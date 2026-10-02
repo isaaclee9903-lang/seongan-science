@@ -248,18 +248,38 @@ window.SM = (function () {
     const svg = document.getElementById('water');
     const Y0 = 330, YT = 130, YM = 230;
     let pats = [], wheels = [], imp = null;
-    function trough(x1, x2, y, id, water) {
-      return `<g filter="url(#wSh)"><rect x="${x1}" y="${y - 16}" width="${x2 - x1}" height="34" rx="7" fill="url(#wBack)"/>
-        ${water ? `<rect x="${x1 + 6}" y="${y - 9}" width="${x2 - x1 - 12}" height="15" fill="url(#${id})"/>` : `<rect x="${x1 + 6}" y="${y + 1}" width="${x2 - x1 - 12}" height="5" fill="#9fd0f5" opacity=".6"/>`}
-        <rect x="${x1}" y="${y + 2}" width="${x2 - x1}" height="16" rx="5" fill="url(#wFront)"/></g>`;
+    // 시멘트 물길: segs = [[물 시작, 물 끝, 무늬 id], ...]
+    function trough(x1, x2, y, id, water, segs) {
+      const w = x2 - x1;
+      segs = segs || [[x1 + 5, x2 - 5, id]];
+      const wat = water ? segs.map(([a, b, pid]) => `<rect x="${a}" y="${y - 10}" width="${b - a}" height="16" fill="url(#${pid})"/><rect x="${a}" y="${y - 10}" width="${b - a}" height="2.5" fill="#effaff" opacity=".85"/>`).join('')
+        : `<rect x="${x1 + 5}" y="${y + 1}" width="${w - 10}" height="5" fill="#9fd0f5" opacity=".6"/>`;
+      return `<g filter="url(#wSh)">
+        <rect x="${x1}" y="${y - 18}" width="${w}" height="13" rx="5" fill="#a9b4c0"/><rect x="${x1 + 2}" y="${y - 17}" width="${w - 4}" height="3" rx="1.5" fill="#e9eef3"/>
+        <rect x="${x1 + 3}" y="${y - 10}" width="${w - 6}" height="16" fill="#5d6b7a"/>${wat}
+        <rect x="${x1}" y="${y + 4}" width="${w}" height="17" rx="5" fill="url(#wFront)"/><rect x="${x1}" y="${y + 4}" width="${w}" height="17" rx="5" fill="url(#wGrit)"/>
+        <rect x="${x1 + 2}" y="${y + 4}" width="${w - 4}" height="3" rx="1.5" fill="#f6f8fa"/><rect x="${x1 + 3}" y="${y + 18}" width="${w - 6}" height="3" rx="1.5" fill="#5f6b78" opacity=".45"/></g>`;
     }
     const tag = (x, y, t, col) => { const w = t.length * 11.5 + 18; return `<g><rect x="${x - w / 2}" y="${y - 12}" width="${w}" height="23" rx="11.5" fill="${col}"/><text x="${x}" y="${y + 4.5}" text-anchor="middle" style="font-size:12px;font-weight:900;fill:#fff">${t}</text></g>`; };
-    const patH = (id) => `<pattern id="${id}" width="36" height="16" patternUnits="userSpaceOnUse"><rect width="36" height="16" fill="#3f9be0"/><path d="M0 5.6 q9 -4 18 0 t18 0" fill="none" stroke="#c9ecff" stroke-width="2" opacity=".9"/><path d="M0 12 q9 -3 18 0 t18 0" fill="none" stroke="#8fd0fa" stroke-width="1.6" opacity=".7"/></pattern>`;
-    const patV = (id) => `<pattern id="${id}" width="20" height="30" patternUnits="userSpaceOnUse"><rect width="20" height="30" fill="#3f9be0"/><path d="M5 0 q-3 7.5 0 15 t0 15 M14.4 0 q3 7.5 0 15 t0 15" fill="none" stroke="#c9ecff" stroke-width="1.8" opacity=".85"/></pattern>`;
+    const patH = (id) => `<pattern id="${id}" width="36" height="16" patternUnits="userSpaceOnUse"><rect width="36" height="16" fill="url(#wDeep)"/><path d="M0 5.6 q9 -4 18 0 t18 0" fill="none" stroke="#c9ecff" stroke-width="2" opacity=".9"/><path d="M0 12 q9 -3 18 0 t18 0" fill="none" stroke="#8fd0fa" stroke-width="1.6" opacity=".7"/></pattern>`;
+    const patV = (id) => `<pattern id="${id}" width="20" height="30" patternUnits="userSpaceOnUse"><rect width="20" height="30" fill="#4aa6e6" opacity=".0"/><path d="M5 0 q-3 7.5 0 15 t0 15 M14.4 0 q3 7.5 0 15 t0 15" fill="none" stroke="#c9ecff" stroke-width="1.8" opacity=".85"/></pattern>`;
     function wheel(cx, cy, r, i) {
-      let s = `<g id="wh${i}"><circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="url(#wWood)" stroke-width="6"/><circle cx="${cx}" cy="${cy}" r="${r * 0.64}" fill="#fbf3e6" stroke="#8a5a32" stroke-width="2.5"/>`;
-      for (let a = 0; a < 8; a++) s += `<line x1="${cx}" y1="${cy}" x2="${cx}" y2="${cy - r}" stroke="#8a5a32" stroke-width="3" stroke-linecap="round" transform="rotate(${a * 45} ${cx} ${cy})"/><rect x="${cx - 6}" y="${cy - r - 9}" width="12" height="14" rx="2" fill="#b98652" stroke="#7a4f2a" stroke-width="1.2" transform="rotate(${a * 45} ${cx} ${cy})"/>`;
-      return s + `</g><circle cx="${cx}" cy="${cy}" r="6" fill="#5c3a1e"/>`;
+      let s = `<circle cx="${cx + 4}" cy="${cy + 3}" r="${r}" fill="none" stroke="#5c3a1e" stroke-width="6" opacity=".55"/><g id="wh${i}">`;
+      for (let a = 0; a < 8; a++) s += `<rect x="${cx - 7}" y="${cy - r - 11}" width="14" height="16" rx="2" fill="url(#wPad)" stroke="#6b4423" stroke-width="1.2" transform="rotate(${a * 45} ${cx} ${cy})"/>`;
+      s += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="url(#wWood)" stroke-width="6.5"/><circle cx="${cx}" cy="${cy}" r="${r - 3}" fill="none" stroke="#d9b48a" stroke-width="1.2" opacity=".7"/>`;
+      s += `<circle cx="${cx}" cy="${cy}" r="${r * 0.62}" fill="#fbf3e6" fill-opacity=".55" stroke="#8a5a32" stroke-width="2.5"/>`;
+      for (let a = 0; a < 8; a++) s += `<line x1="${cx}" y1="${cy}" x2="${cx}" y2="${cy - r}" stroke="#7a4f2a" stroke-width="3.2" stroke-linecap="round" transform="rotate(${a * 45 + 22.5} ${cx} ${cy})"/>`;
+      return s + `</g><circle cx="${cx}" cy="${cy}" r="7.5" fill="url(#wHub)" stroke="#3d4955" stroke-width="1.5"/><circle cx="${cx - 2}" cy="${cy - 2}" r="2" fill="#fff" opacity=".8"/>`;
+    }
+    // 떨어지는 물: 살짝 휘어 떨어지는 물줄기 + 바닥 물보라 (흐름이 셀수록 빨라요)
+    function fallSvg(f, i) {
+      const g = 14, L = f.x - g / 2, R = f.x + g / 2, k = Math.max(0.2, f.i), dur = (0.9 / k).toFixed(2);
+      const d = `M${L} ${f.top} C ${L} ${f.top + 14}, ${L - 3} ${f.top + 30}, ${L - 3} ${f.bot + 2} H${R + 3} C ${R + 3} ${f.top + 30}, ${R} ${f.top + 14}, ${R} ${f.top}Z`;
+      let s = `<path d="${d}" fill="url(#wFall)"/><path d="${d}" fill="url(#pF${i})"/>`;
+      s += `<g fill="none" stroke="#ffffff" stroke-width="2.2">${[0, 1, 2].map((j) => `<ellipse cx="${f.x}" cy="${f.bot}" rx="4" ry="2" opacity="0"><animate attributeName="rx" values="4;${22 + 6 * k}" dur="${dur}s" begin="${(j * dur / 3).toFixed(2)}s" repeatCount="indefinite"/><animate attributeName="ry" values="2;7" dur="${dur}s" begin="${(j * dur / 3).toFixed(2)}s" repeatCount="indefinite"/><animate attributeName="opacity" values=".95;0" dur="${dur}s" begin="${(j * dur / 3).toFixed(2)}s" repeatCount="indefinite"/></ellipse>`).join('')}</g>`;
+      s += `<g fill="#e8f7ff">${[-9, -3, 4, 10].map((dx, j) => `<circle cx="${f.x + dx}" cy="${f.bot - 2}" r="${1.6 + (j % 2)}"><animate attributeName="cy" values="${f.bot - 2};${f.bot - 14 - j * 3};${f.bot - 2}" dur="${(0.7 / k + j * 0.08).toFixed(2)}s" repeatCount="indefinite"/></circle>`).join('')}</g>`;
+      s += `<ellipse cx="${f.x}" cy="${f.bot + 1}" rx="${12 + 6 * k}" ry="3" fill="#ffffff" opacity=".55"/>`;
+      return s;
     }
     function bracket(x, y1, y2, label, sub) {
       return `<g><path d="M${x} ${y1 + 2} V${y2 - 2} M${x - 7} ${y1} H${x + 7} M${x - 7} ${y2} H${x + 7}" stroke="#7d5ad6" stroke-width="3.4" stroke-linecap="round"/>
@@ -269,13 +289,18 @@ window.SM = (function () {
       const m = model(), n = m.n;
       const tot = m.I;                       // 펌프·아래 수로의 흐름
       let s = `<defs>
-        <linearGradient id="wSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e6f3ff"/><stop offset="1" stop-color="#fbfdff"/></linearGradient>
+        <linearGradient id="wSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#cfe8fb"/><stop offset=".7" stop-color="#eef7fd"/><stop offset="1" stop-color="#f7fbf4"/></linearGradient>
+        <linearGradient id="wDeep" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5ab3ec"/><stop offset=".55" stop-color="#2f8ad3"/><stop offset="1" stop-color="#1f6db5"/></linearGradient>
+        <linearGradient id="wPad" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#9c6b3d"/><stop offset=".5" stop-color="#c9955f"/><stop offset="1" stop-color="#8a5a32"/></linearGradient>
+        <radialGradient id="wHub" cx=".4" cy=".35" r=".7"><stop offset="0" stop-color="#d9dfe6"/><stop offset="1" stop-color="#5d6874"/></radialGradient>
+        <pattern id="wGrit" width="14" height="10" patternUnits="userSpaceOnUse"><circle cx="2" cy="3" r=".9" fill="#6f7b88" opacity=".35"/><circle cx="9" cy="7" r=".7" fill="#6f7b88" opacity=".3"/><circle cx="12" cy="2" r=".6" fill="#ffffff" opacity=".5"/></pattern>
+        <linearGradient id="wBrickSh" x1="0" x2="1"><stop offset="0" stop-color="#000" stop-opacity=".18"/><stop offset=".4" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".22"/></linearGradient>
         <linearGradient id="wBack" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#eef1f4"/><stop offset="1" stop-color="#c9d1da"/></linearGradient>
-        <linearGradient id="wFront" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c5ced8"/><stop offset="1" stop-color="#8f9ba9"/></linearGradient>
+        <linearGradient id="wFront" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d3dae2"/><stop offset=".6" stop-color="#b3bdc8"/><stop offset="1" stop-color="#8996a4"/></linearGradient>
         <linearGradient id="wPipe" x1="0" x2="1"><stop offset="0" stop-color="#9aa7b4"/><stop offset=".5" stop-color="#dfe5eb"/><stop offset="1" stop-color="#8794a2"/></linearGradient>
         <pattern id="wBrick" width="24" height="12" patternUnits="userSpaceOnUse"><rect width="24" height="12" fill="#d9a77a"/><path d="M0 11.5H24M12 0V6M0 6H24M0 6V12M24 6V12" stroke="#b37c53" stroke-width="1.2"/></pattern>
         <linearGradient id="wMetal" x1="0" x2="1"><stop offset="0" stop-color="#2a63c4"/><stop offset=".45" stop-color="#5b97f0"/><stop offset="1" stop-color="#2556ab"/></linearGradient>
-        <linearGradient id="wFall" x1="0" x2="1"><stop offset="0" stop-color="#3b93d8"/><stop offset=".5" stop-color="#a6dcfb"/><stop offset="1" stop-color="#3a8fd2"/></linearGradient>
+        <linearGradient id="wFall" x1="0" x2="1"><stop offset="0" stop-color="#2a82cc"/><stop offset=".35" stop-color="#8fd2fb"/><stop offset=".55" stop-color="#d9f2ff"/><stop offset="1" stop-color="#2f86cf"/></linearGradient>
         <linearGradient id="wWood" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#b07b4a"/><stop offset="1" stop-color="#7a4f2a"/></linearGradient>
         <linearGradient id="wSteel" x1="0" x2="1"><stop offset="0" stop-color="#5d6874"/><stop offset=".5" stop-color="#8d98a4"/><stop offset="1" stop-color="#4f5a66"/></linearGradient>
         <filter id="wSh" x="-20%" y="-20%" width="140%" height="180%"><feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#0b2a4a" flood-opacity=".18"/></filter>
@@ -283,7 +308,12 @@ window.SM = (function () {
       </defs>
       <rect width="560" height="400" fill="url(#wSky)"/>
       <g fill="#fff" opacity=".9"><ellipse cx="300" cy="44" rx="34" ry="11"/><circle cx="288" cy="38" r="12"/><circle cx="308" cy="34" r="15"/><ellipse cx="460" cy="66" rx="26" ry="9"/><circle cx="466" cy="59" r="11"/></g>
-      <rect x="0" y="${Y0 + 22}" width="560" height="${400 - Y0 - 22}" fill="#caa47b"/><rect x="0" y="${Y0 + 14}" width="560" height="12" rx="6" fill="#8cc56c"/>
+      <path d="M0 268 C 70 236, 150 250, 220 232 S 360 214, 440 236 S 530 228, 560 240 V400 H0Z" fill="#cfe4d4"/>
+      <path d="M0 300 C 90 280, 170 298, 260 284 S 430 278, 560 294 V400 H0Z" fill="#b9dbbf" opacity=".8"/>
+      <rect x="0" y="${Y0 + 18}" width="560" height="${400 - Y0 - 18}" fill="#c99d6e"/>
+      <path d="M0 ${Y0 + 36} H560 M0 ${Y0 + 52} H560" stroke="#b3875a" stroke-width="2" stroke-dasharray="18 10 6 12" opacity=".6"/>
+      <rect x="0" y="${Y0 + 12}" width="560" height="12" rx="6" fill="#7fbf5e"/>
+      <g fill="#6aac4c">${Array.from({ length: 28 }, (_, k) => `<path d="M${k * 20 + 6} ${Y0 + 14} l3 -7 l2 7 l3 -5 l1 5Z"/>`).join('')}</g>
       <line x1="40" y1="${YT}" x2="540" y2="${YT}" stroke="#2f6fd6" stroke-dasharray="4 6" stroke-opacity=".35"/>
       <text x="548" y="${YT - 58}" text-anchor="end" style="font-size:11.5px;font-weight:800;fill:#2f6fd6">파란 점선: 펌프가 올린 높이 (전지의 전압)</text>`;
       // 수로 배치
@@ -293,25 +323,16 @@ window.SM = (function () {
       else { falls = [{ x: 236, top: YT, bot: Y0, r: 34 }, { x: 392, top: YT, bot: Y0, r: 34 }]; topEnd = 404; bottomEnd = 500; }
       falls.forEach((f, i) => { f.cx = f.x + f.r + 6; f.cy = (f.top + f.bot) / 2; f.i = m.i[i]; f.cut = S.cut[i]; });
       // 벽돌 기둥
-      (n === 2 && S.mode === 'par' ? [110] : [110, topEnd - 40]).forEach((x) => { s += `<rect x="${x}" y="${YT + 18}" width="22" height="${Y0 - YT - 30}" fill="url(#wBrick)" stroke="#a46f48"/>`; });
+      (n === 2 && S.mode === 'par' ? [110] : [110, topEnd - 40]).forEach((x) => { s += `<rect x="${x}" y="${YT + 18}" width="22" height="${Y0 - YT - 30}" fill="url(#wBrick)" stroke="#a46f48"/><rect x="${x}" y="${YT + 18}" width="22" height="${Y0 - YT - 30}" fill="url(#wBrickSh)"/>`; });
       if (n === 2 && S.mode === 'par') s += `<rect x="${topEnd - 8}" y="${YT + 16}" width="7" height="${Y0 - YT - 28}" rx="2" fill="url(#wSteel)"/>`;
       if (n === 2 && S.mode === 'ser') s += `<rect x="${falls[1].x - 44}" y="${YM + 18}" width="20" height="${Y0 - YM - 30}" fill="url(#wBrick)" stroke="#a46f48"/>`;
       falls.forEach((f) => { s += `<path d="M${f.cx - 18} ${f.bot + 14} L${f.cx} ${f.cy} L${f.cx + 18} ${f.bot + 14}" fill="none" stroke="#7a4f2a" stroke-width="6" stroke-linecap="round"/>`; });
       // 아래 수로, 펌프 관
       s += trough(46, bottomEnd, Y0, 'pB', true);
-      s += `<rect x="58" y="${YT - 10}" width="28" height="${Y0 - YT + 14}" rx="9" fill="url(#wPipe)"/><rect x="63" y="${YT - 4}" width="18" height="${Y0 - YT + 4}" fill="url(#pU)"/>`;
+      s += `<rect x="58" y="${YT - 10}" width="28" height="${Y0 - YT + 14}" rx="9" fill="url(#wPipe)"/><rect x="63" y="${YT - 4}" width="18" height="${Y0 - YT + 4}" fill="url(#wDeep)" opacity=".9"/><rect x="63" y="${YT - 4}" width="18" height="${Y0 - YT + 4}" fill="url(#pU)"/>${[YT + 20, Y0 - 24].map((y) => `<rect x="54" y="${y}" width="36" height="8" rx="3" fill="url(#wPipe)" stroke="#7b8794" stroke-width=".8"/>`).join('')}`;
       // 위 수로 (수문 앞 / 뒤)
       const gateX = 170;
-      if (n === 2 && S.mode === 'par') {
-        s += `<g filter="url(#wSh)"><rect x="54" y="${YT - 16}" width="${topEnd - 54}" height="34" rx="7" fill="url(#wBack)"/>
-          <rect x="60" y="${YT - 9}" width="${falls[0].x - 66}" height="15" fill="url(#pT0)"/>
-          <rect x="${falls[0].x + 8}" y="${YT - 9}" width="${topEnd - falls[0].x - 14}" height="15" fill="url(#pT1)"/>
-          <rect x="54" y="${YT + 2}" width="${topEnd - 54}" height="16" rx="5" fill="url(#wFront)"/></g>`;
-      } else {
-        s += `<g filter="url(#wSh)"><rect x="54" y="${YT - 16}" width="${topEnd - 54}" height="34" rx="7" fill="url(#wBack)"/>
-          <rect x="60" y="${YT - 9}" width="${topEnd - 66}" height="15" fill="url(#pT0)"/>
-          <rect x="54" y="${YT + 2}" width="${topEnd - 54}" height="16" rx="5" fill="url(#wFront)"/></g>`;
-      }
+      s += n === 2 && S.mode === 'par' ? trough(54, topEnd, YT, 'pT0', true, [[60, falls[0].x - 6, 'pT0'], [falls[0].x + 8, topEnd - 6, 'pT1']]) : trough(54, topEnd, YT, 'pT0', true, [[60, topEnd - 6, 'pT0']]);
       if (n === 2 && S.mode === 'ser') s += trough(falls[0].x - 10, falls[1].x + 12, YM, 'pM', true);
       // 펌프 본체
       const pyc = (YT + Y0) / 2;
@@ -323,12 +344,12 @@ window.SM = (function () {
       // 낙수와 물레방아
       falls.forEach((f, i) => {
         const drop = f.bot - f.top, gap = 12;
-        if (f.i > 0) s += `<rect x="${f.x - gap / 2}" y="${f.top}" width="${gap}" height="${drop + 4}" fill="url(#wFall)"/><rect x="${f.x - gap / 2}" y="${f.top}" width="${gap}" height="${drop + 4}" fill="url(#pF${i})" opacity=".55"/>`;
+        if (f.i > 0) s += fallSvg(f, i);
         s += `<rect x="${f.x - gap / 2 - 12}" y="${f.top - 14}" width="11" height="26" rx="3" fill="url(#wSteel)"/><rect x="${f.x + gap / 2 + 1}" y="${f.top - 14}" width="11" height="26" rx="3" fill="url(#wSteel)"/>`;
         if (f.cut) s += `<rect x="${f.x - 18}" y="${f.top - 24}" width="36" height="18" rx="3" fill="#e0483e" stroke="#9e2a22"/><text x="${f.x}" y="${f.top - 11}" text-anchor="middle" style="font-size:11px;font-weight:900;fill:#fff">막힘</text>`;
         s += wheel(f.cx, f.cy, f.r, i);
         const nm = n === 1 ? '물레방아(전구)' : `물레방아 ${i + 1}`;
-        s += tag(f.cx, n === 1 ? f.cy + f.r + 20 : f.top - 34, nm, f.cut ? '#e0483e' : '#1f9d5c');
+        s += tag(f.cx, f.top - 34, nm, f.cut ? '#e0483e' : '#1f9d5c');
       });
       // 높이 차 표시
       if (n === 1) s += bracket(falls[0].cx + falls[0].r + 14, YT, Y0, '전구에 걸리는', '전압');
@@ -440,7 +461,7 @@ window.SM = (function () {
         mk('rect', { x: an === 'start' ? lx - 6 : an === 'end' ? lx - lw + 6 : lx - lw / 2, y: ly - 14, width: lw, height: 20, rx: 10, fill: '#fff', opacity: 0.92 }, g);
         tx(g, lx, ly, label, 'font-size:12.5px;font-weight:900;fill:#41536a', an);
       }
-      const bg = mk('g', { transform: `translate(0 ${removed ? -24 : 0})`, opacity: removed ? 0.5 : 1 }, g);
+      const bg = mk('g', { transform: removed ? `translate(${opt.liftDx || 0} ${opt.liftDy != null ? opt.liftDy : -24}) rotate(${opt.liftRot || 0} ${x} ${y})` : '', opacity: removed ? 0.5 : 1 }, g);
       if (b > 0) { const gl = mk('circle', { cx: x, cy: y - 42, r: 26 + 48 * b, fill: `url(#glow${u})`, opacity: (0.3 + 0.7 * b).toFixed(2) }, bg); gl.classList.add('bglow'); }
       // 나사 꼭지
       mk('path', { d: `M${x - 9.5} ${y - 4} V${y - 22} H${x + 9.5} V${y - 4} Q${x} ${y + 1} ${x - 9.5} ${y - 4}Z`, fill: `url(#screw${u})`, stroke: '#5f6a75', 'stroke-width': 0.9 }, bg);
@@ -501,7 +522,7 @@ window.SM = (function () {
     const pathD = (p) => 'M' + p.map((q) => q.join(' ')).join(' L');
     const U = 'c';
     function bulb(x, y, b, removed, label) {
-      KIT.bulb(svg, U, x, y, b, removed, label, S.mode === 'par' ? { tagX: x - 92, tagY: y - 11 } : {});
+      KIT.bulb(svg, U, x, y, b, removed, label, S.mode === 'par' ? { tagX: x - 92, tagY: y - 11, liftDx: 62, liftDy: -8, liftRot: 16 } : {});
     }
     function battery() { KIT.battery(svg, U, BL, BR, BY); }
     function sw(x, y) {
