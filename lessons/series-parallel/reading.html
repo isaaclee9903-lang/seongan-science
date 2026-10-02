@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>저항의 직렬연결과 병렬연결 – 읽기</title>
+<script>
+/* 문제 알림: 그림을 그리는 코드에 오류가 나면 화면 아래에 빨간 상자로 알려 줘요 (선생님 확인용) */
+(function () {
+  function box() {
+    var b = document.getElementById('rdErr');
+    if (!b && document.body) {
+      b = document.createElement('div'); b.id = 'rdErr';
+      b.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;background:#fdecea;color:#8a1f17;border:2px solid #d9534f;border-radius:12px;padding:10px 14px;font:600 14px/1.5 sans-serif;white-space:pre-wrap';
+      document.body.appendChild(b);
+    }
+    return b;
+  }
+  window.RD_err = function (where, err) {
+    var msg = '[' + where + '] ' + (err && err.message ? err.message : String(err));
+    var show = function () { var b = box(); if (b) b.textContent += (b.textContent ? '\n' : '') + msg; };
+    if (document.body) show(); else document.addEventListener('DOMContentLoaded', show);
+  };
+  window.addEventListener('error', function (e) { window.RD_err('스크립트', { message: e.message + ' (줄 ' + e.lineno + ')' }); });
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      var R = window.RD || {}, miss = [];
+      if (!R.ok1) miss.push('기본 기능·퀴즈');
+      if (!R.ok2) miss.push('직렬·병렬 모형 그림');
+      if (!R.ok3) miss.push('멀티탭 그림');
+      if (miss.length) window.RD_err('실행 안 됨', { message: miss.join(', ') + ' 코드가 실행되지 않았어요. 파일이 끝(</html>)까지 들어 있는지 확인해 주세요.' });
+    }, 1500);
+  });
+})();
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+  :root{--bg:#f3f6f9;--paper:#fff;--ink:#15263a;--ink2:#34495e;--muted:#627386;--line:#e1e8ef;--accent:#0e63b3;--accent-soft:#e4f0fb;
+    --V:#2f6fd6;--I:#e89a00;--R:#23a566;--ok:#1f9d5c;--no:#d9534f;--violet:#7d5ad6;
+    --ser:#1784cf;--ser-soft:#e3f2fc;--par:#5e9e1c;--par-soft:#eef7e2;
+    --shadow:0 1px 2px rgba(20,38,59,.05),0 10px 28px rgba(20,38,59,.07);--ease:cubic-bezier(.2,.8,.2,1);--fs:18px}
+  html.big{--fs:20.5px}
+  *{box-sizing:border-box}html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:"Pretendard",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;-webkit-font-smoothing:antialiased;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  button{font:inherit;color:inherit}a{color:var(--accent)}
+  /* 히어로 */
+  .hero{position:relative;color:#fff;overflow:hidden;background:linear-gradient(150deg,#123a6b,#1d6fb8 55%,#4f9a2e)}
+  .hero-in{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:36px 20px 40px;display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.35fr);gap:28px;align-items:center}
+  .hero .kick{display:inline-block;font-size:14px;font-weight:700;background:rgba(255,255,255,.16);padding:6px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.3)}
+  .hero .kick.maker{margin-left:6px;background:rgba(255,255,255,.08)}
+  .hero h1{font-size:clamp(30px,4.4vw,44px);line-height:1.22;letter-spacing:-.03em;margin:14px 0 10px;word-break:keep-all}
+  .hero p{font-size:clamp(16px,2vw,18px);margin:0 0 18px;line-height:1.65;opacity:.95;word-break:keep-all}
+  .route{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px}
+  .route span{font-size:13.5px;font-weight:700;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.28);padding:5px 11px;border-radius:12px}
+  .start{display:inline-flex;align-items:center;gap:10px;white-space:nowrap;background:#fff;color:var(--accent);border:0;border-radius:16px;padding:0 22px;min-height:56px;font-weight:800;font-size:17px;cursor:pointer;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+  .hero svg{width:100%;height:auto;filter:drop-shadow(0 12px 30px rgba(0,0,0,.25))}
+  .msw{cursor:pointer}
+  .msw:focus{outline:none}.msw:focus-visible .rk{stroke:#ffd34d;stroke-width:3}
+  .dev .glow,.dev .lit{transition:opacity .45s var(--ease)}
+  .dev.off .glow,.dev.off .lit{opacity:0}
+  .dev .unlit{opacity:0;transition:opacity .45s}
+  .dev.off .unlit{opacity:1}
+  .fanb{transform-box:fill-box;transform-origin:center;animation:fanspin .45s linear infinite}
+  .dev.off .fanb{animation-duration:6s;animation-play-state:paused}
+  @keyframes fanspin{to{transform:rotate(360deg)}}
+  .credit{text-align:center;font-size:13px;font-weight:700;color:#8495a8;padding:6px 16px 40px;letter-spacing:.02em}
+  /* 진행 */
+  .nav{position:sticky;top:0;z-index:30;background:rgba(255,255,255,.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+  .nav-in{max-width:980px;margin:0 auto;display:flex;align-items:center;gap:6px;padding:8px 12px;overflow-x:auto;scrollbar-width:none}
+  .nav-in::-webkit-scrollbar{display:none}
+  .step{flex:none;display:flex;align-items:center;gap:7px;border:0;background:transparent;border-radius:12px;padding:8px 11px;min-height:44px;font-weight:700;font-size:14.5px;color:var(--muted);cursor:pointer}
+  .step .n{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:12.5px;font-weight:800;background:#e8eef4;color:#607285}
+  .step.active{background:var(--accent-soft);color:var(--accent)}.step.active .n{background:var(--accent);color:#fff}
+  .step.done .n{background:var(--ok);color:#fff}
+  .nav-sp{flex:1}
+  .fsz{flex:none;display:flex;gap:4px}
+  .fsz button{width:44px;height:40px;border:1px solid var(--line);background:#fff;border-radius:10px;font-weight:800;cursor:pointer}
+  .fsz button[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .bar{height:3px}.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--ser),var(--par))}
+  /* 본문 */
+  main{max-width:980px;margin:0 auto;padding:10px 16px 60px}
+  section.part{padding-top:34px;scroll-margin-top:70px}
+  .sec-kick{font-size:14px;font-weight:800;color:var(--accent);display:flex;align-items:center;gap:8px}
+  .sec-kick .time{font-weight:600;color:var(--muted);background:#fff;border:1px solid var(--line);border-radius:999px;padding:2px 10px;font-size:12.5px}
+  h2{font-size:clamp(24px,3.4vw,31px);margin:6px 0 16px;letter-spacing:-.02em;line-height:1.3;word-break:keep-all}
+  h3{font-size:calc(var(--fs) + 3px);margin:0 0 8px;letter-spacing:-.01em;word-break:keep-all}
+  .card{background:var(--paper);border-radius:22px;box-shadow:var(--shadow);border:1px solid rgba(20,38,59,.04)}
+  .read{padding:24px 26px;margin-bottom:16px}
+  .read p{font-size:var(--fs);line-height:1.85;color:var(--ink2);margin:0 0 14px;word-break:keep-all}
+  .read p:last-child{margin-bottom:0}
+  mark{background:linear-gradient(transparent 58%,#fff0a8 58%);color:inherit;padding:0 1px}
+  .term{border:0;background:none;padding:0;font-weight:800;color:var(--accent);border-bottom:2px dotted rgba(14,99,179,.5);cursor:pointer;font-size:inherit;line-height:inherit}
+  .defn{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:14px 0;padding:14px 16px;border-radius:16px;background:#f2f7fd;border:1px solid #d6e5f5;font-size:var(--fs);word-break:keep-all}
+  .defn .k{font-weight:900;color:#fff;padding:4px 12px;border-radius:10px}
+  .defn.ser{background:var(--ser-soft);border-color:#bfe0f5}.defn.ser .k{background:var(--ser)}
+  .defn.par{background:var(--par-soft);border-color:#cfe6b4}.defn.par .k{background:var(--par)}
+  .fig{margin:16px 0;background:#f8fafc;border:1px solid var(--line);border-radius:18px;padding:12px}
+  .fig svg{display:block;width:100%;height:auto}
+  .fig .cap{font-size:14px;color:var(--muted);text-align:center;margin-top:6px;word-break:keep-all;line-height:1.6}
+  .js-reveal .reveal{transform:translateY(18px);transition:transform .7s var(--ease)}
+  .js-reveal .reveal.in{transform:none}
+  details.pause{margin:16px 0 22px;background:linear-gradient(135deg,#fff8e6,#fff);border:2px solid #f6d98a;border-radius:18px;overflow:hidden}
+  details.pause summary{list-style:none;cursor:pointer;padding:15px 18px;display:flex;gap:12px;align-items:center;font-weight:800;font-size:var(--fs);min-height:60px;word-break:keep-all}
+  details.pause summary::-webkit-details-marker{display:none}
+  details.pause .pi{flex:none;width:36px;height:36px;border-radius:12px;background:#f7c948;display:grid;place-items:center}
+  details.pause .tap{margin-left:auto;flex:none;font-size:13px;font-weight:700;color:#9a6b00;background:#fff3cc;padding:4px 10px;border-radius:999px}
+  details.pause[open] .tap{visibility:hidden}
+  details.pause .ans{padding:0 18px 18px 66px;font-size:var(--fs);line-height:1.75;color:#5b4300;word-break:keep-all}
+  .myth{display:flex;gap:14px;align-items:flex-start;background:#fff4f2;border:2px solid #f3c2bb;border-radius:18px;padding:16px 18px;margin:16px 0}
+  .myth .x{flex:none;width:40px;height:40px;border-radius:12px;background:#e0483e;color:#fff;display:grid;place-items:center;font-weight:900;font-size:20px}
+  .myth p{margin:0;font-size:calc(var(--fs) - 1px);line-height:1.7;color:#5e2a25;word-break:keep-all}
+  .formula{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:12px;margin:16px 0;padding:18px;border-radius:20px;background:#f6f9ff;border:1px solid #d6e5f5;font-size:clamp(26px,4vw,36px);font-weight:900;letter-spacing:-.01em}
+  .formula .eqs{font-size:clamp(15px,2vw,17px);font-weight:700;color:var(--muted);flex-basis:100%;text-align:center;word-break:keep-all}
+  .cV{color:var(--V)}.cI{color:var(--I)}.cR{color:var(--R)}.cS{color:var(--ser)}.cP{color:var(--par)}
+  /* 지난 시간 */
+  .recall{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:16px;align-items:center}
+  .backlink{display:inline-flex;align-items:center;gap:8px;min-height:46px;padding:0 16px;border-radius:12px;background:#eef3f8;color:var(--ink2);font-weight:800;font-size:15px;text-decoration:none}
+  /* 직렬·병렬 모형 장면 */
+  .spfig svg{max-width:760px;margin:0 auto}
+  .spfig .etog{display:flex;gap:8px;justify-content:center;margin-bottom:8px;flex-wrap:wrap}
+  .tg{min-height:48px;padding:0 16px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15px;cursor:pointer;transition:all .2s}
+  .tg[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+  .tg.cut{border-style:dashed}
+  .tg.cut[aria-pressed="true"]{border-color:var(--no);background:#fdecea;color:#b33a35;border-style:solid}
+  .tg:disabled{opacity:.35;cursor:default}
+  .mtr{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:10px}
+  .mtr .m{background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px 12px}
+  .mtr .ml{font-size:14px;font-weight:800;color:var(--ink2);word-break:keep-all}
+  .mtr .trk{position:relative;height:16px;border-radius:99px;background:#e9eff5;margin:10px 0 18px}
+  .mtr .fill{position:absolute;left:0;top:0;bottom:0;border-radius:99px;width:0;transition:width .7s var(--ease)}
+  .mtr .ref{position:absolute;top:-4px;bottom:-4px;width:3px;border-radius:2px;background:#14263b;opacity:.55}
+  .mtr .ref::after{content:"전구 1개";position:absolute;top:22px;left:50%;transform:translateX(-50%);font-size:11.5px;font-weight:800;color:#5a6b7e;white-space:nowrap}
+  .mtr .mv{font-size:14.5px;font-weight:800;word-break:keep-all;min-height:22px}
+  /* 왜 그럴까 사슬 */
+  .chain{display:grid;gap:0;margin:16px 0}
+  .ch{display:grid;grid-template-columns:44px 1fr;gap:12px;align-items:start;padding:12px 14px;border-radius:16px;background:#f8fafc;border:1px solid var(--line)}
+  .ch .no{width:36px;height:36px;border-radius:12px;display:grid;place-items:center;font-weight:900;color:#fff}
+  .ch p{margin:0;font-size:calc(var(--fs) - 1px);line-height:1.7;color:var(--ink2);word-break:keep-all}
+  .ch p small{display:block;font-size:calc(var(--fs) - 4px);color:var(--muted);margin-top:2px}
+  .ch-ar{height:22px;display:grid;place-items:center}
+  .ch-ar svg{width:20px;height:20px}
+  .chain.ser .ch .no{background:var(--ser)}.chain.par .ch .no{background:var(--par)}
+  .chain .ch.key{background:#fffdf3;border-color:#f0dc9a}
+  /* 비교표 */
+  .cmp{width:100%;border-collapse:separate;border-spacing:0;margin:8px 0 4px;font-size:calc(var(--fs) - 2px);word-break:keep-all}
+  .cmp th,.cmp td{padding:12px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;line-height:1.6}
+  .cmp thead th{font-size:calc(var(--fs) - 1px);font-weight:900;color:#fff}
+  .cmp thead th:first-child{background:transparent}
+  .cmp thead th.s{background:var(--ser);border-radius:14px 14px 0 0}
+  .cmp thead th.p{background:var(--par);border-radius:14px 14px 0 0}
+  .cmp tbody th{color:var(--muted);font-weight:800;width:24%}
+  .cmp td.s{background:var(--ser-soft)}.cmp td.p{background:var(--par-soft)}
+  .life{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:14px 0}
+  .lc{background:#f8fafc;border:1px solid var(--line);border-radius:18px;padding:14px}
+  .lc svg{display:block;width:100%;height:auto;border-radius:12px;background:#fff}
+  .lc > b{display:block;font-size:calc(var(--fs) - .5px);margin:10px 0 4px}
+  .lc p{margin:0;font-size:calc(var(--fs) - 2px);line-height:1.7;color:var(--ink2);word-break:keep-all}
+  .simlink{display:flex;align-items:center;gap:14px;margin:18px 0 4px;padding:16px 18px;border-radius:18px;background:linear-gradient(120deg,#0e63b3,#1b86c9);color:#fff;text-decoration:none;box-shadow:0 8px 22px rgba(14,99,179,.25)}
+  .simlink .si{flex:none;width:46px;height:46px;border-radius:14px;background:rgba(255,255,255,.18);display:grid;place-items:center}
+  .simlink b{display:block;font-size:17px}.simlink span{font-size:14px;opacity:.9;word-break:keep-all}
+  .simlink .go{margin-left:auto;flex:none}
+  /* 퀴즈 */
+  .quiz{display:flex;flex-direction:column;gap:14px}
+  .qcard{padding:22px 24px}
+  .qhead{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .qno{flex:none;font-weight:800;font-size:13px;color:#fff;background:var(--ink);padding:4px 10px;border-radius:999px}
+  .qtype{font-size:12.5px;font-weight:700;color:var(--muted)}
+  .qstate{margin-left:auto;font-weight:800;font-size:13px;padding:4px 10px;border-radius:999px;display:none}
+  .qcard.right .qstate{display:inline-block;background:#e8f7ef;color:#11703f}
+  .qcard.wrong .qstate{display:inline-block;background:#fdecea;color:#b33a35}
+  .qtext{font-size:calc(var(--fs) + 1px);font-weight:700;line-height:1.65;margin:0 0 16px;word-break:keep-all}
+  .ox{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:420px}
+  .oxb{min-height:80px;border-radius:20px;border:2px solid var(--line);background:#f7fafc;font-size:38px;font-weight:900;cursor:pointer;display:grid;place-items:center}
+  .oxb.o{color:#1f78c8}.oxb.x{color:#d9534f}
+  .mc{display:grid;gap:10px}
+  .mcb{display:flex;align-items:center;gap:12px;text-align:left;min-height:56px;border-radius:16px;border:2px solid var(--line);background:#f7fafc;padding:10px 16px;font-size:var(--fs);font-weight:700;cursor:pointer;word-break:keep-all}
+  .mcb .k{flex:none;width:30px;height:30px;border-radius:50%;background:#fff;border:2px solid #cbd6e1;display:grid;place-items:center;font-size:14px;font-weight:800;color:#5a6b7e}
+  button.good{border-color:var(--ok)!important;background:#e8f7ef!important}
+  button.bad{border-color:var(--no)!important;background:#fdecea!important}
+  button:disabled{cursor:default}
+  .qcard.locked .oxb:not(.good):not(.bad),.qcard.locked .mcb:not(.good):not(.bad){opacity:.55}
+  .sentence{font-size:calc(var(--fs) + 1px);font-weight:700;line-height:2.4;margin:0 0 14px;word-break:keep-all}
+  .slot{display:inline-flex;align-items:center;justify-content:center;min-width:110px;min-height:44px;vertical-align:middle;margin:0 4px;padding:0 14px;border-radius:12px;border:2px dashed #aebdcc;background:#f7fafc;color:var(--muted);font-weight:800;font-size:calc(var(--fs) - 1px);cursor:pointer;line-height:1.2}
+  .slot.filled{border-style:solid;border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+  .slot.cur{box-shadow:0 0 0 4px rgba(14,99,179,.18)}
+  .slot.good{border-style:solid;border-color:var(--ok);background:#e8f7ef;color:#11703f}
+  .slot.bad{border-style:solid;border-color:var(--no);background:#fdecea;color:#b33a35}
+  .bank{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+  .chip{min-height:48px;padding:0 16px;border-radius:14px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:calc(var(--fs) - 1px);cursor:pointer}
+  .chip.used{opacity:.3;pointer-events:none}
+  .btn{min-height:52px;border:0;border-radius:14px;padding:0 20px;font-weight:800;font-size:16px;cursor:pointer}
+  .btn.primary{background:var(--accent);color:#fff}.btn.primary:disabled{opacity:.35}
+  .btn.ghost{background:#eef3f8;color:var(--ink2)}
+  .exp{display:none;margin-top:14px;padding:14px 16px;border-radius:14px;font-size:var(--fs);line-height:1.7;word-break:keep-all}
+  .qcard.right .exp{display:block;background:#e8f7ef;color:#0f5a36}
+  .qcard.wrong .exp{display:block;background:#fff6e8;color:#6d4208}
+  .retry{margin-top:10px}
+  .result{padding:26px;display:grid;grid-template-columns:150px 1fr;gap:24px;align-items:center;margin-top:16px}
+  .ring{width:150px;height:150px;position:relative}.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+  .ring .rv{position:absolute;inset:0;display:grid;place-items:center;text-align:center;font-weight:900;font-size:34px;line-height:1.1}
+  .ring .rv small{display:block;font-size:13px;font-weight:700;color:var(--muted)}
+  .result p{font-size:var(--fs);line-height:1.7;color:var(--ink2);margin:0 0 12px;word-break:keep-all}
+  .wlist{display:flex;flex-wrap:wrap;gap:8px}
+  .wlist button{min-height:44px;border:1px solid #f1c6c3;background:#fdf0ef;color:#b33a35;border-radius:10px;padding:0 12px;font-weight:700;cursor:pointer}
+  .next{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}
+  .next a{text-decoration:none;color:#fff;border-radius:20px;padding:18px;min-height:140px;display:flex;flex-direction:column;justify-content:space-between;box-shadow:var(--shadow)}
+  .next a b{font-size:18px}.next a span{font-size:14px;opacity:.92;word-break:keep-all}
+  .pop{position:absolute;z-index:40;max-width:300px;background:#15263a;color:#fff;border-radius:14px;padding:12px 14px;font-size:15px;line-height:1.6;box-shadow:0 12px 32px rgba(0,0,0,.25);opacity:0;transform:translateY(6px);transition:all .2s;pointer-events:none;word-break:keep-all}
+  .pop.show{opacity:1;transform:none;pointer-events:auto}.pop b{display:block;color:#9fd2ff}
+  @media (max-width:860px){.hero-in{grid-template-columns:1fr}.recall,.life,.next{grid-template-columns:1fr}}
+  @media (max-width:640px){.mtr{grid-template-columns:1fr}}
+  @media (max-width:600px){.read{padding:20px}.result{grid-template-columns:1fr;justify-items:center;text-align:center}.step .t{display:none}.cmp th,.cmp td{padding:10px 8px}}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.js-reveal .reveal{transform:none}}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-in">
+    <div>
+      <span class="kick">중2 과학 · 전기와 자기</span><span class="kick maker">성안중학교 이삭 T</span>
+      <h1>전구를 두 개 연결하면 어떻게 될까?</h1>
+      <p>콘센트마다 스위치가 따로 달린 멀티탭이 있어요. 스위치 하나를 꺼도 다른 기구는 계속 켜져 있지요. 전기 기구는 멀티탭에 어떻게 연결되어 있을까요? 전구를 <b>직렬</b>과 <b>병렬</b>로 연결해 보며 비교해 봐요.</p>
+      <div class="route"><span>① 지난 시간 다시 보기</span><span>② 직렬연결</span><span>③ 병렬연결</span><span>④ 비교와 생활</span></div>
+      <button class="start" type="button" data-go="r1">읽기 시작하기
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg></button>
+    </div>
+    <svg class="hero-art" id="tapSvg" viewBox="0 0 760 440" role="img" aria-label="콘센트마다 스위치가 달린 멀티탭. 스탠드와 선풍기는 켜져 있고 휴대 전화 충전기는 스위치가 꺼져 있다. 스위치를 누르면 해당 기구만 켜지거나 꺼진다.">
+      <defs>
+        <linearGradient id="tSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4f8fc"/><stop offset="1" stop-color="#e3eaf2"/></linearGradient>
+        <linearGradient id="tDesk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d9b48a"/><stop offset="1" stop-color="#b98c5e"/></linearGradient>
+        <pattern id="tGrain" width="120" height="16" patternUnits="userSpaceOnUse"><path d="M0 5 C30 2 60 8 120 4 M0 12 C40 9 80 15 120 11" fill="none" stroke="#a87c50" stroke-width="1" opacity=".35"/></pattern>
+        <linearGradient id="tBody" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset=".6" stop-color="#eef2f6"/><stop offset="1" stop-color="#cfd8e2"/></linearGradient>
+        <radialGradient id="tHole" cx=".5" cy=".4" r=".6"><stop offset="0" stop-color="#d7dee6"/><stop offset="1" stop-color="#9fadbb"/></radialGradient>
+        <linearGradient id="tRkOn" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff8a5c"/><stop offset="1" stop-color="#dc3f24"/></linearGradient>
+        <linearGradient id="tRkOff" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f3f5f8"/><stop offset="1" stop-color="#c9d2dc"/></linearGradient>
+        <radialGradient id="tPlug" cx=".4" cy=".35" r=".7"><stop offset="0" stop-color="#5b6776"/><stop offset="1" stop-color="#28313c"/></radialGradient>
+        <linearGradient id="tShade" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3fa3e8"/><stop offset="1" stop-color="#155f9e"/></linearGradient>
+        <radialGradient id="tLight" cx=".5" cy="0" r="1"><stop offset="0" stop-color="#fff6c2" stop-opacity=".95"/><stop offset=".6" stop-color="#ffe27a" stop-opacity=".35"/><stop offset="1" stop-color="#ffe27a" stop-opacity="0"/></radialGradient>
+        <radialGradient id="tBulb"><stop offset="0" stop-color="#fffbe6"/><stop offset=".6" stop-color="#ffe680"/><stop offset="1" stop-color="#ffc93c" stop-opacity="0"/></radialGradient>
+        <linearGradient id="tMetal" x1="0" x2="1"><stop offset="0" stop-color="#8b97a4"/><stop offset=".5" stop-color="#e3e8ee"/><stop offset="1" stop-color="#7b8794"/></linearGradient>
+        <linearGradient id="tScreen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a3a52"/><stop offset="1" stop-color="#121a26"/></linearGradient>
+        <linearGradient id="tScreenOn" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2f7fd0"/><stop offset="1" stop-color="#1f4f99"/></linearGradient>
+        <filter id="tSh" x="-20%" y="-20%" width="140%" height="170%"><feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#0b2a4a" flood-opacity=".22"/></filter>
+        <filter id="tBlur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="5"/></filter>
+      </defs>
+      <rect width="760" height="440" rx="28" fill="url(#tSky)"/>
+      <!-- 벽 콘센트 줄무늬와 책상 -->
+      <rect x="0" y="236" width="760" height="204" fill="url(#tDesk)"/><rect x="0" y="236" width="760" height="204" fill="url(#tGrain)"/>
+      <rect x="0" y="230" width="760" height="10" fill="#c9a072"/>
+      <path d="M28 0 V440" stroke="#000" stroke-opacity="0"/>
+
+      <!-- 기구 0: 스탠드 -->
+      <g class="dev" data-i="0">
+        <path class="glow" d="M150 104 L60 236 L262 236 Z" fill="url(#tLight)" opacity=".9"/>
+        <ellipse class="glow" cx="160" cy="236" rx="96" ry="12" fill="#fff3b0" opacity=".55"/>
+        <ellipse cx="96" cy="228" rx="44" ry="10" fill="#1f2a36"/><rect x="58" y="218" width="76" height="12" rx="6" fill="#2d3a49"/>
+        <path d="M96 220 L120 120 L170 86" fill="none" stroke="#34404d" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="120" cy="120" r="7" fill="#4b5867"/><circle cx="96" cy="220" r="6" fill="#4b5867"/>
+        <g transform="rotate(28 170 86)" filter="url(#tSh)"><path d="M146 78 L194 78 L210 112 L130 112 Z" fill="url(#tShade)"/><rect x="160" y="68" width="20" height="12" rx="4" fill="#155f9e"/></g>
+        <circle class="lit" cx="158" cy="112" r="16" fill="url(#tBulb)"/>
+        <circle class="unlit" cx="158" cy="110" r="7" fill="#e6e9ee" stroke="#b8c1cb"/>
+      </g>
+      <!-- 기구 1: 선풍기 -->
+      <g class="dev" data-i="1">
+        <ellipse cx="330" cy="229" rx="42" ry="9" fill="#2a3440"/><rect x="292" y="218" width="76" height="12" rx="6" fill="#e8edf2" stroke="#b9c3cd"/>
+        <rect x="324" y="150" width="12" height="70" rx="5" fill="url(#tMetal)"/>
+        <g filter="url(#tSh)">
+          <circle cx="330" cy="116" r="60" fill="#ffffff" fill-opacity=".55" stroke="#9aa7b4" stroke-width="3"/>
+          <g class="fanb"><g fill="#4aa3df" fill-opacity=".92">
+            <path d="M330 116 C 318 86, 330 64, 346 70 C 356 82, 344 104, 330 116Z"/>
+            <path d="M330 116 C 318 86, 330 64, 346 70 C 356 82, 344 104, 330 116Z" transform="rotate(120 330 116)"/>
+            <path d="M330 116 C 318 86, 330 64, 346 70 C 356 82, 344 104, 330 116Z" transform="rotate(240 330 116)"/>
+          </g><circle cx="330" cy="116" r="61" fill="none"/></g>
+          <g stroke="#b8c3ce" stroke-width="1.4" fill="none" opacity=".9"><circle cx="330" cy="116" r="44"/><circle cx="330" cy="116" r="28"/><path d="M330 56 V176 M270 116 H390 M288 74 L372 158 M372 74 L288 158"/></g>
+          <circle cx="330" cy="116" r="11" fill="#e8edf2" stroke="#8d99a6" stroke-width="2"/>
+        </g>
+        <circle class="lit" cx="352" cy="224" r="3" fill="#4fe08a"/>
+      </g>
+      <!-- 기구 2: 휴대 전화 충전 -->
+      <g class="dev off" data-i="2">
+        <path d="M454 224 L470 150 L508 150 L520 224 Z" fill="#cfd7e0" stroke="#aab6c2"/>
+        <g filter="url(#tSh)" transform="rotate(-8 488 170)">
+          <rect x="462" y="104" width="54" height="104" rx="10" fill="#1b2430"/>
+          <rect x="466" y="112" width="46" height="88" rx="6" fill="url(#tScreen)"/>
+          <rect class="lit" x="466" y="112" width="46" height="88" rx="6" fill="url(#tScreenOn)"/>
+          <g class="lit"><rect x="478" y="140" width="22" height="34" rx="4" fill="none" stroke="#fff" stroke-width="2.4"/><rect x="485" y="136" width="8" height="5" rx="1.5" fill="#fff"/><rect x="481" y="156" width="16" height="15" rx="2" fill="#5ff09a"/><path d="M490 146 L484 158 H492 L487 168" fill="none" stroke="#fff" stroke-width="2"/></g>
+        </g>
+      </g>
+
+      <!-- 전선 -->
+      <g fill="none" stroke="#2b3440" stroke-width="6" stroke-linecap="round">
+        <path d="M96 232 C 96 262, 150 262, 192 286"/>
+        <path d="M352 232 C 352 256, 340 262, 332 286"/>
+        <path d="M494 218 C 498 250, 474 262, 472 286"/>
+        <path d="M684 314 C 722 316, 736 360, 760 380"/>
+      </g>
+
+      <!-- 멀티탭 -->
+      <g filter="url(#tSh)">
+        <rect x="86" y="268" width="604" height="96" rx="34" fill="url(#tBody)" stroke="#c3ccd6" stroke-width="2"/>
+        <rect x="104" y="274" width="568" height="10" rx="5" fill="#fff" opacity=".85"/>
+      </g>
+      <g id="tMods"></g>
+      <rect x="236" y="384" width="288" height="34" rx="17" fill="#14263b" fill-opacity=".78"/>
+      <text x="380" y="406" text-anchor="middle" style="font-size:14px;font-weight:800;fill:#fff">빨간 스위치를 눌러 보세요</text>
+    </svg>
+  </div>
+</header>
+
+<nav class="nav" aria-label="학습 순서">
+  <div class="nav-in">
+    <button class="step" data-go="r1" type="button"><span class="n">1</span><span class="t">지난 시간</span></button>
+    <button class="step" data-go="r2" type="button"><span class="n">2</span><span class="t">직렬연결</span></button>
+    <button class="step" data-go="q1" type="button"><span class="n">3</span><span class="t">퀴즈 ①</span></button>
+    <button class="step" data-go="r3" type="button"><span class="n">4</span><span class="t">병렬연결</span></button>
+    <button class="step" data-go="r4" type="button"><span class="n">5</span><span class="t">비교와 생활</span></button>
+    <button class="step" data-go="q2" type="button"><span class="n">6</span><span class="t">퀴즈 ②</span></button>
+    <span class="nav-sp"></span>
+    <div class="fsz" role="group" aria-label="글자 크기"><button type="button" id="fsN" aria-pressed="true">가</button><button type="button" id="fsB" aria-pressed="false" style="font-size:19px">가</button></div>
+  </div>
+  <div class="bar"><i id="progress"></i></div>
+</nav>
+
+<main>
+  <!-- ① 지난 시간 -->
+  <section class="part" id="r1">
+    <div class="sec-kick">읽기 ① <span class="time">약 4분 · 옴의 법칙과 연결</span></div>
+    <h2>지난 시간 다시 보기: 저항의 길이와 굵기, 옴의 법칙</h2>
+    <article class="card read reveal">
+      <div class="recall">
+        <div>
+          <p>지난 시간에 <button class="term" data-term="전기 저항">전기 저항</button>은 전류의 흐름을 방해하는 정도라고 배웠어요. 물질의 종류가 같을 때 <mark>길이가 짧고 굵을수록 저항이 작아요.</mark> 반대로 <b>길수록, 가늘수록</b> 저항이 커요.</p>
+          <p>또 <button class="term" data-term="옴의 법칙">옴의 법칙</button>에 따르면 전류의 세기는 전압에 비례하고 저항에 반비례해요. 그래서 <b>전압이 같을 때 저항이 크면 전류는 작아지고, 저항이 작으면 전류는 커져요.</b></p>
+        </div>
+        <div class="fig" style="margin:0">
+          <svg viewBox="0 0 420 250" role="img" aria-label="기준 막대보다 긴 막대는 저항이 크고, 굵은 막대는 저항이 작다.">
+            <defs>
+              <linearGradient id="rRod" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f6dcc0"/><stop offset=".45" stop-color="#e8b98a"/><stop offset="1" stop-color="#c98d55"/></linearGradient>
+            </defs>
+            <g style="font-size:14px;font-weight:900">
+              <text x="16" y="34" fill="#34495e">기준</text>
+              <rect x="88" y="18" width="130" height="24" rx="12" fill="url(#rRod)" stroke="#b07a45" stroke-width="1.5"/><rect x="96" y="22" width="114" height="4" rx="2" fill="#fff" opacity=".6"/>
+              <text x="16" y="104" fill="#1784cf">길게</text>
+              <rect x="88" y="88" width="260" height="24" rx="12" fill="url(#rRod)" stroke="#b07a45" stroke-width="1.5"/><rect x="96" y="92" width="244" height="4" rx="2" fill="#fff" opacity=".6"/>
+              <rect x="300" y="124" width="104" height="26" rx="13" fill="#1784cf"/><text x="352" y="142" text-anchor="middle" fill="#fff" style="font-size:13px">저항이 커요</text>
+              <text x="16" y="200" fill="#5e9e1c">굵게</text>
+              <rect x="88" y="172" width="130" height="48" rx="20" fill="url(#rRod)" stroke="#b07a45" stroke-width="1.5"/><rect x="96" y="177" width="114" height="5" rx="2.5" fill="#fff" opacity=".6"/>
+              <rect x="236" y="183" width="118" height="26" rx="13" fill="#5e9e1c"/><text x="295" y="201" text-anchor="middle" fill="#fff" style="font-size:13px">저항이 작아요</text>
+            </g>
+          </svg>
+          <div class="cap">물질의 종류가 같을 때 길이와 굵기에 따라 저항이 달라져요</div>
+        </div>
+      </div>
+      <div class="formula"><span class="cI">I</span> = <span class="cV">V</span> ÷ <span class="cR">R</span><span class="eqs">전압(V)이 같을 때 저항(R)이 커지면 전류의 세기(I)는 작아지고, 저항이 작아지면 전류의 세기는 커져요.</span></div>
+      <p style="margin-top:6px">오늘은 이 두 가지를 가지고 <b>전구를 두 개 연결한 회로</b>를 설명해 볼 거예요. 전구도 저항이에요. 전구 두 개를 연결하면 회로 전체의 저항은 커질까요, 작아질까요?</p>
+      <a class="backlink" href="../ohm/?page=reading" target="_blank" rel="noopener">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>지난 수업(옴의 법칙) 다시 열어 보기</a>
+    </article>
+    <details class="pause reveal">
+      <summary><span class="pi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5b4300" stroke-width="2.6" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16.5v.5"/></svg></span>생각 멈춤! 같은 전지에 연결한 니크롬선을 더 긴 것으로 바꾸면 전류의 세기는 어떻게 될까요?<span class="tap">눌러서 확인</span></summary>
+      <div class="ans">니크롬선이 길어지면 <b>저항이 커져요.</b> 전지의 전압은 그대로이니 옴의 법칙(I = V ÷ R)에 따라 <b>전류의 세기는 작아져요.</b> 이 생각을 그대로 전구 두 개에 써 볼 거예요.</div>
+    </details>
+  </section>
+
+  <!-- ② 직렬연결 -->
+  <section class="part" id="r2">
+    <div class="sec-kick">읽기 ② <span class="time">약 8분 · 핵심</span></div>
+    <h2>한 줄로 이어 연결하기: 저항의 직렬연결</h2>
+    <article class="card read reveal">
+      <p>전구 두 개를 한 줄로 이어서 연결하는 방법을 <button class="term" data-term="직렬연결">직렬연결</button>이라고 해요. 직렬연결한 회로에서는 전류가 흐르는 길(<b>경로</b>)이 <b>하나</b>뿐이라서, 전류가 전구 1과 전구 2를 차례로 지나가요.</p>
+      <div class="defn ser"><span class="k">직렬연결</span> 전구(저항) 여러 개를 한 줄로 이어 연결하는 방법 · 전류의 경로가 하나</div>
+      <div class="fig spfig" data-kind="ser">
+        <div class="etog"><button type="button" class="tg" data-m="1" aria-pressed="true">전구 1개</button><button type="button" class="tg" data-m="2" aria-pressed="false">전구 2개 직렬연결</button><button type="button" class="tg cut" aria-pressed="false" disabled>전구 1 빼기</button></div>
+        <svg class="spsvg" viewBox="0 0 640 430" role="img" aria-label="전구를 직렬연결한 회로와 저항 막대 모형. 직렬연결하면 막대가 길어진 것과 같다."></svg>
+        <div class="mtr">
+          <div class="m"><div class="ml">회로 전체의 저항</div><div class="trk"><i class="fill" data-f="R" style="background:var(--R)"></i><i class="ref" data-r="R"></i></div><div class="mv" data-v="R"></div></div>
+          <div class="m"><div class="ml">회로 전체에 흐르는 전류</div><div class="trk"><i class="fill" data-f="I" style="background:var(--I)"></i><i class="ref" data-r="I"></i></div><div class="mv" data-v="I"></div></div>
+          <div class="m"><div class="ml">각 전구의 밝기</div><div class="trk"><i class="fill" data-f="B" style="background:#f2b600"></i><i class="ref" data-r="B"></i></div><div class="mv" data-v="B"></div></div>
+        </div>
+        <div class="cap scap"></div>
+      </div>
+      <h3 style="margin-top:22px">왜 그럴까? 차근차근 따라가 보기</h3>
+      <div class="chain ser">
+        <div class="ch"><span class="no">1</span><p>전구 두 개를 한 줄로 이으면 전류는 두 전구를 <b>차례로 모두</b> 지나가야 해요. 저항 막대를 이어 붙인 것처럼 <mark>저항이 길어지는 것과 같아요.</mark><small>지난 시간: 길이가 길수록 저항이 커요</small></p></div>
+        <div class="ch-ar"><svg viewBox="0 0 24 24" fill="none" stroke="#9fb0c2" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v15M6 13l6 6 6-6"/></svg></div>
+        <div class="ch"><span class="no">2</span><p>그래서 <b>회로 전체의 저항이 커져요.</b></p></div>
+        <div class="ch-ar"><svg viewBox="0 0 24 24" fill="none" stroke="#9fb0c2" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v15M6 13l6 6 6-6"/></svg></div>
+        <div class="ch key"><span class="no">3</span><p>전지의 전압은 그대로인데 전체 저항이 커졌으니, 옴의 법칙(<b>I = V ÷ R</b>)에 따라 <b>회로 전체에 흐르는 전류의 세기는 작아져요.</b><small>옴의 법칙과 연결: 전압이 같을 때 저항이 크면 전류는 작아요</small></p></div>
+        <div class="ch-ar"><svg viewBox="0 0 24 24" fill="none" stroke="#9fb0c2" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v15M6 13l6 6 6-6"/></svg></div>
+        <div class="ch"><span class="no">4</span><p>전지가 만든 높이 차(전압)를 두 전구가 <b>나누어</b> 내려와요. 그래서 각 전구에는 전구를 한 개만 연결할 때보다 <b>낮은 전압</b>이 걸리고, 각 전구는 <b>더 어두워요.</b></p></div>
+        <div class="ch-ar"><svg viewBox="0 0 24 24" fill="none" stroke="#9fb0c2" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v15M6 13l6 6 6-6"/></svg></div>
+        <div class="ch"><span class="no">5</span><p>전류가 <b>하나의 경로</b>로 흐르기 때문에 두 전구 중 한 개의 연결이 끊어지면 길 전체가 막혀 <b>모든 전구가 꺼져요.</b><small>위 그림에서 '전구 1 빼기'를 눌러 확인해 보세요</small></p></div>
+      </div>
+      <div class="fig" style="margin-top:4px">
+        <svg viewBox="0 0 640 250" role="img" aria-label="수로 모형. 전구 1개일 때는 물레방아 하나가 높이 차를 모두 내려오고, 직렬연결에서는 물레방아 두 개가 높이 차를 나누어 내려온다.">
+          <defs>
+            <pattern id="sFlow" width="36" height="14" patternUnits="userSpaceOnUse"><rect width="36" height="14" fill="#3f9be0"/><path d="M0 5 q9 -4 18 0 t18 0" fill="none" stroke="#c9ecff" stroke-width="2" opacity=".85"/><animateTransform attributeName="patternTransform" type="translate" from="0 0" to="36 0" dur="1s" repeatCount="indefinite"/></pattern>
+            <pattern id="sFlowS" width="36" height="14" patternUnits="userSpaceOnUse"><rect width="36" height="14" fill="#3f9be0"/><path d="M0 5 q9 -4 18 0 t18 0" fill="none" stroke="#c9ecff" stroke-width="2" opacity=".85"/><animateTransform attributeName="patternTransform" type="translate" from="0 0" to="36 0" dur="2s" repeatCount="indefinite"/></pattern>
+            <linearGradient id="sFall" x1="0" x2="1"><stop offset="0" stop-color="#3b93d8"/><stop offset=".5" stop-color="#a6dcfb"/><stop offset="1" stop-color="#3a8fd2"/></linearGradient>
+            <linearGradient id="sTrough" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c5ced8"/><stop offset="1" stop-color="#8f9ba9"/></linearGradient>
+            <linearGradient id="sPump" x1="0" x2="1"><stop offset="0" stop-color="#2a63c4"/><stop offset=".45" stop-color="#5b97f0"/><stop offset="1" stop-color="#2556ab"/></linearGradient>
+            <g id="sWheel"><circle r="24" fill="none" stroke="#8a5a32" stroke-width="5"/><circle r="15" fill="#fbf3e6" stroke="#8a5a32" stroke-width="2"/><path d="M0 -24 V24 M-24 0 H24 M-17 -17 L17 17 M17 -17 L-17 17" stroke="#8a5a32" stroke-width="2.6"/><circle r="4" fill="#5c3a1e"/></g>
+          </defs>
+          <rect width="640" height="250" rx="14" fill="#fbfdff"/>
+          <line x1="320" y1="18" x2="320" y2="232" stroke="#dbe4ec" stroke-width="2" stroke-dasharray="4 7"/>
+          <g style="font-size:14px;font-weight:900" text-anchor="middle"><text x="160" y="26" fill="#34495e">전구 1개</text><text x="480" y="26" fill="#1784cf">전구 2개 직렬연결</text></g>
+          <!-- 왼쪽: 전구 1개 -->
+          <rect x="30" y="56" width="22" height="160" rx="7" fill="url(#sTrough)"/><rect x="35" y="60" width="12" height="152" fill="#3f9be0"/>
+          <rect x="18" y="120" width="46" height="40" rx="12" fill="url(#sPump)"/><text x="41" y="145" text-anchor="middle" style="font-size:11.5px;font-weight:900;fill:#fff">펌프</text>
+          <rect x="40" y="52" width="170" height="20" rx="6" fill="url(#sTrough)"/><rect x="46" y="54" width="158" height="10" fill="url(#sFlow)"/>
+          <rect x="198" y="64" width="12" height="148" fill="url(#sFall)"/>
+          <g transform="translate(232 138)"><use href="#sWheel"><animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="3s" repeatCount="indefinite"/></use></g>
+          <rect x="40" y="210" width="240" height="20" rx="6" fill="url(#sTrough)"/><rect x="46" y="212" width="228" height="10" fill="url(#sFlow)" transform="rotate(180 160 217)"/>
+          <path d="M282 62 V214" stroke="#7d5ad6" stroke-width="4"/><path d="M274 62 H290 M274 214 H290" stroke="#7d5ad6" stroke-width="4" stroke-linecap="round"/>
+          <rect x="252" y="122" width="60" height="34" rx="10" fill="#7d5ad6"/><text x="282" y="137" text-anchor="middle" style="font-size:11px;font-weight:900;fill:#fff">전구의</text><text x="282" y="151" text-anchor="middle" style="font-size:11px;font-weight:900;fill:#fff">전압</text>
+          <!-- 오른쪽: 직렬 2개 -->
+          <rect x="350" y="56" width="22" height="160" rx="7" fill="url(#sTrough)"/><rect x="355" y="60" width="12" height="152" fill="#3f9be0"/>
+          <rect x="338" y="120" width="46" height="40" rx="12" fill="url(#sPump)"/><text x="361" y="145" text-anchor="middle" style="font-size:11.5px;font-weight:900;fill:#fff">펌프</text>
+          <rect x="360" y="52" width="84" height="20" rx="6" fill="url(#sTrough)"/><rect x="366" y="54" width="72" height="10" fill="url(#sFlowS)"/>
+          <rect x="432" y="64" width="10" height="76" fill="url(#sFall)"/>
+          <g transform="translate(462 102)"><use href="#sWheel"><animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="6s" repeatCount="indefinite"/></use></g>
+          <rect x="426" y="132" width="100" height="20" rx="6" fill="url(#sTrough)"/><rect x="432" y="134" width="88" height="10" fill="url(#sFlowS)"/>
+          <rect x="516" y="144" width="10" height="68" fill="url(#sFall)"/>
+          <g transform="translate(546 178)"><use href="#sWheel"><animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="6s" repeatCount="indefinite"/></use></g>
+          <rect x="360" y="210" width="226" height="20" rx="6" fill="url(#sTrough)"/><rect x="366" y="212" width="214" height="10" fill="url(#sFlowS)" transform="rotate(180 473 217)"/>
+          <g stroke="#7d5ad6" stroke-width="3.4" stroke-linecap="round"><path d="M500 64 V140 M494 64 H506 M494 140 H506"/><path d="M584 142 V214 M578 142 H590 M578 214 H590"/></g>
+          <g style="font-size:12px;font-weight:900" fill="#7d5ad6"><text x="510" y="92">전구 1</text><text x="510" y="107">낮은 전압</text><text x="592" y="172">전구 2</text><text x="592" y="187">낮은</text><text x="592" y="202">전압</text></g>
+        </svg>
+        <div class="cap">수로 모형으로 보면: 직렬연결에서는 펌프(전지)가 올린 높이를 물레방아(전구) 두 개가 <b>나누어</b> 내려와요. 길이 길어져 물도 천천히 흘러요.</div>
+      </div>
+    </article>
+    <details class="pause reveal">
+      <summary><span class="pi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5b4300" stroke-width="2.6" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16.5v.5"/></svg></span>생각 멈춤! 직렬연결한 전구를 세 개로 늘리면 각 전구의 밝기는 어떻게 될까요?<span class="tap">눌러서 확인</span></summary>
+      <div class="ans">저항이 더 길어지는 것과 같아서 회로 전체의 저항이 더 커지고, 전류는 더 작아져요. 높이 차도 세 전구가 나누어 내려오니 각 전구는 <b>더 어두워져요.</b></div>
+    </details>
+    <a class="simlink reveal" data-link="model" target="_blank" rel="noopener" style="background:linear-gradient(120deg,#1784cf,#2fa6d9)">
+      <span class="si"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><rect x="3" y="9" width="8" height="6" rx="3"/><rect x="13" y="9" width="8" height="6" rx="3"/></svg></span>
+      <div><b>시뮬레이션: 길이·굵기 모형</b><span>수로 모형, 회로, 저항 막대를 함께 움직이며 직렬과 병렬을 비교해요</span></div>
+      <svg class="go" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+    </a>
+  </section>
+
+  <section class="part" id="q1">
+    <div class="sec-kick">퀴즈 ① <span class="time">5문항</span></div>
+    <h2>직렬연결 확인하기</h2>
+    <div class="quiz" data-quiz="q1"></div>
+  </section>
+
+  <!-- ③ 병렬연결 -->
+  <section class="part" id="r3">
+    <div class="sec-kick">읽기 ③ <span class="time">약 8분 · 핵심</span></div>
+    <h2>나란히 나누어 연결하기: 저항의 병렬연결</h2>
+    <article class="card read reveal">
+      <p>전구 두 개를 나란히 놓고, 전류가 두 갈래로 나뉘어 흐르도록 연결하는 방법을 <button class="term" data-term="병렬연결">병렬연결</button>이라고 해요. 병렬연결한 회로에서는 전류가 흐르는 경로가 <b>두 개</b>예요. 전구 1로 가는 길과 전구 2로 가는 길이 따로 있어요.</p>
+      <div class="defn par"><span class="k">병렬연결</span> 전구(저항) 여러 개를 여러 갈래로 나누어 나란히 연결하는 방법 · 전류의 경로가 여러 개</div>
+      <div class="fig spfig" data-kind="par">
+        <div class="etog"><button type="button" class="tg" data-m="1" aria-pressed="true">전구 1개</button><button type="button" class="tg" data-m="2" aria-pressed="false">전구 2개 병렬연결</button><button type="button" class="tg cut" aria-pressed="false" disabled>전구 1 빼기</button></div>
+        <svg class="spsvg" viewBox="0 0 640 430" role="img" aria-label="전구를 병렬연결한 회로와 저항 막대 모형. 병렬연결하면 막대가 굵어진 것과 같다."></svg>
+        <div class="mtr">
+          <div class="m"><div class="ml">회로 전체의 저항</div><div class="trk"><i class="fill" data-f="R" style="background:var(--R)"></i><i class="ref" data-r="R"></i></div><div class="mv" data-v="R"></div></div>
+          <div class="m"><div class="ml">회로 전체에 흐르는 전류</div><div class="trk"><i class="fill" data-f="I" style="background:var(--I)"></i><i class="ref" data-r="I"></i></div><div class="mv" data-v="I"></div></div>
+          <div class="m"><div class="ml">각 전구의 밝기</div><div class="trk"><i class="fill" data-f="B" style="background:#f2b600"></i><i class="ref" data-r="B"></i></div><div class="mv" data-v="B"></div></div>
+        </div>
+        <div class="cap scap"></div>
+      </div>
+      <h3 style="margin-top:22px">왜 그럴까? 차근차근 따라가 보기</h3>
+      <div class="chain par">
+        <div class="ch"><span class="no">1</span><p>전구 두 개를 나란히 연결하면 전류가 지나갈 길이 <b>두 개로 늘어나요.</b> 저항 막대 두 개를 나란히 붙인 것처럼 <mark>저항이 굵어지는 것(단면적이 넓어지는 것)과 같아요.</mark><small>지난 시간: 굵을수록 저항이 작아요</small></p></div>
+        <div class="ch-ar"><svg viewBox="0 0 24 24" fill="none" stroke="#9fb0c2" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v15M6 13l6 6 6-6"/></svg></div>
+        <div class="ch"><span class="no">2</span><p>그래서 <b>회로 전체의 저항이 작아져요.</b></p></div>
+        <div class="ch-ar"><svg viewBox="0 0 24 24" fill="none" stroke="#9fb0c2" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v15M6 13l6 6 6-6"/></svg></div>
+        <div class="ch key"><span class="no">3</span><p>전지의 전압은 그대로인데 전체 저항이 작아졌으니, 옴의 법칙(<b>I = V ÷ R</b>)에 따라 <b>회로 전체에 흐르는 전류의 세기는 커져요.</b><small>옴의 법칙과 연결: 전압이 같을 때 저항이 작으면 전류는 커요</small></p></div>
+        <div class="ch-ar"><svg viewBox="0 0 24 24" fill="none" stroke="#9fb0c2" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v15M6 13l6 6 6-6"/></svg></div>
+        <div class="ch"><span class="no">4</span><p>각 전구는 전지의 양 끝에 바로 이어져 있어서, 물레방아마다 높이 차를 <b>모두</b> 내려와요. 그래서 각 전구에는 전구를 한 개만 연결할 때와 <b>같은 크기의 전압</b>이 걸리고, 밝기도 <b>같아요.</b></p></div>
+        <div class="ch-ar"><svg viewBox="0 0 24 24" fill="none" stroke="#9fb0c2" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v15M6 13l6 6 6-6"/></svg></div>
+        <div class="ch"><span class="no">5</span><p>전류가 <b>두 개의 경로</b>로 흐르기 때문에 두 전구 중 한 개의 연결이 끊어져도 다른 길은 그대로 열려 있어 <b>다른 쪽 전구는 꺼지지 않아요.</b><small>위 그림에서 '전구 1 빼기'를 눌러 확인해 보세요</small></p></div>
+      </div>
+      <div class="fig" style="margin-top:4px">
+        <svg viewBox="0 0 640 250" role="img" aria-label="수로 모형. 병렬연결에서는 물길이 두 갈래로 나뉘어 물레방아 두 개가 각각 높이 차를 모두 내려온다.">
+          <defs>
+            <pattern id="pFlow" width="36" height="14" patternUnits="userSpaceOnUse"><rect width="36" height="14" fill="#3f9be0"/><path d="M0 5 q9 -4 18 0 t18 0" fill="none" stroke="#c9ecff" stroke-width="2" opacity=".85"/><animateTransform attributeName="patternTransform" type="translate" from="0 0" to="36 0" dur="1s" repeatCount="indefinite"/></pattern>
+            <pattern id="pFlowF" width="36" height="14" patternUnits="userSpaceOnUse"><rect width="36" height="14" fill="#3f9be0"/><path d="M0 5 q9 -4 18 0 t18 0" fill="none" stroke="#c9ecff" stroke-width="2" opacity=".85"/><animateTransform attributeName="patternTransform" type="translate" from="0 0" to="36 0" dur=".5s" repeatCount="indefinite"/></pattern>
+            <linearGradient id="pFall" x1="0" x2="1"><stop offset="0" stop-color="#3b93d8"/><stop offset=".5" stop-color="#a6dcfb"/><stop offset="1" stop-color="#3a8fd2"/></linearGradient>
+            <linearGradient id="pTrough" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c5ced8"/><stop offset="1" stop-color="#8f9ba9"/></linearGradient>
+            <linearGradient id="pPump" x1="0" x2="1"><stop offset="0" stop-color="#2a63c4"/><stop offset=".45" stop-color="#5b97f0"/><stop offset="1" stop-color="#2556ab"/></linearGradient>
+            <g id="pWheel"><circle r="24" fill="none" stroke="#8a5a32" stroke-width="5"/><circle r="15" fill="#fbf3e6" stroke="#8a5a32" stroke-width="2"/><path d="M0 -24 V24 M-24 0 H24 M-17 -17 L17 17 M17 -17 L-17 17" stroke="#8a5a32" stroke-width="2.6"/><circle r="4" fill="#5c3a1e"/></g>
+          </defs>
+          <rect width="640" height="250" rx="14" fill="#fbfdff"/>
+          <line x1="320" y1="18" x2="320" y2="232" stroke="#dbe4ec" stroke-width="2" stroke-dasharray="4 7"/>
+          <g style="font-size:14px;font-weight:900" text-anchor="middle"><text x="160" y="26" fill="#34495e">전구 1개</text><text x="480" y="26" fill="#5e9e1c">전구 2개 병렬연결</text></g>
+          <rect x="30" y="56" width="22" height="160" rx="7" fill="url(#pTrough)"/><rect x="35" y="60" width="12" height="152" fill="#3f9be0"/>
+          <rect x="18" y="120" width="46" height="40" rx="12" fill="url(#pPump)"/><text x="41" y="145" text-anchor="middle" style="font-size:11.5px;font-weight:900;fill:#fff">펌프</text>
+          <rect x="40" y="52" width="170" height="20" rx="6" fill="url(#pTrough)"/><rect x="46" y="54" width="158" height="10" fill="url(#pFlow)"/>
+          <rect x="198" y="64" width="12" height="148" fill="url(#pFall)"/>
+          <g transform="translate(232 138)"><use href="#pWheel"><animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="3s" repeatCount="indefinite"/></use></g>
+          <rect x="40" y="210" width="240" height="20" rx="6" fill="url(#pTrough)"/><rect x="46" y="212" width="228" height="10" fill="url(#pFlow)" transform="rotate(180 160 217)"/>
+          <path d="M282 62 V214" stroke="#7d5ad6" stroke-width="4"/><path d="M274 62 H290 M274 214 H290" stroke="#7d5ad6" stroke-width="4" stroke-linecap="round"/>
+          <rect x="252" y="122" width="60" height="34" rx="10" fill="#7d5ad6"/><text x="282" y="137" text-anchor="middle" style="font-size:11px;font-weight:900;fill:#fff">전구의</text><text x="282" y="151" text-anchor="middle" style="font-size:11px;font-weight:900;fill:#fff">전압</text>
+          <!-- 오른쪽: 병렬 2개 -->
+          <rect x="350" y="56" width="22" height="160" rx="7" fill="url(#pTrough)"/><rect x="355" y="60" width="12" height="152" fill="#3f9be0"/>
+          <rect x="338" y="120" width="46" height="40" rx="12" fill="url(#pPump)"/><text x="361" y="145" text-anchor="middle" style="font-size:11.5px;font-weight:900;fill:#fff">펌프</text>
+          <rect x="360" y="52" width="210" height="20" rx="6" fill="url(#pTrough)"/><rect x="366" y="54" width="198" height="10" fill="url(#pFlowF)"/>
+          <rect x="448" y="64" width="12" height="148" fill="url(#pFall)"/>
+          <g transform="translate(482 138)"><use href="#pWheel"><animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="3s" repeatCount="indefinite"/></use></g>
+          <rect x="558" y="64" width="12" height="148" fill="url(#pFall)"/>
+          <g transform="translate(592 138)"><use href="#pWheel"><animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="3s" repeatCount="indefinite"/></use></g>
+          <rect x="360" y="210" width="262" height="20" rx="6" fill="url(#pTrough)"/><rect x="366" y="212" width="250" height="10" fill="url(#pFlowF)" transform="rotate(180 491 217)"/>
+          <g stroke="#7d5ad6" stroke-width="3.4" stroke-linecap="round"><path d="M520 64 V206 M514 64 H526 M514 206 H526"/><path d="M628 64 V206 M622 64 H634 M622 206 H634"/></g>
+          <g style="font-size:12px;font-weight:900" fill="#7d5ad6" text-anchor="middle"><text x="520" y="48">전구 1 · 같은 전압</text></g>
+          <g style="font-size:12px;font-weight:900" fill="#7d5ad6" text-anchor="end"><text x="636" y="48">전구 2</text></g>
+        </svg>
+        <div class="cap">수로 모형으로 보면: 병렬연결에서는 물길이 두 갈래로 나뉘어, 물레방아(전구)마다 펌프가 올린 높이를 <b>모두</b> 내려와요. 길이 두 개라 펌프에서 나오는 물도 많아져요.</div>
+      </div>
+    </article>
+    <div class="myth reveal"><span class="x">✕</span><p><b>오개념 바로잡기: "전구를 많이 연결할수록 회로 전체의 저항은 언제나 커진다?"</b><br>아니에요. 직렬연결은 저항이 길어지는 것과 같아서 전체 저항이 커지지만, 병렬연결은 저항이 굵어지는 것과 같아서 전체 저항이 <b>작아져요.</b> 연결하는 방법에 따라 달라요.</p></div>
+    <div class="myth reveal"><span class="x">✕</span><p><b>오개념 바로잡기: "병렬연결하면 전류가 두 갈래로 나뉘니까 각 전구가 어두워진다?"</b><br>아니에요. 병렬연결한 각 전구에는 전구를 한 개만 연결할 때와 <b>같은 크기의 전압</b>이 걸려서 밝기가 같아요. 대신 길이 두 개라 전지에서 나오는 전체 전류가 커져요.</p></div>
+    <details class="pause reveal">
+      <summary><span class="pi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5b4300" stroke-width="2.6" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16.5v.5"/></svg></span>생각 멈춤! 병렬연결한 전구를 세 개로 늘리면 회로 전체의 저항과 전체 전류는 어떻게 될까요?<span class="tap">눌러서 확인</span></summary>
+      <div class="ans">길이 세 개로 늘어나 저항이 더 굵어지는 것과 같아요. 그래서 <b>전체 저항은 더 작아지고</b>, 옴의 법칙에 따라 <b>전체 전류는 더 커져요.</b> 각 전구의 밝기는 그대로예요.</div>
+    </details>
+    <a class="simlink reveal" data-link="lab" target="_blank" rel="noopener" style="background:linear-gradient(120deg,#4f8f17,#6fb12a)">
+      <span class="si"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.8.8 1 1.5 1 2.5h6c0-1 .2-1.7 1-2.5A6 6 0 0 0 12 3z"/></svg></span>
+      <div><b>가상 실험: 전구의 직렬연결과 병렬연결</b><span>교과서 '해 보기'처럼 회로 카드에 밝기를 표시하며 비교해요</span></div>
+      <svg class="go" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+    </a>
+  </section>
+
+  <!-- ④ 비교와 생활 -->
+  <section class="part" id="r4">
+    <div class="sec-kick">읽기 ④ <span class="time">약 5분</span></div>
+    <h2>한눈에 비교하고, 생활 속에서 찾아보기</h2>
+    <article class="card read reveal">
+      <table class="cmp">
+        <thead><tr><th></th><th class="s">직렬연결</th><th class="p">병렬연결</th></tr></thead>
+        <tbody>
+          <tr><th>연결 모양</th><td class="s">한 줄로 이어 연결</td><td class="p">여러 갈래로 나누어 나란히 연결</td></tr>
+          <tr><th>비슷한 것</th><td class="s">저항이 <b>길어지는</b> 것</td><td class="p">저항이 <b>굵어지는</b> 것 (단면적이 넓어지는 것)</td></tr>
+          <tr><th>회로 전체의 저항</th><td class="s">커진다</td><td class="p">작아진다</td></tr>
+          <tr><th>회로 전체의 전류</th><td class="s">작아진다</td><td class="p">커진다</td></tr>
+          <tr><th>각 전구에 걸리는 전압</th><td class="s">전구 1개일 때보다 낮다</td><td class="p">전구 1개일 때와 같다</td></tr>
+          <tr><th>각 전구의 밝기</th><td class="s">전구 1개일 때보다 어둡다</td><td class="p">전구 1개일 때와 같다</td></tr>
+          <tr><th>한 개의 연결이 끊어지면</th><td class="s">모든 전구가 꺼진다 (경로가 하나)</td><td class="p">다른 쪽 전구는 꺼지지 않는다 (경로가 두 개)</td></tr>
+        </tbody>
+      </table>
+      <p style="margin-top:12px;font-size:calc(var(--fs) - 2px);color:var(--muted)">※ 전체 저항과 전체 전류는 모두 같은 전지에 <b>전구를 한 개만 연결했을 때</b>와 비교한 것이에요.</p>
+      <h3 style="margin-top:20px">생활 속 연결</h3>
+      <div class="life">
+        <div class="lc">
+          <svg viewBox="0 0 300 150" role="img" aria-label="콘센트마다 스위치가 있는 멀티탭에서 각 콘센트로 가는 길이 따로 나뉘어 있다.">
+            <rect x="14" y="56" width="272" height="56" rx="22" fill="#f1f4f8" stroke="#c3ccd6" stroke-width="2"/>
+            <path d="M0 84 H28 M28 84 V36 H262" fill="none" stroke="#e0483e" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+            <g fill="none" stroke="#e0483e" stroke-width="3" stroke-linecap="round"><path d="M76 36 V70"/><path d="M146 36 V70"/><path d="M216 36 V70"/></g>
+            <g><circle cx="88" cy="84" r="15" fill="#c8d2dc"/><circle cx="83" cy="84" r="2.6" fill="#34404c"/><circle cx="93" cy="84" r="2.6" fill="#34404c"/><rect x="60" y="70" width="12" height="28" rx="3" fill="#e2452a"/></g>
+            <g><circle cx="158" cy="84" r="15" fill="#c8d2dc"/><circle cx="153" cy="84" r="2.6" fill="#34404c"/><circle cx="163" cy="84" r="2.6" fill="#34404c"/><rect x="130" y="70" width="12" height="28" rx="3" fill="#cfd8e2" stroke="#9aa7b4"/></g>
+            <g><circle cx="228" cy="84" r="15" fill="#c8d2dc"/><circle cx="223" cy="84" r="2.6" fill="#34404c"/><circle cx="233" cy="84" r="2.6" fill="#34404c"/><rect x="200" y="70" width="12" height="28" rx="3" fill="#e2452a"/></g>
+            <text x="150" y="138" text-anchor="middle" style="font-size:12.5px;font-weight:800;fill:#5a6b7e">콘센트마다 길이 따로 나뉘어 있어요</text>
+            <text x="150" y="24" text-anchor="middle" style="font-size:12px;font-weight:800;fill:#e0483e">전기가 들어오는 길</text>
+          </svg>
+          <b>콘센트마다 스위치가 있는 멀티탭</b>
+          <p>스위치 하나를 꺼도 다른 콘센트의 기구는 계속 켜져 있어요. 각 콘센트로 가는 길이 따로 있는 <b>병렬연결</b>이기 때문이에요. 맨 위 그림의 스위치를 다시 눌러 확인해 보세요.</p>
+        </div>
+        <div class="lc">
+          <svg viewBox="0 0 300 150" role="img" aria-label="교실 천장의 등 여섯 개 중 하나가 꺼져도 나머지는 켜져 있다.">
+            <defs><radialGradient id="lGlow"><stop offset="0" stop-color="#fff7c9"/><stop offset="1" stop-color="#fff7c9" stop-opacity="0"/></radialGradient></defs>
+            <rect x="0" y="0" width="300" height="150" fill="#eef2f6"/>
+            <g>
+              <g transform="translate(40 30)"><ellipse cx="30" cy="22" rx="44" ry="20" fill="url(#lGlow)"/><rect x="0" y="0" width="60" height="16" rx="5" fill="#fffdf2" stroke="#e1d8a8"/></g>
+              <g transform="translate(120 30)"><ellipse cx="30" cy="22" rx="44" ry="20" fill="url(#lGlow)"/><rect x="0" y="0" width="60" height="16" rx="5" fill="#fffdf2" stroke="#e1d8a8"/></g>
+              <g transform="translate(200 30)"><ellipse cx="30" cy="22" rx="44" ry="20" fill="url(#lGlow)"/><rect x="0" y="0" width="60" height="16" rx="5" fill="#fffdf2" stroke="#e1d8a8"/></g>
+              <g transform="translate(40 76)"><ellipse cx="30" cy="22" rx="44" ry="20" fill="url(#lGlow)"/><rect x="0" y="0" width="60" height="16" rx="5" fill="#fffdf2" stroke="#e1d8a8"/></g>
+              <g transform="translate(120 76)"><rect x="0" y="0" width="60" height="16" rx="5" fill="#cfd6de" stroke="#aab4bf"/><path d="M24 4 L36 12 M36 4 L24 12" stroke="#e0483e" stroke-width="2.4" stroke-linecap="round"/></g>
+              <g transform="translate(200 76)"><ellipse cx="30" cy="22" rx="44" ry="20" fill="url(#lGlow)"/><rect x="0" y="0" width="60" height="16" rx="5" fill="#fffdf2" stroke="#e1d8a8"/></g>
+            </g>
+            <text x="150" y="138" text-anchor="middle" style="font-size:12.5px;font-weight:800;fill:#5a6b7e">등 하나가 고장 나도 나머지는 켜져 있어요</text>
+          </svg>
+          <b>교실 천장 등</b>
+          <p>교실 천장 등은 하나의 스위치로 켜고 끄지만, 등 하나가 고장 나도 다른 등은 꺼지지 않아요. 등끼리는 어떻게 연결되어 있을까요? 퀴즈 ②에서 답해 봐요.</p>
+        </div>
+      </div>
+      <details class="pause" style="margin-bottom:0">
+        <summary><span class="pi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5b4300" stroke-width="2.6" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16.5v.5"/></svg></span>친구에게 설명해 보자! 가정에서 사용하는 전기 기구가 모두 직렬로 연결되어 있으면 어떻게 될까요?<span class="tap">생각 길잡이</span></summary>
+        <div class="ans">직렬연결의 특징 두 가지를 떠올려 봐요. <b>① 전류의 경로가 하나</b>라면 기구 하나를 끄거나 플러그를 뽑을 때 어떤 일이 생길까요? <b>② 각 기구에 걸리는 전압</b>은 기구를 하나만 연결할 때와 비교해 어떻게 될까요? 정리·글쓰기 탭에서 내 말로 써 봐요.</div>
+      </details>
+    </article>
+  </section>
+
+  <section class="part" id="q2">
+    <div class="sec-kick">퀴즈 ② <span class="time">5문항</span></div>
+    <h2>병렬연결과 비교 확인하기</h2>
+    <div class="quiz" data-quiz="q2"></div>
+
+    <div class="card result reveal">
+      <div class="ring"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="50" fill="none" stroke="#e7edf3" stroke-width="12"/><circle id="ringArc" cx="60" cy="60" r="50" fill="none" stroke="#1784cf" stroke-width="12" stroke-linecap="round" stroke-dasharray="314.16" stroke-dashoffset="314.16" style="transition:stroke-dashoffset 1s"/></svg>
+        <div class="rv"><div><span id="scoreV">0</span><small>/ <span id="scoreT">10</span> 문항</small></div></div></div>
+      <div><h3 id="resTitle">퀴즈를 풀면 결과가 나타나요</h3><p id="resMsg">퀴즈 ①, ②를 모두 풀어 보세요.</p><div class="wlist" id="wlist"></div></div>
+    </div>
+
+    <div class="next">
+      <a data-link="model" target="_blank" rel="noopener" style="background:linear-gradient(140deg,#1784cf,#2fa6d9)"><b>길이·굵기 모형</b><span>수로 모형 · 회로 · 저항 막대를 함께 보며 비교하기</span></a>
+      <a data-link="lab" target="_blank" rel="noopener" style="background:linear-gradient(140deg,#4f8f17,#6fb12a)"><b>가상 실험</b><span>회로 카드 ①~⑤에 전구의 밝기를 표시하며 비교하기</span></a>
+      <a data-link="summary" target="_blank" rel="noopener" style="background:linear-gradient(140deg,#e07a1f,#e8a400)"><b>스스로 정리 · 글쓰기</b><span>특징 분류, 정리표, 옴의 법칙으로 잇기, 내 말로 설명하기</span></a>
+    </div>
+  </section>
+</main>
+<footer class="credit">중2 과학 · 전기와 자기 &nbsp;|&nbsp; 제작 · 성안중학교 이삭 T</footer>
+<div class="pop" id="pop" role="tooltip"></div>
+
+<script>
+/* 공통 도구: 아래 세 블록이 함께 써요 */
+window.RD = {
+  $: (s, r = document) => r.querySelector(s),
+  $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
+  reduce: !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches),
+};
+</script>
+<script>
+/* ===== 블록 1: 기본 기능 · 퀴즈 ===== */
+(() => {
+  'use strict';
+  try {
+  /* ===== 설정: 다른 페이지 주소 ===== */
+  const LINKS = { model: 'sim1-resistor-model.html', lab: 'sim2-bulb-lab.html', summary: 'summary-writing.html' };
+  const flag = (n) => { if (new URLSearchParams(location.search).get(n) === '1') return true; try { return !!(window.frameElement && window.frameElement.dataset[n] === '1'); } catch (e) { return false; } };
+  const EMBED = flag('embed');
+
+  const GLOSSARY = {
+    '전기 저항': '전류의 흐름을 방해하는 정도예요. 단위는 Ω(옴)이에요. 물질의 종류가 같을 때 길이가 짧고 굵을수록 작아요.',
+    '옴의 법칙': '전류의 세기는 전압에 비례하고 저항에 반비례한다는 법칙이에요. I = V ÷ R',
+    '직렬연결': '전구(저항) 여러 개를 한 줄로 이어 연결하는 방법이에요. 전류가 흐르는 경로가 하나예요.',
+    '병렬연결': '전구(저항) 여러 개를 여러 갈래로 나누어 나란히 연결하는 방법이에요. 전류가 흐르는 경로가 여러 개예요.',
+  };
+  const QUIZ = {
+    q1: [
+      { type: 'ox', q: '전구 두 개를 직렬연결하면 회로 전체의 저항은 전구를 한 개만 연결할 때보다 커진다.', answer: true, exp: '<b>O</b> · 직렬연결은 저항이 길어지는 것과 같아서 회로 전체의 저항이 커져요.' },
+      { type: 'mc', q: '직렬연결하면 회로 전체의 저항이 커지는 까닭으로 가장 알맞은 것은?', options: ['저항이 굵어지는 것과 같아서', '저항이 길어지는 것과 같아서', '전지의 전압이 커져서', '전류가 두 개의 경로로 흘러서'], answer: 1, exp: '전류가 두 전구를 차례로 모두 지나가야 하니 <b>저항이 길어지는 것과 같아요.</b> 길이가 길수록 저항이 커요.' },
+      { type: 'blank', parts: ['같은 전지에 전구를 직렬로 하나 더 연결하면 회로 전체의 저항이 ', 0, ' 옴의 법칙에 따라 회로 전체에 흐르는 전류의 세기는 ', 1, '.'], answers: ['커지고', '작아진다'], bank: ['커지고', '작아지고', '커진다', '작아진다'], exp: '전체 저항이 <b>커지고</b>, 전압은 그대로이니 I = V ÷ R에 따라 전류의 세기는 <b>작아져요.</b>' },
+      { type: 'ox', q: '직렬연결한 각 전구에는 전구를 한 개만 연결할 때와 같은 크기의 전압이 걸린다.', answer: false, exp: '<b>X</b> · 두 전구가 높이 차(전압)를 나누어 내려오므로 각 전구에는 <b>더 낮은 전압</b>이 걸려요. 그래서 더 어두워요.' },
+      { type: 'mc', q: '전구 두 개를 직렬연결한 회로에서 전구 한 개의 연결이 끊어지면?', options: ['끊어진 전구만 꺼진다', '모든 전구가 꺼진다', '남은 전구가 더 밝아진다', '아무 변화가 없다'], answer: 1, exp: '전류의 경로가 <b>하나</b>뿐이라 한 곳이 끊어지면 길 전체가 막혀요. <b>모든 전구가 꺼져요.</b>' },
+    ],
+    q2: [
+      { type: 'ox', q: '전구 두 개를 병렬연결하면 회로 전체의 저항은 전구를 한 개만 연결할 때보다 작아진다.', answer: true, exp: '<b>O</b> · 병렬연결은 저항이 굵어지는 것(단면적이 넓어지는 것)과 같아서 전체 저항이 작아져요.' },
+      { type: 'mc', q: '병렬연결한 각 전구의 밝기를 전구를 한 개만 연결할 때와 비교하면?', options: ['더 밝다', '같다', '더 어둡다', '모두 꺼진다'], answer: 1, exp: '각 전구에 전구 1개일 때와 <b>같은 크기의 전압</b>이 걸려서 밝기가 <b>같아요.</b>' },
+      { type: 'blank', parts: ['저항을 직렬연결하면 전체 저항은 ', 0, '지고, 병렬연결하면 전체 저항은 ', 1, '진다.'], answers: ['커', '작아'], bank: ['작아', '커'], exp: '직렬은 길어지는 것과 같아 <b>커지고</b>, 병렬은 굵어지는 것과 같아 <b>작아져요.</b> (교과서 스스로 평가 1)' },
+      { type: 'mc', q: '교실 천장 등은 등 하나가 고장 나도 다른 등은 꺼지지 않아요. 등끼리는 어떻게 연결되어 있을까요?', options: ['직렬연결 · 전류의 경로가 하나라서', '병렬연결 · 전류의 경로가 여러 개라서', '직렬연결 · 저항이 굵어져서', '병렬연결 · 저항이 길어져서'], answer: 1, exp: '등마다 전류가 흐르는 길이 따로 있는 <b>병렬연결</b>이에요. 한 길이 끊어져도 다른 길로는 전류가 계속 흘러요.' },
+      { type: 'mc', q: '같은 전지에 연결했을 때 회로 전체에 흐르는 전류의 세기가 가장 큰 것은?', options: ['전구 1개만 연결한 회로', '전구 2개를 직렬연결한 회로', '전구 2개를 병렬연결한 회로', '세 회로가 모두 같다'], answer: 2, exp: '회로 전체의 저항이 가장 작은 것은 <b>병렬연결</b>이에요. 전압이 같으면 I = V ÷ R에서 저항이 작을수록 전류가 커요.' },
+    ],
+  };
+
+  const { $, $$ } = window.RD;
+  $$('[data-link]').forEach((a) => {
+    const key = a.dataset.link;
+    a.href = LINKS[key];
+    a.addEventListener('click', (e) => { if (!EMBED) return; e.preventDefault(); parent.postMessage({ type: 'ras-nav', target: key }, '*'); });
+  });
+  $$('[data-go]').forEach((b) => b.addEventListener('click', () => document.getElementById(b.dataset.go).scrollIntoView({ behavior: 'smooth', block: 'start' })));
+  const fsN = $('#fsN'), fsB = $('#fsB');
+  const setBig = (v) => { document.documentElement.classList.toggle('big', v); fsN.setAttribute('aria-pressed', String(!v)); fsB.setAttribute('aria-pressed', String(v)); };
+  fsN.addEventListener('click', () => setBig(false)); fsB.addEventListener('click', () => setBig(true));
+
+  const bar = $('#progress'), steps = $$('.step'), parts = ['r1', 'r2', 'q1', 'r3', 'r4', 'q2'].map((id) => document.getElementById(id));
+  function onScroll() {
+    const h = document.documentElement.scrollHeight - innerHeight;
+    bar.style.width = (h > 0 ? (scrollY / h) * 100 : 0) + '%';
+    let cur = -1; parts.forEach((p, i) => { if (p.getBoundingClientRect().top < innerHeight * 0.4) cur = i; });
+    steps.forEach((s, i) => s.classList.toggle('active', i === cur));
+  }
+  addEventListener('scroll', onScroll, { passive: true }); onScroll();
+  // 스크롤 등장 효과: 화면 감지 기능 없이 위치를 직접 계산해요. 글은 항상 보이고 위치만 살짝 움직여요
+  const revs = $$('.reveal');
+  document.documentElement.classList.add('js-reveal');
+  function checkReveal() {
+    const h = window.innerHeight || document.documentElement.clientHeight;
+    if (!h) return;
+    revs.forEach((el) => { if (!el.classList.contains('in')) { const r = el.getBoundingClientRect(); if (r.top < h * 0.92 && r.bottom > 0) el.classList.add('in'); } });
+  }
+  addEventListener('scroll', checkReveal, { passive: true });
+  addEventListener('resize', checkReveal);
+  checkReveal();
+  const revTimer = setInterval(() => { checkReveal(); if (revs.every((el) => el.classList.contains('in'))) clearInterval(revTimer); }, 250);
+  setTimeout(() => {
+    const h = window.innerHeight || document.documentElement.clientHeight;
+    const blind = !h || revs.every((el) => { const r = el.getBoundingClientRect(); return r.top === 0 && r.height === 0; });
+    if (blind) document.documentElement.classList.remove('js-reveal');
+  }, 1500);
+
+  const pop = $('#pop'); let popFor = null;
+  $$('.term').forEach((t) => t.addEventListener('click', (e) => {
+    e.stopPropagation(); if (popFor === t) return hidePop();
+    pop.innerHTML = `<b>${t.dataset.term}</b>${GLOSSARY[t.dataset.term] || ''}`; pop.classList.add('show');
+    const r = t.getBoundingClientRect(), pw = pop.offsetWidth, ph = pop.offsetHeight;
+    let x = Math.max(scrollX + 10, Math.min(r.left + scrollX + r.width / 2 - pw / 2, scrollX + innerWidth - pw - 10));
+    let y = r.top - ph - 10 < 60 ? r.bottom + scrollY + 10 : r.top + scrollY - ph - 10;
+    pop.style.left = x + 'px'; pop.style.top = y + 'px'; popFor = t;
+  }));
+  function hidePop() { pop.classList.remove('show'); popFor = null; }
+  document.addEventListener('click', hidePop);
+
+  /* 퀴즈 엔진 */
+  const results = {}, ALL = []; let qn = 0;
+  Object.entries(QUIZ).forEach(([sec, list]) => {
+    const host = document.querySelector(`[data-quiz="${sec}"]`);
+    list.forEach((q, i) => {
+      qn += 1; const id = `${sec}-${i}`, label = `문제 ${qn}`; ALL.push({ id, sec, label });
+      const card = document.createElement('article'); card.className = 'card qcard'; card.id = id;
+      card.innerHTML = `<div class="qhead"><span class="qno">${label}</span><span class="qtype">${{ ox: 'O / X', mc: '고르기', blank: '빈칸 채우기' }[q.type]}</span><span class="qstate"></span></div><div class="qbody"></div><div class="exp">${q.exp}</div>`;
+      host.appendChild(card); build(card, q, id);
+    });
+  });
+  $('#scoreT').textContent = ALL.length;
+  function mark(card, id, ok) {
+    results[id] = ok; card.classList.remove('right', 'wrong'); card.classList.add(ok ? 'right' : 'wrong', 'locked');
+    $('.qstate', card).textContent = ok ? '정답' : '다시 보기';
+    if (!ok && !$('.retry', card)) {
+      const r = document.createElement('button'); r.type = 'button'; r.className = 'btn ghost retry'; r.textContent = '다시 풀기';
+      r.addEventListener('click', () => { delete results[id]; card.classList.remove('right', 'wrong', 'locked'); r.remove(); build(card, card._q, id); update(); });
+      card.appendChild(r);
+    }
+    update();
+  }
+  function build(card, q, id) {
+    card._q = q; const body = $('.qbody', card);
+    if (q.type === 'ox') {
+      body.innerHTML = `<p class="qtext">${q.q}</p><div class="ox"><button type="button" class="oxb o" data-v="1">O</button><button type="button" class="oxb x" data-v="0">X</button></div>`;
+      $$('.oxb', body).forEach((b) => b.addEventListener('click', () => { const ok = (b.dataset.v === '1') === q.answer; $$('.oxb', body).forEach((o) => { o.disabled = true; if ((o.dataset.v === '1') === q.answer) o.classList.add('good'); }); if (!ok) b.classList.add('bad'); mark(card, id, ok); }));
+    } else if (q.type === 'mc') {
+      body.innerHTML = `<p class="qtext">${q.q}</p><div class="mc">${q.options.map((o, i) => `<button type="button" class="mcb" data-i="${i}"><span class="k">${'①②③④'[i]}</span>${o}</button>`).join('')}</div>`;
+      $$('.mcb', body).forEach((b) => b.addEventListener('click', () => { const ok = +b.dataset.i === q.answer; $$('.mcb', body).forEach((o, j) => { o.disabled = true; if (j === q.answer) o.classList.add('good'); }); if (!ok) b.classList.add('bad'); mark(card, id, ok); }));
+    } else {
+      const fill = q.answers.map(() => null); let cur = 0;
+      body.innerHTML = `<p class="qtext" style="margin-bottom:6px">알맞은 말을 골라 빈칸을 채워 보세요.</p><p class="sentence">${q.parts.map((p) => typeof p === 'number' ? `<button type="button" class="slot">빈칸 ${p + 1}</button>` : `<span>${p}</span>`).join('')}</p>
+        <div class="bank">${q.bank.slice().sort(() => Math.random() - 0.5).map((w) => `<button type="button" class="chip">${w}</button>`).join('')}</div><button type="button" class="btn primary check" disabled>확인하기</button>`;
+      const slots = $$('.slot', body), chips = $$('.chip', body), check = $('.check', body);
+      const paint = () => { slots.forEach((s, i) => { s.textContent = fill[i] ? fill[i].textContent : `빈칸 ${i + 1}`; s.classList.toggle('filled', !!fill[i]); s.classList.toggle('cur', i === cur && !card.classList.contains('locked')); }); if (check.isConnected) check.disabled = fill.some((f) => !f); };
+      chips.forEach((c) => c.addEventListener('click', () => { if (card.classList.contains('locked')) return; if (fill[cur]) fill[cur].classList.remove('used'); fill[cur] = c; c.classList.add('used'); const n = fill.findIndex((f) => !f); cur = n < 0 ? cur : n; paint(); }));
+      slots.forEach((s, i) => s.addEventListener('click', () => { if (card.classList.contains('locked')) return; if (fill[i]) { fill[i].classList.remove('used'); fill[i] = null; } cur = i; paint(); }));
+      check.addEventListener('click', () => {
+        let ok = true; slots.forEach((s, i) => { const g = fill[i].textContent === q.answers[i]; if (!g) ok = false; s.classList.add(g ? 'good' : 'bad'); s.disabled = true; });
+        chips.forEach((c) => (c.disabled = true)); check.remove(); card.classList.add('locked');
+        if (!ok) body.insertAdjacentHTML('beforeend', `<p class="qtext" style="margin:0;font-size:calc(var(--fs) - 1px);color:#6d4208">정답: ${q.answers.map((a, i) => `빈칸 ${i + 1} <b>${a}</b>`).join(' · ')}</p>`);
+        mark(card, id, ok); paint();
+      });
+      paint();
+    }
+  }
+  function update() {
+    const done = ALL.filter((q) => q.id in results), right = done.filter((q) => results[q.id]);
+    [['q1', 2], ['q2', 5]].forEach(([sec, si]) => steps[si].classList.toggle('done', ALL.filter((q) => q.sec === sec).every((q) => q.id in results)));
+    $('#scoreV').textContent = right.length;
+    $('#ringArc').style.strokeDashoffset = 314.16 * (1 - right.length / ALL.length);
+    const t = $('#resTitle'), m = $('#resMsg'), wl = $('#wlist');
+    if (done.length < ALL.length) { t.textContent = `${ALL.length}문항 중 ${done.length}문항을 풀었어요`; m.textContent = '남은 문제도 풀어 보세요. 틀린 문제는 다시 풀 수 있어요.'; }
+    else if (right.length === ALL.length) { t.textContent = '모두 맞혔어요!'; m.textContent = '이제 시뮬레이션과 가상 실험에서 직접 확인하고, 스스로 정리해 봐요.'; }
+    else { t.textContent = `${ALL.length}문항 중 ${right.length}문항을 맞혔어요`; m.textContent = '틀린 문제를 눌러 다시 읽고 풀어 보세요.'; }
+    wl.innerHTML = '';
+    ALL.filter((q) => results[q.id] === false).forEach((q) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = `${q.label} 다시 보기`; b.addEventListener('click', () => document.getElementById(q.id).scrollIntoView({ behavior: 'smooth', block: 'center' })); wl.appendChild(b); });
+  }
+  update();
+  window.RD.ok1 = true;
+  } catch (err) { window.RD_err && window.RD_err('기본 기능·퀴즈', err); }
+})();
+</script>
+<script>
+/* ===== 블록 2: 직렬·병렬 모형 장면 (회로 + 저항 막대) ===== */
+(() => {
+  'use strict';
+  const { $, $$, reduce } = window.RD;
+  const NS = 'http://www.w3.org/2000/svg';
+  const mk = (t, a, p) => { const n = document.createElementNS(NS, t); for (const k in a) n.setAttribute(k, a[k]); if (p) p.appendChild(n); return n; };
+  const txt = (p, x, y, s, style, anchor) => { const t = mk('text', { x, y, 'text-anchor': anchor || 'middle', style }, p); t.textContent = s; return t; };
+  const mix = (a, b, k) => { const pa = a.match(/\w\w/g).map((h) => parseInt(h, 16)), pb = b.match(/\w\w/g).map((h) => parseInt(h, 16)); return '#' + pa.map((v, i) => Math.round(v + (pb[i] - v) * k).toString(16).padStart(2, '0')).join(''); };
+  const LX = 110, RX = 530, TY = 84, MY = 170, BY = 236;   // 회로 좌표
+  const BL = 232, BR = 408;                                   // 전지 끼우개 왼쪽(−), 오른쪽(+)
+
+  function scene(host) {
+    const kind = host.dataset.kind, svg = $('.spsvg', host), cap = $('.scap', host);
+    const tgs = $$('.tg[data-m]', host), cutBtn = $('.tg.cut', host);
+    let n = 1, cut = false, flows = [], lanes = [], els = [], atoms = [], t = 0, last = 0, uid = kind + Math.random().toString(36).slice(2, 6);
+
+    function model() {
+      // 전구 1개를 기준(1)으로 한 상대값. 숫자는 화면에 쓰지 않고 막대 길이로만 보여 줘요
+      if (n === 1) return { R: 1, I: 1, B: [1], k: { main: 1, b1: 1, b2: 1 } };
+      if (kind === 'ser') return cut ? { R: null, I: 0, B: [0, 0], k: { main: 0, b1: 0, b2: 0 } } : { R: 2, I: 0.5, B: [0.32, 0.32], k: { main: 0.5, b1: 0.5, b2: 0.5 } };
+      return cut ? { R: 1, I: 1, B: [0, 1], k: { main: 1, b1: 0, b2: 1 } } : { R: 0.5, I: 2, B: [1, 1], k: { main: 2, b1: 1, b2: 1 } };
+    }
+    function bulbsPos() {
+      if (n === 1) return [[320, TY]];
+      return kind === 'ser' ? [[245, TY], [395, TY]] : [[320, TY], [320, MY]];
+    }
+    function segs(m) {
+      // 전류 방향 순서: 전지 (+) → 오른쪽 → 위 → 왼쪽 → 전지 (−)
+      if (n === 1 || kind === 'ser') return [
+        { p: [[BR, BY], [RX, BY], [RX, TY]], k: m.k.main },
+        { p: [[RX, TY], [LX, TY]], k: m.k.b1 },
+        { p: [[LX, TY], [LX, BY], [BL, BY]], k: m.k.main }];
+      return [
+        { p: [[BR, BY], [RX, BY], [RX, MY]], k: m.k.main },
+        { p: [[RX, MY], [RX, TY], [LX, TY], [LX, MY]], k: m.k.b1 },
+        { p: [[RX, MY], [LX, MY]], k: m.k.b2 },
+        { p: [[LX, MY], [LX, BY], [BL, BY]], k: m.k.main }];
+    }
+    const pathD = (p) => 'M' + p.map((q) => q.join(' ')).join(' L');
+    function defs() {
+      const d = mk('defs', {}, svg);
+      const lg = (id, stops, attr) => { const g = mk('linearGradient', Object.assign({ id: id + uid }, attr || { x1: 0, y1: 0, x2: 0, y2: 1 }), d); stops.forEach(([o, c]) => mk('stop', { offset: o, 'stop-color': c }, g)); };
+      lg('cu', [[0, '#e9a874'], [1, '#a8642e']]);
+      lg('rod', [[0, '#f7dcc0'], [0.45, '#ecc196'], [1, '#c98d55']]);
+      lg('hold', [[0, '#3c55a8'], [1, '#1f2f6a']]);
+      lg('cell', [[0, '#f4f6f8'], [0.45, '#c3cad2'], [1, '#8d97a2']]);
+      lg('cellp', [[0, '#b07ad8'], [0.5, '#8a4cc0'], [1, '#5d2a8c']]);
+      lg('base', [[0, '#7e8894'], [0.5, '#e6eaee'], [1, '#6f7a86']], { x1: 0, y1: 0, x2: 1, y2: 0 });
+      const rg = mk('radialGradient', { id: 'glow' + uid }, d);
+      mk('stop', { offset: 0, 'stop-color': '#fff8cf', 'stop-opacity': 1 }, rg); mk('stop', { offset: .4, 'stop-color': '#ffd54d', 'stop-opacity': .65 }, rg); mk('stop', { offset: 1, 'stop-color': '#ffcc33', 'stop-opacity': 0 }, rg);
+      const gl = mk('radialGradient', { id: 'glass' + uid, cx: .38, cy: .32, r: .75 }, d);
+      mk('stop', { offset: 0, 'stop-color': '#ffffff', 'stop-opacity': .95 }, gl); mk('stop', { offset: .7, 'stop-color': '#e3eef8', 'stop-opacity': .55 }, gl); mk('stop', { offset: 1, 'stop-color': '#b9cbdc', 'stop-opacity': .7 }, gl);
+      const ion = mk('radialGradient', { id: 'ion' + uid }, d);
+      mk('stop', { offset: 0, 'stop-color': '#ffe9c9' }, ion); mk('stop', { offset: 1, 'stop-color': '#efb878' }, ion);
+      const f = mk('filter', { id: 'sh' + uid, x: '-20%', y: '-20%', width: '140%', height: '170%' }, d);
+      mk('feDropShadow', { dx: 0, dy: 3, stdDeviation: 3, 'flood-color': '#0b2a4a', 'flood-opacity': .2 }, f);
+    }
+    function bulb(x, y, b, removed, label) {
+      const g = mk('g', {}, svg);
+      // 전구 끼우개 (투명 받침 + 파란 단자)
+      mk('rect', { x: x - 30, y: y - 7, width: 60, height: 16, rx: 7, fill: '#eef5fb', stroke: '#9fc2df', 'stroke-width': 1.5 }, g);
+      mk('rect', { x: x - 32, y: y - 6, width: 12, height: 14, rx: 4, fill: '#2f8fd8' }, g);
+      mk('rect', { x: x + 20, y: y - 6, width: 12, height: 14, rx: 4, fill: '#2f8fd8' }, g);
+      mk('rect', { x: x - 12, y: y - 10, width: 24, height: 8, rx: 3, fill: '#c9d4df' }, g);
+      if (label) txt(g, x + 40, y + 5, label, 'font-size:12.5px;font-weight:900;fill:#5a6b7e', 'start');
+      const lift = removed ? -22 : 0, op = removed ? 0.45 : 1;
+      const bg = mk('g', { transform: `translate(0 ${lift})`, opacity: op }, g);
+      if (b > 0) {
+        const glow = mk('circle', { cx: x, cy: y - 40, r: 30 + 30 * b, fill: `url(#glow${uid})`, opacity: (0.25 + 0.75 * b).toFixed(2) }, bg);
+        glow.classList.add('bglow');
+      }
+      // 나사 꼭지
+      mk('rect', { x: x - 9, y: y - 24, width: 18, height: 16, rx: 3, fill: `url(#base${uid})`, stroke: '#5f6a75', 'stroke-width': 1 }, bg);
+      mk('path', { d: `M${x - 9} ${y - 19} H${x + 9} M${x - 9} ${y - 14} H${x + 9}`, stroke: '#5f6a75', 'stroke-width': 1.2 }, bg);
+      // 유리구
+      mk('path', { d: `M${x - 8} ${y - 24} C ${x - 8} ${y - 30}, ${x - 19} ${y - 33}, ${x - 19} ${y - 44} A 19 19 0 1 1 ${x + 19} ${y - 44} C ${x + 19} ${y - 33}, ${x + 8} ${y - 30}, ${x + 8} ${y - 24} Z`, fill: `url(#glass${uid})`, stroke: '#9fb3c6', 'stroke-width': 1.5 }, bg);
+      const fc = b <= 0 ? '#6f6256' : b < 0.6 ? mix('c0581e', 'ffb340', b / 0.6) : mix('ffb340', 'fff2b0', (b - 0.6) / 0.4);
+      mk('path', { d: `M${x - 5} ${y - 25} L${x - 6} ${y - 42} M${x + 5} ${y - 25} L${x + 6} ${y - 42}`, stroke: '#8a8f96', 'stroke-width': 1.4 }, bg);
+      mk('path', { d: `M${x - 6} ${y - 42} l3 -5 l3 5 l3 -5 l3 5`, fill: 'none', stroke: fc, 'stroke-width': b > 0 ? 2.6 : 1.8, 'stroke-linejoin': 'round' }, bg);
+      mk('path', { d: `M${x - 11} ${y - 52} a 10 10 0 0 1 8 -7`, fill: 'none', stroke: '#fff', 'stroke-width': 2.4, 'stroke-linecap': 'round', opacity: .9 }, bg);
+      if (removed) {
+        const px = kind === 'par' ? x - 84 : x, py = kind === 'par' ? y - 11 : y + 14;
+        mk('rect', { x: px - 36, y: py, width: 72, height: 22, rx: 11, fill: '#e0483e' }, g);
+        txt(g, px, py + 15, '연결 끊김', 'font-size:12px;font-weight:900;fill:#fff');
+      }
+    }
+    function battery() {
+      const g = mk('g', { filter: `url(#sh${uid})` }, svg);
+      mk('rect', { x: BL, y: BY - 18, width: BR - BL, height: 36, rx: 8, fill: `url(#hold${uid})` }, g);
+      [[BL + 8, BL + 84], [BL + 92, BR - 8]].forEach(([a, b]) => {
+        mk('rect', { x: a, y: BY - 12, width: b - a, height: 24, rx: 5, fill: `url(#cell${uid})` }, g);
+        mk('rect', { x: b - 30, y: BY - 12, width: 30, height: 24, rx: 5, fill: `url(#cellp${uid})` }, g);
+        mk('rect', { x: b - 2, y: BY - 5, width: 4, height: 10, rx: 1.5, fill: '#d7dce2' }, g);
+      });
+      txt(svg, BR + 14, BY - 22, '+', 'font-size:18px;font-weight:900;fill:#e0483e');
+      txt(svg, BL - 14, BY - 22, '−', 'font-size:20px;font-weight:900;fill:#14263b');
+      txt(svg, (BL + BR) / 2, BY + 34, '전지 2개', 'font-size:12.5px;font-weight:800;fill:#5a6b7e');
+    }
+    function rods(m) {
+      // 저항 막대 모형: 전구 1개의 저항 = 기본 막대 하나
+      const g = mk('g', {}, svg), base = { w: 180, h: 40 }, cy = 352;
+      txt(g, 24, 302, '저항 막대 모형', 'font-size:13.5px;font-weight:900;fill:#34495e', 'start');
+      const rects = [];
+      if (n === 1) rects.push({ x: 230, y: cy - 20, w: base.w, h: base.h });
+      else if (kind === 'ser') {
+        if (cut) { rects.push({ x: 132, y: cy - 20, w: base.w, h: base.h }, { x: 328, y: cy - 20, w: base.w, h: base.h }); }
+        else rects.push({ x: 140, y: cy - 20, w: base.w * 2, h: base.h, seam: 320 });
+      } else rects.push({ x: 230, y: cy - 40, w: base.w, h: base.h, dim: cut }, { x: 230, y: cy, w: base.w, h: base.h, seamTop: true });
+      const x0 = Math.min(...rects.map((r) => r.x)), x1 = Math.max(...rects.map((r) => r.x + r.w));
+      const y0 = Math.min(...rects.map((r) => r.y)), y1 = Math.max(...rects.map((r) => r.y + r.h));
+      // 양 끝 단자
+      mk('rect', { x: x0 - 24, y: (y0 + y1) / 2 - 20, width: 20, height: 40, rx: 6, fill: '#e0483e' }, g);
+      mk('rect', { x: x1 + 4, y: (y0 + y1) / 2 - 20, width: 20, height: 40, rx: 6, fill: '#14263b' }, g);
+      txt(g, x0 - 14, (y0 + y1) / 2 + 7, '+', 'font-size:19px;font-weight:900;fill:#fff');
+      txt(g, x1 + 14, (y0 + y1) / 2 + 7, '−', 'font-size:21px;font-weight:900;fill:#fff');
+      rects.forEach((r) => {
+        const rg = mk('g', { opacity: r.dim ? 0.3 : 1 }, g);
+        mk('rect', { x: r.x - 3, y: r.y - 3, width: r.w + 6, height: r.h + 6, rx: 22, fill: '#c98d55', opacity: .3 }, rg);
+        mk('rect', { x: r.x, y: r.y, width: r.w, height: r.h, rx: 18, fill: `url(#rod${uid})`, stroke: '#b07a45', 'stroke-width': 1.5 }, rg);
+        mk('rect', { x: r.x + 12, y: r.y + 5, width: r.w - 24, height: 4, rx: 2, fill: '#fff', opacity: .55 }, rg);
+        if (r.seam) mk('line', { x1: r.seam, y1: r.y + 3, x2: r.seam, y2: r.y + r.h - 3, stroke: '#a8743f', 'stroke-width': 1.5, 'stroke-dasharray': '3 4' }, rg);
+        if (r.seamTop) mk('line', { x1: r.x + 6, y1: r.y, x2: r.x + r.w - 6, y2: r.y, stroke: '#a8743f', 'stroke-width': 1.5, 'stroke-dasharray': '3 4' }, rg);
+      });
+      // 길이·굵기 표시
+      if (n === 2 && kind === 'ser' && !cut) {
+        mk('path', { d: `M${x0} ${y0 - 14} H${x1}`, stroke: '#1784cf', 'stroke-width': 2.5 }, g);
+        mk('path', { d: `M${x0 + 10} ${y0 - 20} L${x0} ${y0 - 14} L${x0 + 10} ${y0 - 8} M${x1 - 10} ${y0 - 20} L${x1} ${y0 - 14} L${x1 - 10} ${y0 - 8}`, stroke: '#1784cf', 'stroke-width': 2.5, fill: 'none', 'stroke-linecap': 'round' }, g);
+        mk('rect', { x: 230, y: y0 - 42, width: 180, height: 24, rx: 12, fill: '#1784cf' }, g);
+        txt(g, 320, y0 - 25, '길이가 길어진 것과 같아요', 'font-size:12.5px;font-weight:900;fill:#fff');
+      }
+      if (n === 2 && kind === 'par' && !cut) {
+        mk('path', { d: `M${x1 + 40} ${y0} V${y1}`, stroke: '#5e9e1c', 'stroke-width': 2.5 }, g);
+        mk('path', { d: `M${x1 + 34} ${y0 + 10} L${x1 + 40} ${y0} L${x1 + 46} ${y0 + 10} M${x1 + 34} ${y1 - 10} L${x1 + 40} ${y1} L${x1 + 46} ${y1 - 10}`, stroke: '#5e9e1c', 'stroke-width': 2.5, fill: 'none', 'stroke-linecap': 'round' }, g);
+        txt(g, x1 + 54, cy - 6, '굵어진 것과 같아요', 'font-size:13px;font-weight:900;fill:#5e9e1c', 'start');
+        txt(g, x1 + 54, cy + 13, '(단면적이 넓어져요)', 'font-size:12px;font-weight:800;fill:#5e9e1c', 'start');
+      }
+      if (cut) {
+        mk('rect', { x: 236, y: 400, width: 168, height: 24, rx: 12, fill: '#e0483e' }, g);
+        txt(g, 320, 417, kind === 'ser' ? '막대가 끊어졌어요' : '한쪽 막대가 빠졌어요', 'font-size:12.5px;font-weight:900;fill:#fff');
+      }
+      // 자유전자가 지나가는 길(레인)
+      const D = 64;
+      lanes = rects.map((r) => {
+        let d = D;
+        if (kind === 'ser' && n === 2) d = cut ? 0 : D / 2;
+        if (r.dim) d = 0;
+        return { x: r.x + 10, y: r.y + 7, w: r.w - 20, h: r.h - 14, d, dim: r.dim };
+      });
+      atoms = []; els = [];
+      lanes.forEach((L) => {
+        const cols = Math.max(2, Math.round(L.w / 34));
+        for (let c = 0; c < cols; c++) for (let rr = 0; rr < 2; rr++) {
+          const ax = L.x + (c + 0.5 + (rr ? 0.25 : -0.25)) * (L.w / cols), ay = L.y + (rr + 0.5) * (L.h / 2);
+          const ag = mk('g', { opacity: L.dim ? 0.3 : 1 }, g);
+          mk('circle', { r: 7, fill: `url(#ion${uid})`, stroke: '#c98a4a', 'stroke-width': 1 }, ag);
+          txt(ag, 0, 3.5, '+', 'font-size:10px;font-weight:900;fill:#a5612a');
+          atoms.push({ x: ax, y: ay, g: ag, ph: Math.random() * 6.28 });
+        }
+        const cnt = Math.round(L.w / 20);
+        for (let i = 0; i < cnt; i++) {
+          const eg = mk('g', { opacity: L.dim ? 0.3 : 1 }, g);
+          mk('circle', { r: 5, fill: '#2f6fd6', stroke: '#fff', 'stroke-width': 1.2 }, eg);
+          const a = Math.random() * 6.28, s = 40 + Math.random() * 30;
+          els.push({ L, x: L.x + Math.random() * L.w, y: L.y + Math.random() * L.h, vx: Math.cos(a) * s, vy: Math.sin(a) * s, slow: 0, g: eg });
+        }
+      });
+    }
+    function build() {
+      svg.innerHTML = ''; defs();
+      const m = model();
+      mk('rect', { x: 0, y: 0, width: 640, height: 430, rx: 14, fill: '#fbfcfe' }, svg);
+      mk('line', { x1: 20, y1: 284, x2: 620, y2: 284, stroke: '#e1e8ef', 'stroke-width': 2, 'stroke-dasharray': '4 7' }, svg);
+      flows = [];
+      const S = segs(m);
+      S.forEach((s) => { mk('path', { d: pathD(s.p), fill: 'none', stroke: `url(#cu${uid})`, 'stroke-width': 7, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }, svg); });
+      S.forEach((s) => { mk('path', { d: pathD(s.p), fill: 'none', stroke: '#ffd9a6', 'stroke-width': 1.6, 'stroke-opacity': .7, 'stroke-linejoin': 'round' }, svg); });
+      if (n === 2 && kind === 'par') [[RX, MY], [LX, MY]].forEach(([x, y]) => mk('circle', { cx: x, cy: y, r: 6, fill: '#a8642e' }, svg));
+      S.forEach((s) => {
+        if (!s.k) return;
+        const f = mk('path', { d: pathD(s.p), fill: 'none', stroke: '#ffcf33', 'stroke-width': 4.5, 'stroke-linecap': 'round', 'stroke-dasharray': '1 17', 'stroke-linejoin': 'round' }, svg);
+        flows.push({ el: f, k: s.k, off: 0 });
+      });
+      const pos = bulbsPos();
+      pos.forEach(([x, y], i) => bulb(x, y, m.B[i] || 0, cut && i === 0, n === 2 ? `전구 ${i + 1}` : ''));
+      battery();
+      txt(svg, 620, 28, n === 1 ? '전구 1개' : kind === 'ser' ? '직렬연결' : '병렬연결', `font-size:15px;font-weight:900;fill:${n === 1 ? '#34495e' : kind === 'ser' ? '#1784cf' : '#5e9e1c'}`, 'end');
+      txt(svg, 620, 46, '노란 점: 전류의 방향', 'font-size:12px;font-weight:700;fill:#9a7a10', 'end');
+      rods(m);
+      meters(m);
+      render();
+    }
+    function meters(m) {
+      const W = (v) => Math.min(100, v * 50);   // 전구 1개 = 막대 절반
+      const fR = $('[data-f="R"]', host), fI = $('[data-f="I"]', host), fB = $('[data-f="B"]', host);
+      $$('.ref', host).forEach((r) => (r.style.left = 'calc(50% - 1.5px)'));
+      fR.style.width = (m.R === null ? 100 : W(m.R)) + '%'; fR.style.opacity = m.R === null ? 0.25 : 1;
+      fI.style.width = W(m.I) + '%';
+      const bAll = m.B.filter((b, i) => !(cut && i === 0)), bv = bAll.length ? Math.max(...bAll) : 0;
+      fB.style.width = W(bv) + '%';
+      const say = (v, big, small) => (v > 1.01 ? big : v < 0.99 ? small : '전구 1개일 때와 같아요');
+      $('[data-v="R"]', host).textContent = m.R === null ? '끊어져서 전류가 흐를 길이 없어요' : n === 1 ? '기준 (전구 1개)' : say(m.R, '전구 1개일 때보다 커요', '전구 1개일 때보다 작아요');
+      $('[data-v="I"]', host).textContent = m.I === 0 ? '흐르지 않아요' : n === 1 ? '기준 (전구 1개)' : say(m.I, '전구 1개일 때보다 커요', '전구 1개일 때보다 작아요');
+      $('[data-v="B"]', host).textContent = bv === 0 ? '모두 꺼졌어요' : n === 1 ? '기준 (전구 1개)' : cut ? '남은 전구는 전구 1개일 때와 같아요' : say(bv, '더 밝아요', '전구 1개일 때보다 어두워요');
+      tgs.forEach((b) => b.setAttribute('aria-pressed', String(+b.dataset.m === n)));
+      cutBtn.disabled = n === 1; cutBtn.setAttribute('aria-pressed', String(cut)); cutBtn.textContent = cut ? '전구 1 다시 끼우기' : '전구 1 빼기';
+      const C = {
+        ser1: '<b>전구 1개</b>: 비교의 기준이에요. 막대 가운데 검은 눈금이 전구 1개일 때예요.',
+        ser2: '<b>직렬연결</b>: 저항 막대가 <b>길어진 것</b>과 같아요. 전체 저항이 커지고 전체 전류는 작아져요. 자유전자가 지나가는 속도도 느려졌어요. 전구는 더 어두워요.',
+        serC: '<b>직렬연결에서 전구 하나를 빼면</b>: 경로가 하나뿐이라 길 전체가 끊어져요. <b>모든 전구가 꺼져요.</b>',
+        par1: '<b>전구 1개</b>: 비교의 기준이에요. 막대 가운데 검은 눈금이 전구 1개일 때예요.',
+        par2: '<b>병렬연결</b>: 저항 막대가 <b>굵어진 것</b>과 같아요. 전자가 지나갈 길이 넓어져 전체 저항은 작아지고 전체 전류는 커져요. 각 전구의 밝기는 전구 1개일 때와 같아요.',
+        parC: '<b>병렬연결에서 전구 하나를 빼면</b>: 다른 경로는 그대로라서 <b>남은 전구는 계속 켜져 있어요.</b> 전체는 전구 1개 회로와 같아져요.',
+      };
+      cap.innerHTML = C[kind + (n === 1 ? '1' : cut ? 'C' : '2')] + ' <span style="color:#8a99a8">(막대 길이는 비교를 위한 모형이에요)</span>';
+    }
+    function step(dt) {
+      t += dt;
+      flows.forEach((f) => { f.off -= f.k * 42 * dt; });
+      els.forEach((e) => {
+        const L = e.L, drift = e.slow > 0 ? L.d * 0.2 : L.d;
+        e.slow = Math.max(0, e.slow - dt);
+        const th = L.d ? 0.6 : 1;
+        e.x += (e.vx * th - drift) * dt; e.y += e.vy * th * dt;
+        if (e.y < L.y) { e.y = L.y; e.vy = Math.abs(e.vy); }
+        if (e.y > L.y + L.h) { e.y = L.y + L.h; e.vy = -Math.abs(e.vy); }
+        if (L.d) { if (e.x < L.x) { e.x = L.x + L.w; e.y = L.y + Math.random() * L.h; } if (e.x > L.x + L.w) e.x = L.x + L.w; }
+        else { if (e.x < L.x) { e.x = L.x; e.vx = Math.abs(e.vx); } if (e.x > L.x + L.w) { e.x = L.x + L.w; e.vx = -Math.abs(e.vx); } }
+        if (L.d) for (const a of atoms) {
+          const dx = e.x - a.x, dy = e.y - a.y, d2 = dx * dx + dy * dy;
+          if (d2 < 100 && d2 > 0.01) { const d = Math.sqrt(d2), nx = dx / d, ny = dy / d; e.x = a.x + nx * 10.5; e.y = a.y + ny * 10.5; const ang = Math.atan2(ny, nx) + (Math.random() - .5) * 1.4, s = 40 + Math.random() * 30; e.vx = Math.cos(ang) * s; e.vy = Math.sin(ang) * s; e.slow = 0.3; break; }
+        }
+      });
+    }
+    function render() {
+      flows.forEach((f) => f.el.setAttribute('stroke-dashoffset', f.off.toFixed(1)));
+      atoms.forEach((a) => a.g.setAttribute('transform', `translate(${(a.x + Math.sin(t * 9 + a.ph) * 1.2).toFixed(1)} ${(a.y + Math.cos(t * 7 + a.ph) * 1.2).toFixed(1)})`));
+      els.forEach((e) => e.g.setAttribute('transform', `translate(${e.x.toFixed(1)} ${e.y.toFixed(1)})`));
+      $$('.bglow', svg).forEach((g, i) => { const o = parseFloat(g.getAttribute('opacity')); g.setAttribute('transform', ''); g.style.opacity = (o * (0.92 + 0.08 * Math.sin(t * 6 + i))).toFixed(2); });
+    }
+    function loop(now) {
+      const dt = Math.min(0.05, (now - last) / 1000 || 0); last = now;
+      const r = host.getBoundingClientRect(), h = window.innerHeight || document.documentElement.clientHeight;
+      if (r.bottom > 0 && r.top < h) { step(dt); render(); }
+      requestAnimationFrame(loop);
+    }
+    tgs.forEach((b) => b.addEventListener('click', () => { n = +b.dataset.m; cut = false; build(); }));
+    cutBtn.addEventListener('click', () => { if (n === 1) return; cut = !cut; build(); });
+    build();
+    if (!reduce) { last = performance.now(); requestAnimationFrame(loop); }
+  }
+  let ok = true;
+  $$('.spfig').forEach((host) => { try { scene(host); } catch (err) { ok = false; window.RD_err && window.RD_err('직렬·병렬 모형 그림', err); } });
+  if (ok) window.RD.ok2 = true;
+})();
+</script>
+<script>
+/* ===== 블록 3: 멀티탭 그림 (스위치 누르기) ===== */
+(() => {
+  'use strict';
+  try {
+    const { $, $$ } = window.RD;
+    const NS = 'http://www.w3.org/2000/svg';
+    const host = $('#tMods');
+    const on = [true, true, false, false];           // 처음 상태: 스탠드·선풍기 켜짐, 충전기·빈 콘센트 꺼짐
+    const plugged = [true, true, true, false];
+    const X = [150, 290, 430, 570];
+    let s = '';
+    X.forEach((cx, i) => {
+      const sx = cx + 46;
+      s += `<g class="msw" data-i="${i}" role="button" tabindex="0" aria-label="콘센트 ${i + 1} 스위치">
+        <rect x="${cx - 34}" y="276" width="64" height="80" fill="transparent"/>
+        <rect class="rk" x="${cx - 18}" y="292" width="28" height="44" rx="7" stroke="#b5bfca" stroke-width="1.5"/>
+        <rect class="rkTop" x="${cx - 15}" y="295" width="22" height="19" rx="5" fill="#fff" opacity=".35"/>
+        <circle class="led" cx="${cx - 4}" cy="285" r="3.4"/>
+      </g>
+      <circle cx="${sx}" cy="316" r="32" fill="#e6ecf2" stroke="#c5cfd9" stroke-width="2"/>
+      <circle cx="${sx}" cy="316" r="26" fill="url(#tHole)"/>
+      <rect x="${sx - 5}" y="290" width="10" height="5" rx="2" fill="#a7b2bd"/><rect x="${sx - 5}" y="337" width="10" height="5" rx="2" fill="#a7b2bd"/>
+      ${plugged[i] ? `<circle cx="${sx}" cy="316" r="25" fill="url(#tPlug)"/><circle cx="${sx}" cy="316" r="17" fill="none" stroke="#6d7a89" stroke-width="1.5" opacity=".6"/>`
+        : `<circle cx="${sx - 10}" cy="316" r="4.6" fill="#34404c"/><circle cx="${sx + 10}" cy="316" r="4.6" fill="#34404c"/>`}`;
+    });
+    host.innerHTML = s;
+    const sws = $$('.msw', host), devs = $$('#tapSvg .dev');
+    function paint() {
+      sws.forEach((g, i) => {
+        $('.rk', g).setAttribute('fill', on[i] ? 'url(#tRkOn)' : 'url(#tRkOff)');
+        $('.led', g).setAttribute('fill', on[i] ? '#ff5a36' : '#9aa5b1');
+        g.setAttribute('aria-pressed', String(on[i]));
+      });
+      devs.forEach((d) => d.classList.toggle('off', !on[+d.dataset.i]));
+    }
+    sws.forEach((g) => {
+      const tog = (e) => { e.preventDefault(); const i = +g.dataset.i; on[i] = !on[i]; paint(); };
+      g.addEventListener('click', tog);
+      g.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') tog(e); });
+    });
+    paint();
+    window.RD.ok3 = true;
+  } catch (err) { window.RD_err && window.RD_err('멀티탭 그림', err); }
+})();
+</script>
+</body>
+</html>

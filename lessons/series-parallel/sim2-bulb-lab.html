@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>전구의 직렬연결과 병렬연결 가상 실험</title>
+<script>
+/* 문제 알림: 코드에 오류가 나면 화면 아래에 빨간 상자로 알려 줘요 (선생님 확인용) */
+(function () {
+  function box() {
+    var b = document.getElementById('lbErr');
+    if (!b && document.body) {
+      b = document.createElement('div'); b.id = 'lbErr';
+      b.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;background:#fdecea;color:#8a1f17;border:2px solid #d9534f;border-radius:12px;padding:10px 14px;font:600 14px/1.5 sans-serif;white-space:pre-wrap';
+      document.body.appendChild(b);
+    }
+    return b;
+  }
+  window.LB_err = function (where, err) {
+    var msg = '[' + where + '] ' + (err && err.message ? err.message : String(err));
+    var show = function () { var b = box(); if (b) b.textContent += (b.textContent ? '\n' : '') + msg; };
+    if (document.body) show(); else document.addEventListener('DOMContentLoaded', show);
+  };
+  window.addEventListener('error', function (e) { window.LB_err('스크립트', { message: e.message + ' (줄 ' + e.lineno + ')' }); });
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      var L = window.LB || {}, miss = [];
+      if (!L.okCard) miss.push('회로 카드 그림');
+      if (!L.okLab) miss.push('실험 단계');
+      if (miss.length) window.LB_err('실행 안 됨', { message: miss.join(', ') + ' 코드가 실행되지 않았어요. 파일이 끝(</html>)까지 들어 있는지 확인해 주세요.' });
+    }, 1500);
+  });
+})();
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+  :root{--bg:#edf3f8;--card:#fff;--ink:#14263b;--ink2:#34495e;--muted:#5a6b7e;--line:#dde6ee;--accent:#0e63b3;--accent-soft:#e3effb;
+    --V:#2f6fd6;--I:#e89a00;--R:#23a566;--ok:#1f9d5c;--no:#d9534f;--ser:#1784cf;--ser-soft:#e3f2fc;--par:#5e9e1c;--par-soft:#eef7e2;
+    --shadow:0 1px 2px rgba(20,38,59,.06),0 8px 24px rgba(20,38,59,.07);--ease:cubic-bezier(.2,.8,.2,1)}
+  *{box-sizing:border-box}html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:"Pretendard",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  button{font:inherit;color:inherit}
+  .app{max-width:1280px;margin:0 auto;padding:16px 16px 28px;display:flex;flex-direction:column;gap:14px}
+  .eyebrow{display:inline-flex;font-size:13px;font-weight:700;color:var(--accent);background:var(--accent-soft);padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(22px,2.6vw,30px);margin:8px 0 2px;letter-spacing:-.02em}
+  .sub{margin:0;color:var(--muted);font-size:15px;word-break:keep-all}
+  .card{background:var(--card);border-radius:20px;box-shadow:var(--shadow);border:1px solid rgba(20,38,59,.04)}
+  .pad{padding:16px 18px}
+  .steps{display:flex;gap:8px;flex-wrap:wrap}
+  .stp{display:flex;align-items:center;gap:8px;min-height:46px;padding:0 14px;border-radius:12px;border:0;background:#fff;box-shadow:var(--shadow);font-weight:700;font-size:14.5px;color:var(--muted);cursor:pointer}
+  .stp .n{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:12.5px;font-weight:800;background:#e6edf4;color:#607285}
+  .stp.on{color:var(--accent)}.stp.on .n{background:var(--accent);color:#fff}
+  .stp.done .n{background:var(--ok);color:#fff}
+  .stp:disabled{opacity:.45;cursor:default}
+  .sec{display:none}.sec.on{display:block;animation:fade .4s var(--ease)}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  h2{font-size:21px;margin:0 0 4px;letter-spacing:-.01em}
+  .goal{font-size:15px;color:var(--ink2);margin:0 0 12px;word-break:keep-all;line-height:1.65}
+  .goal b{color:var(--ink)}
+  .prep{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 12px}
+  .prep span{font-size:13px;font-weight:700;background:#f2f6fa;border:1px solid var(--line);border-radius:999px;padding:4px 10px;color:var(--ink2)}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+  .ccard{background:#f8fafc;border:1px solid var(--line);border-radius:18px;padding:10px 10px 12px}
+  .ccard .ct{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:2px 6px 6px;flex-wrap:wrap}
+  .ccard .ct b{font-size:15.5px}
+  .ccard .ct span{font-size:12.5px;font-weight:700;color:var(--muted)}
+  .ccard svg{display:block;width:100%;height:auto}
+  .ccard.ok{border-color:#9fdcbb;background:#f1faf5}
+  .ccard.no{border-color:#f3c2bb;background:#fff6f4}
+  .hit{cursor:pointer}
+  .hit:focus{outline:none}.hit:focus-visible .hl{stroke:#f2b600;stroke-width:4}
+  .pulse{animation:pulse 1.4s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+  @keyframes pulse{50%{opacity:.35}}
+  .bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:14px}
+  .btn{min-height:52px;border:0;border-radius:14px;padding:0 20px;font-weight:800;font-size:16px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;justify-content:center;text-decoration:none}
+  .btn:active{transform:scale(.97)}
+  .btn.primary{background:var(--accent);color:#fff;box-shadow:0 5px 14px rgba(14,99,179,.25)}
+  .btn.green{background:var(--ok);color:#fff}
+  .btn.ghost{background:#eef3f8;color:var(--ink2)}
+  .btn:disabled{opacity:.4;box-shadow:none}
+  .fb{margin-top:12px;padding:12px 14px;border-radius:14px;font-size:15.5px;line-height:1.65;word-break:keep-all;display:none}
+  .fb.show{display:block;animation:fade .35s var(--ease)}
+  .fb.ok{background:#e8f7ef;color:#0f5a36}.fb.no{background:#fff5e6;color:#7a4508}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:13.5px;font-weight:700;color:var(--ink2);margin:0 0 10px}
+  .legend i{display:inline-block;width:16px;height:12px;border-radius:3px;border:1.5px solid #8a99a8;margin-right:5px;vertical-align:-1px}
+  .legend i.f{background:#ffd23f;border-color:#c9a000}
+  /* 4단계 표 */
+  table.cmp{border-collapse:separate;border-spacing:6px;width:100%}
+  .cmp th{font-size:14.5px;color:#fff;padding:8px 10px;border-radius:10px;text-align:left}
+  .cmp th.s{background:var(--ser)}.cmp th.p{background:var(--par)}
+  .cmp td.h{font-weight:800;font-size:15px;color:var(--ink2);width:30%;word-break:keep-all}
+  .cell{width:100%;min-height:54px;border-radius:12px;border:2px dashed #aebdcc;background:#f7fafc;font-weight:800;font-size:15px;color:var(--muted);cursor:pointer;padding:6px 10px;line-height:1.3;word-break:keep-all}
+  .cell.filled{border-style:solid;border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+  .cell.cur{box-shadow:0 0 0 4px rgba(14,99,179,.18)}
+  .cell.good{border-style:solid;border-color:var(--ok);background:#e8f7ef;color:#11703f}
+  .cell.bad{border-style:solid;border-color:var(--no);background:#fdecea;color:#b33a35}
+  .bank{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+  .chip{min-height:48px;padding:0 14px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15px;cursor:pointer}
+  .chip.used{opacity:.3;pointer-events:none}
+  .concl{display:none;margin-top:14px;border-radius:18px;padding:16px 18px;background:linear-gradient(135deg,#efeafd,#fff);border:2px solid #cbbcf3}
+  .concl.show{display:block;animation:fade .4s var(--ease)}
+  .concl p{margin:0 0 8px;font-size:16.5px;line-height:1.75;color:#2d2350;word-break:keep-all}
+  .note{font-size:12.5px;color:var(--muted);margin:2px 4px 0;line-height:1.6;word-break:keep-all}
+  @media (max-width:640px){.cmp td.h{width:26%;font-size:13.5px}.cell{font-size:13.5px}}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <span class="eyebrow">중2 과학 · 전기 · 해 보기 (교과서 p.248)</span>
+    <h1>전구의 직렬연결과 병렬연결 특징 비교하기</h1>
+    <p class="sub">교과서 '해 보기'를 회로 카드로 따라 해 봐요. 전구를 끼우고, 스위치를 닫고, 밝기를 카드에 표시해요.</p>
+  </header>
+
+  <nav class="steps" id="steps"></nav>
+
+  <!-- 1 -->
+  <section class="card pad sec" id="s1">
+    <h2>1. 회로 만들기</h2>
+    <p class="goal">회로 카드 ①~③처럼 <b>전구 1개 회로, 전구 2개를 직렬연결한 회로, 전구 2개를 병렬연결한 회로</b>를 만들어요. 빈 <b>전구 끼우개</b>를 눌러 전구를 끼워요.</p>
+    <div class="prep"><span>전지(1.5 V) 2개</span><span>전지 끼우개</span><span>전구(3 V)</span><span>전구 끼우개</span><span>전선</span><span>스위치</span><span>회로 카드</span></div>
+    <div class="cards" id="cards1"></div>
+    <div class="bar"><button type="button" class="btn primary" id="go2" disabled>다음: 스위치 닫고 밝기 비교하기</button></div>
+    <div class="fb" id="fb1"></div>
+  </section>
+
+  <!-- 2 -->
+  <section class="card pad sec" id="s2">
+    <h2>2. 스위치를 모두 닫고 밝기 비교하기</h2>
+    <p class="goal">각 카드의 <b>스위치를 모두 닫아</b> 전구를 켜요. 카드 ①의 전구 밝기(3칸)를 기준으로, 카드 ②와 ③의 각 전구 밝기를 <b>칸을 눌러 칠해</b> 표시해요. 누를 때마다 한 칸씩 늘어나고, 3칸 다음에는 0칸으로 돌아가요.</p>
+    <div class="legend"><span><i class="f"></i>칠한 칸 = 밝기</span><span><i></i>빈칸</span><span>0칸 = 꺼짐</span></div>
+    <div class="cards" id="cards2"></div>
+    <div class="bar"><button type="button" class="btn primary" id="chk2">표시 확인하기</button><button type="button" class="btn ghost" id="go3" disabled>다음: 스위치 하나만 열기</button></div>
+    <div class="fb" id="fb2"></div>
+  </section>
+
+  <!-- 3 -->
+  <section class="card pad sec" id="s3">
+    <h2>3. 스위치를 하나만 열고 밝기 비교하기</h2>
+    <p class="goal">②, ③처럼 연결한 회로를 카드 ④, ⑤에 다시 만들었어요. 지금은 스위치가 모두 닫혀 있어요. 각 회로에서 <b>스위치를 하나만 열고</b> 전구의 밝기를 카드에 표시해요.</p>
+    <div class="cards" id="cards3"></div>
+    <div class="bar"><button type="button" class="btn primary" id="chk3">표시 확인하기</button><button type="button" class="btn ghost" id="go4" disabled>다음: 특징 비교하기</button></div>
+    <div class="fb" id="fb3"></div>
+  </section>
+
+  <!-- 4 -->
+  <section class="card pad sec" id="s4">
+    <h2>4. 연결 방법에 따른 특징 비교하기</h2>
+    <p class="goal">실험 결과를 바탕으로 표를 완성해요. 빈칸을 누르고 아래 낱말 카드를 눌러 채운 뒤 확인해요. 친구와 결과를 비교해 이야기해 봐요.</p>
+    <table class="cmp"><thead><tr><th style="background:transparent"></th><th class="s">직렬연결</th><th class="p">병렬연결</th></tr></thead><tbody id="tbody4"></tbody></table>
+    <div class="bank" id="bank4"></div>
+    <button type="button" class="btn primary" id="chk4" disabled>확인하기</button>
+    <div class="fb" id="fb4"></div>
+    <div class="concl" id="concl">
+      <p><b>결론</b> · 직렬연결은 저항이 <b>길어지는</b> 것과 같아서 회로 전체의 저항이 커지고 전류는 작아져요. 각 전구에는 더 낮은 전압이 걸려 <b>어둡고</b>, 경로가 하나라서 하나가 끊어지면 <b>모두 꺼져요.</b></p>
+      <p>병렬연결은 저항이 <b>굵어지는</b> 것과 같아서 회로 전체의 저항이 작아지고 전류는 커져요. 각 전구에는 전구 1개일 때와 같은 전압이 걸려 <b>밝기가 같고</b>, 경로가 두 개라서 하나가 끊어져도 <b>다른 전구는 켜져 있어요.</b></p>
+      <div class="bar" style="margin-top:6px"><a class="btn green" data-link="summary" href="summary-writing.html" target="_blank" rel="noopener">정리·글쓰기로 가기</a><a class="btn ghost" data-link="model" href="sim1-resistor-model.html" target="_blank" rel="noopener">길이·굵기 모형으로 까닭 다시 보기</a></div>
+    </div>
+  </section>
+
+  <p class="note">※ 실제 실험에서는 보호 장갑을 끼고, 켜져 있던 전구는 뜨거울 수 있으니 만지지 않아요. 화면의 밝기는 비교를 위한 모형이에요.</p>
+  <p class="credit" style="margin:20px 0 4px;text-align:center;font-size:13px;font-weight:700;color:#8495a8;letter-spacing:.02em">제작 · 성안중학교 이삭 T</p>
+</div>
+
+<script>
+/* ===== 블록 1: 회로 카드 그리기 ===== */
+window.LB = {};
+(() => {
+  'use strict';
+  try {
+    const NS = 'http://www.w3.org/2000/svg';
+    const el = (t, a, p) => { const n = document.createElementNS(NS, t); for (const k in a || {}) n.setAttribute(k, a[k]); if (p) p.appendChild(n); return n; };
+    const txt = (p, x, y, s, style, anchor) => { const t = el('text', { x, y, 'text-anchor': anchor || 'middle', style }, p); t.textContent = s; return t; };
+    const mix = (a, b, k) => { const pa = a.match(/\w\w/g).map((h) => parseInt(h, 16)), pb = b.match(/\w\w/g).map((h) => parseInt(h, 16)); return '#' + pa.map((v, i) => Math.round(v + (pb[i] - v) * k).toString(16).padStart(2, '0')).join(''); };
+    let uidN = 0;
+
+    // 밝기: 전구 1개 = 1. 직렬은 두 전구 모두 연결되고 스위치가 모두 닫혀야 켜져요
+    function bright(c, i) {
+      if (c.kind === 'one') return c.ins[0] && c.sw[0] ? 1 : 0;
+      if (c.kind === 'ser') return c.ins.every(Boolean) && c.sw.every(Boolean) ? 0.32 : 0;
+      return c.ins[i] && c.sw[i] ? 1 : 0;
+    }
+    // 카드 안 배치
+    const L = 50, R = 310, M = 158, B = 216;
+    let T = 86;
+    function layout(kind) {
+      T = kind === 'par' ? 86 : 104;
+      if (kind === 'one') return { bulbs: [[180, T, 'up']], sws: [[95, B]] };
+      if (kind === 'ser') return { bulbs: [[130, T, 'up'], [230, T, 'up']], sws: [[95, B], [265, B]] };
+      return { bulbs: [[205, T, 'side'], [205, M, 'side']], sws: [[105, T], [105, M]] };
+    }
+    function draw(svg, c, opt) {
+      const u = 'k' + (uidN++);
+      svg.innerHTML = '';
+      const d = el('defs', {}, svg);
+      const lg = (id, stops, attr) => { const g = el('linearGradient', Object.assign({ id: id + u }, attr || { x1: 0, y1: 0, x2: 0, y2: 1 }), d); stops.forEach(([o, col]) => el('stop', { offset: o, 'stop-color': col }, g)); };
+      lg('hold', [[0, '#3c55a8'], [1, '#1f2f6a']]); lg('cell', [[0, '#f4f6f8'], [0.45, '#c3cad2'], [1, '#8d97a2']]); lg('cellp', [[0, '#b07ad8'], [0.5, '#8a4cc0'], [1, '#5d2a8c']]);
+      lg('base', [[0, '#7e8894'], [0.5, '#e6eaee'], [1, '#6f7a86']], { x1: 0, y1: 0, x2: 1, y2: 0 }); lg('swb', [[0, '#eef2f6'], [1, '#c7d0da']]);
+      const rg = el('radialGradient', { id: 'glow' + u }, d);
+      el('stop', { offset: 0, 'stop-color': '#fff8cf' }, rg); el('stop', { offset: .4, 'stop-color': '#ffd54d', 'stop-opacity': .65 }, rg); el('stop', { offset: 1, 'stop-color': '#ffcc33', 'stop-opacity': 0 }, rg);
+      const gl = el('radialGradient', { id: 'glass' + u, cx: .38, cy: .32, r: .75 }, d);
+      el('stop', { offset: 0, 'stop-color': '#ffffff', 'stop-opacity': .95 }, gl); el('stop', { offset: .7, 'stop-color': '#e3eef8', 'stop-opacity': .55 }, gl); el('stop', { offset: 1, 'stop-color': '#b9cbdc', 'stop-opacity': .7 }, gl);
+      const f = el('filter', { id: 'sh' + u, x: '-20%', y: '-20%', width: '140%', height: '170%' }, d);
+      el('feDropShadow', { dx: 0, dy: 2.5, stdDeviation: 2.5, 'flood-color': '#0b2a4a', 'flood-opacity': .22 }, f);
+      // 회로 카드 (교과서 부록처럼 하늘색 테두리)
+      el('rect', { x: 5, y: 5, width: 350, height: 250, rx: 20, fill: '#cfe9fa' }, svg);
+      el('rect', { x: 13, y: 13, width: 334, height: 234, rx: 14, fill: '#ffffff' }, svg);
+      el('circle', { cx: 36, cy: 36, r: 15, fill: '#1f8fd8' }, svg);
+      txt(svg, 36, 42, c.no, 'font-size:16px;font-weight:900;fill:#fff');
+      const lay = layout(c.kind);
+      // 전선 (카드에 인쇄된 검은 선)
+      const wire = { fill: 'none', stroke: '#1d2733', 'stroke-width': 3.2, 'stroke-linejoin': 'round' };
+      if (c.kind === 'par') { el('path', Object.assign({ d: `M${L} ${B} V${T} H${R} V${B} Z M${L} ${M} H${R}` }, wire), svg); el('circle', { cx: L, cy: M, r: 4.5, fill: '#1d2733' }, svg); el('circle', { cx: R, cy: M, r: 4.5, fill: '#1d2733' }, svg); }
+      else el('path', Object.assign({ d: `M${L} ${B} V${T} H${R} V${B} Z` }, wire), svg);
+      // 전지 끼우개
+      const bg = el('g', { filter: `url(#sh${u})` }, svg);
+      el('rect', { x: 120, y: B - 16, width: 120, height: 32, rx: 7, fill: `url(#hold${u})` }, bg);
+      [[126, 178], [182, 234]].forEach(([a, b]) => { el('rect', { x: a, y: B - 10, width: b - a, height: 20, rx: 4, fill: `url(#cell${u})` }, bg); el('rect', { x: b - 18, y: B - 10, width: 18, height: 20, rx: 4, fill: `url(#cellp${u})` }, bg); });
+      // 스위치
+      lay.sws.forEach(([x, y], i) => {
+        const g = el('g', { class: opt.swTap ? 'hit' : '', 'data-sw': i, role: opt.swTap ? 'button' : 'img', tabindex: opt.swTap ? 0 : -1, 'aria-label': `스위치 ${i + 1} ${c.sw[i] ? '닫힘' : '열림'}` }, svg);
+        el('rect', { x: x - 30, y: y - 11, width: 60, height: 22, rx: 6, fill: '#fff' }, g);
+        const sg = el('g', { filter: `url(#sh${u})` }, g);
+        el('rect', { class: 'hl', x: x - 28, y: y - 10, width: 56, height: 20, rx: 5, fill: `url(#swb${u})`, stroke: '#a9b5c1' }, sg);
+        el('circle', { cx: x - 18, cy: y, r: 4.2, fill: '#56616d' }, sg); el('circle', { cx: x + 18, cy: y, r: 4.2, fill: '#56616d' }, sg);
+        el('line', { x1: x - 18, y1: y, x2: x + 20, y2: y, stroke: '#7b8794', 'stroke-width': 4.4, 'stroke-linecap': 'round', transform: c.sw[i] ? '' : `rotate(-34 ${x - 18} ${y})` }, sg);
+        if (c.kind !== 'one') txt(g, x, y + 24, `스위치 ${i + 1}`, 'font-size:11px;font-weight:800;fill:#5a6b7e');
+        if (opt.swTap) el('rect', { x: x - 36, y: y - 26, width: 72, height: 50, fill: 'transparent' }, g);
+      });
+      // 전구와 밝기 칸
+      lay.bulbs.forEach(([x, y, boxPos], i) => {
+        const b = bright(c, i), s = 0.82;
+        const g = el('g', { class: opt.insTap && !c.ins[i] ? 'hit' : '', 'data-bulb': i, role: opt.insTap && !c.ins[i] ? 'button' : 'img', tabindex: opt.insTap && !c.ins[i] ? 0 : -1, 'aria-label': c.ins[i] ? `전구 ${i + 1}` : `빈 전구 끼우개 ${i + 1}` }, svg);
+        const t = el('g', { transform: `translate(${x} ${y}) scale(${s})` }, g);
+        el('rect', { x: -30, y: -7, width: 60, height: 16, rx: 7, fill: '#eef5fb', stroke: '#9fc2df', 'stroke-width': 1.5 }, t);
+        el('rect', { x: -32, y: -6, width: 12, height: 14, rx: 4, fill: '#2f8fd8' }, t); el('rect', { x: 20, y: -6, width: 12, height: 14, rx: 4, fill: '#2f8fd8' }, t);
+        el('rect', { x: -12, y: -10, width: 24, height: 8, rx: 3, fill: '#c9d4df' }, t);
+        if (c.ins[i]) {
+          if (b > 0) el('circle', { cx: 0, cy: -40, r: 26 + 30 * b, fill: `url(#glow${u})`, opacity: (0.25 + 0.75 * b).toFixed(2) }, t);
+          el('rect', { x: -9, y: -24, width: 18, height: 16, rx: 3, fill: `url(#base${u})`, stroke: '#5f6a75', 'stroke-width': 1 }, t);
+          el('path', { d: 'M-9 -19 H9 M-9 -14 H9', stroke: '#5f6a75', 'stroke-width': 1.2 }, t);
+          el('path', { d: 'M-8 -24 C -8 -30, -19 -33, -19 -44 A 19 19 0 1 1 19 -44 C 19 -33, 8 -30, 8 -24 Z', fill: `url(#glass${u})`, stroke: '#9fb3c6', 'stroke-width': 1.5 }, t);
+          const fc = b <= 0 ? '#6f6256' : b < 0.6 ? mix('c0581e', 'ffb340', b / 0.6) : mix('ffb340', 'fff2b0', (b - 0.6) / 0.4);
+          el('path', { d: 'M-5 -25 L-6 -42 M5 -25 L6 -42', stroke: '#8a8f96', 'stroke-width': 1.4 }, t);
+          el('path', { d: 'M-6 -42 l3 -5 l3 5 l3 -5 l3 5', fill: 'none', stroke: fc, 'stroke-width': b > 0 ? 2.6 : 1.8, 'stroke-linejoin': 'round' }, t);
+          el('path', { d: 'M-11 -52 a 10 10 0 0 1 8 -7', fill: 'none', stroke: '#fff', 'stroke-width': 2.4, 'stroke-linecap': 'round', opacity: .9 }, t);
+        } else {
+          el('circle', { class: 'hl pulse', cx: 0, cy: -38, r: 20, fill: '#eaf4fd', stroke: '#1f8fd8', 'stroke-width': 2.4, 'stroke-dasharray': '5 4' }, t);
+          txt(t, 0, -40, '눌러서', 'font-size:10.5px;font-weight:900;fill:#1f8fd8');
+          txt(t, 0, -27, '끼우기', 'font-size:10.5px;font-weight:900;fill:#1f8fd8');
+        }
+        if (opt.insTap && !c.ins[i]) el('rect', { x: x - 36, y: y - 58, width: 72, height: 70, fill: 'transparent' }, g);
+        if (c.kind !== 'one') txt(svg, boxPos === 'up' ? x : x - 36, boxPos === 'up' ? y + 22 : y + 4, `전구 ${i + 1}`, 'font-size:11px;font-weight:800;fill:#5a6b7e', boxPos === 'up' ? 'middle' : 'end');
+        // 밝기 칸 3개
+        if (opt.marks) {
+          const bx = boxPos === 'up' ? x - 30 : x + 34, by = boxPos === 'up' ? y - 74 : y - 34;
+          const mg = el('g', { class: opt.markTap ? 'hit' : '', 'data-mark': i, role: opt.markTap ? 'button' : 'img', tabindex: opt.markTap ? 0 : -1, 'aria-label': `전구 ${i + 1} 밝기 ${c.mk[i]}칸` }, svg);
+          for (let k = 0; k < 3; k++) el('rect', { class: k === 0 ? 'hl' : '', x: bx + k * 21, y: by, width: 18, height: 15, rx: 2, fill: k < c.mk[i] ? '#ffd23f' : '#fff', stroke: k < c.mk[i] ? '#c9a000' : '#8a99a8', 'stroke-width': 1.6 }, mg);
+          if (opt.markTap) el('rect', { x: bx - 12, y: by - 14, width: 84, height: 44, fill: 'transparent' }, mg);
+          if (opt.markTap && opt.hintMarks) txt(mg, bx + 30, by - 4, '눌러서 표시', 'font-size:9.5px;font-weight:800;fill:#9a7a10');
+        }
+      });
+    }
+    window.LB.bright = bright; window.LB.draw = draw;
+    window.LB.okCard = true;
+  } catch (err) { window.LB_err('회로 카드 그림', err); }
+})();
+</script>
+<script>
+/* ===== 블록 2: 실험 단계 ===== */
+(() => {
+  'use strict';
+  try {
+    const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+    const { draw, bright } = window.LB;
+    const flag = (n) => { if (new URLSearchParams(location.search).get(n) === '1') return true; try { return !!(window.frameElement && window.frameElement.dataset[n] === '1'); } catch (e) { return false; } };
+    const EMBED = flag('embed');
+    $$('[data-link]').forEach((a) => a.addEventListener('click', (e) => { if (!EMBED) return; e.preventDefault(); parent.postMessage({ type: 'ras-nav', target: a.dataset.link }, '*'); }));
+    const fb = (id, ok, html) => { const f = $(id); f.className = 'fb show ' + (ok ? 'ok' : 'no'); f.innerHTML = html; };
+
+    const C = {
+      c1: { no: '①', kind: 'one', name: '전구 1개', ins: [false], sw: [false], mk: [3] },
+      c2: { no: '②', kind: 'ser', name: '전구 2개 직렬연결', ins: [false, false], sw: [false, false], mk: [0, 0] },
+      c3: { no: '③', kind: 'par', name: '전구 2개 병렬연결', ins: [false, false], sw: [false, false], mk: [0, 0] },
+      c4: { no: '④', kind: 'ser', name: '② 회로에서 스위치 하나 열기', ins: [true, true], sw: [true, true], mk: [0, 0] },
+      c5: { no: '⑤', kind: 'par', name: '③ 회로에서 스위치 하나 열기', ins: [true, true], sw: [true, true], mk: [0, 0] },
+    };
+    const TABS = ['회로 만들기', '스위치 닫고 비교', '스위치 하나 열기', '특징 비교'];
+    let cur = 1; const done = {};
+    function renderTabs() {
+      $('#steps').innerHTML = TABS.map((t, i) => `<button type="button" class="stp${cur === i + 1 ? ' on' : ''}${done[i + 1] ? ' done' : ''}" data-s="${i + 1}" ${i + 1 > 1 && !done[i] ? 'disabled' : ''}><span class="n">${i + 1}</span>${t}</button>`).join('');
+      $$('#steps .stp').forEach((b) => b.addEventListener('click', () => go(+b.dataset.s)));
+    }
+    function go(n) { cur = n; $$('.sec').forEach((s) => s.classList.toggle('on', s.id === 's' + n)); renderTabs(); renderStep(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+
+    function cardBox(host, key, opt, sub) {
+      const c = C[key];
+      const w = document.createElement('div'); w.className = 'ccard'; w.dataset.k = key;
+      w.innerHTML = `<div class="ct"><b>회로 카드 ${c.no} ${c.name}</b><span>${sub || ''}</span></div><svg viewBox="0 0 360 260" role="img" aria-label="회로 카드 ${c.no} ${c.name}"></svg>`;
+      host.appendChild(w);
+      const svg = $('svg', w);
+      const paint = () => {
+        draw(svg, c, opt);
+        $$('[data-bulb].hit', svg).forEach((g) => act(g, () => { c.ins[+g.dataset.bulb] = true; paint(); after(); }));
+        if (opt.swTap) $$('[data-sw]', svg).forEach((g) => act(g, () => { const i = +g.dataset.sw; c.sw[i] = !c.sw[i]; paint(); after(); }));
+        if (opt.markTap) $$('[data-mark]', svg).forEach((g) => act(g, () => { const i = +g.dataset.mark; c.mk[i] = (c.mk[i] + 1) % 4; w.classList.remove('ok', 'no'); paint(); after(); }));
+      };
+      paint();
+      return w;
+    }
+    function act(g, f) { g.addEventListener('click', f); g.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); f(); } }); }
+    let after = () => {};
+
+    function renderStep() {
+      if (cur === 1) {
+        const h = $('#cards1'); h.innerHTML = '';
+        ['c1', 'c2', 'c3'].forEach((k) => cardBox(h, k, { insTap: true }));
+        after = () => {
+          const all = ['c1', 'c2', 'c3'].every((k) => C[k].ins.every(Boolean));
+          $('#go2').disabled = !all;
+          if (all) { fb('#fb1', true, '회로 3개를 모두 만들었어요. 아직 스위치가 열려 있어서 전구는 꺼져 있어요.'); done[1] = true; renderTabs(); }
+        };
+        after();
+      }
+      if (cur === 2) {
+        const h = $('#cards2'); h.innerHTML = '';
+        cardBox(h, 'c1', { swTap: true, marks: true }, '기준: 밝기 3칸');
+        cardBox(h, 'c2', { swTap: true, marks: true, markTap: true, hintMarks: true }, '전구 2개를 한 줄로');
+        cardBox(h, 'c3', { swTap: true, marks: true, markTap: true, hintMarks: true }, '전구 2개를 나란히');
+        after = () => {};
+      }
+      if (cur === 3) {
+        const h = $('#cards3'); h.innerHTML = '';
+        cardBox(h, 'c4', { swTap: true, marks: true, markTap: true, hintMarks: true }, '직렬연결');
+        cardBox(h, 'c5', { swTap: true, marks: true, markTap: true, hintMarks: true }, '병렬연결');
+        after = () => {};
+      }
+      if (cur === 4) build4();
+    }
+    const mark = (key, ok) => { const w = $(`.ccard[data-k="${key}"]`); if (w) { w.classList.remove('ok', 'no'); w.classList.add(ok ? 'ok' : 'no'); } };
+
+    $('#go2').addEventListener('click', () => go(2));
+    $('#chk2').addEventListener('click', () => {
+      const allOn = ['c1', 'c2', 'c3'].every((k) => C[k].sw.every(Boolean));
+      if (!allOn) return fb('#fb2', false, '먼저 카드 ①, ②, ③의 <b>스위치를 모두 닫아</b> 전구를 켜 보세요. 스위치를 누르면 닫혀요.');
+      const s = C.c2.mk, p = C.c3.mk;
+      const okS = s[0] === s[1] && s[0] >= 1 && s[0] <= 2, okP = p[0] === 3 && p[1] === 3;
+      mark('c2', okS); mark('c3', okP);
+      const msg = [];
+      if (!okS) msg.push(s[0] !== s[1] ? '카드 ②: 직렬연결한 두 전구는 같은 전류가 흘러 <b>밝기가 서로 같아요.</b> 다시 비교해 보세요.' : s[0] === 3 ? '카드 ②: 카드 ①의 전구와 비교해 보세요. 직렬연결한 전구는 <b>더 어두워요.</b>' : s[0] === 0 ? '카드 ②: 전구가 꺼진 것은 아니에요. 희미하게라도 켜져 있어요.' : '');
+      if (!okP) msg.push('카드 ③: 병렬연결한 각 전구의 밝기를 카드 ①의 전구(3칸)와 비교해 보세요.');
+      if (okS && okP) { fb('#fb2', true, '<b>잘 표시했어요!</b> 직렬연결한 전구는 전구 1개일 때보다 <b>어둡고</b>, 병렬연결한 전구는 전구 1개일 때와 <b>밝기가 같아요.</b> 직렬연결은 저항이 길어지는 것과 같아 전체 전류가 작아지기 때문이에요.'); done[2] = true; $('#go3').disabled = false; renderTabs(); }
+      else fb('#fb2', false, msg.filter(Boolean).join('<br>'));
+    });
+    $('#go3').addEventListener('click', () => go(3));
+    $('#chk3').addEventListener('click', () => {
+      const s = C.c4, p = C.c5;
+      const openS = s.sw.filter((v) => !v).length, openP = p.sw.filter((v) => !v).length;
+      if (openS !== 1 || openP !== 1) return fb('#fb3', false, `카드 ④와 ⑤에서 각각 <b>스위치를 하나만</b> 열어요. (지금 열린 스위치: ④ ${openS}개, ⑤ ${openP}개)`);
+      const okS = s.mk[0] === 0 && s.mk[1] === 0;
+      const okP = p.mk.every((m, i) => m === (bright(p, i) > 0 ? 3 : 0));
+      mark('c4', okS); mark('c5', okP);
+      if (okS && okP) { fb('#fb3', true, '<b>정확해요!</b> 직렬연결은 전류의 경로가 <b>하나</b>라서 스위치 하나만 열어도 <b>모든 전구가 꺼져요.</b> 병렬연결은 경로가 <b>두 개</b>라서 한쪽 스위치를 열어도 <b>다른 쪽 전구는 그대로 켜져 있어요.</b>'); done[3] = true; $('#go4').disabled = false; renderTabs(); }
+      else {
+        const m = [];
+        if (!okS) m.push('카드 ④: 전구 두 개가 지금 켜져 있나요? 꺼진 전구는 <b>0칸</b>으로 표시해요.');
+        if (!okP) m.push('카드 ⑤: 꺼진 전구는 0칸, 켜져 있는 전구는 카드 ①과 비교해 표시해요.');
+        fb('#fb3', false, m.join('<br>'));
+      }
+    });
+    $('#go4').addEventListener('click', () => go(4));
+
+    /* 4단계: 특징 비교 표 */
+    const ROWS = [
+      ['전구의 밝기 (전구 1개와 비교)', '어둡다', '같다'],
+      ['스위치 하나를 열면', '모든 전구가 꺼진다', '다른 전구는 켜져 있다'],
+      ['전류가 흐르는 경로', '하나', '두 개'],
+      ['비슷한 것', '저항이 길어지는 것', '저항이 굵어지는 것'],
+      ['회로 전체의 저항', '커진다', '작아진다'],
+    ];
+    const ANS = ROWS.flatMap((r) => [r[1], r[2]]);
+    let built4 = false;
+    function build4() {
+      if (built4) return; built4 = true;
+      const fill = ANS.map(() => null); let c = 0, locked = false;
+      $('#tbody4').innerHTML = ROWS.map((r, i) => `<tr><td class="h">${r[0]}</td><td><button type="button" class="cell" data-i="${i * 2}">빈칸</button></td><td><button type="button" class="cell" data-i="${i * 2 + 1}">빈칸</button></td></tr>`).join('');
+      const words = ANS.slice().sort(() => Math.random() - 0.5);
+      $('#bank4').innerHTML = words.map((w) => `<button type="button" class="chip">${w}</button>`).join('');
+      const cells = $$('#tbody4 .cell'), chips = $$('#bank4 .chip');
+      const paint = () => { cells.forEach((el, i) => { el.textContent = fill[i] ? fill[i].textContent : '빈칸'; el.classList.toggle('filled', !!fill[i]); el.classList.toggle('cur', i === c && !locked); }); $('#chk4').disabled = locked || fill.some((f) => !f); };
+      chips.forEach((ch) => ch.addEventListener('click', () => { if (locked) return; if (fill[c]) fill[c].classList.remove('used'); fill[c] = ch; ch.classList.add('used'); const n = fill.findIndex((f) => !f); if (n >= 0) c = n; paint(); }));
+      cells.forEach((el, i) => el.addEventListener('click', () => { if (locked) return; if (fill[i]) { fill[i].classList.remove('used'); fill[i] = null; } c = i; cells.forEach((x) => x.classList.remove('good', 'bad')); paint(); }));
+      $('#chk4').addEventListener('click', () => {
+        let wrong = 0; cells.forEach((el, i) => { const ok = fill[i].textContent === ANS[i]; el.classList.toggle('good', ok); el.classList.toggle('bad', !ok); if (!ok) wrong++; });
+        if (!wrong) { locked = true; paint(); fb('#fb4', true, '표를 모두 맞게 채웠어요. 아래 결론을 읽고 친구에게 설명해 봐요.'); $('#concl').classList.add('show'); done[4] = true; renderTabs(); }
+        else fb('#fb4', false, `빨간 칸 ${wrong}개를 다시 확인해요. 칸을 누르면 낱말이 빠져요. 2·3단계의 회로 카드를 떠올려 보세요.`);
+      });
+      paint();
+    }
+    go(1);
+    window.LB.okLab = true;
+  } catch (err) { window.LB_err('실험 단계', err); }
+})();
+</script>
+</body>
+</html>

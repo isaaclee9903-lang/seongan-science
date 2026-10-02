@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>저항이 길어질 때, 굵어질 때 – 길이·굵기 모형</title>
+<script>
+/* 문제 알림: 그림을 그리는 코드에 오류가 나면 화면 아래에 빨간 상자로 알려 줘요 (선생님 확인용) */
+(function () {
+  function box() {
+    var b = document.getElementById('smErr');
+    if (!b && document.body) {
+      b = document.createElement('div'); b.id = 'smErr';
+      b.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;background:#fdecea;color:#8a1f17;border:2px solid #d9534f;border-radius:12px;padding:10px 14px;font:600 14px/1.5 sans-serif;white-space:pre-wrap';
+      document.body.appendChild(b);
+    }
+    return b;
+  }
+  window.SM_err = function (where, err) {
+    var msg = '[' + where + '] ' + (err && err.message ? err.message : String(err));
+    var show = function () { var b = box(); if (b) b.textContent += (b.textContent ? '\n' : '') + msg; };
+    if (document.body) show(); else document.addEventListener('DOMContentLoaded', show);
+  };
+  window.addEventListener('error', function (e) { window.SM_err('스크립트', { message: e.message + ' (줄 ' + e.lineno + ')' }); });
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      var S = window.SM || {}, miss = [];
+      [['okW', '수로 모형'], ['okC', '전기 회로'], ['okR', '저항 막대 모형'], ['okU', '조작·설명·미션']].forEach(function (p) { if (!S[p[0]]) miss.push(p[1]); });
+      if (miss.length) window.SM_err('실행 안 됨', { message: miss.join(', ') + ' 코드가 실행되지 않았어요. 파일이 끝(</html>)까지 들어 있는지 확인해 주세요.' });
+    }, 1500);
+  });
+})();
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+  :root{
+    --bg:#edf3f8; --card:#fff; --ink:#14263b; --muted:#5a6b7e; --line:#dde6ee;
+    --accent:#0e63b3; --accent-soft:#e3effb;
+    --V:#2f6fd6; --I:#e89a00; --R:#23a566; --red:#e0483e; --ok:#1f9d5c; --no:#d9534f;
+    --ser:#1784cf; --ser-soft:#e3f2fc; --par:#5e9e1c; --par-soft:#eef7e2;
+    --shadow:0 1px 2px rgba(20,38,59,.06),0 8px 24px rgba(20,38,59,.07);
+    --ease:cubic-bezier(.2,.8,.2,1);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:"Pretendard",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+    -webkit-font-smoothing:antialiased;line-height:1.5;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  button{font:inherit;color:inherit}
+  .app{max-width:1280px;margin:0 auto;padding:16px 16px 28px;display:flex;flex-direction:column;gap:14px}
+  .top{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;flex-wrap:wrap}
+  .eyebrow{display:inline-flex;font-size:13px;font-weight:700;color:var(--accent);background:var(--accent-soft);padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(22px,2.6vw,30px);margin:8px 0 2px;letter-spacing:-.02em;line-height:1.25}
+  .sub{margin:0;color:var(--muted);font-size:15px;word-break:keep-all}
+  .seg{display:flex;background:#dde7f1;padding:4px;border-radius:16px;gap:4px;flex-wrap:wrap}
+  .seg button{border:0;background:transparent;padding:8px 16px;border-radius:12px;cursor:pointer;min-height:56px;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;line-height:1.25;font-weight:800;font-size:15.5px;color:#3b4d61;transition:all .25s}
+  .seg button small{font-weight:500;font-size:12px;color:var(--muted)}
+  .seg button[aria-pressed="true"]{background:#fff;box-shadow:var(--shadow);color:var(--ink)}
+  .seg button[data-mode="ser"][aria-pressed="true"]{color:var(--ser)}
+  .seg button[data-mode="par"][aria-pressed="true"]{color:var(--par)}
+  .card{background:var(--card);border-radius:20px;box-shadow:var(--shadow);border:1px solid rgba(20,38,59,.04);transition:box-shadow .35s var(--ease)}
+  .pad{padding:14px 16px}
+  .card-title{font-weight:800;font-size:16px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .card-title .hint{font-weight:500;font-size:12.5px;color:var(--muted)}
+  .controls{display:flex;flex-wrap:wrap;gap:14px 22px;align-items:flex-end}
+  .ctl{display:flex;flex-direction:column;gap:6px}
+  .ctl .lb{font-size:13px;font-weight:800;color:#34495e}
+  .tog{min-height:48px;padding:0 14px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15px;cursor:pointer;display:flex;align-items:center;gap:8px;transition:all .2s}
+  .tog .dot{width:12px;height:12px;border-radius:50%;background:#c2ccd6}
+  .tog[aria-pressed="true"]{border-color:var(--R);background:#e6f6ee;color:#11703f}
+  .tog[aria-pressed="true"] .dot{background:var(--R)}
+  .tog.cutb[aria-pressed="true"]{border-color:var(--no);background:#fdecea;color:#b33a35}
+  .tog.cutb[aria-pressed="true"] .dot{background:var(--no)}
+  .tog:disabled{opacity:.35;cursor:default}
+  .tog:active{transform:scale(.97)}
+  /* 예상하기 */
+  .predict{display:none;border:2px solid #f6d98a;background:linear-gradient(135deg,#fff8e6,#fff)}
+  .predict.show{display:block;animation:fade .4s var(--ease)}
+  .predict .q{font-weight:800;font-size:17px;word-break:keep-all;margin:0 0 10px}
+  .predict .opts{display:flex;gap:8px;flex-wrap:wrap}
+  .pchip{min-height:52px;min-width:120px;padding:0 18px;border-radius:14px;border:2px solid #e6cf8a;background:#fff;font-weight:800;font-size:16px;cursor:pointer}
+  .pchip:active{transform:scale(.97)}
+  .pchip.good{border-color:var(--ok);background:#e8f7ef;color:#11703f}
+  .pchip.bad{border-color:var(--no);background:#fdecea;color:#b33a35}
+  .pfb{margin-top:10px;font-size:15px;line-height:1.6;word-break:keep-all;display:none}
+  .pfb.show{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  /* 두 화면 */
+  .twin{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .panel{position:relative;overflow:hidden}
+  .panel .ph{display:flex;justify-content:space-between;align-items:center;padding:12px 16px 0;gap:8px;flex-wrap:wrap}
+  .panel svg{display:block;width:100%;height:auto}
+  .tagline{font-size:12.5px;font-weight:700;color:var(--muted)}
+  .row{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:14px;align-items:start}
+  .col{display:flex;flex-direction:column;gap:14px}
+  .hl{box-shadow:0 0 0 4px rgba(242,182,0,.55),var(--shadow)!important}
+  /* 비교 막대 */
+  .mtr{display:grid;gap:10px;margin-top:10px}
+  .mtr .m{display:grid;grid-template-columns:150px 1fr;gap:10px;align-items:center;border-radius:12px;padding:6px 8px;transition:background .3s}
+  .mtr .m.hl{background:#fff7d6;box-shadow:none!important}
+  .mtr .ml{font-size:14px;font-weight:800;color:var(--ink2,#34495e);word-break:keep-all}
+  .mtr .trk{position:relative;height:16px;border-radius:99px;background:#e9eff5;margin:6px 0 20px}
+  .mtr .fill{position:absolute;left:0;top:0;bottom:0;border-radius:99px;width:0;transition:width .7s var(--ease),opacity .4s}
+  .mtr .ref{position:absolute;top:-4px;bottom:-4px;left:calc(50% - 1.5px);width:3px;border-radius:2px;background:#14263b;opacity:.55}
+  .mtr .ref::after{content:"전구 1개";position:absolute;top:22px;left:50%;transform:translateX(-50%);font-size:11.5px;font-weight:800;color:#5a6b7e;white-space:nowrap}
+  .mtr .mv{grid-column:2;font-size:14px;font-weight:800;margin-top:-14px;word-break:keep-all}
+  /* 왜 그럴까 */
+  .why .dh{font-weight:900;font-size:16.5px;margin-bottom:8px;word-break:keep-all}
+  .dstep{display:none}
+  .dstep.on{display:block;animation:dIn .45s var(--ease)}
+  @keyframes dIn{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:none}}
+  .dstep .sn{display:inline-block;font-size:12.5px;font-weight:900;color:#fff;background:var(--accent);border-radius:999px;padding:2px 10px;margin-bottom:6px}
+  .dstep p{margin:0 0 6px;font-size:16px;line-height:1.75;color:#34495e;word-break:keep-all}
+  .dstep .look{font-size:13.5px;color:#9a6b00;font-weight:800}
+  .dnav{display:flex;align-items:center;justify-content:space-between;margin-top:10px;gap:8px}
+  .dnav button{min-height:48px;padding:0 14px;border:0;border-radius:12px;font-weight:800;font-size:15px;cursor:pointer;white-space:nowrap}
+  .dnav .prev{background:#eef3f8;color:#34495e}.dnav .next{background:var(--accent);color:#fff}
+  .dnav button:disabled{opacity:.35}
+  .dnav .dots{display:flex;gap:6px}.dnav .dots i{width:9px;height:9px;border-radius:50%;background:#d4dee8}.dnav .dots i.on{background:var(--accent)}
+  /* 미션 */
+  .missions .head{display:flex;justify-content:space-between;align-items:center}
+  .prog{font-size:13px;font-weight:800;color:var(--accent);background:var(--accent-soft);padding:4px 10px;border-radius:999px}
+  .mlist{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin-top:12px}
+  .mission{display:flex;gap:10px;align-items:flex-start;background:#f5f8fb;border-radius:14px;padding:12px;border:2px solid transparent;transition:all .35s}
+  .mcheck{flex:none;width:28px;height:28px;border-radius:50%;border:2px solid #b8c7d6;display:grid;place-items:center;background:#fff;transition:all .35s var(--ease)}
+  .mcheck svg{opacity:0;transform:scale(.4);transition:all .35s var(--ease)}
+  .mission .mt{font-weight:800;font-size:14px;line-height:1.35;word-break:keep-all}
+  .mission .mr{font-size:13px;color:#155c39;margin-top:4px;max-height:0;overflow:hidden;opacity:0;transition:all .5s var(--ease);word-break:keep-all}
+  .mission.done{background:#ecf8f1;border-color:#9fdcbb}
+  .mission.done .mcheck{background:var(--R);border-color:var(--R)}
+  .mission.done .mcheck svg{opacity:1;transform:none}
+  .mission.done .mr{max-height:90px;opacity:1}
+  .note{font-size:12.5px;color:var(--muted);margin:2px 4px 0;line-height:1.6;word-break:keep-all}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,30px);opacity:0;background:#14263b;color:#fff;padding:12px 18px;border-radius:14px;font-weight:700;font-size:15px;box-shadow:0 10px 30px rgba(0,0,0,.25);transition:all .4s var(--ease);pointer-events:none;z-index:10;max-width:calc(100% - 32px);text-align:center;word-break:keep-all}
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+  @media (max-width:900px){.twin,.row{grid-template-columns:1fr}}
+  @media (max-width:560px){.mtr .m{grid-template-columns:1fr}.mtr .mv{grid-column:1;margin-top:-12px}}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div>
+      <span class="eyebrow">중2 과학 · 전기 · 길이·굵기 모형</span>
+      <h1>저항이 길어질 때, 굵어질 때</h1>
+      <p class="sub">수로 모형, 전기 회로, 저항 막대가 함께 움직여요. 전구 1개 회로를 기준으로 직렬연결과 병렬연결을 비교해 봐요.</p>
+    </div>
+    <div class="seg" role="group" aria-label="회로 고르기">
+      <button type="button" data-mode="one" aria-pressed="true">전구 1개<small>비교의 기준</small></button>
+      <button type="button" data-mode="ser" aria-pressed="false">직렬연결<small>한 줄로 이어 연결</small></button>
+      <button type="button" data-mode="par" aria-pressed="false">병렬연결<small>나란히 나누어 연결</small></button>
+    </div>
+  </header>
+
+  <section class="card pad predict" id="predict">
+    <p class="q" id="pQ"></p>
+    <div class="opts" id="pOpts"></div>
+    <div class="pfb" id="pFb"></div>
+  </section>
+
+  <section class="card pad controls">
+    <div class="ctl">
+      <span class="lb">스위치 (수문)</span>
+      <button type="button" class="tog" id="swBtn" aria-pressed="true"><span class="dot"></span><span id="swTxt">닫힘 · 전류가 흘러요</span></button>
+    </div>
+    <div class="ctl">
+      <span class="lb">전구 1</span>
+      <button type="button" class="tog cutb" id="cut1" aria-pressed="false"><span class="dot"></span><span>끼워져 있음</span></button>
+    </div>
+    <div class="ctl">
+      <span class="lb">전구 2</span>
+      <button type="button" class="tog cutb" id="cut2" aria-pressed="false" disabled><span class="dot"></span><span>끼워져 있음</span></button>
+    </div>
+    <p class="note" style="flex:1;min-width:220px;margin:0 0 4px">전구를 빼면 그 자리의 연결이 끊어져요. 수로 모형에서는 그 물레방아로 가는 물길이 막혀요.</p>
+  </section>
+
+  <div class="twin">
+    <section class="card panel" id="pWater">
+      <div class="ph"><div class="card-title">수로 모형</div><span class="tagline">높이 차 = 전압 · 물의 흐름 = 전류</span></div>
+      <svg id="water" viewBox="0 0 560 400" role="img" aria-label="펌프, 수로, 물레방아로 이루어진 수로 모형"></svg>
+    </section>
+    <section class="card panel" id="pCircuit">
+      <div class="ph"><div class="card-title">전기 회로</div><span class="tagline">노란 점: 전류의 방향 · (+)극 → (−)극</span></div>
+      <svg id="circuit" viewBox="0 0 560 400" role="img" aria-label="전지, 스위치, 전구로 이루어진 전기 회로"></svg>
+    </section>
+  </div>
+
+  <div class="row">
+    <section class="card pad" id="pRod">
+      <div class="card-title">저항 막대 모형 <span class="hint">전구 하나의 저항을 막대 하나로 나타냈어요</span></div>
+      <svg id="rod" viewBox="0 0 560 220" role="img" aria-label="저항 막대 모형. 직렬연결은 막대가 길어지고 병렬연결은 막대가 굵어진다." style="display:block;width:100%;height:auto;margin-top:6px"></svg>
+      <div class="mtr" id="mtr">
+        <div class="m" data-m="R"><div class="ml">회로 전체의 저항</div><div class="trk"><i class="fill" data-f="R" style="background:var(--R)"></i><i class="ref"></i></div><div class="mv" data-v="R"></div></div>
+        <div class="m" data-m="I"><div class="ml">회로 전체에 흐르는 전류</div><div class="trk"><i class="fill" data-f="I" style="background:var(--I)"></i><i class="ref"></i></div><div class="mv" data-v="I"></div></div>
+        <div class="m" data-m="B"><div class="ml">각 전구의 밝기</div><div class="trk"><i class="fill" data-f="B" style="background:#f2b600"></i><i class="ref"></i></div><div class="mv" data-v="B"></div></div>
+      </div>
+    </section>
+    <div class="col">
+      <section class="card pad why" id="why">
+        <div class="dh" id="whyH"></div>
+        <div id="whySteps"></div>
+        <div class="dnav"><button type="button" class="prev" id="dPrev">이전</button><span class="dots" id="dDots"></span><button type="button" class="next" id="dNext">다음 단계</button></div>
+      </section>
+    </div>
+  </div>
+
+  <section class="card pad missions">
+    <div class="head"><div class="card-title">탐구 미션</div><span class="prog" id="prog">0 / 5</span></div>
+    <div class="mlist" id="mlist"></div>
+  </section>
+
+  <p class="note">※ 개념 이해를 위한 모형이에요. 실제 전기 회로 속에 물이 흐르는 것은 아니에요. 막대 길이와 물이 흐르는 빠르기는 전구 1개 회로와 비교하기 위해 나타낸 것이고, 실제 값을 나타내지 않아요.</p>
+  <p class="credit" style="margin:20px 0 4px;text-align:center;font-size:13px;font-weight:700;color:#8495a8;letter-spacing:.02em">제작 · 성안중학교 이삭 T</p>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* ===== 블록 0: 공통 상태와 도구 ===== */
+window.SM = (function () {
+  const NS = 'http://www.w3.org/2000/svg';
+  const S = { mode: 'one', sw: true, cut: [false, false] };
+  const el = (tag, a, parent) => { const n = document.createElementNS(NS, tag); for (const k in a || {}) n.setAttribute(k, a[k]); if (parent) parent.appendChild(n); return n; };
+  const txt = (p, x, y, s, style, anchor) => { const t = el('text', { x, y, 'text-anchor': anchor || 'middle', style }, p); t.textContent = s; return t; };
+  const mix = (a, b, k) => { const pa = a.match(/\w\w/g).map((h) => parseInt(h, 16)), pb = b.match(/\w\w/g).map((h) => parseInt(h, 16)); return '#' + pa.map((v, i) => Math.round(v + (pb[i] - v) * k).toString(16).padStart(2, '0')).join(''); };
+  // 전구 1개 회로를 1로 놓은 상대값 (화면에는 숫자를 쓰지 않아요)
+  function model() {
+    const n = S.mode === 'one' ? 1 : 2;
+    const cut = S.cut.slice(0, n);
+    if (!S.sw) return { n, on: false, R: n === 1 ? 1 : S.mode === 'ser' ? 2 : 0.5, I: 0, b: [0, 0], i: [0, 0], open: 'sw' };
+    if (n === 1) return cut[0] ? { n, on: false, R: null, I: 0, b: [0], i: [0], open: 'b' } : { n, on: true, R: 1, I: 1, b: [1], i: [1] };
+    if (S.mode === 'ser') {
+      if (cut[0] || cut[1]) return { n, on: false, R: null, I: 0, b: [0, 0], i: [0, 0], open: 'b' };
+      return { n, on: true, R: 2, I: 0.5, b: [0.32, 0.32], i: [0.5, 0.5] };
+    }
+    const i = [cut[0] ? 0 : 1, cut[1] ? 0 : 1], k = i[0] + i[1];
+    return { n, on: k > 0, R: k === 2 ? 0.5 : k === 1 ? 1 : null, I: k, b: i.slice(), i };
+  }
+  const listeners = [];
+  return { S, el, txt, mix, model, NS, on: (f) => listeners.push(f), emit: () => listeners.forEach((f) => { try { f(); } catch (e) { window.SM_err('다시 그리기', e); } }), tick: [], t: 0 };
+})();
+</script>
+<script>
+/* ===== 블록 1: 수로 모형 ===== */
+(() => {
+  'use strict';
+  try {
+    const { S, el, txt, model } = window.SM;
+    const svg = document.getElementById('water');
+    const Y0 = 330, YT = 130, YM = 230;
+    let pats = [], wheels = [], imp = null;
+    function trough(x1, x2, y, id, water) {
+      return `<g filter="url(#wSh)"><rect x="${x1}" y="${y - 16}" width="${x2 - x1}" height="34" rx="7" fill="url(#wBack)"/>
+        ${water ? `<rect x="${x1 + 6}" y="${y - 9}" width="${x2 - x1 - 12}" height="15" fill="url(#${id})"/>` : `<rect x="${x1 + 6}" y="${y + 1}" width="${x2 - x1 - 12}" height="5" fill="#9fd0f5" opacity=".6"/>`}
+        <rect x="${x1}" y="${y + 2}" width="${x2 - x1}" height="16" rx="5" fill="url(#wFront)"/></g>`;
+    }
+    const tag = (x, y, t, col) => { const w = t.length * 11.5 + 18; return `<g><rect x="${x - w / 2}" y="${y - 12}" width="${w}" height="23" rx="11.5" fill="${col}"/><text x="${x}" y="${y + 4.5}" text-anchor="middle" style="font-size:12px;font-weight:900;fill:#fff">${t}</text></g>`; };
+    const patH = (id) => `<pattern id="${id}" width="36" height="16" patternUnits="userSpaceOnUse"><rect width="36" height="16" fill="#3f9be0"/><path d="M0 5.6 q9 -4 18 0 t18 0" fill="none" stroke="#c9ecff" stroke-width="2" opacity=".9"/><path d="M0 12 q9 -3 18 0 t18 0" fill="none" stroke="#8fd0fa" stroke-width="1.6" opacity=".7"/></pattern>`;
+    const patV = (id) => `<pattern id="${id}" width="20" height="30" patternUnits="userSpaceOnUse"><rect width="20" height="30" fill="#3f9be0"/><path d="M5 0 q-3 7.5 0 15 t0 15 M14.4 0 q3 7.5 0 15 t0 15" fill="none" stroke="#c9ecff" stroke-width="1.8" opacity=".85"/></pattern>`;
+    function wheel(cx, cy, r, i) {
+      let s = `<g id="wh${i}"><circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="url(#wWood)" stroke-width="6"/><circle cx="${cx}" cy="${cy}" r="${r * 0.64}" fill="#fbf3e6" stroke="#8a5a32" stroke-width="2.5"/>`;
+      for (let a = 0; a < 8; a++) s += `<line x1="${cx}" y1="${cy}" x2="${cx}" y2="${cy - r}" stroke="#8a5a32" stroke-width="3" stroke-linecap="round" transform="rotate(${a * 45} ${cx} ${cy})"/><rect x="${cx - 6}" y="${cy - r - 9}" width="12" height="14" rx="2" fill="#b98652" stroke="#7a4f2a" stroke-width="1.2" transform="rotate(${a * 45} ${cx} ${cy})"/>`;
+      return s + `</g><circle cx="${cx}" cy="${cy}" r="6" fill="#5c3a1e"/>`;
+    }
+    function bracket(x, y1, y2, label, sub) {
+      return `<g><path d="M${x} ${y1 + 2} V${y2 - 2} M${x - 7} ${y1} H${x + 7} M${x - 7} ${y2} H${x + 7}" stroke="#7d5ad6" stroke-width="3.4" stroke-linecap="round"/>
+        <text x="${x + 10}" y="${(y1 + y2) / 2 - 3}" style="font-size:12px;font-weight:900;fill:#7d5ad6">${label}</text><text x="${x + 10}" y="${(y1 + y2) / 2 + 12}" style="font-size:11.5px;font-weight:800;fill:#7d5ad6">${sub}</text></g>`;
+    }
+    function draw() {
+      const m = model(), n = m.n;
+      const tot = m.I;                       // 펌프·아래 수로의 흐름
+      let s = `<defs>
+        <linearGradient id="wSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e6f3ff"/><stop offset="1" stop-color="#fbfdff"/></linearGradient>
+        <linearGradient id="wBack" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#eef1f4"/><stop offset="1" stop-color="#c9d1da"/></linearGradient>
+        <linearGradient id="wFront" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c5ced8"/><stop offset="1" stop-color="#8f9ba9"/></linearGradient>
+        <linearGradient id="wPipe" x1="0" x2="1"><stop offset="0" stop-color="#9aa7b4"/><stop offset=".5" stop-color="#dfe5eb"/><stop offset="1" stop-color="#8794a2"/></linearGradient>
+        <pattern id="wBrick" width="24" height="12" patternUnits="userSpaceOnUse"><rect width="24" height="12" fill="#d9a77a"/><path d="M0 11.5H24M12 0V6M0 6H24M0 6V12M24 6V12" stroke="#b37c53" stroke-width="1.2"/></pattern>
+        <linearGradient id="wMetal" x1="0" x2="1"><stop offset="0" stop-color="#2a63c4"/><stop offset=".45" stop-color="#5b97f0"/><stop offset="1" stop-color="#2556ab"/></linearGradient>
+        <linearGradient id="wFall" x1="0" x2="1"><stop offset="0" stop-color="#3b93d8"/><stop offset=".5" stop-color="#a6dcfb"/><stop offset="1" stop-color="#3a8fd2"/></linearGradient>
+        <linearGradient id="wWood" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#b07b4a"/><stop offset="1" stop-color="#7a4f2a"/></linearGradient>
+        <linearGradient id="wSteel" x1="0" x2="1"><stop offset="0" stop-color="#5d6874"/><stop offset=".5" stop-color="#8d98a4"/><stop offset="1" stop-color="#4f5a66"/></linearGradient>
+        <filter id="wSh" x="-20%" y="-20%" width="140%" height="180%"><feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#0b2a4a" flood-opacity=".18"/></filter>
+        ${patH('pT0')}${patH('pT1')}${patH('pM')}${patH('pB')}${patV('pU')}${patV('pF0')}${patV('pF1')}
+      </defs>
+      <rect width="560" height="400" fill="url(#wSky)"/>
+      <g fill="#fff" opacity=".9"><ellipse cx="300" cy="44" rx="34" ry="11"/><circle cx="288" cy="38" r="12"/><circle cx="308" cy="34" r="15"/><ellipse cx="460" cy="66" rx="26" ry="9"/><circle cx="466" cy="59" r="11"/></g>
+      <rect x="0" y="${Y0 + 22}" width="560" height="${400 - Y0 - 22}" fill="#caa47b"/><rect x="0" y="${Y0 + 14}" width="560" height="12" rx="6" fill="#8cc56c"/>
+      <line x1="40" y1="${YT}" x2="540" y2="${YT}" stroke="#2f6fd6" stroke-dasharray="4 6" stroke-opacity=".35"/>
+      <text x="548" y="${YT - 58}" text-anchor="end" style="font-size:11.5px;font-weight:800;fill:#2f6fd6">파란 점선: 펌프가 올린 높이 (전지의 전압)</text>`;
+      // 수로 배치
+      let falls, topEnd, bottomEnd;
+      if (n === 1) { falls = [{ x: 352, top: YT, bot: Y0, r: 40 }]; topEnd = 364; bottomEnd = 470; }
+      else if (S.mode === 'ser') { falls = [{ x: 236, top: YT, bot: YM, r: 30 }, { x: 392, top: YM, bot: Y0, r: 30 }]; topEnd = 248; bottomEnd = 480; }
+      else { falls = [{ x: 236, top: YT, bot: Y0, r: 34 }, { x: 392, top: YT, bot: Y0, r: 34 }]; topEnd = 404; bottomEnd = 500; }
+      falls.forEach((f, i) => { f.cx = f.x + f.r + 6; f.cy = (f.top + f.bot) / 2; f.i = m.i[i]; f.cut = S.cut[i]; });
+      // 벽돌 기둥
+      (n === 2 && S.mode === 'par' ? [110] : [110, topEnd - 40]).forEach((x) => { s += `<rect x="${x}" y="${YT + 18}" width="22" height="${Y0 - YT - 30}" fill="url(#wBrick)" stroke="#a46f48"/>`; });
+      if (n === 2 && S.mode === 'par') s += `<rect x="${topEnd - 8}" y="${YT + 16}" width="7" height="${Y0 - YT - 28}" rx="2" fill="url(#wSteel)"/>`;
+      if (n === 2 && S.mode === 'ser') s += `<rect x="${falls[1].x - 44}" y="${YM + 18}" width="20" height="${Y0 - YM - 30}" fill="url(#wBrick)" stroke="#a46f48"/>`;
+      falls.forEach((f) => { s += `<path d="M${f.cx - 18} ${f.bot + 14} L${f.cx} ${f.cy} L${f.cx + 18} ${f.bot + 14}" fill="none" stroke="#7a4f2a" stroke-width="6" stroke-linecap="round"/>`; });
+      // 아래 수로, 펌프 관
+      s += trough(46, bottomEnd, Y0, 'pB', true);
+      s += `<rect x="58" y="${YT - 10}" width="28" height="${Y0 - YT + 14}" rx="9" fill="url(#wPipe)"/><rect x="63" y="${YT - 4}" width="18" height="${Y0 - YT + 4}" fill="url(#pU)"/>`;
+      // 위 수로 (수문 앞 / 뒤)
+      const gateX = 170;
+      if (n === 2 && S.mode === 'par') {
+        s += `<g filter="url(#wSh)"><rect x="54" y="${YT - 16}" width="${topEnd - 54}" height="34" rx="7" fill="url(#wBack)"/>
+          <rect x="60" y="${YT - 9}" width="${falls[0].x - 66}" height="15" fill="url(#pT0)"/>
+          <rect x="${falls[0].x + 8}" y="${YT - 9}" width="${topEnd - falls[0].x - 14}" height="15" fill="url(#pT1)"/>
+          <rect x="54" y="${YT + 2}" width="${topEnd - 54}" height="16" rx="5" fill="url(#wFront)"/></g>`;
+      } else {
+        s += `<g filter="url(#wSh)"><rect x="54" y="${YT - 16}" width="${topEnd - 54}" height="34" rx="7" fill="url(#wBack)"/>
+          <rect x="60" y="${YT - 9}" width="${topEnd - 66}" height="15" fill="url(#pT0)"/>
+          <rect x="54" y="${YT + 2}" width="${topEnd - 54}" height="16" rx="5" fill="url(#wFront)"/></g>`;
+      }
+      if (n === 2 && S.mode === 'ser') s += trough(falls[0].x - 10, falls[1].x + 12, YM, 'pM', true);
+      // 펌프 본체
+      const pyc = (YT + Y0) / 2;
+      s += `<g filter="url(#wSh)"><rect x="24" y="${pyc - 33}" width="96" height="66" rx="18" fill="url(#wMetal)"/>
+        <circle cx="72" cy="${pyc}" r="24" fill="#e8f1ff" stroke="#1f4f9e" stroke-width="3"/>
+        <g id="wImp"><path d="M72 ${pyc} L72 ${pyc - 19} Q80 ${pyc - 13} 72 ${pyc}Z" fill="#2f6fd6"/><path d="M72 ${pyc} L72 ${pyc - 19} Q80 ${pyc - 13} 72 ${pyc}Z" fill="#2f6fd6" transform="rotate(120 72 ${pyc})"/><path d="M72 ${pyc} L72 ${pyc - 19} Q80 ${pyc - 13} 72 ${pyc}Z" fill="#2f6fd6" transform="rotate(240 72 ${pyc})"/></g>
+        <circle cx="72" cy="${pyc}" r="4" fill="#1f4f9e"/></g>`;
+      s += tag(72, pyc - 48, '펌프(전지)', '#2f6fd6');
+      // 낙수와 물레방아
+      falls.forEach((f, i) => {
+        const drop = f.bot - f.top, gap = 12;
+        if (f.i > 0) s += `<rect x="${f.x - gap / 2}" y="${f.top}" width="${gap}" height="${drop + 4}" fill="url(#wFall)"/><rect x="${f.x - gap / 2}" y="${f.top}" width="${gap}" height="${drop + 4}" fill="url(#pF${i})" opacity=".55"/>`;
+        s += `<rect x="${f.x - gap / 2 - 12}" y="${f.top - 14}" width="11" height="26" rx="3" fill="url(#wSteel)"/><rect x="${f.x + gap / 2 + 1}" y="${f.top - 14}" width="11" height="26" rx="3" fill="url(#wSteel)"/>`;
+        if (f.cut) s += `<rect x="${f.x - 18}" y="${f.top - 24}" width="36" height="18" rx="3" fill="#e0483e" stroke="#9e2a22"/><text x="${f.x}" y="${f.top - 11}" text-anchor="middle" style="font-size:11px;font-weight:900;fill:#fff">막힘</text>`;
+        s += wheel(f.cx, f.cy, f.r, i);
+        const nm = n === 1 ? '물레방아(전구)' : `물레방아 ${i + 1}`;
+        s += tag(f.cx, n === 1 ? f.cy + f.r + 20 : f.top - 34, nm, f.cut ? '#e0483e' : '#1f9d5c');
+      });
+      // 높이 차 표시
+      if (n === 1) s += bracket(falls[0].cx + falls[0].r + 14, YT, Y0, '전구에 걸리는', '전압');
+      else falls.forEach((f, i) => { s += bracket(f.cx + f.r + 12, f.top, f.bot, `전구 ${i + 1}`, S.mode === 'ser' ? '낮은 전압' : '같은 전압'); });
+      // 수문 (스위치)
+      const gy = S.sw ? YT - 52 : YT - 20;
+      s += `<rect x="${gateX - 9}" y="${YT - 64}" width="4" height="56" fill="#7a8794"/><rect x="${gateX + 5}" y="${YT - 64}" width="4" height="56" fill="#7a8794"/>
+        <rect x="${gateX - 6}" y="${gy}" width="12" height="32" rx="2" fill="url(#wSteel)" stroke="#3d4955" stroke-width="1.2"/>
+        <circle cx="${gateX}" cy="${YT - 70}" r="7" fill="none" stroke="#3d4955" stroke-width="3"/><line x1="${gateX}" y1="${YT - 63}" x2="${gateX}" y2="${gy}" stroke="#3d4955" stroke-width="2"/>`;
+      s += tag(gateX, YT - 90, S.sw ? '수문 열림 (스위치 닫힘)' : '수문 닫힘 (스위치 열림)', S.sw ? '#56616d' : '#e0483e');
+      s += tag(150, Y0 + 32, '수로(도선)', '#7a8794');
+      svg.innerHTML = s;
+      // 움직임 정보: 물결 무늬 속도 = 그 자리의 흐름
+      const q = (id) => document.getElementById(id);
+      pats = [
+        { p: q('pT0'), k: m.on ? tot : 0, dx: 1, w: 36 },
+        { p: q('pT1'), k: m.on && n === 2 && S.mode === 'par' ? m.i[1] : 0, dx: 1, w: 36 },
+        { p: q('pM'), k: m.on ? tot : 0, dx: 1, w: 36 },
+        { p: q('pB'), k: tot, dx: -1, w: 36 },
+        { p: q('pU'), k: tot, dy: -1, w: 30 },
+        { p: q('pF0'), k: m.i[0] || 0, dy: 1, w: 30 },
+        { p: q('pF1'), k: m.i[1] || 0, dy: 1, w: 30 },
+      ].map((o) => Object.assign(o, { off: 0 }));
+      wheels = falls.map((f, i) => ({ g: q('wh' + i), cx: f.cx, cy: f.cy, k: f.i, a: 0 }));
+      imp = { g: q('wImp'), cy: pyc, k: tot, a: 0 };
+    }
+    function tick(dt) {
+      pats.forEach((o) => { if (!o.p || !o.k) return; o.off = (o.off + o.k * 40 * dt) % o.w; o.p.setAttribute('patternTransform', o.dx ? `translate(${o.dx * o.off} 0)` : `translate(0 ${o.dy * o.off})`); });
+      wheels.forEach((w) => { if (!w.g || !w.k) return; w.a = (w.a + w.k * 80 * dt) % 360; w.g.setAttribute('transform', `rotate(${w.a.toFixed(1)} ${w.cx} ${w.cy})`); });
+      if (imp && imp.g && imp.k) { imp.a = (imp.a + imp.k * 240 * dt) % 360; imp.g.setAttribute('transform', `rotate(${imp.a.toFixed(1)} 72 ${imp.cy})`); }
+    }
+    window.SM.on(draw); window.SM.tick.push(tick);
+    draw();
+    window.SM.okW = true;
+  } catch (err) { window.SM_err('수로 모형', err); }
+})();
+</script>
+<script>
+/* ===== 블록 2: 전기 회로 ===== */
+(() => {
+  'use strict';
+  try {
+    const { S, el, txt, mix, model } = window.SM;
+    const svg = document.getElementById('circuit');
+    const LX = 70, RX = 490, TY = 100, MY = 196, BY = 318, BL = 200, BR = 372;
+    let flows = [], glows = [];
+    const pathD = (p) => 'M' + p.map((q) => q.join(' ')).join(' L');
+    function defs() {
+      const d = el('defs', {}, svg);
+      const lg = (id, stops, attr) => { const g = el('linearGradient', Object.assign({ id }, attr || { x1: 0, y1: 0, x2: 0, y2: 1 }), d); stops.forEach(([o, c]) => el('stop', { offset: o, 'stop-color': c }, g)); };
+      lg('cCu', [[0, '#e9a874'], [1, '#a8642e']]);
+      lg('cHold', [[0, '#3c55a8'], [1, '#1f2f6a']]);
+      lg('cCell', [[0, '#f4f6f8'], [0.45, '#c3cad2'], [1, '#8d97a2']]);
+      lg('cCellP', [[0, '#b07ad8'], [0.5, '#8a4cc0'], [1, '#5d2a8c']]);
+      lg('cBase', [[0, '#7e8894'], [0.5, '#e6eaee'], [1, '#6f7a86']], { x1: 0, y1: 0, x2: 1, y2: 0 });
+      lg('cSwb', [[0, '#eef2f6'], [1, '#c7d0da']]);
+      const rg = el('radialGradient', { id: 'cGlow' }, d);
+      el('stop', { offset: 0, 'stop-color': '#fff8cf' }, rg); el('stop', { offset: .4, 'stop-color': '#ffd54d', 'stop-opacity': .65 }, rg); el('stop', { offset: 1, 'stop-color': '#ffcc33', 'stop-opacity': 0 }, rg);
+      const gl = el('radialGradient', { id: 'cGlass', cx: .38, cy: .32, r: .75 }, d);
+      el('stop', { offset: 0, 'stop-color': '#ffffff', 'stop-opacity': .95 }, gl); el('stop', { offset: .7, 'stop-color': '#e3eef8', 'stop-opacity': .55 }, gl); el('stop', { offset: 1, 'stop-color': '#b9cbdc', 'stop-opacity': .7 }, gl);
+      const p = el('pattern', { id: 'cGrid', width: 20, height: 20, patternUnits: 'userSpaceOnUse' }, d); el('path', { d: 'M20 0 H0 V20', fill: 'none', stroke: '#e9eff5', 'stroke-width': 1 }, p);
+      const f = el('filter', { id: 'cSh', x: '-20%', y: '-20%', width: '140%', height: '170%' }, d);
+      el('feDropShadow', { dx: 0, dy: 3, stdDeviation: 3, 'flood-color': '#0b2a4a', 'flood-opacity': .2 }, f);
+    }
+    function bulb(x, y, b, removed, label) {
+      const g = el('g', {}, svg);
+      el('rect', { x: x - 30, y: y - 7, width: 60, height: 16, rx: 7, fill: '#eef5fb', stroke: '#9fc2df', 'stroke-width': 1.5 }, g);
+      el('rect', { x: x - 32, y: y - 6, width: 12, height: 14, rx: 4, fill: '#2f8fd8' }, g);
+      el('rect', { x: x + 20, y: y - 6, width: 12, height: 14, rx: 4, fill: '#2f8fd8' }, g);
+      el('rect', { x: x - 12, y: y - 10, width: 24, height: 8, rx: 3, fill: '#c9d4df' }, g);
+      if (label) txt(g, x + 40, y + 5, label, 'font-size:12.5px;font-weight:900;fill:#5a6b7e', 'start');
+      const bg = el('g', { transform: `translate(0 ${removed ? -22 : 0})`, opacity: removed ? 0.45 : 1 }, g);
+      if (b > 0) glows.push({ g: el('circle', { cx: x, cy: y - 40, r: 30 + 30 * b, fill: 'url(#cGlow)' }, bg), o: 0.25 + 0.75 * b, ph: Math.random() * 6 });
+      el('rect', { x: x - 9, y: y - 24, width: 18, height: 16, rx: 3, fill: 'url(#cBase)', stroke: '#5f6a75', 'stroke-width': 1 }, bg);
+      el('path', { d: `M${x - 9} ${y - 19} H${x + 9} M${x - 9} ${y - 14} H${x + 9}`, stroke: '#5f6a75', 'stroke-width': 1.2 }, bg);
+      el('path', { d: `M${x - 8} ${y - 24} C ${x - 8} ${y - 30}, ${x - 19} ${y - 33}, ${x - 19} ${y - 44} A 19 19 0 1 1 ${x + 19} ${y - 44} C ${x + 19} ${y - 33}, ${x + 8} ${y - 30}, ${x + 8} ${y - 24} Z`, fill: 'url(#cGlass)', stroke: '#9fb3c6', 'stroke-width': 1.5 }, bg);
+      const fc = b <= 0 ? '#6f6256' : b < 0.6 ? mix('c0581e', 'ffb340', b / 0.6) : mix('ffb340', 'fff2b0', (b - 0.6) / 0.4);
+      el('path', { d: `M${x - 5} ${y - 25} L${x - 6} ${y - 42} M${x + 5} ${y - 25} L${x + 6} ${y - 42}`, stroke: '#8a8f96', 'stroke-width': 1.4 }, bg);
+      el('path', { d: `M${x - 6} ${y - 42} l3 -5 l3 5 l3 -5 l3 5`, fill: 'none', stroke: fc, 'stroke-width': b > 0 ? 2.6 : 1.8, 'stroke-linejoin': 'round' }, bg);
+      el('path', { d: `M${x - 11} ${y - 52} a 10 10 0 0 1 8 -7`, fill: 'none', stroke: '#fff', 'stroke-width': 2.4, 'stroke-linecap': 'round', opacity: .9 }, bg);
+      if (removed) {
+        const px = S.mode === 'par' ? x - 84 : x, py = S.mode === 'par' ? y - 11 : y + 14;
+        el('rect', { x: px - 36, y: py, width: 72, height: 22, rx: 11, fill: '#e0483e' }, g);
+        txt(g, px, py + 15, '연결 끊김', 'font-size:12px;font-weight:900;fill:#fff');
+      }
+    }
+    function battery() {
+      const g = el('g', { filter: 'url(#cSh)' }, svg);
+      el('rect', { x: BL, y: BY - 18, width: BR - BL, height: 36, rx: 8, fill: 'url(#cHold)' }, g);
+      const mid = (BL + BR) / 2;
+      [[BL + 8, mid - 4], [mid + 4, BR - 8]].forEach(([a, b]) => {
+        el('rect', { x: a, y: BY - 12, width: b - a, height: 24, rx: 5, fill: 'url(#cCell)' }, g);
+        el('rect', { x: b - 28, y: BY - 12, width: 28, height: 24, rx: 5, fill: 'url(#cCellP)' }, g);
+        el('rect', { x: b - 2, y: BY - 5, width: 4, height: 10, rx: 1.5, fill: '#d7dce2' }, g);
+      });
+      txt(svg, BR + 14, BY - 22, '+', 'font-size:18px;font-weight:900;fill:#e0483e');
+      txt(svg, BL - 14, BY - 22, '−', 'font-size:20px;font-weight:900;fill:#14263b');
+      txt(svg, mid, BY + 36, '전지 2개', 'font-size:12.5px;font-weight:800;fill:#5a6b7e');
+    }
+    function sw(x, y) {
+      // 스위치: 회색 받침 + 금속 막대
+      const g = el('g', { filter: 'url(#cSh)' }, svg);
+      el('rect', { x: x - 34, y: y - 12, width: 68, height: 24, rx: 6, fill: 'url(#cSwb)', stroke: '#a9b5c1' }, g);
+      el('circle', { cx: x - 22, cy: y, r: 5, fill: '#56616d' }, g); el('circle', { cx: x + 22, cy: y, r: 5, fill: '#56616d' }, g);
+      el('line', { x1: x - 22, y1: y, x2: x + 24, y2: y, stroke: '#7b8794', 'stroke-width': 5, 'stroke-linecap': 'round', transform: S.sw ? '' : `rotate(-32 ${x - 22} ${y})` }, g);
+      el('circle', { cx: x + 24, cy: y, r: 3, fill: '#2b3440', transform: S.sw ? '' : `rotate(-32 ${x - 22} ${y})` }, g);
+      txt(svg, x, y + 30, S.sw ? '스위치 닫힘' : '스위치 열림', `font-size:12.5px;font-weight:900;fill:${S.sw ? '#5a6b7e' : '#e0483e'}`);
+    }
+    function draw() {
+      svg.innerHTML = ''; defs(); flows = []; glows = [];
+      const m = model(), n = m.n;
+      el('rect', { width: 560, height: 400, fill: '#fbfcfe' }, svg); el('rect', { width: 560, height: 400, fill: 'url(#cGrid)' }, svg);
+      const main = m.on ? m.I : 0, k1 = m.on ? m.i[0] : 0, k2 = m.on ? (m.i[1] || 0) : 0;
+      const SWX = 130;
+      let segs;
+      if (n === 1 || S.mode === 'ser') segs = [
+        { p: [[BR, BY], [RX, BY], [RX, TY]], k: main }, { p: [[RX, TY], [LX, TY]], k: main }, { p: [[LX, TY], [LX, BY], [BL, BY]], k: main }];
+      else segs = [
+        { p: [[BR, BY], [RX, BY], [RX, MY]], k: main }, { p: [[RX, MY], [RX, TY], [LX, TY], [LX, MY]], k: k1 },
+        { p: [[RX, MY], [LX, MY]], k: k2 }, { p: [[LX, MY], [LX, BY], [BL, BY]], k: main }];
+      segs.forEach((s) => el('path', { d: pathD(s.p), fill: 'none', stroke: 'url(#cCu)', 'stroke-width': 7, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }, svg));
+      segs.forEach((s) => el('path', { d: pathD(s.p), fill: 'none', stroke: '#ffd9a6', 'stroke-width': 1.6, 'stroke-opacity': .7, 'stroke-linejoin': 'round' }, svg));
+      if (n === 2 && S.mode === 'par') [[RX, MY], [LX, MY]].forEach(([x, y]) => el('circle', { cx: x, cy: y, r: 6, fill: '#a8642e' }, svg));
+      segs.forEach((s) => { if (!s.k) return; flows.push({ el: el('path', { d: pathD(s.p), fill: 'none', stroke: '#ffcf33', 'stroke-width': 4.5, 'stroke-linecap': 'round', 'stroke-dasharray': '1 17', 'stroke-linejoin': 'round' }, svg), k: s.k, off: 0 }); });
+      const pos = n === 1 ? [[280, TY]] : S.mode === 'ser' ? [[205, TY], [355, TY]] : [[280, TY], [280, MY]];
+      pos.forEach(([x, y], i) => bulb(x, y, m.on ? m.b[i] : 0, S.cut[i], n === 2 ? `전구 ${i + 1}` : ''));
+      battery();
+      sw(SWX, BY);
+      const title = n === 1 ? '전구 1개' : S.mode === 'ser' ? '직렬연결' : '병렬연결';
+      txt(svg, 540, 30, title, `font-size:15px;font-weight:900;fill:${n === 1 ? '#34495e' : S.mode === 'ser' ? '#1784cf' : '#5e9e1c'}`, 'end');
+      if (n === 2) txt(svg, 540, 48, S.mode === 'ser' ? '전류의 경로가 하나' : '전류의 경로가 두 개', 'font-size:12.5px;font-weight:800;fill:#5a6b7e', 'end');
+    }
+    function tick(dt) {
+      flows.forEach((f) => { f.off -= f.k * 42 * dt; f.el.setAttribute('stroke-dashoffset', f.off.toFixed(1)); });
+      const t = window.SM.t;
+      glows.forEach((g, i) => g.g.setAttribute('opacity', (g.o * (0.92 + 0.08 * Math.sin(t * 6 + g.ph + i))).toFixed(2)));
+    }
+    window.SM.on(draw); window.SM.tick.push(tick);
+    draw();
+    window.SM.okC = true;
+  } catch (err) { window.SM_err('전기 회로', err); }
+})();
+</script>
+<script>
+/* ===== 블록 3: 저항 막대 모형과 비교 막대 ===== */
+(() => {
+  'use strict';
+  try {
+    const { S, el, txt, model } = window.SM;
+    const svg = document.getElementById('rod'), host = document.getElementById('pRod');
+    const $ = (s) => host.querySelector(s);
+    let lanes = [], atoms = [], els = [];
+    function draw() {
+      svg.innerHTML = '';
+      const m = model(), n = m.n, cy = 112, W = 180, H = 40;
+      const d = el('defs', {}, svg);
+      const lg = el('linearGradient', { id: 'rRod', x1: 0, y1: 0, x2: 0, y2: 1 }, d);
+      [[0, '#f7dcc0'], [0.45, '#ecc196'], [1, '#c98d55']].forEach(([o, c]) => el('stop', { offset: o, 'stop-color': c }, lg));
+      const ion = el('radialGradient', { id: 'rIon' }, d); el('stop', { offset: 0, 'stop-color': '#ffe9c9' }, ion); el('stop', { offset: 1, 'stop-color': '#efb878' }, ion);
+      el('rect', { width: 560, height: 220, rx: 14, fill: '#fbfcfe' }, svg);
+      const rects = [];
+      const flowOn = m.on;
+      if (n === 1) rects.push({ x: 190, y: cy - H / 2, w: W, h: H, dim: S.cut[0] });
+      else if (S.mode === 'ser') {
+        if (S.cut[0] || S.cut[1]) rects.push({ x: 92, y: cy - H / 2, w: W, h: H, dim: S.cut[0] }, { x: 288, y: cy - H / 2, w: W, h: H, dim: S.cut[1] });
+        else rects.push({ x: 100, y: cy - H / 2, w: W * 2, h: H, seam: 280 });
+      } else rects.push({ x: 190, y: cy - H, w: W, h: H, dim: S.cut[0] }, { x: 190, y: cy, w: W, h: H, dim: S.cut[1], seamTop: true });
+      const x0 = Math.min(...rects.map((r) => r.x)), x1 = Math.max(...rects.map((r) => r.x + r.w));
+      const y0 = Math.min(...rects.map((r) => r.y)), y1 = Math.max(...rects.map((r) => r.y + r.h));
+      el('rect', { x: x0 - 24, y: (y0 + y1) / 2 - 20, width: 20, height: 40, rx: 6, fill: '#e0483e' }, svg);
+      el('rect', { x: x1 + 4, y: (y0 + y1) / 2 - 20, width: 20, height: 40, rx: 6, fill: '#14263b' }, svg);
+      txt(svg, x0 - 14, (y0 + y1) / 2 + 7, '+', 'font-size:19px;font-weight:900;fill:#fff');
+      txt(svg, x1 + 14, (y0 + y1) / 2 + 7, '−', 'font-size:21px;font-weight:900;fill:#fff');
+      rects.forEach((r) => {
+        const g = el('g', { opacity: r.dim ? 0.28 : 1 }, svg);
+        el('rect', { x: r.x - 3, y: r.y - 3, width: r.w + 6, height: r.h + 6, rx: 22, fill: '#c98d55', opacity: .3 }, g);
+        el('rect', { x: r.x, y: r.y, width: r.w, height: r.h, rx: 18, fill: 'url(#rRod)', stroke: '#b07a45', 'stroke-width': 1.5 }, g);
+        el('rect', { x: r.x + 12, y: r.y + 5, width: r.w - 24, height: 4, rx: 2, fill: '#fff', opacity: .55 }, g);
+        if (r.seam) el('line', { x1: r.seam, y1: r.y + 3, x2: r.seam, y2: r.y + r.h - 3, stroke: '#a8743f', 'stroke-width': 1.5, 'stroke-dasharray': '3 4' }, g);
+        if (r.seamTop) el('line', { x1: r.x + 6, y1: r.y, x2: r.x + r.w - 6, y2: r.y, stroke: '#a8743f', 'stroke-width': 1.5, 'stroke-dasharray': '3 4' }, g);
+      });
+      if (n === 2 && S.mode === 'ser' && !S.cut[0] && !S.cut[1]) {
+        el('path', { d: `M${x0} ${y0 - 14} H${x1} M${x0 + 10} ${y0 - 20} L${x0} ${y0 - 14} L${x0 + 10} ${y0 - 8} M${x1 - 10} ${y0 - 20} L${x1} ${y0 - 14} L${x1 - 10} ${y0 - 8}`, stroke: '#1784cf', 'stroke-width': 2.5, fill: 'none', 'stroke-linecap': 'round' }, svg);
+        el('rect', { x: 190, y: y0 - 46, width: 180, height: 24, rx: 12, fill: '#1784cf' }, svg);
+        txt(svg, 280, y0 - 29, '길이가 길어진 것과 같아요', 'font-size:12.5px;font-weight:900;fill:#fff');
+      }
+      if (n === 2 && S.mode === 'par' && !S.cut[0] && !S.cut[1]) {
+        el('path', { d: `M${x1 + 40} ${y0} V${y1} M${x1 + 34} ${y0 + 10} L${x1 + 40} ${y0} L${x1 + 46} ${y0 + 10} M${x1 + 34} ${y1 - 10} L${x1 + 40} ${y1} L${x1 + 46} ${y1 - 10}`, stroke: '#5e9e1c', 'stroke-width': 2.5, fill: 'none', 'stroke-linecap': 'round' }, svg);
+        txt(svg, x1 + 54, cy - 6, '굵어진 것과 같아요', 'font-size:13px;font-weight:900;fill:#5e9e1c', 'start');
+        txt(svg, x1 + 54, cy + 13, '(단면적이 넓어져요)', 'font-size:12px;font-weight:800;fill:#5e9e1c', 'start');
+      }
+      const lbl = n === 1 ? (S.cut[0] ? '막대가 빠졌어요' : '전구 1개 = 막대 1개') : S.mode === 'ser' ? (S.cut[0] || S.cut[1] ? '막대가 끊어졌어요 → 전자가 지나갈 수 없어요' : '막대 2개를 이어 붙였어요') : (S.cut[0] && S.cut[1] ? '막대가 모두 빠졌어요' : S.cut[0] || S.cut[1] ? '한쪽 막대가 빠졌어요 → 남은 막대로 지나가요' : '막대 2개를 나란히 붙였어요');
+      txt(svg, 280, 206, lbl, `font-size:13px;font-weight:900;fill:${/빠졌|끊어/.test(lbl) ? '#e0483e' : '#5a6b7e'}`);
+      // 자유전자 레인
+      const D = 64;
+      lanes = rects.map((r) => {
+        let dv = D;
+        if (n === 2 && S.mode === 'ser') dv = D / 2;
+        if (!flowOn || r.dim) dv = 0;
+        return { x: r.x + 10, y: r.y + 7, w: r.w - 20, h: r.h - 14, d: dv, dim: r.dim };
+      });
+      atoms = []; els = [];
+      lanes.forEach((L) => {
+        const cols = Math.max(2, Math.round(L.w / 34));
+        for (let c = 0; c < cols; c++) for (let rr = 0; rr < 2; rr++) {
+          const g = el('g', { opacity: L.dim ? 0.3 : 1 }, svg);
+          el('circle', { r: 7, fill: 'url(#rIon)', stroke: '#c98a4a', 'stroke-width': 1 }, g);
+          txt(g, 0, 3.5, '+', 'font-size:10px;font-weight:900;fill:#a5612a');
+          atoms.push({ x: L.x + (c + 0.5 + (rr ? 0.25 : -0.25)) * (L.w / cols), y: L.y + (rr + 0.5) * (L.h / 2), g, ph: Math.random() * 6.28 });
+        }
+        for (let i = 0; i < Math.round(L.w / 20); i++) {
+          const g = el('g', { opacity: L.dim ? 0.3 : 1 }, svg);
+          el('circle', { r: 5, fill: '#2f6fd6', stroke: '#fff', 'stroke-width': 1.2 }, g);
+          const a = Math.random() * 6.28, sp = 40 + Math.random() * 30;
+          els.push({ L, x: L.x + Math.random() * L.w, y: L.y + Math.random() * L.h, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, slow: 0, g });
+        }
+      });
+      place();
+      meters(m);
+    }
+    function meters(m) {
+      const W = (v) => Math.min(100, v * 50);
+      const fR = $('[data-f="R"]'), fI = $('[data-f="I"]'), fB = $('[data-f="B"]');
+      fR.style.width = (m.R === null ? 100 : W(m.R)) + '%'; fR.style.opacity = m.R === null ? 0.22 : 1;
+      fI.style.width = W(m.I) + '%';
+      const lit = m.b.filter((b, i) => !S.cut[i] && b > 0), bv = lit.length ? Math.max(...lit) : 0;
+      fB.style.width = W(bv) + '%';
+      const cmp = (v, big, small) => (v > 1.01 ? big : v < 0.99 ? small : '전구 1개일 때와 같아요');
+      const base = m.n === 1 && !S.cut[0] && S.sw;
+      $('[data-v="R"]').textContent = m.R === null ? '끊어져서 전류가 흐를 길이 없어요' : base ? '기준 (전구 1개)' : cmp(m.R, '전구 1개일 때보다 커요', '전구 1개일 때보다 작아요');
+      $('[data-v="I"]').textContent = !S.sw ? '스위치가 열려 흐르지 않아요' : m.I === 0 ? '흐르지 않아요' : base ? '기준 (전구 1개)' : cmp(m.I, '전구 1개일 때보다 커요', '전구 1개일 때보다 작아요');
+      $('[data-v="B"]').textContent = bv === 0 ? '모두 꺼졌어요' : base ? '기준 (전구 1개)' : (S.cut[0] || S.cut[1]) ? '남은 전구는 전구 1개일 때와 같아요' : cmp(bv, '더 밝아요', '전구 1개일 때보다 어두워요');
+    }
+    function place() {
+      const t = window.SM.t;
+      atoms.forEach((a) => a.g.setAttribute('transform', `translate(${(a.x + Math.sin(t * 9 + a.ph) * 1.2).toFixed(1)} ${(a.y + Math.cos(t * 7 + a.ph) * 1.2).toFixed(1)})`));
+      els.forEach((e) => e.g.setAttribute('transform', `translate(${e.x.toFixed(1)} ${e.y.toFixed(1)})`));
+    }
+    function tick(dt) {
+      els.forEach((e) => {
+        const L = e.L, drift = e.slow > 0 ? L.d * 0.2 : L.d, th = L.d ? 0.6 : 1;
+        e.slow = Math.max(0, e.slow - dt);
+        e.x += (e.vx * th - drift) * dt; e.y += e.vy * th * dt;
+        if (e.y < L.y) { e.y = L.y; e.vy = Math.abs(e.vy); }
+        if (e.y > L.y + L.h) { e.y = L.y + L.h; e.vy = -Math.abs(e.vy); }
+        if (L.d) { if (e.x < L.x) { e.x = L.x + L.w; e.y = L.y + Math.random() * L.h; } if (e.x > L.x + L.w) e.x = L.x + L.w; }
+        else { if (e.x < L.x) { e.x = L.x; e.vx = Math.abs(e.vx); } if (e.x > L.x + L.w) { e.x = L.x + L.w; e.vx = -Math.abs(e.vx); } }
+        if (L.d) for (const a of atoms) {
+          const dx = e.x - a.x, dy = e.y - a.y, d2 = dx * dx + dy * dy;
+          if (d2 < 100 && d2 > 0.01) { const dd = Math.sqrt(d2), nx = dx / dd, ny = dy / dd; e.x = a.x + nx * 10.5; e.y = a.y + ny * 10.5; const ang = Math.atan2(ny, nx) + (Math.random() - .5) * 1.4, sp = 40 + Math.random() * 30; e.vx = Math.cos(ang) * sp; e.vy = Math.sin(ang) * sp; e.slow = 0.3; break; }
+        }
+      });
+      place();
+    }
+    window.SM.on(draw); window.SM.tick.push(tick);
+    draw();
+    window.SM.okR = true;
+  } catch (err) { window.SM_err('저항 막대 모형', err); }
+})();
+</script>
+<script>
+/* ===== 블록 4: 조작, 예상하기, 왜 그럴까, 미션 ===== */
+(() => {
+  'use strict';
+  try {
+    const SM = window.SM, S = SM.S;
+    const $ = (s) => document.querySelector(s), $$ = (s) => Array.from(document.querySelectorAll(s));
+    const toastEl = $('#toast'); let tt = null;
+    const toast = (m) => { toastEl.textContent = m; toastEl.classList.add('show'); clearTimeout(tt); tt = setTimeout(() => toastEl.classList.remove('show'), 2600); };
+
+    /* --- 예상하기: 직렬·병렬을 처음 고르면 먼저 예상하고 스위치를 닫아요 --- */
+    const PRED = {
+      ser: { q: '예상해 보기: 전구 두 개를 직렬연결하면, 각 전구의 밝기는 전구 1개일 때와 비교해 어떻게 될까요?', a: 2, why: '직렬연결은 저항이 길어지는 것과 같아 전체 전류가 작아지고, 두 전구가 높이 차(전압)를 나누어 내려와요. 그래서 <b>더 어두워요.</b>' },
+      par: { q: '예상해 보기: 전구 두 개를 병렬연결하면, 각 전구의 밝기는 전구 1개일 때와 비교해 어떻게 될까요?', a: 1, why: '병렬연결한 각 전구에는 전구 1개일 때와 <b>같은 크기의 전압</b>이 걸려서 밝기가 같아요. 대신 전체 전류는 커져요.' },
+    };
+    const OPTS = ['더 밝다', '같다', '더 어둡다'];
+    const predicted = {};
+    function showPredict() {
+      const box = $('#predict'), p = PRED[S.mode];
+      if (!p || predicted[S.mode]) { box.classList.remove('show'); return; }
+      box.classList.add('show');
+      $('#pQ').textContent = p.q; $('#pFb').className = 'pfb'; $('#pFb').innerHTML = '';
+      $('#pOpts').innerHTML = OPTS.map((o, i) => `<button type="button" class="pchip" data-i="${i}">${o}</button>`).join('');
+      $$('#pOpts .pchip').forEach((b) => b.addEventListener('click', () => {
+        const i = +b.dataset.i, ok = i === p.a;
+        $$('#pOpts .pchip').forEach((c, j) => { c.disabled = true; if (j === p.a) c.classList.add('good'); });
+        if (!ok) b.classList.add('bad');
+        predicted[S.mode] = true;
+        $('#pFb').className = 'pfb show'; $('#pFb').innerHTML = (ok ? '<b style="color:#11703f">예상이 맞았어요!</b> ' : '<b style="color:#b33a35">예상과 달라요.</b> ') + p.why + ' 스위치를 닫았어요. 화면에서 확인해 보세요.';
+        S.sw = true; SM.emit(); done(S.mode === 'ser' ? 'm1' : 'm2');
+      }));
+      S.sw = false;
+    }
+
+    /* --- 왜 그럴까 단계 --- */
+    const WHY = {
+      one: { h: '전구 1개 회로: 비교의 기준', steps: [
+        { p: '전지(펌프)가 높이 차를 만들고, 물이 물레방아(전구) 하나를 지나며 그 높이를 <b>모두</b> 내려와요. 그래서 전구에 걸리는 전압은 전지의 전압과 같아요.', look: '수로 모형의 보라색 높이 표시를 보세요', hl: ['#pWater'] },
+        { p: '저항 막대 모형에서는 전구 하나의 저항을 <b>막대 하나</b>로 나타냈어요. 비교 막대의 검은 눈금이 이 회로의 값이에요.', look: '비교 막대의 검은 눈금이 기준이에요', hl: ['#pRod'] },
+        { p: '이제 위에서 <b>직렬연결</b>이나 <b>병렬연결</b>을 골라, 이 기준과 비교해 봐요. 고르기 전에 결과를 먼저 예상해요.', look: '맨 위 버튼을 눌러 보세요', hl: ['.seg'] },
+      ] },
+      ser: { h: '직렬연결: 왜 전구가 어두워질까?', steps: [
+        { p: '전류가 전구 1과 전구 2를 <b>차례로 모두</b> 지나가야 해요. 저항 막대를 이어 붙인 것처럼 <b>저항이 길어지는 것</b>과 같아요.', look: '저항 막대가 길어졌어요', hl: ['#pRod'] },
+        { p: '길이가 길수록 저항이 크므로 <b>회로 전체의 저항이 커져요.</b>', look: '비교 막대: 회로 전체의 저항', hl: ['[data-m="R"]'] },
+        { p: '전지의 전압은 그대로인데 전체 저항이 커졌으니, 옴의 법칙 <b>I = V ÷ R</b>에 따라 <b>회로 전체에 흐르는 전류가 작아져요.</b> 물도 천천히 흘러요.', look: '비교 막대: 전체 전류, 물레방아가 천천히 돌아요', hl: ['[data-m="I"]', '#pWater'] },
+        { p: '두 물레방아가 펌프가 올린 높이를 <b>나누어</b> 내려와요. 각 전구에는 전구 1개일 때보다 <b>낮은 전압</b>이 걸려서 <b>더 어두워요.</b>', look: '수로 모형의 보라색 높이 표시 두 개', hl: ['#pWater', '[data-m="B"]'] },
+        { p: '전류의 경로가 <b>하나</b>예요. 전구 1이나 전구 2를 빼 보세요. 길 전체가 끊어져 <b>모든 전구가 꺼져요.</b>', look: '위의 전구 1·전구 2 버튼', hl: ['.controls'] },
+      ] },
+      par: { h: '병렬연결: 왜 전체 전류가 커질까?', steps: [
+        { p: '전류가 지나갈 길이 <b>두 개</b>로 늘어나요. 저항 막대를 나란히 붙인 것처럼 <b>저항이 굵어지는 것(단면적이 넓어지는 것)</b>과 같아요.', look: '저항 막대가 굵어졌어요', hl: ['#pRod'] },
+        { p: '굵을수록 저항이 작으므로 <b>회로 전체의 저항이 작아져요.</b>', look: '비교 막대: 회로 전체의 저항', hl: ['[data-m="R"]'] },
+        { p: '전지의 전압은 그대로인데 전체 저항이 작아졌으니, 옴의 법칙 <b>I = V ÷ R</b>에 따라 <b>회로 전체에 흐르는 전류가 커져요.</b> 펌프에서 물이 더 많이 나와요.', look: '비교 막대: 전체 전류, 펌프가 빨리 돌아요', hl: ['[data-m="I"]', '#pWater'] },
+        { p: '물길이 두 갈래로 나뉘어, 물레방아마다 펌프가 올린 높이를 <b>모두</b> 내려와요. 각 전구에는 전구 1개일 때와 <b>같은 크기의 전압</b>이 걸려서 밝기가 <b>같아요.</b>', look: '수로 모형의 보라색 높이 표시 두 개', hl: ['#pWater', '[data-m="B"]'] },
+        { p: '전류의 경로가 <b>두 개</b>예요. 전구 하나를 빼도 다른 길은 그대로라서 <b>다른 쪽 전구는 꺼지지 않아요.</b>', look: '위의 전구 1·전구 2 버튼', hl: ['.controls'] },
+      ] },
+    };
+    let ds = 0; const seenEnd = {};
+    function renderWhy() {
+      const W = WHY[S.mode];
+      $('#whyH').textContent = W.h;
+      $('#whySteps').innerHTML = W.steps.map((s, i) => `<div class="dstep${i === ds ? ' on' : ''}"><span class="sn">${i + 1}단계${i === W.steps.length - 1 && S.mode !== 'one' ? ' · 정리' : ''}</span><p>${s.p}</p><div class="look">살펴볼 곳: ${s.look}</div></div>`).join('');
+      $('#dDots').innerHTML = W.steps.map((s, i) => `<i class="${i === ds ? 'on' : ''}"></i>`).join('');
+      $('#dPrev').disabled = ds === 0;
+      $('#dNext').textContent = ds === W.steps.length - 1 ? '처음부터' : '다음 단계';
+      $$('.hl').forEach((e) => e.classList.remove('hl'));
+      W.steps[ds].hl.forEach((sel) => $$(sel).forEach((e) => e.classList.add('hl')));
+      if (ds === W.steps.length - 1 && S.mode !== 'one') { seenEnd[S.mode] = true; if (seenEnd.ser && seenEnd.par) done('m5'); }
+    }
+    $('#dPrev').addEventListener('click', () => { if (ds > 0) { ds--; renderWhy(); } });
+    $('#dNext').addEventListener('click', () => { const L = WHY[S.mode].steps.length; ds = ds === L - 1 ? 0 : ds + 1; renderWhy(); });
+
+    /* --- 미션 --- */
+    const MISSIONS = [
+      { id: 'm1', t: '직렬연결을 예상하고 확인하기', r: '각 전구가 전구 1개일 때보다 어두워요. 전체 저항은 커지고 전체 전류는 작아져요.' },
+      { id: 'm2', t: '병렬연결을 예상하고 확인하기', r: '각 전구의 밝기는 전구 1개일 때와 같아요. 전체 저항은 작아지고 전체 전류는 커져요.' },
+      { id: 'm3', t: '직렬연결에서 전구 하나 빼 보기', r: '경로가 하나라서 모든 전구가 꺼져요.' },
+      { id: 'm4', t: '병렬연결에서 전구 하나 빼 보기', r: '경로가 두 개라서 다른 쪽 전구는 계속 켜져 있어요.' },
+      { id: 'm5', t: "직렬·병렬 모두 '왜 그럴까?'를 끝까지 보기", r: '길어지면 저항이 커지고, 굵어지면 저항이 작아져요. 그다음은 옴의 법칙!' },
+    ];
+    const doneSet = {};
+    $('#mlist').innerHTML = MISSIONS.map((m) => `<div class="mission" id="${m.id}"><span class="mcheck"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg></span><div><div class="mt">${m.t}</div><div class="mr">${m.r}</div></div></div>`).join('');
+    function done(id) {
+      if (doneSet[id]) return; doneSet[id] = true;
+      $('#' + id).classList.add('done');
+      const k = Object.keys(doneSet).length;
+      $('#prog').textContent = `${k} / ${MISSIONS.length}`;
+      toast(k === MISSIONS.length ? '미션을 모두 마쳤어요! 가상 실험 탭에서 직접 확인해 봐요.' : '미션 완료: ' + MISSIONS.find((m) => m.id === id).t);
+    }
+
+    /* --- 조작 --- */
+    function paintControls() {
+      $$('.seg button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.mode === S.mode)));
+      const swb = $('#swBtn'); swb.setAttribute('aria-pressed', String(S.sw)); $('#swTxt').textContent = S.sw ? '닫힘 · 전류가 흘러요' : '열림 · 전류가 흐르지 않아요';
+      [0, 1].forEach((i) => {
+        const b = $('#cut' + (i + 1)); b.setAttribute('aria-pressed', String(S.cut[i]));
+        b.querySelector('span:last-child').textContent = S.cut[i] ? '빠져 있음 · 다시 끼우기' : '끼워져 있음 · 빼기';
+        b.disabled = i === 1 && S.mode === 'one';
+      });
+    }
+    SM.on(paintControls);
+    $$('.seg button').forEach((b) => b.addEventListener('click', () => {
+      if (S.mode === b.dataset.mode) return;
+      S.mode = b.dataset.mode; S.cut = [false, false]; S.sw = true; ds = 0;
+      showPredict(); SM.emit(); renderWhy();
+    }));
+    $('#swBtn').addEventListener('click', () => { S.sw = !S.sw; SM.emit(); });
+    [0, 1].forEach((i) => $('#cut' + (i + 1)).addEventListener('click', () => {
+      S.cut[i] = !S.cut[i]; SM.emit();
+      if (S.cut[i] && S.sw) {
+        if (S.mode === 'ser') { done('m3'); toast('직렬연결: 전구 하나를 빼니 모든 전구가 꺼졌어요.'); }
+        else if (S.mode === 'par' && !(S.cut[0] && S.cut[1])) { done('m4'); toast('병렬연결: 다른 쪽 전구는 그대로 켜져 있어요.'); }
+      }
+    }));
+    paintControls(); renderWhy();
+    window.SM.okU = true;
+  } catch (err) { window.SM_err('조작·설명·미션', err); }
+})();
+</script>
+<script>
+/* ===== 블록 5: 움직임 ===== */
+(() => {
+  'use strict';
+  try {
+    const reduce = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+    if (reduce) return;
+    let last = performance.now();
+    function loop(now) {
+      const dt = Math.min(0.05, (now - last) / 1000 || 0); last = now;
+      window.SM.t += dt;
+      window.SM.tick.forEach((f) => { try { f(dt); } catch (e) { /* 한 그림의 오류가 다른 그림을 멈추지 않게 */ } });
+      requestAnimationFrame(loop);
+    }
+    requestAnimationFrame(loop);
+  } catch (err) { window.SM_err('움직임', err); }
+})();
+</script>
+</body>
+</html>
