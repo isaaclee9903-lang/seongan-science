@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>전력량 실험실</title>
+<script>
+/* 문제 알림: 코드에 오류가 나면 화면 아래에 빨간 상자로 알려 줘요 (선생님 확인용) */
+(function () {
+  function box() {
+    var b = document.getElementById('pmErr');
+    if (!b && document.body) {
+      b = document.createElement('div'); b.id = 'pmErr';
+      b.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;background:#fdecea;color:#8a1f17;border:2px solid #d9534f;border-radius:12px;padding:10px 14px;font:600 14px/1.5 sans-serif;white-space:pre-wrap';
+      document.body.appendChild(b);
+    }
+    return b;
+  }
+  window.PM_err = function (where, err) {
+    var msg = '[' + where + '] ' + (err && err.message ? err.message : String(err));
+    var show = function () { var b = box(); if (b) b.textContent += (b.textContent ? '\n' : '') + msg; };
+    if (document.body) show(); else document.addEventListener('DOMContentLoaded', show);
+  };
+  window.addEventListener('error', function (e) { window.PM_err('스크립트', { message: e.message + ' (줄 ' + e.lineno + ')' }); });
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      var S = window.PM || {}, miss = [];
+      [['okG', '비교 그래프'], ['okD', '하루 전력량 계산기'], ['okQ', '도전 문제']].forEach(function (p) { if (!S[p[0]]) miss.push(p[1]); });
+      if (miss.length) window.PM_err('실행 안 됨', { message: miss.join(', ') + ' 코드가 실행되지 않았어요. 파일이 끝(</html>)까지 들어 있는지 확인해 주세요.' });
+    }, 1500);
+  });
+})();
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+  :root{--bg:#edf3f8;--card:#fff;--ink:#14263b;--ink2:#34495e;--muted:#5a6b7e;--line:#dde6ee;--accent:#0e63b3;--accent-soft:#e3effb;
+    --El:#23a566;--W:#7d5ad6;--Wh:#2f6fd6;--ok:#1f9d5c;--no:#d9534f;
+    --shadow:0 1px 2px rgba(20,38,59,.06),0 8px 24px rgba(20,38,59,.07);--ease:cubic-bezier(.2,.8,.2,1)}
+  *{box-sizing:border-box}html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:"Pretendard",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  button,input{font:inherit;color:inherit}
+  .app{max-width:1280px;margin:0 auto;padding:16px 16px 28px;display:flex;flex-direction:column;gap:14px}
+  .eyebrow{display:inline-flex;font-size:13px;font-weight:700;color:var(--Wh);background:#e7effc;padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(22px,2.6vw,30px);margin:8px 0 2px;letter-spacing:-.02em}
+  .sub{margin:0;color:var(--muted);font-size:15px;word-break:keep-all}
+  .formula{display:inline-flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:10px;padding:10px 16px;border-radius:14px;background:#fff;box-shadow:var(--shadow);font-weight:900;font-size:18px}
+  .cW{color:var(--W)}.cWh{color:var(--Wh)}
+  .card{background:var(--card);border-radius:20px;box-shadow:var(--shadow);border:1px solid rgba(20,38,59,.04)}
+  .pad{padding:16px 18px}
+  h2{font-size:20px;margin:0 0 4px;display:flex;align-items:center;gap:10px}
+  h2 .no{width:30px;height:30px;border-radius:10px;background:var(--Wh);color:#fff;display:grid;place-items:center;font-size:15px}
+  .goal{font-size:14.5px;color:var(--muted);margin:0 0 12px;word-break:keep-all}
+  .sample{font-size:11.5px;font-weight:800;color:#8a6d00;background:#fff4c7;border-radius:6px;padding:1px 6px;margin-left:4px;white-space:nowrap}
+  .book{font-size:11.5px;font-weight:800;color:#0f5a36;background:#e6f6ee;border-radius:6px;padding:1px 6px;margin-left:4px;white-space:nowrap}
+  /* 1. 그래프 */
+  .g2{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:16px;align-items:start}
+  .pickrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+  .pickrow .lb{font-weight:900;font-size:14px;min-width:54px}
+  .chip{min-height:46px;padding:0 12px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:14.5px;cursor:pointer}
+  .chip[aria-pressed="true"].a{border-color:#c94a1d;background:#fdf0ea;color:#a23a14}
+  .chip[aria-pressed="true"].b{border-color:#1f7f74;background:#e9f6f3;color:#16645b}
+  .chip:disabled{opacity:.35}
+  .gbox{background:#f8fafc;border:1px solid var(--line);border-radius:18px;padding:12px}
+  .gbox svg{display:block;width:100%;height:auto}
+  .gctl{display:flex;align-items:center;gap:12px;margin-top:8px;flex-wrap:wrap}
+  .gctl label{font-weight:800;font-size:15px;white-space:nowrap}
+  .gctl input[type=range]{flex:1;min-width:160px;height:40px;accent-color:var(--Wh)}
+  .reads{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+  .reads div{border-radius:12px;padding:8px 10px;font-size:14px;font-weight:700;background:#fff;border:2px solid;word-break:keep-all}
+  .reads b{display:block;font-size:17px;font-variant-numeric:tabular-nums}
+  .why{background:#fff;border:2px solid #dbe4ec;border-radius:18px;padding:16px}
+  .why h3{margin:0 0 8px;font-size:17px}
+  .why ol{margin:0;padding-left:20px}
+  .why li{font-size:15.5px;line-height:1.75;color:var(--ink2);margin-bottom:6px;word-break:keep-all}
+  .why li b{font-variant-numeric:tabular-nums}
+  /* 2. 하루 계산기 */
+  .day{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:16px;align-items:start}
+  table.dt{border-collapse:separate;border-spacing:0 6px;width:100%;font-variant-numeric:tabular-nums}
+  .dt th{font-size:13px;color:var(--muted);text-align:left;padding:0 8px;font-weight:800}
+  .dt td{background:#f7fafc;padding:8px;font-weight:800;font-size:15px}
+  .dt td:first-child{border-radius:12px 0 0 12px}.dt td:last-child{border-radius:0 12px 12px 0;text-align:right}
+  .dt tr.off td{opacity:.45}
+  .tg{width:46px;height:28px;border-radius:99px;border:0;background:#c9d3dd;position:relative;cursor:pointer;flex:none}
+  .tg::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:left .2s}
+  .tg[aria-pressed="true"]{background:var(--El)}.tg[aria-pressed="true"]::after{left:21px}
+  .tgwrap{position:relative;display:inline-flex;align-items:center;justify-content:center;min-width:48px;min-height:44px}
+  .hrs{display:flex;align-items:center;gap:6px}
+  .hrs button{width:44px;height:44px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-size:20px;font-weight:900;cursor:pointer}
+  .hrs span{min-width:54px;text-align:center}
+  .meterbox{background:linear-gradient(180deg,#f4f7fb,#e8eef5);border-radius:18px;padding:14px;text-align:center}
+  .meterbox svg{display:block;width:100%;max-width:340px;margin:0 auto;height:auto}
+  .tot{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+  .tot div{background:#fff;border-radius:14px;padding:10px;font-weight:800;font-size:13.5px;color:var(--muted)}
+  .tot b{display:block;font-size:22px;color:var(--Wh);font-variant-numeric:tabular-nums}
+  .btn{min-height:50px;border:0;border-radius:14px;padding:0 18px;font-weight:800;font-size:15.5px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;justify-content:center}
+  .btn:active{transform:scale(.97)}
+  .btn.primary{background:var(--Wh);color:#fff}.btn.ghost{background:#eef3f8;color:var(--ink2)}
+  .btn:disabled{opacity:.4}
+  .clock{font-weight:900;font-size:15px;color:var(--ink2);margin-top:8px}
+  /* 3. 도전 */
+  .qs{display:grid;gap:12px}
+  .qq{background:#f7fafc;border-radius:16px;padding:14px;border:2px solid transparent}
+  .qq.ok{border-color:#9fdcbb;background:#ecf8f1}
+  .qq p{margin:0 0 10px;font-weight:700;font-size:16.5px;line-height:1.6;word-break:keep-all}
+  .ansrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .ansrow input{width:130px;min-height:50px;border-radius:12px;border:2px solid #cbd6e1;padding:0 12px;font-size:19px;font-weight:800;text-align:center}
+  .ansrow .u{font-weight:900;font-size:17px}
+  .fb{margin-top:10px;padding:10px 12px;border-radius:12px;font-size:15px;line-height:1.6;word-break:keep-all;display:none}
+  .fb.show{display:block}
+  .fb.ok{background:#e8f7ef;color:#0f5a36}.fb.no{background:#fff5e6;color:#7a4508}
+  .note{font-size:12.5px;color:var(--muted);margin:2px 4px 0;line-height:1.6;word-break:keep-all}
+  @media (max-width:900px){.g2,.day{grid-template-columns:1fr}}
+  @media (max-width:560px){.dt td{font-size:13.5px;padding:6px}.hrs button{width:44px}}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <span class="eyebrow">중2 과학 · 전기 · 전력량 실험실</span>
+    <h1>전력량 실험실: 얼마나 오래, 얼마나 세게?</h1>
+    <p class="sub">전력량은 소비 전력과 사용 시간을 함께 따져요. 그래프와 전력량계로 직접 확인해 봐요.</p>
+    <div class="formula"><span class="cWh">전력량(Wh)</span> = <span class="cW">소비 전력(W)</span> × 사용 시간(h) <span style="font-size:14px;color:var(--muted)">· 1 kWh = 1000 Wh</span></div>
+  </header>
+
+  <section class="card pad" id="s1">
+    <h2><span class="no">1</span>두 기구의 전력량 그래프 비교하기</h2>
+    <p class="goal">기구 두 개를 고르고 사용 시간을 바꿔 봐요. 그래프가 왜 다르게 기울어지는지 오른쪽 설명을 읽어요.</p>
+    <div class="g2">
+      <div>
+        <div class="pickrow"><span class="lb" style="color:#c94a1d">기구 가</span><span id="pickA" style="display:flex;gap:6px;flex-wrap:wrap"></span></div>
+        <div class="pickrow"><span class="lb" style="color:#1f7f74">기구 나</span><span id="pickB" style="display:flex;gap:6px;flex-wrap:wrap"></span></div>
+        <div class="gbox">
+          <svg id="graph" viewBox="0 0 600 380" role="img" aria-label="사용 시간에 따른 두 기구의 전력량 그래프"></svg>
+          <div class="gctl"><label for="tR">사용 시간 <b id="tV" class="cWh">2시간</b></label><input type="range" id="tR" min="0" max="6" step="0.5" value="2" aria-label="사용 시간"></div>
+          <div class="reads"><div style="border-color:#f3b49a"><span id="rAn" style="color:#c94a1d"></span><b id="rA" style="color:#c94a1d"></b></div><div style="border-color:#9fd7cf"><span id="rBn" style="color:#1f7f74"></span><b id="rB" style="color:#1f7f74"></b></div></div>
+        </div>
+      </div>
+      <div class="why" id="why"></div>
+    </div>
+  </section>
+
+  <section class="card pad" id="s2">
+    <h2><span class="no">2</span>우리 집 하루 전력량 재기</h2>
+    <p class="goal">오늘 쓸 기구를 켜고 사용 시간을 정한 뒤 '하루 돌려 보기'를 눌러요. 전력량계가 돌며 전력량이 쌓여요.</p>
+    <div class="day">
+      <table class="dt"><thead><tr><th>사용</th><th>기구 · 소비 전력</th><th>사용 시간</th><th style="text-align:right">전력량</th></tr></thead><tbody id="dtb"></tbody></table>
+      <div class="meterbox">
+        <svg id="meter" viewBox="0 0 340 300" role="img" aria-label="전력량계. 원판이 돌고 숫자가 늘어난다."></svg>
+        <div class="clock" id="clock">0시간 지남</div>
+        <div class="tot"><div>하루 전력량 (계산)<b id="totWh">0 Wh</b></div><div>킬로와트시로 바꾸면<b id="totK">0 kWh</b></div></div>
+        <div style="display:flex;gap:8px;justify-content:center;margin-top:10px;flex-wrap:wrap"><button type="button" class="btn primary" id="runDay">하루 돌려 보기</button><button type="button" class="btn ghost" id="resetDay">처음으로</button></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card pad" id="s3">
+    <h2><span class="no">3</span>도전! 전력량 계산하기</h2>
+    <p class="goal">숫자를 넣고 확인해요. 시간은 '시간(h)' 단위로 계산해요.</p>
+    <div class="qs" id="qs"></div>
+  </section>
+
+  <p class="note">※ 에어컨(690 W)과 선풍기(10 W)는 교과서 그림 값이고, 나머지 기구의 소비 전력은 이해를 돕기 위한 예시 값이에요(제품마다 달라요). 전력량계의 원판이 도는 빠르기는 비교를 위한 모형이에요.</p>
+  <p class="credit" style="margin:20px 0 4px;text-align:center;font-size:13px;font-weight:700;color:#8495a8;letter-spacing:.02em">제작 · 성안중학교 이삭 T</p>
+</div>
+
+<script>
+/* ===== 블록 0: 기구 자료 (선생님이 고치기 쉽게 여기 모았어요) ===== */
+window.PM = {
+  DEV: [
+    { id: 'fan', n: '선풍기', w: 10, book: true },
+    { id: 'led', n: 'LED등', w: 16 },
+    { id: 'fl', n: '형광등', w: 32 },
+    { id: 'tv', n: '텔레비전', w: 100 },
+    { id: 'ac', n: '에어컨', w: 690, book: true },
+    { id: 'cooker', n: '전기밥솥', w: 900 },
+    { id: 'dryer', n: '헤어드라이어', w: 1200 },
+  ],
+  fmt: (v) => (Math.round(v * 1000) / 1000).toLocaleString('ko-KR', { maximumFractionDigits: 3 }),
+  // 받침에 따라 조사 고르기: jo('형광등','은','는') → 형광등은. '로'는 ㄹ받침이면 '로'
+  jo: (w, a, b) => { const c = w.charCodeAt(w.length - 1) - 0xac00, f = c >= 0 && c <= 11171 ? c % 28 : 0; return w + (a === '으로' ? (f && f !== 8 ? a : b) : (f ? a : b)); },
+  tag: (d) => (d.book ? '<span class="book">교과서</span>' : '<span class="sample">예시</span>'),
+};
+</script>
+<script>
+/* ===== 블록 1: 비교 그래프 ===== */
+(() => {
+  'use strict';
+  try {
+    const PM = window.PM, $ = (s) => document.querySelector(s), $$ = (s) => Array.from(document.querySelectorAll(s));
+    let A = 'fl', B = 'led', T = 2;
+    const X0 = 76, Y0 = 320, W = 470, H = 270, TMAX = 6;
+    const dev = (id) => PM.DEV.find((d) => d.id === id);
+    const nice = (v) => { const p = Math.pow(10, Math.floor(Math.log10(v))); const m = v / p; return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 2.5 ? 2.5 : m <= 5 ? 5 : 10) * p; };
+    function chips() {
+      ['A', 'B'].forEach((k) => {
+        const cur = k === 'A' ? A : B, other = k === 'A' ? B : A;
+        $('#pick' + k).innerHTML = PM.DEV.map((d) => `<button type="button" class="chip ${k.toLowerCase()}" data-id="${d.id}" aria-pressed="${d.id === cur}" ${d.id === other ? 'disabled' : ''}>${d.n} ${d.w} W</button>`).join('');
+        $$('#pick' + k + ' .chip').forEach((b) => b.addEventListener('click', () => { if (k === 'A') A = b.dataset.id; else B = b.dataset.id; chips(); draw(); }));
+      });
+    }
+    function draw() {
+      const a = dev(A), b = dev(B), emax = nice(Math.max(a.w, b.w) * TMAX), step = emax / 5;
+      const px = (t) => X0 + (t / TMAX) * W, py = (e) => Y0 - (e / emax) * H;
+      let s = `<rect width="600" height="380" fill="#fbfcfe"/>`;
+      for (let t = 0; t <= TMAX; t++) s += `<line x1="${px(t)}" y1="${Y0}" x2="${px(t)}" y2="${Y0 - H}" stroke="#e6edf4"/><text x="${px(t)}" y="${Y0 + 22}" text-anchor="middle" style="font-size:14px;font-weight:700;fill:#5a6b7e">${t}</text>`;
+      for (let k = 0; k <= 5; k++) s += `<line x1="${X0}" y1="${py(k * step)}" x2="${X0 + W}" y2="${py(k * step)}" stroke="#e6edf4"/><text x="${X0 - 10}" y="${py(k * step) + 5}" text-anchor="end" style="font-size:13px;font-weight:700;fill:#5a6b7e">${PM.fmt(k * step)}</text>`;
+      s += `<path d="M${X0} ${Y0 - H - 10} V${Y0} H${X0 + W + 10}" fill="none" stroke="#34495e" stroke-width="2.5"/>`;
+      s += `<text x="${X0 + W}" y="${Y0 + 46}" text-anchor="end" style="font-size:14px;font-weight:800;fill:#34495e">사용 시간(h)</text><text x="${X0 - 6}" y="${Y0 - H - 18}" style="font-size:14px;font-weight:800;fill:#34495e">전력량(Wh)</text>`;
+      [[a, '#c94a1d'], [b, '#1f7f74']].forEach(([d, c], i) => {
+        s += `<line x1="${px(0)}" y1="${py(0)}" x2="${px(TMAX)}" y2="${py(d.w * TMAX)}" stroke="${c}" stroke-width="4" stroke-linecap="round"/>`;
+        s += `<path d="M${px(1)} ${py(d.w)} H${px(2)} V${py(d.w * 2)}" fill="none" stroke="${c}" stroke-width="2" stroke-dasharray="5 4" opacity=".8"/>`;
+        const ly = Math.max(py(d.w * TMAX) - 10, Y0 - H + 14 + i * 18);
+        s += `<text x="${px(TMAX) - 4}" y="${i && Math.abs(ly - Math.max(py(a.w * TMAX) - 10, Y0 - H + 14)) < 18 ? ly + 20 : ly}" text-anchor="end" style="font-size:14px;font-weight:900;fill:${c}">${d.n} ${d.w} W</text>`;
+        s += `<circle cx="${px(T)}" cy="${py(d.w * T)}" r="8" fill="${c}" stroke="#fff" stroke-width="3"/>`;
+      });
+      s += `<line x1="${px(T)}" y1="${Y0}" x2="${px(T)}" y2="${Y0 - H}" stroke="#2f6fd6" stroke-width="2" stroke-dasharray="6 5"/>`;
+      $('#graph').innerHTML = s;
+      const tt = String(T);
+      $('#tV').textContent = `${tt}시간`;
+      $('#rAn').innerHTML = `${a.n} ${a.w} W`; $('#rBn').innerHTML = `${b.n} ${b.w} W`;
+      $('#rA').textContent = `${a.w} × ${tt} = ${PM.fmt(a.w * T)} Wh`; $('#rB').textContent = `${b.w} × ${tt} = ${PM.fmt(b.w * T)} Wh`;
+      const big = a.w > b.w ? a : b, sm = a.w > b.w ? b : a;
+      $('#why').innerHTML = `<h3>왜 그래프의 기울기가 다를까?</h3><ol>
+        <li><b>${PM.jo(a.n, '은', '는')}</b> 1시간마다 전력량이 <b>${a.w} Wh</b>씩, <b>${PM.jo(b.n, '은', '는')}</b> <b>${b.w} Wh</b>씩 늘어나요. (점선 계단)</li>
+        <li>전력량 = 소비 전력 × 시간이라서, 1시간 동안 늘어나는 전력량이 곧 <b>소비 전력</b>이에요. 그래서 <b>기울기 = 소비 전력</b>이에요.</li>
+        <li>소비 전력이 큰 <b>${big.n}</b>의 그래프가 더 가팔라요. 같은 ${tt}시간 동안 ${PM.jo(big.n, '은', '는')} ${PM.fmt(big.w * T)} Wh, ${PM.jo(sm.n, '은', '는')} ${PM.fmt(sm.w * T)} Wh를 써요.</li>
+        <li>${T > 0 && sm.w ? `${PM.jo(sm.n, '으로', '로')} ${big.n}의 ${tt}시간 전력량만큼 쓰려면 ${PM.fmt(big.w * T / sm.w)}시간이 걸려요. 소비 전력이 작아도 <b>오래 쓰면</b> 전력량이 커져요.` : '슬라이더로 사용 시간을 늘려 봐요.'}</li></ol>`;
+    }
+    $('#tR').addEventListener('input', (e) => { T = parseFloat(e.target.value); draw(); });
+    chips(); draw();
+    PM.okG = true;
+  } catch (err) { window.PM_err('비교 그래프', err); }
+})();
+</script>
+<script>
+/* ===== 블록 2: 하루 전력량 계산기와 전력량계 ===== */
+(() => {
+  'use strict';
+  try {
+    const PM = window.PM, $ = (s) => document.querySelector(s), $$ = (s) => Array.from(document.querySelectorAll(s));
+    const reduce = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+    const ROWS = PM.DEV.map((d) => ({ d, on: ['led', 'tv', 'cooker'].includes(d.id), h: { led: 5, tv: 2, cooker: 1 }[d.id] || 1 }));
+    let clockH = 0, acc = 0, running = false, disk = 0, last = 0;
+    function table() {
+      $('#dtb').innerHTML = ROWS.map((r, i) => `<tr class="${r.on ? '' : 'off'}"><td><span class="tgwrap"><button type="button" class="tg" data-i="${i}" aria-pressed="${r.on}" aria-label="${r.d.n} 사용"></button></span></td>
+        <td>${r.d.n} ${PM.tag(r.d)}<br><span style="color:var(--W)">${r.d.w} W</span></td>
+        <td><div class="hrs"><button type="button" data-m="${i}" aria-label="시간 줄이기">−</button><span>${r.h}시간</span><button type="button" data-p="${i}" aria-label="시간 늘리기">+</button></div></td>
+        <td>${r.on ? `<span style="color:var(--muted);font-size:13px">${r.d.w} × ${r.h} =</span><br><span style="color:var(--Wh)">${PM.fmt(r.d.w * r.h)} Wh</span>` : '—'}</td></tr>`).join('');
+      $$('#dtb .tg').forEach((b) => b.addEventListener('click', () => { const r = ROWS[+b.dataset.i]; r.on = !r.on; reset(); }));
+      $$('#dtb [data-m]').forEach((b) => b.addEventListener('click', () => { const r = ROWS[+b.dataset.m]; r.h = Math.max(0.5, r.h - 0.5); reset(); }));
+      $$('#dtb [data-p]').forEach((b) => b.addEventListener('click', () => { const r = ROWS[+b.dataset.p]; r.h = Math.min(10, r.h + 0.5); reset(); }));
+      const tot = ROWS.filter((r) => r.on).reduce((s, r) => s + r.d.w * r.h, 0);
+      $('#totWh').textContent = `${PM.fmt(tot)} Wh`; $('#totK').textContent = `${PM.fmt(tot / 1000)} kWh`;
+    }
+    function meterSvg() {
+      return `<defs><linearGradient id="mBody" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f7f9fb"/><stop offset="1" stop-color="#d5dde6"/></linearGradient>
+        <linearGradient id="mDisk" x1="0" x2="1"><stop offset="0" stop-color="#9aa5b1"/><stop offset=".5" stop-color="#eef2f6"/><stop offset="1" stop-color="#8b97a4"/></linearGradient>
+        <filter id="mSh" x="-20%" y="-20%" width="140%" height="160%"><feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#0b2a4a" flood-opacity=".2"/></filter></defs>
+        <g filter="url(#mSh)"><rect x="40" y="14" width="260" height="272" rx="26" fill="url(#mBody)" stroke="#b8c3ce" stroke-width="2"/></g>
+        <rect x="64" y="38" width="212" height="150" rx="16" fill="#e8f0f7" stroke="#c9d3dd"/>
+        <text x="170" y="62" text-anchor="middle" style="font-size:13px;font-weight:900;fill:#34495e">전력량계</text>
+        <rect x="84" y="74" width="172" height="44" rx="8" fill="#1d2733"/>
+        <text id="mNum" x="246" y="105" text-anchor="end" style="font-family:'Courier New',monospace;font-size:26px;font-weight:900;fill:#7cf0b0">0</text>
+        <text x="96" y="105" style="font-size:12px;font-weight:800;fill:#7a8a9b">Wh</text>
+        <rect x="84" y="138" width="172" height="34" rx="17" fill="#cfd8e2"/>
+        <g id="mDiskG"><ellipse cx="170" cy="155" rx="80" ry="10" fill="url(#mDisk)"/><rect id="mMark" x="160" y="146" width="20" height="18" rx="3" fill="#e0483e"/></g>
+        <text x="170" y="214" text-anchor="middle" style="font-size:12.5px;font-weight:800;fill:#5a6b7e">지금 켜진 기구의 소비 전력 합</text>
+        <text id="mW" x="170" y="242" text-anchor="middle" style="font-size:22px;font-weight:900;fill:#7d5ad6">0 W</text>
+        <rect x="150" y="286" width="40" height="14" fill="#9aa5b1"/>`;
+    }
+    $('#meter').innerHTML = meterSvg();
+    const maxH = () => Math.max(0, ...ROWS.filter((r) => r.on).map((r) => r.h));
+    function nowW() { return ROWS.filter((r) => r.on && clockH < r.h).reduce((s, r) => s + r.d.w, 0); }
+    function paintMeter() {
+      $('#mNum').textContent = PM.fmt(Math.round(acc * 10) / 10);
+      $('#mW').textContent = `${running || clockH > 0 ? nowW() : ROWS.filter((r) => r.on).reduce((s, r) => s + r.d.w, 0)} W`;
+      $('#clock').textContent = clockH > 0 ? `${PM.fmt(Math.round(clockH * 10) / 10)}시간 지남${clockH >= maxH() ? ' · 하루 끝' : ''}` : '0시간 지남';
+      const x = 170 + Math.sin(disk) * 64, vis = Math.cos(disk) > 0;
+      $('#mMark').setAttribute('x', (x - 10).toFixed(1)); $('#mMark').style.opacity = vis ? 1 : 0.25;
+    }
+    function reset() { running = false; clockH = 0; acc = 0; $('#runDay').disabled = false; $('#runDay').textContent = '하루 돌려 보기'; table(); paintMeter(); }
+    function loop(now) {
+      if (!running) return;
+      const dt = Math.min(0.05, (now - last) / 1000); last = now;
+      const speed = maxH() / 6;                 // 하루를 약 6초에 돌려요
+      const dh = dt * speed * 1, w = nowW();
+      clockH = Math.min(maxH(), clockH + dh); acc += w * dh;
+      disk += dt * (0.4 + Math.sqrt(w) / 6);
+      if (clockH >= maxH()) { running = false; acc = ROWS.filter((r) => r.on).reduce((s, r) => s + r.d.w * r.h, 0); $('#runDay').textContent = '다시 돌려 보기'; $('#runDay').disabled = false; }
+      paintMeter();
+      if (running) requestAnimationFrame(loop);
+    }
+    $('#runDay').addEventListener('click', () => {
+      clockH = 0; acc = 0;
+      if (!ROWS.some((r) => r.on)) return;
+      if (reduce) { clockH = maxH(); acc = ROWS.filter((r) => r.on).reduce((s, r) => s + r.d.w * r.h, 0); paintMeter(); return; }
+      running = true; last = performance.now(); $('#runDay').disabled = true; requestAnimationFrame(loop);
+    });
+    $('#resetDay').addEventListener('click', reset);
+    reset();
+    PM.okD = true;
+  } catch (err) { window.PM_err('하루 전력량 계산기', err); }
+})();
+</script>
+<script>
+/* ===== 블록 3: 도전 문제 ===== */
+(() => {
+  'use strict';
+  try {
+    const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+    const QS = [
+      { q: '소비 전력이 690 W인 에어컨을 2시간 사용한 전력량은 몇 kWh일까요?', a: 1.38, u: 'kWh', hint: '690 × 2 = 1380 Wh예요. 1 kWh = 1000 Wh이니 1000으로 나눠요.' },
+      { q: '에어컨(690 W)을 2시간 사용한 전력량만큼 선풍기(10 W)로 쓰려면 선풍기를 몇 시간 켜야 할까요?', a: 138, u: '시간', hint: '에어컨의 전력량 1380 Wh를 선풍기의 소비 전력 10 W로 나눠요.' },
+      { q: '헤어드라이어(1200 W, 예시 값)를 30분(0.5시간) 사용한 전력량은 몇 Wh일까요?', a: 600, u: 'Wh', hint: '30분은 0.5시간이에요. 1200 × 0.5를 계산해요.' },
+      { q: '형광등(32 W)을 같은 밝기의 LED등(16 W)으로 바꾸고 하루 5시간씩 켜면, 하루에 전력량이 몇 Wh 줄어들까요? (예시 값)', a: 80, u: 'Wh', hint: '형광등 32 × 5와 LED등 16 × 5의 차이를 구해요.' },
+    ];
+    $('#qs').innerHTML = QS.map((q, i) => `<div class="qq" data-i="${i}"><p>${i + 1}. ${q.q}</p><div class="ansrow"><input type="number" inputmode="decimal" step="any" aria-label="답"><span class="u">${q.u}</span><button type="button" class="btn primary">확인</button><button type="button" class="btn ghost">힌트</button></div><div class="fb"></div></div>`).join('');
+    $$('#qs .qq').forEach((box) => {
+      const q = QS[+box.dataset.i], inp = $('input', box), [chk, hint] = $$('button', box), fb = $('.fb', box);
+      const go = () => {
+        const v = parseFloat(inp.value);
+        if (isNaN(v)) { fb.className = 'fb show no'; fb.textContent = '숫자를 넣어요.'; return; }
+        if (Math.abs(v - q.a) < 1e-6) { box.classList.add('ok'); fb.className = 'fb show ok'; fb.innerHTML = `<b>정답!</b> ${q.a} ${q.u}`; }
+        else { const unitSlip = Math.abs(v - q.a * 1000) < 1e-6 || Math.abs(v * 1000 - q.a) < 1e-6; fb.className = 'fb show no'; fb.textContent = unitSlip ? 'Wh와 kWh를 확인해요. 1 kWh = 1000 Wh' : '다시 계산해 봐요. 힌트를 눌러도 좋아요.'; }
+      };
+      chk.addEventListener('click', go);
+      inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); });
+      hint.addEventListener('click', () => { fb.className = 'fb show no'; fb.textContent = q.hint; });
+    });
+    window.PM.okQ = true;
+  } catch (err) { window.PM_err('도전 문제', err); }
+})();
+</script>
+</body>
+</html>
