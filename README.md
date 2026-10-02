@@ -9,5 +9,6 @@ https://isaaclee9903-lang.github.io/seongan-science/
 | 전기는 왜 흐를까? 전류·전압·저항과 옴의 법칙 | 중2 · Ⅶ. 전기와 자기 | `lessons/ohm/` |
 | 전구를 두 개 연결하면? 저항의 직렬연결과 병렬연결 | 중2 · Ⅶ. 전기와 자기 | `lessons/series-parallel/` |
 | 우리는 전기 에너지를 어떻게 이용할까? 소비 전력과 전력량 | 중2 · Ⅶ. 전기와 자기 | `lessons/electric-energy/` |
+| 전류가 흐르는 코일 주변에는 무엇이 생길까? 코일 주위의 자기장 | 중2 · Ⅶ. 전기와 자기 | `lessons/coil-field/` |
 
 제작 · 성안중학교 이삭 T
