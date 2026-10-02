@@ -1,0 +1,1069 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>전기는 왜 흐를까? – 전류·전압·저항 읽기</title>
+<script>
+/* 문제 알림: 그림을 그리는 코드에 오류가 나면 화면 아래에 빨간 상자로 알려 줘요 (선생님 확인용) */
+(function () {
+  function box() {
+    var b = document.getElementById('rdErr');
+    if (!b && document.body) {
+      b = document.createElement('div'); b.id = 'rdErr';
+      b.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;background:#fdecea;color:#8a1f17;border:2px solid #d9534f;border-radius:12px;padding:10px 14px;font:600 14px/1.5 sans-serif;white-space:pre-wrap';
+      document.body.appendChild(b);
+    }
+    return b;
+  }
+  window.RD_err = function (where, err) {
+    var msg = '[' + where + '] ' + (err && err.message ? err.message : String(err));
+    var show = function () { var b = box(); if (b) b.textContent += (b.textContent ? '\n' : '') + msg; };
+    if (document.body) show(); else document.addEventListener('DOMContentLoaded', show);
+  };
+  window.addEventListener('error', function (e) { window.RD_err('스크립트', { message: e.message + ' (줄 ' + e.lineno + ')' }); });
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      var R = window.RD || {}, miss = [];
+      if (!R.ok1) miss.push('기본 기능·퀴즈');
+      if (!R.ok2) miss.push('자유전자 그림');
+      if (!R.ok3) miss.push('그래프');
+      if (miss.length) window.RD_err('실행 안 됨', { message: miss.join(', ') + ' 코드가 실행되지 않았어요. GAS의 reading 파일이 끝(</html>)까지 붙여 넣어졌는지 확인해 주세요.' });
+    }, 1500);
+  });
+})();
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+  :root{--bg:#f3f6f9;--paper:#fff;--ink:#15263a;--ink2:#34495e;--muted:#627386;--line:#e1e8ef;--accent:#0e63b3;--accent-soft:#e4f0fb;
+    --V:#2f6fd6;--I:#e89a00;--R:#23a566;--ok:#1f9d5c;--no:#d9534f;--violet:#7d5ad6;
+    --shadow:0 1px 2px rgba(20,38,59,.05),0 10px 28px rgba(20,38,59,.07);--ease:cubic-bezier(.2,.8,.2,1);--fs:18px}
+  html.big{--fs:20.5px}
+  *{box-sizing:border-box}html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:"Pretendard",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;-webkit-font-smoothing:antialiased;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  button{font:inherit;color:inherit}a{color:var(--accent)}
+  /* 히어로 */
+  .hero{position:relative;color:#fff;overflow:hidden;background:linear-gradient(150deg,#123a6b,#1d6fb8 55%,#2a9d8f)}
+  .hero-in{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:36px 20px 40px;display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.35fr);gap:28px;align-items:center}
+  .hero .kick{display:inline-block;font-size:14px;font-weight:700;background:rgba(255,255,255,.16);padding:6px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.3)}
+  .hero h1{font-size:clamp(30px,4.6vw,46px);line-height:1.2;letter-spacing:-.03em;margin:14px 0 10px;word-break:keep-all}
+  .hero p{font-size:clamp(16px,2vw,18px);margin:0 0 18px;line-height:1.65;opacity:.95;word-break:keep-all}
+  .hero .kick.maker{margin-left:6px;background:rgba(255,255,255,.08)}
+  .credit{text-align:center;font-size:13px;font-weight:700;color:#8495a8;padding:6px 16px 40px;letter-spacing:.02em}
+  .route{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px}
+  .route span{font-size:13.5px;font-weight:700;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.28);padding:5px 11px;border-radius:12px}
+  .start{display:inline-flex;align-items:center;gap:10px;white-space:nowrap;background:#fff;color:var(--accent);border:0;border-radius:16px;padding:0 22px;min-height:56px;font-weight:800;font-size:17px;cursor:pointer;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+  .hero svg{width:100%;height:auto;filter:drop-shadow(0 12px 30px rgba(0,0,0,.25))}
+  /* 진행 */
+  .nav{position:sticky;top:0;z-index:30;background:rgba(255,255,255,.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+  .nav-in{max-width:980px;margin:0 auto;display:flex;align-items:center;gap:6px;padding:8px 12px;overflow-x:auto;scrollbar-width:none}
+  .nav-in::-webkit-scrollbar{display:none}
+  .step{flex:none;display:flex;align-items:center;gap:7px;border:0;background:transparent;border-radius:12px;padding:8px 11px;min-height:44px;font-weight:700;font-size:14.5px;color:var(--muted);cursor:pointer}
+  .step .n{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:12.5px;font-weight:800;background:#e8eef4;color:#607285}
+  .step.active{background:var(--accent-soft);color:var(--accent)}.step.active .n{background:var(--accent);color:#fff}
+  .step.done .n{background:var(--ok);color:#fff}
+  .nav-sp{flex:1}
+  .fsz{flex:none;display:flex;gap:4px}
+  .fsz button{width:44px;height:40px;border:1px solid var(--line);background:#fff;border-radius:10px;font-weight:800;cursor:pointer}
+  .fsz button[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .bar{height:3px}.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--V),var(--R))}
+  /* 본문 */
+  main{max-width:980px;margin:0 auto;padding:10px 16px 60px}
+  section.part{padding-top:34px;scroll-margin-top:70px}
+  .sec-kick{font-size:14px;font-weight:800;color:var(--accent);display:flex;align-items:center;gap:8px}
+  .sec-kick .time{font-weight:600;color:var(--muted);background:#fff;border:1px solid var(--line);border-radius:999px;padding:2px 10px;font-size:12.5px}
+  h2{font-size:clamp(24px,3.4vw,31px);margin:6px 0 16px;letter-spacing:-.02em;line-height:1.3;word-break:keep-all}
+  h3{font-size:calc(var(--fs) + 3px);margin:0 0 8px;letter-spacing:-.01em;word-break:keep-all}
+  .card{background:var(--paper);border-radius:22px;box-shadow:var(--shadow);border:1px solid rgba(20,38,59,.04)}
+  .read{padding:24px 26px;margin-bottom:16px}
+  .read p{font-size:var(--fs);line-height:1.85;color:var(--ink2);margin:0 0 14px;word-break:keep-all}
+  .read p:last-child{margin-bottom:0}
+  .tag{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:800;color:var(--accent);background:var(--accent-soft);padding:4px 10px;border-radius:999px;margin-bottom:10px}
+  mark{background:linear-gradient(transparent 58%,#fff0a8 58%);color:inherit;padding:0 1px}
+  .term{border:0;background:none;padding:0;font-weight:800;color:var(--accent);border-bottom:2px dotted rgba(14,99,179,.5);cursor:pointer;font-size:inherit;line-height:inherit}
+  .defn{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:14px 0;padding:14px 16px;border-radius:16px;background:#f2f7fd;border:1px solid #d6e5f5;font-size:var(--fs)}
+  .defn .k{font-weight:900;color:#fff;padding:4px 12px;border-radius:10px}
+  .defn .u{margin-left:auto;font-weight:800;color:var(--ink2);background:#fff;border:1px solid var(--line);border-radius:10px;padding:4px 10px;font-size:calc(var(--fs) - 2px)}
+  .hanja{font-size:calc(var(--fs) - 3px);color:var(--muted)}
+  .fig{margin:16px 0;background:#f8fafc;border:1px solid var(--line);border-radius:18px;padding:12px}
+  .fig svg{display:block;width:100%;height:auto}
+  .fig .cap{font-size:13.5px;color:var(--muted);text-align:center;margin-top:6px;word-break:keep-all}
+  /* 글은 항상 보이게 두고, 위로 살짝 올라오는 움직임만 줘요 */
+  .js-reveal .reveal{transform:translateY(18px);transition:transform .7s var(--ease)}
+  .js-reveal .reveal.in{transform:none}
+  details.pause{margin:16px 0 22px;background:linear-gradient(135deg,#fff8e6,#fff);border:2px solid #f6d98a;border-radius:18px;overflow:hidden}
+  details.pause summary{list-style:none;cursor:pointer;padding:15px 18px;display:flex;gap:12px;align-items:center;font-weight:800;font-size:var(--fs);min-height:60px;word-break:keep-all}
+  details.pause summary::-webkit-details-marker{display:none}
+  details.pause .pi{flex:none;width:36px;height:36px;border-radius:12px;background:#f7c948;display:grid;place-items:center}
+  details.pause .tap{margin-left:auto;flex:none;font-size:13px;font-weight:700;color:#9a6b00;background:#fff3cc;padding:4px 10px;border-radius:999px}
+  details.pause[open] .tap{visibility:hidden}
+  details.pause .ans{padding:0 18px 18px 66px;font-size:var(--fs);line-height:1.75;color:#5b4300;word-break:keep-all}
+  .myth{display:flex;gap:14px;align-items:flex-start;background:#fff4f2;border:2px solid #f3c2bb;border-radius:18px;padding:16px 18px;margin:16px 0}
+  .myth .x{flex:none;width:40px;height:40px;border-radius:12px;background:#e0483e;color:#fff;display:grid;place-items:center;font-weight:900;font-size:20px}
+  .myth p{margin:0;font-size:calc(var(--fs) - 1px);line-height:1.7;color:#5e2a25;word-break:keep-all}
+  .maps{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:14px 0}
+  .mcard{background:#fff;border:1px solid var(--line);border-radius:20px;padding:12px 12px 16px;box-shadow:0 3px 12px rgba(20,38,59,.06);transition:transform .25s var(--ease),box-shadow .25s}
+  .mcard:hover{transform:translateY(-3px);box-shadow:0 10px 24px rgba(20,38,59,.1)}
+  .mcard .icons{display:flex;align-items:center;justify-content:center;gap:4px;background:linear-gradient(180deg,#f3f9ff,#e9f2fa);border-radius:14px;padding:10px 4px}
+  .mcard .icons svg{width:46%;max-width:104px;height:auto;display:block}
+  .mcard .eq{font-size:22px;font-weight:900;color:#9aa7b4}
+  .mcard .nm{display:flex;justify-content:center;align-items:center;gap:8px;margin-top:10px;font-weight:900;font-size:calc(var(--fs) - .5px);word-break:keep-all;text-align:center}
+  .mcard .nm .w{color:#1f6fbf}.mcard .nm .e{color:#14263b}.mcard .nm .eq2{color:#9aa7b4}
+  .mcard p{margin:6px 4px 0;font-size:calc(var(--fs) - 4px);color:var(--muted);text-align:center;line-height:1.55;word-break:keep-all}
+  .mcard.key{background:linear-gradient(180deg,#f6f2ff,#fff);border:2px solid #cbbcf3}
+  .mcard.key .icons{background:linear-gradient(180deg,#f1ebff,#e8e0fb)}
+  .mcard.key .nm .w,.mcard.key .nm .e{color:var(--violet)}
+  /* 자유전자 장면 */
+  .escene .etog{display:flex;gap:8px;justify-content:center;margin-bottom:8px;flex-wrap:wrap}
+  .tg{min-height:46px;padding:0 16px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15px;cursor:pointer;transition:all .2s}
+  .tg[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+  .ecount{display:inline-block;margin-left:6px;font-weight:900;color:#e0483e}
+  /* 그래프 유도 */
+  .gwrap{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:16px;margin:16px 0;align-items:start}
+  .gcard{background:#f8fafc;border:1px solid var(--line);border-radius:18px;padding:12px}
+  .gcard svg{display:block;width:100%;height:auto}
+  .gctl{display:flex;align-items:center;gap:12px;margin-top:8px;flex-wrap:wrap}
+  .gctl label{font-weight:800;font-size:15px;white-space:nowrap}
+  .gctl label b{color:var(--V);font-variant-numeric:tabular-nums}
+  .gctl input[type=range]{flex:1;min-width:160px;height:40px;accent-color:var(--V)}
+  .greads{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+  .greads div{border-radius:12px;padding:8px 10px;font-size:14px;font-weight:700;background:#fff;border:2px solid}
+  .greads b{font-size:18px;font-variant-numeric:tabular-nums;display:block}
+  .dpanel{background:#fff;border:2px solid #dbe4ec;border-radius:18px;padding:16px}
+  .dpanel .dh{font-weight:900;font-size:calc(var(--fs) + 1px);margin-bottom:10px;word-break:keep-all}
+  .dstep{display:none;animation:dIn .45s var(--ease)}
+  .dstep.on{display:block}
+  @keyframes dIn{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:none}}
+  .dstep .sn{display:inline-block;font-size:12.5px;font-weight:900;color:#fff;background:var(--accent);border-radius:999px;padding:2px 10px;margin-bottom:6px}
+  .dstep p{margin:0 0 8px;font-size:calc(var(--fs) - 1px);line-height:1.75;color:var(--ink2);word-break:keep-all}
+  .dstep table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;font-size:14.5px;margin:6px 0}
+  .dstep th,.dstep td{border:1px solid #dbe4ec;padding:6px;text-align:center}
+  .dstep th{background:#f2f6fa}
+  .dstep .big{font-size:calc(var(--fs) + 4px);font-weight:900;text-align:center;padding:10px;border-radius:12px;background:#f6f9ff;margin:8px 0}
+  .dnav{display:flex;align-items:center;justify-content:space-between;margin-top:12px;gap:8px}
+  .dnav button{min-height:48px;padding:0 14px;border:0;border-radius:12px;font-weight:800;font-size:15px;cursor:pointer;white-space:nowrap}
+  .dnav .prev{background:#eef3f8;color:#34495e}.dnav .next{background:var(--accent);color:#fff}
+  .dnav button:disabled{opacity:.35}
+  .dnav .dots{display:flex;gap:6px}.dnav .dots i{width:9px;height:9px;border-radius:50%;background:#d4dee8}.dnav .dots i.on{background:var(--accent)}
+  .key-box{border-radius:20px;padding:20px 22px;margin:18px 0;background:linear-gradient(135deg,#efeafd,#fff);border:2px solid #cbbcf3}
+  .key-box .kt{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:900;color:#fff;background:var(--violet);padding:4px 10px;border-radius:999px;margin-bottom:8px}
+  .key-box p{font-size:var(--fs);line-height:1.8;margin:0 0 10px;color:#2d2350;word-break:keep-all}
+  .key-box p:last-child{margin:0}
+  .meters2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}
+  .m2{border-radius:18px;padding:14px 16px}
+  .m2 > b{display:block;font-size:calc(var(--fs) + 1px);margin-bottom:4px}
+  .m2 p{margin:0;font-size:calc(var(--fs) - 2px);line-height:1.65;word-break:keep-all}
+  .formula{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:12px;margin:16px 0;padding:18px;border-radius:20px;background:#f6f9ff;border:1px solid #d6e5f5;font-size:clamp(26px,4vw,38px);font-weight:900;letter-spacing:-.01em}
+  .formula .eqs{font-size:clamp(15px,2vw,18px);font-weight:700;color:var(--muted);flex-basis:100%;text-align:center}
+  .cV{color:var(--V)}.cI{color:var(--I)}.cR{color:var(--R)}
+  .ex{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:12px 0}
+  .ex .e{background:#f8fafc;border:1px solid var(--line);border-radius:16px;padding:14px;font-size:calc(var(--fs) - 2px);line-height:1.65;word-break:keep-all}
+  .ex .e b{display:block;font-size:calc(var(--fs) - 1px);margin-bottom:4px}
+  .ex .e .ans{display:block;margin-top:6px;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums}
+  .people{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
+  .pp{border-radius:18px;padding:14px;text-align:center;background:#f8fafc;border:1px solid var(--line)}
+  .pp .u{font-size:34px;font-weight:900;line-height:1}
+  .pp b{display:block;margin-top:6px}
+  .pp small{color:var(--muted);font-size:13px}
+  .simlink{display:flex;align-items:center;gap:14px;margin:18px 0 4px;padding:16px 18px;border-radius:18px;background:linear-gradient(120deg,#0e63b3,#1b86c9);color:#fff;text-decoration:none;box-shadow:0 8px 22px rgba(14,99,179,.25)}
+  .simlink .si{flex:none;width:46px;height:46px;border-radius:14px;background:rgba(255,255,255,.18);display:grid;place-items:center}
+  .simlink b{display:block;font-size:17px}.simlink span{font-size:14px;opacity:.9}
+  .simlink .go{margin-left:auto;flex:none}
+  .simlink[hidden]{display:none}
+  .drawln{stroke-dasharray:620;stroke-dashoffset:620;animation:drawln 1.1s var(--ease) forwards}
+  @keyframes drawln{to{stroke-dashoffset:0}}
+  .popin{transform-box:fill-box;transform-origin:center;animation:popin .45s cubic-bezier(.3,1.6,.5,1) both}
+  @keyframes popin{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
+  /* 퀴즈 */
+  .quiz{display:flex;flex-direction:column;gap:14px}
+  .qcard{padding:22px 24px}
+  .qhead{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .qno{flex:none;font-weight:800;font-size:13px;color:#fff;background:var(--ink);padding:4px 10px;border-radius:999px}
+  .qtype{font-size:12.5px;font-weight:700;color:var(--muted)}
+  .qstate{margin-left:auto;font-weight:800;font-size:13px;padding:4px 10px;border-radius:999px;display:none}
+  .qcard.right .qstate{display:inline-block;background:#e8f7ef;color:#11703f}
+  .qcard.wrong .qstate{display:inline-block;background:#fdecea;color:#b33a35}
+  .qtext{font-size:calc(var(--fs) + 1px);font-weight:700;line-height:1.65;margin:0 0 16px;word-break:keep-all}
+  .ox{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:420px}
+  .oxb{min-height:80px;border-radius:20px;border:2px solid var(--line);background:#f7fafc;font-size:38px;font-weight:900;cursor:pointer;display:grid;place-items:center}
+  .oxb.o{color:#1f78c8}.oxb.x{color:#d9534f}
+  .mc{display:grid;gap:10px}
+  .mcb{display:flex;align-items:center;gap:12px;text-align:left;min-height:56px;border-radius:16px;border:2px solid var(--line);background:#f7fafc;padding:10px 16px;font-size:var(--fs);font-weight:700;cursor:pointer;word-break:keep-all}
+  .mcb .k{flex:none;width:30px;height:30px;border-radius:50%;background:#fff;border:2px solid #cbd6e1;display:grid;place-items:center;font-size:14px;font-weight:800;color:#5a6b7e}
+  button.good{border-color:var(--ok)!important;background:#e8f7ef!important}
+  button.bad{border-color:var(--no)!important;background:#fdecea!important}
+  button:disabled{cursor:default}
+  .qcard.locked .oxb:not(.good):not(.bad),.qcard.locked .mcb:not(.good):not(.bad){opacity:.55}
+  .sentence{font-size:calc(var(--fs) + 1px);font-weight:700;line-height:2.4;margin:0 0 14px;word-break:keep-all}
+  .slot{display:inline-flex;align-items:center;justify-content:center;min-width:110px;min-height:44px;vertical-align:middle;margin:0 4px;padding:0 14px;border-radius:12px;border:2px dashed #aebdcc;background:#f7fafc;color:var(--muted);font-weight:800;font-size:calc(var(--fs) - 1px);cursor:pointer;line-height:1.2}
+  .slot.filled{border-style:solid;border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+  .slot.cur{box-shadow:0 0 0 4px rgba(14,99,179,.18)}
+  .slot.good{border-style:solid;border-color:var(--ok);background:#e8f7ef;color:#11703f}
+  .slot.bad{border-style:solid;border-color:var(--no);background:#fdecea;color:#b33a35}
+  .bank{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+  .chip{min-height:48px;padding:0 16px;border-radius:14px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:calc(var(--fs) - 1px);cursor:pointer}
+  .chip.used{opacity:.3;pointer-events:none}
+  .btn{min-height:52px;border:0;border-radius:14px;padding:0 20px;font-weight:800;font-size:16px;cursor:pointer}
+  .btn.primary{background:var(--accent);color:#fff}.btn.primary:disabled{opacity:.35}
+  .btn.ghost{background:#eef3f8;color:var(--ink2)}
+  .exp{display:none;margin-top:14px;padding:14px 16px;border-radius:14px;font-size:var(--fs);line-height:1.7;word-break:keep-all}
+  .qcard.right .exp{display:block;background:#e8f7ef;color:#0f5a36}
+  .qcard.wrong .exp{display:block;background:#fff6e8;color:#6d4208}
+  .retry{margin-top:10px}
+  .result{padding:26px;display:grid;grid-template-columns:150px 1fr;gap:24px;align-items:center;margin-top:16px}
+  .ring{width:150px;height:150px;position:relative}.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+  .ring .rv{position:absolute;inset:0;display:grid;place-items:center;text-align:center;font-weight:900;font-size:34px;line-height:1.1}
+  .ring .rv small{display:block;font-size:13px;font-weight:700;color:var(--muted)}
+  .result p{font-size:var(--fs);line-height:1.7;color:var(--ink2);margin:0 0 12px;word-break:keep-all}
+  .wlist{display:flex;flex-wrap:wrap;gap:8px}
+  .wlist button{min-height:40px;border:1px solid #f1c6c3;background:#fdf0ef;color:#b33a35;border-radius:10px;padding:0 12px;font-weight:700;cursor:pointer}
+  .next{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}
+  .next a{text-decoration:none;color:#fff;border-radius:20px;padding:18px;min-height:140px;display:flex;flex-direction:column;justify-content:space-between;box-shadow:var(--shadow)}
+  .next a b{font-size:18px}.next a span{font-size:14px;opacity:.92;word-break:keep-all}
+  .next a[hidden]{display:none}
+  .pop{position:absolute;z-index:40;max-width:300px;background:#15263a;color:#fff;border-radius:14px;padding:12px 14px;font-size:15px;line-height:1.6;box-shadow:0 12px 32px rgba(0,0,0,.25);opacity:0;transform:translateY(6px);transition:all .2s;pointer-events:none;word-break:keep-all}
+  .pop.show{opacity:1;transform:none;pointer-events:auto}.pop b{display:block;color:#9fd2ff}
+  @media (max-width:860px){.hero-in{grid-template-columns:1fr}.maps{grid-template-columns:repeat(2,1fr)}.gwrap{grid-template-columns:1fr}.ex,.people,.next{grid-template-columns:1fr}.meters2{grid-template-columns:1fr}}
+  @media (max-width:600px){.read{padding:20px}.result{grid-template-columns:1fr;justify-items:center;text-align:center}.step .t{display:none}}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.js-reveal .reveal{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-in">
+    <div>
+      <span class="kick">중2 과학 · 전기와 자기</span><span class="kick maker">성안중학교 이삭 T</span>
+      <h1>전기는 왜 흐를까?</h1>
+      <p>전류, 전압, 저항을 <b>수로 모형</b>으로 읽어 봐요. 펌프가 물을 끌어올리듯 전지가 전류를 흐르게 하고, 물의 높이 차가 바로 전압이에요.</p>
+      <div class="route"><span>① 전류</span><span>② 전압</span><span>③ 저항</span><span>④ 옴의 법칙</span></div>
+      <button class="start" type="button" data-go="r1">읽기 시작하기
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg></button>
+    </div>
+    <svg class="hero-art" viewBox="0 0 760 440" role="img" aria-label="수로 모형과 전기 회로 비교 그림. 펌프는 전지, 물의 흐름은 전류, 물레방아는 전구, 수면의 높이 차는 전압에 해당한다.">
+      <defs>
+        <linearGradient id="hSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#eef7ff"/><stop offset="1" stop-color="#ffffff"/></linearGradient>
+        <pattern id="hFlowR" width="36" height="16" patternUnits="userSpaceOnUse">
+          <rect width="36" height="16" fill="#3f9be0"/>
+          <path d="M0 5 q9 -4 18 0 t18 0" fill="none" stroke="#c9ecff" stroke-width="2" opacity=".85"/>
+          <path d="M0 11 q9 -3 18 0 t18 0" fill="none" stroke="#8fd0fa" stroke-width="1.6" opacity=".6"/>
+          <animateTransform attributeName="patternTransform" type="translate" from="0 0" to="36 0" dur="1s" repeatCount="indefinite"/>
+        </pattern>
+        <pattern id="hFlowL" width="36" height="16" patternUnits="userSpaceOnUse">
+          <rect width="36" height="16" fill="#3f9be0"/>
+          <path d="M0 5 q9 -4 18 0 t18 0" fill="none" stroke="#c9ecff" stroke-width="2" opacity=".85"/>
+          <path d="M0 11 q9 -3 18 0 t18 0" fill="none" stroke="#8fd0fa" stroke-width="1.6" opacity=".6"/>
+          <animateTransform attributeName="patternTransform" type="translate" from="0 0" to="-36 0" dur="1.2s" repeatCount="indefinite"/>
+        </pattern>
+        <pattern id="hFlowUp" width="20" height="30" patternUnits="userSpaceOnUse">
+          <rect width="20" height="30" fill="#3f9be0"/>
+          <path d="M4 0 q-3 7 0 15 t0 15 M14 0 q3 7 0 15 t0 15" fill="none" stroke="#bfe6ff" stroke-width="1.6" opacity=".7"/>
+          <animateTransform attributeName="patternTransform" type="translate" from="0 0" to="0 -30" dur=".9s" repeatCount="indefinite"/>
+        </pattern>
+        <linearGradient id="hBack" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#eef1f4"/><stop offset="1" stop-color="#cbd3dc"/></linearGradient>
+        <linearGradient id="hFront" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c3ccd6"/><stop offset="1" stop-color="#8e9aa8"/></linearGradient>
+        <pattern id="hBrick" width="24" height="12" patternUnits="userSpaceOnUse"><rect width="24" height="12" fill="#d9a77a"/><path d="M0 11.5H24M12 0V6M0 6H24M0 6V12M24 6V12" stroke="#b37c53" stroke-width="1.2"/></pattern>
+        <linearGradient id="hMetal" x1="0" x2="1"><stop offset="0" stop-color="#2a63c4"/><stop offset=".45" stop-color="#5b97f0"/><stop offset="1" stop-color="#2556ab"/></linearGradient>
+        <linearGradient id="hFall" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#3b93d8"/><stop offset=".5" stop-color="#a6dcfb"/><stop offset="1" stop-color="#3a8fd2"/></linearGradient>
+        <linearGradient id="hWood" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#a87445"/><stop offset="1" stop-color="#7a4f2a"/></linearGradient>
+        <linearGradient id="hCell" x1="0" x2="1"><stop offset="0" stop-color="#1d2f4d"/><stop offset=".45" stop-color="#3b5683"/><stop offset="1" stop-color="#16243c"/></linearGradient>
+        <linearGradient id="hCopper" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e3a16a"/><stop offset="1" stop-color="#a8642e"/></linearGradient>
+        <radialGradient id="hGlow"><stop offset="0" stop-color="#fff8c8"/><stop offset=".45" stop-color="#ffd84d" stop-opacity=".75"/><stop offset="1" stop-color="#ffd84d" stop-opacity="0"/></radialGradient>
+        <filter id="hSh" x="-20%" y="-20%" width="140%" height="170%"><feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#0b2a4a" flood-opacity=".18"/></filter>
+      </defs>
+      <rect width="760" height="440" rx="28" fill="url(#hSky)"/>
+      <g style="font-size:15px;font-weight:900" text-anchor="middle"><text x="210" y="38" fill="#14263b">수로 모형</text><text x="592" y="38" fill="#14263b">전기 회로</text></g>
+      <line x1="414" y1="56" x2="414" y2="404" stroke="#d6e1ec" stroke-width="2" stroke-dasharray="4 8"/>
+
+      <!-- 땅 -->
+      <rect x="18" y="362" width="384" height="58" fill="#caa47b"/><rect x="18" y="352" width="384" height="14" rx="7" fill="#8cc56c"/>
+      <g fill="#7db55e"><ellipse cx="44" cy="356" rx="10" ry="5"/><ellipse cx="380" cy="356" rx="12" ry="5"/></g>
+      <!-- 벽돌 기둥 -->
+      <rect x="150" y="166" width="24" height="190" fill="url(#hBrick)"/><rect x="150" y="166" width="24" height="190" fill="none" stroke="#a46f48"/>
+      <rect x="236" y="166" width="24" height="190" fill="url(#hBrick)"/><rect x="236" y="166" width="24" height="190" fill="none" stroke="#a46f48"/>
+      <!-- 물레방아 받침 -->
+      <path d="M318 352 L340 252 L362 352" fill="none" stroke="#7a4f2a" stroke-width="8" stroke-linecap="round"/>
+
+      <!-- 아래 수로 -->
+      <g filter="url(#hSh)">
+        <rect x="40" y="304" width="350" height="44" rx="8" fill="url(#hBack)"/>
+        <rect x="46" y="314" width="338" height="18" fill="url(#hFlowL)"/>
+        <rect x="40" y="326" width="350" height="22" rx="6" fill="url(#hFront)"/>
+      </g>
+      <!-- 펌프 관 -->
+      <rect x="58" y="132" width="28" height="196" rx="8" fill="url(#hFront)"/>
+      <rect x="63" y="140" width="18" height="180" fill="url(#hFlowUp)"/>
+      <g fill="#e6f6ff">
+        <circle cx="70" cy="300" r="3"><animate attributeName="cy" values="318;142" dur="2.2s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;1;1;0" dur="2.2s" repeatCount="indefinite"/></circle>
+        <circle cx="76" cy="300" r="2.4"><animate attributeName="cy" values="318;142" dur="2.2s" begin=".7s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;1;1;0" dur="2.2s" begin=".7s" repeatCount="indefinite"/></circle>
+        <circle cx="68" cy="300" r="2"><animate attributeName="cy" values="318;142" dur="2.2s" begin="1.4s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;1;1;0" dur="2.2s" begin="1.4s" repeatCount="indefinite"/></circle>
+      </g>
+      <!-- 위 수로 -->
+      <g filter="url(#hSh)">
+        <rect x="58" y="130" width="262" height="40" rx="8" fill="url(#hBack)"/>
+        <rect x="64" y="139" width="252" height="17" fill="url(#hFlowR)"/>
+        <rect x="58" y="150" width="262" height="20" rx="6" fill="url(#hFront)"/>
+      </g>
+      <!-- 흐름 화살표 -->
+      <g fill="#ffffff" opacity=".95">
+        <path d="M0 -5 L8 0 L0 5Z"><animateMotion dur="2.4s" repeatCount="indefinite" path="M110 147 H290"/></path>
+        <path d="M0 -5 L8 0 L0 5Z"><animateMotion dur="2.4s" begin="1.2s" repeatCount="indefinite" path="M110 147 H290"/></path>
+        <path d="M8 -5 L0 0 L8 5Z"><animateMotion dur="2.8s" repeatCount="indefinite" path="M360 322 H90"/></path>
+        <path d="M8 -5 L0 0 L8 5Z"><animateMotion dur="2.8s" begin="1.4s" repeatCount="indefinite" path="M360 322 H90"/></path>
+      </g>
+      <!-- 펌프 본체 -->
+      <g filter="url(#hSh)">
+        <rect x="26" y="214" width="92" height="74" rx="18" fill="url(#hMetal)"/>
+        <circle cx="72" cy="251" r="24" fill="#e8f1ff" stroke="#1f4f9e" stroke-width="3"/>
+        <g fill="#2f6fd6"><path d="M72 251 L72 232 Q80 238 72 251Z"/><path d="M72 251 L72 232 Q80 238 72 251Z" transform="rotate(120 72 251)"/><path d="M72 251 L72 232 Q80 238 72 251Z" transform="rotate(240 72 251)"/>
+          <animateTransform attributeName="transform" type="rotate" from="0 72 251" to="360 72 251" dur="1s" repeatCount="indefinite"/></g>
+        <circle cx="72" cy="251" r="4" fill="#1f4f9e"/>
+      </g>
+      <!-- 낙수 -->
+      <rect x="312" y="152" width="16" height="172" fill="url(#hFall)"/>
+      <g stroke="#e8f7ff" stroke-width="2" stroke-linecap="round" stroke-dasharray="10 16" fill="none">
+        <path d="M316 154 V322"><animate attributeName="stroke-dashoffset" from="0" to="-52" dur=".55s" repeatCount="indefinite"/></path>
+        <path d="M323 154 V322"><animate attributeName="stroke-dashoffset" from="-20" to="-72" dur=".5s" repeatCount="indefinite"/></path>
+      </g>
+      <g fill="none" stroke="#ffffff" stroke-width="2">
+        <ellipse cx="320" cy="320" rx="4" ry="2"><animate attributeName="rx" values="4;24" dur="1s" repeatCount="indefinite"/><animate attributeName="ry" values="2;7" dur="1s" repeatCount="indefinite"/><animate attributeName="opacity" values=".9;0" dur="1s" repeatCount="indefinite"/></ellipse>
+        <ellipse cx="320" cy="320" rx="4" ry="2"><animate attributeName="rx" values="4;24" dur="1s" begin=".5s" repeatCount="indefinite"/><animate attributeName="ry" values="2;7" dur="1s" begin=".5s" repeatCount="indefinite"/><animate attributeName="opacity" values=".9;0" dur="1s" begin=".5s" repeatCount="indefinite"/></ellipse>
+      </g>
+      <g fill="#bfe6ff"><circle cx="312" cy="314" r="2.5"><animate attributeName="cy" values="316;296;316" dur=".8s" repeatCount="indefinite"/></circle><circle cx="330" cy="314" r="2"><animate attributeName="cy" values="316;300;316" dur=".7s" begin=".3s" repeatCount="indefinite"/></circle></g>
+      <!-- 물레방아 -->
+      <g>
+        <g>
+          <circle cx="352" cy="244" r="50" fill="none" stroke="url(#hWood)" stroke-width="7"/>
+          <circle cx="352" cy="244" r="34" fill="#fbf3e6" stroke="#8a5a32" stroke-width="3"/>
+          <g stroke="#8a5a32" stroke-width="4" stroke-linecap="round">
+            <line x1="352" y1="196" x2="352" y2="292"/><line x1="304" y1="244" x2="400" y2="244"/><line x1="318" y1="210" x2="386" y2="278"/><line x1="386" y1="210" x2="318" y2="278"/>
+          </g>
+          <g fill="#b98652" stroke="#7a4f2a" stroke-width="1.5">
+            <rect x="345" y="186" width="14" height="16" rx="2"/><rect x="345" y="186" width="14" height="16" rx="2" transform="rotate(45 352 244)"/><rect x="345" y="186" width="14" height="16" rx="2" transform="rotate(90 352 244)"/><rect x="345" y="186" width="14" height="16" rx="2" transform="rotate(135 352 244)"/>
+            <rect x="345" y="186" width="14" height="16" rx="2" transform="rotate(180 352 244)"/><rect x="345" y="186" width="14" height="16" rx="2" transform="rotate(225 352 244)"/><rect x="345" y="186" width="14" height="16" rx="2" transform="rotate(270 352 244)"/><rect x="345" y="186" width="14" height="16" rx="2" transform="rotate(315 352 244)"/>
+          </g>
+          <animateTransform attributeName="transform" type="rotate" from="0 352 244" to="-360 352 244" dur="5s" repeatCount="indefinite"/>
+        </g>
+        <circle cx="352" cy="244" r="7" fill="#5c3a1e"/>
+      </g>
+      <!-- 높이 차 -->
+      <g>
+        <line x1="205" y1="148" x2="205" y2="320" stroke="#7d5ad6" stroke-width="4"/>
+        <path d="M195 148 H215 M195 320 H215" stroke="#7d5ad6" stroke-width="4" stroke-linecap="round"/>
+        <path d="M205 160 L199 172 H211Z M205 308 L199 296 H211Z" fill="#7d5ad6"/>
+        <rect x="168" y="214" width="74" height="44" rx="14" fill="#7d5ad6"><animate attributeName="opacity" values="1;.82;1" dur="2s" repeatCount="indefinite"/></rect>
+        <text x="205" y="233" text-anchor="middle" style="font-size:13px;font-weight:900;fill:#fff">높이 차</text>
+        <text x="205" y="250" text-anchor="middle" style="font-size:12px;font-weight:800;fill:#ece6ff">= 전압</text>
+      </g>
+      <!-- 꼬리표 (수로) -->
+      <g style="font-size:12.5px;font-weight:900" text-anchor="middle" fill="#fff">
+        <rect x="36" y="186" width="72" height="22" rx="11" fill="#2f6fd6"/><text x="72" y="201">펌프</text>
+        <rect x="104" y="98" width="92" height="22" rx="11" fill="#e8930a"/><text x="150" y="113">물의 흐름</text>
+        <rect x="314" y="164" width="76" height="22" rx="11" fill="#1f9d5c"/><text x="352" y="179">물레방아</text>
+        <rect x="236" y="358" width="54" height="22" rx="11" fill="#7a8794"/><text x="263" y="373">수로</text>
+      </g>
+
+      <!-- ===== 전기 회로 ===== -->
+      <path id="hLoop" d="M488 118 H700 V330 H488 Z" fill="none" stroke="url(#hCopper)" stroke-width="8" stroke-linejoin="round"/>
+      <path d="M488 118 H700 V330 H488 Z" fill="none" stroke="#ffd27a" stroke-width="2" stroke-opacity=".7" stroke-linejoin="round"/>
+      <g fill="#ffb21f" stroke="#fff" stroke-width="1.5">
+        <circle r="5"><animateMotion dur="7s" repeatCount="indefinite" path="M488 270 V118 H700 V330 H488 Z"/></circle>
+        <circle r="5"><animateMotion dur="7s" begin="-1s" repeatCount="indefinite" path="M488 270 V118 H700 V330 H488 Z"/></circle>
+        <circle r="5"><animateMotion dur="7s" begin="-2s" repeatCount="indefinite" path="M488 270 V118 H700 V330 H488 Z"/></circle>
+        <circle r="5"><animateMotion dur="7s" begin="-3s" repeatCount="indefinite" path="M488 270 V118 H700 V330 H488 Z"/></circle>
+        <circle r="5"><animateMotion dur="7s" begin="-4s" repeatCount="indefinite" path="M488 270 V118 H700 V330 H488 Z"/></circle>
+        <circle r="5"><animateMotion dur="7s" begin="-5s" repeatCount="indefinite" path="M488 270 V118 H700 V330 H488 Z"/></circle>
+        <circle r="5"><animateMotion dur="7s" begin="-6s" repeatCount="indefinite" path="M488 270 V118 H700 V330 H488 Z"/></circle>
+      </g>
+      <!-- 전지 -->
+      <g filter="url(#hSh)">
+        <rect x="478" y="176" width="20" height="10" rx="3" fill="#c9d2dc"/>
+        <rect x="462" y="184" width="52" height="92" rx="10" fill="url(#hCell)"/>
+        <rect x="462" y="184" width="52" height="30" rx="10" fill="#2f6fd6"/><rect x="462" y="204" width="52" height="10" fill="#2f6fd6"/>
+        <text x="488" y="205" text-anchor="middle" style="font-size:18px;font-weight:900;fill:#fff">+</text>
+        <text x="488" y="262" text-anchor="middle" style="font-size:20px;font-weight:900;fill:#c9d6ea">−</text>
+        <rect x="470" y="226" width="36" height="6" rx="3" fill="#7fb2ff" opacity=".6"><animate attributeName="opacity" values=".3;.9;.3" dur="1.6s" repeatCount="indefinite"/></rect>
+      </g>
+      <!-- 스위치 -->
+      <rect x="566" y="108" width="52" height="20" fill="url(#hSky)"/>
+      <circle cx="570" cy="118" r="5" fill="#14263b"/><circle cx="614" cy="118" r="5" fill="#14263b"/><line x1="570" y1="118" x2="614" y2="118" stroke="#14263b" stroke-width="5" stroke-linecap="round"/>
+      <!-- 전구 -->
+      <circle cx="700" cy="214" r="44" fill="url(#hGlow)"><animate attributeName="r" values="40;48;40" dur="1.8s" repeatCount="indefinite"/></circle>
+      <rect x="686" y="232" width="28" height="22" rx="4" fill="#9aa5b1"/><path d="M686 238 H714 M686 244 H714" stroke="#6f7b88" stroke-width="2"/>
+      <circle cx="700" cy="210" r="25" fill="#fffbe0" stroke="#d8c27a" stroke-width="2.5"/>
+      <path d="M690 220 L694 204 L700 214 L706 204 L710 220" fill="none" stroke="#e08a00" stroke-width="2.4" stroke-linejoin="round"/>
+      <g stroke="#f2b800" stroke-width="3" stroke-linecap="round"><animate attributeName="opacity" values=".3;1;.3" dur="1.8s" repeatCount="indefinite"/>
+        <path d="M700 172 V160"/><path d="M730 186 L739 179"/><path d="M670 186 L661 179"/><path d="M736 212 H748"/><path d="M664 212 H652"/></g>
+      <!-- 전압계 -->
+      <path d="M700 178 C 660 150, 640 170, 632 198" fill="none" stroke="#e0483e" stroke-width="2.5"/>
+      <path d="M700 250 C 660 280, 640 262, 632 246" fill="none" stroke="#14263b" stroke-width="2.5"/>
+      <circle cx="626" cy="222" r="22" fill="#fff" stroke="#7d5ad6" stroke-width="3"/>
+      <text x="626" y="229" text-anchor="middle" style="font-size:20px;font-weight:900;fill:#7d5ad6">V</text>
+      <!-- 꼬리표 (회로) -->
+      <g style="font-size:12.5px;font-weight:900" text-anchor="middle" fill="#fff">
+        <rect x="436" y="286" width="62" height="22" rx="11" fill="#2f6fd6"/><text x="467" y="301">전지</text>
+        <rect x="560" y="80" width="62" height="22" rx="11" fill="#e8930a"/><text x="591" y="95">전류</text>
+        <rect x="668" y="262" width="74" height="22" rx="11" fill="#1f9d5c"/><text x="705" y="277">전구(저항)</text>
+        <rect x="596" y="174" width="60" height="22" rx="11" fill="#7d5ad6"/><text x="626" y="189">전압</text>
+        <rect x="562" y="344" width="58" height="22" rx="11" fill="#7a8794"/><text x="591" y="359">도선</text>
+      </g>
+      <text x="380" y="420" text-anchor="middle" style="font-size:13px;font-weight:800;fill:#5a6b7e">같은 색 꼬리표끼리 하는 일이 같아요</text>
+    </svg>
+  </div>
+</header>
+
+<nav class="nav" aria-label="학습 순서">
+  <div class="nav-in">
+    <button class="step" data-go="r1" type="button"><span class="n">1</span><span class="t">전류</span></button>
+    <button class="step" data-go="r2" type="button"><span class="n">2</span><span class="t">전압</span></button>
+    <button class="step" data-go="q1" type="button"><span class="n">3</span><span class="t">퀴즈 ①</span></button>
+    <button class="step" data-go="r3" type="button"><span class="n">4</span><span class="t">저항</span></button>
+    <button class="step" data-go="r4" type="button"><span class="n">5</span><span class="t">옴의 법칙</span></button>
+    <button class="step" data-go="q2" type="button"><span class="n">6</span><span class="t">퀴즈 ②</span></button>
+    <span class="nav-sp"></span>
+    <div class="fsz" role="group" aria-label="글자 크기"><button type="button" id="fsN" aria-pressed="true">가</button><button type="button" id="fsB" aria-pressed="false" style="font-size:19px">가</button></div>
+  </div>
+  <div class="bar"><i id="progress"></i></div>
+</nav>
+
+<main>
+  <!-- ① 전류 -->
+  <section class="part" id="r1">
+    <div class="sec-kick">읽기 ① <span class="time">약 5분</span></div>
+    <h2>전하의 흐름, 전류</h2>
+    <article class="card read reveal">
+      <p>전기 회로에서 전구에 불이 켜지는 것은 <b>전하가 도선을 따라 이동</b>하기 때문이에요. 이처럼 전하가 이동하는 것을 <button class="term" data-term="전류">전류</button>라고 해요.</p>
+      <div class="defn"><span class="k" style="background:var(--I)">전류</span> 전하의 흐름 <span class="hanja">· 流 흐를 류 (해류, 혈류)</span><span class="u">단위 A (암페어)</span></div>
+      <p>구리 같은 금속 도선 속에는 특정 원자핵에 묶여 있지 않고 자유롭게 돌아다니는 <button class="term" data-term="자유전자">자유전자</button>가 있어요. 전지가 없을 때는 자유전자가 제멋대로 움직여서 전류가 흐르지 않아요. 전지를 연결하면 <b>전지의 전압</b> 때문에 전자가 한쪽으로 이동하면서 전류가 흘러요.</p>
+      <p>작은 전류는 mA(밀리암페어)로 나타내요. <b>1 A = 1000 mA</b>예요.</p>
+      <div class="fig escene" data-scene="drift">
+        <div class="etog"><button type="button" class="tg" data-m="0" aria-pressed="true">전지 연결 전</button><button type="button" class="tg" data-m="1" aria-pressed="false">전지 연결 후</button></div>
+        <svg class="esvg" viewBox="0 0 640 250" role="img" aria-label="도선 속 자유전자의 움직임. 전지를 연결하면 전자는 (+)극 쪽으로, 전류는 (+)극에서 (−)극으로 흐른다."></svg>
+        <div class="cap ecap"></div>
+      </div>
+    </article>
+
+    <details class="pause reveal">
+      <summary><span class="pi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5b4300" stroke-width="2.6" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16.5v.5"/></svg></span>생각 멈춤! 전자는 전선 속에서 아주 느리게 움직이는데, 스위치를 켜면 전구가 바로 켜지는 까닭은?<span class="tap">눌러서 확인</span></summary>
+      <div class="ans">전선 속에는 <b>이미 자유전자가 꽉 차 있어요.</b> 구슬이 가득 찬 관의 한쪽 끝에서 구슬 하나를 밀면 반대쪽 끝의 구슬이 바로 밀려 나오는 것처럼, 전지가 전자를 밀면 회로 전체의 전자가 한꺼번에 움직이기 시작해요.</div>
+    </details>
+    <div class="myth reveal"><span class="x">✕</span><p><b>오개념 바로잡기: "전지에서 전자가 만들어져 전선으로 나온다?"</b><br>아니에요. 전자는 원래 전선 속에 있어요. 전지는 이미 있는 전자를 <b>밀어서 움직이게</b> 할 뿐이에요. 수로의 펌프가 물을 만들지 않고 이미 있는 물을 끌어올리는 것과 같아요.</p></div>
+  </section>
+
+  <!-- ② 전압 -->
+  <section class="part" id="r2">
+    <div class="sec-kick">읽기 ② <span class="time">약 8분 · 핵심</span></div>
+    <h2>전류를 흐르게 하는 능력, 전압</h2>
+    <article class="card read reveal">
+      <p>수로의 펌프는 낮은 곳의 물을 높은 곳으로 끌어올려 <b>수면의 높이 차</b>를 만들어요. 그래서 물이 계속 흘러요. 전기 회로에서는 <b>전지</b>가 이런 차이를 만들어 전류가 계속 흐르게 해요. 이렇게 전류를 흐르게 하는 능력을 <button class="term" data-term="전압">전압</button>이라고 해요.</p>
+      <div class="defn"><span class="k" style="background:var(--V)">전압</span> 전류를 흐르게 하는 능력 <span class="hanja">· 壓 누를 압 (수압, 기압)</span><span class="u">단위 V (볼트)</span></div>
+      <h3 style="margin-top:20px">수로 모형과 전기 회로 짝짓기</h3>
+      <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+        <defs>
+          <pattern id="mFlow" width="30" height="14" patternUnits="userSpaceOnUse"><rect width="30" height="14" fill="#3f9be0"/><path d="M0 5 q7.5 -4 15 0 t15 0" fill="none" stroke="#c9ecff" stroke-width="2"/><animateTransform attributeName="patternTransform" type="translate" from="0 0" to="30 0" dur="1s" repeatCount="indefinite"/></pattern>
+          <linearGradient id="mStone" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c3ccd6"/><stop offset="1" stop-color="#8e9aa8"/></linearGradient>
+          <linearGradient id="mMetal" x1="0" x2="1"><stop offset="0" stop-color="#2a63c4"/><stop offset=".45" stop-color="#5b97f0"/><stop offset="1" stop-color="#2556ab"/></linearGradient>
+          <linearGradient id="mCell" x1="0" x2="1"><stop offset="0" stop-color="#1d2f4d"/><stop offset=".45" stop-color="#3b5683"/><stop offset="1" stop-color="#16243c"/></linearGradient>
+          <linearGradient id="mCopper" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e3a16a"/><stop offset="1" stop-color="#a8642e"/></linearGradient>
+          <radialGradient id="mGlow"><stop offset="0" stop-color="#fff8c8"/><stop offset=".45" stop-color="#ffd84d" stop-opacity=".75"/><stop offset="1" stop-color="#ffd84d" stop-opacity="0"/></radialGradient>
+        </defs>
+      </svg>
+      <div class="maps">
+        <!-- 1 펌프 = 전지 -->
+        <div class="mcard">
+          <div class="icons">
+            <svg viewBox="0 0 92 72" aria-hidden="true"><rect x="40" y="4" width="14" height="30" rx="4" fill="#9aa7b4"/><rect x="43" y="6" width="8" height="28" fill="#3f9be0"/>
+              <circle cx="47" cy="30" r="2" fill="#e6f6ff"><animate attributeName="cy" values="32;6" dur="1.4s" repeatCount="indefinite"/></circle>
+              <rect x="14" y="30" width="64" height="38" rx="12" fill="url(#mMetal)"/><circle cx="46" cy="49" r="14" fill="#e8f1ff" stroke="#1f4f9e" stroke-width="2.5"/>
+              <g fill="#2f6fd6"><path d="M46 49 L46 37 Q52 41 46 49Z"/><path d="M46 49 L46 37 Q52 41 46 49Z" transform="rotate(120 46 49)"/><path d="M46 49 L46 37 Q52 41 46 49Z" transform="rotate(240 46 49)"/><animateTransform attributeName="transform" type="rotate" from="0 46 49" to="360 46 49" dur="1s" repeatCount="indefinite"/></g></svg>
+            <span class="eq">=</span>
+            <svg viewBox="0 0 92 72" aria-hidden="true"><rect x="16" y="28" width="8" height="18" rx="2" fill="#c9d2dc"/><rect x="22" y="16" width="60" height="42" rx="10" fill="url(#mCell)"/><rect x="22" y="16" width="20" height="42" rx="10" fill="#2f6fd6"/><rect x="34" y="16" width="8" height="42" fill="#2f6fd6"/>
+              <text x="31" y="42" text-anchor="middle" style="font-size:16px;font-weight:900;fill:#fff">+</text><text x="70" y="43" text-anchor="middle" style="font-size:16px;font-weight:900;fill:#c9d6ea">−</text>
+              <path d="M58 24 l-6 12 h6 l-4 10 l10 -14 h-6 l4 -8z" fill="#ffd34d"><animate attributeName="opacity" values=".3;1;.3" dur="1.4s" repeatCount="indefinite"/></path></svg>
+          </div>
+          <div class="nm"><span class="w">펌프</span><span class="eq2">=</span><span class="e">전지</span></div>
+          <p>물을 높은 곳으로 끌어올려 계속 흐르게 해요. = 전류가 계속 흐르게 해요.</p>
+        </div>
+        <!-- 2 물의 흐름 = 전류 -->
+        <div class="mcard">
+          <div class="icons">
+            <svg viewBox="0 0 92 72" aria-hidden="true"><rect x="4" y="22" width="84" height="30" rx="7" fill="#dfe5eb"/><rect x="8" y="28" width="76" height="14" fill="url(#mFlow)"/><rect x="4" y="38" width="84" height="14" rx="5" fill="url(#mStone)"/>
+              <path d="M0 -5 L8 0 L0 5Z" fill="#fff"><animateMotion dur="1.6s" repeatCount="indefinite" path="M12 33 H80"/></path></svg>
+            <span class="eq">=</span>
+            <svg viewBox="0 0 92 72" aria-hidden="true"><path d="M6 36 H86" stroke="url(#mCopper)" stroke-width="10" stroke-linecap="round"/>
+              <g fill="#ffb21f" stroke="#fff" stroke-width="1.2"><circle r="5"><animateMotion dur="1.6s" repeatCount="indefinite" path="M8 36 H84"/></circle><circle r="5"><animateMotion dur="1.6s" begin="-.53s" repeatCount="indefinite" path="M8 36 H84"/></circle><circle r="5"><animateMotion dur="1.6s" begin="-1.06s" repeatCount="indefinite" path="M8 36 H84"/></circle></g>
+              <path d="M30 16 H62 M56 10 L64 16 L56 22" stroke="#e8930a" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="nm"><span class="w">물의 흐름</span><span class="eq2">=</span><span class="e">전류</span></div>
+          <p>수로를 따라 물이 흘러요. = 도선을 따라 전하가 흘러요.</p>
+        </div>
+        <!-- 3 수로 = 도선 -->
+        <div class="mcard">
+          <div class="icons">
+            <svg viewBox="0 0 92 72" aria-hidden="true"><path d="M8 18 H60 Q74 18 74 32 V58" fill="none" stroke="#dfe5eb" stroke-width="22" stroke-linejoin="round"/><path d="M8 18 H60 Q74 18 74 32 V58" fill="none" stroke="#3f9be0" stroke-width="12" stroke-dasharray="6 6"><animate attributeName="stroke-dashoffset" from="0" to="-24" dur="1s" repeatCount="indefinite"/></path></svg>
+            <span class="eq">=</span>
+            <svg viewBox="0 0 92 72" aria-hidden="true"><path d="M8 18 H60 Q74 18 74 32 V58" fill="none" stroke="#2f6fd6" stroke-width="16" stroke-linejoin="round" stroke-opacity=".25"/><path d="M8 18 H60 Q74 18 74 32 V58" fill="none" stroke="url(#mCopper)" stroke-width="7" stroke-linejoin="round"/><path d="M8 16 H60" stroke="#ffe0bf" stroke-width="1.5"/></svg>
+          </div>
+          <div class="nm"><span class="w">수로</span><span class="eq2">=</span><span class="e">도선</span></div>
+          <p>물이 지나가는 길. = 전류가 지나가는 길. 높이는 거의 그대로예요.</p>
+        </div>
+        <!-- 4 수문 = 스위치 -->
+        <div class="mcard">
+          <div class="icons">
+            <svg viewBox="0 0 92 72" aria-hidden="true"><rect x="4" y="34" width="84" height="26" rx="6" fill="#dfe5eb"/><rect x="8" y="38" width="36" height="14" fill="#3f9be0"/>
+              <rect x="48" y="38" width="36" height="14" fill="#3f9be0"><animate attributeName="opacity" values="1;1;0;0;1" keyTimes="0;.4;.5;.9;1" dur="3s" repeatCount="indefinite"/></rect>
+              <rect x="42" y="18" width="8" height="40" rx="2" fill="#56616d"><animate attributeName="y" values="2;2;30;30;2" keyTimes="0;.4;.5;.9;1" dur="3s" repeatCount="indefinite"/></rect>
+              <rect x="38" y="30" width="16" height="6" fill="#9aa7b4"/></svg>
+            <span class="eq">=</span>
+            <svg viewBox="0 0 92 72" aria-hidden="true"><path d="M4 46 H26 M66 46 H88" stroke="url(#mCopper)" stroke-width="7" stroke-linecap="round"/><circle cx="28" cy="46" r="5" fill="#14263b"/><circle cx="64" cy="46" r="5" fill="#14263b"/>
+              <line x1="28" y1="46" x2="64" y2="46" stroke="#14263b" stroke-width="5" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" values="0 28 46;0 28 46;-35 28 46;-35 28 46;0 28 46" keyTimes="0;.4;.5;.9;1" dur="3s" repeatCount="indefinite"/></line>
+              <text x="46" y="68" text-anchor="middle" style="font-size:11px;font-weight:800;fill:#5a6b7e"><animate attributeName="opacity" values="1;1;0;0;1" keyTimes="0;.4;.5;.9;1" dur="3s" repeatCount="indefinite"/>닫힘: 흐름</text></svg>
+          </div>
+          <div class="nm"><span class="w">수문</span><span class="eq2">=</span><span class="e">스위치</span></div>
+          <p>닫으면 물이 멈춰요. = 열면 전류가 멈춰요. 길이 끊기면 흐르지 않아요.</p>
+        </div>
+        <!-- 5 물레방아 = 전구 -->
+        <div class="mcard">
+          <div class="icons">
+            <svg viewBox="0 0 92 72" aria-hidden="true"><rect x="22" y="2" width="9" height="68" fill="#3f9be0"/><path d="M26 6 V68" stroke="#d9f1ff" stroke-width="2" stroke-dasharray="6 8"><animate attributeName="stroke-dashoffset" from="0" to="-28" dur=".5s" repeatCount="indefinite"/></path>
+              <g><circle cx="54" cy="38" r="26" fill="none" stroke="#8a5a32" stroke-width="4"/><circle cx="54" cy="38" r="17" fill="#fbf3e6" stroke="#8a5a32" stroke-width="2"/><path d="M54 12 V64 M28 38 H80 M36 20 L72 56 M72 20 L36 56" stroke="#8a5a32" stroke-width="3"/>
+                <animateTransform attributeName="transform" type="rotate" from="0 54 38" to="-360 54 38" dur="3s" repeatCount="indefinite"/></g><circle cx="54" cy="38" r="4" fill="#5c3a1e"/></svg>
+            <span class="eq">=</span>
+            <svg viewBox="0 0 92 72" aria-hidden="true"><circle cx="46" cy="30" r="30" fill="url(#mGlow)"><animate attributeName="r" values="24;32;24" dur="1.6s" repeatCount="indefinite"/></circle><rect x="36" y="46" width="20" height="16" rx="3" fill="#9aa5b1"/><circle cx="46" cy="28" r="18" fill="#fffbe0" stroke="#d8c27a" stroke-width="2"/><path d="M39 36 L42 24 L46 31 L50 24 L53 36" fill="none" stroke="#e08a00" stroke-width="2.2"/></svg>
+          </div>
+          <div class="nm"><span class="w">물레방아</span><span class="eq2">=</span><span class="e">전구 (저항)</span></div>
+          <p>흐르는 물로 돌아가요. = 전류가 흐르면 빛을 내요. 여기서 높이가 내려와요.</p>
+        </div>
+        <!-- 6 높이 차 = 전압 -->
+        <div class="mcard key">
+          <div class="icons">
+            <svg viewBox="0 0 92 72" aria-hidden="true"><rect x="4" y="10" width="40" height="14" rx="4" fill="#3f9be0"/><rect x="4" y="52" width="70" height="14" rx="4" fill="#3f9be0"/>
+              <path d="M62 14 V58" stroke="#7d5ad6" stroke-width="3.5"/><path d="M56 14 H68 M56 58 H68" stroke="#7d5ad6" stroke-width="3.5" stroke-linecap="round"/>
+              <path d="M62 20 L57 30 H67Z M62 52 L57 42 H67Z" fill="#7d5ad6"><animate attributeName="opacity" values=".4;1;.4" dur="1.6s" repeatCount="indefinite"/></path></svg>
+            <span class="eq">=</span>
+            <svg viewBox="0 0 92 72" aria-hidden="true"><rect x="10" y="6" width="72" height="60" rx="12" fill="#fff" stroke="#7d5ad6" stroke-width="3"/><path d="M20 50 A26 26 0 0 1 72 50" fill="none" stroke="#cbbcf3" stroke-width="3"/>
+              <line x1="46" y1="50" x2="46" y2="26" stroke="#e0483e" stroke-width="3" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" values="-55 46 50;40 46 50;-55 46 50" dur="3s" repeatCount="indefinite"/></line><circle cx="46" cy="50" r="4" fill="#14263b"/><text x="46" y="63" text-anchor="middle" style="font-size:11px;font-weight:900;fill:#7d5ad6">V</text></svg>
+          </div>
+          <div class="nm"><span class="w">수면의 높이 차</span><span class="eq2">=</span><span class="e">전압</span></div>
+          <p>높이 차가 클수록 물이 세게 흘러요. = 전압이 클수록 전류가 세게 흘러요.</p>
+        </div>
+      </div>
+      <p>건전지마다 전압이 정해져 있어요. 1.5 V 건전지와 6 V 전지는 <b>펌프의 세기</b>, 즉 물을 끌어올리는 높이가 다른 셈이에요. 펌프가 없으면 높이 차가 생기지 않아 물이 흐르지 않듯, 전지가 없으면 전류도 흐르지 않아요.</p>
+    </article>
+
+    <div class="key-box reveal">
+      <span class="kt">핵심 ① 전압은 '두 지점 사이'의 높이 차</span>
+      <p>높이는 항상 <b>어디와 비교하느냐</b>가 중요해요. 전압도 마찬가지로 <mark>두 지점 사이의 높이 차</mark>예요. "이 전구의 전압"이라고 하면 <b>전구 양 끝 두 지점</b> 사이의 높이 차를 말해요.</p>
+      <p>수로에서 물은 펌프에서 올라가고, 평평한 수로에서는 높이가 그대로이며, 물레방아를 지나면서 내려와요. 전기 회로에서도 전하는 <b>전지에서 올라가고, 도선에서는 거의 그대로, 전구(저항)를 지나며 내려와요.</b></p>
+    </div>
+
+    <article class="card read reveal">
+      <h3>회로를 한 바퀴 돌면 높이 차는?</h3>
+      <div class="fig">
+        <svg viewBox="0 0 640 250" role="img" aria-label="한 바퀴 높이 지도: 전지에서 올라가고 도선에서 평평하며 전구에서 내려와 출발점 높이로 돌아온다">
+          <rect width="640" height="250" rx="12" fill="#fbfcfe"/>
+          <line x1="60" y1="190" x2="600" y2="190" stroke="#c9d3dd" stroke-width="2"/>
+          <line x1="60" y1="70" x2="600" y2="70" stroke="#e3e9ef" stroke-dasharray="5 5"/>
+          <text x="44" y="194" text-anchor="end" style="font-size:13px;font-weight:700;fill:#5a6b7e">0 V</text>
+          <text x="52" y="74" text-anchor="end" style="font-size:13px;font-weight:700;fill:#2f6fd6">1.5 V</text>
+          <rect x="60" y="200" width="130" height="8" rx="4" fill="#2f6fd6" opacity=".7"/><rect x="194" y="200" width="130" height="8" rx="4" fill="#9aa7b4" opacity=".7"/><rect x="328" y="200" width="130" height="8" rx="4" fill="#23a566" opacity=".7"/><rect x="462" y="200" width="138" height="8" rx="4" fill="#9aa7b4" opacity=".7"/>
+          <g style="font-size:14px;font-weight:800" text-anchor="middle"><text x="125" y="228" fill="#2f6fd6">전지: 올라감</text><text x="259" y="228" fill="#5a6b7e">도선: 그대로</text><text x="393" y="228" fill="#11703f">전구: 내려옴</text><text x="531" y="228" fill="#5a6b7e">도선: 그대로</text></g>
+          <path d="M60 190 L190 70 L324 70 L458 190 L600 190" fill="none" stroke="#2f6fd6" stroke-width="5" stroke-linejoin="round"/>
+          <g fill="#fff" stroke="#14263b" stroke-width="2.5"><circle cx="60" cy="190" r="7"/><circle cx="190" cy="70" r="7"/><circle cx="324" cy="70" r="7"/><circle cx="458" cy="190" r="7"/><circle cx="600" cy="190" r="7"/></g>
+          <g><circle r="14" fill="#7d5ad6" opacity=".22"/><circle r="8" fill="#7d5ad6" stroke="#fff" stroke-width="2.5"/>
+            <animateMotion dur="7s" repeatCount="indefinite" keyPoints="0;0;1;1" keyTimes="0;.06;.94;1" calcMode="linear" path="M60 190 L190 70 L324 70 L458 190 L600 190"/></g>
+          <g style="font-size:15px;font-weight:900;fill:#14263b" text-anchor="middle"><text x="60" y="176">출발</text><text x="190" y="56">A</text><text x="324" y="56">B</text><text x="458" y="176">C</text><text x="600" y="176">출발점</text></g>
+          <path d="M610 186 V194" stroke="#7d5ad6" stroke-width="3"/><text x="612" y="160" text-anchor="end" style="font-size:13px;font-weight:800;fill:#7d5ad6">높이 차 0</text>
+        </svg>
+        <div class="cap">1.5 V 전지 1개와 전구 1개로 이루어진 회로를 한 바퀴 따라간 높이 지도</div>
+      </div>
+      <p>출발점에서 회로를 한 바퀴 돌아 <b>다시 출발점으로 돌아오면 높이는 처음과 같아요. 높이 차는 0이에요.</b> 전지가 1.5 V만큼 올려 준 높이를 전구에서 모두 내려오기 때문이에요.</p>
+      <p>그래서 전구가 1개인 회로에서는 <mark>전구 양 끝의 전압 = 전지의 전압</mark>이에요. 그리고 도선 양 끝(A와 B 사이)은 높이가 거의 같아서 전압이 0에 가까워요.</p>
+    </article>
+
+    <div class="meters2 reveal">
+      <div class="m2" style="background:#fff7e6;border:2px solid #f3d38c"><b style="color:#b87400">전류계 = 흐르는 물의 양을 세는 도구</b><p>물이 지나가는 길 <b>중간에</b> 끼워야 지나가는 물을 셀 수 있어요. 그래서 전류계는 회로에 <b>직렬</b>(전류가 흐르는 길이 하나)로 연결해요. 전류계와 전지만 연결하면 센 전류가 흘러 고장 날 수 있어요.</p></div>
+      <div class="m2" style="background:#eef3fd;border:2px solid #bcd0f3"><b style="color:#2f6fd6">전압계 = 두 지점의 높이 차를 재는 도구</b><p>높이 차는 <b>두 지점</b>을 비교해야 알 수 있어요. 그래서 전압계는 재려는 부분의 양 끝에 걸쳐 <b>병렬</b>(길이 갈라지게)로 연결해요. (+)단자는 전지의 (+)극 쪽에 연결해요.</p></div>
+    </div>
+    <p class="reveal" style="font-size:15px;color:var(--muted);margin:0 4px">두 계기 모두 측정값을 모를 때는 <b>(−)단자를 가장 큰 값부터</b> 연결해요. 전류계는 5 A → 500 mA → 50 mA, 전압계는 30 V → 15 V → 3 V 순서예요.</p>
+
+    <details class="pause reveal">
+      <summary><span class="pi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5b4300" stroke-width="2.6" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16.5v.5"/></svg></span>생각 멈춤! 전구가 켜진 회로에서 도선의 양 끝에 전압계를 연결하면 몇 V가 나올까요?<span class="tap">눌러서 확인</span></summary>
+      <div class="ans">거의 <b>0 V</b>예요. 도선은 평평한 수로처럼 높이가 거의 줄지 않아요. 전지가 만든 높이 차는 대부분 전구(저항)에서 내려와요.</div>
+    </details>
+
+    <a class="simlink reveal" data-link="water" target="_blank" rel="noopener" style="background:linear-gradient(120deg,#2f6fd6,#7d5ad6)">
+      <span class="si"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><path d="M2 15c2.5 0 2.5-2 5-2s2.5 2 5 2 2.5-2 5-2 2.5 2 5 2"/><path d="M12 3v7M9 7l3 3 3-3"/></svg></span>
+      <div><b>시뮬레이션: 수로 모형으로 보는 전기 회로</b><span>전압계로 여러 지점의 높이 차를 재고, 한 바퀴 여행을 떠나 봐요</span></div>
+      <svg class="go" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+    </a>
+  </section>
+
+  <section class="part" id="q1">
+    <div class="sec-kick">퀴즈 ① <span class="time">5문항</span></div>
+    <h2>전류와 전압 확인하기</h2>
+    <div class="quiz" data-quiz="q1"></div>
+  </section>
+
+  <!-- ③ 저항 -->
+  <section class="part" id="r3">
+    <div class="sec-kick">읽기 ③ <span class="time">약 4분</span></div>
+    <h2>전류의 흐름을 방해하는 정도, 저항</h2>
+    <article class="card read reveal">
+      <p>같은 전압을 걸어도 물질의 종류나 모양에 따라 전류가 흐르는 정도가 달라요. 전류의 흐름을 방해하는 정도를 <button class="term" data-term="전기 저항">전기 저항</button> 또는 저항이라고 해요.</p>
+      <div class="defn"><span class="k" style="background:var(--R)">저항</span> 전류의 흐름을 방해하는 정도<span class="u">단위 Ω (옴)</span></div>
+      <p><b>1 Ω</b>은 1 V의 전압을 걸었을 때 1 A의 전류가 흐르는 도선의 저항이에요.</p>
+      <div class="fig escene" data-scene="collide">
+        <div class="etog"><button type="button" class="tg" data-m="1" aria-pressed="true">짧고 굵은 도선</button><button type="button" class="tg" data-m="2" aria-pressed="false">길고 가는 도선</button></div>
+        <svg class="esvg" viewBox="0 0 640 250" role="img" aria-label="자유전자가 원자와 충돌하며 움직임을 방해받는 모습"></svg>
+        <div class="cap ecap"></div>
+      </div>
+      <p>저항이 생기는 까닭은 전류가 흐를 때 도선 속에서 이동하는 자유전자들이 <b>원자들과 충돌하면서 움직임에 방해</b>를 받기 때문이에요.</p>
+      <p>물질의 종류가 같을 때는 <mark>길이가 짧고 굵을수록 저항이 작아요.</mark> 넓은 길은 지나가기 편하고, 힘든 길도 짧으면 금방 지나가는 것과 같아요. 수로 모형에서는 물레방아 앞의 통로가 <b>좁을수록</b> 물이 잘 흐르지 못해요.</p>
+    </article>
+  </section>
+
+  <!-- ④ 옴의 법칙 -->
+  <section class="part" id="r4">
+    <div class="sec-kick">읽기 ④ <span class="time">약 8분 · 핵심</span></div>
+    <h2>전압, 전류, 저항의 관계: 옴의 법칙</h2>
+    <article class="card read reveal">
+      <p>집에서 쓰는 전기 기구는 220 V의 전압에서 작동해요. 그런데 선풍기의 바람 세기 버튼을 바꾸면 선풍기에 흐르는 전류의 세기가 변해 날개의 회전 속도가 바뀌어요. 전압, 전류, 저항 사이에는 어떤 관계가 있을까요?</p>
+      <p>니크롬선에 걸리는 전압을 2배, 3배로 높이면 니크롬선에 흐르는 전류의 세기도 2배, 3배가 돼요. 즉 <b>전류의 세기는 전압에 비례</b>해요. 또 전압이 같을 때 저항이 클수록 전류는 약해져요. 즉 <b>전류의 세기는 저항에 반비례</b>해요. 이 관계를 <button class="term" data-term="옴의 법칙">옴의 법칙</button>이라고 해요.</p>
+      <div class="formula"><span class="cI">I</span> = <span class="cV">V</span> ÷ <span class="cR">R</span><span class="eqs">전류의 세기(I) = 전압(V) ÷ 전기 저항(R) &nbsp;·&nbsp; 바꿔 쓰면 <b class="cV">V</b> = <b class="cI">I</b> × <b class="cR">R</b></span></div>
+      <div class="gwrap" id="gwrap">
+        <div class="gcard">
+          <svg id="ohmGraph" viewBox="0 0 600 400" role="img" aria-label="전압과 전류의 관계 그래프. 저항이 작은 니크롬선의 그래프가 더 가파르다."></svg>
+          <div class="gctl"><label for="gRange">전압 <b id="gV">2.0 V</b></label><input type="range" id="gRange" min="0" max="4" step="0.5" value="2" aria-label="니크롬선에 걸리는 전압"></div>
+          <div class="greads">
+            <div style="border-color:#f3b49a"><span style="color:#d0491d">짧은 니크롬선 10 Ω</span><b id="gI1" style="color:#d0491d">0.20 A</b></div>
+            <div style="border-color:#9fd7cf"><span style="color:#1f7f74">긴 니크롬선 20 Ω</span><b id="gI2" style="color:#1f7f74">0.10 A</b></div>
+          </div>
+        </div>
+        <div class="dpanel">
+          <div class="dh">그래프의 기울기가 다른 까닭, 차근차근 알아보기</div>
+          <div class="dstep" data-d="1"><span class="sn">1단계</span>
+            <p><b style="color:#d0491d">짧은 니크롬선(10 Ω)</b>에 걸리는 전압을 1 V씩 높여요. 전류는 <b>0.1 A씩</b> 늘어나요.</p>
+            <table><tr><th>전압(V)</th><td>0</td><td>1</td><td>2</td><td>3</td><td>4</td></tr><tr><th>전류(A)</th><td>0</td><td>0.1</td><td>0.2</td><td>0.3</td><td>0.4</td></tr></table>
+            <p>점들을 이으면 <b>원점을 지나는 직선</b>! 전압이 2배, 3배가 되면 전류도 2배, 3배 → 전류는 전압에 비례해요.</p></div>
+          <div class="dstep" data-d="2"><span class="sn">2단계</span>
+            <p><b style="color:#1f7f74">긴 니크롬선(20 Ω)</b>도 똑같이 해 봐요. 저항이 2배로 커서 전류는 1 V마다 <b>0.05 A씩만</b> 늘어요.</p>
+            <table><tr><th>전압(V)</th><td>0</td><td>1</td><td>2</td><td>3</td><td>4</td></tr><tr><th>전류(A)</th><td>0</td><td>0.05</td><td>0.1</td><td>0.15</td><td>0.2</td></tr></table>
+            <p>이것도 원점을 지나는 직선이지만, 더 <b>완만</b>해요.</p></div>
+          <div class="dstep" data-d="3"><span class="sn">3단계</span>
+            <p><b>같은 전압 2 V</b>에서 비교해 봐요. (아래 슬라이더를 움직여 다른 전압에서도 확인!)</p>
+            <div class="big"><span style="color:#d0491d">10 Ω → 0.2 A</span> &nbsp;·&nbsp; <span style="color:#1f7f74">20 Ω → 0.1 A</span></div>
+            <p>저항이 2배가 되면 전류는 절반! 같은 전압에서 <b>전류는 저항에 반비례</b>해요.</p></div>
+          <div class="dstep" data-d="4"><span class="sn">4단계</span>
+            <p>그래프의 <b>기울기</b>는 "전압이 1 V 늘어날 때 전류가 얼마나 늘어나는가"예요. 그래프의 계단 모양 삼각형을 보세요.</p>
+            <div class="big"><span style="color:#d0491d">10 Ω: 1 V마다 0.1 A</span><br><span style="color:#1f7f74">20 Ω: 1 V마다 0.05 A</span></div>
+            <p>1 V 늘 때 전류가 많이 늘어날수록 그래프가 가팔라요.</p></div>
+          <div class="dstep" data-d="5"><span class="sn">5단계 · 정리</span>
+            <p>옴의 법칙 <b>I = V ÷ R</b>에서, 전압이 1 V 늘어날 때 전류는 <b>1 ÷ R</b>만큼 늘어나요.</p>
+            <div class="big">기울기 = <span class="cI">전류</span> ÷ <span class="cV">전압</span> = 1 ÷ <span class="cR">저항</span></div>
+            <p>그래서 <b>저항이 작을수록 기울기가 커서 그래프가 가파르고</b>, 저항이 클수록 완만해요. 그래프의 기울기만 보고도 어느 쪽 저항이 더 큰지 알 수 있어요!</p></div>
+          <div class="dnav"><button type="button" class="prev" id="dPrev">이전</button><span class="dots" id="dDots"></span><button type="button" class="next" id="dNext">다음 단계</button></div>
+        </div>
+      </div>
+    </article>
+
+    <div class="key-box reveal">
+      <span class="kt">핵심 ② 옴의 법칙의 V는 '그 저항에 걸리는 전압'</span>
+      <p>교과서 실험에서는 <b>"니크롬선에 걸리는 전압"</b>을 바꾸며 전류를 쟀어요. 옴의 법칙의 V는 건전지에 적힌 전압이 아니라, <mark>계산하려는 저항의 양 끝 두 지점 사이의 높이 차</mark>예요. 수로 모형에서는 <b>그 물레방아 위와 아래의 높이 차</b>예요.</p>
+      <p>저항이 1개뿐인 회로에서는 전지가 올린 높이를 그 저항에서 모두 내려오니까, 저항에 걸리는 전압이 전지의 전압과 같아요. 하지만 저항(전구)이 여러 개면 높이를 <b>나눠서</b> 내려오므로, 각 저항에 걸리는 전압은 전지의 전압과 달라요. 그때도 옴의 법칙은 <b>각 저항에 걸린 전압</b>으로 계산해요.</p>
+      <p style="font-size:calc(var(--fs) - 2px);color:#5a4a8a">→ 시뮬레이션의 '저항 2개' 도전 모드에서 직접 확인해 보세요.</p>
+    </div>
+
+    <article class="card read reveal">
+      <h3>계산해 보기</h3>
+      <div class="ex">
+        <div class="e"><b class="cI">전류 구하기</b>저항 10 Ω인 니크롬선에 걸리는 전압이 3 V일 때 흐르는 전류는?<span class="ans">I = 3 V ÷ 10 Ω = 0.3 A (300 mA)</span></div>
+        <div class="e"><b class="cV">전압 구하기</b>저항 20 Ω인 전구에 0.2 A의 전류가 흐를 때, 전구에 걸리는 전압은?<span class="ans">V = 0.2 A × 20 Ω = 4 V</span></div>
+        <div class="e"><b class="cR">저항 구하기</b>니크롬선에 걸리는 전압이 2 V일 때 100 mA가 흘렀다면 저항은?<span class="ans">100 mA = 0.1 A → R = 2 V ÷ 0.1 A = 20 Ω</span></div>
+      </div>
+      <p style="font-size:calc(var(--fs) - 2px);color:var(--muted)">※ 전류가 mA로 주어지면 먼저 A로 바꿔요. 1000 mA = 1 A</p>
+      <h3 style="margin-top:18px">단위 속 과학자</h3>
+      <div class="people">
+        <div class="pp"><div class="u cV">V</div><b>볼타</b><small>1745~1827 · 전압의 단위 볼트(V)</small></div>
+        <div class="pp"><div class="u cI">A</div><b>앙페르</b><small>1775~1836 · 전류의 단위 암페어(A)</small></div>
+        <div class="pp"><div class="u cR">Ω</div><b>옴</b><small>1789~1854 · 저항의 단위 옴(Ω)</small></div>
+      </div>
+    </article>
+
+    <a class="simlink reveal" data-link="lab" target="_blank" rel="noopener" style="background:linear-gradient(120deg,#1f8f55,#2ba36b)">
+      <span class="si"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6M10 3v6L4 19a2 2 0 0 0 2 3h12a2 2 0 0 0 2-3l-6-10V3"/></svg></span>
+      <div><b>가상 실험실: 옴의 법칙</b><span>니크롬선에 걸리는 전압을 바꾸며 전류를 재고 그래프를 그려요</span></div>
+      <svg class="go" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+    </a>
+  </section>
+
+  <section class="part" id="q2">
+    <div class="sec-kick">퀴즈 ② <span class="time">5문항</span></div>
+    <h2>저항과 옴의 법칙 확인하기</h2>
+    <div class="quiz" data-quiz="q2"></div>
+
+    <div class="card result reveal">
+      <div class="ring"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="50" fill="none" stroke="#e7edf3" stroke-width="12"/><circle id="ringArc" cx="60" cy="60" r="50" fill="none" stroke="#2f6fd6" stroke-width="12" stroke-linecap="round" stroke-dasharray="314.16" stroke-dashoffset="314.16" style="transition:stroke-dashoffset 1s"/></svg>
+        <div class="rv"><div><span id="scoreV">0</span><small>/ <span id="scoreT">10</span> 문항</small></div></div></div>
+      <div><h3 id="resTitle">퀴즈를 풀면 결과가 나타나요</h3><p id="resMsg">퀴즈 ①, ②를 모두 풀어 보세요.</p><div class="wlist" id="wlist"></div></div>
+    </div>
+
+    <div class="next">
+      <a data-link="water" target="_blank" rel="noopener" style="background:linear-gradient(140deg,#2f6fd6,#7d5ad6)"><b>수로 모형 시뮬레이션</b><span>높이 차로 전압 이해하기 · 한 바퀴 여행</span></a>
+      <a data-link="lab" target="_blank" rel="noopener" style="background:linear-gradient(140deg,#1f8f55,#2ba36b)"><b>옴의 법칙 가상 실험실</b><span>회로 연결 → 측정 → 그래프 → 저항 구하기</span></a>
+      <a data-link="summary" target="_blank" rel="noopener" style="background:linear-gradient(140deg,#e07a1f,#e8a400)"><b>스스로 정리 · 글쓰기</b><span>개념 짝짓기, 계산 연습, 내 말로 설명하는 글 쓰기</span></a>
+    </div>
+  </section>
+</main>
+<footer class="credit">중2 과학 · 전기와 자기 &nbsp;|&nbsp; 제작 · 성안중학교 이삭 T</footer>
+<div class="pop" id="pop" role="tooltip"></div>
+
+<script>
+/* 공통 도구: 아래 세 블록이 함께 써요 */
+window.RD = {
+  $: (s, r = document) => r.querySelector(s),
+  $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
+  reduce: !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches),
+};
+</script>
+<script>
+/* ===== 블록 1: 기본 기능 · 퀴즈 ===== */
+(() => {
+  'use strict';
+  try {
+  /* ===== 설정: 다른 페이지 주소 ===== */
+  const LINKS = { water: 'sim1-water-circuit.html', lab: 'sim2-ohm-lab.html', summary: 'summary-writing.html' };
+  const flag = (n) => { if (new URLSearchParams(location.search).get(n) === '1') return true; try { return !!(window.frameElement && window.frameElement.dataset[n] === '1'); } catch (e) { return false; } };
+  const EMBED = flag('embed');
+
+  const GLOSSARY = {
+    '전류': '전하의 흐름이에요. 단위는 A(암페어)이고, 1 A = 1000 mA예요.',
+    '자유전자': '특정 원자핵에 묶이지 않고 물질 속을 자유롭게 돌아다닐 수 있는 전자예요.',
+    '전압': '전류를 흐르게 하는 능력이에요. 단위는 V(볼트)예요. 수로 모형의 높이 차에 해당해요.',
+    '전기 저항': '전류의 흐름을 방해하는 정도예요. 단위는 Ω(옴)이에요.',
+    '옴의 법칙': '전류의 세기는 전압에 비례하고 저항에 반비례한다는 법칙이에요. I = V ÷ R',
+  };
+  const QUIZ = {
+    q1: [
+      { type: 'ox', q: '전류의 방향과 전자의 이동 방향은 같다.', answer: false, exp: '<b>X</b> · 전류는 (+)극 → (−)극, 전자는 (−)극 → (+)극으로 서로 반대예요.' },
+      { type: 'ox', q: '전지는 전자를 만들어 전선으로 내보낸다.', answer: false, exp: '<b>X</b> · 전자는 원래 전선 속에 있어요. 전지는 이미 있는 전자를 밀어서 움직이게 해요.' },
+      { type: 'mc', q: '수로 모형에서 전압에 해당하는 것은?', options: ['펌프', '물의 흐름', '수면의 높이 차', '물레방아'], answer: 2, exp: '전압은 <b>수면의 높이 차</b>에 해당해요. 펌프는 전지, 물의 흐름은 전류, 물레방아는 전구(저항)예요.' },
+      { type: 'blank', parts: ['전류계는 회로에 ', 0, '로 연결하고, 전압계는 재려는 부분의 양 끝에 ', 1, '로 연결한다.'], answers: ['직렬', '병렬'], bank: ['병렬', '직렬'], exp: '전류계는 흐르는 양을 세므로 길 중간에 <b>직렬</b>로, 전압계는 두 지점의 높이 차를 재므로 <b>병렬</b>로 연결해요.' },
+      { type: 'mc', q: '1.5 V 건전지 1개에 전구 1개를 연결한 회로를 한 바퀴 돌아 출발점으로 돌아왔을 때, 출발점과의 높이 차(전압)는?', options: ['0 V', '0.75 V', '1.5 V', '3 V'], answer: 0, exp: '전지가 올린 1.5 V만큼 전구에서 내려오므로, 한 바퀴 돌면 <b>높이 차는 0 V</b>예요.' },
+    ],
+    q2: [
+      { type: 'ox', q: '물질의 종류와 굵기가 같으면 길이가 길수록 저항이 크다.', answer: true, exp: '<b>O</b> · 물질의 종류가 같을 때 길이가 짧고 굵을수록 저항이 작아요. 반대로 길수록 커요.' },
+      { type: 'blank', parts: ['옴의 법칙: 전류의 세기는 ', 0, '에 비례하고 ', 1, '에 반비례한다.'], answers: ['전압', '저항'], bank: ['저항', '전압', '전하'], exp: '전류의 세기는 <b>전압</b>에 비례하고 <b>저항</b>에 반비례해요. I = V ÷ R' },
+      { type: 'mc', q: '저항이 10 Ω인 니크롬선에 걸리는 전압이 3 V일 때, 흐르는 전류의 세기는?', options: ['0.03 A', '0.3 A', '3.3 A', '30 A'], answer: 1, exp: 'I = 3 V ÷ 10 Ω = <b>0.3 A</b> (300 mA)예요.' },
+      { type: 'mc', q: '저항이 20 Ω인 전구에 200 mA의 전류가 흐를 때, 전구에 걸리는 전압은?', options: ['0.4 V', '4 V', '10 V', '4000 V'], answer: 1, exp: '200 mA = 0.2 A → V = 0.2 A × 20 Ω = <b>4 V</b>예요. mA를 A로 바꾸는 것을 잊지 마세요!' },
+      { type: 'mc', q: '6 V 전지에 저항 2개를 이어 연결했더니, 저항 1에 걸리는 전압이 2 V였어요. 저항 1이 10 Ω이라면 저항 1에 흐르는 전류는?', options: ['0.6 A (6 V ÷ 10 Ω)', '0.2 A (2 V ÷ 10 Ω)', '5 A (10 Ω ÷ 2 V)', '알 수 없다'], answer: 1, exp: '옴의 법칙의 V는 <b>그 저항에 걸리는 전압</b>이에요. 2 V ÷ 10 Ω = <b>0.2 A</b>. 전지 전압 6 V로 나누면 안 돼요.' },
+    ],
+  };
+
+  const { $, $$ } = window.RD;
+  $$('[data-link]').forEach((a) => {
+    const key = a.dataset.link;
+    a.href = LINKS[key];
+    a.addEventListener('click', (e) => { if (!EMBED) return; e.preventDefault(); parent.postMessage({ type: 'ras-nav', target: key }, '*'); });
+  });
+  $$('[data-go]').forEach((b) => b.addEventListener('click', () => document.getElementById(b.dataset.go).scrollIntoView({ behavior: 'smooth', block: 'start' })));
+  const fsN = $('#fsN'), fsB = $('#fsB');
+  const setBig = (v) => { document.documentElement.classList.toggle('big', v); fsN.setAttribute('aria-pressed', String(!v)); fsB.setAttribute('aria-pressed', String(v)); };
+  fsN.addEventListener('click', () => setBig(false)); fsB.addEventListener('click', () => setBig(true));
+
+  const bar = $('#progress'), steps = $$('.step'), parts = ['r1', 'r2', 'q1', 'r3', 'r4', 'q2'].map((id) => document.getElementById(id));
+  function onScroll() {
+    const h = document.documentElement.scrollHeight - innerHeight;
+    bar.style.width = (h > 0 ? (scrollY / h) * 100 : 0) + '%';
+    let cur = -1; parts.forEach((p, i) => { if (p.getBoundingClientRect().top < innerHeight * 0.4) cur = i; });
+    steps.forEach((s, i) => s.classList.toggle('active', i === cur));
+  }
+  addEventListener('scroll', onScroll, { passive: true }); onScroll();
+  // 스크롤 등장 효과: 화면 감지 기능 없이 위치를 직접 계산해요 (GAS처럼 여러 겹 화면 안에서도 동작)
+  const revs = $$('.reveal');
+  document.documentElement.classList.add('js-reveal');
+  function checkReveal() {
+    const h = window.innerHeight || document.documentElement.clientHeight;
+    if (!h) return;
+    revs.forEach((el) => { if (!el.classList.contains('in')) { const r = el.getBoundingClientRect(); if (r.top < h * 0.92 && r.bottom > 0) el.classList.add('in'); } });
+  }
+  addEventListener('scroll', checkReveal, { passive: true });
+  addEventListener('resize', checkReveal);
+  checkReveal();
+  // 스크롤 신호가 늦거나 오지 않는 환경을 위해 0.25초마다 직접 확인 (모두 나타나면 멈춤)
+  const revTimer = setInterval(() => { checkReveal(); if (revs.every((el) => el.classList.contains('in'))) clearInterval(revTimer); }, 250);
+  // 안전장치: 화면 높이나 위치를 읽지 못하는 환경이면 효과 없이 전부 보여 줘요
+  setTimeout(() => {
+    const h = window.innerHeight || document.documentElement.clientHeight;
+    const blind = !h || revs.every((el) => { const r = el.getBoundingClientRect(); return r.top === 0 && r.height === 0; });
+    if (blind) document.documentElement.classList.remove('js-reveal');
+  }, 1500);
+
+  const pop = $('#pop'); let popFor = null;
+  $$('.term').forEach((t) => t.addEventListener('click', (e) => {
+    e.stopPropagation(); if (popFor === t) return hidePop();
+    pop.innerHTML = `<b>${t.dataset.term}</b>${GLOSSARY[t.dataset.term] || ''}`; pop.classList.add('show');
+    const r = t.getBoundingClientRect(), pw = pop.offsetWidth, ph = pop.offsetHeight;
+    let x = Math.max(scrollX + 10, Math.min(r.left + scrollX + r.width / 2 - pw / 2, scrollX + innerWidth - pw - 10));
+    let y = r.top - ph - 10 < 60 ? r.bottom + scrollY + 10 : r.top + scrollY - ph - 10;
+    pop.style.left = x + 'px'; pop.style.top = y + 'px'; popFor = t;
+  }));
+  function hidePop() { pop.classList.remove('show'); popFor = null; }
+  document.addEventListener('click', hidePop);
+
+  /* 퀴즈 엔진 */
+  const results = {}, ALL = []; let qn = 0;
+  Object.entries(QUIZ).forEach(([sec, list]) => {
+    const host = document.querySelector(`[data-quiz="${sec}"]`);
+    list.forEach((q, i) => {
+      qn += 1; const id = `${sec}-${i}`, label = `문제 ${qn}`; ALL.push({ id, sec, label });
+      const card = document.createElement('article'); card.className = 'card qcard'; card.id = id;
+      card.innerHTML = `<div class="qhead"><span class="qno">${label}</span><span class="qtype">${{ ox: 'O / X', mc: '고르기', blank: '빈칸 채우기' }[q.type]}</span><span class="qstate"></span></div><div class="qbody"></div><div class="exp">${q.exp}</div>`;
+      host.appendChild(card); build(card, q, id);
+    });
+  });
+  $('#scoreT').textContent = ALL.length;
+  function mark(card, id, ok) {
+    results[id] = ok; card.classList.remove('right', 'wrong'); card.classList.add(ok ? 'right' : 'wrong', 'locked');
+    $('.qstate', card).textContent = ok ? '정답' : '다시 보기';
+    if (!ok && !$('.retry', card)) {
+      const r = document.createElement('button'); r.type = 'button'; r.className = 'btn ghost retry'; r.textContent = '다시 풀기';
+      r.addEventListener('click', () => { delete results[id]; card.classList.remove('right', 'wrong', 'locked'); r.remove(); build(card, card._q, id); update(); });
+      card.appendChild(r);
+    }
+    update();
+  }
+  function build(card, q, id) {
+    card._q = q; const body = $('.qbody', card);
+    if (q.type === 'ox') {
+      body.innerHTML = `<p class="qtext">${q.q}</p><div class="ox"><button type="button" class="oxb o" data-v="1">O</button><button type="button" class="oxb x" data-v="0">X</button></div>`;
+      $$('.oxb', body).forEach((b) => b.addEventListener('click', () => { const ok = (b.dataset.v === '1') === q.answer; $$('.oxb', body).forEach((o) => { o.disabled = true; if ((o.dataset.v === '1') === q.answer) o.classList.add('good'); }); if (!ok) b.classList.add('bad'); mark(card, id, ok); }));
+    } else if (q.type === 'mc') {
+      body.innerHTML = `<p class="qtext">${q.q}</p><div class="mc">${q.options.map((o, i) => `<button type="button" class="mcb" data-i="${i}"><span class="k">${'①②③④'[i]}</span>${o}</button>`).join('')}</div>`;
+      $$('.mcb', body).forEach((b) => b.addEventListener('click', () => { const ok = +b.dataset.i === q.answer; $$('.mcb', body).forEach((o, j) => { o.disabled = true; if (j === q.answer) o.classList.add('good'); }); if (!ok) b.classList.add('bad'); mark(card, id, ok); }));
+    } else {
+      const fill = q.answers.map(() => null); let cur = 0;
+      body.innerHTML = `<p class="qtext" style="margin-bottom:6px">알맞은 말을 골라 빈칸을 채워 보세요.</p><p class="sentence">${q.parts.map((p) => typeof p === 'number' ? `<button type="button" class="slot">빈칸 ${p + 1}</button>` : `<span>${p}</span>`).join('')}</p>
+        <div class="bank">${q.bank.slice().sort(() => Math.random() - 0.5).map((w) => `<button type="button" class="chip">${w}</button>`).join('')}</div><button type="button" class="btn primary check" disabled>확인하기</button>`;
+      const slots = $$('.slot', body), chips = $$('.chip', body), check = $('.check', body);
+      const paint = () => { slots.forEach((s, i) => { s.textContent = fill[i] ? fill[i].textContent : `빈칸 ${i + 1}`; s.classList.toggle('filled', !!fill[i]); s.classList.toggle('cur', i === cur && !card.classList.contains('locked')); }); if (check.isConnected) check.disabled = fill.some((f) => !f); };
+      chips.forEach((c) => c.addEventListener('click', () => { if (card.classList.contains('locked')) return; if (fill[cur]) fill[cur].classList.remove('used'); fill[cur] = c; c.classList.add('used'); const n = fill.findIndex((f) => !f); cur = n < 0 ? cur : n; paint(); }));
+      slots.forEach((s, i) => s.addEventListener('click', () => { if (card.classList.contains('locked')) return; if (fill[i]) { fill[i].classList.remove('used'); fill[i] = null; } cur = i; paint(); }));
+      check.addEventListener('click', () => {
+        let ok = true; slots.forEach((s, i) => { const g = fill[i].textContent === q.answers[i]; if (!g) ok = false; s.classList.add(g ? 'good' : 'bad'); s.disabled = true; });
+        chips.forEach((c) => (c.disabled = true)); check.remove(); card.classList.add('locked');
+        if (!ok) body.insertAdjacentHTML('beforeend', `<p class="qtext" style="margin:0;font-size:calc(var(--fs) - 1px);color:#6d4208">정답: ${q.answers.map((a, i) => `빈칸 ${i + 1} <b>${a}</b>`).join(' · ')}</p>`);
+        mark(card, id, ok); paint();
+      });
+      paint();
+    }
+  }
+  function update() {
+    const done = ALL.filter((q) => q.id in results), right = done.filter((q) => results[q.id]);
+    [['q1', 2], ['q2', 5]].forEach(([sec, si]) => steps[si].classList.toggle('done', ALL.filter((q) => q.sec === sec).every((q) => q.id in results)));
+    $('#scoreV').textContent = right.length;
+    $('#ringArc').style.strokeDashoffset = 314.16 * (1 - right.length / ALL.length);
+    const t = $('#resTitle'), m = $('#resMsg'), wl = $('#wlist');
+    if (done.length < ALL.length) { t.textContent = `${ALL.length}문항 중 ${done.length}문항을 풀었어요`; m.textContent = '남은 문제도 풀어 보세요. 틀린 문제는 다시 풀 수 있어요.'; }
+    else if (right.length === ALL.length) { t.textContent = '모두 맞혔어요!'; m.textContent = '이제 시뮬레이션과 가상 실험실에서 직접 확인하고, 스스로 정리해 봐요.'; }
+    else { t.textContent = `${ALL.length}문항 중 ${right.length}문항을 맞혔어요`; m.textContent = '틀린 문제를 눌러 다시 읽고 풀어 보세요.'; }
+    wl.innerHTML = '';
+    ALL.filter((q) => results[q.id] === false).forEach((q) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = `${q.label} 다시 보기`; b.addEventListener('click', () => document.getElementById(q.id).scrollIntoView({ behavior: 'smooth', block: 'center' })); wl.appendChild(b); });
+  }
+  update();
+  window.RD.ok1 = true;
+  } catch (err) { window.RD_err && window.RD_err('기본 기능·퀴즈', err); }
+})();
+</script>
+<script>
+/* ===== 블록 2: 자유전자 장면 ===== */
+(() => {
+  'use strict';
+  const { $, $$, reduce } = window.RD;
+  const NS = 'http://www.w3.org/2000/svg';
+  const mk = (t, a, p) => { const n = document.createElementNS(NS, t); for (const k in a) n.setAttribute(k, a[k]); if (p) p.appendChild(n); return n; };
+  function scene(host) {
+    const kind = host.dataset.scene, svg = $('.esvg', host), cap = $('.ecap', host), btns = $$('.tg', host);
+    let mode = kind === 'drift' ? 0 : 1, atoms = [], els = [], hits = 0, G = null, connected = false, running = false, t = 0, last = 0, hitTxt = null;
+    const geom = () => (kind === 'drift' ? { x: 40, y: 76, w: 560, h: 108 } : mode === 1 ? { x: 120, y: 60, w: 400, h: 136 } : { x: 24, y: 98, w: 592, h: 60 });
+    function arrow(x1, x2, y, col, label, ly) {
+      const dir = x2 > x1 ? 1 : -1;
+      mk('path', { d: `M${x1} ${y} H${x2 - dir * 14}`, stroke: col, 'stroke-width': 5, 'stroke-linecap': 'round' }, svg);
+      mk('path', { d: `M${x2} ${y} L${x2 - dir * 16} ${y - 9} L${x2 - dir * 16} ${y + 9}Z`, fill: col }, svg);
+      const tx = mk('text', { x: (x1 + x2) / 2, y: ly, 'text-anchor': 'middle', style: `font-size:15px;font-weight:900;fill:${col}` }, svg); tx.textContent = label;
+    }
+    function build() {
+      svg.innerHTML = ''; G = geom(); hits = 0;
+      connected = kind === 'collide' || mode === 1;
+      const d = mk('defs', {}, svg);
+      const lg = mk('linearGradient', { id: 'cu-' + kind, x1: 0, y1: 0, x2: 0, y2: 1 }, d);
+      mk('stop', { offset: 0, 'stop-color': '#f7dcc0' }, lg); mk('stop', { offset: .5, 'stop-color': '#f0c9a0' }, lg); mk('stop', { offset: 1, 'stop-color': '#dca876' }, lg);
+      const rg = mk('radialGradient', { id: 'ion-' + kind }, d);
+      mk('stop', { offset: 0, 'stop-color': '#ffe9c9' }, rg); mk('stop', { offset: 1, 'stop-color': '#efb878' }, rg);
+      mk('rect', { x: G.x - 4, y: G.y - 4, width: G.w + 8, height: G.h + 8, rx: Math.min(30, G.h / 2 + 4), fill: '#c98d55', opacity: .35 }, svg);
+      mk('rect', { x: G.x, y: G.y, width: G.w, height: G.h, rx: Math.min(26, G.h / 2), fill: `url(#cu-${kind})`, stroke: '#b07a45', 'stroke-width': 2 }, svg);
+      mk('rect', { x: G.x + 14, y: G.y + 6, width: G.w - 28, height: 5, rx: 2.5, fill: '#fff', opacity: .55 }, svg);
+      if (connected) {
+        mk('rect', { x: G.x - 26, y: G.y + G.h / 2 - 22, width: 24, height: 44, rx: 6, fill: '#e0483e' }, svg);
+        mk('rect', { x: G.x + G.w + 2, y: G.y + G.h / 2 - 22, width: 24, height: 44, rx: 6, fill: '#14263b' }, svg);
+        const a = mk('text', { x: G.x - 14, y: G.y + G.h / 2 + 7, 'text-anchor': 'middle', style: 'font-size:20px;font-weight:900;fill:#fff' }, svg); a.textContent = '+';
+        const b = mk('text', { x: G.x + G.w + 14, y: G.y + G.h / 2 + 7, 'text-anchor': 'middle', style: 'font-size:22px;font-weight:900;fill:#fff' }, svg); b.textContent = '−';
+      }
+      // 원자 (양이온)
+      atoms = [];
+      const sp = kind === 'collide' ? 46 : 56, cols = Math.max(2, Math.round(G.w / sp)), rows = Math.max(1, Math.round(G.h / 46));
+      for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+        const ax = G.x + (c + 0.5 + (r % 2 ? 0.25 : -0.25)) * (G.w / cols), ay = G.y + (r + 0.5) * (G.h / rows);
+        if (ax < G.x + 14 || ax > G.x + G.w - 14) continue;
+        const g = mk('g', {}, svg);
+        const ring = mk('circle', { r: 17, fill: 'none', stroke: '#ff9f1c', 'stroke-width': 3, opacity: 0 }, g);
+        const body = mk('circle', { r: 12, fill: `url(#ion-${kind})`, stroke: '#c98a4a', 'stroke-width': 1.5 }, g);
+        const tx = mk('text', { y: 5, 'text-anchor': 'middle', style: 'font-size:15px;font-weight:900;fill:#a5612a' }, g); tx.textContent = '+';
+        atoms.push({ x: ax, y: ay, g, ring, body, ph: Math.random() * 6.28, flash: 0 });
+      }
+      // 자유전자
+      els = [];
+      const n = kind === 'drift' ? 24 : mode === 1 ? 22 : 12;
+      for (let i = 0; i < n; i++) {
+        const g = mk('g', {}, svg);
+        mk('circle', { r: 11, fill: '#2f6fd6', opacity: .18 }, g);
+        mk('circle', { r: 7.5, fill: '#2f6fd6', stroke: '#fff', 'stroke-width': 1.5 }, g);
+        const tx = mk('text', { y: 4.5, 'text-anchor': 'middle', style: 'font-size:13px;font-weight:900;fill:#fff' }, g); tx.textContent = '−';
+        const a = Math.random() * Math.PI * 2, s = 70 + Math.random() * 60;
+        els.push({ x: G.x + 16 + Math.random() * (G.w - 32), y: G.y + 10 + Math.random() * (G.h - 20), vx: Math.cos(a) * s, vy: Math.sin(a) * s, slow: 0, g });
+      }
+      if (kind === 'drift' && connected) {
+        arrow(G.x + 80, G.x + G.w - 80, G.y - 30, '#e8930a', '', 0);
+        const t1 = mk('text', { x: 320, y: G.y - 44, 'text-anchor': 'middle', style: 'font-size:15px;font-weight:900;fill:#b87400' }, svg); t1.textContent = '전류의 방향: (+)극 → (−)극';
+        arrow(G.x + G.w - 80, G.x + 80, G.y + G.h + 30, '#2f6fd6', '', 0);
+        const t2 = mk('text', { x: 320, y: G.y + G.h + 58, 'text-anchor': 'middle', style: 'font-size:15px;font-weight:900;fill:#2f6fd6' }, svg); t2.textContent = '전자의 이동 방향: (−)극 → (+)극';
+      }
+      if (kind === 'drift' && !connected) {
+        const t1 = mk('text', { x: 320, y: 44, 'text-anchor': 'middle', style: 'font-size:15px;font-weight:900;fill:#5a6b7e' }, svg); t1.textContent = '전지가 없어요 → 자유전자가 제멋대로 움직여요';
+      }
+      if (kind === 'collide') {
+        const t1 = mk('text', { x: 320, y: 30, 'text-anchor': 'middle', style: 'font-size:15px;font-weight:900;fill:#2f6fd6' }, svg); t1.textContent = '자유전자가 (+)극 쪽으로 이동하면서 원자와 부딪혀요';
+        hitTxt = mk('text', { x: 320, y: 236, 'text-anchor': 'middle', style: 'font-size:15px;font-weight:900;fill:#e0483e' }, svg);
+      }
+      btns.forEach((b) => b.setAttribute('aria-pressed', String(+b.dataset.m === mode)));
+      cap.innerHTML = kind === 'drift'
+        ? (mode === 0 ? '<b>전지를 연결하기 전</b>: 자유전자가 이리저리 제멋대로 움직여요. 한쪽으로 이동하는 전하가 없어서 전류가 흐르지 않아요.'
+          : '<b>전지를 연결한 후</b>: 자유전자가 전체적으로 (−)극 쪽에서 (+)극 쪽으로 이동해요. 전류의 방향은 그 반대인 (+)극 → (−)극이에요.')
+        : (mode === 1 ? '<b>짧고 굵은 도선</b>: 지나갈 길이 넓고 짧아서 전자가 비교적 쉽게 빠져나가요 → 저항이 작아요.'
+          : '<b>길고 가는 도선</b>: 길이 좁고 길어서 전자가 원자와 더 자주, 더 오래 부딪혀요 → 저항이 커요.');
+      render();
+    }
+    function step(dt) {
+      t += dt;
+      const vd = connected ? (kind === 'collide' ? 80 : 60) : 0;
+      els.forEach((e) => {
+        const drift = e.slow > 0 ? vd * 0.15 : vd;
+        e.slow = Math.max(0, e.slow - dt);
+        e.x += (e.vx * (connected ? 0.55 : 1) - drift) * dt; e.y += e.vy * (connected ? 0.55 : 1) * dt;
+        if (e.y < G.y + 10) { e.y = G.y + 10; e.vy = Math.abs(e.vy); }
+        if (e.y > G.y + G.h - 10) { e.y = G.y + G.h - 10; e.vy = -Math.abs(e.vy); }
+        if (connected) { if (e.x < G.x + 8) { e.x = G.x + G.w - 10; e.y = G.y + 10 + Math.random() * (G.h - 20); } }
+        else { if (e.x < G.x + 10) { e.x = G.x + 10; e.vx = Math.abs(e.vx); } if (e.x > G.x + G.w - 10) { e.x = G.x + G.w - 10; e.vx = -Math.abs(e.vx); } }
+        if (kind === 'collide') atoms.forEach((a) => {
+          const dx = e.x - a.x, dy = e.y - a.y, d2 = dx * dx + dy * dy;
+          if (d2 < 19 * 19 && d2 > 0.01) {
+            const d = Math.sqrt(d2), nx = dx / d, ny = dy / d;
+            e.x = a.x + nx * 19.5; e.y = a.y + ny * 19.5;
+            const dot = e.vx * nx + e.vy * ny; e.vx -= 2 * dot * nx; e.vy -= 2 * dot * ny;
+            const ang = Math.atan2(e.vy, e.vx) + (Math.random() - .5) * 1.2, s = 70 + Math.random() * 60;
+            e.vx = Math.cos(ang) * s; e.vy = Math.sin(ang) * s;
+            e.slow = 0.45; a.flash = 1; hits++;
+          }
+        });
+      });
+      atoms.forEach((a) => (a.flash = Math.max(0, a.flash - dt * 2.5)));
+    }
+    function render() {
+      const amp = kind === 'collide' ? 1.8 : 1.2;
+      atoms.forEach((a) => {
+        const ox = Math.sin(t * 9 + a.ph) * amp, oy = Math.cos(t * 7 + a.ph) * amp;
+        a.g.setAttribute('transform', `translate(${(a.x + ox).toFixed(1)} ${(a.y + oy).toFixed(1)})`);
+        a.ring.setAttribute('opacity', a.flash.toFixed(2)); a.ring.setAttribute('r', (17 + (1 - a.flash) * 8).toFixed(1));
+      });
+      els.forEach((e) => e.g.setAttribute('transform', `translate(${e.x.toFixed(1)} ${e.y.toFixed(1)})`));
+      if (hitTxt) hitTxt.textContent = `원자와 부딪힌 횟수: ${hits}회`;
+    }
+    function loop(now) {
+      const dt = Math.min(0.05, (now - last) / 1000 || 0); last = now;
+      // 화면에 보일 때만 움직임 계산 (화면 감지 기능 대신 위치를 직접 확인)
+      const r = host.getBoundingClientRect(), h = window.innerHeight || document.documentElement.clientHeight;
+      if (r.bottom > 0 && r.top < h) { step(dt); render(); }
+      requestAnimationFrame(loop);
+    }
+    btns.forEach((b) => b.addEventListener('click', () => { mode = +b.dataset.m; build(); }));
+    build();
+    if (!reduce) { running = true; last = performance.now(); requestAnimationFrame(loop); }
+  }
+  $$('.escene').forEach((host) => { try { scene(host); } catch (err) { window.RD_err && window.RD_err('자유전자 그림', err); } });
+  window.RD.ok2 = true;
+})();
+</script>
+<script>
+/* ===== 블록 3: 그래프 기울기 유도 ===== */
+(() => {
+  'use strict';
+  const { $, $$, reduce } = window.RD;
+  const gsvg = $('#ohmGraph');
+  if (gsvg) try {
+    const X0 = 74, Y0 = 344, GW = 440, GH = 286, IMAX = 0.45;
+    const vx = (v) => X0 + (v / 4) * GW, iy = (i) => Y0 - (i / IMAX) * GH;
+    const drawn = {};
+    let ds = 1, gV = 2;
+    const halo = 'paint-order:stroke;stroke:#f8fafc;stroke-width:5px;stroke-linejoin:round';
+    function line(R, col, key) {
+      const first = !drawn[key]; drawn[key] = true;
+      let s = `<path d="M${vx(0)} ${iy(0)} L${vx(4)} ${iy(4 / R)}" stroke="${col}" stroke-width="${ds === 5 ? 6 : 4.5}" stroke-linecap="round" fill="none" ${first && !reduce ? 'class="drawln"' : ''}/>`;
+      [1, 2, 3, 4].forEach((v, k) => { s += `<circle cx="${vx(v)}" cy="${iy(v / R)}" r="6.5" fill="${col}" stroke="#fff" stroke-width="2.5" ${first && !reduce ? `class="popin" style="animation-delay:${0.25 + k * 0.18}s"` : ''}/>`; });
+      return s;
+    }
+    function drawG() {
+      let s = '<rect width="600" height="400" rx="14" fill="#f8fafc"/>';
+      for (let v = 0; v <= 4; v++) s += `<line x1="${vx(v)}" y1="${Y0}" x2="${vx(v)}" y2="${Y0 - GH}" stroke="#e3e9ef"/><text x="${vx(v)}" y="${Y0 + 22}" text-anchor="middle" style="font-size:14px;font-weight:700;fill:#5a6b7e">${v}</text>`;
+      for (let i = 0; i <= 0.4001; i += 0.1) s += `<line x1="${X0}" y1="${iy(i)}" x2="${X0 + GW}" y2="${iy(i)}" stroke="#e3e9ef"/><text x="${X0 - 10}" y="${iy(i) + 5}" text-anchor="end" style="font-size:14px;font-weight:700;fill:#5a6b7e">${(Math.round(i * 10) / 10).toFixed(1)}</text>`;
+      s += `<line x1="${X0}" y1="${Y0}" x2="${X0 + GW + 8}" y2="${Y0}" stroke="#34495e" stroke-width="2.5"/><line x1="${X0}" y1="${Y0}" x2="${X0}" y2="${Y0 - GH - 8}" stroke="#34495e" stroke-width="2.5"/>`;
+      s += `<text x="${X0 + GW}" y="${Y0 + 46}" text-anchor="end" style="font-size:15px;font-weight:900;fill:#34495e">전압(V)</text><text x="${X0 - 8}" y="${Y0 - GH - 18}" text-anchor="start" style="font-size:15px;font-weight:900;fill:#34495e">전류(A)</text>`;
+      if (ds >= 4) {
+        s += `<path d="M${vx(2)} ${iy(0.2)} H${vx(3)} V${iy(0.3)}" fill="#fbe1d6" fill-opacity=".6" stroke="#d0491d" stroke-width="2.5" stroke-dasharray="6 4"/>`;
+        s += `<text x="${(vx(2) + vx(3)) / 2}" y="${iy(0.2) + 20}" text-anchor="middle" style="font-size:13.5px;font-weight:900;fill:#d0491d;${halo}">1 V</text><text x="${vx(3) + 8}" y="${(iy(0.2) + iy(0.3)) / 2 + 5}" style="font-size:13.5px;font-weight:900;fill:#d0491d;${halo}">0.1 A</text>`;
+        s += `<path d="M${vx(3)} ${iy(0.15)} H${vx(4)} V${iy(0.2)}" fill="#d4efeb" fill-opacity=".7" stroke="#1f7f74" stroke-width="2.5" stroke-dasharray="6 4"/>`;
+        s += `<text x="${(vx(3) + vx(4)) / 2}" y="${iy(0.15) + 20}" text-anchor="middle" style="font-size:13.5px;font-weight:900;fill:#1f7f74;${halo}">1 V</text><text x="${vx(4) + 8}" y="${(iy(0.15) + iy(0.2)) / 2 + 5}" style="font-size:13.5px;font-weight:900;fill:#1f7f74;${halo}">0.05 A</text>`;
+      }
+      if (ds >= 2) s += line(20, '#2a9d8f', 'l2');
+      if (ds >= 1) s += line(10, '#e05a2a', 'l1');
+      s += `<text x="${vx(4) - 10}" y="${iy(0.4) - 14}" text-anchor="end" style="font-size:14.5px;font-weight:900;fill:#d0491d;${halo}">짧은 니크롬선 (10 Ω)</text>`;
+      if (ds >= 2) s += `<text x="${vx(2.5)}" y="${iy(0.075) + 28}" text-anchor="start" style="font-size:14.5px;font-weight:900;fill:#1f7f74;${halo}">긴 니크롬선 (20 Ω)</text>`;
+      // 같은 전압 안내선
+      const gx = vx(gV);
+      s += `<line x1="${gx}" y1="${Y0}" x2="${gx}" y2="${iy(gV / 10) - 6}" stroke="#2f6fd6" stroke-width="2" stroke-dasharray="5 5"/>`;
+      s += `<circle cx="${gx}" cy="${iy(gV / 10)}" r="9" fill="#fff" stroke="#e05a2a" stroke-width="3.5"/>`;
+      if (ds >= 2) s += `<circle cx="${gx}" cy="${iy(gV / 20)}" r="9" fill="#fff" stroke="#2a9d8f" stroke-width="3.5"/>`;
+      gsvg.innerHTML = s;
+      $('#gV').textContent = gV.toFixed(1) + ' V';
+      $('#gI1').textContent = (gV / 10).toFixed(2) + ' A';
+      $('#gI2').textContent = ds >= 2 ? (gV / 20).toFixed(2) + ' A' : '2단계에서 확인';
+    }
+    const steps = $$('.dstep'), dDots = $('#dDots');
+    dDots.innerHTML = steps.map(() => '<i></i>').join('');
+    function setStep(n) {
+      ds = Math.max(1, Math.min(5, n));
+      steps.forEach((el) => el.classList.toggle('on', +el.dataset.d === ds));
+      $$('i', dDots).forEach((d, i) => d.classList.toggle('on', i < ds));
+      $('#dPrev').disabled = ds === 1; $('#dNext').textContent = ds === 5 ? '처음부터' : '다음 단계';
+      if (ds === 3) { gV = 2; $('#gRange').value = 2; }
+      drawG();
+    }
+    $('#dPrev').addEventListener('click', () => setStep(ds - 1));
+    $('#dNext').addEventListener('click', () => { if (ds === 5) { Object.keys(drawn).forEach((k) => delete drawn[k]); setStep(1); } else setStep(ds + 1); });
+    $('#gRange').addEventListener('input', (e) => { gV = parseFloat(e.target.value); drawG(); });
+    setStep(1);
+  } catch (err) { window.RD_err && window.RD_err('그래프', err); }
+  window.RD.ok3 = true;
+})();
+</script>
+</body>
+</html>
