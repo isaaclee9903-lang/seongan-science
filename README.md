@@ -7,5 +7,6 @@ https://isaaclee9903-lang.github.io/seongan-science/
 | 수업 | 학년·단원 | 주소 |
 |---|---|---|
 | 전기는 왜 흐를까? 전류·전압·저항과 옴의 법칙 | 중2 · Ⅶ. 전기와 자기 | `lessons/ohm/` |
+| 전구를 두 개 연결하면? 저항의 직렬연결과 병렬연결 | 중2 · Ⅶ. 전기와 자기 | `lessons/series-parallel/` |
 
 제작 · 성안중학교 이삭 T
