@@ -330,19 +330,20 @@ const C3 = (() => {
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true; controls.dampingFactor = 0.09; controls.enablePan = false;
     controls.rotateSpeed = 0.85; controls.zoomSpeed = 0.9;
+    if (opt.scroll) { controls.enableZoom = false; renderer.domElement.style.touchAction = 'pan-y'; host.style.touchAction = 'pan-y'; }
     controls.minDistance = opt.minD || 4; controls.maxDistance = opt.maxD || 24; controls.maxPolarAngle = Math.PI * 0.86;
 
     const overlay = document.createElement('div'); overlay.className = 'lbls'; host.appendChild(overlay);
     let W = 1, H = 1;
     function resize() {
       const r = host.getBoundingClientRect(); W = Math.max(1, r.width); H = Math.max(1, r.height);
-      renderer.setSize(W, H); camera.aspect = W / H;
+      renderer.setSize(W, H, false); camera.aspect = W / H;
       if (opt.fitWidth) { // 세로 화면에서 장면이 잘리지 않도록 화각을 넓혀요
         const base = opt.fov || 34; camera.fov = camera.aspect < 1.15 ? Math.min(62, base * (1.15 / camera.aspect) * 0.92) : base;
       }
       camera.updateProjectionMatrix();
     }
-    try { new ResizeObserver(resize).observe(host); } catch (e) { addEventListener('resize', resize); }
+    try { let rq = 0; new ResizeObserver(() => { cancelAnimationFrame(rq); rq = requestAnimationFrame(resize); }).observe(host); } catch (e) { addEventListener('resize', resize); }
     resize();
 
     // 이름표(HTML)를 3D 위치에 붙이기
@@ -385,6 +386,7 @@ const C3 = (() => {
     function tick(now) {
       requestAnimationFrame(tick);
       if (!running || !visibleNow()) { last = now; return; }
+      if (opt.scroll) { const hr = host.getBoundingClientRect(); if (hr.bottom < -50 || hr.top > (window.innerHeight || 800) + 50) { last = now; return; } } // 화면 밖이면 쉬기
       const dt = Math.min(0.05, Math.max(0, (now - last) / 1000)); last = now;
       if (fly) {
         fly.k = Math.min(1, fly.k + dt / fly.dur); const e = ease(fly.k);
