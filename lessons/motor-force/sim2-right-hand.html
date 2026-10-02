@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>3D 오른손으로 힘의 방향 찾기</title>
+<script>
+/* 문제 알림: 코드에 오류가 나면 화면 아래에 빨간 상자로 알려 줘요 (선생님 확인용) */
+(function () {
+  function box() {
+    var b = document.getElementById('rhErr');
+    if (!b && document.body) {
+      b = document.createElement('div'); b.id = 'rhErr';
+      b.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;background:#fdecea;color:#8a1f17;border:2px solid #d9534f;border-radius:12px;padding:10px 14px;font:600 14px/1.5 sans-serif;white-space:pre-wrap';
+      document.body.appendChild(b);
+    }
+    return b;
+  }
+  window.RH_err = function (where, err) {
+    var msg = '[' + where + '] ' + (err && err.message ? err.message : String(err));
+    var show = function () { var b = box(); if (b) b.textContent += (b.textContent ? '\n' : '') + msg; };
+    if (document.body) show(); else document.addEventListener('DOMContentLoaded', show);
+  };
+  window.addEventListener('error', function (e) { window.RH_err('스크립트', { message: e.message + ' (줄 ' + e.lineno + ')' }); });
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      var S = window.RH || {};
+      if (!S.okUI) window.RH_err('실행 안 됨', { message: '안내 코드가 실행되지 않았어요. 파일이 끝(</html>)까지 들어 있는지 확인해 주세요.' });
+      if (!S.ok3d) {
+        var f = document.getElementById('fail3d'); if (f) f.classList.add('show');
+        window.RH_err('3D 그림', { message: '3D 그림을 불러오지 못했어요. 인터넷 연결(cdn.jsdelivr.net)을 확인하고 새로고침해 주세요.' });
+      }
+    }, 9000);
+  });
+})();
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+  :root{--bg:#edf3f8;--card:#fff;--ink:#14263b;--ink2:#34495e;--muted:#5a6b7e;--line:#dde6ee;--accent:#0e63b3;--accent-soft:#e3effb;
+    --hd:#c0503a;--hd-soft:#fdeee8;--ok:#1f9d5c;--no:#d9534f;
+    --shadow:0 1px 2px rgba(20,38,59,.06),0 8px 24px rgba(20,38,59,.07);--ease:cubic-bezier(.2,.8,.2,1)}
+  *{box-sizing:border-box}html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:"Pretendard",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  button{font:inherit;color:inherit}
+  .app{max-width:1320px;margin:0 auto;padding:14px 16px 28px;display:flex;flex-direction:column;gap:12px}
+  .eyebrow{display:inline-flex;font-size:13px;font-weight:700;color:var(--hd);background:var(--hd-soft);padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(21px,2.4vw,28px);margin:6px 0 2px;letter-spacing:-.02em;word-break:keep-all}
+  .sub{margin:0;color:var(--muted);font-size:15px;word-break:keep-all}
+  .card{background:var(--card);border-radius:20px;box-shadow:var(--shadow);border:1px solid rgba(20,38,59,.04)}
+  .pad{padding:14px 16px}
+  .stage{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(330px,1fr);gap:14px;align-items:start}
+  .viewer{position:sticky;top:10px}
+  .rule{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px}
+  .rule div{border-radius:12px;padding:8px 10px;color:#fff;font-weight:800;font-size:14px;line-height:1.35;word-break:keep-all}
+  .rule small{display:block;font-weight:700;opacity:.92;font-size:12.5px}
+  .modes{display:flex;gap:6px;margin-bottom:12px}
+  .md{flex:1;min-height:50px;border:0;border-radius:12px;background:#eef3f8;font-weight:800;font-size:15px;color:var(--muted);cursor:pointer}
+  .md[aria-selected="true"]{background:var(--hd);color:#fff}
+  .pane{display:none}.pane.on{display:block;animation:pIn .35s var(--ease)}
+  @keyframes pIn{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:none}}
+  .pane h2{font-size:19px;margin:0 0 6px;letter-spacing:-.01em;word-break:keep-all}
+  .goal{font-size:15px;color:var(--ink2);line-height:1.65;margin:0 0 10px;word-break:keep-all}
+  .gs{background:#fff;border:2px solid #f0d5cc;border-radius:16px;padding:12px 14px;min-height:150px}
+  .gs .sn{display:inline-block;font-size:12.5px;font-weight:900;color:#fff;background:var(--hd);border-radius:999px;padding:2px 10px;margin-bottom:6px}
+  .gs p{margin:0;font-size:16px;line-height:1.75;color:var(--ink2);word-break:keep-all}
+  .dots{display:flex;gap:6px;justify-content:center;margin:10px 0 0}
+  .dots i{width:10px;height:10px;border-radius:50%;background:#dfe6ee}.dots i.on{background:var(--hd)}
+  .acts{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+  .btn{min-height:50px;border:0;border-radius:14px;padding:0 16px;font-weight:800;font-size:15.5px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;justify-content:center;word-break:keep-all}
+  .btn:active{transform:scale(.97)}
+  .btn.primary{background:var(--hd);color:#fff}.btn.ghost{background:#eef3f8;color:var(--ink2)}
+  .btn:disabled{opacity:.4;cursor:default;transform:none}
+  .q{font-weight:800;font-size:16px;line-height:1.6;margin:8px 0 8px;word-break:keep-all}
+  .cands{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .cd{min-height:60px;border-radius:14px;border:2px solid #d4dee8;background:#fff;font-weight:900;font-size:22px;cursor:pointer;color:#4b5b6c}
+  .cd.good{border-color:var(--ok);background:#e8f7ef;color:#11703f}.cd.bad{border-color:var(--no);background:#fdecea;color:#b33a35}
+  .cd:disabled{cursor:default}
+  .fb{margin-top:10px;padding:12px 14px;border-radius:14px;font-size:15px;line-height:1.65;word-break:keep-all;display:none}
+  .fb.show{display:block;animation:pIn .35s var(--ease)}
+  .fb.ok{background:#e8f7ef;color:#0f5a36}.fb.no{background:#fff5e6;color:#7a4508}.fb.info{background:#eef3fb;color:#1d3f66}
+  .score{display:flex;gap:16px;align-items:center;margin-top:12px;font-size:14px;font-weight:700;color:var(--muted)}
+  .score b{color:var(--ink);font-size:20px}
+  .prog{display:flex;gap:4px;margin-top:10px}
+  .prog i{flex:1;height:8px;border-radius:4px;background:#e6edf4}.prog i.r{background:var(--ok)}.prog i.w{background:#f2b8a8}.prog i.c{background:#b9c6d3}
+  .free{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .free .btn{width:100%}
+  .now{margin-top:12px;background:#f7fafc;border-radius:14px;padding:12px 14px;font-size:15px;line-height:1.8;word-break:keep-all}
+  .now b{font-weight:900}
+  .cB{color:#0f87ad}.cI{color:#23913b}.cF{color:#d9441d}
+  .credit{text-align:center;font-size:13px;font-weight:700;color:#8495a8;letter-spacing:.02em;margin:6px 0 0}
+  /* ===== 3D 화면 공통 ===== */
+  :root{--Bc:#14a5d0;--Ic:#2fae4a;--Fc:#f0522a;--N:#d8433b;--S:#2f62c9;--P:#7d5ad6}
+  .viewer{position:relative;overflow:hidden;padding:0}
+  .gl-host{position:relative;width:100%;height:min(74vh,700px);min-height:380px;background:linear-gradient(#f6f9fc,#d6e3ef);touch-action:none}
+  .gl-host canvas.gl{display:block;width:100%;height:100%;outline:none}
+  .lbls{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+  .lb{position:absolute;left:0;top:0;white-space:nowrap;font-weight:800;font-size:14px;padding:3px 9px;border-radius:9px;background:rgba(255,255,255,.88);color:#34495e;box-shadow:0 2px 8px rgba(20,38,59,.14);will-change:transform}
+  .lb.small{font-size:12px;font-weight:700;color:#5a6b7e;background:rgba(255,255,255,.72);box-shadow:none}
+  .lb.B{background:var(--Bc);color:#fff}.lb.I{background:var(--Ic);color:#fff}.lb.F{background:var(--Fc);color:#fff;font-size:15px}
+  .lb.P{background:var(--P);color:#fff}
+  .lb.dim{opacity:.35}
+  .vt{position:absolute;display:flex;gap:6px;flex-wrap:wrap;z-index:3}
+  .vt.tl{left:10px;top:10px;max-width:calc(100% - 20px)}
+  .vt.tr{right:10px;top:10px;justify-content:flex-end}
+  .vt.bl{left:10px;bottom:10px;align-items:center}
+  .vb{min-height:44px;padding:0 12px;border-radius:12px;border:1px solid rgba(20,38,59,.12);background:rgba(255,255,255,.9);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);font-weight:800;font-size:14px;color:#34495e;cursor:pointer;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 10px rgba(20,38,59,.08)}
+  .vb:active{transform:scale(.96)}
+  .vb .dot{width:12px;height:12px;border-radius:50%;flex:none}
+  .vb[aria-pressed="false"]{opacity:.62}
+  .vb[aria-pressed="false"] .dot{background:#c2ccd6!important}
+  .vb.sel{background:#14263b;color:#fff;border-color:#14263b}
+  .hint{font-size:12.5px;font-weight:700;color:#5a6b7e;background:rgba(255,255,255,.78);border-radius:10px;padding:6px 10px;word-break:keep-all}
+  .inset{position:absolute;z-index:2;border-radius:18px;border:2px solid rgba(255,255,255,.95);box-shadow:0 10px 30px rgba(20,38,59,.22),inset 0 0 0 1px rgba(20,38,59,.08);pointer-events:none;display:none}
+  .inset.on{display:block}
+  .inset .it{position:absolute;left:8px;top:8px;font-size:12.5px;font-weight:900;color:#14263b;background:rgba(255,255,255,.9);border-radius:8px;padding:3px 8px}
+  .inset .ic{position:absolute;left:6px;right:6px;bottom:6px;display:flex;flex-wrap:wrap;gap:4px;justify-content:center}
+  .inset .ic span{font-size:11.5px;font-weight:800;color:#fff;border-radius:7px;padding:2px 7px;white-space:nowrap}
+  .fail3d{position:absolute;inset:0;display:none;place-items:center;text-align:center;padding:24px;font-size:16px;font-weight:700;color:#7a2a22;line-height:1.7;word-break:keep-all;background:#fff4f2}
+  .fail3d.show{display:grid}
+  .model{font-size:13px;color:var(--muted);text-align:right;margin:0;word-break:keep-all}
+  @media (max-width:900px){.gl-host{height:min(56vh,620px)}}
+  .lb.cand{background:#5f6f80;color:#fff;font-size:15px;min-width:30px;text-align:center;border-radius:50%;padding:4px 8px;pointer-events:auto}
+  .lb.cand.good{background:var(--ok)}.lb.cand.bad{background:var(--no)}
+  @media (max-width:900px){.stage{grid-template-columns:1fr}.viewer{position:relative;top:0}}
+  @media (max-width:520px){.rule{grid-template-columns:1fr}.cands{grid-template-columns:repeat(2,1fr)}}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }
+</script>
+</head>
+<body>
+<div class="app">
+  <header>
+    <span class="eyebrow">중2 과학 · 전기와 자기 · 3D 연습</span>
+    <h1>오른손으로 힘의 방향 찾기 (그림 Ⅶ-14)</h1>
+    <p class="sub">자석 사이에 놓인 전선에 전류가 흐를 때 전선이 받는 힘의 방향을 3D 손으로 찾아봐요. 직접 오른손을 들고 따라 해 보세요.</p>
+  </header>
+
+  <div class="stage">
+    <section class="card viewer">
+      <div class="gl-host" id="host">
+        <div class="vt tl" id="views" role="group" aria-label="보는 방향">
+          <button class="vb sel" type="button" data-v="tilt">비스듬히</button>
+          <button class="vb" type="button" data-v="front">앞에서</button>
+          <button class="vb" type="button" data-v="top">위에서</button>
+          <button class="vb" type="button" data-v="side">옆에서</button>
+        </div>
+        <div class="vt tr" id="layers" role="group" aria-label="보이기">
+          <button class="vb" type="button" data-l="B" aria-pressed="true"><span class="dot" style="background:var(--Bc)"></span>자기장</button>
+          <button class="vb" type="button" data-l="H" aria-pressed="true"><span class="dot" style="background:#eebc97"></span>오른손</button>
+        </div>
+        <div class="vt bl"><span class="hint">한 손가락: 돌리기 · 두 손가락: 확대</span></div>
+        <div class="fail3d" id="fail3d">3D 그림을 불러오지 못했어요.<br>인터넷 연결을 확인하고 새로고침해 주세요.</div>
+      </div>
+    </section>
+
+    <section class="card pad">
+      <div class="rule">
+        <div style="background:var(--Bc)">네 손가락<small>자기장 방향 (N극 → S극)</small></div>
+        <div style="background:var(--Ic)">엄지손가락<small>전류 방향</small></div>
+        <div style="background:var(--Fc)">손바닥이 향하는 방향<small>힘의 방향</small></div>
+      </div>
+      <div class="modes" role="tablist">
+        <button class="md" role="tab" type="button" data-m="guide" aria-selected="true">따라 하기</button>
+        <button class="md" role="tab" type="button" data-m="quiz" aria-selected="false">문제 풀기</button>
+        <button class="md" role="tab" type="button" data-m="free" aria-selected="false">자유 실험</button>
+      </div>
+
+      <div class="pane on" data-m="guide">
+        <h2>3단계로 오른손 맞추기</h2>
+        <p class="goal">교과서 그림 Ⅶ-16의 확대 그림처럼, 자석 사이에 놓인 전선의 힘의 방향을 찾아봐요.</p>
+        <div class="gs" id="gs"></div>
+        <div class="dots" id="gdots"></div>
+        <div class="acts"><button class="btn ghost" id="gP" type="button">이전</button><button class="btn primary" id="gN" type="button">다음</button><button class="btn ghost" id="gMe" type="button">내 손처럼 돌려 보기</button></div>
+        <div class="fb info" id="fbG"></div>
+      </div>
+
+      <div class="pane" data-m="quiz">
+        <h2>힘의 방향 고르기 · 8문제</h2>
+        <p class="goal">장치를 돌려 보며 생각해요. 회색 화살표 ①~④ 중 전선이 받는 힘의 방향을 골라요. 화살표를 직접 눌러도 돼요.</p>
+        <div class="cands" id="cands"></div>
+        <div class="acts"><button class="btn ghost" id="qHint" type="button">오른손으로 확인하기</button><button class="btn primary" id="qNext" type="button" disabled>다음 문제</button></div>
+        <div class="fb" id="fbQ"></div>
+        <div class="prog" id="prog"></div>
+        <div class="score"><span>맞힌 문제 <b id="sc">0</b> / 8</span><span id="tries"></span></div>
+      </div>
+
+      <div class="pane" data-m="free">
+        <h2>자유 실험</h2>
+        <p class="goal">자석과 전류를 마음대로 바꾸고, 힘의 방향이 어떻게 바뀌는지 손과 함께 확인해요.</p>
+        <div class="free">
+          <button class="btn ghost" type="button" data-f="pole">N극·S극 바꾸기</button>
+          <button class="btn ghost" type="button" data-f="cur">전류 방향 바꾸기</button>
+          <button class="btn ghost" type="button" data-f="mag">자석 돌려 놓기</button>
+          <button class="btn ghost" type="button" data-f="wire">전선 돌려 놓기</button>
+        </div>
+        <div class="acts"><button class="btn ghost" type="button" id="fMe">내 손처럼 돌려 보기</button><button class="btn ghost" type="button" id="fReset">처음으로</button></div>
+        <div class="now" id="now"></div>
+      </div>
+    </section>
+  </div>
+  <p class="model">화살표 길이는 개념 이해를 위한 모형이에요. 자석 사이의 자기장은 하늘색 화살표로 나타냈어요.</p>
+  <p class="credit">중2 과학 · 전기와 자기 &nbsp;|&nbsp; 제작 · 성안중학교 이삭 T</p>
+</div>
+
+<script>
+/* ===== 블록 1: 안내·문제 (3D 그림과 RH.view로 주고받아요) ===== */
+window.RH = window.RH || {};
+(() => {
+  'use strict';
+  try {
+    const S = window.RH;
+    const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+    const v3 = () => S.view || null;
+    const fb = (id, cls, html) => { const f = $(id); f.className = 'fb show ' + cls; f.innerHTML = html; };
+    const AX = { '+x': [1, 0, 0], '-x': [-1, 0, 0], '+y': [0, 1, 0], '-y': [0, -1, 0], '+z': [0, 0, 1], '-z': [0, 0, -1] };
+    const WORD = { '+x': '오른쪽', '-x': '왼쪽', '+y': '위', '-y': '아래', '+z': '앞(보는 사람 쪽)', '-z': '뒤' };
+    const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+    const key = (v) => Object.keys(AX).find((k) => AX[k].every((c, i) => Math.abs(c - v[i]) < 0.01));
+
+    // 상태: b = 자기장 방향(N극 → S극), i = 전류 방향 (처음 보는 방향 기준)
+    const st = S.state = { mode: 'guide', b: '-x', i: '+z', showB: true, showH: true };
+
+    // 보는 방향·보이기
+    $$('#views .vb').forEach((b) => b.addEventListener('click', () => { const V = v3(); if (V) V.view(b.dataset.v); }));
+    S.markView = (k) => $$('#views .vb').forEach((b) => b.classList.toggle('sel', b.dataset.v === k));
+    function syncLayers() { $$('#layers .vb').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.l === 'B' ? st.showB : st.showH))); }
+    $$('#layers .vb').forEach((b) => b.addEventListener('click', () => { if (b.dataset.l === 'B') st.showB = !st.showB; else st.showH = !st.showH; syncLayers(); const V = v3(); if (V) V.layers(st.showB, st.showH); }));
+
+    // 모드
+    function setMode(m) {
+      st.mode = m;
+      $$('.md').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.m === m)));
+      $$('.pane').forEach((p) => p.classList.toggle('on', p.dataset.m === m));
+      if (m === 'guide') { st.b = '-x'; st.i = '+z'; gi = 0; renderGuide(); }
+      if (m === 'quiz') { qi = 0; score = 0; results.length = 0; newQ(); }
+      if (m === 'free') { const V = v3(); if (V) { V.setConfig(st.b, st.i); V.handPose('final'); V.force(true); V.cands(null); } renderNow(); }
+    }
+    $$('.md').forEach((b) => b.addEventListener('click', () => setMode(b.dataset.m)));
+
+    // 1) 따라 하기
+    const G = [
+      { t: '자기장의 방향 찾기', p: '자기장의 방향은 <b class="cB">N극에서 S극 쪽</b>이에요(나침반 바늘의 N극이 가리키는 방향). 하늘색 화살표를 보세요. 전선에는 <b class="cI">초록색 화살표 방향</b>으로 전류가 흘러요.', pose: 'start', f: false },
+      { t: '1단계 · 네 손가락 = 자기장', p: '오른손의 <b class="cB">네 손가락을 자기장 방향</b>으로 향하게 해요. 손가락이 S극 쪽을 가리켜요.', pose: 'fingers', f: false },
+      { t: '2단계 · 엄지손가락 = 전류', p: '손가락 방향은 그대로 두고 손목을 돌려 <b class="cI">엄지손가락을 전류 방향</b>으로 향하게 해요.', pose: 'final', f: false },
+      { t: '3단계 · 손바닥 = 힘', p: '이때 <b class="cF">손바닥이 향하는 방향이 힘의 방향</b>이에요. 이 전선은 <b>아래쪽</b>으로 힘을 받아요. 교과서 그림 Ⅶ-16 왼쪽 확대 그림과 같아요.', pose: 'final', f: true },
+      { t: '직접 해 보기', p: '<b>내 손처럼 돌려 보기</b>를 누르면 장치가 돌아가 손등이 나를 보게 돼요. 내 오른손을 화면 속 손과 똑같이 들어 보세요. 손가락은 위, 엄지는 왼쪽, 손바닥은 화면 안쪽을 향해요.', pose: 'final', f: true },
+    ];
+    let gi = 0;
+    function renderGuide() {
+      const g = G[gi];
+      $('#gs').innerHTML = `<span class="sn">${g.t}</span><p>${g.p}</p>`;
+      $('#gdots').innerHTML = G.map((_, i) => `<i class="${i === gi ? 'on' : ''}"></i>`).join('');
+      $('#gP').disabled = gi === 0; $('#gN').disabled = gi === G.length - 1;
+      $('#fbG').className = 'fb info';
+      const V = v3(); if (V) { V.setConfig(st.b, st.i); V.handPose(g.pose); V.force(g.f); V.cands(null); }
+    }
+    $('#gP').addEventListener('click', () => { gi = Math.max(0, gi - 1); renderGuide(); });
+    $('#gN').addEventListener('click', () => { gi = Math.min(G.length - 1, gi + 1); renderGuide(); });
+    $('#gMe').addEventListener('click', () => {
+      if (gi < 3) { gi = 3; renderGuide(); }
+      const V = v3(); if (V) V.likeMe();
+      fb('#fbG', 'info', '지금 화면 속 손은 내 오른손을 들어 손바닥을 앞으로 내민 모습이에요. 장치가 돌아가도 <b>세 방향의 관계</b>는 그대로예요. 다시 돌려 보려면 위의 보는 방향 버튼을 눌러요.');
+    });
+
+    // 2) 문제 풀기
+    const N = 8, results = []; let qi = 0, score = 0, cur = null, tries = 0, last = '';
+    function newQ() {
+      const V = v3();
+      let b, i;
+      do {
+        const ks = Object.keys(AX); b = ks[Math.floor(Math.random() * 6)];
+        const perp = ks.filter((k) => Math.abs(AX[k].reduce((s, c, j) => s + c * AX[b][j], 0)) < 0.01);
+        i = perp[Math.floor(Math.random() * perp.length)];
+      } while (b + i === last);
+      last = b + i; st.b = b; st.i = i; tries = 0;
+      const f = key(cross(AX[i], AX[b]));
+      // 후보: 전선에 수직인 네 방향(힘 방향 2개 + 자기장 방향 2개)
+      const opts = [f, key(AX[f].map((c) => -c)), b, key(AX[b].map((c) => -c))].sort(() => Math.random() - 0.5);
+      cur = { b, i, f, opts };
+      $('#cands').innerHTML = opts.map((o, k) => `<button class="cd" type="button" data-k="${k}">${'①②③④'[k]}</button>`).join('');
+      $$('#cands .cd').forEach((c) => c.addEventListener('click', () => answer(+c.dataset.k)));
+      $('#qNext').disabled = true; $('#fbQ').className = 'fb';
+      if (V) { V.setConfig(b, i); V.handPose('hidden'); V.force(false); V.cands(opts.map((o) => AX[o])); }
+      renderProg();
+    }
+    S.pickCand = (k) => { if (st.mode === 'quiz') answer(k); };
+    function answer(k) {
+      if (!cur || $('#qNext').disabled === false) return;
+      const ok = cur.opts[k] === cur.f, btn = $$('#cands .cd')[k], V = v3();
+      tries++;
+      if (ok) {
+        btn.classList.add('good'); $$('#cands .cd').forEach((c) => (c.disabled = true));
+        if (tries === 1) score++;
+        results[qi] = tries === 1 ? 'r' : 'c';
+        fb('#fbQ', 'ok', `정답! <b class="cB">네 손가락 → 자기장</b>, <b class="cI">엄지 → 전류</b>로 맞추면 <b class="cF">손바닥이 ${'①②③④'[k]} 방향</b>을 향해요.`);
+        if (V) { V.markCand(k, true); V.handPose('final'); V.force(true); }
+        $('#qNext').disabled = false; $('#qNext').textContent = qi === N - 1 ? '결과 보기' : '다음 문제';
+      } else {
+        btn.classList.add('bad'); btn.disabled = true; results[qi] = 'w';
+        const isB = cur.opts[k] === cur.b || cur.opts[k] === key(AX[cur.b].map((c) => -c));
+        fb('#fbQ', 'no', isB ? '그 화살표는 <b class="cB">자기장</b>과 나란한 방향이에요. 힘의 방향은 자기장 방향도, 전류 방향도 아닌 다른 방향이에요. <b>오른손으로 확인하기</b>를 눌러 보세요.' : '반대쪽이에요. 오른손의 <b class="cB">네 손가락</b>과 <b class="cI">엄지</b>를 다시 맞춰 보세요.');
+        if (V) V.markCand(k, false);
+      }
+      $('#sc').textContent = score; renderProg();
+    }
+    $('#qHint').addEventListener('click', () => { const V = v3(); if (V) V.handPose('animate'); });
+    $('#qNext').addEventListener('click', () => {
+      qi++;
+      if (qi >= N) {
+        fb('#fbQ', score >= 6 ? 'ok' : 'info', `8문제 중 <b>${score}문제</b>를 한 번에 맞혔어요. ${score >= 6 ? '오른손 방법을 잘 익혔어요!' : '따라 하기를 한 번 더 보고 다시 도전해 봐요.'} <button class="btn primary" type="button" id="qAgain" style="margin-top:8px">다시 풀기</button>`);
+        $('#qAgain').addEventListener('click', () => setMode('quiz'));
+        $('#qNext').disabled = true; return;
+      }
+      newQ();
+    });
+    function renderProg() { $('#prog').innerHTML = Array.from({ length: N }, (_, k) => `<i class="${results[k] || ''}"></i>`).join(''); $('#tries').textContent = qi < N ? `${qi + 1}번째 문제` : ''; }
+
+    // 3) 자유 실험
+    function renderNow() {
+      const f = key(cross(AX[st.i], AX[st.b]));
+      $('#now').innerHTML = `처음 보는 방향 기준으로<br><b class="cB">자기장</b>: ${WORD[st.b]} 쪽 · <b class="cI">전류</b>: ${WORD[st.i]} 쪽<br>→ <b class="cF">힘</b>: ${WORD[f]} 쪽`;
+    }
+    $$('[data-f]').forEach((b) => b.addEventListener('click', () => {
+      const t = b.dataset.f, neg = (k) => key(AX[k].map((c) => -c));
+      if (t === 'pole') st.b = neg(st.b);
+      if (t === 'cur') st.i = neg(st.i);
+      if (t === 'wire') st.i = key(cross(AX[st.b], AX[st.i]));
+      if (t === 'mag') { const nb = key(cross(AX[st.i], AX[st.b])); st.b = nb; }
+      const V = v3(); if (V) { V.setConfig(st.b, st.i); V.handPose('final'); V.force(true); }
+      renderNow();
+    }));
+    $('#fMe').addEventListener('click', () => { const V = v3(); if (V) V.likeMe(); });
+    $('#fReset').addEventListener('click', () => { st.b = '-x'; st.i = '+z'; const V = v3(); if (V) { V.setConfig(st.b, st.i); V.view('tilt'); } renderNow(); });
+
+    S.start = () => { syncLayers(); renderGuide(); };
+    syncLayers(); renderGuide();
+    S.okUI = true;
+  } catch (err) { window.RH_err('안내·문제', err); }
+})();
+</script>
+
+<script type="module">
+/* ===== 블록 2: 3D 장면 ===== */
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+/* ===== 공통 3D 도구 (three.js) =====
+   화살표 색은 교과서 그림 Ⅶ-14~16과 같게: 자기장 하늘색, 전류 초록색, 힘 빨간(주황)색.
+   화살표 길이·움직이는 정도는 개념 이해를 위한 모형이에요(숫자 없음). */
+const C3 = (() => {
+  const COL = { B: 0x14a5d0, I: 0x2fae4a, F: 0xf0522a, N: 0xd8433b, S: 0x2f62c9, Cu: 0xc0703a, P: 0x7d5ad6 };
+  const REDUCE = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const V = (x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z);
+  const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+
+  // 탭 껍데기에서 보이지 않는 탭이면 그리지 않아요(태블릿 배터리 아끼기)
+  function visibleNow() {
+    if (document.hidden) return false;
+    try { const f = window.frameElement; if (f && f.hasAttribute('data-page') && !f.classList.contains('on')) return false; } catch (e) {}
+    return true;
+  }
+
+  function canvasTex(w, h, draw) {
+    const c = document.createElement('canvas'); c.width = w; c.height = h;
+    draw(c.getContext('2d'), w, h);
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
+    t.userData.canvas = c; return t;
+  }
+  function gradientBg(top, bottom) {
+    return canvasTex(4, 256, (g, w, h) => { const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, top); gr.addColorStop(1, bottom); g.fillStyle = gr; g.fillRect(0, 0, w, h); });
+  }
+  // 극 표시(N, S) 글자 판
+  function letterTex(ch, bg) {
+    return canvasTex(256, 256, (g, w, h) => {
+      g.fillStyle = bg; g.fillRect(0, 0, w, h);
+      g.fillStyle = 'rgba(255,255,255,.96)'; g.font = '900 190px Pretendard, Arial, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.fillText(ch, w / 2, h / 2 + 10);
+    });
+  }
+  // 나뭇결 책상
+  function woodTex() {
+    const t = canvasTex(1024, 512, (g, w, h) => {
+      const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#c99a6b'); gr.addColorStop(1, '#b8875a'); g.fillStyle = gr; g.fillRect(0, 0, w, h);
+      for (let i = 0; i < 160; i++) {
+        const y = Math.random() * h, a = 0.04 + Math.random() * 0.08; g.strokeStyle = `rgba(${90 + Math.random() * 40},${55 + Math.random() * 25},30,${a})`;
+        g.lineWidth = 1 + Math.random() * 3; g.beginPath(); g.moveTo(0, y);
+        for (let x = 0; x <= w; x += 32) g.lineTo(x, y + Math.sin(x / 90 + i) * 4 + Math.sin(x / 23) * 1.2);
+        g.stroke();
+      }
+    });
+    t.wrapS = t.wrapT = THREE.RepeatWrapping; return t;
+  }
+  // 바닥에 드리우는 부드러운 그림자
+  function blobTex() {
+    return canvasTex(256, 256, (g, w, h) => { const r = g.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2); r.addColorStop(0, 'rgba(20,38,59,.32)'); r.addColorStop(1, 'rgba(20,38,59,0)'); g.fillStyle = r; g.fillRect(0, 0, w, h); });
+  }
+
+  /* 무대: 렌더러·카메라·조명·손가락 조작 */
+  function makeStage(host, opt = {}) {
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = opt.exposure || 1.05;
+    renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.domElement.className = 'gl';
+    host.appendChild(renderer.domElement);
+    const scene = new THREE.Scene();
+    scene.background = gradientBg(opt.top || '#f6f9fc', opt.bottom || '#d6e3ef');
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    scene.environment = pmrem.fromScene(new RoomEnvironment(renderer), 0.04).texture;
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x8a9bb0, 0.55));
+    const sun = new THREE.DirectionalLight(0xffffff, 1.6);
+    sun.position.set(opt.sunX || 5, 11, opt.sunZ || 7); sun.castShadow = true;
+    sun.shadow.mapSize.set(1024, 1024); sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.02;
+    const sc = sun.shadow.camera; sc.left = -9; sc.right = 9; sc.top = 9; sc.bottom = -9; sc.near = 1; sc.far = 40;
+    scene.add(sun);
+    const camera = new THREE.PerspectiveCamera(opt.fov || 34, 1, 0.1, 200);
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true; controls.dampingFactor = 0.09; controls.enablePan = false;
+    controls.rotateSpeed = 0.85; controls.zoomSpeed = 0.9;
+    controls.minDistance = opt.minD || 4; controls.maxDistance = opt.maxD || 24; controls.maxPolarAngle = Math.PI * 0.86;
+
+    const overlay = document.createElement('div'); overlay.className = 'lbls'; host.appendChild(overlay);
+    let W = 1, H = 1;
+    function resize() {
+      const r = host.getBoundingClientRect(); W = Math.max(1, r.width); H = Math.max(1, r.height);
+      renderer.setSize(W, H); camera.aspect = W / H;
+      if (opt.fitWidth) { // 세로 화면에서 장면이 잘리지 않도록 화각을 넓혀요
+        const base = opt.fov || 34; camera.fov = camera.aspect < 1.15 ? Math.min(62, base * (1.15 / camera.aspect) * 0.92) : base;
+      }
+      camera.updateProjectionMatrix();
+    }
+    try { new ResizeObserver(resize).observe(host); } catch (e) { addEventListener('resize', resize); }
+    resize();
+
+    // 이름표(HTML)를 3D 위치에 붙이기
+    const labels = [];
+    function label(html, cls, at) {
+      const el = document.createElement('div'); el.className = 'lb ' + (cls || ''); el.innerHTML = html; overlay.appendChild(el);
+      const L = { el, at, show: true, set(h) { el.innerHTML = h; } };
+      labels.push(L); return L;
+    }
+    const tmp = V();
+    function placeLabels() {
+      labels.forEach((L) => {
+        if (!L.show) { L.el.style.display = 'none'; return; }
+        const p = typeof L.at === 'function' ? L.at() : L.at;
+        if (!p) { L.el.style.display = 'none'; return; }
+        tmp.copy(p).project(camera);
+        if (tmp.z > 1 || tmp.z < -1) { L.el.style.display = 'none'; return; }
+        const px = ((tmp.x + 1) / 2) * W, py = ((1 - tmp.y) / 2) * H;
+        // 작은 창(오른손 등)에 가려지는 이름표는 숨겨요
+        if (insets.some((I) => I.on && I.last && px > I.last.x - 30 && px < I.last.x + I.last.w + 30 && py > I.last.y - 12 && py < I.last.y + I.last.h + 12)) { L.el.style.display = 'none'; return; }
+        L.el.style.display = '';
+        L.el.style.transform = `translate(${px}px,${py}px) translate(-50%,-50%)`;
+      });
+    }
+
+    // 카메라 이동
+    let fly = null;
+    controls.addEventListener('start', () => { fly = null; });
+    function flyTo(pos, target, dur = 1.1) {
+      if (REDUCE || dur <= 0) { camera.position.copy(pos); controls.target.copy(target); controls.update(); return; }
+      fly = { p0: camera.position.clone(), t0: controls.target.clone(), p1: pos.clone(), t1: target.clone(), k: 0, dur };
+    }
+
+    // 작은 창(오른손 보기 등)을 같은 캔버스 귀퉁이에 그리기
+    const insets = [];
+    function addInset(sc2, cam2, rectFn) { const I = { scene: sc2, camera: cam2, rect: rectFn, on: true }; insets.push(I); return I; }
+
+    const fns = [];
+    let last = performance.now(), running = true;
+    function tick(now) {
+      requestAnimationFrame(tick);
+      if (!running || !visibleNow()) { last = now; return; }
+      const dt = Math.min(0.05, Math.max(0, (now - last) / 1000)); last = now;
+      if (fly) {
+        fly.k = Math.min(1, fly.k + dt / fly.dur); const e = ease(fly.k);
+        camera.position.lerpVectors(fly.p0, fly.p1, e); controls.target.lerpVectors(fly.t0, fly.t1, e);
+        if (fly.k >= 1) fly = null;
+      }
+      for (let i = 0; i < fns.length; i++) { try { fns[i](dt, now / 1000); } catch (err) { console.error(err); } }
+      controls.update();
+      renderer.setScissorTest(false); renderer.setViewport(0, 0, W, H);
+      renderer.render(scene, camera);
+      insets.forEach((I) => {
+        if (!I.on) return; const r = I.rect(W, H); I.last = r; if (!r) return;
+        renderer.setScissorTest(true);
+        renderer.setScissor(r.x, H - r.y - r.h, r.w, r.h); renderer.setViewport(r.x, H - r.y - r.h, r.w, r.h);
+        I.camera.aspect = r.w / r.h; I.camera.updateProjectionMatrix();
+        renderer.render(I.scene, I.camera);
+      });
+      renderer.setScissorTest(false);
+      placeLabels();
+    }
+    requestAnimationFrame(tick);
+    return { renderer, scene, camera, controls, sun, overlay, label, flyTo, onFrame: (f) => fns.push(f), addInset, size: () => ({ W, H }), resize };
+  }
+
+  /* 화살표: 원기둥 + 원뿔. setDir(방향, 길이) */
+  const UP = V(0, 1, 0);
+  function makeArrow(color, o = {}) {
+    const r = o.r || 0.06, head = o.head || 0.3, hr = o.hr || r * 2.6;
+    const mat = new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: o.glow == null ? 0.38 : o.glow, roughness: 0.35, metalness: 0.05, transparent: !!o.opacity, opacity: o.opacity || 1 });
+    const g = new THREE.Group();
+    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 1, 20), mat);
+    const cone = new THREE.Mesh(new THREE.ConeGeometry(hr, head, 28), mat);
+    shaft.castShadow = cone.castShadow = !!o.shadow;
+    g.add(shaft, cone);
+    let curLen = 1;
+    g.setDir = (dir, len) => {
+      if (len != null) curLen = len;
+      const L = Math.max(curLen, head * 1.05);
+      shaft.scale.y = L - head; shaft.position.y = (L - head) / 2; cone.position.y = L - head / 2;
+      if (dir) g.quaternion.setFromUnitVectors(UP, tmpD.copy(dir).normalize());
+      return g;
+    };
+    g.mat = mat; g.len = () => curLen;
+    return g;
+  }
+  const tmpD = V();
+
+  /* 오른손 모형
+     손의 기준 방향: 네 손가락 = +Y, 엄지손가락 = +X, 손바닥이 향하는 쪽 = +Z
+     (오른손이므로 엄지(전류) × 네 손가락(자기장) = 손바닥(힘) 방향) */
+  function makeHand(o = {}) {
+    const root = new THREE.Group();
+    const skin = new THREE.MeshStandardMaterial({ color: 0xeebc97, roughness: 0.62, metalness: 0 });
+    const palmSkin = new THREE.MeshStandardMaterial({ color: 0xf8d3b8, roughness: 0.75 });
+    const nailM = new THREE.MeshStandardMaterial({ color: 0xffe9e2, roughness: 0.25 });
+    const sleeve = new THREE.MeshStandardMaterial({ color: 0x35587d, roughness: 0.85 });
+    const add = (m) => { m.castShadow = true; root.add(m); return m; };
+    add(new THREE.Mesh(new RoundedBoxGeometry(0.94, 1.02, 0.34, 4, 0.14), skin));
+    const pad = add(new THREE.Mesh(new RoundedBoxGeometry(0.8, 0.86, 0.05, 3, 0.022), palmSkin)); pad.position.set(0, -0.02, 0.155);
+    // 손바닥 주름(손바닥 쪽임을 알아보기 쉽게)
+    const crease = new THREE.MeshStandardMaterial({ color: 0xdca184, roughness: 0.8 });
+    [[-0.05, 0.12, 0.62, -0.2], [0.02, -0.12, 0.55, 0.35]].forEach(([x, y, w, rz]) => { const c = new THREE.Mesh(new THREE.CapsuleGeometry(0.012, w, 2, 6), crease); c.rotation.z = Math.PI / 2 + rz; c.position.set(x, y, 0.182); root.add(c); });
+    const F = [[0.34, 0.8], [0.115, 0.9], [-0.115, 0.84], [-0.33, 0.66]];
+    F.forEach(([x, L]) => {
+      const r = 0.102;
+      const f = add(new THREE.Mesh(new THREE.CapsuleGeometry(r, L - 2 * r, 6, 16), skin)); f.position.set(x, 0.44 + L / 2, 0);
+      const n = add(new THREE.Mesh(new THREE.SphereGeometry(0.074, 16, 10), nailM)); n.scale.set(1, 1.35, 0.32); n.position.set(x, 0.44 + L - 0.14, -0.088);
+      // 마디 주름
+      const k = new THREE.Mesh(new THREE.TorusGeometry(r * 0.98, 0.006, 4, 18, Math.PI), crease); k.rotation.x = Math.PI / 2; k.rotation.z = Math.PI; k.position.set(x, 0.44 + L * 0.42, 0); root.add(k);
+    });
+    // 엄지: +X 방향으로 곧게
+    const th = add(new THREE.Mesh(new THREE.CapsuleGeometry(0.118, 0.5, 6, 16), skin)); th.rotation.z = -Math.PI / 2; th.position.set(0.78, -0.16, 0.04);
+    const tn = add(new THREE.Mesh(new THREE.SphereGeometry(0.08, 16, 10), nailM)); tn.scale.set(1.35, 1, 0.32); tn.position.set(0.98, -0.16, -0.075);
+    const mound = add(new THREE.Mesh(new THREE.SphereGeometry(0.3, 20, 14), skin)); mound.scale.set(1.1, 1.05, 0.62); mound.position.set(0.36, -0.2, 0.04);
+    const wrist = add(new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.33, 0.55, 24), skin)); wrist.scale.z = 0.62; wrist.position.y = -0.74;
+    const cuff = add(new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.42, 0.62, 28), sleeve)); cuff.scale.z = 0.72; cuff.position.y = -1.25;
+    // 세 화살표
+    const aB = makeArrow(COL.B, { r: 0.05, head: 0.24 }); aB.position.set(0, 1.5, 0); aB.setDir(V(0, 1, 0), 0.75);
+    const aI = makeArrow(COL.I, { r: 0.05, head: 0.24 }); aI.position.set(1.22, -0.16, 0.04); aI.setDir(V(1, 0, 0), 0.75);
+    const aF = makeArrow(COL.F, { r: 0.065, head: 0.3 }); aF.position.set(0, 0.0, 0.2); aF.setDir(V(0, 0, 1), o.fLen || 1.15);
+    root.add(aB, aI, aF);
+    root.arrows = { B: aB, I: aI, F: aF };
+    root.tips = { B: V(0, 2.42, 0), I: V(2.2, -0.16, 0.04), F: V(0, 0, 1.6) };
+    return root;
+  }
+  // 엄지 = 전류 방향, 네 손가락 = 자기장 방향이 되도록 손을 돌리는 회전값
+  function handQuat(iDir, bDir) {
+    const x = iDir.clone().normalize(), y = bDir.clone().normalize(), z = V().crossVectors(x, y).normalize();
+    return new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(x, y, z));
+  }
+
+  /* 7-세그먼트 숫자(디지털 전원 장치 화면) */
+  const SEG = { '0': 'abcdef', '1': 'bc', '2': 'abged', '3': 'abgcd', '4': 'fgbc', '5': 'afgcd', '6': 'afgedc', '7': 'abc', '8': 'abcdefg', '9': 'abcdfg', '-': 'g', ' ': '' };
+  function seg7(g, txt, x, y, s, on, off) {
+    let cx = x;
+    for (const ch of txt) {
+      if (ch === '.') { g.fillStyle = on; g.beginPath(); g.arc(cx - s * 0.12, y + s * 1.9, s * 0.11, 0, 7); g.fill(); continue; }
+      const segs = SEG[ch] || '', w = s, t = s * 0.2, h = s * 0.95;
+      const R = { a: [cx + t, y, w - 2 * t, t], d: [cx + t, y + 2 * h, w - 2 * t, t], g: [cx + t, y + h, w - 2 * t, t], f: [cx, y + t * 0.6, t, h - t * 0.4], b: [cx + w - t, y + t * 0.6, t, h - t * 0.4], e: [cx, y + h + t * 0.6, t, h - t * 0.4], c: [cx + w - t, y + h + t * 0.6, t, h - t * 0.4] };
+      Object.keys(R).forEach((k) => { g.fillStyle = segs.includes(k) ? on : off; const r = R[k]; g.fillRect(r[0], r[1], r[2], r[3]); });
+      cx += w * 1.35;
+    }
+  }
+
+  // 관 모양 전선(곡선)
+  function tube(points, r, mat, seg = 80) {
+    const curve = new THREE.CatmullRomCurve3(points, false, 'centripetal');
+    const m = new THREE.Mesh(new THREE.TubeGeometry(curve, seg, r, 10, false), mat); m.castShadow = true; m.curve = curve; return m;
+  }
+
+  // 길을 따라 움직이는 전류 화살표(작은 원뿔). setPath(점 배열), update(dt, 빠르기, 방향)
+  function makeFlow(count, color, size = 1) {
+    const geo = new THREE.ConeGeometry(0.055 * size, 0.17 * size, 12); geo.rotateX(Math.PI / 2); // 원뿔 끝 = +Z
+    const mat = new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.9, roughness: 0.3 });
+    const mesh = new THREE.InstancedMesh(geo, mat, count); mesh.frustumCulled = false;
+    let pts = [], cum = [], total = 1, off = 0; const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), p = V(), d = V(), sc = V(1, 1, 1), Z = V(0, 0, 1);
+    function setPath(P) {
+      pts = P; cum = [0];
+      for (let i = 1; i < P.length; i++) cum.push(cum[i - 1] + P[i].distanceTo(P[i - 1]));
+      total = cum[cum.length - 1] || 1;
+    }
+    function at(s, out, dir) {
+      s = ((s % total) + total) % total;
+      let i = 1; while (i < cum.length - 1 && cum[i] < s) i++;
+      const a = pts[i - 1], b = pts[i], seg = cum[i] - cum[i - 1] || 1, k = (s - cum[i - 1]) / seg;
+      out.lerpVectors(a, b, k); dir.subVectors(b, a).normalize();
+    }
+    function update(dt, speed, sign, visible) {
+      mesh.visible = !!visible && pts.length > 1;
+      if (!mesh.visible) return;
+      off += dt * speed * sign;
+      const gap = total / count;
+      for (let k = 0; k < count; k++) {
+        at(off + k * gap, p, d);
+        if (sign < 0) d.negate();
+        q.setFromUnitVectors(Z, d); m4.compose(p, q, sc); mesh.setMatrixAt(k, m4);
+      }
+      mesh.instanceMatrix.needsUpdate = true;
+    }
+    return { mesh, setPath, update, mat };
+  }
+
+  // 책상과 그림자 받는 바닥
+  function addTable(scene, w, d, y = 0) {
+    const tex = woodTex(); tex.repeat.set(w / 10, d / 10);
+    const mat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.55, metalness: 0 });
+    const t = new THREE.Mesh(new RoundedBoxGeometry(w, 0.4, d, 3, 0.12), mat); t.position.y = y - 0.2; t.receiveShadow = true; scene.add(t);
+    return t;
+  }
+
+  return { COL, REDUCE, V, ease, makeStage, makeArrow, makeHand, handQuat, letterTex, canvasTex, blobTex, seg7, tube, makeFlow, addTable, visibleNow };
+})();
+try {
+  const S = window.RH, st = S.state, { V, COL } = C3;
+  const host = document.getElementById('host');
+  const stage = C3.makeStage(host, { fitWidth: true, minD: 4, maxD: 22, top: '#f7f9fc', bottom: '#dfe8f1' });
+  const { scene, camera, controls, label } = stage;
+  // 바닥
+  const floor = new THREE.Mesh(new THREE.CircleGeometry(9, 64), new THREE.MeshStandardMaterial({ color: 0xe9eef4, roughness: 0.9 }));
+  floor.rotation.x = -Math.PI / 2; floor.position.y = -2.6; floor.receiveShadow = true; scene.add(floor);
+  const blob = new THREE.Mesh(new THREE.PlaneGeometry(7, 7), new THREE.MeshBasicMaterial({ map: C3.blobTex(), transparent: true, depthWrite: false }));
+  blob.rotation.x = -Math.PI / 2; blob.position.y = -2.59; scene.add(blob);
+
+  /* 기준 틀: 자기장 = +x (N극은 -x, S극은 +x), 전류 = +z, 힘 = +y.
+     문제마다 이 틀 전체를 돌려서 여러 방향을 만들어요. */
+  const rig = new THREE.Group(); scene.add(rig);
+  const GAP = 1.55;
+  function poleBlock(ch, color, sx) {
+    const g = new THREE.Group();
+    const mat = new THREE.MeshPhysicalMaterial({ color, roughness: 0.36, clearcoat: 0.5 });
+    const b = new THREE.Mesh(new RoundedBoxGeometry(1.0, 2.0, 2.0, 4, 0.12), mat); b.castShadow = true; b.receiveShadow = true; g.add(b);
+    const tm = new THREE.MeshStandardMaterial({ map: C3.letterTex(ch, color === COL.N ? '#d8433b' : '#2f62c9'), roughness: 0.4 });
+    [[V(0, 0, 1.005), 0, 0], [V(0, 0, -1.005), Math.PI, 0], [V(0, 1.005, 0), 0, -Math.PI / 2], [V(0, -1.005, 0), 0, Math.PI / 2], [V(-sx * 0.505, 0, 0), -sx * Math.PI / 2, 0]].forEach(([p, ry, rx]) => {
+      const pl = new THREE.Mesh(new THREE.PlaneGeometry(0.62, 0.62), tm); pl.position.copy(p);
+      if (rx) pl.rotation.x = rx; else pl.rotation.y = ry; g.add(pl);
+    });
+    g.position.x = sx * (GAP + 0.5); return g;
+  }
+  rig.add(poleBlock('N', COL.N, -1), poleBlock('S', COL.S, 1));
+  // 자기장 화살표
+  const fieldG = new THREE.Group(); rig.add(fieldG);
+  [-0.6, 0, 0.6].forEach((y) => [-0.65, 0, 0.65].forEach((z) => {
+    if (Math.abs(z) < 0.1 && Math.abs(y) < 0.1) return;
+    const a = C3.makeArrow(COL.B, { r: 0.028, head: 0.18, hr: 0.075, glow: 0.45, opacity: 0.85 }); a.position.set(-GAP + 0.05, y, z); a.setDir(V(1, 0, 0), 2 * GAP - 0.1); fieldG.add(a);
+  }));
+  // 전선(구리 막대)과 전류
+  const cu = new THREE.MeshStandardMaterial({ color: 0xc8733a, metalness: 1, roughness: 0.28 });
+  const wire = new THREE.Group(); rig.add(wire);
+  const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.075, 4.4, 24), cu); rod.rotation.x = Math.PI / 2; rod.castShadow = true; wire.add(rod);
+  const aI = C3.makeArrow(COL.I, { r: 0.05, head: 0.26 }); aI.position.set(-0.34, 0, -0.9); aI.setDir(V(0, 0, 1), 1.8); wire.add(aI);
+  const flow = C3.makeFlow(14, COL.I, 1.2); scene.add(flow.mesh);
+  const aF = C3.makeArrow(COL.F, { r: 0.085, head: 0.36, shadow: true }); aF.position.set(0, 0.12, 0); aF.setDir(V(0, 1, 0), 1.5); rig.add(aF);
+  // 오른손
+  const hand = C3.makeHand({ fLen: 0.9 }); const HS = 0.62; hand.scale.setScalar(HS); rig.add(hand);
+  const HPOS = V(0, -1.2, 0.5); hand.position.copy(HPOS);
+  const Q = {
+    start: C3.handQuat(V(0, 0, -1), V(0, -1, 0)),   // 아직 맞추지 않은 손: 손가락은 전선 반대쪽, 엄지는 전류와 반대
+  };
+  Q.fingers = new THREE.Quaternion().setFromUnitVectors(V(0, -1, 0), V(1, 0, 0)).multiply(Q.start.clone());
+  Q.final = C3.handQuat(V(0, 0, 1), V(1, 0, 0));
+  // 후보 화살표
+  const candG = new THREE.Group(); scene.add(candG);
+  const cands = [0, 1, 2, 3].map((k) => { const a = C3.makeArrow(0x7d8a98, { r: 0.07, head: 0.32, glow: 0.05 }); a.userData.k = k; candG.add(a); return a; });
+  const candLbls = cands.map((a, k) => { const L = label('①②③④'[k], 'cand', () => (candG.visible && a.visible ? a.localToWorld(V(0, a.len() + 0.3, 0)) : null)); L.el.addEventListener('click', () => S.pickCand && S.pickCand(k)); return L; });
+  // 이름표
+  const lbF = label('힘', 'F', () => (aF.visible && aF.scale.y > 0.5 ? aF.localToWorld(V(0, aF.len() + 0.25, 0)) : null));
+  label('전류', 'I', () => aI.localToWorld(V(0, aI.len() + 0.2, 0)));
+  label('자기장', 'B', () => (fieldG.visible ? rig.localToWorld(V(-0.85, 0.95, 0.95)) : null));
+
+  /* 보는 방향 */
+  const VIEWS = { tilt: [V(6.2, 4.4, 8.4), V(0, -0.2, 0)], front: [V(0, 0.2, 11), V(0, -0.2, 0)], top: [V(0.01, 11.5, 0.6), V(0, 0, 0)], side: [V(11, 0.6, 0.3), V(0, -0.2, 0)] };
+  camera.position.copy(VIEWS.tilt[0]); controls.target.copy(VIEWS.tilt[1]);
+  controls.addEventListener('start', () => S.markView && S.markView(''));
+
+  /* 상태와 애니메이션 */
+  const AXV = { '+x': V(1, 0, 0), '-x': V(-1, 0, 0), '+y': V(0, 1, 0), '-y': V(0, -1, 0), '+z': V(0, 0, 1), '-z': V(0, 0, -1) };
+  let rigQ = new THREE.Quaternion(), handTarget = 'final', fOn = false, fK = 0, anim = null, candDirs = null, picked = {};
+  function basisQ(b, i) { const bx = b.clone(), iz = i.clone(), fy = V().crossVectors(iz, bx); return new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(bx, fy, iz)); }
+  rig.quaternion.copy(basisQ(AXV[st.b], AXV[st.i]));
+  rigQ.copy(rig.quaternion);
+  function poseQ(p) { return Q[p] || Q.final; }
+  stage.onFrame((dt, t) => {
+    rig.quaternion.slerp(rigQ, C3.REDUCE ? 1 : Math.min(1, dt * 4.5));
+    // 손 동작
+    if (anim) {
+      anim.k += dt / anim.dur; const seq = anim.seq, n = seq.length - 1, x = Math.min(anim.k, 1) * n, i = Math.min(n - 1, Math.floor(x)), e = C3.ease(Math.min(1, x - i));
+      hand.quaternion.copy(poseQ(seq[i])).slerp(poseQ(seq[i + 1]), e);
+      if (anim.k >= 1) { anim = null; fOn = true; }
+    } else if (handTarget !== 'hidden') hand.quaternion.slerp(poseQ(handTarget), C3.REDUCE ? 1 : Math.min(1, dt * 4));
+    hand.visible = st.showH && handTarget !== 'hidden';
+    hand.arrows.F.visible = fOn; hand.arrows.I.visible = handTarget === 'final' || !!anim;
+    // 힘
+    fK += ((fOn ? 1 : 0) - fK) * Math.min(1, dt * 6);
+    aF.visible = fK > 0.02; aF.scale.setScalar(Math.max(0.001, fK));
+    wire.position.y += ((fOn ? 0.14 : 0) - wire.position.y) * Math.min(1, dt * 3);
+    // 전류 흐름(전선을 따라)
+    const p0 = rig.localToWorld(V(0, wire.position.y, -2.2)), p1 = rig.localToWorld(V(0, wire.position.y, 2.2));
+    flow.setPath([p0, p1]); flow.update(dt, 1.4, 1, true);
+    fieldG.visible = st.showB;
+    // 후보 화살표: 전선 가운데에서 바깥쪽으로 (세계 좌표 기준 방향)
+    candG.visible = !!candDirs;
+    if (candDirs) cands.forEach((a, k) => {
+      const d = candDirs[k]; a.visible = true; a.position.copy(d).multiplyScalar(0.25); a.setDir(d, 1.25);
+      const c = picked[k] === true ? COL.F : picked[k] === false ? 0xd9534f : 0x7d8a98; a.mat.color.setHex(c); a.mat.emissive.setHex(c); a.mat.emissiveIntensity = picked[k] != null ? 0.35 : 0.05;
+    });
+  });
+
+  // 3D에서 후보 화살표 눌러 고르기
+  const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(); let down = null;
+  {
+    const el = stage.renderer.domElement;
+    el.addEventListener('pointerdown', (e) => { down = [e.clientX, e.clientY]; });
+    el.addEventListener('pointerup', (e) => {
+      if (!down || Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 8 || !candG.visible) return;
+      const r = el.getBoundingClientRect(); ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+      ray.setFromCamera(ndc, camera);
+      const hit = ray.intersectObjects(cands, true)[0];
+      if (hit) { let o = hit.object; while (o && o.userData.k == null) o = o.parent; if (o) S.pickCand && S.pickCand(o.userData.k); }
+    });
+  }
+
+  S.view = {
+    view(k) { const v = VIEWS[k]; if (!v) return; stage.flyTo(v[0], v[1]); S.markView && S.markView(k); },
+    setConfig(b, i) { rigQ.copy(basisQ(AXV[b], AXV[i])); picked = {}; },
+    handPose(p) {
+      if (p === 'animate') { st.showH = true; anim = { k: 0, dur: C3.REDUCE ? 0.01 : 3.2, seq: ['start', 'fingers', 'final'] }; hand.quaternion.copy(Q.start); handTarget = 'final'; fOn = false; return; }
+      anim = null; handTarget = p; if (p === 'start') hand.quaternion.copy(Q.start);
+    },
+    force(on) { fOn = on; },
+    cands(dirs) { candDirs = dirs ? dirs.map((d) => V(d[0], d[1], d[2])) : null; picked = {}; candLbls.forEach((L) => L.el.classList.remove('good', 'bad')); },
+    markCand(k, ok) { picked[k] = ok; candLbls[k].el.classList.add(ok ? 'good' : 'bad'); },
+    layers(b, h) { st.showB = b; st.showH = h; },
+    // 내 손처럼: 자기장이 위, 힘이 화면 안쪽이 되도록 장치를 돌리고 손등 쪽에서 봐요
+    likeMe() {
+      const b = V(0, 1, 0), f = V(0, 0, -1), i = V().crossVectors(b, f); // 전류 = 자기장 × 힘 → 왼쪽
+      rigQ.copy(basisQ(b, i)); handTarget = 'final'; fOn = true; st.showH = true;
+      stage.flyTo(V(-0.4, 0.5, 8.2), V(-0.35, 0, 0.6)); S.markView && S.markView('');
+    },
+  };
+  S.start && S.start();
+  S.ok3d = true;
+} catch (err) { window.RH_err('3D 장면', err); const f = document.getElementById('fail3d'); if (f) f.classList.add('show'); }
+</script>
+</body>
+</html>

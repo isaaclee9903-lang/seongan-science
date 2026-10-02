@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>3D 전기 그네 – 자기장 안에서 전류가 흐르는 코일이 받는 힘</title>
+<script>
+/* 문제 알림: 코드에 오류가 나면 화면 아래에 빨간 상자로 알려 줘요 (선생님 확인용) */
+(function () {
+  function box() {
+    var b = document.getElementById('sgErr');
+    if (!b && document.body) {
+      b = document.createElement('div'); b.id = 'sgErr';
+      b.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;background:#fdecea;color:#8a1f17;border:2px solid #d9534f;border-radius:12px;padding:10px 14px;font:600 14px/1.5 sans-serif;white-space:pre-wrap';
+      document.body.appendChild(b);
+    }
+    return b;
+  }
+  window.SG_err = function (where, err) {
+    var msg = '[' + where + '] ' + (err && err.message ? err.message : String(err));
+    var show = function () { var b = box(); if (b) b.textContent += (b.textContent ? '\n' : '') + msg; };
+    if (document.body) show(); else document.addEventListener('DOMContentLoaded', show);
+  };
+  window.addEventListener('error', function (e) { window.SG_err('스크립트', { message: e.message + ' (줄 ' + e.lineno + ')' }); });
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      var S = window.SG || {};
+      if (!S.okUI) window.SG_err('실행 안 됨', { message: '실험 단계 코드가 실행되지 않았어요. 파일이 끝(</html>)까지 들어 있는지 확인해 주세요.' });
+      if (!S.ok3d) {
+        var f = document.getElementById('fail3d'); if (f) f.classList.add('show');
+        window.SG_err('3D 그림', { message: '3D 그림을 불러오지 못했어요. 인터넷 연결(cdn.jsdelivr.net)을 확인하고 새로고침해 주세요.' });
+      }
+    }, 9000);
+  });
+})();
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+  :root{--bg:#edf3f8;--card:#fff;--ink:#14263b;--ink2:#34495e;--muted:#5a6b7e;--line:#dde6ee;--accent:#0e63b3;--accent-soft:#e3effb;
+    --vi:#6a55c8;--vi-soft:#efebfb;--ok:#1f9d5c;--no:#d9534f;
+    --shadow:0 1px 2px rgba(20,38,59,.06),0 8px 24px rgba(20,38,59,.07);--ease:cubic-bezier(.2,.8,.2,1)}
+  *{box-sizing:border-box}html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:"Pretendard",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  button{font:inherit;color:inherit}
+  .app{max-width:1320px;margin:0 auto;padding:14px 16px 28px;display:flex;flex-direction:column;gap:12px}
+  .top{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;flex-wrap:wrap}
+  .eyebrow{display:inline-flex;font-size:13px;font-weight:700;color:var(--vi);background:var(--vi-soft);padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(21px,2.4vw,28px);margin:6px 0 2px;letter-spacing:-.02em;word-break:keep-all}
+  .sub{margin:0;color:var(--muted);font-size:15px;word-break:keep-all}
+  .card{background:var(--card);border-radius:20px;box-shadow:var(--shadow);border:1px solid rgba(20,38,59,.04)}
+  .pad{padding:14px 16px}
+  .stage{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(330px,1fr);gap:14px;align-items:start}
+  .viewer{position:sticky;top:10px}
+  .steps{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+  .stp{flex:1;min-width:52px;min-height:50px;border:0;border-radius:12px;background:#eef3f8;font-weight:800;font-size:13px;color:var(--muted);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;line-height:1.15}
+  .stp b{font-size:16px}
+  .stp[aria-selected="true"]{background:var(--vi);color:#fff}
+  .stp.done:not([aria-selected="true"]){background:#e5f5ec;color:#11703f}
+  .pane{display:none}.pane.on{display:block;animation:pIn .35s var(--ease)}
+  @keyframes pIn{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:none}}
+  .pane h2{font-size:19px;margin:0 0 6px;letter-spacing:-.01em;word-break:keep-all}
+  .pane .goal{font-size:15px;color:var(--ink2);line-height:1.65;margin:0 0 10px;word-break:keep-all}
+  .acts{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+  .btn{min-height:50px;border:0;border-radius:14px;padding:0 16px;font-weight:800;font-size:15.5px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;justify-content:center;word-break:keep-all}
+  .btn:active{transform:scale(.97)}
+  .btn.primary{background:var(--vi);color:#fff}.btn.ghost{background:#eef3f8;color:var(--ink2)}.btn.amber{background:#e8a400;color:#2c2000}
+  .btn.on{background:#1f9d5c;color:#fff}
+  .btn:disabled{opacity:.4;cursor:default;transform:none}
+  .safe{background:#fff4f2;border:1px solid #f3c2bb;border-radius:14px;padding:10px 12px;font-size:14px;line-height:1.6;color:#7a2a22;word-break:keep-all;margin-bottom:10px}
+  .safe b{color:#c0392b}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 10px}
+  .chips span{font-size:13.5px;font-weight:700;background:#f7fafc;border:1px solid #d6e0ea;border-radius:10px;padding:4px 10px}
+  .chk label{display:flex;align-items:center;gap:10px;min-height:50px;background:#f7fafc;border-radius:12px;padding:6px 12px;font-weight:700;font-size:15px;cursor:pointer;word-break:keep-all}
+  .chk input{width:24px;height:24px;accent-color:var(--ok);flex:none}
+  .q{font-weight:800;font-size:15.5px;line-height:1.6;margin:12px 0 8px;word-break:keep-all}
+  .q small{display:block;font-weight:600;color:var(--muted);font-size:13.5px}
+  .opts{display:flex;flex-wrap:wrap;gap:8px}
+  .ob{min-height:50px;padding:0 16px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15px;cursor:pointer;word-break:keep-all;text-align:left}
+  .ob[aria-pressed="true"]{border-color:var(--vi);background:var(--vi-soft);color:var(--vi)}
+  .ob.good{border-color:var(--ok);background:#e8f7ef;color:#11703f}.ob.bad{border-color:var(--no);background:#fdecea;color:#b33a35}
+  .ob:disabled{cursor:default}
+  .fb{margin-top:10px;padding:12px 14px;border-radius:14px;font-size:15px;line-height:1.65;word-break:keep-all;display:none}
+  .fb.show{display:block;animation:pIn .35s var(--ease)}
+  .fb.ok{background:#e8f7ef;color:#0f5a36}.fb.no{background:#fff5e6;color:#7a4508}.fb.info{background:#eef3fb;color:#1d3f66}
+  .rec{margin-top:14px;background:#fbfaf6;border:1px dashed #d8cfb6;border-radius:16px;padding:10px 12px}
+  .rec .rh{font-size:14px;font-weight:900;color:#c0507a;text-align:center;margin:0 0 6px}
+  .rec table{width:100%;border-collapse:separate;border-spacing:0 6px}
+  .rec td{padding:8px 10px;background:#fff;font-size:15px;font-weight:700}
+  .rec td:first-child{border-radius:10px 0 0 10px;width:30%;color:var(--muted)}
+  .rec td:last-child{border-radius:0 10px 10px 0}
+  .rec td.fill{color:#11703f}
+  .volt{display:flex;align-items:center;gap:10px;margin:10px 0;flex-wrap:wrap}
+  .volt .vbtn{width:56px;height:56px;border-radius:14px;border:2px solid #d4dee8;background:#fff;font-size:26px;font-weight:900;cursor:pointer}
+  .volt .vd{min-width:110px;text-align:center;font-size:26px;font-weight:900;font-variant-numeric:tabular-nums;color:#ff5a45;background:#1b1f24;border-radius:12px;padding:6px 12px;letter-spacing:.04em;text-shadow:0 0 8px rgba(255,70,50,.6)}
+  .meter{background:#f7fafc;border-radius:14px;padding:10px 12px;margin-top:6px}
+  .meter .ml{font-size:13.5px;font-weight:800;color:var(--muted);margin-bottom:6px;word-break:keep-all}
+  .trk{height:16px;border-radius:99px;background:#e6edf4;overflow:hidden}
+  .trk i{display:block;height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,#ffb39d,var(--Fc));transition:width .25s linear}
+  .hist{display:flex;gap:6px;align-items:flex-end;height:74px;margin-top:8px}
+  .hist div{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:12px;font-weight:800;color:var(--muted);height:100%;justify-content:flex-end}
+  .hist span{display:block;width:100%;border-radius:6px 6px 0 0;background:#f8c7b8;transition:height .5s var(--ease);height:2px}
+  .hist div.cur span{background:var(--Fc)}
+  .bank{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+  .chip{min-height:48px;padding:0 14px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15px;cursor:pointer}
+  .chip.used{opacity:.3;pointer-events:none}
+  .sent{font-size:16px;font-weight:700;line-height:2.4;word-break:keep-all;margin:6px 0}
+  .slot{display:inline-flex;align-items:center;justify-content:center;min-width:92px;min-height:44px;vertical-align:middle;margin:0 3px;padding:0 12px;border-radius:12px;border:2px dashed #aebdcc;background:#f7fafc;color:var(--muted);font-weight:800;font-size:15px;cursor:pointer;line-height:1.2}
+  .slot.filled{border-style:solid;border-color:var(--vi);background:var(--vi-soft);color:var(--vi)}
+  .slot.cur{box-shadow:0 0 0 4px rgba(106,85,200,.18)}
+  .slot.good{border-color:var(--ok);background:#e8f7ef;color:#11703f;border-style:solid}.slot.bad{border-color:var(--no);background:#fdecea;color:#b33a35;border-style:solid}
+  .cases{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}
+  .case{min-height:64px;border-radius:14px;border:2px solid #d4dee8;background:#fff;cursor:pointer;text-align:left;padding:8px 12px;font-weight:800;font-size:14.5px;line-height:1.35;word-break:keep-all}
+  .case small{display:block;font-weight:700;color:var(--muted);font-size:12.5px;margin-top:2px}
+  .case[aria-pressed="true"]{border-color:var(--vi);background:var(--vi-soft)}
+  .case .res{display:inline-block;margin-top:4px;font-size:12.5px;font-weight:900;color:#fff;background:var(--Fc);border-radius:7px;padding:1px 7px}
+  .why{background:#fff;border:2px solid #dbe4ec;border-radius:16px;padding:12px 14px;margin-top:12px}
+  .why .ws{display:none}.why .ws.on{display:block;animation:pIn .35s var(--ease)}
+  .why .sn{display:inline-block;font-size:12.5px;font-weight:900;color:#fff;background:var(--vi);border-radius:999px;padding:2px 10px;margin-bottom:6px}
+  .why p{margin:0;font-size:15.5px;line-height:1.7;color:var(--ink2);word-break:keep-all}
+  .wnav{display:flex;justify-content:space-between;align-items:center;margin-top:10px;gap:8px}
+  .wnav button{min-height:46px;padding:0 14px;border:0;border-radius:12px;font-weight:800;cursor:pointer}
+  .wnav .p{background:#eef3f8}.wnav .n{background:var(--vi);color:#fff}
+  .wnav button:disabled{opacity:.35}
+  .cB{color:#0f87ad}.cI{color:#23913b}.cF{color:#d9441d}.cN{color:var(--N)}.cS{color:var(--S)}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,30px);opacity:0;background:#14263b;color:#fff;padding:12px 18px;border-radius:14px;font-weight:700;font-size:15px;box-shadow:0 10px 30px rgba(0,0,0,.25);transition:all .4s var(--ease);pointer-events:none;z-index:10;max-width:calc(100% - 32px);text-align:center;word-break:keep-all}
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+  .toast.warn{background:#b3261e}
+  .credit{text-align:center;font-size:13px;font-weight:700;color:#8495a8;letter-spacing:.02em;margin:6px 0 0}
+  /* ===== 3D 화면 공통 ===== */
+  :root{--Bc:#14a5d0;--Ic:#2fae4a;--Fc:#f0522a;--N:#d8433b;--S:#2f62c9;--P:#7d5ad6}
+  .viewer{position:relative;overflow:hidden;padding:0}
+  .gl-host{position:relative;width:100%;height:min(74vh,700px);min-height:380px;background:linear-gradient(#f6f9fc,#d6e3ef);touch-action:none}
+  .gl-host canvas.gl{display:block;width:100%;height:100%;outline:none}
+  .lbls{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+  .lb{position:absolute;left:0;top:0;white-space:nowrap;font-weight:800;font-size:14px;padding:3px 9px;border-radius:9px;background:rgba(255,255,255,.88);color:#34495e;box-shadow:0 2px 8px rgba(20,38,59,.14);will-change:transform}
+  .lb.small{font-size:12px;font-weight:700;color:#5a6b7e;background:rgba(255,255,255,.72);box-shadow:none}
+  .lb.B{background:var(--Bc);color:#fff}.lb.I{background:var(--Ic);color:#fff}.lb.F{background:var(--Fc);color:#fff;font-size:15px}
+  .lb.P{background:var(--P);color:#fff}
+  .lb.dim{opacity:.35}
+  .vt{position:absolute;display:flex;gap:6px;flex-wrap:wrap;z-index:3}
+  .vt.tl{left:10px;top:10px;max-width:calc(100% - 20px)}
+  .vt.tr{right:10px;top:10px;justify-content:flex-end}
+  .vt.bl{left:10px;bottom:10px;align-items:center}
+  .vb{min-height:44px;padding:0 12px;border-radius:12px;border:1px solid rgba(20,38,59,.12);background:rgba(255,255,255,.9);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);font-weight:800;font-size:14px;color:#34495e;cursor:pointer;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 10px rgba(20,38,59,.08)}
+  .vb:active{transform:scale(.96)}
+  .vb .dot{width:12px;height:12px;border-radius:50%;flex:none}
+  .vb[aria-pressed="false"]{opacity:.62}
+  .vb[aria-pressed="false"] .dot{background:#c2ccd6!important}
+  .vb.sel{background:#14263b;color:#fff;border-color:#14263b}
+  .hint{font-size:12.5px;font-weight:700;color:#5a6b7e;background:rgba(255,255,255,.78);border-radius:10px;padding:6px 10px;word-break:keep-all}
+  .inset{position:absolute;z-index:2;border-radius:18px;border:2px solid rgba(255,255,255,.95);box-shadow:0 10px 30px rgba(20,38,59,.22),inset 0 0 0 1px rgba(20,38,59,.08);pointer-events:none;display:none}
+  .inset.on{display:block}
+  .inset .it{position:absolute;left:8px;top:8px;font-size:12.5px;font-weight:900;color:#14263b;background:rgba(255,255,255,.9);border-radius:8px;padding:3px 8px}
+  .inset .ic{position:absolute;left:6px;right:6px;bottom:6px;display:flex;flex-wrap:wrap;gap:4px;justify-content:center}
+  .inset .ic span{font-size:11.5px;font-weight:800;color:#fff;border-radius:7px;padding:2px 7px;white-space:nowrap}
+  .fail3d{position:absolute;inset:0;display:none;place-items:center;text-align:center;padding:24px;font-size:16px;font-weight:700;color:#7a2a22;line-height:1.7;word-break:keep-all;background:#fff4f2}
+  .fail3d.show{display:grid}
+  .model{font-size:13px;color:var(--muted);text-align:right;margin:0;word-break:keep-all}
+  @media (max-width:900px){.gl-host{height:min(56vh,620px)}}
+  @media (max-width:900px){.stage{grid-template-columns:1fr}.viewer{position:relative;top:0}}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }
+</script>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div>
+      <span class="eyebrow">중2 과학 · 전기와 자기 · 3D 가상 탐구</span>
+      <h1>3D 전기 그네: 자기장 안에 놓인 전류가 흐르는 코일이 받는 힘</h1>
+      <p class="sub">교과서 탐구 과정 1~6을 3D로 해 봐요. 장치를 한 손가락으로 돌려 보고, 두 손가락으로 확대해 보세요.</p>
+    </div>
+  </header>
+
+  <div class="stage">
+    <section class="card viewer">
+      <div class="gl-host" id="host">
+        <div class="vt tl" id="views" role="group" aria-label="보는 방향">
+          <button class="vb sel" type="button" data-v="tilt">비스듬히</button>
+          <button class="vb" type="button" data-v="side">옆에서</button>
+          <button class="vb" type="button" data-v="front">앞에서</button>
+          <button class="vb" type="button" data-v="top">위에서</button>
+          <button class="vb" type="button" data-v="near">가까이</button>
+        </div>
+        <div class="vt tr" id="layers" role="group" aria-label="보이기">
+          <button class="vb" type="button" data-l="B" aria-pressed="true"><span class="dot" style="background:var(--Bc)"></span>자기장</button>
+          <button class="vb" type="button" data-l="I" aria-pressed="true"><span class="dot" style="background:var(--Ic)"></span>전류</button>
+          <button class="vb" type="button" data-l="F" aria-pressed="true"><span class="dot" style="background:var(--Fc)"></span>힘</button>
+          <button class="vb" type="button" data-l="H" aria-pressed="false"><span class="dot" style="background:#eebc97"></span>오른손</button>
+        </div>
+        <div class="vt bl"><span class="hint">한 손가락: 돌리기 · 두 손가락: 확대</span></div>
+        <div class="inset" id="inset"><span class="it">오른손으로 힘의 방향 찾기</span>
+          <div class="ic"><span style="background:var(--Bc)">네 손가락 = 자기장</span><span style="background:var(--Ic)">엄지 = 전류</span><span style="background:var(--Fc)">손바닥 = 힘</span></div></div>
+        <div class="fail3d" id="fail3d">3D 그림을 불러오지 못했어요.<br>인터넷 연결을 확인하고 새로고침해 주세요.<br>(오른쪽 단계 안내와 기록표는 그대로 쓸 수 있어요)</div>
+      </div>
+    </section>
+
+    <section class="card pad">
+      <div class="steps" role="tablist" id="steps"></div>
+
+      <div class="pane" data-p="1">
+        <h2>과정 1 · 전기 그네 실험 장치 연결하기</h2>
+        <p class="goal">디지털 전원 장치, 니크롬선, 전기 그네 실험 장치를 전선으로 연결해요. 전기 그네의 코일 아랫부분은 말굽자석의 두 극 사이에 들어가 있어요.</p>
+        <div class="chips"><span>디지털 전원 장치</span><span>전기 그네 실험 장치</span><span>전선</span><span>니크롬선</span><span>보호 장갑</span></div>
+        <div class="safe"><b>안전</b> 6 V 이상의 전압을 가하지 않아요.</div>
+        <div class="chk"><label><input type="checkbox" id="glove">보호 장갑을 꼈어요</label></div>
+        <div class="acts"><button class="btn primary" id="bWire" type="button">회로 연결하기</button></div>
+        <div class="fb" id="fb1"></div>
+      </div>
+
+      <div class="pane" data-p="2">
+        <h2>과정 2 · 스위치를 누르고 움직이는 방향 기록하기</h2>
+        <p class="goal">전원 장치를 켜고 스위치를 눌러 전기 그네가 (가), (나) 중 어느 쪽으로 움직이는지 관찰해요. <b>옆에서</b> 보면 잘 보여요.</p>
+        <p class="q">먼저 예상해 볼까요? 그네는 어느 쪽으로 움직일까요?<small>예상은 점수와 상관없어요.</small></p>
+        <div class="opts" data-pred="2"><button class="ob" type="button" data-v="가" aria-pressed="false">(가) 말굽자석 안쪽</button><button class="ob" type="button" data-v="나" aria-pressed="false">(나) 말굽자석 바깥쪽</button></div>
+        <div class="acts"><button class="btn amber pw" type="button">전원 켜고 스위치 누르기</button></div>
+        <p class="q">관찰한 방향을 기록해요.</p>
+        <div class="opts" data-rec="2"><button class="ob" type="button" data-v="가" disabled>(가) 쪽으로 움직였다</button><button class="ob" type="button" data-v="나" disabled>(나) 쪽으로 움직였다</button></div>
+        <div class="fb" id="fb2"></div>
+      </div>
+
+      <div class="pane" data-p="3">
+        <h2>과정 3 · 전류의 방향을 바꾸어 반복하기</h2>
+        <p class="goal">전원 장치에 연결한 두 전선을 서로 바꾸어 꽂으면 코일에 흐르는 전류의 방향이 반대로 바뀌어요. 초록 화살표를 잘 보세요.</p>
+        <div class="acts"><button class="btn primary" id="bRev" type="button">두 전선을 바꾸어 꽂기</button><button class="btn amber pw" type="button" disabled>전원 켜고 스위치 누르기</button></div>
+        <p class="q">관찰한 방향을 기록해요.</p>
+        <div class="opts" data-rec="3"><button class="ob" type="button" data-v="가" disabled>(가) 쪽으로 움직였다</button><button class="ob" type="button" data-v="나" disabled>(나) 쪽으로 움직였다</button></div>
+        <div class="fb" id="fb3"></div>
+      </div>
+
+      <div class="pane" data-p="4">
+        <h2>과정 4 · 말굽자석의 N극과 S극 위치를 바꾸어 반복하기</h2>
+        <p class="goal">전선은 처음처럼 다시 꽂았어요. 이번에는 말굽자석을 뒤집어 N극과 S극의 위치를 바꿔요. 하늘색 화살표(자기장의 방향)를 잘 보세요.</p>
+        <div class="acts"><button class="btn primary" id="bFlip" type="button">말굽자석 뒤집기</button><button class="btn amber pw" type="button" disabled>전원 켜고 스위치 누르기</button></div>
+        <p class="q">관찰한 방향을 기록해요.</p>
+        <div class="opts" data-rec="4"><button class="ob" type="button" data-v="가" disabled>(가) 쪽으로 움직였다</button><button class="ob" type="button" data-v="나" disabled>(나) 쪽으로 움직였다</button></div>
+        <div class="fb" id="fb4"></div>
+      </div>
+
+      <div class="pane" data-p="5">
+        <h2>과정 5 · 전류의 세기를 높이며 관찰하기</h2>
+        <p class="goal">장치를 과정 2처럼 되돌렸어요. 전원 장치의 전압을 높이면 회로에 흐르는 전류의 세기가 커져요. 그네가 움직이는 정도를 관찰해요.</p>
+        <div class="volt"><button class="vbtn" id="vDn" type="button" aria-label="전압 내리기">−</button><span class="vd" id="vTxt">3.0 V</span><button class="vbtn" id="vUp" type="button" aria-label="전압 올리기">+</button></div>
+        <div class="meter"><div class="ml">전기 그네가 움직인 정도 (개념 이해를 위한 모형)</div><div class="trk"><i id="mFill"></i></div><div class="hist" id="hist"></div></div>
+        <p class="q">전류의 세기를 크게 하면 전기 그네의 움직임은?</p>
+        <div class="opts" data-q="5"><button class="ob" type="button" data-ok="1">더 크게 움직인다</button><button class="ob" type="button">움직이는 방향이 바뀐다</button><button class="ob" type="button">변하지 않는다</button></div>
+        <div class="fb" id="fb5"></div>
+        <div class="acts" id="strongRow" hidden><button class="btn ghost" id="bStrong" type="button" aria-pressed="false">더 센 자석으로 바꿔 보기</button></div>
+        <div class="fb info" id="fb5b"></div>
+      </div>
+
+      <div class="pane" data-p="6">
+        <h2>과정 6 · 전기 그네를 움직이는 힘의 특성</h2>
+        <p class="goal">과정 2~5의 결과를 생각하며 빈칸을 채워요. 빈칸을 누른 뒤 낱말을 눌러요.</p>
+        <p class="sent" id="sent"></p>
+        <div class="bank" id="bank"></div>
+        <button class="btn primary" id="bChk6" type="button" disabled>확인하기</button>
+        <div class="fb" id="fb6"></div>
+        <p class="q">교과서 그림 Ⅶ-15의 네 가지 경우를 눌러 3D로 확인해요.</p>
+        <div class="cases" id="cases">
+          <button class="case" type="button" data-r="0" data-f="0">처음<small>N극 아래 · S극 위</small><span class="res">바깥쪽</span></button>
+          <button class="case" type="button" data-r="1" data-f="0">전류의 방향 반대<small>전선을 바꾸어 꽂음</small><span class="res">안쪽</span></button>
+          <button class="case" type="button" data-r="0" data-f="1">자기장의 방향 반대<small>말굽자석을 뒤집음</small><span class="res">안쪽</span></button>
+          <button class="case" type="button" data-r="1" data-f="1">전류와 자기장의 방향 모두 반대<small>둘 다 바꿈</small><span class="res">바깥쪽</span></button>
+        </div>
+        <div class="why" id="why">
+          <div class="ws on"><span class="sn">왜 그럴까? 1</span><p>코일에 전류가 흐르면 코일 주변에 자기장이 생겨요(지난 시간). 이 자기장과 말굽자석이 만든 자기장이 <b>상호작용</b>해서 코일이 힘을 받아요.</p></div>
+          <div class="ws"><span class="sn">왜 그럴까? 2</span><p>힘의 방향은 오른손으로 찾아요. 오른손의 <b class="cB">네 손가락을 자기장 방향</b>(N극에서 S극 쪽)으로, <b class="cI">엄지손가락을 전류 방향</b>으로 향하게 해요. 오른쪽 아래 작은 창의 손을 보세요.</p></div>
+          <div class="ws"><span class="sn">왜 그럴까? 3</span><p>그때 <b class="cF">손바닥이 향하는 방향이 힘의 방향</b>이에요. 처음 장치에서는 손바닥이 말굽자석 바깥쪽을 향하므로 그네가 (나) 쪽으로 움직여요.</p></div>
+          <div class="ws"><span class="sn">왜 그럴까? 4</span><p>전류나 자기장 중 <b>하나만</b> 반대로 바꾸면 손을 뒤집어야 해서 손바닥이 반대쪽을 향해요 → 힘도 반대. <b>둘 다</b> 바꾸면 손이 두 번 뒤집혀 손바닥이 처음 방향을 향해요 → 힘의 방향은 처음과 같아요.</p></div>
+          <div class="wnav"><button class="p" type="button" id="wP" disabled>이전</button><span id="wN" style="font-weight:800;color:var(--muted)">1 / 4</span><button class="n" type="button" id="wNx">다음</button></div>
+        </div>
+      </div>
+
+      <div class="rec"><p class="rh">움직이는 방향</p>
+        <table><tbody><tr><td>과정 2</td><td id="r2">-</td></tr><tr><td>과정 3</td><td id="r3">-</td></tr><tr><td>과정 4</td><td id="r4">-</td></tr></tbody></table></div>
+    </section>
+  </div>
+  <p class="model">화살표 길이, 그네가 움직이는 정도는 개념 이해를 위한 모형이에요. 실제 장치와 크기·모양이 다를 수 있어요.</p>
+  <p class="credit">중2 과학 · 전기와 자기 &nbsp;|&nbsp; 제작 · 성안중학교 이삭 T</p>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ===== 블록 1: 실험 단계 안내 (3D 그림 없이도 동작) ===== */
+window.SG = window.SG || {};
+(() => {
+  'use strict';
+  try {
+    const S = window.SG;
+    const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+    // 장치 상태. 3D 그림은 이 값을 매 순간 읽어서 그려요
+    const st = S.state = { wired: false, on: false, rev: false, flip: false, volt: 3, strong: false, show: { B: true, I: true, F: true, H: false } };
+    const v3 = () => S.view || null;
+    const toast = (msg, warn) => { const t = $('#toast'); t.textContent = msg; t.className = 'toast show' + (warn ? ' warn' : ''); clearTimeout(t._h); t._h = setTimeout(() => (t.className = 'toast'), 2600); };
+    const fb = (id, cls, html) => { const f = $(id); f.className = 'fb show ' + cls; f.innerHTML = html; };
+    const actual = () => ((st.rev ? -1 : 1) * (st.flip ? -1 : 1) > 0 ? '나' : '가');
+    const NAME = { 가: '(가) 말굽자석 안쪽', 나: '(나) 말굽자석 바깥쪽' };
+
+    // 단계 탭
+    const STEPS = ['장치 연결', '스위치', '전류 방향', '자석 방향', '전류 세기', '정리'];
+    const done = {};
+    let cur = 1;
+    function renderSteps() {
+      $('#steps').innerHTML = STEPS.map((t, i) => `<button class="stp${done[i + 1] ? ' done' : ''}" role="tab" type="button" data-s="${i + 1}" aria-selected="${cur === i + 1}"><b>${i + 1}</b>${t}</button>`).join('');
+      $$('#steps .stp').forEach((b) => b.addEventListener('click', () => go(+b.dataset.s)));
+    }
+    function setOn(v) {
+      st.on = v;
+      $$('.pw').forEach((b) => { b.classList.toggle('on', v); b.textContent = v ? '전원 끄기' : '전원 켜고 스위치 누르기'; });
+    }
+    function go(n) {
+      if (n > 1 && !st.wired) { toast('먼저 과정 1에서 회로를 연결해요.'); n = 1; }
+      cur = n; renderSteps();
+      $$('.pane').forEach((p) => p.classList.toggle('on', +p.dataset.p === n));
+      setOn(false);
+      if (n === 2) { setRev(false); setFlip(false); st.volt = 3; showVolt(); }
+      if (n === 3) { setFlip(false); $('#bRev').disabled = false; $('.pane[data-p="3"] .pw').disabled = !st.rev; }
+      if (n === 4) { if (st.rev) { setRev(false); toast('전선을 처음처럼 다시 꽂았어요.'); } $('.pane[data-p="4"] .pw').disabled = !st.flip; }
+      if (n === 5) { setRev(false); setFlip(false); st.volt = 3; showVolt(); setOn(true); }
+      if (n === 6) { st.show.H = true; syncLayers(); }
+      const V = v3(); if (V) V.view(n === 2 || n === 3 || n === 4 || n === 5 ? 'side' : n === 6 ? 'near' : 'tilt');
+    }
+    function setRev(v) { st.rev = v; }
+    function setFlip(v) { if (st.flip !== v) { st.flip = v; } }
+    S.go = go;
+
+    // 보이기 버튼
+    function syncLayers() { $$('#layers .vb').forEach((b) => b.setAttribute('aria-pressed', String(!!st.show[b.dataset.l]))); }
+    $$('#layers .vb').forEach((b) => b.addEventListener('click', () => { st.show[b.dataset.l] = !st.show[b.dataset.l]; syncLayers(); }));
+    $$('#views .vb').forEach((b) => b.addEventListener('click', () => { const V = v3(); if (V) V.view(b.dataset.v); }));
+    S.markView = (k) => $$('#views .vb').forEach((b) => b.classList.toggle('sel', b.dataset.v === k));
+
+    // 과정 1
+    $('#bWire').addEventListener('click', () => {
+      if (!$('#glove').checked) { fb('#fb1', 'no', '실험 전에 <b>보호 장갑</b>을 꼈는지 먼저 확인해요.'); return; }
+      st.wired = true; $('#bWire').disabled = true; done[1] = true; renderSteps();
+      fb('#fb1', 'ok', '연결 완료! 전원 장치(+) → 전기 그네 → 니크롬선 → 전원 장치(−)로 이어지는 회로예요. 이제 과정 2로 가요. <button class="btn primary" type="button" id="to2" style="margin-top:8px">과정 2로</button>');
+      $('#to2').addEventListener('click', () => go(2));
+    });
+
+    // 전원 버튼(과정 2~4)
+    let onTimer = null;
+    $$('.pw').forEach((b) => b.addEventListener('click', () => {
+      const V = v3(); if (V && V.busy()) { toast('자석을 옮기는 중이에요. 잠시만요.'); return; }
+      setOn(!st.on);
+      clearTimeout(onTimer);
+      if (st.on) onTimer = setTimeout(() => { const box = $(`[data-rec="${cur}"]`); if (box) $$('.ob', box).forEach((o) => { if (!o.classList.contains('good')) o.disabled = false; }); }, 1400);
+    }));
+    // 예상
+    $$('[data-pred] .ob').forEach((b) => b.addEventListener('click', () => { $$('.ob', b.parentNode).forEach((o) => o.setAttribute('aria-pressed', String(o === b))); S.pred = b.dataset.v; }));
+    // 기록
+    const WHY = {
+      2: '그네는 <b>(나) 말굽자석 바깥쪽</b>으로 움직였어요. 자기장 안에 놓인 코일에 전류가 흐르면 코일이 <b>힘</b>을 받아요.',
+      3: '전류의 방향을 바꾸었더니 그네가 <b>(가) 안쪽</b>으로, 과정 2와 <b>반대쪽</b>으로 움직였어요. → 전류의 방향을 바꾸면 힘의 방향도 바뀌어요.',
+      4: '자석을 뒤집어 자기장의 방향을 바꾸었더니 그네가 <b>(가) 안쪽</b>으로, 과정 2와 <b>반대쪽</b>으로 움직였어요. → 자기장의 방향을 바꾸면 힘의 방향도 바뀌어요.',
+    };
+    $$('[data-rec] .ob').forEach((b) => b.addEventListener('click', () => {
+      const n = +b.parentNode.dataset.rec, ok = b.dataset.v === actual();
+      if (!st.on) { toast('전원을 켜고 그네를 관찰한 뒤 기록해요.'); return; }
+      if (ok) {
+        $$('.ob', b.parentNode).forEach((o) => { o.disabled = true; o.classList.toggle('good', o === b); o.classList.remove('bad'); });
+        const td = $('#r' + n); td.textContent = NAME[actual()]; td.classList.add('fill');
+        let extra = '';
+        if (n === 2 && S.pred) extra = S.pred === actual() ? ' 예상이 맞았어요!' : ' 예상과 달랐네요. 왜 그런지 과정 6에서 알아봐요.';
+        fb('#fb' + n, 'ok', WHY[n] + extra + ` <button class="btn primary" type="button" data-next="${n + 1}" style="margin-top:8px">과정 ${n + 1}로</button>`);
+        $(`[data-next="${n + 1}"]`).addEventListener('click', () => go(n + 1));
+        done[n] = true; renderSteps();
+      } else {
+        b.classList.add('bad');
+        fb('#fb' + n, 'no', '그네를 다시 관찰해 보세요. 위의 <b>옆에서</b> 또는 <b>가까이</b> 버튼을 누르면 잘 보여요. 보라색 (가), (나) 표시를 확인해요.');
+      }
+    }));
+    // 과정 3
+    $('#bRev').addEventListener('click', () => {
+      setOn(false); setRev(true); $('#bRev').disabled = true;
+      $('.pane[data-p="3"] .pw').disabled = false;
+      toast('두 전선을 바꾸어 꽂았어요. 초록 화살표 방향을 보세요.');
+    });
+    // 과정 4
+    $('#bFlip').addEventListener('click', () => {
+      setOn(false); setFlip(true); $('#bFlip').disabled = true;
+      setTimeout(() => ($('.pane[data-p="4"] .pw').disabled = false), 2300);
+      toast('말굽자석을 뒤집는 중이에요. N극(빨강)과 S극(파랑)의 위치를 보세요.');
+    });
+    // 과정 5
+    const VS = [2, 3, 4, 5], best = {};
+    function showVolt() {
+      $('#vTxt').textContent = st.volt.toFixed(1) + ' V';
+      $('#hist').innerHTML = VS.map((v) => `<div class="${v === st.volt ? 'cur' : ''}"><span style="height:${Math.max(2, (best[v] || 0) * 52)}px"></span>${v} V</div>`).join('');
+    }
+    $('#vUp').addEventListener('click', () => { if (st.volt >= 5) { toast('안전: 6 V 이상의 전압을 가하지 않아요.', true); return; } st.volt += 1; showVolt(); });
+    $('#vDn').addEventListener('click', () => { if (st.volt > 2) { st.volt -= 1; showVolt(); } });
+    setInterval(() => {
+      if (cur !== 5) return; const V = v3(); if (!V) return;
+      const a = V.amount(); $('#mFill').style.width = Math.min(100, a * 100) + '%';
+      if (!st.strong && st.on && a > (best[st.volt] || 0)) { best[st.volt] = a; showVolt(); }
+    }, 250);
+    $$('[data-q="5"] .ob').forEach((b) => b.addEventListener('click', () => {
+      const ok = b.dataset.ok === '1';
+      $$('[data-q="5"] .ob').forEach((o) => { o.classList.remove('good', 'bad'); if (o.dataset.ok === '1' && ok) o.classList.add('good'); });
+      if (!ok) b.classList.add('bad');
+      if (ok) { fb('#fb5', 'ok', '전류의 세기가 커질수록 코일에 작용하는 <b>힘이 커져서</b> 그네가 더 크게 움직여요. 움직이는 방향은 그대로예요.'); done[5] = true; renderSteps(); $('#strongRow').hidden = false; }
+      else fb('#fb5', 'no', '전압을 2 V부터 5 V까지 올리면서 막대그래프를 다시 보세요. 방향은 그대로인지도 확인해요.');
+    }));
+    $('#bStrong').addEventListener('click', () => {
+      st.strong = !st.strong; $('#bStrong').setAttribute('aria-pressed', String(st.strong)); $('#bStrong').textContent = st.strong ? '처음 자석으로 되돌리기' : '더 센 자석으로 바꿔 보기';
+      if (st.strong) fb('#fb5b', 'info', '교과서: <b>자기장의 세기가 커질수록</b> 전류가 흐르는 코일에 작용하는 힘은 커져요. 하늘색 화살표가 굵어지고 그네가 더 크게 움직여요.');
+      else $('#fb5b').className = 'fb info';
+    });
+    // 과정 6: 빈칸
+    const PARTS = ['전류의 방향이나 자기장의 방향을 바꾸면 코일이 받는 힘의 방향이 ', 0, '. 전류의 세기가 커질수록 코일이 받는 힘이 ', 1, '.'];
+    const ANS = ['바뀐다', '커진다'], BANK = ['바뀐다', '그대로다', '커진다', '작아진다'];
+    const fill = [null, null]; let sc = 0;
+    $('#sent').innerHTML = PARTS.map((p) => typeof p === 'number' ? `<button type="button" class="slot">빈칸 ${p + 1}</button>` : `<span>${p}</span>`).join('');
+    $('#bank').innerHTML = BANK.map((w) => `<button type="button" class="chip">${w}</button>`).join('');
+    const slots = $$('#sent .slot'), chips = $$('#bank .chip');
+    const paint = () => { slots.forEach((s, i) => { s.textContent = fill[i] ? fill[i].textContent : `빈칸 ${i + 1}`; s.classList.toggle('filled', !!fill[i]); s.classList.toggle('cur', i === sc); }); $('#bChk6').disabled = fill.some((f) => !f); };
+    chips.forEach((c) => c.addEventListener('click', () => { if (fill[sc]) fill[sc].classList.remove('used'); fill[sc] = c; c.classList.add('used'); const n = fill.findIndex((f) => !f); if (n >= 0) sc = n; paint(); }));
+    slots.forEach((s, i) => s.addEventListener('click', () => { if (fill[i]) { fill[i].classList.remove('used'); fill[i] = null; } sc = i; slots.forEach((x) => x.classList.remove('good', 'bad')); paint(); }));
+    $('#bChk6').addEventListener('click', () => {
+      let ok = true; slots.forEach((s, i) => { const g = fill[i].textContent === ANS[i]; s.classList.toggle('good', g); s.classList.toggle('bad', !g); if (!g) ok = false; });
+      if (ok) { fb('#fb6', 'ok', '맞아요! 또 <b>자기장의 세기</b>가 커질수록 힘이 커져요(과정 5의 센 자석). 아래 네 가지 경우를 눌러 3D로 확인해 보세요.'); done[6] = true; renderSteps(); }
+      else fb('#fb6', 'no', '빨간 칸을 다시 생각해 봐요. 과정 3, 4에서 그네가 어느 쪽으로 움직였는지 기록표를 보세요.');
+    });
+    paint();
+    // 과정 6: 네 가지 경우
+    $$('#cases .case').forEach((b) => b.addEventListener('click', () => {
+      const V = v3(); if (V && V.busy()) { toast('자석을 옮기는 중이에요. 잠시만요.'); return; }
+      $$('#cases .case').forEach((o) => o.setAttribute('aria-pressed', String(o === b)));
+      const r = b.dataset.r === '1', f = b.dataset.f === '1';
+      const needFlip = st.flip !== f;
+      setOn(false); setRev(r); setFlip(f);
+      setTimeout(() => setOn(true), needFlip ? 2300 : 300);
+    }));
+    // 왜 그럴까
+    let wi = 0; const ws = $$('#why .ws');
+    const wshow = () => { ws.forEach((w, i) => w.classList.toggle('on', i === wi)); $('#wP').disabled = wi === 0; $('#wNx').disabled = wi === ws.length - 1; $('#wN').textContent = `${wi + 1} / ${ws.length}`; if (wi >= 1) { st.show.H = true; syncLayers(); } };
+    $('#wP').addEventListener('click', () => { wi = Math.max(0, wi - 1); wshow(); });
+    $('#wNx').addEventListener('click', () => { wi = Math.min(ws.length - 1, wi + 1); wshow(); });
+
+    renderSteps(); go(1); syncLayers();
+    S.okUI = true;
+  } catch (err) { window.SG_err('실험 단계', err); }
+})();
+</script>
+
+<script type="module">
+/* ===== 블록 2: 3D 전기 그네 ===== */
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+/* ===== 공통 3D 도구 (three.js) =====
+   화살표 색은 교과서 그림 Ⅶ-14~16과 같게: 자기장 하늘색, 전류 초록색, 힘 빨간(주황)색.
+   화살표 길이·움직이는 정도는 개념 이해를 위한 모형이에요(숫자 없음). */
+const C3 = (() => {
+  const COL = { B: 0x14a5d0, I: 0x2fae4a, F: 0xf0522a, N: 0xd8433b, S: 0x2f62c9, Cu: 0xc0703a, P: 0x7d5ad6 };
+  const REDUCE = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const V = (x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z);
+  const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+
+  // 탭 껍데기에서 보이지 않는 탭이면 그리지 않아요(태블릿 배터리 아끼기)
+  function visibleNow() {
+    if (document.hidden) return false;
+    try { const f = window.frameElement; if (f && f.hasAttribute('data-page') && !f.classList.contains('on')) return false; } catch (e) {}
+    return true;
+  }
+
+  function canvasTex(w, h, draw) {
+    const c = document.createElement('canvas'); c.width = w; c.height = h;
+    draw(c.getContext('2d'), w, h);
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
+    t.userData.canvas = c; return t;
+  }
+  function gradientBg(top, bottom) {
+    return canvasTex(4, 256, (g, w, h) => { const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, top); gr.addColorStop(1, bottom); g.fillStyle = gr; g.fillRect(0, 0, w, h); });
+  }
+  // 극 표시(N, S) 글자 판
+  function letterTex(ch, bg) {
+    return canvasTex(256, 256, (g, w, h) => {
+      g.fillStyle = bg; g.fillRect(0, 0, w, h);
+      g.fillStyle = 'rgba(255,255,255,.96)'; g.font = '900 190px Pretendard, Arial, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.fillText(ch, w / 2, h / 2 + 10);
+    });
+  }
+  // 나뭇결 책상
+  function woodTex() {
+    const t = canvasTex(1024, 512, (g, w, h) => {
+      const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#c99a6b'); gr.addColorStop(1, '#b8875a'); g.fillStyle = gr; g.fillRect(0, 0, w, h);
+      for (let i = 0; i < 160; i++) {
+        const y = Math.random() * h, a = 0.04 + Math.random() * 0.08; g.strokeStyle = `rgba(${90 + Math.random() * 40},${55 + Math.random() * 25},30,${a})`;
+        g.lineWidth = 1 + Math.random() * 3; g.beginPath(); g.moveTo(0, y);
+        for (let x = 0; x <= w; x += 32) g.lineTo(x, y + Math.sin(x / 90 + i) * 4 + Math.sin(x / 23) * 1.2);
+        g.stroke();
+      }
+    });
+    t.wrapS = t.wrapT = THREE.RepeatWrapping; return t;
+  }
+  // 바닥에 드리우는 부드러운 그림자
+  function blobTex() {
+    return canvasTex(256, 256, (g, w, h) => { const r = g.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2); r.addColorStop(0, 'rgba(20,38,59,.32)'); r.addColorStop(1, 'rgba(20,38,59,0)'); g.fillStyle = r; g.fillRect(0, 0, w, h); });
+  }
+
+  /* 무대: 렌더러·카메라·조명·손가락 조작 */
+  function makeStage(host, opt = {}) {
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = opt.exposure || 1.05;
+    renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.domElement.className = 'gl';
+    host.appendChild(renderer.domElement);
+    const scene = new THREE.Scene();
+    scene.background = gradientBg(opt.top || '#f6f9fc', opt.bottom || '#d6e3ef');
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    scene.environment = pmrem.fromScene(new RoomEnvironment(renderer), 0.04).texture;
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x8a9bb0, 0.55));
+    const sun = new THREE.DirectionalLight(0xffffff, 1.6);
+    sun.position.set(opt.sunX || 5, 11, opt.sunZ || 7); sun.castShadow = true;
+    sun.shadow.mapSize.set(1024, 1024); sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.02;
+    const sc = sun.shadow.camera; sc.left = -9; sc.right = 9; sc.top = 9; sc.bottom = -9; sc.near = 1; sc.far = 40;
+    scene.add(sun);
+    const camera = new THREE.PerspectiveCamera(opt.fov || 34, 1, 0.1, 200);
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true; controls.dampingFactor = 0.09; controls.enablePan = false;
+    controls.rotateSpeed = 0.85; controls.zoomSpeed = 0.9;
+    controls.minDistance = opt.minD || 4; controls.maxDistance = opt.maxD || 24; controls.maxPolarAngle = Math.PI * 0.86;
+
+    const overlay = document.createElement('div'); overlay.className = 'lbls'; host.appendChild(overlay);
+    let W = 1, H = 1;
+    function resize() {
+      const r = host.getBoundingClientRect(); W = Math.max(1, r.width); H = Math.max(1, r.height);
+      renderer.setSize(W, H); camera.aspect = W / H;
+      if (opt.fitWidth) { // 세로 화면에서 장면이 잘리지 않도록 화각을 넓혀요
+        const base = opt.fov || 34; camera.fov = camera.aspect < 1.15 ? Math.min(62, base * (1.15 / camera.aspect) * 0.92) : base;
+      }
+      camera.updateProjectionMatrix();
+    }
+    try { new ResizeObserver(resize).observe(host); } catch (e) { addEventListener('resize', resize); }
+    resize();
+
+    // 이름표(HTML)를 3D 위치에 붙이기
+    const labels = [];
+    function label(html, cls, at) {
+      const el = document.createElement('div'); el.className = 'lb ' + (cls || ''); el.innerHTML = html; overlay.appendChild(el);
+      const L = { el, at, show: true, set(h) { el.innerHTML = h; } };
+      labels.push(L); return L;
+    }
+    const tmp = V();
+    function placeLabels() {
+      labels.forEach((L) => {
+        if (!L.show) { L.el.style.display = 'none'; return; }
+        const p = typeof L.at === 'function' ? L.at() : L.at;
+        if (!p) { L.el.style.display = 'none'; return; }
+        tmp.copy(p).project(camera);
+        if (tmp.z > 1 || tmp.z < -1) { L.el.style.display = 'none'; return; }
+        const px = ((tmp.x + 1) / 2) * W, py = ((1 - tmp.y) / 2) * H;
+        // 작은 창(오른손 등)에 가려지는 이름표는 숨겨요
+        if (insets.some((I) => I.on && I.last && px > I.last.x - 30 && px < I.last.x + I.last.w + 30 && py > I.last.y - 12 && py < I.last.y + I.last.h + 12)) { L.el.style.display = 'none'; return; }
+        L.el.style.display = '';
+        L.el.style.transform = `translate(${px}px,${py}px) translate(-50%,-50%)`;
+      });
+    }
+
+    // 카메라 이동
+    let fly = null;
+    controls.addEventListener('start', () => { fly = null; });
+    function flyTo(pos, target, dur = 1.1) {
+      if (REDUCE || dur <= 0) { camera.position.copy(pos); controls.target.copy(target); controls.update(); return; }
+      fly = { p0: camera.position.clone(), t0: controls.target.clone(), p1: pos.clone(), t1: target.clone(), k: 0, dur };
+    }
+
+    // 작은 창(오른손 보기 등)을 같은 캔버스 귀퉁이에 그리기
+    const insets = [];
+    function addInset(sc2, cam2, rectFn) { const I = { scene: sc2, camera: cam2, rect: rectFn, on: true }; insets.push(I); return I; }
+
+    const fns = [];
+    let last = performance.now(), running = true;
+    function tick(now) {
+      requestAnimationFrame(tick);
+      if (!running || !visibleNow()) { last = now; return; }
+      const dt = Math.min(0.05, Math.max(0, (now - last) / 1000)); last = now;
+      if (fly) {
+        fly.k = Math.min(1, fly.k + dt / fly.dur); const e = ease(fly.k);
+        camera.position.lerpVectors(fly.p0, fly.p1, e); controls.target.lerpVectors(fly.t0, fly.t1, e);
+        if (fly.k >= 1) fly = null;
+      }
+      for (let i = 0; i < fns.length; i++) { try { fns[i](dt, now / 1000); } catch (err) { console.error(err); } }
+      controls.update();
+      renderer.setScissorTest(false); renderer.setViewport(0, 0, W, H);
+      renderer.render(scene, camera);
+      insets.forEach((I) => {
+        if (!I.on) return; const r = I.rect(W, H); I.last = r; if (!r) return;
+        renderer.setScissorTest(true);
+        renderer.setScissor(r.x, H - r.y - r.h, r.w, r.h); renderer.setViewport(r.x, H - r.y - r.h, r.w, r.h);
+        I.camera.aspect = r.w / r.h; I.camera.updateProjectionMatrix();
+        renderer.render(I.scene, I.camera);
+      });
+      renderer.setScissorTest(false);
+      placeLabels();
+    }
+    requestAnimationFrame(tick);
+    return { renderer, scene, camera, controls, sun, overlay, label, flyTo, onFrame: (f) => fns.push(f), addInset, size: () => ({ W, H }), resize };
+  }
+
+  /* 화살표: 원기둥 + 원뿔. setDir(방향, 길이) */
+  const UP = V(0, 1, 0);
+  function makeArrow(color, o = {}) {
+    const r = o.r || 0.06, head = o.head || 0.3, hr = o.hr || r * 2.6;
+    const mat = new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: o.glow == null ? 0.38 : o.glow, roughness: 0.35, metalness: 0.05, transparent: !!o.opacity, opacity: o.opacity || 1 });
+    const g = new THREE.Group();
+    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 1, 20), mat);
+    const cone = new THREE.Mesh(new THREE.ConeGeometry(hr, head, 28), mat);
+    shaft.castShadow = cone.castShadow = !!o.shadow;
+    g.add(shaft, cone);
+    let curLen = 1;
+    g.setDir = (dir, len) => {
+      if (len != null) curLen = len;
+      const L = Math.max(curLen, head * 1.05);
+      shaft.scale.y = L - head; shaft.position.y = (L - head) / 2; cone.position.y = L - head / 2;
+      if (dir) g.quaternion.setFromUnitVectors(UP, tmpD.copy(dir).normalize());
+      return g;
+    };
+    g.mat = mat; g.len = () => curLen;
+    return g;
+  }
+  const tmpD = V();
+
+  /* 오른손 모형
+     손의 기준 방향: 네 손가락 = +Y, 엄지손가락 = +X, 손바닥이 향하는 쪽 = +Z
+     (오른손이므로 엄지(전류) × 네 손가락(자기장) = 손바닥(힘) 방향) */
+  function makeHand(o = {}) {
+    const root = new THREE.Group();
+    const skin = new THREE.MeshStandardMaterial({ color: 0xeebc97, roughness: 0.62, metalness: 0 });
+    const palmSkin = new THREE.MeshStandardMaterial({ color: 0xf8d3b8, roughness: 0.75 });
+    const nailM = new THREE.MeshStandardMaterial({ color: 0xffe9e2, roughness: 0.25 });
+    const sleeve = new THREE.MeshStandardMaterial({ color: 0x35587d, roughness: 0.85 });
+    const add = (m) => { m.castShadow = true; root.add(m); return m; };
+    add(new THREE.Mesh(new RoundedBoxGeometry(0.94, 1.02, 0.34, 4, 0.14), skin));
+    const pad = add(new THREE.Mesh(new RoundedBoxGeometry(0.8, 0.86, 0.05, 3, 0.022), palmSkin)); pad.position.set(0, -0.02, 0.155);
+    // 손바닥 주름(손바닥 쪽임을 알아보기 쉽게)
+    const crease = new THREE.MeshStandardMaterial({ color: 0xdca184, roughness: 0.8 });
+    [[-0.05, 0.12, 0.62, -0.2], [0.02, -0.12, 0.55, 0.35]].forEach(([x, y, w, rz]) => { const c = new THREE.Mesh(new THREE.CapsuleGeometry(0.012, w, 2, 6), crease); c.rotation.z = Math.PI / 2 + rz; c.position.set(x, y, 0.182); root.add(c); });
+    const F = [[0.34, 0.8], [0.115, 0.9], [-0.115, 0.84], [-0.33, 0.66]];
+    F.forEach(([x, L]) => {
+      const r = 0.102;
+      const f = add(new THREE.Mesh(new THREE.CapsuleGeometry(r, L - 2 * r, 6, 16), skin)); f.position.set(x, 0.44 + L / 2, 0);
+      const n = add(new THREE.Mesh(new THREE.SphereGeometry(0.074, 16, 10), nailM)); n.scale.set(1, 1.35, 0.32); n.position.set(x, 0.44 + L - 0.14, -0.088);
+      // 마디 주름
+      const k = new THREE.Mesh(new THREE.TorusGeometry(r * 0.98, 0.006, 4, 18, Math.PI), crease); k.rotation.x = Math.PI / 2; k.rotation.z = Math.PI; k.position.set(x, 0.44 + L * 0.42, 0); root.add(k);
+    });
+    // 엄지: +X 방향으로 곧게
+    const th = add(new THREE.Mesh(new THREE.CapsuleGeometry(0.118, 0.5, 6, 16), skin)); th.rotation.z = -Math.PI / 2; th.position.set(0.78, -0.16, 0.04);
+    const tn = add(new THREE.Mesh(new THREE.SphereGeometry(0.08, 16, 10), nailM)); tn.scale.set(1.35, 1, 0.32); tn.position.set(0.98, -0.16, -0.075);
+    const mound = add(new THREE.Mesh(new THREE.SphereGeometry(0.3, 20, 14), skin)); mound.scale.set(1.1, 1.05, 0.62); mound.position.set(0.36, -0.2, 0.04);
+    const wrist = add(new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.33, 0.55, 24), skin)); wrist.scale.z = 0.62; wrist.position.y = -0.74;
+    const cuff = add(new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.42, 0.62, 28), sleeve)); cuff.scale.z = 0.72; cuff.position.y = -1.25;
+    // 세 화살표
+    const aB = makeArrow(COL.B, { r: 0.05, head: 0.24 }); aB.position.set(0, 1.5, 0); aB.setDir(V(0, 1, 0), 0.75);
+    const aI = makeArrow(COL.I, { r: 0.05, head: 0.24 }); aI.position.set(1.22, -0.16, 0.04); aI.setDir(V(1, 0, 0), 0.75);
+    const aF = makeArrow(COL.F, { r: 0.065, head: 0.3 }); aF.position.set(0, 0.0, 0.2); aF.setDir(V(0, 0, 1), o.fLen || 1.15);
+    root.add(aB, aI, aF);
+    root.arrows = { B: aB, I: aI, F: aF };
+    root.tips = { B: V(0, 2.42, 0), I: V(2.2, -0.16, 0.04), F: V(0, 0, 1.6) };
+    return root;
+  }
+  // 엄지 = 전류 방향, 네 손가락 = 자기장 방향이 되도록 손을 돌리는 회전값
+  function handQuat(iDir, bDir) {
+    const x = iDir.clone().normalize(), y = bDir.clone().normalize(), z = V().crossVectors(x, y).normalize();
+    return new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(x, y, z));
+  }
+
+  /* 7-세그먼트 숫자(디지털 전원 장치 화면) */
+  const SEG = { '0': 'abcdef', '1': 'bc', '2': 'abged', '3': 'abgcd', '4': 'fgbc', '5': 'afgcd', '6': 'afgedc', '7': 'abc', '8': 'abcdefg', '9': 'abcdfg', '-': 'g', ' ': '' };
+  function seg7(g, txt, x, y, s, on, off) {
+    let cx = x;
+    for (const ch of txt) {
+      if (ch === '.') { g.fillStyle = on; g.beginPath(); g.arc(cx - s * 0.12, y + s * 1.9, s * 0.11, 0, 7); g.fill(); continue; }
+      const segs = SEG[ch] || '', w = s, t = s * 0.2, h = s * 0.95;
+      const R = { a: [cx + t, y, w - 2 * t, t], d: [cx + t, y + 2 * h, w - 2 * t, t], g: [cx + t, y + h, w - 2 * t, t], f: [cx, y + t * 0.6, t, h - t * 0.4], b: [cx + w - t, y + t * 0.6, t, h - t * 0.4], e: [cx, y + h + t * 0.6, t, h - t * 0.4], c: [cx + w - t, y + h + t * 0.6, t, h - t * 0.4] };
+      Object.keys(R).forEach((k) => { g.fillStyle = segs.includes(k) ? on : off; const r = R[k]; g.fillRect(r[0], r[1], r[2], r[3]); });
+      cx += w * 1.35;
+    }
+  }
+
+  // 관 모양 전선(곡선)
+  function tube(points, r, mat, seg = 80) {
+    const curve = new THREE.CatmullRomCurve3(points, false, 'centripetal');
+    const m = new THREE.Mesh(new THREE.TubeGeometry(curve, seg, r, 10, false), mat); m.castShadow = true; m.curve = curve; return m;
+  }
+
+  // 길을 따라 움직이는 전류 화살표(작은 원뿔). setPath(점 배열), update(dt, 빠르기, 방향)
+  function makeFlow(count, color, size = 1) {
+    const geo = new THREE.ConeGeometry(0.055 * size, 0.17 * size, 12); geo.rotateX(Math.PI / 2); // 원뿔 끝 = +Z
+    const mat = new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.9, roughness: 0.3 });
+    const mesh = new THREE.InstancedMesh(geo, mat, count); mesh.frustumCulled = false;
+    let pts = [], cum = [], total = 1, off = 0; const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), p = V(), d = V(), sc = V(1, 1, 1), Z = V(0, 0, 1);
+    function setPath(P) {
+      pts = P; cum = [0];
+      for (let i = 1; i < P.length; i++) cum.push(cum[i - 1] + P[i].distanceTo(P[i - 1]));
+      total = cum[cum.length - 1] || 1;
+    }
+    function at(s, out, dir) {
+      s = ((s % total) + total) % total;
+      let i = 1; while (i < cum.length - 1 && cum[i] < s) i++;
+      const a = pts[i - 1], b = pts[i], seg = cum[i] - cum[i - 1] || 1, k = (s - cum[i - 1]) / seg;
+      out.lerpVectors(a, b, k); dir.subVectors(b, a).normalize();
+    }
+    function update(dt, speed, sign, visible) {
+      mesh.visible = !!visible && pts.length > 1;
+      if (!mesh.visible) return;
+      off += dt * speed * sign;
+      const gap = total / count;
+      for (let k = 0; k < count; k++) {
+        at(off + k * gap, p, d);
+        if (sign < 0) d.negate();
+        q.setFromUnitVectors(Z, d); m4.compose(p, q, sc); mesh.setMatrixAt(k, m4);
+      }
+      mesh.instanceMatrix.needsUpdate = true;
+    }
+    return { mesh, setPath, update, mat };
+  }
+
+  // 책상과 그림자 받는 바닥
+  function addTable(scene, w, d, y = 0) {
+    const tex = woodTex(); tex.repeat.set(w / 10, d / 10);
+    const mat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.55, metalness: 0 });
+    const t = new THREE.Mesh(new RoundedBoxGeometry(w, 0.4, d, 3, 0.12), mat); t.position.y = y - 0.2; t.receiveShadow = true; scene.add(t);
+    return t;
+  }
+
+  return { COL, REDUCE, V, ease, makeStage, makeArrow, makeHand, handQuat, letterTex, canvasTex, blobTex, seg7, tube, makeFlow, addTable, visibleNow };
+})();
+try {
+  const S = window.SG, st = S.state, { V, COL } = C3;
+  const host = document.getElementById('host');
+  const stage = C3.makeStage(host, { fitWidth: true, minD: 3.5, maxD: 26 });
+  const { scene, camera, controls, label } = stage;
+  C3.addTable(scene, 15, 11);
+
+  const M = {
+    white: new THREE.MeshStandardMaterial({ color: 0xf3f5f7, roughness: 0.42 }),
+    dark: new THREE.MeshStandardMaterial({ color: 0x2a3036, roughness: 0.5, metalness: 0.2 }),
+    steel: new THREE.MeshStandardMaterial({ color: 0xd0d6dc, metalness: 0.92, roughness: 0.26 }),
+    cu: new THREE.MeshStandardMaterial({ color: 0xc8733a, metalness: 1, roughness: 0.3 }),
+    black: new THREE.MeshStandardMaterial({ color: 0x1d2024, roughness: 0.55 }),
+    red: new THREE.MeshStandardMaterial({ color: 0xd23b33, roughness: 0.45 }),
+    leadK: new THREE.MeshStandardMaterial({ color: 0x25282d, roughness: 0.5 }),
+    leadR: new THREE.MeshStandardMaterial({ color: 0xd23b33, roughness: 0.45 }),
+    acryl: new THREE.MeshPhysicalMaterial({ color: 0xe8f6ff, roughness: 0.04, metalness: 0, transparent: true, opacity: 0.22, clearcoat: 1 }),
+    magN: new THREE.MeshPhysicalMaterial({ color: COL.N, roughness: 0.36, clearcoat: 0.55, clearcoatRoughness: 0.25 }),
+    magS: new THREE.MeshPhysicalMaterial({ color: COL.S, roughness: 0.36, clearcoat: 0.55, clearcoatRoughness: 0.25 }),
+  };
+  const mesh = (geo, mat, x = 0, y = 0, z = 0) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true; return m; };
+
+  /* --- 받침과 기둥 --- */
+  scene.add(mesh(new RoundedBoxGeometry(6.2, 0.25, 5.0, 3, 0.08), M.white, 0, 0.125, -0.25));
+  const POSTX = 2.4, TOPY = 5.4, HOOKX = 0.95;
+  [-1, 1].forEach((sx) => {
+    scene.add(mesh(new THREE.CylinderGeometry(0.075, 0.075, TOPY - 0.25, 20), M.steel, sx * POSTX, 0.25 + (TOPY - 0.25) / 2, 0));
+    scene.add(mesh(new RoundedBoxGeometry(0.62, 0.16, 0.62, 2, 0.05), M.dark, sx * POSTX, 0.33, 0));
+    const tm = mesh(new THREE.CylinderGeometry(0.075, 0.075, 0.18, 18), sx > 0 ? M.red : M.black, sx * POSTX, 0.42, 0.33); tm.rotation.x = Math.PI / 2; scene.add(tm);
+    scene.add(mesh(new THREE.SphereGeometry(0.11, 18, 12), M.steel, sx * POSTX, TOPY, 0));
+    const rail = mesh(new THREE.CylinderGeometry(0.05, 0.05, POSTX - 0.45, 16), M.steel, sx * (0.45 + (POSTX - 0.45) / 2), TOPY, 0); rail.rotation.z = Math.PI / 2; scene.add(rail);
+    const hook = mesh(new THREE.TorusGeometry(0.09, 0.022, 10, 24), M.steel, sx * HOOKX, TOPY - 0.03, 0); hook.rotation.y = Math.PI / 2; scene.add(hook);
+  });
+  scene.add(mesh(new RoundedBoxGeometry(0.95, 0.2, 0.2, 2, 0.05), M.black, 0, TOPY, 0));
+
+  /* --- 전기 그네 (위쪽 걸이를 축으로 흔들려요) --- */
+  const swing = new THREE.Group(); swing.position.set(0, TOPY, 0); scene.add(swing);
+  const CT = -3.05, CB = -4.35, CX = HOOKX; // 코일 위·아래(그네 기준), 코일 반너비
+  [-1, 1].forEach((sx) => {
+    swing.add(mesh(new THREE.CylinderGeometry(0.028, 0.028, 3.0, 12), M.steel, sx * CX, -1.5, 0));
+    swing.add(mesh(new RoundedBoxGeometry(0.2, 0.18, 0.3, 2, 0.04), M.black, sx * CX, CT + 0.04, 0));
+  });
+  swing.add(mesh(new RoundedBoxGeometry(2.25, 0.62, 0.06, 2, 0.02), M.acryl, 0, CT - 0.22, -0.16));
+  function rrect(x0, x1, y0, y1, r, z) {
+    const P = [], arc = (cx, cy, a0) => { for (let k = 0; k <= 6; k++) { const a = a0 + (k / 6) * Math.PI / 2; P.push(V(cx + r * Math.cos(a), cy + r * Math.sin(a), z)); } };
+    arc(x1 - r, y1 - r, 0); arc(x0 + r, y1 - r, Math.PI / 2); arc(x0 + r, y0 + r, Math.PI); arc(x1 - r, y0 + r, Math.PI * 1.5);
+    return P;
+  }
+  for (let k = 0; k < 6; k++) {
+    const z = -0.1 + k * 0.04;
+    const curve = new THREE.CatmullRomCurve3(rrect(-CX, CX, CB, CT, 0.1, z), true, 'catmullrom', 0.1);
+    swing.add(mesh(new THREE.TubeGeometry(curve, 160, 0.021, 8, true), M.cu));
+  }
+
+  /* --- 말굽자석: 옆으로 세워 N극(빨강)이 아래, S극(파랑)이 위 (그림 Ⅶ-15) --- */
+  const MAGY = 1.05, TIP = 1.0, BEND = -1.6;
+  const magPivot = new THREE.Group(); magPivot.position.set(0, MAGY, 0); scene.add(magPivot);
+  const magnet = new THREE.Group(); magPivot.add(magnet);
+  function half(lower) {
+    const s = new THREE.Shape();
+    if (lower) { s.moveTo(TIP, -0.75); s.lineTo(BEND, -0.75); s.absarc(BEND, 0, 0.75, -Math.PI / 2, -Math.PI, true); s.lineTo(BEND - 0.25, 0); s.absarc(BEND, 0, 0.25, Math.PI, Math.PI * 1.5, false); s.lineTo(TIP, -0.25); }
+    else { s.moveTo(TIP, 0.75); s.lineTo(BEND, 0.75); s.absarc(BEND, 0, 0.75, Math.PI / 2, Math.PI, false); s.lineTo(BEND - 0.25, 0); s.absarc(BEND, 0, 0.25, Math.PI, Math.PI / 2, true); s.lineTo(TIP, 0.25); }
+    s.closePath();
+    const g = new THREE.ExtrudeGeometry(s, { depth: 1.0, bevelEnabled: true, bevelThickness: 0.035, bevelSize: 0.035, bevelSegments: 3, curveSegments: 28 });
+    g.translate(0, 0, -0.5); g.rotateY(-Math.PI / 2); g.computeVertexNormals();
+    return mesh(g, lower ? M.magN : M.magS);
+  }
+  magnet.add(half(true), half(false));
+  const texN = C3.letterTex('N', '#d8433b'), texS = C3.letterTex('S', '#2f62c9');
+  [[texN, -0.5], [texS, 0.5]].forEach(([t, v]) => {
+    const mat = new THREE.MeshStandardMaterial({ map: t, roughness: 0.4 });
+    [-1, 1].forEach((sx) => { const p = new THREE.Mesh(new THREE.PlaneGeometry(0.4, 0.4), mat); p.position.set(sx * 0.538, v, 0.45); p.rotation.y = sx * Math.PI / 2; magnet.add(p); });
+    const f = new THREE.Mesh(new THREE.PlaneGeometry(0.4, 0.4), mat); f.position.set(0, v, TIP + 0.04); magnet.add(f);
+  });
+  const blob = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 2.4), new THREE.MeshBasicMaterial({ map: C3.blobTex(), transparent: true, depthWrite: false }));
+  blob.rotation.x = -Math.PI / 2; blob.position.set(0, 0.255, -0.4); scene.add(blob);
+  // 자기장 화살표(자석과 함께 뒤집혀요): N극 → S극
+  const fieldG = new THREE.Group(); magnet.add(fieldG);
+  [-1.15, -0.6, 0.72].forEach((z) => [-0.3, 0, 0.3].forEach((x) => { const a = C3.makeArrow(COL.B, { r: 0.022, head: 0.14, hr: 0.06, glow: 0.5 }); a.position.set(x, -0.23, z); a.setDir(V(0, 1, 0), 0.46); fieldG.add(a); }));
+
+  /* --- 디지털 전원 장치 --- */
+  const SUPY = -0.95; const sup = new THREE.Group(); sup.position.set(5.3, 0, 1.5); sup.rotation.y = SUPY; scene.add(sup);
+  sup.add(mesh(new RoundedBoxGeometry(2.3, 1.35, 1.7, 3, 0.1), M.dark, 0, 0.675, 0));
+  const panelTex = C3.canvasTex(512, 300, () => {});
+  const panel = new THREE.Mesh(new THREE.PlaneGeometry(2.1, 1.23), new THREE.MeshStandardMaterial({ map: panelTex, roughness: 0.5 })); panel.position.set(0, 0.675, 0.856); sup.add(panel);
+  let panelKey = '';
+  function drawPanel() {
+    const key = `${st.on}|${st.volt}|${st.wired}`; if (key === panelKey) return; panelKey = key;
+    const c = panelTex.userData.canvas, g = c.getContext('2d');
+    const gr = g.createLinearGradient(0, 0, 0, 300); gr.addColorStop(0, '#3a4148'); gr.addColorStop(1, '#2b3137'); g.fillStyle = gr; g.fillRect(0, 0, 512, 300);
+    g.fillStyle = '#0d0f11'; g.fillRect(28, 26, 300, 116);
+    C3.seg7(g, st.wired ? st.volt.toFixed(1) : '0.0', 70, 44, 54, st.on ? '#ff4a3a' : '#5a1d18', '#1c1214');
+    g.fillStyle = '#c9d1d9'; g.font = '800 30px Pretendard, sans-serif'; g.fillText('V', 290, 128);
+    g.font = '700 24px Pretendard, sans-serif'; g.fillStyle = '#aab4bf'; g.fillText('전압', 350, 60); g.fillText('출력', 410, 196);
+    g.fillText('+', 92, 278); g.fillText('−', 202, 278);
+  }
+  drawPanel();
+  const led = mesh(new THREE.SphereGeometry(0.06, 16, 10), new THREE.MeshStandardMaterial({ color: 0x1f4d2e, emissive: 0x000000 }), 0.62, 0.45, 0.88); sup.add(led);
+  const knob = mesh(new THREE.CylinderGeometry(0.17, 0.19, 0.16, 28), M.black, 0.75, 1.05, 0.9); knob.rotation.x = Math.PI / 2; sup.add(knob);
+  const knobMark = mesh(new THREE.BoxGeometry(0.03, 0.12, 0.02), M.white, 0, 0.09, 0.09); knob.add(knobMark); knobMark.rotation.x = -Math.PI / 2;
+  const TP = V(-0.68, 0.22, 0.95), TM = V(-0.25, 0.22, 0.95);
+  [[TP, M.red], [TM, M.black]].forEach(([p, m]) => { const t = mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.2, 18), m, p.x, p.y, p.z - 0.05); t.rotation.x = Math.PI / 2; sup.add(t); });
+  scene.updateMatrixWorld(true);
+  const wTP = sup.localToWorld(TP.clone()), wTM = sup.localToWorld(TM.clone());
+  const fwd = V(Math.sin(SUPY), 0, Math.cos(SUPY));
+
+  /* --- 니크롬선 --- */
+  const NX0 = -1.2, NX1 = 0.4, NZ = 3.2;
+  scene.add(mesh(new RoundedBoxGeometry(NX1 - NX0 + 0.5, 0.14, 0.4, 2, 0.04), M.white, (NX0 + NX1) / 2, 0.07, NZ));
+  {
+    const P = []; for (let k = 0; k <= 600; k++) { const t = k / 600, a = t * Math.PI * 2 * 22; P.push(V(NX0 + 0.12 + t * (NX1 - NX0 - 0.24), 0.32 + 0.075 * Math.sin(a), NZ + 0.075 * Math.cos(a))); }
+    scene.add(mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(P), 900, 0.011, 6, false), new THREE.MeshStandardMaterial({ color: 0x9a9da3, metalness: 0.85, roughness: 0.35 })));
+    [NX0, NX1].forEach((x) => scene.add(mesh(new RoundedBoxGeometry(0.16, 0.3, 0.22, 2, 0.04), M.black, x, 0.29, NZ)));
+  }
+
+  /* --- 전선 (과정 1에서 그려져요) --- */
+  const LP = V(-POSTX, 0.42, 0.44), RP = V(POSTX, 0.42, 0.44), N0 = V(NX0, 0.36, NZ + 0.12), N1 = V(NX1, 0.36, NZ + 0.12);
+  let leads = [];
+  function buildLeads() {
+    leads.forEach((l) => scene.remove(l)); leads = [];
+    const pA = st.rev ? wTM : wTP, pC = st.rev ? wTP : wTM; // 전선을 바꾸어 꽂으면 끝이 서로 바뀌어요
+    const A = C3.tube([pA, pA.clone().addScaledVector(fwd, 0.5).setY(0.12), V(3.5, 0.06, 1.6), RP.clone().setZ(0.85).setY(0.2), RP], 0.045, M.leadR, 120);
+    const B = C3.tube([LP, LP.clone().setZ(0.85).setY(0.2), V(-2.6, 0.06, 2.6), N0.clone().setX(NX0 - 0.4).setY(0.12), N0], 0.045, M.leadK, 120);
+    const C = C3.tube([N1, N1.clone().setX(NX1 + 0.4).setY(0.12), V(2.2, 0.06, 3.4), V(3.8, 0.06, 2.9), pC.clone().addScaledVector(fwd, 0.5).setY(0.12), pC], 0.045, M.leadK, 120);
+    leads = [A, B, C]; leads.forEach((l) => scene.add(l));
+    return leads;
+  }
+  buildLeads(); leads.forEach((l) => (l.visible = false));
+  let wireAnim = st.wired ? 1 : 0, builtRev = st.rev;
+
+  /* --- 전류 흐름(초록 화살표들), 전류·힘 화살표, 이름표 --- */
+  const flow = C3.makeFlow(64, COL.I, 1.15); scene.add(flow.mesh);
+  const aI = C3.makeArrow(COL.I, { r: 0.045, head: 0.24 }); swing.add(aI);
+  const aF = C3.makeArrow(COL.F, { r: 0.075, head: 0.32, shadow: true }); scene.add(aF);
+  const pk = new THREE.Group(); scene.add(pk); // (가)(나) 표시
+  const pkA = C3.makeArrow(COL.P, { r: 0.035, head: 0.2, hr: 0.09, glow: 0.3 }), pkB = C3.makeArrow(COL.P, { r: 0.035, head: 0.2, hr: 0.09, glow: 0.3 });
+  pkA.position.set(-1.6, 2.65, 0); pkA.setDir(V(0, 0, -1), 0.85); pkB.position.set(-1.6, 2.65, 0); pkB.setDir(V(0, 0, 1), 0.85); pk.add(pkA, pkB);
+  label('(가) 안쪽', 'P', V(-1.6, 2.7, -1.3));
+  label('(나) 바깥쪽', 'P', V(-1.6, 2.7, 1.35));
+  const bottomW = V();
+  const lbF = label('힘', 'F', () => (aF.visible ? aF.localToWorld(V(0, aF.len() + 0.22, 0)) : null));
+  const lbI = label('전류', 'I', () => (aI.visible ? aI.localToWorld(V(0, aI.len() + 0.2, 0)) : null));
+  const lbB = label('자기장', 'B', () => (fieldG.visible ? magnet.localToWorld(V(-0.85, 0.55, 0.35)) : null));
+  label('디지털 전원 장치', 'small', () => sup.localToWorld(V(0, 1.62, 0)));
+  label('니크롬선', 'small', V((NX0 + NX1) / 2, 0.75, NZ));
+  label('말굽자석', 'small', () => magPivot.localToWorld(V(0, -0.95, BEND - 0.2)));
+  label('전기 그네', 'small', () => swing.localToWorld(V(-CX - 0.7, -1.6, 0)));
+
+  /* --- 오른손 작은 창 --- */
+  const hScene = new THREE.Scene(); hScene.environment = scene.environment;
+  hScene.add(new THREE.HemisphereLight(0xffffff, 0x8a9bb0, 0.7)); const hl = new THREE.DirectionalLight(0xffffff, 1.4); hl.position.set(3, 6, 5); hScene.add(hl);
+  hScene.background = C3.canvasTex(4, 128, (g, w, h) => { const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#fffaf3'); gr.addColorStop(1, '#f3e6d6'); g.fillStyle = gr; g.fillRect(0, 0, w, h); });
+  const hand = C3.makeHand(); const handWrap = new THREE.Group(); handWrap.add(hand); hScene.add(handWrap);
+  const hCam = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
+  const insetEl = document.getElementById('inset');
+  const inset = stage.addInset(hScene, hCam, (W, H) => {
+    const w = Math.round(Math.min(W * 0.32, H * 0.42, 270)), x = W - w - 12, y = H - w - 12;
+    insetEl.style.cssText = `left:${x}px;top:${y}px;width:${w}px;height:${w}px`;
+    return { x, y, w, h: w };
+  });
+  const cLocal = V(0.55, 0.4, 0.2);
+
+  /* --- 보는 방향 --- */
+  const VIEWS = {
+    tilt: [V(-8.2, 5.6, 9.4), V(0.9, 1.9, 0.3)],
+    side: [V(-12.2, 3.2, 4.6), V(0, 2.5, 0.2)],
+    front: [V(0.6, 3.4, 13.5), V(0.4, 2.3, 0)],
+    top: [V(0.3, 15.5, 1.6), V(0.6, 0.6, 0.2)],
+    near: [V(-3.1, 2.0, 2.7), V(0, 1.15, 0.2)],
+  };
+  camera.position.copy(VIEWS.tilt[0]); controls.target.copy(VIEWS.tilt[1]);
+  let curView = 'tilt';
+  controls.addEventListener('start', () => { curView = ''; S.markView && S.markView(''); });
+
+  /* --- 움직임 --- */
+  let th = 0, om = 0, magAnim = null, magSign = st.flip ? -1 : 1, shownFlip = st.flip, magHome = true;
+  if (st.flip) magPivot.rotation.z = Math.PI;
+  const flowPts = [];
+  const TH_MAX = 0.19;
+  stage.onFrame((dt, t) => {
+    // 전선 그리기
+    if (st.wired && wireAnim < 1) { wireAnim = Math.min(1, wireAnim + dt / (C3.REDUCE ? 0.01 : 1.4)); }
+    if (builtRev !== st.rev) { builtRev = st.rev; buildLeads(); }
+    leads.forEach((l) => { l.visible = st.wired; const n = l.geometry.index.count; l.geometry.setDrawRange(0, Math.floor((n * wireAnim) / 6) * 6); });
+    // 자석 뒤집기: 뒤로 빼고 → 돌리고 → 다시 넣기
+    if (shownFlip !== st.flip && !magAnim) { magAnim = { k: 0, from: magPivot.rotation.z, to: st.flip ? Math.PI : 0 }; shownFlip = st.flip; }
+    if (magAnim) {
+      const d = C3.REDUCE ? 1 : dt / 2.1; magAnim.k = Math.min(1, magAnim.k + d); const k = magAnim.k;
+      const out = k < 0.33 ? C3.ease(k / 0.33) : k < 0.67 ? 1 : 1 - C3.ease((k - 0.67) / 0.33);
+      const rot = k < 0.33 ? 0 : k < 0.67 ? C3.ease((k - 0.33) / 0.34) : 1;
+      magPivot.position.set(0, MAGY + out * 0.12, -2.5 * out);
+      magPivot.rotation.z = magAnim.from + (magAnim.to - magAnim.from) * rot;
+      magHome = false;
+      if (k >= 1) { magAnim = null; magHome = true; magSign = st.flip ? -1 : 1; magPivot.position.set(0, MAGY, 0); }
+    }
+    // 힘과 그네의 흔들림 (개념 이해를 위한 모형)
+    const sI = st.rev ? -1 : 1, kI = st.wired && st.on ? st.volt / 3 : 0, kB = magHome ? (st.strong ? 1.6 : 1) : 0;
+    const Fz = sI * magSign * kI * kB;
+    const thEq = -Math.atan(0.072 * Fz), w0 = 2.5, z = 0.13;
+    const n = 4; for (let i = 0; i < n; i++) { const h = dt / n; om += (-w0 * w0 * (th - thEq) - 2 * z * w0 * om) * h; th += om * h; }
+    swing.rotation.x = th;
+    // 화살표
+    fieldG.visible = st.show.B; fieldG.scale.set(st.strong ? 1.7 : 1, 1, st.strong ? 1.7 : 1);
+    bottomW.copy(swing.localToWorld(V(0, CB, 0)));
+    aF.visible = st.show.F && Math.abs(Fz) > 0.01;
+    if (aF.visible) { aF.position.copy(bottomW).add(V(0, 0, Math.sign(Fz) * 0.16)); aF.setDir(V(0, 0, Math.sign(Fz)), 0.45 + 0.42 * Math.abs(Fz)); }
+    aI.visible = st.show.I && kI > 0; aI.position.set(-0.62 * sI, CB, -0.3); aI.setDir(V(sI, 0, 0), 1.24);
+    // 회로를 따라 흐르는 전류
+    flowPts.length = 0;
+    flowPts.push(...leads[0].curve.getPoints(30));
+    flowPts.push(V(POSTX, 0.42, 0), V(POSTX, TOPY, 0), V(HOOKX, TOPY, 0));
+    // 코일은 여러 번 감겨 있어요. 화살표는 한 바퀴만 보여 줘요: 아랫부분에서 전류는 +x 쪽(기본)
+    [V(CX, -0.05, 0), V(CX, CT, 0.15), V(-CX, CT, 0.15), V(-CX, CB, 0.15), V(CX, CB, 0.15), V(CX, CT, 0.15), V(-CX, CT, 0.15), V(-CX, -0.05, 0)].forEach((p) => flowPts.push(swing.localToWorld(p)));
+    flowPts.push(V(-HOOKX, TOPY, 0), V(-POSTX, TOPY, 0), V(-POSTX, 0.42, 0));
+    flowPts.push(...leads[1].curve.getPoints(40), V(NX0, 0.42, NZ), V(NX1, 0.42, NZ), ...leads[2].curve.getPoints(30));
+    if (st.rev) { /* 전선을 바꾸어 꽂으면 같은 길을 거꾸로 흘러요 */ }
+    flow.setPath(flowPts); flow.update(dt, 0.9 + 0.5 * kI, st.rev ? -1 : 1, st.show.I && kI > 0 && wireAnim >= 1);
+    // 전원 장치
+    drawPanel(); panelTex.needsUpdate = true;
+    led.material.emissive.setHex(st.on ? 0x31e06b : 0x000000);
+    knob.rotation.y = -(st.volt - 2) * 0.55;
+    // 오른손 창
+    inset.on = st.show.H; insetEl.classList.toggle('on', st.show.H);
+    if (st.show.H) {
+      const q = C3.handQuat(V(sI, 0, 0), V(0, magSign, 0));
+      hand.quaternion.slerp(q, C3.REDUCE ? 1 : Math.min(1, dt * 5));
+      hand.position.copy(cLocal).applyQuaternion(hand.quaternion).negate();
+      hand.arrows.F.visible = kI > 0 && magHome;
+      const dir = V().subVectors(camera.position, controls.target).normalize();
+      hCam.position.copy(dir.multiplyScalar(6.6)); hCam.up.copy(camera.up); hCam.lookAt(0, 0, 0);
+    }
+  });
+
+  S.view = {
+    view(k) { const v = VIEWS[k]; if (!v) return; curView = k; stage.flyTo(v[0], v[1]); S.markView && S.markView(k); },
+    amount: () => Math.abs(th) / TH_MAX,
+    busy: () => !!magAnim || shownFlip !== st.flip,
+  };
+  S.ok3d = true;
+} catch (err) { window.SG_err('3D 전기 그네', err); const f = document.getElementById('fail3d'); if (f) f.classList.add('show'); }
+</script>
+</body>
+</html>
