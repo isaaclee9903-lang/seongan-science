@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>자기장 탐험 – 막대자석과 코일 주위</title>
+<script>
+/* 문제 알림: 코드에 오류가 나면 화면 아래에 빨간 상자로 알려 줘요 (선생님 확인용) */
+(function () {
+  function box() {
+    var b = document.getElementById('feErr');
+    if (!b && document.body) {
+      b = document.createElement('div'); b.id = 'feErr';
+      b.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;background:#fdecea;color:#8a1f17;border:2px solid #d9534f;border-radius:12px;padding:10px 14px;font:600 14px/1.5 sans-serif;white-space:pre-wrap';
+      document.body.appendChild(b);
+    }
+    return b;
+  }
+  window.FE_err = function (where, err) {
+    var msg = '[' + where + '] ' + (err && err.message ? err.message : String(err));
+    var show = function () { var b = box(); if (b) b.textContent += (b.textContent ? '\n' : '') + msg; };
+    if (document.body) show(); else document.addEventListener('DOMContentLoaded', show);
+  };
+  window.addEventListener('error', function (e) { window.FE_err('스크립트', { message: e.message + ' (줄 ' + e.lineno + ')' }); });
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      if (!(window.FE && window.FE.ok)) window.FE_err('실행 안 됨', { message: '자기장 탐험 코드가 실행되지 않았어요. 파일이 끝(</html>)까지 들어 있는지 확인해 주세요.' });
+    }, 1500);
+  });
+})();
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+  :root{--bg:#edf3f8;--card:#fff;--ink:#14263b;--ink2:#34495e;--muted:#5a6b7e;--line:#dde6ee;--accent:#0e63b3;--accent-soft:#e3effb;
+    --N:#d8433b;--S:#2f62c9;--Fd:#1d86b8;--Cu:#a85a26;--Ea:#1f7a8c;--ok:#1f9d5c;
+    --shadow:0 1px 2px rgba(20,38,59,.06),0 8px 24px rgba(20,38,59,.07);--ease:cubic-bezier(.2,.8,.2,1)}
+  *{box-sizing:border-box}html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:"Pretendard",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  button{font:inherit;color:inherit}
+  .app{max-width:1280px;margin:0 auto;padding:16px 16px 28px;display:flex;flex-direction:column;gap:14px}
+  .top{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;flex-wrap:wrap}
+  .eyebrow{display:inline-flex;font-size:13px;font-weight:700;color:var(--Fd);background:#e3f2fa;padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(22px,2.6vw,30px);margin:8px 0 2px;letter-spacing:-.02em}
+  .sub{margin:0;color:var(--muted);font-size:15px;word-break:keep-all}
+  .prog{font-size:14px;font-weight:800;color:var(--Fd);background:#e3f2fa;padding:8px 14px;border-radius:999px}
+  .card{background:var(--card);border-radius:20px;box-shadow:var(--shadow);border:1px solid rgba(20,38,59,.04)}
+  .pad{padding:14px 16px}
+  .card-title{font-weight:800;font-size:16px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+  .card-title .hint{font-weight:500;font-size:12.5px;color:var(--muted)}
+  .stage{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(300px,1fr);grid-template-areas:"b s" "m s";gap:14px;align-items:start}
+  .board{grid-area:b}.side{grid-area:s}.mcard{grid-area:m}
+  .mis{grid-template-columns:1fr 1fr}
+  .board{position:relative;overflow:hidden;padding:0}
+  .board svg{display:block;width:100%;height:auto;touch-action:none}
+  .model{position:absolute;left:14px;bottom:10px;font-size:12px;font-weight:700;color:#9fc3d6}
+  .side{display:flex;flex-direction:column;gap:14px}
+  .seg{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:#eef3f8;border-radius:14px;padding:5px}
+  .seg button{min-height:48px;border:0;border-radius:11px;background:transparent;font-weight:800;font-size:16px;cursor:pointer;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:8px}
+  .seg button[aria-pressed="true"]{background:#fff;color:var(--ink);box-shadow:0 2px 8px rgba(20,38,59,.12)}
+  .seg svg{width:30px;height:18px}
+  .ctl{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+  .tg{min-height:48px;padding:0 14px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15px;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:8px}
+  .tg[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+  .tg.sw[aria-pressed="true"]{border-color:#e8a400;background:#fff6d6;color:#7a5600}
+  .tg.ea[aria-pressed="true"]{border-color:var(--Ea);background:#e3f3f5;color:var(--Ea)}
+  .tg:disabled{opacity:.35;cursor:default}
+  .tg svg{width:18px;height:18px;flex:none}
+  .rng{display:flex;align-items:center;gap:12px;margin-top:12px}
+  .rng label{font-weight:800;font-size:15px;white-space:nowrap}
+  .rng input{flex:1;height:44px;accent-color:#e8a400}
+  .rng b{min-width:56px;text-align:right;font-variant-numeric:tabular-nums}
+  .coilonly[hidden],.magonly[hidden]{display:none}
+  .note{background:#f6fafc;border:1px solid #d9e9f2;border-radius:14px;padding:12px 14px;font-size:15.5px;line-height:1.7;color:var(--ink2);word-break:keep-all;min-height:104px}
+  .note b.h{display:block;font-size:16.5px;color:var(--ink);margin-bottom:2px}
+  .mis{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+  .mis li{display:grid;grid-template-columns:30px 1fr;gap:10px;align-items:start;font-size:14.5px;line-height:1.55;color:var(--ink2);word-break:keep-all;padding:8px 10px;border-radius:12px;background:#f7fafc;transition:background .3s}
+  .mis li i{width:26px;height:26px;border-radius:50%;border:2px solid #c3cfdb;display:grid;place-items:center;font-style:normal;font-weight:900;font-size:13px;color:#8a99a8;background:#fff}
+  .mis li.done{background:#ecf8f1}
+  .mis li.done i{background:var(--ok);border-color:var(--ok);color:#fff}
+  .drag{cursor:grab}.drag:active{cursor:grabbing}
+  .drag .ring{fill:none;stroke:#ffb020;stroke-width:4;stroke-dasharray:7 6}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,30px);opacity:0;background:#14263b;color:#fff;padding:12px 18px;border-radius:14px;font-weight:700;font-size:15px;box-shadow:0 10px 30px rgba(0,0,0,.25);transition:all .4s var(--ease);pointer-events:none;z-index:10;max-width:calc(100% - 32px);text-align:center;word-break:keep-all}
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+  .credit{text-align:center;font-size:13px;font-weight:700;color:#8495a8;letter-spacing:.02em;margin:6px 0 0}
+  @media (max-width:900px){.stage{grid-template-columns:1fr;grid-template-areas:"b" "s" "m"}}
+  @media (max-width:600px){.mis{grid-template-columns:1fr}}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div>
+      <span class="eyebrow">중2 과학 · 전기와 자기 · 자기장 탐험</span>
+      <h1>나침반으로 자기장 지도 그리기</h1>
+      <p class="sub">노란 테두리 나침반을 끌어 막대자석과 코일 둘레를 돌아다녀 보세요. 바늘의 N극(빨간 쪽)이 그 자리의 자기장 방향이에요.</p>
+    </div>
+    <span class="prog" id="prog">미션 0 / 4</span>
+  </header>
+
+  <div class="stage">
+    <section class="card board">
+      <svg id="board" viewBox="0 0 1000 640" role="img" aria-label="자기장 탐험 판. 가운데에 막대자석 또는 코일이 있고 나침반을 끌어 옮길 수 있다."></svg>
+      <span class="model">개념 이해를 위한 모형이에요</span>
+    </section>
+    <section class="card pad mcard">
+      <div class="card-title">탐험 미션</div>
+      <ul class="mis" id="mis"></ul>
+    </section>
+    <div class="side">
+      <section class="card pad">
+        <div class="card-title">무엇 주위를 볼까요?</div>
+        <div class="seg" role="group" aria-label="자석 또는 코일">
+          <button type="button" id="mMag" aria-pressed="true"><svg viewBox="0 0 30 18"><rect x="1" y="3" width="14" height="12" rx="2" fill="#d8433b"/><rect x="15" y="3" width="14" height="12" rx="2" fill="#2f62c9"/></svg>막대자석</button>
+          <button type="button" id="mCoil" aria-pressed="false"><svg viewBox="0 0 30 18" fill="none" stroke="#c0703a" stroke-width="2.4"><ellipse cx="7" cy="9" rx="3" ry="7"/><ellipse cx="13" cy="9" rx="3" ry="7"/><ellipse cx="19" cy="9" rx="3" ry="7"/><ellipse cx="25" cy="9" rx="3" ry="7"/></svg>코일</button>
+        </div>
+        <div class="ctl magonly" id="magCtl">
+          <button type="button" class="tg" id="flip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h13l-3-3M20 15H7l3 3"/></svg>자석 뒤집기</button>
+        </div>
+        <div class="coilonly" id="coilCtl" hidden>
+          <div class="ctl">
+            <button type="button" class="tg sw" id="sw" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="5" cy="15" r="2"/><circle cx="19" cy="15" r="2"/><path id="swLever" d="M6.8 14.2 L17 7"/></svg><span id="swTxt">스위치 닫기</span></button>
+            <button type="button" class="tg" id="rev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v16M7 4L3 8M7 4l4 4M17 20V4M17 20l-4-4M17 20l4-4"/></svg>전류 방향 바꾸기</button>
+          </div>
+          <div class="rng"><label for="lv">전류의 세기</label><input type="range" id="lv" min="1" max="5" step="1" value="3"><b id="lvTxt">3단계</b></div>
+        </div>
+      </section>
+      <section class="card pad">
+        <div class="card-title">보기 <span class="hint">켜고 끌 수 있어요</span></div>
+        <div class="ctl" style="margin-top:0">
+          <button type="button" class="tg" id="tLines" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 12h18M5 7c4-4 10-4 14 0M5 17c4 4 10 4 14 0"/></svg>자기장 모습</button>
+          <button type="button" class="tg" id="tGrid" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="18" r="3"/></svg>나침반 가득 놓기</button>
+          <button type="button" class="tg ea" id="tEarth" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg>지구 자기장 함께</button>
+        </div>
+      </section>
+      <section class="card pad">
+        <div class="card-title">관찰 노트</div>
+        <div class="note" id="note"></div>
+      </section>
+    </div>
+  </div>
+  <p class="credit">중2 과학 · 전기와 자기 &nbsp;|&nbsp; 제작 · 성안중학교 이삭 T</p>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+/* ===== 공통: 자기장 모형 =====
+   코일(막대자석)을 판을 뚫고 지나가는 전선 묶음으로 보고, 각 점에서 자기장의 방향을 계산해요.
+   화면 좌표(오른쪽 x+, 아래 y+). 방향과 상대적인 세기만 쓰고, 세기 숫자는 화면에 내지 않아요(개념 이해를 위한 모형). */
+window.MF = (function () {
+  'use strict';
+  // pole: 'L'이면 왼쪽 끝이 N극, 'R'이면 오른쪽 끝이 N극. rot: 전체를 돌리는 각도(도)
+  function coil(cx, cy, len, half, n, pole, rot) {
+    const s0 = pole === 'R' ? -1 : 1, a = ((rot || 0) * Math.PI) / 180, c = Math.cos(a), s = Math.sin(a);
+    const w = [];
+    for (let i = 0; i < n; i++) {
+      const u = -len / 2 + (len * (i + 0.5)) / n;
+      [[half, s0], [-half, -s0]].forEach(([v, sg]) => w.push({ x: cx + u * c - v * s, y: cy + u * s + v * c, s: sg }));
+    }
+    return { cx, cy, len, half, n, pole, rot: rot || 0, c, s, w };
+  }
+  function field(src, x, y) {
+    let bx = 0, by = 0;
+    const w = src.w, eps = 26;
+    for (let i = 0; i < w.length; i++) {
+      const k = w[i], dx = x - k.x, dy = y - k.y, r2 = dx * dx + dy * dy + eps;
+      bx += (k.s * dy) / r2; by -= (k.s * dx) / r2;
+    }
+    return [bx, by];
+  }
+  function inside(src, x, y, pad) {
+    const dx = x - src.cx, dy = y - src.cy, u = dx * src.c + dy * src.s, v = -dx * src.s + dy * src.c;
+    return Math.abs(u) < src.len / 2 + (pad || 0) && Math.abs(v) < src.half + (pad || 0);
+  }
+  function trace(src, x0, y0, sg, box, maxN) {
+    const pts = [[x0, y0]], h = 4;
+    let x = x0, y = y0;
+    for (let i = 0; i < maxN; i++) {
+      let [bx, by] = field(src, x, y), m = Math.hypot(bx, by) || 1e-9;
+      const mx = x + (sg * h * bx) / m / 2, my = y + (sg * h * by) / m / 2;
+      [bx, by] = field(src, mx, my); m = Math.hypot(bx, by) || 1e-9;
+      x += (sg * h * bx) / m; y += (sg * h * by) / m;
+      pts.push([x, y]);
+      if (x < box[0] || x > box[2] || y < box[1] || y > box[3]) return { pts, closed: false };
+      if (i > 30 && Math.hypot(x - x0, y - y0) < h * 1.3) { pts.push([x0, y0]); return { pts, closed: true }; }
+    }
+    return { pts, closed: false };
+  }
+  // 코일 가운데를 가로지르는 씨앗 점에서 앞뒤로 따라가 자기장의 모습을 나타낸 선을 만들어요
+  function lines(src, box, k, spread) {
+    const out = [], sp = spread || 0.8;
+    for (let j = 0; j < k; j++) {
+      const v = -src.half * sp + (src.half * 2 * sp * (j + 0.5)) / k;
+      const x0 = src.cx - v * src.s, y0 = src.cy + v * src.c;
+      const f = trace(src, x0, y0, 1, box, 3200);
+      if (f.closed) out.push(f.pts);
+      else { const b = trace(src, x0, y0, -1, box, 3200); out.push(b.pts.reverse().concat(f.pts.slice(1))); }
+    }
+    return out;
+  }
+  function pathD(pts) {
+    let d = `M${pts[0][0].toFixed(1)} ${pts[0][1].toFixed(1)}`;
+    for (let i = 2; i < pts.length; i += 2) d += `L${pts[i][0].toFixed(1)} ${pts[i][1].toFixed(1)}`;
+    return d + `L${pts[pts.length - 1][0].toFixed(1)} ${pts[pts.length - 1][1].toFixed(1)}`;
+  }
+  // 선의 1/4, 3/4 지점(자석·코일 밖)에 화살표를 붙여요
+  function arrows(src, pts, color, size, box) {
+    let L = 0; const cum = [0];
+    for (let i = 1; i < pts.length; i++) { L += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]); cum.push(L); }
+    let out = '';
+    [0.25, 0.75].forEach((f) => {
+      const t = L * f; let i = cum.findIndex((c) => c >= t); if (i < 1) i = 1;
+      const [x, y] = pts[i], [px, py] = pts[i - 1];
+      if (inside(src, x, y, 14)) return;
+      if (box && (x < box[0] + 14 || x > box[2] - 14 || y < box[1] + 14 || y > box[3] - 14)) return;
+      const a = (Math.atan2(y - py, x - px) * 180) / Math.PI, z = size || 7;
+      out += `<path d="M${z} 0 L${-z} ${-z * 0.8} L${-z * 0.45} 0 L${-z} ${z * 0.8}Z" fill="${color}" transform="translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${a.toFixed(1)})"/>`;
+    });
+    return out;
+  }
+  const DEFS = `
+    <radialGradient id="mfBezel" cx=".35" cy=".3" r=".9"><stop offset="0" stop-color="#fdfdfd"/><stop offset=".55" stop-color="#c9d1da"/><stop offset="1" stop-color="#7d8996"/></radialGradient>
+    <radialGradient id="mfFace" cx=".45" cy=".4" r=".75"><stop offset="0" stop-color="#ffffff"/><stop offset=".8" stop-color="#f1f3f5"/><stop offset="1" stop-color="#dde2e8"/></radialGradient>
+    <linearGradient id="mfN" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#f0645a"/><stop offset=".5" stop-color="#e2443a"/><stop offset=".5" stop-color="#b92a22"/><stop offset="1" stop-color="#cf3a31"/></linearGradient>
+    <linearGradient id="mfS" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#f4f6f8"/><stop offset=".5" stop-color="#dfe4ea"/><stop offset=".5" stop-color="#b9c2cc"/><stop offset="1" stop-color="#cfd6de"/></linearGradient>
+    <linearGradient id="mfCu" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#7a3a14"/><stop offset=".35" stop-color="#e59a5c"/><stop offset=".55" stop-color="#ffd2a1"/><stop offset=".75" stop-color="#c7743b"/><stop offset="1" stop-color="#7a3a14"/></linearGradient>
+    <linearGradient id="mfCuB" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#4d230b"/><stop offset=".5" stop-color="#8f4c22"/><stop offset="1" stop-color="#4d230b"/></linearGradient>
+    <linearGradient id="mfMagN" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f06a5f"/><stop offset=".45" stop-color="#d8433b"/><stop offset="1" stop-color="#a52a23"/></linearGradient>
+    <linearGradient id="mfMagS" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5d8cf0"/><stop offset=".45" stop-color="#2f62c9"/><stop offset="1" stop-color="#1e4596"/></linearGradient>
+    <filter id="mfSh" x="-40%" y="-40%" width="180%" height="180%"><feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#0b1a2b" flood-opacity=".35"/></filter>`;
+  function compass(id, r, extra) {
+    const t = [];
+    for (let k = 0; k < 16; k++) { const a = (k * Math.PI) / 8, r1 = r * (k % 4 ? 0.74 : 0.68), r2 = r * 0.8; t.push(`M${(r1 * Math.sin(a)).toFixed(1)} ${(-r1 * Math.cos(a)).toFixed(1)}L${(r2 * Math.sin(a)).toFixed(1)} ${(-r2 * Math.cos(a)).toFixed(1)}`); }
+    return `<g class="cps" id="${id}" ${extra || ''}><g filter="url(#mfSh)"><circle r="${r}" fill="url(#mfBezel)"/></g><circle r="${(r * 0.84).toFixed(1)}" fill="url(#mfFace)" stroke="#8d99a6" stroke-width="1"/>
+      <path d="${t.join('')}" stroke="#9aa5b1" stroke-width="1.2"/>
+      <g class="ndl"><path d="M0 ${(-r * 0.66).toFixed(1)}L${(r * 0.15).toFixed(1)} 0L${(-r * 0.15).toFixed(1)} 0Z" fill="url(#mfN)"/><path d="M0 ${(r * 0.66).toFixed(1)}L${(r * 0.15).toFixed(1)} 0L${(-r * 0.15).toFixed(1)} 0Z" fill="url(#mfS)" stroke="#aab3bd" stroke-width=".6"/></g>
+      <circle r="${(r * 0.1).toFixed(1)}" fill="#eef1f4" stroke="#6f7b88" stroke-width="1"/>
+      <ellipse cx="${(-r * 0.28).toFixed(1)}" cy="${(-r * 0.34).toFixed(1)}" rx="${(r * 0.38).toFixed(1)}" ry="${(r * 0.17).toFixed(1)}" fill="#fff" opacity=".45" transform="rotate(-32 ${(-r * 0.28).toFixed(1)} ${(-r * 0.34).toFixed(1)})"/></g>`;
+  }
+  // 코일 그림: 뒤쪽 반(back)과 앞쪽 반(front)을 따로 그려 선이 코일을 통과하는 것처럼 보이게 해요
+  function coilParts(src, turns) {
+    const n = turns || 9, rx = src.half * 0.3, ry = src.half, ar = [];
+    let back = '', front = '';
+    for (let i = 0; i < n; i++) {
+      const x = src.cx - src.len / 2 + (src.len * (i + 0.5)) / n;
+      back += `<path d="M${x} ${src.cy - ry} A${rx} ${ry} 0 0 0 ${x} ${src.cy + ry}" fill="none" stroke="url(#mfCuB)" stroke-width="7" stroke-linecap="round"/>`;
+      front += `<path d="M${x} ${src.cy + ry} A${rx} ${ry} 0 0 0 ${x} ${src.cy - ry}" fill="none" stroke="url(#mfCu)" stroke-width="7.5" stroke-linecap="round"/>`;
+      ar.push(x + rx);
+    }
+    const up = src.pole !== 'R';
+    const ax = src.cx + rx, ay = src.cy;
+    const arrow = `<g class="iarrow" transform="translate(${ax} ${ay}) rotate(${up ? 0 : 180})"><path d="M0 ${-ry * 0.62} V${ry * 0.5}" stroke="#ff3b5c" stroke-width="5" stroke-linecap="round"/><path d="M-9 ${-ry * 0.42} L0 ${-ry * 0.68} L9 ${-ry * 0.42}Z" fill="#ff3b5c" stroke="#ff3b5c" stroke-width="3" stroke-linejoin="round"/></g>`;
+    return { back, front, arrow };
+  }
+  function magnet(src) {
+    const x = src.cx - src.len / 2, y = src.cy - src.half, w = src.len, h = src.half * 2, nl = src.pole !== 'R';
+    const L = nl ? ['mfMagN', 'N'] : ['mfMagS', 'S'], R = nl ? ['mfMagS', 'S'] : ['mfMagN', 'N'];
+    return `<g filter="url(#mfSh)"><rect x="${x}" y="${y}" width="${w / 2}" height="${h}" rx="6" fill="url(#${L[0]})"/><rect x="${x + w / 2}" y="${y}" width="${w / 2}" height="${h}" rx="6" fill="url(#${R[0]})"/><rect x="${x + w / 2 - 6}" y="${y}" width="12" height="${h}" fill="url(#${R[0]})"/></g>
+      <rect x="${x + 4}" y="${y + 4}" width="${w - 8}" height="${h * 0.22}" rx="4" fill="#fff" opacity=".22"/>
+      <text x="${x + w * 0.22}" y="${src.cy + h * 0.18}" text-anchor="middle" style="font:900 ${Math.round(h * 0.52)}px Pretendard,sans-serif;fill:#fff">${L[1]}</text>
+      <text x="${x + w * 0.78}" y="${src.cy + h * 0.18}" text-anchor="middle" style="font:900 ${Math.round(h * 0.52)}px Pretendard,sans-serif;fill:#fff">${R[1]}</text>`;
+  }
+  // 나침반 바늘: 실제 자석 바늘처럼 살짝 지나쳤다가 제자리를 찾는 움직임
+  const REDUCE = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  function needles() {
+    const list = []; let raf = 0, last = 0;
+    const wrap = (d) => Math.atan2(Math.sin(d), Math.cos(d));
+    function paint(o) { o.el.setAttribute('transform', `rotate(${((o.th * 180) / Math.PI).toFixed(2)})`); }
+    function step(now) {
+      const dt = Math.min(0.033, (now - last) / 1000 || 0.016); last = now;
+      let moving = false;
+      list.forEach((o) => {
+        const d = wrap(o.tg - o.th), k = 38 * o.k;
+        o.w += (k * Math.sin(d) - 5.2 * Math.sqrt(o.k) * o.w) * dt; o.th += o.w * dt;
+        if (Math.abs(o.w) > 0.004 || Math.abs(d) > 0.004) moving = true; else { o.w = 0; o.th = o.tg; }
+        paint(o);
+      });
+      raf = moving ? requestAnimationFrame(step) : 0;
+    }
+    function kick() { if (!raf) { last = performance.now(); raf = requestAnimationFrame(step); } }
+    return {
+      add(g, ang) { const o = { el: g.querySelector('.ndl'), th: ang || 0, w: 0, tg: ang || 0, k: 1 }; list.push(o); paint(o); return o; },
+      set(o, bx, by, instant) {
+        const m = Math.hypot(bx, by); if (m < 1e-12) return;
+        o.tg = Math.atan2(bx, -by); o.k = Math.max(0.35, Math.min(1.6, m));
+        if (instant || REDUCE) { o.th = o.tg; o.w = 0; paint(o); } else kick();
+      },
+      clear() { list.length = 0; },
+    };
+  }
+  return { coil, field, lines, pathD, arrows, DEFS, compass, coilParts, magnet, needles, REDUCE };
+})();
+</script>
+<script>
+/* ===== 자기장 탐험 ===== */
+(() => {
+  'use strict';
+  try {
+    const $ = (s) => document.querySelector(s);
+    const svg = $('#board'), W = 1000, H = 640, CX = 500, CY = 320, box = [0, 0, W, H];
+    const LV = [0, 0.4, 0.9, 1.6, 2.6, 4];   // 전류의 세기 단계별 코일 자기장 크기(상대값)
+    const S = { mode: 'mag', flip: false, sw: false, rev: false, lv: 3, lines: false, grid: false, earth: false };
+    const MIS = [
+      ['막대자석의 N극 가까이와 S극 가까이에 나침반을 하나씩 놓고 바늘 방향을 비교해요.', false],
+      ['코일의 스위치를 닫고 \'나침반 가득 놓기\'를 켜서, 바늘이 막대자석 때와 비슷하게 늘어서는지 봐요.', false],
+      ['스위치를 닫은 채로 전류의 방향을 바꿔 바늘이 모두 반대로 돌아가는지 봐요.', false],
+      ['\'지구 자기장 함께\'를 켜고 전류의 세기를 1단계와 5단계로 바꿔 바늘이 움직이는 정도를 비교해요.', false],
+    ];
+    const seen = { l1: false, l5: false };
+    let src, N = MF.needles(), drags = [], grid = [], gridPos = [];
+    const dragPos = [[200, 160], [800, 480], [500, 110]];
+
+    function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('show'), 2600); }
+    function makeSrc() {
+      src = S.mode === 'mag' ? MF.coil(CX, CY, 280, 46, 18, S.flip ? 'R' : 'L') : MF.coil(CX, CY, 210, 70, 12, S.rev ? 'R' : 'L');
+    }
+    function blocked(x, y) { return Math.abs(x - CX) < src.len / 2 + 40 && Math.abs(y - CY) < src.half + 40; }
+    function draw() {
+      makeSrc();
+      const lines = MF.lines(src, box, S.mode === 'mag' ? 14 : 12, S.mode === 'mag' ? 0.92 : 0.82);
+      const showL = S.lines && (S.mode === 'mag' || S.sw);
+      const holes = [];
+      for (let x = 40; x < W; x += 50) for (let y = 40; y < H; y += 50) holes.push(`<circle cx="${x}" cy="${y}" r="2.4"/>`);
+      gridPos = [];
+      for (let x = 80; x < W - 40; x += 105) for (let y = 70; y < H - 30; y += 100) if (!blocked(x, y) && Math.hypot(x - (W - 56), y - 56) > 70 && dragPos.every(([a, b]) => Math.hypot(x - a, y - b) > 62)) gridPos.push([x, y]);
+      const cp = S.mode === 'coil' ? MF.coilParts(src, 10) : null;
+      svg.innerHTML = `<defs>${MF.DEFS}
+          <linearGradient id="bdBg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#173a57"/><stop offset=".6" stop-color="#14304a"/><stop offset="1" stop-color="#1a4652"/></linearGradient>
+          <radialGradient id="bdLt" cx=".3" cy=".1" r=".9"><stop offset="0" stop-color="#fff" stop-opacity=".12"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient></defs>
+        <rect width="${W}" height="${H}" fill="url(#bdBg)"/><rect width="${W}" height="${H}" fill="url(#bdLt)"/>
+        <g fill="#9fd2e6" opacity=".16">${holes.join('')}</g>
+        ${cp ? `<g>${cp.back}</g>` : ''}
+        <g id="lns" style="transition:opacity .5s" opacity="${showL ? 1 : 0}"><g fill="none" stroke="#7fd3f5" stroke-width="2.2" stroke-opacity=".6">${lines.map((p) => `<path d="${MF.pathD(p)}"/>`).join('')}</g>${lines.map((p) => MF.arrows(src, p, '#a6e4fb', 7, box)).join('')}</g>
+        ${cp ? `<path d="M${CX - src.len / 2 + 10} ${CY + src.half} C ${CX - 120} ${CY + 170}, ${CX - 160} ${CY + 230}, ${CX - 180} ${H}M${CX + src.len / 2 - 10} ${CY + src.half} C ${CX + 120} ${CY + 170}, ${CX + 160} ${CY + 230}, ${CX + 180} ${H}" fill="none" stroke="#f4b183" stroke-width="5" stroke-linecap="round"/><g>${cp.front}</g><g id="iar" opacity="${S.sw ? 1 : 0}">${cp.arrow}</g>` : MF.magnet(src)}
+        <g id="gridG" opacity="${S.grid ? 1 : 0}">${gridPos.map(([x, y], i) => `<g transform="translate(${x} ${y})">${MF.compass('gc' + i, 18)}</g>`).join('')}</g>
+        ${dragPos.map(([x, y], i) => `<g class="drag" id="dg${i}" transform="translate(${x} ${y})" tabindex="0" role="button" aria-label="끌어서 옮기는 나침반 ${i + 1}"><circle class="ring" r="46"/><circle r="50" fill="transparent"/>${MF.compass('dc' + i, 38)}</g>`).join('')}
+        <g id="north" transform="translate(${W - 56} 56)" opacity="${S.earth ? 1 : 0.35}"><circle r="34" fill="rgba(255,255,255,.1)" stroke="rgba(255,255,255,.45)"/><path d="M0 -22 L9 8 L0 3 L-9 8Z" fill="${S.earth ? '#7ff0d6' : '#fff'}"/><text y="26" text-anchor="middle" style="font:800 13px Pretendard,sans-serif;fill:#fff">북</text></g>
+        ${S.mode === 'coil' ? `<g transform="translate(${CX} ${H - 22})"><rect x="-120" y="-20" width="240" height="30" rx="15" fill="rgba(6,18,31,.6)"/><text y="1" text-anchor="middle" style="font:800 14px Pretendard,sans-serif;fill:#cfe7f3">${S.sw ? `스위치 닫힘 · 전류 ${S.lv}단계` : '스위치 열림 · 전류 없음'}</text></g>` : ''}`;
+      // 바늘 다시 연결 (이전 각도를 이어받아 자연스럽게 돌아가요)
+      const oldD = drags.map((o) => o.th), oldG = grid.map((o) => o.th);
+      N.clear();
+      drags = dragPos.map((_, i) => N.add(svg.querySelector('#dc' + i), oldD[i] || 0));
+      grid = gridPos.map((_, i) => N.add(svg.querySelector('#gc' + i), oldG[i] || 0));
+      dragPos.forEach((_, i) => bindDrag(i));
+      update(true);
+    }
+    function vec(x, y) {
+      let [bx, by] = MF.field(src, x, y);
+      const ref = Math.hypot(...MF.field(src, CX + src.len / 2 + 160, CY));
+      const amp = S.mode === 'mag' ? 3 : S.sw ? LV[S.lv] : 0;
+      bx = (bx / ref) * amp; by = (by / ref) * amp;
+      if (S.earth) by -= 1;
+      return [bx, by];
+    }
+    function update(first) {
+      dragPos.forEach(([x, y], i) => { const [bx, by] = vec(x, y); N.set(drags[i], bx, by); });
+      if (S.grid || first) gridPos.forEach(([x, y], i) => { const [bx, by] = vec(x, y); N.set(grid[i], bx, by, !S.grid); });
+      note(); missions();
+    }
+    function bindDrag(i) {
+      const g = svg.querySelector('#dg' + i);
+      const toSvg = (e) => { const r = svg.getBoundingClientRect(); return [((e.clientX - r.left) / r.width) * W, ((e.clientY - r.top) / r.height) * H]; };
+      const place = (x, y) => {
+        x = Math.max(44, Math.min(W - 44, x)); y = Math.max(44, Math.min(H - 44, y));
+        if (blocked(x, y)) y = y < CY ? CY - src.half - 41 : CY + src.half + 41;
+        dragPos[i] = [x, y]; g.setAttribute('transform', `translate(${x.toFixed(1)} ${y.toFixed(1)})`);
+        const [bx, by] = vec(x, y); N.set(drags[i], bx, by); note(); missions();
+      };
+      let on = false;
+      g.addEventListener('pointerdown', (e) => { on = true; g.setPointerCapture(e.pointerId); e.preventDefault(); svg.appendChild(g); });
+      g.addEventListener('pointermove', (e) => { if (on) place(...toSvg(e)); });
+      ['pointerup', 'pointercancel'].forEach((t) => g.addEventListener(t, () => (on = false)));
+      g.addEventListener('keydown', (e) => { const d = { ArrowLeft: [-25, 0], ArrowRight: [25, 0], ArrowUp: [0, -25], ArrowDown: [0, 25] }[e.key]; if (d) { e.preventDefault(); place(dragPos[i][0] + d[0], dragPos[i][1] + d[1]); } });
+    }
+    // 나침반이 자석·코일의 어느 끝 가까이에 있는지 (N극 끝 / S극 끝)
+    function nearEnd(x, y) {
+      const lx = CX - src.len / 2, rx = CX + src.len / 2, nLeft = src.pole !== 'R';
+      const dl = Math.hypot(x - lx, y - CY), dr = Math.hypot(x - rx, y - CY);
+      if (Math.min(dl, dr) > 190) return '';
+      return (dl < dr) === nLeft ? 'N' : 'S';
+    }
+    function note() {
+      const el = $('#note');
+      const ends = dragPos.map(([x, y]) => nearEnd(x, y));
+      if (S.mode === 'mag') {
+        const nm = ends.includes('N'), sm = ends.includes('S');
+        el.innerHTML = nm && sm ? '<b class="h">N극 쪽과 S극 쪽을 비교해 봐요</b>N극 가까이의 바늘은 자석 <b>바깥쪽</b>을, S극 가까이의 바늘은 자석 <b>쪽</b>을 가리켜요. 자기장은 N극에서 나와 S극으로 들어가요.'
+          : nm ? '<b class="h">N극 가까이에 놓았어요</b>바늘의 N극이 자석의 N극에서 멀어지는 쪽을 가리켜요. 같은 극끼리 밀어내기 때문이에요.'
+            : sm ? '<b class="h">S극 가까이에 놓았어요</b>바늘의 N극이 자석의 S극 쪽을 가리켜요. 다른 극끼리 끌어당기기 때문이에요.'
+              : '<b class="h">막대자석 주위</b>나침반을 자석의 양 끝 가까이로 옮겨 보세요. 바늘의 N극이 가리키는 방향이 그 자리의 자기장 방향이에요.';
+        if (S.earth) el.innerHTML += '<br>지구 자기장도 바늘을 북쪽으로 조금 당기지만, 자석 가까이에서는 자석의 자기장이 훨씬 세요.';
+      } else if (!S.sw) {
+        el.innerHTML = S.earth ? '<b class="h">전류가 흐르지 않아요</b>코일 주위에 자기장이 없어서 바늘은 <b>지구 자기장</b>만 받아 모두 북쪽을 가리켜요. 스위치를 닫아 보세요.'
+          : '<b class="h">전류가 흐르지 않아요</b>코일 주위에 자기장이 생기지 않아 바늘이 움직이지 않아요. 스위치를 닫아 보세요.';
+      } else {
+        const side = src.pole !== 'R' ? '왼쪽' : '오른쪽';
+        let t = `<b class="h">코일 주위에 자기장이 생겼어요</b>바늘이 늘어선 모양이 막대자석 때와 비슷해요. 지금은 코일의 <b>${side} 끝</b>이 막대자석의 N극처럼 행동해요.`;
+        if (S.earth) t += S.lv <= 2 ? '<br>전류가 약해서 지구 자기장이 바늘을 북쪽으로 붙잡아요. 코일에서 먼 바늘은 거의 움직이지 않아요.' : S.lv >= 4 ? '<br>전류가 세서 코일의 자기장이 지구 자기장보다 세요. 바늘이 코일의 자기장 방향으로 크게 돌아가요.' : '<br>바늘이 지구 자기장과 코일의 자기장을 함께 받아요. 전류의 세기를 바꿔 보세요.';
+        el.innerHTML = t;
+      }
+    }
+    function missions() {
+      const ends = dragPos.map(([x, y]) => nearEnd(x, y));
+      if (S.mode === 'mag' && ends.includes('N') && ends.includes('S')) MIS[0][1] = true;
+      if (S.mode === 'coil' && S.sw && S.grid) MIS[1][1] = true;
+      if (S.mode === 'coil' && S.sw && S.earth) { if (S.lv === 1) seen.l1 = true; if (S.lv === 5) seen.l5 = true; if (seen.l1 && seen.l5) MIS[3][1] = true; }
+      const before = $('#mis').querySelectorAll('.done').length;
+      $('#mis').innerHTML = MIS.map(([t, d], i) => `<li class="${d ? 'done' : ''}"><i>${d ? '✓' : i + 1}</i><span>${t}</span></li>`).join('');
+      const n = MIS.filter((m) => m[1]).length;
+      $('#prog').textContent = `미션 ${n} / ${MIS.length}`;
+      if (n > before && before >= 0 && missions.ready) toast(n === MIS.length ? '미션을 모두 마쳤어요! 정리 페이지에서 바늘 방향 맞히기에 도전해 보세요.' : '미션 성공!');
+    }
+    function setMode(m) {
+      S.mode = m;
+      $('#mMag').setAttribute('aria-pressed', String(m === 'mag')); $('#mCoil').setAttribute('aria-pressed', String(m === 'coil'));
+      $('#magCtl').hidden = m !== 'mag'; $('#coilCtl').hidden = m !== 'coil';
+      draw();
+    }
+    $('#mMag').addEventListener('click', () => setMode('mag'));
+    $('#mCoil').addEventListener('click', () => setMode('coil'));
+    $('#flip').addEventListener('click', () => { S.flip = !S.flip; draw(); });
+    $('#sw').addEventListener('click', () => {
+      S.sw = !S.sw;
+      $('#sw').setAttribute('aria-pressed', String(S.sw)); $('#swTxt').textContent = S.sw ? '스위치 열기' : '스위치 닫기';
+      $('#swLever').setAttribute('d', S.sw ? 'M6.8 15 L17.2 15' : 'M6.8 14.2 L17 7');
+      draw();
+    });
+    $('#rev').addEventListener('click', () => { S.rev = !S.rev; if (S.sw) MIS[2][1] = true; draw(); if (!S.sw) toast('스위치를 닫아야 전류가 흘러요.'); });
+    $('#lv').addEventListener('input', (e) => { S.lv = +e.target.value; $('#lvTxt').textContent = S.lv + '단계'; draw(); });
+    const tog = (id, k) => $(id).addEventListener('click', () => { S[k] = !S[k]; $(id).setAttribute('aria-pressed', String(S[k])); draw(); });
+    tog('#tLines', 'lines'); tog('#tGrid', 'grid'); tog('#tEarth', 'earth');
+    draw();
+    missions.ready = true;
+    window.FE = { ok: true };
+  } catch (err) { window.FE_err('자기장 탐험', err); }
+})();
+</script>
+</body>
+</html>

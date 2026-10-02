@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>전류가 흐르는 코일 주위의 자기장 – 스스로 정리하고 글쓰기</title>
+<script>
+/* 문제 알림: 코드에 오류가 나면 화면 아래에 빨간 상자로 알려 줘요 (선생님 확인용) */
+(function () {
+  function box() {
+    var b = document.getElementById('swErr');
+    if (!b && document.body) {
+      b = document.createElement('div'); b.id = 'swErr';
+      b.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;background:#fdecea;color:#8a1f17;border:2px solid #d9534f;border-radius:12px;padding:10px 14px;font:600 14px/1.5 sans-serif;white-space:pre-wrap';
+      document.body.appendChild(b);
+    }
+    return b;
+  }
+  window.SW_err = function (where, err) {
+    var msg = '[' + where + '] ' + (err && err.message ? err.message : String(err));
+    var show = function () { var b = box(); if (b) b.textContent += (b.textContent ? '\n' : '') + msg; };
+    if (document.body) show(); else document.addEventListener('DOMContentLoaded', show);
+  };
+  window.addEventListener('error', function (e) { window.SW_err('스크립트', { message: e.message + ' (줄 ' + e.lineno + ')' }); });
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      var S = window.SW || {}, miss = [];
+      [['ok1', 'O/X 판단'], ['ok2', '정리표'], ['ok3', '바늘 방향 맞히기'], ['ok4', '글쓰기']].forEach(function (p) { if (!S[p[0]]) miss.push(p[1]); });
+      if (miss.length) window.SW_err('실행 안 됨', { message: miss.join(', ') + ' 코드가 실행되지 않았어요. 파일이 끝(</html>)까지 들어 있는지 확인해 주세요.' });
+    }, 1500);
+  });
+})();
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+  :root{--bg:#f3f6f9;--card:#fff;--ink:#14263b;--ink2:#34495e;--muted:#5a6b7e;--line:#dde6ee;--accent:#0e63b3;--accent-soft:#e3effb;
+    --ok:#1f9d5c;--no:#d9534f;--violet:#7d5ad6;--ser:#1784cf;--ser-soft:#e3f2fc;--par:#5e9e1c;--par-soft:#eef7e2;
+    --shadow:0 1px 2px rgba(20,38,59,.06),0 8px 24px rgba(20,38,59,.07);--ease:cubic-bezier(.2,.8,.2,1)}
+  *{box-sizing:border-box}html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:"Pretendard",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  button{font:inherit;color:inherit}
+  .app{max-width:1000px;margin:0 auto;padding:16px 16px 28px;display:flex;flex-direction:column;gap:16px}
+  .eyebrow{display:inline-flex;font-size:13px;font-weight:700;color:var(--accent);background:var(--accent-soft);padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(22px,2.8vw,30px);margin:8px 0 2px;letter-spacing:-.02em}
+  .sub{margin:0;color:var(--muted);font-size:15px;word-break:keep-all}
+  .tabs{display:flex;gap:8px;flex-wrap:wrap;position:sticky;top:0;z-index:5;background:rgba(243,246,249,.94);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);padding:8px 0}
+  .tab{display:flex;align-items:center;gap:8px;min-height:46px;padding:0 14px;border:0;border-radius:12px;background:#fff;box-shadow:var(--shadow);font-weight:800;font-size:14.5px;color:var(--muted);cursor:pointer}
+  .tab .n{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:12.5px;background:#e6edf4;color:#607285}
+  .tab.done .n{background:var(--ok);color:#fff}
+  .card{background:var(--card);border-radius:22px;box-shadow:var(--shadow);border:1px solid rgba(20,38,59,.04);padding:20px 22px;scroll-margin-top:70px}
+  h2{font-size:21px;margin:0 0 4px;display:flex;align-items:center;gap:10px}
+  h2 .no{width:30px;height:30px;border-radius:10px;background:var(--accent);color:#fff;display:grid;place-items:center;font-size:15px}
+  .goal{font-size:14.5px;color:var(--muted);margin:0 0 14px;word-break:keep-all}
+  .fb{margin-top:12px;padding:12px 14px;border-radius:14px;font-size:15px;line-height:1.6;word-break:keep-all;display:none}
+  .fb.show{display:block;animation:fade .35s var(--ease)}
+  .fb.ok{background:#e8f7ef;color:#0f5a36}.fb.no{background:#fff5e6;color:#7a4508}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .btn{min-height:50px;border:0;border-radius:14px;padding:0 18px;font-weight:800;font-size:15.5px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;justify-content:center}
+  .btn:active{transform:scale(.97)}
+  .btn.primary{background:var(--accent);color:#fff}.btn.ghost{background:#eef3f8;color:var(--ink2)}.btn.green{background:var(--ok);color:#fff}
+  .btn:disabled{opacity:.4}
+  /* 1. 분류 */
+  .sort{display:grid;gap:10px}
+  .si{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;background:#f7fafc;border:2px solid transparent;border-radius:16px;padding:10px 12px 10px 16px;transition:all .25s}
+  .si p{margin:0;font-weight:700;font-size:16.5px;line-height:1.5;word-break:keep-all}
+  .si .two{display:flex;gap:6px}
+  .si .two button{min-height:48px;min-width:84px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15px;cursor:pointer}
+  .si .two button.s[aria-pressed="true"]{border-color:var(--ser);background:var(--ser-soft);color:var(--ser)}
+  .si .two button.p[aria-pressed="true"]{border-color:var(--par);background:var(--par-soft);color:#3f6e10}
+  .si.good{border-color:#9fdcbb;background:#ecf8f1}.si.bad{border-color:#f3c2bb;background:#fff4f2}
+  /* 2. 잇기 */
+  .chains{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .chn h3{margin:0 0 8px;font-size:16px}
+  .chn.s h3{color:var(--ser)}.chn.p h3{color:var(--par)}
+  .slots{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+  .sl{min-height:50px;border-radius:12px;border:2px dashed #b8c6d4;background:#f7fafc;display:flex;align-items:center;gap:10px;padding:6px 12px;font-weight:800;font-size:15px;color:var(--muted);word-break:keep-all}
+  .sl .k{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:13px;color:#fff;background:#aebdcc}
+  .chn.s .sl.f{border-style:solid;border-color:var(--ser);background:var(--ser-soft);color:#0f4f7d}.chn.s .sl.f .k{background:var(--ser)}
+  .chn.p .sl.f{border-style:solid;border-color:var(--par);background:var(--par-soft);color:#3f6e10}.chn.p .sl.f .k{background:var(--par)}
+  .pool{display:flex;flex-direction:column;gap:6px}
+  .pc{min-height:50px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15px;cursor:pointer;text-align:left;padding:6px 12px;word-break:keep-all}
+  .pc.shake{animation:shake .4s;border-color:var(--no)}
+  @keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+  .pc[hidden]{display:none}
+  /* 3. 생활 */
+  .lq{padding:14px 0;border-bottom:1px dashed var(--line)}
+  .lq:last-child{border-bottom:0;padding-bottom:0}
+  .lq p{margin:0 0 10px;font-weight:700;font-size:16.5px;line-height:1.6;word-break:keep-all}
+  .opts{display:grid;gap:8px}
+  .ob{display:flex;align-items:center;gap:10px;text-align:left;min-height:52px;border-radius:14px;border:2px solid var(--line);background:#f7fafc;padding:8px 14px;font-size:15.5px;font-weight:700;cursor:pointer;word-break:keep-all}
+  .ob .k{flex:none;width:28px;height:28px;border-radius:50%;background:#fff;border:2px solid #cbd6e1;display:grid;place-items:center;font-size:13px;font-weight:800;color:#5a6b7e}
+  .ob.good{border-color:var(--ok);background:#e8f7ef}.ob.bad{border-color:var(--no);background:#fdecea}
+  .ob:disabled{cursor:default}
+  .lexp{display:none;margin-top:10px;padding:12px 14px;border-radius:14px;background:#f2f7fd;font-size:15px;line-height:1.65;word-break:keep-all}
+  .lexp.show{display:block}
+  /* 4. 글쓰기 */
+  .prompts{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+  .pr{border-radius:16px;border:2px solid #d4dee8;background:#fff;padding:12px 14px;text-align:left;cursor:pointer;min-height:96px}
+  .pr b{display:block;font-size:15.5px;margin-bottom:4px}.pr span{font-size:13.5px;color:var(--muted);word-break:keep-all}
+  .pr.sel{border-color:var(--violet);background:#f3effd}
+  .wq{font-size:17px;font-weight:800;background:#f3effd;border-radius:14px;padding:12px 14px;margin-bottom:10px;color:#3d2f73;word-break:keep-all}
+  .starters{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+  .starters button{min-height:44px;border-radius:10px;border:1px dashed #b8a6ec;background:#fff;color:#5a43a8;font-weight:700;font-size:13.5px;padding:0 10px;cursor:pointer}
+  textarea{width:100%;min-height:220px;border-radius:16px;border:2px solid #cbd6e1;padding:14px 16px;font-size:17px;line-height:1.8;resize:vertical;font-family:inherit}
+  textarea:focus{outline:none;border-color:var(--violet);box-shadow:0 0 0 4px rgba(125,90,214,.15)}
+  .wmeta{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-top:8px;font-size:14px;color:var(--muted);font-weight:700}
+  .kw{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+  .kw span{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:6px 12px;font-size:14px;font-weight:800;background:#eef3f8;color:#7a8a9b;transition:all .3s}
+  .kw span.on{background:#e8f7ef;color:#11703f}
+  .kw span::before{content:"○"}.kw span.on::before{content:"●"}
+  .self{display:grid;gap:8px;margin-top:14px}
+  .self label{display:flex;align-items:center;gap:10px;background:#f7fafc;border-radius:12px;padding:10px 12px;font-size:15px;font-weight:700;cursor:pointer;word-break:keep-all;min-height:48px}
+  .self input{width:22px;height:22px;accent-color:var(--ok)}
+  .self .cat{flex:none;font-size:12px;font-weight:800;color:#fff;border-radius:999px;padding:2px 8px}
+  .acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+  .note{font-size:12.5px;color:var(--muted);line-height:1.6;word-break:keep-all}
+  @media (max-width:760px){.chains,.prompts{grid-template-columns:1fr}.si{grid-template-columns:1fr}}
+  @media print{body{background:#fff}.tabs,.card:not(#s4),.acts,.starters,.prompts,.self,.kw,header .sub{display:none!important}#s4{box-shadow:none;border:0}textarea{border:0;min-height:0;height:auto}}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+  /* ===== 이 수업 전용 ===== */
+  .si .two button{min-width:92px}
+  .si .two button.o[aria-pressed="true"]{border-color:#1f78c8;background:#e5f0fb;color:#1f78c8}
+  .si .two button.x[aria-pressed="true"]{border-color:#d9534f;background:#fdecea;color:#b33a35}
+  table.tb{border-collapse:separate;border-spacing:6px;width:100%;table-layout:fixed}
+  .tb th{font-size:14px;color:var(--muted);text-align:left;padding:4px 6px}
+  .tb td.h{font-weight:900;font-size:16px;word-break:keep-all;width:30%}
+  .cell{width:100%;min-height:56px;border-radius:12px;border:2px dashed #aebdcc;background:#f7fafc;font-weight:800;font-size:15px;color:var(--muted);cursor:pointer;padding:6px 12px;line-height:1.35;word-break:keep-all;text-align:left}
+  .cell.filled{border-style:solid;border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+  .cell.cur{box-shadow:0 0 0 4px rgba(14,99,179,.18)}
+  .cell.good{border-style:solid;border-color:var(--ok);background:#e8f7ef;color:#11703f}
+  .cell.bad{border-style:solid;border-color:var(--no);background:#fdecea;color:#b33a35}
+  .bank{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
+  .chip{min-height:48px;padding:6px 14px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15px;cursor:pointer;text-align:left;word-break:keep-all;line-height:1.35}
+  .chip.used{opacity:.3;pointer-events:none}
+  .pz{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:16px;align-items:start}
+  .pz svg{display:block;width:100%;height:auto;border-radius:16px;touch-action:manipulation}
+  .pz .qd{font-size:16.5px;font-weight:700;line-height:1.7;word-break:keep-all;margin:0 0 10px}
+  .pz .tip{font-size:14px;color:var(--muted);line-height:1.6;word-break:keep-all;background:#f7fafc;border-radius:12px;padding:10px 12px}
+  .qc{cursor:pointer}.qc:focus{outline:none}.qc:focus-visible .face{stroke:var(--accent);stroke-width:4}
+  .streak{display:flex;gap:14px;margin-top:12px;font-size:14px;font-weight:700;color:var(--muted)}
+  .streak b{color:var(--ink);font-size:18px}
+  .prompts{grid-template-columns:repeat(4,1fr)}
+  @media (max-width:860px){.pz{grid-template-columns:1fr}.prompts{grid-template-columns:1fr 1fr}}
+  @media (max-width:640px){.tb td.h{font-size:14px}.cell{font-size:14px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <span class="eyebrow">중2 과학 · 전기와 자기 · 스스로 정리</span>
+    <h1>코일 주위의 자기장, 스스로 정리하기</h1>
+    <p class="sub">맞는 말을 고르고, 정리표를 채우고, 바늘 방향을 맞혀 본 뒤, 내 말로 설명해 봐요.</p>
+  </header>
+  <nav class="tabs" id="tabs"></nav>
+
+  <section class="card" id="s1">
+    <h2><span class="no">1</span>맞을까, 틀릴까?</h2>
+    <p class="goal">문장마다 '맞다' 또는 '틀리다'를 골라요. 다 고르면 확인!</p>
+    <div class="sort" id="sort"></div>
+    <div class="acts"><button type="button" class="btn primary" id="chk1" disabled>확인하기</button></div>
+    <div class="fb" id="fb1"></div>
+  </section>
+
+  <section class="card" id="s2">
+    <h2><span class="no">2</span>자기장 정리표</h2>
+    <p class="goal">빈칸을 누른 뒤 아래 낱말 카드를 눌러 채워요. 다 채우면 확인!</p>
+    <table class="tb"><thead><tr><th>무엇</th><th>정리</th></tr></thead><tbody id="tbody"></tbody></table>
+    <div class="bank" id="bank2"></div>
+    <button class="btn primary" id="chk2" type="button" disabled>확인하기</button>
+    <div class="fb" id="fb2"></div>
+  </section>
+
+  <section class="card" id="s3">
+    <h2><span class="no">3</span>바늘 방향 맞히기</h2>
+    <p class="goal">물음표 나침반을 누를 때마다 바늘이 45°씩 돌아가요. 빨간 쪽이 N극이에요. 3문제를 연속으로 맞혀 보세요!</p>
+    <div class="pz">
+      <svg id="pzSvg" viewBox="0 0 560 380" role="img" aria-label="막대자석 또는 코일과 그 주위의 나침반들"></svg>
+      <div>
+        <p class="qd" id="pzQ"></p>
+        <p class="tip" id="pzTip"></p>
+        <div class="acts"><button class="btn primary" id="chk3" type="button" disabled>확인하기</button><button class="btn ghost" id="next3" type="button">다음 문제</button></div>
+        <div class="fb" id="fb3"></div>
+        <div class="streak"><span>연속 정답 <b id="streak">0</b></span><span>맞힌 문제 <b id="solved">0</b></span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card" id="s4">
+    <h2><span class="no">4</span>내 말로 설명하는 글쓰기</h2>
+    <p class="goal">주제를 하나 골라 친구에게 설명하듯 써 봐요. 핵심어를 넣으면 초록색으로 바뀌어요.</p>
+    <div class="prompts" id="prompts"></div>
+    <div class="wq" id="wq"></div>
+    <div class="starters" id="starters"></div>
+    <textarea id="txt" placeholder="여기에 써 보세요."></textarea>
+    <div class="wmeta"><span id="cnt">0자 · 목표 150자 이상</span><span id="saved"></span></div>
+    <div class="kw" id="kw"></div>
+    <div class="self" id="self"></div>
+    <div class="acts">
+      <button class="btn green" id="copyBtn" type="button">글 복사하기</button>
+      <button class="btn ghost" id="printBtn" type="button">인쇄 / PDF로 저장</button>
+    </div>
+    <p class="note" style="margin-top:10px">※ 글은 이 기기의 브라우저에만 임시로 저장되고 어디에도 보내지 않아요. 다 쓰면 '글 복사하기'로 복사해서 선생님이 안내한 곳(패들렛, 학습지 등)에 붙여 넣으세요.</p>
+  </section>
+  <p class="credit" style="margin:20px 0 4px;text-align:center;font-size:13px;font-weight:700;color:#8495a8;letter-spacing:.02em">제작 · 성안중학교 이삭 T</p>
+</div>
+
+<script>
+/* ===== 공통: 자기장 모형 =====
+   코일(막대자석)을 판을 뚫고 지나가는 전선 묶음으로 보고, 각 점에서 자기장의 방향을 계산해요.
+   화면 좌표(오른쪽 x+, 아래 y+). 방향과 상대적인 세기만 쓰고, 세기 숫자는 화면에 내지 않아요(개념 이해를 위한 모형). */
+window.MF = (function () {
+  'use strict';
+  // pole: 'L'이면 왼쪽 끝이 N극, 'R'이면 오른쪽 끝이 N극. rot: 전체를 돌리는 각도(도)
+  function coil(cx, cy, len, half, n, pole, rot) {
+    const s0 = pole === 'R' ? -1 : 1, a = ((rot || 0) * Math.PI) / 180, c = Math.cos(a), s = Math.sin(a);
+    const w = [];
+    for (let i = 0; i < n; i++) {
+      const u = -len / 2 + (len * (i + 0.5)) / n;
+      [[half, s0], [-half, -s0]].forEach(([v, sg]) => w.push({ x: cx + u * c - v * s, y: cy + u * s + v * c, s: sg }));
+    }
+    return { cx, cy, len, half, n, pole, rot: rot || 0, c, s, w };
+  }
+  function field(src, x, y) {
+    let bx = 0, by = 0;
+    const w = src.w, eps = 26;
+    for (let i = 0; i < w.length; i++) {
+      const k = w[i], dx = x - k.x, dy = y - k.y, r2 = dx * dx + dy * dy + eps;
+      bx += (k.s * dy) / r2; by -= (k.s * dx) / r2;
+    }
+    return [bx, by];
+  }
+  function inside(src, x, y, pad) {
+    const dx = x - src.cx, dy = y - src.cy, u = dx * src.c + dy * src.s, v = -dx * src.s + dy * src.c;
+    return Math.abs(u) < src.len / 2 + (pad || 0) && Math.abs(v) < src.half + (pad || 0);
+  }
+  function trace(src, x0, y0, sg, box, maxN) {
+    const pts = [[x0, y0]], h = 4;
+    let x = x0, y = y0;
+    for (let i = 0; i < maxN; i++) {
+      let [bx, by] = field(src, x, y), m = Math.hypot(bx, by) || 1e-9;
+      const mx = x + (sg * h * bx) / m / 2, my = y + (sg * h * by) / m / 2;
+      [bx, by] = field(src, mx, my); m = Math.hypot(bx, by) || 1e-9;
+      x += (sg * h * bx) / m; y += (sg * h * by) / m;
+      pts.push([x, y]);
+      if (x < box[0] || x > box[2] || y < box[1] || y > box[3]) return { pts, closed: false };
+      if (i > 30 && Math.hypot(x - x0, y - y0) < h * 1.3) { pts.push([x0, y0]); return { pts, closed: true }; }
+    }
+    return { pts, closed: false };
+  }
+  // 코일 가운데를 가로지르는 씨앗 점에서 앞뒤로 따라가 자기장의 모습을 나타낸 선을 만들어요
+  function lines(src, box, k, spread) {
+    const out = [], sp = spread || 0.8;
+    for (let j = 0; j < k; j++) {
+      const v = -src.half * sp + (src.half * 2 * sp * (j + 0.5)) / k;
+      const x0 = src.cx - v * src.s, y0 = src.cy + v * src.c;
+      const f = trace(src, x0, y0, 1, box, 3200);
+      if (f.closed) out.push(f.pts);
+      else { const b = trace(src, x0, y0, -1, box, 3200); out.push(b.pts.reverse().concat(f.pts.slice(1))); }
+    }
+    return out;
+  }
+  function pathD(pts) {
+    let d = `M${pts[0][0].toFixed(1)} ${pts[0][1].toFixed(1)}`;
+    for (let i = 2; i < pts.length; i += 2) d += `L${pts[i][0].toFixed(1)} ${pts[i][1].toFixed(1)}`;
+    return d + `L${pts[pts.length - 1][0].toFixed(1)} ${pts[pts.length - 1][1].toFixed(1)}`;
+  }
+  // 선의 1/4, 3/4 지점(자석·코일 밖)에 화살표를 붙여요
+  function arrows(src, pts, color, size, box) {
+    let L = 0; const cum = [0];
+    for (let i = 1; i < pts.length; i++) { L += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]); cum.push(L); }
+    let out = '';
+    [0.25, 0.75].forEach((f) => {
+      const t = L * f; let i = cum.findIndex((c) => c >= t); if (i < 1) i = 1;
+      const [x, y] = pts[i], [px, py] = pts[i - 1];
+      if (inside(src, x, y, 14)) return;
+      if (box && (x < box[0] + 14 || x > box[2] - 14 || y < box[1] + 14 || y > box[3] - 14)) return;
+      const a = (Math.atan2(y - py, x - px) * 180) / Math.PI, z = size || 7;
+      out += `<path d="M${z} 0 L${-z} ${-z * 0.8} L${-z * 0.45} 0 L${-z} ${z * 0.8}Z" fill="${color}" transform="translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${a.toFixed(1)})"/>`;
+    });
+    return out;
+  }
+  const DEFS = `
+    <radialGradient id="mfBezel" cx=".35" cy=".3" r=".9"><stop offset="0" stop-color="#fdfdfd"/><stop offset=".55" stop-color="#c9d1da"/><stop offset="1" stop-color="#7d8996"/></radialGradient>
+    <radialGradient id="mfFace" cx=".45" cy=".4" r=".75"><stop offset="0" stop-color="#ffffff"/><stop offset=".8" stop-color="#f1f3f5"/><stop offset="1" stop-color="#dde2e8"/></radialGradient>
+    <linearGradient id="mfN" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#f0645a"/><stop offset=".5" stop-color="#e2443a"/><stop offset=".5" stop-color="#b92a22"/><stop offset="1" stop-color="#cf3a31"/></linearGradient>
+    <linearGradient id="mfS" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#f4f6f8"/><stop offset=".5" stop-color="#dfe4ea"/><stop offset=".5" stop-color="#b9c2cc"/><stop offset="1" stop-color="#cfd6de"/></linearGradient>
+    <linearGradient id="mfCu" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#7a3a14"/><stop offset=".35" stop-color="#e59a5c"/><stop offset=".55" stop-color="#ffd2a1"/><stop offset=".75" stop-color="#c7743b"/><stop offset="1" stop-color="#7a3a14"/></linearGradient>
+    <linearGradient id="mfCuB" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#4d230b"/><stop offset=".5" stop-color="#8f4c22"/><stop offset="1" stop-color="#4d230b"/></linearGradient>
+    <linearGradient id="mfMagN" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f06a5f"/><stop offset=".45" stop-color="#d8433b"/><stop offset="1" stop-color="#a52a23"/></linearGradient>
+    <linearGradient id="mfMagS" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5d8cf0"/><stop offset=".45" stop-color="#2f62c9"/><stop offset="1" stop-color="#1e4596"/></linearGradient>
+    <filter id="mfSh" x="-40%" y="-40%" width="180%" height="180%"><feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#0b1a2b" flood-opacity=".35"/></filter>`;
+  function compass(id, r, extra) {
+    const t = [];
+    for (let k = 0; k < 16; k++) { const a = (k * Math.PI) / 8, r1 = r * (k % 4 ? 0.74 : 0.68), r2 = r * 0.8; t.push(`M${(r1 * Math.sin(a)).toFixed(1)} ${(-r1 * Math.cos(a)).toFixed(1)}L${(r2 * Math.sin(a)).toFixed(1)} ${(-r2 * Math.cos(a)).toFixed(1)}`); }
+    return `<g class="cps" id="${id}" ${extra || ''}><g filter="url(#mfSh)"><circle r="${r}" fill="url(#mfBezel)"/></g><circle r="${(r * 0.84).toFixed(1)}" fill="url(#mfFace)" stroke="#8d99a6" stroke-width="1"/>
+      <path d="${t.join('')}" stroke="#9aa5b1" stroke-width="1.2"/>
+      <g class="ndl"><path d="M0 ${(-r * 0.66).toFixed(1)}L${(r * 0.15).toFixed(1)} 0L${(-r * 0.15).toFixed(1)} 0Z" fill="url(#mfN)"/><path d="M0 ${(r * 0.66).toFixed(1)}L${(r * 0.15).toFixed(1)} 0L${(-r * 0.15).toFixed(1)} 0Z" fill="url(#mfS)" stroke="#aab3bd" stroke-width=".6"/></g>
+      <circle r="${(r * 0.1).toFixed(1)}" fill="#eef1f4" stroke="#6f7b88" stroke-width="1"/>
+      <ellipse cx="${(-r * 0.28).toFixed(1)}" cy="${(-r * 0.34).toFixed(1)}" rx="${(r * 0.38).toFixed(1)}" ry="${(r * 0.17).toFixed(1)}" fill="#fff" opacity=".45" transform="rotate(-32 ${(-r * 0.28).toFixed(1)} ${(-r * 0.34).toFixed(1)})"/></g>`;
+  }
+  // 코일 그림: 뒤쪽 반(back)과 앞쪽 반(front)을 따로 그려 선이 코일을 통과하는 것처럼 보이게 해요
+  function coilParts(src, turns) {
+    const n = turns || 9, rx = src.half * 0.3, ry = src.half, ar = [];
+    let back = '', front = '';
+    for (let i = 0; i < n; i++) {
+      const x = src.cx - src.len / 2 + (src.len * (i + 0.5)) / n;
+      back += `<path d="M${x} ${src.cy - ry} A${rx} ${ry} 0 0 0 ${x} ${src.cy + ry}" fill="none" stroke="url(#mfCuB)" stroke-width="7" stroke-linecap="round"/>`;
+      front += `<path d="M${x} ${src.cy + ry} A${rx} ${ry} 0 0 0 ${x} ${src.cy - ry}" fill="none" stroke="url(#mfCu)" stroke-width="7.5" stroke-linecap="round"/>`;
+      ar.push(x + rx);
+    }
+    const up = src.pole !== 'R';
+    const ax = src.cx + rx, ay = src.cy;
+    const arrow = `<g class="iarrow" transform="translate(${ax} ${ay}) rotate(${up ? 0 : 180})"><path d="M0 ${-ry * 0.62} V${ry * 0.5}" stroke="#ff3b5c" stroke-width="5" stroke-linecap="round"/><path d="M-9 ${-ry * 0.42} L0 ${-ry * 0.68} L9 ${-ry * 0.42}Z" fill="#ff3b5c" stroke="#ff3b5c" stroke-width="3" stroke-linejoin="round"/></g>`;
+    return { back, front, arrow };
+  }
+  function magnet(src) {
+    const x = src.cx - src.len / 2, y = src.cy - src.half, w = src.len, h = src.half * 2, nl = src.pole !== 'R';
+    const L = nl ? ['mfMagN', 'N'] : ['mfMagS', 'S'], R = nl ? ['mfMagS', 'S'] : ['mfMagN', 'N'];
+    return `<g filter="url(#mfSh)"><rect x="${x}" y="${y}" width="${w / 2}" height="${h}" rx="6" fill="url(#${L[0]})"/><rect x="${x + w / 2}" y="${y}" width="${w / 2}" height="${h}" rx="6" fill="url(#${R[0]})"/><rect x="${x + w / 2 - 6}" y="${y}" width="12" height="${h}" fill="url(#${R[0]})"/></g>
+      <rect x="${x + 4}" y="${y + 4}" width="${w - 8}" height="${h * 0.22}" rx="4" fill="#fff" opacity=".22"/>
+      <text x="${x + w * 0.22}" y="${src.cy + h * 0.18}" text-anchor="middle" style="font:900 ${Math.round(h * 0.52)}px Pretendard,sans-serif;fill:#fff">${L[1]}</text>
+      <text x="${x + w * 0.78}" y="${src.cy + h * 0.18}" text-anchor="middle" style="font:900 ${Math.round(h * 0.52)}px Pretendard,sans-serif;fill:#fff">${R[1]}</text>`;
+  }
+  // 나침반 바늘: 실제 자석 바늘처럼 살짝 지나쳤다가 제자리를 찾는 움직임
+  const REDUCE = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  function needles() {
+    const list = []; let raf = 0, last = 0;
+    const wrap = (d) => Math.atan2(Math.sin(d), Math.cos(d));
+    function paint(o) { o.el.setAttribute('transform', `rotate(${((o.th * 180) / Math.PI).toFixed(2)})`); }
+    function step(now) {
+      const dt = Math.min(0.033, (now - last) / 1000 || 0.016); last = now;
+      let moving = false;
+      list.forEach((o) => {
+        const d = wrap(o.tg - o.th), k = 38 * o.k;
+        o.w += (k * Math.sin(d) - 5.2 * Math.sqrt(o.k) * o.w) * dt; o.th += o.w * dt;
+        if (Math.abs(o.w) > 0.004 || Math.abs(d) > 0.004) moving = true; else { o.w = 0; o.th = o.tg; }
+        paint(o);
+      });
+      raf = moving ? requestAnimationFrame(step) : 0;
+    }
+    function kick() { if (!raf) { last = performance.now(); raf = requestAnimationFrame(step); } }
+    return {
+      add(g, ang) { const o = { el: g.querySelector('.ndl'), th: ang || 0, w: 0, tg: ang || 0, k: 1 }; list.push(o); paint(o); return o; },
+      set(o, bx, by, instant) {
+        const m = Math.hypot(bx, by); if (m < 1e-12) return;
+        o.tg = Math.atan2(bx, -by); o.k = Math.max(0.35, Math.min(1.6, m));
+        if (instant || REDUCE) { o.th = o.tg; o.w = 0; paint(o); } else kick();
+      },
+      clear() { list.length = 0; },
+    };
+  }
+  return { coil, field, lines, pathD, arrows, DEFS, compass, coilParts, magnet, needles, REDUCE };
+})();
+</script>
+<script>
+/* ===== 공통 ===== */
+window.SW = {
+  $: (s, r = document) => r.querySelector(s),
+  $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
+  shuffle: (a) => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; },
+  fb: (id, ok, html) => { const f = document.querySelector(id); f.className = 'fb show ' + (ok ? 'ok' : 'no'); f.innerHTML = html; },
+  done: {},
+};
+(() => {
+  const { $, $$ } = window.SW;
+  const TABS = ['맞을까 틀릴까', '정리표', '바늘 방향', '글쓰기'];
+  window.SW.renderTabs = () => {
+    $('#tabs').innerHTML = TABS.map((t, i) => `<button type="button" class="tab${window.SW.done[i + 1] ? ' done' : ''}" data-s="${i + 1}"><span class="n">${i + 1}</span>${t}</button>`).join('');
+    $$('#tabs .tab').forEach((b) => b.addEventListener('click', () => document.getElementById('s' + b.dataset.s).scrollIntoView({ behavior: 'smooth', block: 'start' })));
+  };
+  window.SW.finish = (n) => { window.SW.done[n] = true; window.SW.renderTabs(); };
+  window.SW.renderTabs();
+})();
+</script>
+<script>
+/* ===== 블록 1: 맞을까 틀릴까 ===== */
+(() => {
+  'use strict';
+  try {
+    const { $, $$, shuffle, fb, finish } = window.SW;
+    const ITEMS = [
+      ['자기력이 미치는 공간을 자기장이라고 한다.', true],
+      ['자기장의 방향은 나침반 바늘의 S극이 가리키는 방향이다.', false],
+      ['외르스테드는 전류가 흐르는 전선 주위의 나침반 바늘이 움직이는 것을 발견했다.', true],
+      ['전류가 흐르는 코일 주위의 자기장 모습은 막대자석 주위의 자기장 모습과 비슷하다.', true],
+      ['코일에 흐르는 전류의 방향을 바꾸어도 나침반 바늘의 N극이 가리키는 방향은 그대로다.', false],
+      ['전류의 세기가 커질수록 코일 주위에 생긴 자기장이 세다.', true],
+      ['나침반 바늘의 N극을 끌어당기는 지구의 북극 쪽은 자석의 N극처럼 행동한다.', false],
+    ];
+    const list = shuffle(ITEMS.slice()), pick = list.map(() => null);
+    $('#sort').innerHTML = list.map((it, i) => `<div class="si" data-i="${i}"><p>${it[0]}</p><div class="two"><button type="button" class="o" data-v="1" aria-pressed="false">맞다</button><button type="button" class="x" data-v="0" aria-pressed="false">틀리다</button></div></div>`).join('');
+    $$('#sort .si').forEach((row) => {
+      const i = +row.dataset.i;
+      $$('button', row).forEach((b) => b.addEventListener('click', () => {
+        pick[i] = b.dataset.v === '1'; row.classList.remove('good', 'bad');
+        $$('button', row).forEach((o) => o.setAttribute('aria-pressed', String(o === b)));
+        $('#chk1').disabled = pick.some((p) => p === null);
+      }));
+    });
+    $('#chk1').addEventListener('click', () => {
+      let wrong = 0;
+      $$('#sort .si').forEach((row) => { const i = +row.dataset.i, ok = pick[i] === list[i][1]; row.classList.toggle('good', ok); row.classList.toggle('bad', !ok); if (!ok) wrong++; });
+      if (!wrong) { fb('#fb1', true, '모두 맞았어요! 틀린 문장 고쳐 보기: 자기장의 방향은 바늘의 <b>N극</b>이 가리키는 방향 · 전류의 방향을 바꾸면 바늘의 방향도 <b>바뀐다</b> · 북극 쪽은 자석의 <b>S극</b>처럼 행동한다.'); finish(1); }
+      else fb('#fb1', false, `빨간 문장 ${wrong}개를 다시 생각해 보세요. 읽기 자료의 굵은 글씨를 떠올려요.`);
+    });
+    window.SW.ok1 = true;
+  } catch (err) { window.SW_err('O/X 판단', err); }
+})();
+</script>
+<script>
+/* ===== 블록 2: 정리표 ===== */
+(() => {
+  'use strict';
+  try {
+    const { $, $$, shuffle, fb, finish } = window.SW;
+    const TBL = [
+      ['자기력', '자석이 쇠붙이를 끌어당기거나, 자석끼리 밀어내거나 끌어당기는 힘'],
+      ['자기장', '자기력이 미치는 공간'],
+      ['자기장의 방향', '나침반 바늘의 N극이 가리키는 방향'],
+      ['전류가 흐르는 코일 주위', '막대자석 주위와 비슷한 모습의 자기장이 생긴다'],
+      ['전류의 방향을 바꾸면', '자기장의 방향이 반대로 바뀐다'],
+      ['전류의 세기를 크게 하면', '코일 주위에 생긴 자기장이 세진다'],
+    ];
+    const slots = TBL.map((r) => r[1]);
+    $('#tbody').innerHTML = TBL.map(([h], r) => `<tr><td class="h">${h}</td><td><button type="button" class="cell" data-s="${r}">빈칸</button></td></tr>`).join('');
+    const words = shuffle(slots.concat(['나침반 바늘의 S극이 가리키는 방향', '자기장의 방향은 그대로다']));
+    $('#bank2').innerHTML = words.map((w) => `<button type="button" class="chip">${w}</button>`).join('');
+    const cells = $$('#tbody .cell'), chips = $$('#bank2 .chip'), fill = slots.map(() => null); let cur = 0, locked = false;
+    const paint = () => { cells.forEach((c, i) => { c.textContent = fill[i] ? fill[i].textContent : '빈칸'; c.classList.toggle('filled', !!fill[i]); c.classList.toggle('cur', i === cur && !locked); }); $('#chk2').disabled = locked || fill.some((f) => !f); };
+    chips.forEach((ch) => ch.addEventListener('click', () => { if (locked) return; if (fill[cur]) fill[cur].classList.remove('used'); fill[cur] = ch; ch.classList.add('used'); const n = fill.findIndex((f) => !f); if (n >= 0) cur = n; paint(); }));
+    cells.forEach((c, i) => c.addEventListener('click', () => { if (locked) return; if (fill[i]) { fill[i].classList.remove('used'); fill[i] = null; } cur = i; cells.forEach((x) => x.classList.remove('good', 'bad')); paint(); }));
+    $('#chk2').addEventListener('click', () => {
+      let wrong = 0; cells.forEach((c, i) => { const ok = fill[i].textContent === slots[i]; c.classList.toggle('good', ok); c.classList.toggle('bad', !ok); if (!ok) wrong++; });
+      if (!wrong) { locked = true; paint(); fb('#fb2', true, '정리표 완성! 전류의 <b>방향</b>은 자기장의 <b>방향</b>을, 전류의 <b>세기</b>는 자기장의 <b>세기</b>를 바꿔요.'); finish(2); }
+      else fb('#fb2', false, `빨간 칸 ${wrong}개를 다시 확인해요. 칸을 누르면 낱말이 빠져요.`);
+    });
+    paint();
+    window.SW.ok2 = true;
+  } catch (err) { window.SW_err('정리표', err); }
+})();
+</script>
+<script>
+/* ===== 블록 3: 바늘 방향 맞히기 ===== */
+(() => {
+  'use strict';
+  try {
+    const { $, $$, shuffle, fb, finish } = window.SW;
+    const svg = $('#pzSvg'), CX = 280, CY = 190;
+    const POS = [];
+    for (let k = 0; k < 8; k++) { const a = (k * Math.PI) / 4; POS.push([CX + 200 * Math.cos(a), CY + 136 * Math.sin(a)]); }
+    let P = null, streak = 0, solved = 0;
+    const pick = (a) => a[Math.floor(Math.random() * a.length)];
+    function make() {
+      const kind = pick(['mag', 'coil', 'rev']), pole = pick(['L', 'R']);
+      const clue = pick([0, 4]);   // 단서 나침반: 코일 오른쪽 또는 왼쪽 끝
+      const ask = shuffle([1, 2, 3, 5, 6, 7, clue === 0 ? 4 : 0]).slice(0, 4);
+      const nowPole = kind === 'rev' ? (pole === 'L' ? 'R' : 'L') : pole;
+      const src = kind === 'mag' ? MF.coil(CX, CY, 190, 32, 16, nowPole) : MF.coil(CX, CY, 130, 46, 10, nowPole);
+      const ang = (x, y, s) => { const [bx, by] = MF.field(s, x, y); return (Math.atan2(bx, -by) * 180) / Math.PI; };
+      const before = MF.coil(CX, CY, 130, 46, 10, pole);
+      P = { kind, src, ask, clue, dir: ask.map(() => null), ans: ask.map((k) => ang(POS[k][0], POS[k][1], src)), clueAng: ang(POS[clue][0], POS[clue][1], kind === 'rev' ? before : src) };
+      const cp = kind === 'mag' ? null : MF.coilParts(src, 8);
+      svg.innerHTML = `<defs>${MF.DEFS}</defs><rect width="560" height="380" fill="#f4f8fb"/>
+        ${cp ? `<g>${cp.back}</g><g>${cp.front}</g>${cp.arrow}` : MF.magnet(src)}
+        ${POS.map(([x, y], k) => {
+          if (k === clue && kind !== 'mag') return `<g transform="translate(${x.toFixed(1)} ${y.toFixed(1)})">${MF.compass('pc', 30)}<text y="52" text-anchor="middle" style="font:800 13px Pretendard,sans-serif;fill:#1f7a8c">${kind === 'rev' ? '바꾸기 전 단서' : '단서'}</text></g>`;
+          const j = ask.indexOf(k);
+          if (j < 0) return '';
+          return `<g class="qc" data-j="${j}" tabindex="0" role="button" aria-label="물음표 나침반 ${j + 1}" transform="translate(${x.toFixed(1)} ${y.toFixed(1)})"><circle class="face" r="30" fill="#fff" stroke="#b5c1cc" stroke-width="2"/><text class="qm" y="9" text-anchor="middle" style="font:900 26px Pretendard,sans-serif;fill:#aab6c2">?</text><g class="arw" opacity="0"><path d="M0 -22 L7 0 L-7 0Z" fill="#d8433b"/><path d="M0 22 L7 0 L-7 0Z" fill="#c3cad2"/></g><circle r="3.5" fill="#6f7b88" class="pv" opacity="0"/><circle class="mk" r="35" fill="none" stroke-width="4" opacity="0"/></g>`;
+        }).join('')}`;
+      if (kind !== 'mag') { const n = MF.needles(), o = n.add(svg.querySelector('#pc')); const a = (P.clueAng * Math.PI) / 180; n.set(o, Math.sin(a), -Math.cos(a), true); }
+      $('#pzQ').innerHTML = kind === 'mag' ? '막대자석 주위의 물음표 나침반 4개에서 바늘의 N극이 가리키는 방향을 맞혀 보세요.'
+        : kind === 'coil' ? '전류가 흐르는 코일이에요. <b>단서 나침반</b>을 보고 물음표 나침반 4개의 바늘 방향을 맞혀 보세요.'
+          : '단서 나침반은 <b>전류의 방향을 바꾸기 전</b>의 모습이에요. 지금은 전류의 방향을 바꾸었어요(빨간 화살표). 물음표 나침반의 바늘 방향은?';
+      $('#pzTip').innerHTML = kind === 'mag' ? '도움말: 자기장은 N극에서 나와 S극으로 들어가요. 지구 자기장의 영향은 빼고 생각해요.'
+        : kind === 'coil' ? '도움말: 단서 바늘을 보면 코일의 어느 끝이 막대자석의 N극처럼 행동하는지 알 수 있어요. 그다음은 막대자석과 같아요.'
+          : '도움말: 전류의 방향을 바꾸면 자기장의 방향이 반대로 바뀌어요. 단서 바늘이 지금은 어느 쪽을 가리킬지 먼저 떠올려 봐요.';
+      $$('.qc', svg).forEach((g) => {
+        const j = +g.dataset.j;
+        const turn = () => {
+          if (P.locked) return;
+          P.dir[j] = P.dir[j] === null ? 0 : (P.dir[j] + 1) % 8;
+          $('.qm', g).setAttribute('opacity', 0); $('.pv', g).setAttribute('opacity', 1);
+          const a = $('.arw', g); a.setAttribute('opacity', 1); a.setAttribute('transform', `rotate(${P.dir[j] * 45})`);
+          $('.mk', g).setAttribute('opacity', 0);
+          $('#chk3').disabled = P.dir.some((d) => d === null);
+        };
+        g.addEventListener('click', turn);
+        g.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); turn(); } });
+      });
+      $('#chk3').disabled = true; $('#fb3').className = 'fb'; P.tried = false; P.locked = false;
+    }
+    $('#chk3').addEventListener('click', () => {
+      let wrong = 0;
+      P.ask.forEach((k, j) => {
+        const d = Math.abs(((P.dir[j] * 45 - P.ans[j] + 540) % 360) - 180), ok = d <= 30;
+        const mk = svg.querySelector(`.qc[data-j="${j}"] .mk`); mk.setAttribute('opacity', 1); mk.setAttribute('stroke', ok ? '#1f9d5c' : '#d9534f');
+        if (!ok) wrong++;
+      });
+      if (!wrong) {
+        streak = P.tried ? 0 : streak + 1; solved++; P.locked = true;
+        fb('#fb3', true, `<b>정답!</b> ${P.kind === 'mag' ? '바늘의 N극이 자기장을 따라 N극 쪽에서 S극 쪽으로 늘어서요.' : P.kind === 'coil' ? '코일 주위의 자기장도 막대자석처럼 한쪽 끝에서 나와 다른 쪽 끝으로 들어가요.' : '전류의 방향을 바꾸면 바늘이 모두 반대쪽을 가리켜요.'} '다음 문제'를 눌러요.`);
+        if (streak >= 3) finish(3);
+      } else { P.tried = true; streak = 0; fb('#fb3', false, `빨간 테두리 ${wrong}개를 다시 돌려 봐요. 도움말을 읽어 보세요.`); }
+      $('#streak').textContent = streak; $('#solved').textContent = solved;
+    });
+    $('#next3').addEventListener('click', make);
+    make();
+    window.SW.ok3 = true;
+  } catch (err) { window.SW_err('바늘 방향 맞히기', err); }
+})();
+</script>
+<script>
+/* ===== 블록 4: 글쓰기 (저장하지 않고 복사·인쇄만) ===== */
+(() => {
+  'use strict';
+  try {
+    const { $, $$, finish } = window.SW;
+    const PROMPTS = [
+      { t: '바늘이 움직인 까닭', s: '교과서 정리하기 2', q: '코일에 전류가 흐를 때 나침반 바늘이 움직인 까닭을 자기장과 관련지어 설명해 보세요.', kw: ['전류', '자기장', '나침반', 'N극', '자기력'], st: ['스위치를 닫으면 코일에', '전류가 흐르는 코일 주위에는', '나침반 바늘은 작은 자석이라서', '그래서 바늘의 N극은'] },
+      { t: '전선 아래 나침반', s: '스스로 평가 2', q: '전류가 흐르는 전선 아래에 놓인 나침반 바늘이 움직이는 까닭은 무엇인지 외르스테드의 발견과 함께 설명해 보세요.', kw: ['외르스테드', '전류', '전선', '자기장', '자기력'], st: ['외르스테드는 실험 중에', '전류가 흐르는 전선 주위에는', '그래서 전선 아래의 나침반 바늘은', '전류의 방향을 바꾸면'] },
+      { t: '움직임을 크게 하려면', s: '친구에게 설명하기', q: '전류가 흐르는 코일 옆에 놓인 나침반 바늘의 움직임을 크게 하는 방법을 친구에게 설명해 보세요.', kw: ['전류의 세기', '자기장', '크게', '지구'], st: ['바늘을 더 크게 움직이려면', '전류의 세기가 커지면', '코일의 자기장이 약하면', '하지만 전압은'] },
+      { t: '지구와 나침반', s: '더 생각해 보기', q: '나침반 바늘의 N극이 늘 북쪽을 가리키는 까닭을 \'지구는 거대한 자석\'이라는 말을 넣어 설명해 보세요.', kw: ['지구', '자석', '자기장', 'S극', 'N극'], st: ['지구는 거대한 자석처럼', '지구의 북극 쪽은', '다른 극끼리는', '그래서 나침반 바늘의 N극은'] },
+    ];
+    const SELF = [['지식·이해', '#2f6fd6', '전류가 흐르는 코일 주위에 생기는 자기장을 설명할 수 있다.'], ['과정·기능', '#23a566', '전류의 세기와 방향에 따른 자기장의 세기와 방향을 관찰할 수 있다.'], ['가치·태도', '#7d5ad6', '전류가 흐르는 코일 주위에 생기는 자기장에 호기심을 느끼고 탐구할 수 있다.']];
+    const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); return true; } catch (e) { return false; } } };
+    let pi = 0; const txt = $('#txt');
+    function renderPrompt() {
+      $('#prompts').innerHTML = PROMPTS.map((p, i) => `<button type="button" class="pr${i === pi ? ' sel' : ''}" data-i="${i}"><b>${p.t}</b><span>${p.s}</span></button>`).join('');
+      $$('#prompts .pr').forEach((b) => b.addEventListener('click', () => { pi = +b.dataset.i; renderPrompt(); }));
+      const p = PROMPTS[pi];
+      $('#wq').textContent = p.q;
+      $('#starters').innerHTML = p.st.map((s) => `<button type="button">${s}</button>`).join('');
+      $$('#starters button').forEach((b) => b.addEventListener('click', () => { const add = (txt.value && !/[\s\n]$/.test(txt.value) ? ' ' : '') + b.textContent + ' '; txt.value += add; txt.focus(); onInput(); }));
+      txt.value = store.get('cf-write-' + pi) || '';
+      onInput();
+    }
+    function onInput() {
+      const v = txt.value, p = PROMPTS[pi];
+      const ok = store.set('cf-write-' + pi, v);
+      $('#saved').textContent = v ? (ok ? '이 기기에 임시 저장됨' : '') : '';
+      const n = v.replace(/\s/g, '').length, hit = p.kw.filter((k) => v.includes(k)).length;
+      $('#cnt').textContent = `${n}자 · 목표 150자 이상`;
+      $('#kw').innerHTML = p.kw.map((k) => `<span class="${v.includes(k) ? 'on' : ''}">${k}</span>`).join('');
+      if (n >= 150 && hit >= 3) finish(4);
+    }
+    txt.addEventListener('input', onInput);
+    $('#self').innerHTML = SELF.map(([c, col, t]) => `<label><input type="checkbox"><span class="cat" style="background:${col}">${c}</span>${t}</label>`).join('');
+    $('#copyBtn').addEventListener('click', async () => {
+      const out = `[${PROMPTS[pi].t}]\n${PROMPTS[pi].q}\n\n${txt.value}`;
+      try { await navigator.clipboard.writeText(out); $('#copyBtn').textContent = '복사했어요!'; }
+      catch (e) { txt.select(); try { document.execCommand('copy'); $('#copyBtn').textContent = '복사했어요!'; } catch (e2) { $('#copyBtn').textContent = '길게 눌러 직접 복사해 주세요'; } }
+      setTimeout(() => ($('#copyBtn').textContent = '글 복사하기'), 2200);
+    });
+    $('#printBtn').addEventListener('click', () => window.print());
+    renderPrompt();
+    window.SW.ok4 = true;
+  } catch (err) { window.SW_err('글쓰기', err); }
+})();
+</script>
+</body>
+</html>
