@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>에너지 전환 관찰 – 전기 기구 켜 보기</title>
+<script>
+/* 문제 알림: 코드에 오류가 나면 화면 아래에 빨간 상자로 알려 줘요 (선생님 확인용) */
+(function () {
+  function box() {
+    var b = document.getElementById('ecErr');
+    if (!b && document.body) {
+      b = document.createElement('div'); b.id = 'ecErr';
+      b.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;background:#fdecea;color:#8a1f17;border:2px solid #d9534f;border-radius:12px;padding:10px 14px;font:600 14px/1.5 sans-serif;white-space:pre-wrap';
+      document.body.appendChild(b);
+    }
+    return b;
+  }
+  window.EC_err = function (where, err) {
+    var msg = '[' + where + '] ' + (err && err.message ? err.message : String(err));
+    var show = function () { var b = box(); if (b) b.textContent += (b.textContent ? '\n' : '') + msg; };
+    if (document.body) show(); else document.addEventListener('DOMContentLoaded', show);
+  };
+  window.addEventListener('error', function (e) { window.EC_err('스크립트', { message: e.message + ' (줄 ' + e.lineno + ')' }); });
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      var S = window.EC || {}, miss = [];
+      if (!S.okScene) miss.push('기구 그림');
+      if (!S.okUI) miss.push('예상하기·미션');
+      if (miss.length) window.EC_err('실행 안 됨', { message: miss.join(', ') + ' 코드가 실행되지 않았어요. 파일이 끝(</html>)까지 들어 있는지 확인해 주세요.' });
+    }, 1500);
+  });
+})();
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+  :root{--bg:#edf3f8;--card:#fff;--ink:#14263b;--ink2:#34495e;--muted:#5a6b7e;--line:#dde6ee;--accent:#0e63b3;--accent-soft:#e3effb;
+    --El:#23a566;--Lt:#f0b400;--Ht:#e4572e;--Mv:#f29a2e;--W:#7d5ad6;--ok:#1f9d5c;--no:#d9534f;
+    --shadow:0 1px 2px rgba(20,38,59,.06),0 8px 24px rgba(20,38,59,.07);--ease:cubic-bezier(.2,.8,.2,1)}
+  *{box-sizing:border-box}html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:"Pretendard",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  button{font:inherit;color:inherit}
+  .app{max-width:1280px;margin:0 auto;padding:16px 16px 28px;display:flex;flex-direction:column;gap:14px}
+  .top{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;flex-wrap:wrap}
+  .eyebrow{display:inline-flex;font-size:13px;font-weight:700;color:var(--El);background:#e6f6ee;padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(22px,2.6vw,30px);margin:8px 0 2px;letter-spacing:-.02em}
+  .sub{margin:0;color:var(--muted);font-size:15px;word-break:keep-all}
+  .prog{font-size:14px;font-weight:800;color:var(--El);background:#e6f6ee;padding:8px 14px;border-radius:999px}
+  .card{background:var(--card);border-radius:20px;box-shadow:var(--shadow);border:1px solid rgba(20,38,59,.04)}
+  .pad{padding:14px 16px}
+  .card-title{font-weight:800;font-size:16px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .card-title .hint{font-weight:500;font-size:12.5px;color:var(--muted)}
+  /* 기구 고르기 */
+  .picker{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}
+  .dev{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;min-height:118px;padding:10px 6px 10px;border-radius:16px;border:2px solid #d4dee8;background:#fff;cursor:pointer;transition:all .25s var(--ease)}
+  .dev > svg{width:64px;height:52px}
+  .dev b{font-size:14.5px;word-break:keep-all;text-align:center}
+  .dev small{font-size:12px;font-weight:700;color:var(--muted)}
+  .dev[aria-pressed="true"]{border-color:var(--El);background:#ecf8f1;box-shadow:0 6px 16px rgba(35,165,102,.18)}
+  .dev .ck{position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:50%;background:var(--El);display:none;place-items:center}
+  .dev.done .ck{display:grid}
+  .dev:active{transform:scale(.97)}
+  /* 무대 */
+  .stage{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:14px;align-items:start}
+  .scene{position:relative;overflow:hidden}
+  .scene > svg{display:block;width:100%;height:auto}
+  .power{white-space:nowrap;position:absolute;right:14px;bottom:14px;display:flex;align-items:center;gap:8px;min-height:52px;padding:0 18px;border-radius:16px;border:0;font-weight:900;font-size:16px;cursor:pointer;color:#fff;background:#14263b;box-shadow:0 8px 20px rgba(20,38,59,.3)}
+  .power.on{background:var(--El)}
+  .power:active{transform:scale(.97)}
+  .side{display:flex;flex-direction:column;gap:14px}
+  .q{font-weight:800;font-size:16.5px;word-break:keep-all;margin:6px 0 10px;line-height:1.55}
+  .echips{display:flex;gap:8px;flex-wrap:wrap}
+  .ech{min-height:52px;padding:0 16px;border-radius:14px;border:2px solid #d4dee8;background:#fff;font-weight:900;font-size:16px;cursor:pointer;display:flex;align-items:center;gap:8px}
+  .ech i{width:14px;height:14px;border-radius:50%}
+  .ech[aria-pressed="true"]{color:#fff}
+  .ech:disabled{cursor:default}
+  .btn{min-height:50px;border:0;border-radius:14px;padding:0 18px;font-weight:800;font-size:15.5px;cursor:pointer;display:inline-flex;align-items:center;gap:8px}
+  .btn.primary{background:var(--accent);color:#fff}.btn.ghost{background:#eef3f8;color:var(--ink2)}
+  .btn:disabled{opacity:.4}
+  .fb{margin-top:10px;padding:12px 14px;border-radius:14px;font-size:15px;line-height:1.65;word-break:keep-all;display:none}
+  .fb.show{display:block;animation:fade .35s var(--ease)}
+  .fb.ok{background:#e8f7ef;color:#0f5a36}.fb.no{background:#fff5e6;color:#7a4508}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .flowbox svg{display:block;width:100%;height:auto}
+  .flowbox .lock{display:grid;place-items:center;min-height:150px;border-radius:14px;background:repeating-linear-gradient(135deg,#f4f7fa 0 12px,#eef2f6 12px 24px);color:var(--muted);font-weight:800;font-size:15px;text-align:center;padding:12px;word-break:keep-all}
+  .rate{max-width:460px;display:grid;grid-template-columns:auto 1fr;border:2px solid #34495e;border-radius:10px;overflow:hidden;background:#fff;font-size:15px;margin-top:8px}
+  .rate span{padding:8px 12px;border-bottom:1px solid #c9d3dd;font-weight:800}
+  .rate span:nth-child(odd){background:#eef2f6;color:#34495e;border-right:1px solid #c9d3dd}
+  .rate span:nth-child(even){text-align:right;font-variant-numeric:tabular-nums}
+  .rate span:nth-last-child(-n+2){border-bottom:0}
+  .rate .big{color:var(--W);font-size:18px}
+  .tagS{font-size:11.5px;font-weight:800;color:#8a6d00;background:#fff4c7;border-radius:6px;padding:1px 6px;margin-left:6px}
+  .tagT{font-size:11.5px;font-weight:800;color:#0f5a36;background:#e6f6ee;border-radius:6px;padding:1px 6px;margin-left:6px}
+  /* 소비 전력 비교 */
+  .bars{display:grid;gap:8px;margin-top:10px}
+  .br{display:grid;grid-template-columns:120px 1fr 86px;gap:10px;align-items:center;padding:4px 6px;border-radius:10px;transition:background .3s}
+  .br.cur{background:#f3effd}
+  .br .n{font-weight:800;font-size:14px;word-break:keep-all}
+  .br .t{height:18px;border-radius:99px;background:#eef2f6;position:relative;overflow:hidden}
+  .br .t i{position:absolute;left:0;top:0;bottom:0;border-radius:99px;background:linear-gradient(90deg,#9b7ee6,var(--W));width:0;transition:width .9s var(--ease)}
+  .br .v{font-weight:900;font-size:14.5px;text-align:right;font-variant-numeric:tabular-nums;color:var(--W)}
+  .note{font-size:12.5px;color:var(--muted);margin:2px 4px 0;line-height:1.6;word-break:keep-all}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,30px);opacity:0;background:#14263b;color:#fff;padding:12px 18px;border-radius:14px;font-weight:700;font-size:15px;box-shadow:0 10px 30px rgba(0,0,0,.25);transition:all .4s var(--ease);pointer-events:none;z-index:10;max-width:calc(100% - 32px);text-align:center;word-break:keep-all}
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+  @media (max-width:1000px){.picker{grid-template-columns:repeat(3,minmax(0,1fr))}}
+  @media (max-width:900px){.stage{grid-template-columns:1fr}}
+  @media (max-width:560px){.br{grid-template-columns:90px 1fr 70px}}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div>
+      <span class="eyebrow">중2 과학 · 전기 · 에너지 전환 관찰</span>
+      <h1>전기 기구를 켜면 전기 에너지는 무엇으로 바뀔까?</h1>
+      <p class="sub">기구를 고르고, 바뀌는 에너지를 먼저 예상한 뒤 확인해요. 여섯 기구를 모두 확인해 보세요.</p>
+    </div>
+    <span class="prog" id="prog">확인한 기구 0 / 6</span>
+  </header>
+
+  <section class="card pad">
+    <div class="card-title">전기 기구 고르기 <span class="hint">하나를 눌러요</span></div>
+    <div class="picker" id="picker" style="margin-top:10px"></div>
+  </section>
+
+  <div class="stage">
+    <section class="card scene" id="sceneCard">
+      <svg id="scene" viewBox="0 0 640 400" role="img" aria-label="선택한 전기 기구가 작동하는 모습"></svg>
+      <button type="button" class="power" id="power"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 3v9"/><path d="M6.3 7.3a8 8 0 1 0 11.4 0"/></svg><span id="powTxt">켜기</span></button>
+    </section>
+    <div class="side">
+      <section class="card pad">
+        <div class="card-title" id="qTitle">예상해 보기</div>
+        <p class="q" id="qText"></p>
+        <div class="echips" id="echips"></div>
+        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap"><button type="button" class="btn primary" id="chk" disabled>확인하기</button></div>
+        <div class="fb" id="fb"></div>
+      </section>
+      <section class="card pad flowbox">
+        <div class="card-title">에너지 전환 띠 그림 <span class="hint">띠의 굵기는 실제 비율이 아니에요</span></div>
+        <div id="flow" style="margin-top:8px"></div>
+      </section>
+    </div>
+  </div>
+
+  <section class="card pad">
+    <div class="card-title">기구마다 1초 동안 쓰는 전기 에너지 <span class="hint">소비 전력(W)이 클수록 막대가 길어요</span></div>
+    <div id="rateBox"></div>
+    <div class="bars" id="bars"></div>
+    <p class="note" style="margin-top:8px">※ 에어컨(690 W)과 선풍기(10 W)는 교과서 그림 값이에요. 나머지는 이해를 돕기 위한 예시 값이고, 제품마다 달라요. 전기 버스는 가정용 기구가 아니어서 비교에서 뺐어요.</p>
+  </section>
+
+  <p class="note">※ 개념 이해를 위한 모형이에요. 전기 기구에서 바뀌는 에너지 가운데 주로 이용하는 것과, 함께 조금 생기는 것을 나누어 보여 줘요.</p>
+  <p class="credit" style="margin:20px 0 4px;text-align:center;font-size:13px;font-weight:700;color:#8495a8;letter-spacing:.02em">제작 · 성안중학교 이삭 T</p>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* ===== 블록 0: 기구 자료 (선생님이 고치기 쉽게 여기 모았어요) ===== */
+window.EC = {
+  // main: 주로 이용하는 에너지, also: 함께 조금 생기는 에너지 (골라도 정답으로 인정)
+  DEVICES: [
+    { id: 'led', name: 'LED등', w: 16, src: 'sample', main: ['L'], also: ['H'], use: '방을 밝혀요' },
+    { id: 'fl', name: '형광등', w: 32, src: 'sample', main: ['L'], also: ['H'], use: '방을 밝혀요' },
+    { id: 'fan', name: '선풍기', w: 10, src: 'book', main: ['M'], also: ['H'], use: '날개가 돌아 바람을 일으켜요' },
+    { id: 'dryer', name: '헤어드라이어', w: 1200, src: 'sample', main: ['H', 'M'], also: [], use: '따뜻한 바람으로 머리를 말려요' },
+    { id: 'cooker', name: '전기밥솥', w: 900, src: 'sample', main: ['H'], also: [], use: '쌀을 익혀 밥을 지어요' },
+    { id: 'bus', name: '전기 버스', w: null, src: 'none', main: ['M'], also: ['H', 'L'], use: '바퀴가 돌아 달려요' },
+  ],
+  EN: { L: { n: '빛에너지', c: '#f0b400' }, H: { n: '열에너지', c: '#e4572e' }, M: { n: '운동 에너지', c: '#f29a2e' } },
+  S: { cur: 'led', on: false, done: {}, pick: {} },
+  t: 0,
+};
+</script>
+<script>
+/* ===== 블록 1: 기구 그림 ===== */
+(() => {
+  'use strict';
+  try {
+    const EC = window.EC, svg = document.getElementById('scene');
+    const defs = `<defs>
+      <linearGradient id="sWall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4f8fc"/><stop offset="1" stop-color="#e3eaf2"/></linearGradient>
+      <linearGradient id="sFloor" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d9b48a"/><stop offset="1" stop-color="#b98c5e"/></linearGradient>
+      <radialGradient id="sGlow"><stop offset="0" stop-color="#fffbe8" stop-opacity="1"/><stop offset=".35" stop-color="#ffe9a0" stop-opacity=".6"/><stop offset="1" stop-color="#ffd76a" stop-opacity="0"/></radialGradient>
+      <linearGradient id="sBase" x1="0" x2="1"><stop offset="0" stop-color="#d9dfe6"/><stop offset=".5" stop-color="#ffffff"/><stop offset="1" stop-color="#c3ccd6"/></linearGradient>
+      <linearGradient id="sScrew" x1="0" x2="1"><stop offset="0" stop-color="#8b97a4"/><stop offset=".5" stop-color="#eef2f6"/><stop offset="1" stop-color="#7b8794"/></linearGradient>
+      <linearGradient id="sTube" x1="0" x2="1"><stop offset="0" stop-color="#e8eef4"/><stop offset=".5" stop-color="#ffffff"/><stop offset="1" stop-color="#dbe3ec"/></linearGradient>
+      <radialGradient id="sLed" cx=".4" cy=".35" r=".75"><stop offset="0" stop-color="#ffffff"/><stop offset=".7" stop-color="#fbfaf2"/><stop offset="1" stop-color="#e7e4d6"/></radialGradient>
+      <linearGradient id="sHd" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff8fb0"/><stop offset="1" stop-color="#d9416e"/></linearGradient>
+      <linearGradient id="sCook" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#d5dde6"/></linearGradient>
+      <linearGradient id="sBus" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3fbf8a"/><stop offset="1" stop-color="#1c8a5c"/></linearGradient>
+      <linearGradient id="sHot" x1="0" x2="1"><stop offset="0" stop-color="#ff7a45" stop-opacity=".95"/><stop offset="1" stop-color="#ffc49a" stop-opacity="0"/></linearGradient>
+      <linearGradient id="sMetal" x1="0" x2="1"><stop offset="0" stop-color="#8b97a4"/><stop offset=".5" stop-color="#e3e8ee"/><stop offset="1" stop-color="#7b8794"/></linearGradient>
+      <filter id="sSh" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#0b2a4a" flood-opacity=".22"/></filter>
+    </defs>`;
+    const room = (dark) => `<rect width="640" height="400" fill="url(#sWall)"/>${dark ? '<rect width="640" height="400" fill="#0f1d30" opacity=".55" class="dim"/>' : ''}<rect x="0" y="318" width="640" height="82" fill="url(#sFloor)"/>`;
+    const outlet = `<g filter="url(#sSh)"><rect x="34" y="214" width="52" height="64" rx="10" fill="#fff" stroke="#c9d2dc"/><circle cx="60" cy="246" r="17" fill="#d7dee6"/><circle cx="54" cy="246" r="3" fill="#34404c"/><circle cx="66" cy="246" r="3" fill="#34404c"/></g>`;
+    // 기구별 그림 (on/off에 따라 달라지는 부분은 class로 표시)
+    const DRAW = {
+      led: () => `${room(true)}<path d="M320 0 V60" stroke="#5a6b7e" stroke-width="4"/>
+        <g class="lit"><circle cx="320" cy="140" r="170" fill="url(#sGlow)"/><path d="M320 140 L140 400 H500Z" fill="#fff6c8" opacity=".35"/></g>
+        <g filter="url(#sSh)"><rect x="304" y="58" width="32" height="18" rx="4" fill="#34495e"/><rect x="306" y="76" width="28" height="30" rx="4" fill="url(#sScrew)"/>
+          <path d="M290 106 H350 L344 120 H296Z" fill="url(#sBase)"/>
+          <path d="M296 120 C 296 132, 266 146, 266 176 A 54 54 0 1 0 374 176 C 374 146, 344 132, 344 120Z" fill="url(#sLed)"/>
+          <circle class="unlit" cx="320" cy="180" r="44" fill="#b9c2cc" opacity=".55"/></g>
+        <g class="heat" fill="none" stroke="#e4572e" stroke-width="3" stroke-linecap="round" opacity=".55"><path d="M262 120 q-8 -12 0 -24 t0 -24"/><path d="M378 120 q8 -12 0 -24 t0 -24"/></g>
+        <path class="cord" d="M86 246 C 160 246, 180 30, 320 20" fill="none" stroke="#34404d" stroke-width="5"/>`,
+      fl: () => `${room(true)}<path d="M320 0 V60" stroke="#5a6b7e" stroke-width="4"/>
+        <g class="lit"><circle cx="320" cy="160" r="170" fill="url(#sGlow)"/><path d="M320 160 L140 400 H500Z" fill="#fff6c8" opacity=".35"/></g>
+        <g filter="url(#sSh)"><rect x="304" y="58" width="32" height="18" rx="4" fill="#34495e"/><rect x="306" y="76" width="28" height="30" rx="4" fill="url(#sScrew)"/>
+          <path d="M286 106 H354 L348 136 H292Z" fill="url(#sBase)"/>
+          ${[0, 1, 2, 3, 4].map((k) => `<path d="M290 ${150 + k * 20} C 290 ${139 + k * 20}, 350 ${139 + k * 20}, 350 ${150 + k * 20} C 350 ${161 + k * 20}, 290 ${161 + k * 20}, 290 ${150 + k * 20}" fill="none" stroke="url(#sTube)" stroke-width="13" stroke-linecap="round"/>`).join('')}
+          <rect class="unlit" x="280" y="136" width="80" height="110" rx="20" fill="#b9c2cc" opacity=".45"/></g>
+        <g class="heat" fill="none" stroke="#e4572e" stroke-width="3" stroke-linecap="round" opacity=".6"><path d="M272 150 q-8 -12 0 -24 t0 -24"/><path d="M368 150 q8 -12 0 -24 t0 -24"/><path d="M262 210 q-8 -12 0 -24 t0 -24"/></g>
+        <path class="cord" d="M86 246 C 160 246, 180 30, 320 20" fill="none" stroke="#34404d" stroke-width="5"/>`,
+      fan: () => `${room(false)}<ellipse cx="380" cy="350" rx="80" ry="14" fill="#2b9ad6"/><rect x="370" y="236" width="20" height="116" rx="8" fill="url(#sMetal)"/>
+        <g class="wind" fill="none" stroke="#9fd6ff" stroke-width="5" stroke-linecap="round"><path d="M480 120 C 520 110, 560 130, 610 116" stroke-dasharray="26 16"/><path d="M490 160 C 530 166, 570 150, 620 160" stroke-dasharray="22 14"/><path d="M480 200 C 520 214, 560 196, 610 208" stroke-dasharray="26 16"/></g>
+        <g filter="url(#sSh)"><circle cx="380" cy="160" r="100" fill="#fff" fill-opacity=".55" stroke="#9aa7b4" stroke-width="4"/>
+          <g class="spin" data-cx="380" data-cy="160"><g fill="#4aa3df" fill-opacity=".92">${[0, 120, 240].map((a) => `<path d="M380 160 C 360 110, 380 74, 408 86 C 424 106, 404 144, 380 160Z" transform="rotate(${a} 380 160)"/>`).join('')}</g></g>
+          <g stroke="#b8c3ce" stroke-width="1.6" fill="none"><circle cx="380" cy="160" r="72"/><circle cx="380" cy="160" r="44"/><path d="M380 60 V260 M280 160 H480 M309 89 L451 231 M451 89 L309 231"/></g>
+          <circle cx="380" cy="160" r="18" fill="#e8edf2" stroke="#8d99a6" stroke-width="3"/></g>
+        <g class="heat" fill="none" stroke="#e4572e" stroke-width="2.6" stroke-linecap="round" opacity=".45"><path d="M396 330 q-6 -10 0 -20 t0 -20"/></g>
+        <path class="cord" d="M86 246 C 200 300, 280 360, 330 350" fill="none" stroke="#34404d" stroke-width="5"/>`,
+      dryer: () => `${room(false)}
+        <g class="wind" fill="none" stroke="url(#sHot)" stroke-width="10" stroke-linecap="round"><path d="M430 150 C 480 136, 530 160, 620 140" stroke-dasharray="30 18"/><path d="M430 180 C 490 180, 540 196, 625 186" stroke-dasharray="34 16"/><path d="M430 210 C 480 226, 530 212, 615 232" stroke-dasharray="28 18"/></g>
+        <g class="heat"><circle cx="430" cy="180" r="40" fill="#ff7a45" opacity=".25"/></g>
+        <g filter="url(#sSh)"><path d="M230 130 H410 a22 22 0 0 1 22 22 V208 a22 22 0 0 1 -22 22 H230 a50 50 0 0 1 0 -100Z" fill="url(#sHd)"/>
+          <circle cx="232" cy="180" r="36" fill="#fff" opacity=".22"/><circle cx="232" cy="180" r="20" fill="#b8325a"/>
+          <g class="spin" data-cx="232" data-cy="180" fill="#ffd0dd">${[0, 90, 180, 270].map((a) => `<rect x="229" y="164" width="6" height="16" rx="3" transform="rotate(${a} 232 180)"/>`).join('')}</g>
+          <path d="M262 226 L244 316 H290 L310 226Z" fill="#c23762"/><rect x="410" y="146" width="20" height="68" rx="5" fill="#8f2246"/>
+          <rect x="266" y="246" width="16" height="30" rx="5" fill="#8f2246"/></g>
+        <path class="cord" d="M86 246 C 160 320, 220 340, 266 312" fill="none" stroke="#34404d" stroke-width="5"/>`,
+      cooker: () => `${room(false)}<rect x="250" y="300" width="300" height="20" rx="6" fill="#c9a072"/>
+        <g class="steam" fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="round" opacity=".9"><path d="M380 120 q-16 -22 0 -44 t0 -44"/><path d="M412 112 q16 -22 0 -44 t0 -44"/></g>
+        <g filter="url(#sSh)"><path d="M290 170 C 290 150, 510 150, 510 170 L 500 290 C 500 304, 300 304, 300 290Z" fill="url(#sCook)" stroke="#c3ccd6" stroke-width="2"/>
+          <path d="M280 170 C 280 130, 520 130, 520 170Z" fill="#eef2f6" stroke="#c3ccd6" stroke-width="2"/><rect x="380" y="128" width="40" height="12" rx="6" fill="#34495e"/>
+          <rect x="350" y="214" width="100" height="42" rx="10" fill="#1d2733"/><text x="400" y="242" text-anchor="middle" class="disp" style="font-size:15px;font-weight:900;fill:#5ff09a">취사 중</text>
+          <rect class="heat" x="312" y="282" width="176" height="8" rx="4" fill="#ff5a2a"/></g>
+        <path class="cord" d="M86 246 C 160 290, 240 300, 300 276" fill="none" stroke="#34404d" stroke-width="5"/>`,
+      bus: () => `<rect width="640" height="400" fill="#dcecf8"/><g fill="#fff" opacity=".9"><ellipse cx="140" cy="70" rx="44" ry="14"/><ellipse cx="480" cy="90" rx="36" ry="12"/></g>
+        <g class="far"><rect x="0" y="210" width="1280" height="40" fill="#a9c7a0"/>${Array.from({ length: 12 }, (_, k) => `<g transform="translate(${k * 110 + 20} 160)"><rect x="18" y="30" width="8" height="30" fill="#7a5a3a"/><circle cx="22" cy="24" r="26" fill="#5fa86a"/></g>`).join('')}</g>
+        <rect x="0" y="250" width="640" height="150" fill="#9aa5b1"/>
+        <g class="road" stroke="#fff" stroke-width="6" stroke-dasharray="40 30"><path d="M0 330 H1280"/></g>
+        <g class="busb" filter="url(#sSh)"><rect x="150" y="150" width="320" height="120" rx="20" fill="url(#sBus)"/>
+          ${[0, 1, 2, 3].map((k) => `<rect x="${168 + k * 62}" y="168" width="52" height="44" rx="6" fill="#d9f1ff"/>`).join('')}<rect x="420" y="168" width="40" height="56" rx="6" fill="#d9f1ff"/>
+          <rect x="150" y="232" width="320" height="10" fill="#fff" opacity=".5"/><rect class="lit" x="458" y="244" width="12" height="10" rx="3" fill="#ffe27a"/>
+          <path d="M300 136 L312 120 L310 132 L322 128 L310 146 L312 136Z" fill="#ffd23f"/></g>
+        ${[220, 400].map((x, k) => `<g class="spin" data-cx="${x}" data-cy="272"><circle cx="${x}" cy="272" r="26" fill="#2b3440"/><circle cx="${x}" cy="272" r="11" fill="#aab4bf"/><path d="M${x} 252 V292 M${x - 20} 272 H${x + 20}" stroke="#6f7a86" stroke-width="4"/></g>`).join('')}
+        <text x="320" y="390" text-anchor="middle" style="font-size:13px;font-weight:800;fill:#3a4a5c">전기 버스는 충전한 전기 에너지로 달려요</text>`,
+    };
+    let flowDots = [], spinners = [], parts = {};
+    function draw() {
+      const S = EC.S, d = EC.DEVICES.find((x) => x.id === S.cur);
+      svg.innerHTML = defs + DRAW[d.id]() + (d.id !== 'bus' ? outlet : '') +
+        `<text x="620" y="34" text-anchor="end" style="font-size:16px;font-weight:900;fill:${S.on ? '#1c8a52' : '#5a6b7e'}">${d.name} · ${S.on ? '켜짐' : '꺼짐'}</text>`;
+      const q = (s) => Array.from(svg.querySelectorAll(s));
+      parts = { lit: q('.lit'), unlit: q('.unlit'), heat: q('.heat'), wind: q('.wind path'), steam: q('.steam path'), dim: q('.dim'), road: q('.road path'), far: q('.far'), disp: q('.disp') };
+      spinners = q('.spin').map((g) => ({ g, cx: +g.dataset.cx, cy: +g.dataset.cy, a: 0 }));
+      // 전선 위 전기 에너지 점
+      flowDots = [];
+      const cord = svg.querySelector('.cord');
+      if (cord) {
+        const L = cord.getTotalLength();
+        for (let k = 0; k < 7; k++) { const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle'); c.setAttribute('r', 6); c.setAttribute('fill', '#3fd08a'); c.setAttribute('stroke', '#fff'); c.setAttribute('stroke-width', 2); svg.appendChild(c); flowDots.push({ c, s: (k / 7) * L, L, cord }); }
+      }
+      paint();
+    }
+    function paint() {
+      const on = EC.S.on;
+      parts.lit.forEach((e) => (e.style.opacity = on ? 1 : 0));
+      parts.unlit.forEach((e) => (e.style.opacity = on ? 0 : 1));
+      parts.heat.forEach((e) => (e.style.display = on ? '' : 'none'));
+      parts.wind.concat(parts.steam).forEach((e) => (e.style.display = on ? '' : 'none'));
+      parts.dim.forEach((e) => (e.style.opacity = on ? 0 : 0.55));
+      parts.disp.forEach((e) => (e.textContent = on ? '취사 중' : ''));
+      flowDots.forEach((f) => (f.c.style.display = on ? '' : 'none'));
+    }
+    function tick(dt) {
+      if (!EC.S.on) return;
+      const t = EC.t;
+      spinners.forEach((s) => { s.a = (s.a + dt * 600) % 360; s.g.setAttribute('transform', `rotate(${s.a.toFixed(1)} ${s.cx} ${s.cy})`); });
+      parts.wind.forEach((p, i) => p.setAttribute('stroke-dashoffset', (-t * 160 - i * 13).toFixed(1)));
+      parts.steam.forEach((p, i) => { p.setAttribute('transform', `translate(0 ${-((t * 30 + i * 20) % 40)})`); p.style.opacity = (1 - ((t * 30 + i * 20) % 40) / 40).toFixed(2); });
+      parts.heat.forEach((p, i) => { p.style.opacity = (0.35 + 0.25 * Math.sin(t * 4 + i)).toFixed(2); });
+      parts.road.forEach((p) => p.setAttribute('stroke-dashoffset', (t * 260).toFixed(1)));
+      parts.far.forEach((g) => g.setAttribute('transform', `translate(${-((t * 60) % 110)} 0)`));
+      flowDots.forEach((f) => { f.s = (f.s + dt * 160) % f.L; const p = f.cord.getPointAtLength(f.s); f.c.setAttribute('cx', p.x.toFixed(1)); f.c.setAttribute('cy', p.y.toFixed(1)); });
+    }
+    EC.drawScene = draw; EC.paintScene = paint;
+    draw();
+    const reduce = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+    if (!reduce) { let last = performance.now(); const loop = (now) => { const dt = Math.min(0.05, (now - last) / 1000); last = now; EC.t += dt; try { tick(dt); } catch (e) {} requestAnimationFrame(loop); }; requestAnimationFrame(loop); }
+    EC.okScene = true;
+  } catch (err) { window.EC_err('기구 그림', err); }
+})();
+</script>
+<script>
+/* ===== 블록 2: 고르기·예상하기·띠 그림·미션 ===== */
+(() => {
+  'use strict';
+  try {
+    const EC = window.EC, S = EC.S, EN = EC.EN;
+    const $ = (s) => document.querySelector(s), $$ = (s) => Array.from(document.querySelectorAll(s));
+    const toastEl = $('#toast'); let tt;
+    const toast = (m) => { toastEl.textContent = m; toastEl.classList.add('show'); clearTimeout(tt); tt = setTimeout(() => toastEl.classList.remove('show'), 2600); };
+    const ICON = {
+      led: '<circle cx="32" cy="22" r="14" fill="#fff8d6" stroke="#d8c27a" stroke-width="2"/><rect x="25" y="36" width="14" height="10" rx="2" fill="#aab4bf"/>',
+      fl: '<path d="M22 12 C22 8 42 8 42 12 C42 16 22 16 22 12 M22 20 C22 16 42 16 42 20 C42 24 22 24 22 20 M22 28 C22 24 42 24 42 28 C42 32 22 32 22 28" fill="none" stroke="#c9d2dc" stroke-width="4" stroke-linecap="round"/><rect x="24" y="34" width="16" height="12" rx="2" fill="#aab4bf"/>',
+      fan: '<circle cx="32" cy="22" r="17" fill="#fff" stroke="#9aa7b4" stroke-width="2"/><path d="M32 22 C26 12 32 6 38 9 C40 14 36 20 32 22Z M32 22 C42 24 44 32 38 34 C33 32 32 26 32 22Z M32 22 C26 30 18 28 18 22 C22 18 28 20 32 22Z" fill="#4aa3df"/><rect x="30" y="38" width="4" height="10" fill="#9aa7b4"/><ellipse cx="32" cy="48" rx="12" ry="3" fill="#2b9ad6"/>',
+      dryer: '<path d="M16 14 H44 a5 5 0 0 1 5 5 V27 a5 5 0 0 1 -5 5 H16 a9 9 0 0 1 0 -18Z" fill="#e05582"/><path d="M22 32 L19 48 H27 L30 32Z" fill="#c23762"/><path d="M50 18 h8 M50 23 h10 M50 28 h8" stroke="#ff8a5a" stroke-width="2.4" stroke-linecap="round"/>',
+      cooker: '<path d="M14 22 C14 18 50 18 50 22 L48 44 C48 47 16 47 16 44Z" fill="#eef2f6" stroke="#9aa7b4" stroke-width="2"/><path d="M12 22 C12 12 52 12 52 22Z" fill="#dfe6ee" stroke="#9aa7b4" stroke-width="2"/><path d="M28 8 q-3 -4 0 -7 M36 8 q3 -4 0 -7" fill="none" stroke="#9aa7b4" stroke-width="2" stroke-linecap="round"/>',
+      bus: '<rect x="8" y="12" width="48" height="28" rx="6" fill="#23a566"/><rect x="12" y="16" width="10" height="9" rx="2" fill="#d9f1ff"/><rect x="25" y="16" width="10" height="9" rx="2" fill="#d9f1ff"/><rect x="38" y="16" width="14" height="12" rx="2" fill="#d9f1ff"/><circle cx="18" cy="42" r="5" fill="#2b3440"/><circle cx="46" cy="42" r="5" fill="#2b3440"/>',
+    };
+    // 받침에 따라 조사 고르기 (을/를, 이/가)
+    const jo = (w, a, b) => { const c = w.charCodeAt(w.length - 1) - 0xac00; return w + (c >= 0 && c <= 11171 && c % 28 ? a : b); };
+    const wTxt = (d) => (d.w ? `${d.w} W` : '—');
+    function renderPicker() {
+      $('#picker').innerHTML = EC.DEVICES.map((d) => `<button type="button" class="dev${S.done[d.id] ? ' done' : ''}" data-id="${d.id}" aria-pressed="${d.id === S.cur}"><span class="ck"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg></span><svg viewBox="0 0 64 52">${ICON[d.id]}</svg><b>${d.name}</b><small>${d.w ? wTxt(d) : '가정용 아님'}</small></button>`).join('');
+      $$('#picker .dev').forEach((b) => b.addEventListener('click', () => { S.cur = b.dataset.id; S.on = false; renderAll(); }));
+    }
+    function renderQuiz() {
+      const d = EC.DEVICES.find((x) => x.id === S.cur), done = S.done[d.id];
+      $('#qTitle').textContent = done ? '확인 완료' : '예상해 보기';
+      $('#qText').textContent = `${jo(d.name, '을', '를')} 켜면 ${d.use}. 전기 에너지는 어떤 에너지로 바뀔까요? (여러 개 고를 수 있어요)`;
+      const pick = S.pick[d.id] || (S.pick[d.id] = {});
+      $('#echips').innerHTML = Object.keys(EN).map((k) => `<button type="button" class="ech" data-k="${k}" aria-pressed="${!!pick[k]}" ${done ? 'disabled' : ''} style="${pick[k] ? `background:${EN[k].c};border-color:${EN[k].c}` : ''}"><i style="background:${EN[k].c}"></i>${EN[k].n}</button>`).join('');
+      $$('#echips .ech').forEach((b) => b.addEventListener('click', () => { pick[b.dataset.k] = !pick[b.dataset.k]; renderQuiz(); }));
+      $('#chk').disabled = done || !Object.values(pick).some(Boolean);
+      const fb = $('#fb');
+      if (!done) { fb.className = 'fb'; fb.innerHTML = ''; }
+    }
+    function flowSvg(d) {
+      // 전기 에너지 띠가 주로 이용하는 에너지(굵게)와 함께 생기는 에너지(가늘게)로 나뉘어요
+      const outs = d.main.map((k) => ({ k, main: true })).concat(d.also.map((k) => ({ k, main: false })));
+      const H = 230, x0 = 20, xs = 200, xe = 350;
+      const wid = outs.map((o) => (o.main ? 46 : 14)), tot = wid.reduce((a, b) => a + b, 0), gap = 26;
+      const totH = tot + gap * (outs.length - 1), yIn = (H - tot) / 2;
+      let s = `<svg viewBox="0 0 560 ${H}" role="img" aria-label="${d.name}의 에너지 전환 띠 그림"><rect width="560" height="${H}" rx="14" fill="#fbfcfe"/>`;
+      s += `<rect x="${x0}" y="${yIn}" width="${xs - x0}" height="${tot}" fill="#23a566"/><text x="${x0 + 12}" y="${yIn + tot / 2 + 6}" style="font-size:16px;font-weight:900;fill:#fff">전기 에너지</text>`;
+      let yi = yIn, yo = (H - totH) / 2;
+      outs.forEach((o, i) => {
+        const w = wid[i], c = EN[o.k].c;
+        s += `<path d="M${xs} ${yi} C ${xs + 90} ${yi}, ${xe - 90} ${yo}, ${xe} ${yo} H500 L522 ${yo + w / 2} L500 ${yo + w} H${xe} C ${xe - 90} ${yo + w}, ${xs + 90} ${yi + w}, ${xs} ${yi + w}Z" fill="${c}" opacity="${o.main ? 1 : 0.75}"/>`;
+        s += `<path d="M${xs} ${yi + w / 2} C ${xs + 90} ${yi + w / 2}, ${xe - 90} ${yo + w / 2}, ${xe} ${yo + w / 2} H496" fill="none" stroke="#fff" stroke-opacity=".6" stroke-width="2.5" stroke-dasharray="5 12" class="fdash"/>`;
+        s += `<text x="${xe + 4}" y="${yo - 6}" style="font-size:14px;font-weight:900;fill:${c}">${EN[o.k].n}${o.main ? ' · 주로 이용' : ' · 조금'}</text>`;
+        yi += w; yo += w + gap;
+      });
+      s += '</svg>';
+      return s;
+    }
+    function renderFlow() {
+      const d = EC.DEVICES.find((x) => x.id === S.cur);
+      $('#flow').innerHTML = S.done[d.id] ? flowSvg(d) : '<div class="lock">예상을 확인하면 띠 그림이 나타나요</div>';
+    }
+    function renderRate() {
+      const d = EC.DEVICES.find((x) => x.id === S.cur);
+      $('#rateBox').innerHTML = d.w ? `<div class="rate"><span>기구</span><span>${d.name}${d.src === 'book' ? '<span class="tagT">교과서 값</span>' : '<span class="tagS">예시 값</span>'}</span><span>정격 전압</span><span>220 V</span><span>소비 전력</span><span class="big">${d.w} W</span></div>` : '<p class="note" style="margin-top:8px">전기 버스는 가정에서 쓰는 기구가 아니어서 소비 전력 비교에서 뺐어요.</p>';
+      const list = EC.DEVICES.filter((x) => x.w).concat([{ id: 'ac', name: '에어컨', w: 690, src: 'book' }]).sort((a, b) => b.w - a.w);
+      const max = Math.max(...list.map((x) => x.w));
+      $('#bars').innerHTML = list.map((x) => `<div class="br${x.id === S.cur ? ' cur' : ''}"><span class="n">${x.name}${x.src === 'book' ? '<span class="tagT">교과서</span>' : ''}</span><span class="t"><i data-w="${(x.w / max) * 100}"></i></span><span class="v">${x.w} W</span></div>`).join('');
+      requestAnimationFrame(() => $$('#bars i').forEach((i) => (i.style.width = `max(${i.dataset.w}%, 6px)`)));
+    }
+    function renderPower() { $('#power').classList.toggle('on', S.on); $('#powTxt').textContent = S.on ? '끄기' : '켜기'; }
+    function renderAll() { renderPicker(); renderQuiz(); renderFlow(); renderRate(); renderPower(); EC.drawScene(); }
+
+    $('#power').addEventListener('click', () => { S.on = !S.on; renderPower(); EC.drawScene(); });
+    $('#chk').addEventListener('click', () => {
+      const d = EC.DEVICES.find((x) => x.id === S.cur), pick = S.pick[d.id] || {};
+      const chosen = Object.keys(pick).filter((k) => pick[k]);
+      const miss = d.main.filter((k) => !chosen.includes(k)), wrong = chosen.filter((k) => !d.main.includes(k) && !d.also.includes(k));
+      const fb = $('#fb');
+      if (!miss.length && !wrong.length) {
+        S.done[d.id] = true; S.on = true;
+        const extra = chosen.filter((k) => d.also.includes(k)).map((k) => EN[k].n);
+        fb.className = 'fb show ok';
+        fb.innerHTML = `<b>맞아요!</b> ${d.name}에서 전기 에너지는 주로 <b>${d.main.map((k) => EN[k].n).join('와 ')}</b>로 바뀌어요.` + (extra.length ? ` ${extra.join(', ')}도 조금 생기는 것을 잘 찾았어요.` : d.also.length ? ` 함께 조금 생기는 ${d.also.map((k) => EN[k].n).join(', ')}도 있어요.` : '') + ' 기구가 켜졌어요.';
+        const n = Object.keys(S.done).length;
+        $('#prog').textContent = `확인한 기구 ${n} / ${EC.DEVICES.length}`;
+        toast(n === EC.DEVICES.length ? '여섯 기구를 모두 확인했어요! 전력량 실험실로 가 볼까요?' : `${d.name} 확인 완료`);
+        renderPicker(); renderQuiz(); renderFlow(); renderPower(); EC.drawScene();
+        $('#fb').className = 'fb show ok'; $('#fb').innerHTML = fb.innerHTML;
+      } else {
+        fb.className = 'fb show no';
+        fb.innerHTML = (miss.length ? `기구를 켜고 다시 살펴봐요. ${jo(d.name, '이', '가')} 하는 일(${d.use})에 꼭 필요한 에너지가 빠졌어요.` : `${wrong.map((k) => EN[k].n).join(', ')}는 ${d.name}에서 거의 생기지 않아요. 다시 골라 봐요.`) + ' 위의 <b>켜기</b> 버튼으로 먼저 관찰해도 좋아요.';
+      }
+    });
+    renderAll();
+    EC.okUI = true;
+  } catch (err) { window.EC_err('예상하기·미션', err); }
+})();
+</script>
+</body>
+</html>
