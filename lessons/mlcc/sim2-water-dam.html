@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>수로 모형으로 보는 MLCC</title>
+<script>
+/* 문제 알림: 코드에 오류가 나면 화면 아래에 빨간 상자로 알려 줘요 (선생님 확인용) */
+(function () {
+  function box() {
+    var b = document.getElementById('dmErr');
+    if (!b && document.body) {
+      b = document.createElement('div'); b.id = 'dmErr';
+      b.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;background:#fdecea;color:#8a1f17;border:2px solid #d9534f;border-radius:12px;padding:10px 14px;font:600 14px/1.5 sans-serif;white-space:pre-wrap';
+      document.body.appendChild(b);
+    }
+    return b;
+  }
+  window.DM_err = function (where, err) {
+    var msg = '[' + where + '] ' + (err && err.message ? err.message : String(err));
+    var show = function () { var b = box(); if (b) b.textContent += (b.textContent ? '\n' : '') + msg; };
+    if (document.body) show(); else document.addEventListener('DOMContentLoaded', show);
+  };
+  window.addEventListener('error', function (e) { window.DM_err('스크립트', { message: e.message + ' (줄 ' + e.lineno + ')' }); });
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      var S = window.DM || {}, miss = [];
+      [['okSim', '계산'], ['okDraw', '그림'], ['okUI', '버튼·미션']].forEach(function (p) { if (!S[p[0]]) miss.push(p[1]); });
+      if (miss.length) window.DM_err('실행 안 됨', { message: miss.join(', ') + ' 코드가 실행되지 않았어요. 파일이 끝(</html>)까지 들어 있는지 확인해 주세요.' });
+    }, 1500);
+  });
+})();
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+  :root{
+    --bg:#edf3f8; --card:#fff; --ink:#14263b; --ink2:#34495e; --muted:#5a6b7e; --line:#dde6ee;
+    --accent:#0e63b3; --accent-soft:#e3effb;
+    --V:#2f6fd6; --I:#e89a00; --water:#3e9ad8; --red:#e0483e; --ok:#1f9d5c; --cer:#a0714a; --cer-soft:#f6eee6;
+    --shadow:0 1px 2px rgba(20,38,59,.06),0 8px 24px rgba(20,38,59,.07);
+    --ease:cubic-bezier(.2,.8,.2,1);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:"Pretendard",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  button{font:inherit;color:inherit}
+  .app{max-width:1280px;margin:0 auto;padding:16px 16px 28px;display:flex;flex-direction:column;gap:14px}
+  .eyebrow{display:inline-flex;font-size:13px;font-weight:700;color:var(--accent);background:var(--accent-soft);padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(22px,2.6vw,30px);margin:8px 0 2px;letter-spacing:-.02em;line-height:1.25}
+  .sub{margin:0;color:var(--muted);font-size:15px;word-break:keep-all}
+  .card{background:var(--card);border-radius:20px;box-shadow:var(--shadow);border:1px solid rgba(20,38,59,.04)}
+  .pad{padding:14px 16px}
+  .card-title{font-weight:800;font-size:16px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .card-title .hint{font-weight:500;font-size:12.5px;color:var(--muted)}
+  /* 조작 */
+  .controls{display:flex;flex-wrap:wrap;gap:14px 22px;align-items:flex-end}
+  .ctl{display:flex;flex-direction:column;gap:6px}
+  .ctl .lb{font-size:13px;font-weight:800;color:var(--ink2)}
+  .chips{display:flex;gap:6px;flex-wrap:wrap}
+  .chip{min-height:50px;padding:0 14px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15px;cursor:pointer;transition:all .2s var(--ease)}
+  .chip:active{transform:scale(.96)}
+  .chip[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+  .chip.burst{border-color:#f0c48a;background:#fff8ec;color:#8a5200}
+  .tog{min-height:50px;padding:0 16px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15px;cursor:pointer;display:flex;align-items:center;gap:10px}
+  .tog .dot{width:14px;height:14px;border-radius:4px;background:#c2ccd6}
+  .tog[aria-pressed="true"]{border-color:var(--cer);background:var(--cer-soft);color:#5b3a1f}
+  .tog[aria-pressed="true"] .dot{background:var(--cer)}
+  .stat{margin-left:auto;display:flex;gap:10px;align-items:center}
+  .glitch{min-width:170px;border-radius:16px;padding:8px 14px;background:#f5f8fb;border:1px solid var(--line)}
+  .glitch span{display:block;font-size:12.5px;font-weight:800;color:var(--muted)}
+  .glitch b{font-size:26px;font-weight:900;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+  .glitch.hot{background:#fdecea;border-color:#f3c2bb}.glitch.hot b{color:var(--red)}
+  .small-btn{min-height:46px;padding:0 14px;border:0;border-radius:12px;background:#eef3f8;font-weight:800;font-size:14px;cursor:pointer;color:var(--ink2)}
+  /* 두 화면 */
+  .twin{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .panel{position:relative;overflow:hidden}
+  .panel .ph{display:flex;justify-content:space-between;align-items:center;padding:12px 16px 0;gap:8px;flex-wrap:wrap}
+  .panel svg{display:block;width:100%;height:auto}
+  .tagline{font-size:12.5px;font-weight:700;color:var(--muted)}
+  .lbl{font-size:13px;font-weight:800;fill:#34495e}
+  .lbl.s{font-size:11.5px;font-weight:700;fill:#5a6b7e}
+  .row{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:14px;align-items:start}
+  /* 왜 그럴까 */
+  .why{display:grid;gap:6px;margin-top:10px}
+  .w{display:grid;grid-template-columns:30px 1fr;gap:10px;align-items:start;padding:9px 12px;border-radius:14px;background:#f7fafc;font-size:15px;line-height:1.6;color:var(--muted);word-break:keep-all;transition:background .3s,color .3s}
+  .w i{font-style:normal;width:28px;height:28px;border-radius:9px;background:#dfe6ee;color:#607285;display:grid;place-items:center;font-weight:900;font-size:13.5px;transition:all .3s}
+  .w.on{background:#fff8e6;color:var(--ink)}.w.on i{background:#e8a400;color:#fff}
+  .w b{color:var(--ink)}
+  /* 미션 */
+  .missions .head{display:flex;justify-content:space-between;align-items:center}
+  .prog{font-size:13px;font-weight:800;color:var(--accent);background:var(--accent-soft);padding:4px 10px;border-radius:999px}
+  .mlist{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin-top:12px}
+  .mission{display:grid;grid-template-columns:28px 1fr;gap:10px;padding:12px;border-radius:14px;background:#f7fafc;border:2px solid transparent;transition:all .3s}
+  .mission .mcheck{width:26px;height:26px;border-radius:50%;background:#dfe6ee;display:grid;place-items:center}
+  .mission .mt{font-weight:800;font-size:14.5px;word-break:keep-all}
+  .mission .mr{font-size:13px;color:var(--muted);margin-top:2px;word-break:keep-all}
+  .mission.done{border-color:#9fdcbb;background:#ecf8f1}.mission.done .mcheck{background:var(--ok)}
+  .note{font-size:12.5px;color:var(--muted);line-height:1.6;word-break:keep-all;margin:0}
+  .credit{text-align:center;font-size:13px;font-weight:700;color:#8495a8;letter-spacing:.02em;margin:10px 0 0}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @media (max-width:900px){.twin,.row{grid-template-columns:1fr}.stat{margin-left:0}}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <span class="eyebrow">MLCC 읽기 자료 · 수로 모형</span>
+    <h1>수로 모형으로 보는 MLCC: 칩 곁의 작은 댐</h1>
+    <p class="sub">옴의 법칙 시간의 수로 모형처럼 <b>수면의 높이 차가 전압</b>이에요. 칩(물레방아)이 갑자기 물을 많이 쓸 때, 칩 곁에 물탱크(MLCC)가 있을 때와 없을 때를 비교해 봐요.</p>
+  </header>
+
+  <section class="card pad controls">
+    <div class="ctl">
+      <span class="lb">칩 곁의 MLCC (물탱크)</span>
+      <button type="button" class="tog" id="tankBtn" aria-pressed="false"><span class="dot"></span><span id="tankTxt">떼어 냄</span></button>
+    </div>
+    <div class="ctl">
+      <span class="lb">칩(AP)이 하는 일</span>
+      <div class="chips">
+        <button type="button" class="chip" id="mRest" aria-pressed="true">쉬기</button>
+        <button type="button" class="chip burst" id="mBurst">갑자기 바빠지기 (한 번)</button>
+        <button type="button" class="chip" id="mBusy" aria-pressed="false">게임 켜기 (계속 바쁘게)</button>
+      </div>
+    </div>
+    <div class="stat">
+      <div class="glitch" id="glitchBox"><span>칩이 멈칫한 횟수</span><b id="glitchN">0번</b></div>
+      <button type="button" class="small-btn" id="resetBtn">횟수 지우기</button>
+    </div>
+  </section>
+
+  <div class="twin">
+    <section class="card panel">
+      <div class="ph"><div class="card-title">수로 모형</div><span class="tagline">수면의 높이 = 전압</span></div>
+      <svg id="water" viewBox="0 0 600 380" role="img" aria-label="왼쪽 펌프에서 멀고 좁은 수로를 지나 오른쪽 물레방아(칩)로 물이 흐르는 수로 모형. 물레방아 곁에 물탱크(MLCC)를 붙이거나 뗄 수 있다."></svg>
+    </section>
+    <section class="card panel">
+      <div class="ph"><div class="card-title">스마트폰 속 회로</div><span class="tagline" id="cTag">주황 점: 전류의 방향</span></div>
+      <svg id="circuit" viewBox="0 0 600 380" role="img" aria-label="전원에서 긴 배선을 지나 칩(AP)으로 전류가 흐르고, 칩 곁에 MLCC가 연결된 회로"></svg>
+    </section>
+  </div>
+
+  <div class="row">
+    <section class="card pad">
+      <div class="card-title">칩에 걸리는 전압 <span class="hint">칩 곁 수면의 높이를 시간에 따라 그린 그래프 · 눈금 없이 높낮이만 비교해요</span></div>
+      <svg id="graph" viewBox="0 0 600 230" style="display:block;width:100%;height:auto;margin-top:6px" role="img" aria-label="시간에 따른 칩 곁 수면 높이(전압) 그래프"></svg>
+    </section>
+    <section class="card pad">
+      <div class="card-title">왜 그럴까? <span class="hint">지금 일어나는 일이 노랗게 표시돼요</span></div>
+      <div class="why" id="why">
+        <div class="w" data-w="0"><i>1</i><span>칩이 갑자기 바빠지면 물(전기)을 한꺼번에 많이 써서 <b>칩 곁 수면(전압)이 내려가요</b>.</span></div>
+        <div class="w" data-w="1"><i>2</i><span>펌프(전원)의 물은 <b>멀고 좁은 수로</b>를 지나야 해서, 한꺼번에 많이 빨리 오지 못해요.</span></div>
+        <div class="w" data-w="2"><i>3</i><span>물탱크(MLCC)가 있으면 <b>칩 바로 곁에서 먼저 물을 내줘서</b> 수면이 조금만 내려가요.</span></div>
+        <div class="w" data-w="3"><i>4</i><span>칩이 다시 쉬면 펌프가 물탱크를 <b>다시 채워요(충전)</b>. 다음 순간을 위해 준비하는 거예요.</span></div>
+      </div>
+    </section>
+  </div>
+
+  <section class="card pad missions">
+    <div class="head"><div class="card-title">탐구 미션</div><span class="prog" id="mProg">0 / 4</span></div>
+    <div class="mlist" id="mlist"></div>
+  </section>
+
+  <p class="note">※ 물의 높이로 전압을 나타낸 비유 모형이에요. 실제 회로 속에 물이 흐르는 것은 아니에요. 수면 높이, 물탱크 크기, 빠르기, 멈칫하는 높이는 개념 이해를 위한 모형이며 실제 값이 아니에요. 실제 스마트폰에는 칩 둘레에 MLCC가 여러 개 붙어 있어요.</p>
+  <p class="credit">MLCC 읽기 자료 &nbsp;|&nbsp; 제작 · 성안중학교 이삭 T</p>
+</div>
+
+<script>
+/* ===== 블록 1: 계산 (눈금 없는 모형 단위, 수면 높이 0~1) =====
+   펌프 높이 H0는 늘 같아요. 멀고 좁은 수로로 들어오는 물 = G × (H0 − h)
+   칩이 쓰는 물 = 수요 d. 물탱크가 있으면 칩 곁에 담긴 물이 많아서(CAP) 수면이 천천히 변해요. */
+window.DM = window.DM || {};
+(() => {
+  'use strict';
+  try {
+    const S = Object.assign(window.DM, {
+      H0: 1, G: 4, CAP_NO: 0.03, CAP_TANK: 3.2, LOW: 0.6, REST: 0.4, BUSY: 2.5,
+      tank: false, mode: 'rest', h: 0.9, d: 0.4, qin: 0.4, qtank: 0, t: 0, burst: 0, nextBurst: 0, glitches: 0, low: false, lowT: 0,
+      hist: [], used: { burstNo: false, burstTank: false, busyCmp: false, refill: false }, busyNo: 0, busyTank: 0,
+    });
+    S.cap = () => (S.tank ? S.CAP_TANK : S.CAP_NO);
+    S.step = (dt) => {
+      S.t += dt;
+      // 수요: 쉬기 + 작은 흔들림(잡음), 바쁜 순간에는 크게
+      if (S.mode === 'busy' && S.t >= S.nextBurst && S.burst <= 0) { S.burst = 0.28 + Math.random() * 0.18; S.nextBurst = S.t + 1.3 + Math.random() * 0.8; }
+      const jitter = 0.05 * Math.sin(S.t * 23) + 0.04 * Math.sin(S.t * 37 + 1.3);
+      let d = S.REST + jitter;
+      if (S.burst > 0) { d = S.BUSY + jitter * 2; S.burst -= dt; }
+      S.d = d;
+      const n = 6, h0 = S.h;
+      for (let i = 0; i < n; i++) { const qin = S.G * (S.H0 - S.h); S.h += ((qin - d) / S.cap()) * (dt / n); S.h = Math.max(0.05, Math.min(S.H0, S.h)); }
+      S.qin = S.G * (S.H0 - S.h);
+      S.qtank = S.tank ? S.CAP_TANK * (S.h - h0) / Math.max(dt, 1e-4) : 0; // +: 채워짐, −: 내줌
+      const low = S.h < S.LOW;
+      if (low && !S.low) { S.glitches++; S.lowT = 0.7; S.onGlitch && S.onGlitch(); }
+      S.low = low; if (S.lowT > 0) S.lowT -= dt;
+      S.hist.push([S.t, S.h, S.tank]); while (S.hist.length && S.hist[0][0] < S.t - 10) S.hist.shift();
+    };
+    S.okSim = true;
+  } catch (err) { window.DM_err('계산', err); }
+})();
+</script>
+<script>
+/* ===== 블록 2: 그림 (수로 모형, 회로, 그래프) ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.DM, NS = 'http://www.w3.org/2000/svg';
+    const $ = (s) => document.querySelector(s);
+    const REDUCE = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+    const Y = (lv) => 262 - lv * 150; // 수면 높이 → 그림 y
+
+    /* --- 수로 모형 --- */
+    $('#water').innerHTML = `
+      <defs>
+        <linearGradient id="wSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#eaf4fd"/><stop offset="1" stop-color="#f8fbff"/></linearGradient>
+        <linearGradient id="wWater" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6cc0f2"/><stop offset="1" stop-color="#2c7fc4"/></linearGradient>
+        <linearGradient id="wPipe" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e9eef3"/><stop offset=".5" stop-color="#b8c3ce"/><stop offset="1" stop-color="#8794a2"/></linearGradient>
+        <linearGradient id="wGlass" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ffffff" stop-opacity=".75"/><stop offset=".2" stop-color="#ffffff" stop-opacity=".15"/><stop offset=".85" stop-color="#ffffff" stop-opacity=".05"/><stop offset="1" stop-color="#ffffff" stop-opacity=".5"/></linearGradient>
+        <linearGradient id="wPump" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4f8ff0"/><stop offset="1" stop-color="#1f5bbf"/></linearGradient>
+        <linearGradient id="wSoil" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c9a27a"/><stop offset="1" stop-color="#a87f58"/></linearGradient>
+        <linearGradient id="wCer" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8a5a34"/><stop offset=".5" stop-color="#c49a6f"/><stop offset="1" stop-color="#8a5a34"/></linearGradient>
+        <radialGradient id="wWood" cx=".4" cy=".35" r=".8"><stop offset="0" stop-color="#d79a5e"/><stop offset="1" stop-color="#8a5326"/></radialGradient>
+        <clipPath id="cTank"><rect x="347" y="100" width="96" height="162"/></clipPath>
+        <clipPath id="cStand"><rect x="473" y="96" width="18" height="166"/></clipPath>
+        <clipPath id="cPump"><rect x="115" y="96" width="18" height="166"/></clipPath>
+      </defs>
+      <rect width="600" height="380" fill="url(#wSky)"/>
+      <rect y="330" width="600" height="50" fill="url(#wSoil)"/><rect y="326" width="600" height="8" rx="3" fill="#7cc36a"/>
+      <!-- 아래 되돌아오는 수로 -->
+      <rect x="60" y="306" width="520" height="20" rx="6" fill="url(#wPipe)"/>
+      <rect x="64" y="313" width="512" height="10" rx="4" fill="url(#wWater)" opacity=".9"/>
+      <g id="wRet"></g>
+      <!-- 펌프 -->
+      <rect x="64" y="262" width="20" height="50" fill="url(#wPipe)"/>
+      <rect x="22" y="196" width="92" height="96" rx="18" fill="url(#wPump)"/>
+      <circle cx="68" cy="244" r="30" fill="#e8f1fd"/><circle cx="68" cy="244" r="30" fill="none" stroke="#1d4f9e" stroke-width="3"/>
+      <g id="fan" transform="translate(68 244)"><path d="M0 0 C 6 -8 14 -24 2 -26 C -8 -27 -6 -12 0 0Z M0 0 C 8 6 24 14 26 2 C 27 -8 12 -6 0 0Z M0 0 C -6 8 -14 24 -2 26 C 8 27 6 12 0 0Z M0 0 C -8 -6 -24 -14 -26 -2 C -27 8 -12 6 0 0Z" fill="#2f6fd6"/><circle r="5" fill="#14263b"/></g>
+      <!-- 펌프 쪽 기둥(늘 같은 높이) -->
+      <rect x="112" y="94" width="24" height="170" rx="6" fill="#dfe7ef" stroke="#9aa7b4" stroke-width="2"/>
+      <g clip-path="url(#cPump)"><rect id="pumpW" x="115" y="${Y(1)}" width="18" height="${262 - Y(1)}" fill="url(#wWater)"/></g>
+      <!-- 멀고 좁은 수로 -->
+      <rect x="132" y="246" width="220" height="18" rx="6" fill="url(#wPipe)"/>
+      <rect x="132" y="251" width="220" height="8" fill="url(#wWater)"/>
+      <g id="wFlow"></g>
+      <!-- 물탱크(MLCC) -->
+      <g id="tankG">
+        <rect x="343" y="96" width="104" height="170" rx="10" fill="#f3f7fb" stroke="#9aa7b4" stroke-width="2.5"/>
+        <g clip-path="url(#cTank)"><rect id="tankW" x="347" y="${Y(0.9)}" width="96" height="200" fill="url(#wWater)"/><path id="tankWave" d="" fill="#9fd6f7" opacity=".6"/></g>
+        <rect x="343" y="96" width="104" height="170" rx="10" fill="url(#wGlass)" pointer-events="none"/>
+        <rect x="372" y="78" width="46" height="22" rx="6" fill="url(#wCer)"/><text x="395" y="94" text-anchor="middle" font-size="12" font-weight="900" fill="#fff">MLCC</text>
+        <g id="tankArrow" opacity="0"><path id="tankArrowP" d="M395 150 v40" stroke="#14263b" stroke-width="4" stroke-linecap="round"/><path id="tankArrowH" d="M385 180 l10 12 l10 -12" fill="none" stroke="#14263b" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></g>
+      </g>
+      <g id="tankOff">
+        <rect x="343" y="96" width="104" height="170" rx="10" fill="none" stroke="#b8c4d0" stroke-width="2" stroke-dasharray="7 6"/>
+        <text x="395" y="176" text-anchor="middle" class="lbl s">물탱크 자리</text><text x="395" y="194" text-anchor="middle" class="lbl s">(떼어 냄)</text>
+      </g>
+      <!-- 탱크 아래로 이어지는 짧고 넓은 길 -->
+      <rect x="350" y="246" width="128" height="18" rx="5" fill="url(#wPipe)"/>
+      <rect x="350" y="251" width="128" height="8" fill="url(#wWater)"/>
+      <!-- 칩 곁 기둥 -->
+      <rect x="470" y="94" width="24" height="170" rx="6" fill="#dfe7ef" stroke="#9aa7b4" stroke-width="2"/>
+      <g clip-path="url(#cStand)"><rect id="standW" x="473" y="${Y(0.9)}" width="18" height="200" fill="url(#wWater)"/></g>
+      <!-- 멈칫 높이 -->
+      <path d="M104 ${Y(0.6)} H 520" stroke="#e0483e" stroke-width="2" stroke-dasharray="6 5" opacity=".8"/>
+      <text x="150" y="${Y(0.6) - 7}" class="lbl s" style="fill:#b33a35">이보다 낮으면 칩이 멈칫</text>
+      <path d="M104 ${Y(1)} H 140" stroke="#2f6fd6" stroke-width="2" stroke-dasharray="4 4"/>
+      <!-- 칩 쪽 수문과 물줄기 -->
+      <rect x="490" y="246" width="20" height="18" rx="4" fill="url(#wPipe)"/>
+      <path id="spout" d="" fill="url(#wWater)" opacity=".95"/>
+      <!-- 물레방아 = 칩 -->
+      <g transform="translate(540 270)">
+        <circle r="40" fill="none" stroke="#7b4a22" stroke-width="5"/>
+        <g id="wheel"><g fill="url(#wWood)" stroke="#6b3d18" stroke-width="1.5">
+          ${Array.from({ length: 8 }, (_, i) => `<rect x="-6" y="-46" width="12" height="16" rx="3" transform="rotate(${i * 45})"/>`).join('')}</g>
+          <g stroke="#7b4a22" stroke-width="3">${Array.from({ length: 4 }, (_, i) => `<line x1="0" y1="-38" x2="0" y2="38" transform="rotate(${i * 45})"/>`).join('')}</g></g>
+        <circle r="9" fill="#3d4654"/>
+        <circle id="wheelGlow" r="48" fill="none" stroke="#e0483e" stroke-width="5" opacity="0"/>
+      </g>
+      <rect x="520" y="306" width="40" height="20" fill="url(#wPipe)"/>
+      <!-- 이름표 -->
+      <g class="tags">
+        <rect x="18" y="168" width="100" height="24" rx="8" fill="#2f6fd6"/><text x="68" y="185" text-anchor="middle" font-size="13" font-weight="800" fill="#fff">펌프(전원)</text>
+        <rect x="170" y="268" width="146" height="24" rx="8" fill="#5a6b7e"/><text x="243" y="285" text-anchor="middle" font-size="13" font-weight="800" fill="#fff">멀고 좁은 수로(긴 배선)</text>
+        <rect x="496" y="194" width="92" height="24" rx="8" fill="#14263b"/><text x="542" y="211" text-anchor="middle" font-size="13" font-weight="800" fill="#fff">물레방아(칩)</text>
+        <text id="wheelMsg" x="542" y="348" text-anchor="middle" font-size="14" font-weight="900" fill="#e0483e" opacity="0">멈칫!</text>
+      </g>`;
+    const wFlow = $('#wFlow'), wRet = $('#wRet');
+    for (let i = 0; i < 9; i++) { const c = document.createElementNS(NS, 'circle'); c.setAttribute('r', '2.6'); c.setAttribute('cy', '255'); c.setAttribute('fill', '#e8f6ff'); wFlow.appendChild(c); }
+    for (let i = 0; i < 18; i++) { const c = document.createElementNS(NS, 'circle'); c.setAttribute('r', '2.2'); c.setAttribute('cy', '318'); c.setAttribute('fill', '#e8f6ff'); wRet.appendChild(c); }
+
+    /* --- 회로 --- */
+    // 위 줄(+): 전원 → 긴 배선(구불구불) → 갈림점 → MLCC, 칩. 아래 줄(−)로 돌아와요.
+    const meander = (() => { let d = 'M150 70'; for (let i = 0; i < 5; i++) { const x = 150 + i * 36; d += ` L${x + 9} 70 L${x + 9} 46 L${x + 27} 46 L${x + 27} 70 L${x + 36} 70`; } return d + ' L 400 70'; })();
+    $('#circuit').innerHTML = `
+      <defs>
+        <pattern id="cGrid" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M20 0H0V20" fill="none" stroke="#eef2f6" stroke-width="1"/></pattern>
+        <linearGradient id="cWire" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e2a06a"/><stop offset="1" stop-color="#a8642e"/></linearGradient>
+        <linearGradient id="cChip" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3a3f48"/><stop offset="1" stop-color="#16191e"/></linearGradient>
+        <linearGradient id="cCer" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8a5a34"/><stop offset=".5" stop-color="#c49a6f"/><stop offset="1" stop-color="#8a5a34"/></linearGradient>
+        <linearGradient id="cBar" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#9fc3f5"/><stop offset="1" stop-color="#2f6fd6"/></linearGradient>
+      </defs>
+      <rect width="600" height="380" fill="url(#cGrid)"/>
+      <g fill="none" stroke="url(#cWire)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M70 150 V70 H150"/><path d="${meander}"/><path d="M400 70 H500 V140"/>
+        <path d="M400 70 V150"/><path d="M400 214 V300"/>
+        <path d="M500 230 V300 H70 V214"/>
+      </g>
+      <!-- 전원 -->
+      <g transform="translate(70 182)">
+        <rect x="-34" y="-34" width="68" height="68" rx="14" fill="#f2f7fd" stroke="#c9d8e8" stroke-width="2"/>
+        <path d="M-22 -10 H22 M-12 10 H12" stroke="#14263b" stroke-width="5" stroke-linecap="round"/>
+        <text x="30" y="-16" font-size="16" font-weight="900" fill="#e0483e">+</text><text x="30" y="26" font-size="18" font-weight="900" fill="#14263b">−</text>
+      </g>
+      <text x="114" y="236" class="lbl">전원(배터리)</text>
+      <text x="245" y="30" text-anchor="middle" class="lbl s">칩까지 오는 긴 배선</text>
+      <!-- MLCC -->
+      <g id="cMl">
+        <path d="M376 150 H424 M376 214 H424" stroke="#5d6672" stroke-width="6" stroke-linecap="round"/>
+        <rect x="380" y="156" width="40" height="52" rx="5" fill="url(#cCer)" opacity=".9"/>
+        <g id="cQ"></g>
+        <text x="352" y="186" text-anchor="end" class="lbl">MLCC</text>
+      </g>
+      <g id="cMlOff" opacity=".9"><rect x="376" y="150" width="48" height="64" rx="8" fill="none" stroke="#b8c4d0" stroke-width="2" stroke-dasharray="6 5"/><text x="352" y="186" text-anchor="end" class="lbl s">MLCC 떼어 냄</text></g>
+      <!-- 칩 -->
+      <g transform="translate(500 185)">
+        <rect x="-44" y="-45" width="88" height="90" rx="10" fill="url(#cChip)"/>
+        <g stroke="#c9ced8" stroke-width="3">${[-30, -15, 0, 15, 30].map((v) => `<path d="M${v} -45 v-6 M${v} 45 v6 M-44 ${v} h-6 M44 ${v} h6"/>`).join('')}</g>
+        <rect id="chipCore" x="-28" y="-28" width="56" height="56" rx="6" fill="#2b6fd6" opacity=".35"/>
+        <text y="-4" text-anchor="middle" font-size="12" font-weight="800" fill="#cfe0f7">칩</text><text y="15" text-anchor="middle" font-size="16" font-weight="900" fill="#fff">AP</text>
+        <rect id="chipWarn" x="-50" y="-51" width="100" height="102" rx="14" fill="none" stroke="#e0483e" stroke-width="5" opacity="0"/>
+      </g>
+      <!-- 칩에 걸리는 전압 막대 -->
+      <g transform="translate(566 110)">
+        <rect x="-10" y="0" width="20" height="150" rx="10" fill="#eef3f8" stroke="#d4dee8"/>
+        <rect id="cVbar" x="-7" y="10" width="14" height="137" rx="7" fill="url(#cBar)"/>
+        <path d="M-16 ${150 - 0.6 * 150} h32" stroke="#e0483e" stroke-width="2.5" stroke-dasharray="4 3"/>
+      </g>
+      <text x="566" y="282" text-anchor="middle" class="lbl s">칩에 걸리는</text><text x="566" y="297" text-anchor="middle" class="lbl s">전압</text>
+      <g id="cDots"></g>
+      <text id="cMsg" x="300" y="345" text-anchor="middle" class="lbl" style="font-size:14.5px"></text>`;
+    // 전류 점이 다니는 길들
+    const P = (pts) => { const L = [0]; for (let i = 1; i < pts.length; i++) L.push(L[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1])); return { pts, L, tot: L[L.length - 1] }; };
+    const mPts = [[70, 150], [70, 70], [150, 70]]; for (let i = 0; i < 5; i++) { const x = 150 + i * 36; mPts.push([x + 9, 70], [x + 9, 46], [x + 27, 46], [x + 27, 70], [x + 36, 70]); } mPts.push([400, 70]);
+    const pathIn = P(mPts), pathChip = P([[400, 70], [500, 70], [500, 140]]), pathChipDn = P([[500, 230], [500, 300], [400, 300]]), pathRet = P([[400, 300], [70, 300], [70, 214]]);
+    const pathMlTop = P([[400, 70], [400, 150]]), pathMlBot = P([[400, 214], [400, 300]]);
+    const groups = [];
+    const mkDots = (path, n) => { const g = { path, off: 0, els: [] }; for (let i = 0; i < n; i++) { const c = document.createElementNS(NS, 'circle'); c.setAttribute('r', '4.2'); c.setAttribute('fill', '#e89a00'); c.setAttribute('stroke', '#fff'); c.setAttribute('stroke-width', '1.5'); $('#cDots').appendChild(c); g.els.push(c); } groups.push(g); return g; };
+    const gIn = mkDots(pathIn, 16), gChip = mkDots(pathChip, 5), gChipDn = mkDots(pathChipDn, 4), gRet = mkDots(pathRet, 10), gMlT = mkDots(pathMlTop, 3), gMlB = mkDots(pathMlBot, 3);
+    const at = (p, s) => { s = ((s % p.tot) + p.tot) % p.tot; let i = 1; while (i < p.L.length - 1 && p.L[i] < s) i++; const k = (s - p.L[i - 1]) / (p.L[i] - p.L[i - 1] || 1); const a = p.pts[i - 1], b = p.pts[i]; return [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k]; };
+    const moveDots = (g, v, dt) => { g.off += v * dt; const gap = g.path.tot / g.els.length; g.els.forEach((c, i) => { const [x, y] = at(g.path, g.off + i * gap); c.setAttribute('cx', x.toFixed(1)); c.setAttribute('cy', y.toFixed(1)); }); };
+    // MLCC 판 위 전하 표시
+    const cQ = $('#cQ'); for (let i = 0; i < 5; i++) { cQ.insertAdjacentHTML('beforeend', `<text class="qp" x="${384 + i * 8}" y="166" font-size="11" font-weight="900" fill="#e0483e">+</text><text class="qm" x="${384 + i * 8}" y="206" font-size="13" font-weight="900" fill="#2f6fd6">−</text>`); }
+    const qps = Array.from(cQ.querySelectorAll('.qp')), qms = Array.from(cQ.querySelectorAll('.qm'));
+
+    /* --- 그래프 --- */
+    const GX0 = 46, GX1 = 586, GY0 = 196, GY1 = 18, gy = (lv) => GY0 - (lv / 1.05) * (GY0 - GY1);
+    $('#graph').innerHTML = `
+      <rect x="${GX0}" y="${GY1}" width="${GX1 - GX0}" height="${GY0 - GY1}" fill="#fbfcfd" stroke="#e3e9ef"/>
+      <g id="gBands"></g>
+      <rect x="${GX0}" y="${gy(0.6)}" width="${GX1 - GX0}" height="${GY0 - gy(0.6)}" fill="#fdecea" opacity=".55"/>
+      <path d="M${GX0} ${gy(0.6)} H${GX1}" stroke="#e0483e" stroke-width="2" stroke-dasharray="6 5"/>
+      <text x="${GX1 - 6}" y="${gy(0.6) + 16}" text-anchor="end" class="lbl s" style="fill:#b33a35">이보다 낮으면 칩이 멈칫</text>
+      <path d="M${GX0} ${gy(1)} H${GX1}" stroke="#2f6fd6" stroke-width="1.5" stroke-dasharray="3 4" opacity=".6"/>
+      <text x="${GX0 + 6}" y="${gy(1) - 5}" class="lbl s">펌프(전원)의 높이</text>
+      <path id="gLine" d="" fill="none" stroke="#2f6fd6" stroke-width="3" stroke-linejoin="round"/>
+      <circle id="gDot" r="5" fill="#2f6fd6" stroke="#fff" stroke-width="2"/>
+      <text x="${GX0 - 8}" y="${GY1 + 10}" text-anchor="end" class="lbl s">높음</text><text x="${GX0 - 8}" y="${GY0}" text-anchor="end" class="lbl s">낮음</text>
+      <text x="${GX1}" y="${GY0 + 22}" text-anchor="end" class="lbl s">지금</text><text x="${GX0}" y="${GY0 + 22}" class="lbl s">10초 전</text>
+      <rect x="${GX0 + 150}" y="${GY0 + 10}" width="14" height="14" rx="3" fill="#f3e6d8"/><text x="${GX0 + 170}" y="${GY0 + 22}" class="lbl s">MLCC 붙인 동안</text>`;
+
+    let wheelA = 0, fanA = 0, retOff = 0, flowOff = 0;
+    S.draw = (dt) => {
+      const h = S.h, yh = Y(h);
+      // 수로
+      $('#standW').setAttribute('y', yh.toFixed(1)); $('#tankW').setAttribute('y', yh.toFixed(1));
+      const tw = REDUCE ? 0 : S.t;
+      let wave = `M347 ${yh}`; for (let x = 347; x <= 443; x += 8) wave += ` L${x} ${(yh + Math.sin(x / 9 + tw * 4) * 1.6).toFixed(1)}`; wave += ` L443 ${yh + 6} L347 ${yh + 6}Z`;
+      $('#tankWave').setAttribute('d', wave);
+      $('#tankG').style.display = S.tank ? '' : 'none'; $('#tankOff').style.display = S.tank ? 'none' : '';
+      const ta = $('#tankArrow');
+      if (S.tank && Math.abs(S.qtank) > 0.25) { ta.setAttribute('opacity', '1'); const down = S.qtank < 0; ta.setAttribute('transform', down ? '' : 'rotate(180 395 170)'); }
+      else ta.setAttribute('opacity', '0');
+      flowOff += S.qin * dt * 55; wFlow.childNodes.forEach((c, i) => c.setAttribute('cx', (140 + ((flowOff + i * 24) % 210)).toFixed(1)));
+      retOff += S.d * dt * 40; wRet.childNodes.forEach((c, i) => c.setAttribute('cx', (570 - ((retOff + i * 29) % 500)).toFixed(1)));
+      const w = 3 + S.d * 4.2, sx = 510, sy = 252;
+      $('#spout').setAttribute('d', `M${sx} ${sy - w / 2} C ${sx + 20} ${sy - w / 2}, ${sx + 26} ${sy + 8}, ${sx + 26} ${sy + 22} L ${sx + 26 - w} ${sy + 22} C ${sx + 26 - w} ${sy + 10}, ${sx + 14} ${sy + w / 2}, ${sx} ${sy + w / 2} Z`);
+      if (!REDUCE) { wheelA += S.d * dt * 160 * Math.max(0.2, h); fanA += dt * 260; }
+      $('#wheel').setAttribute('transform', `rotate(${wheelA.toFixed(1)})`); $('#fan').setAttribute('transform', `translate(68 244) rotate(${fanA.toFixed(1)})`);
+      const warn = S.lowT > 0 ? Math.min(1, S.lowT * 2) : 0;
+      $('#wheelGlow').setAttribute('opacity', warn.toFixed(2)); $('#wheelMsg').setAttribute('opacity', warn.toFixed(2));
+      // 회로
+      $('#cMl').style.display = S.tank ? '' : 'none'; $('#cMlOff').style.display = S.tank ? 'none' : '';
+      const sp = 60;
+      moveDots(gIn, S.qin * sp, dt); moveDots(gRet, S.qin * sp, dt); moveDots(gChip, S.d * sp, dt); moveDots(gChipDn, S.d * sp, dt);
+      const qt = S.tank ? Math.max(-3, Math.min(3, S.qtank)) : 0;
+      gMlT.els.concat(gMlB.els).forEach((c) => (c.style.display = S.tank ? '' : 'none'));
+      moveDots(gMlT, qt * sp, dt); moveDots(gMlB, qt * sp, dt);
+      const nq = Math.round(Math.max(0, Math.min(1, (h - 0.3) / 0.7)) * 5); qps.forEach((e, i) => (e.style.display = i < nq ? '' : 'none')); qms.forEach((e, i) => (e.style.display = i < nq ? '' : 'none'));
+      const bh = Math.max(4, h * 137); $('#cVbar').setAttribute('y', (147 - bh + 10).toFixed(1)); $('#cVbar').setAttribute('height', bh.toFixed(1));
+      $('#cVbar').setAttribute('fill', h < S.LOW ? '#e0483e' : 'url(#cBar)');
+      $('#chipCore').setAttribute('opacity', (0.25 + Math.min(1, S.d / S.BUSY) * 0.6).toFixed(2));
+      $('#chipWarn').setAttribute('opacity', warn.toFixed(2));
+      let msg = '';
+      if (S.lowT > 0) msg = '전압이 너무 낮아져 칩이 멈칫했어요!';
+      else if (S.tank && S.qtank < -0.25) msg = 'MLCC가 칩 바로 곁에서 전기를 내주고 있어요';
+      else if (S.tank && S.qtank > 0.25) msg = '전원이 MLCC를 다시 채우고 있어요(충전)';
+      else if (S.d > 1) msg = '칩이 전기를 많이 쓰고 있어요';
+      $('#cMsg').textContent = msg; $('#cMsg').style.fill = S.lowT > 0 ? '#b33a35' : '#34495e';
+      // 그래프
+      const hs = S.hist; if (hs.length > 1) {
+        const tx = (t) => GX1 - ((S.t - t) / 10) * (GX1 - GX0);
+        let d = ''; hs.forEach(([t, v], i) => { d += (i ? ' L' : 'M') + tx(t).toFixed(1) + ' ' + gy(v).toFixed(1); });
+        $('#gLine').setAttribute('d', d); $('#gDot').setAttribute('cx', GX1); $('#gDot').setAttribute('cy', gy(h).toFixed(1));
+        let bands = '', st = null;
+        hs.forEach(([t, , tk], i) => { if (tk && st === null) st = t; if ((!tk || i === hs.length - 1) && st !== null) { bands += `<rect x="${tx(st).toFixed(1)}" y="${GY1}" width="${(tx(t) - tx(st)).toFixed(1)}" height="${GY0 - GY1}" fill="#f3e6d8" opacity=".75"/>`; st = null; } });
+        $('#gBands').innerHTML = bands;
+      }
+      // 왜 그럴까 표시
+      const on = [S.d > 1 || S.lowT > 0, S.d > 1 && S.h < 0.85, S.tank && S.qtank < -0.25, S.tank && S.qtank > 0.25];
+      document.querySelectorAll('#why .w').forEach((el, i) => el.classList.toggle('on', on[i]));
+    };
+    S.okDraw = true;
+  } catch (err) { window.DM_err('그림', err); }
+})();
+</script>
+<script>
+/* ===== 블록 3: 버튼과 탐구 미션 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.DM, $ = (s) => document.querySelector(s);
+    const MISSIONS = [
+      { id: 'burstNo', t: 'MLCC 없이 갑자기 바빠지기', r: '물탱크를 떼어 낸 채 \'갑자기 바빠지기\'를 눌러 칩이 멈칫하는 모습을 보세요.' },
+      { id: 'burstTank', t: 'MLCC를 붙이고 다시 해 보기', r: '물탱크를 붙이고 다시 눌러, 그래프에서 수면이 얼마나 덜 내려가는지 비교해요.' },
+      { id: 'busyCmp', t: '게임 켜기로 비교하기', r: '\'게임 켜기\'를 켜고 MLCC를 떼었다 붙였다 하며 멈칫 횟수를 비교해요.' },
+      { id: 'refill', t: '다시 채우는 순간 찾기', r: '칩이 쉴 때 물탱크가 다시 차는(충전) 순간을 찾아보세요.' },
+    ];
+    $('#mlist').innerHTML = MISSIONS.map((m) => `<div class="mission" id="m-${m.id}"><span class="mcheck"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><div><div class="mt">${m.t}</div><div class="mr">${m.r}</div></div></div>`).join('');
+    const done = (id) => { if (S.used[id]) return; S.used[id] = true; $('#m-' + id).classList.add('done'); $('#mProg').textContent = `${Object.values(S.used).filter(Boolean).length} / 4`; };
+    const paintTank = () => { $('#tankBtn').setAttribute('aria-pressed', String(S.tank)); $('#tankTxt').textContent = S.tank ? '붙임' : '떼어 냄'; };
+    const paintMode = () => { $('#mRest').setAttribute('aria-pressed', String(S.mode === 'rest')); $('#mBusy').setAttribute('aria-pressed', String(S.mode === 'busy')); };
+    $('#tankBtn').addEventListener('click', () => { S.tank = !S.tank; paintTank(); if (S.mode === 'busy') S.busyToggled = true; });
+    $('#mRest').addEventListener('click', () => { S.mode = 'rest'; paintMode(); });
+    $('#mBusy').addEventListener('click', () => { S.mode = 'busy'; S.nextBurst = S.t + 0.3; paintMode(); });
+    $('#mBurst').addEventListener('click', () => { S.burst = 0.38; S.burstFromBtn = S.tank ? 'tank' : 'no'; S.burstStartGl = S.glitches; });
+    $('#resetBtn').addEventListener('click', () => { S.glitches = 0; });
+    S.onGlitch = () => { if (S.burstFromBtn === 'no') done('burstNo'); if (S.mode === 'busy') { if (S.tank) S.busyTank++; else S.busyNo++; } };
+    // 미션 판정과 숫자 표시
+    let last = performance.now();
+    (function loop(now) {
+      requestAnimationFrame(loop);
+      const dt = Math.min(0.05, Math.max(0, (now - last) / 1000)); last = now;
+      if (!dt) return;
+      S.step(dt); S.draw && S.draw(dt);
+      if (S.burstFromBtn === 'tank' && S.burst <= 0) { if (S.glitches === S.burstStartGl) done('burstTank'); S.burstFromBtn = null; }
+      if (S.burstFromBtn === 'no' && S.burst <= 0 && S.lowT <= 0) S.burstFromBtn = null;
+      if (S.mode === 'busy' && S.busyToggled && S.busyNo > 0 && S.t > 0) { S.busyCmpT = (S.busyCmpT || 0) + (S.tank ? dt : 0); if (S.busyCmpT > 4) done('busyCmp'); }
+      if (S.tank && S.qtank > 0.4 && S.d < 1) done('refill');
+      $('#glitchN').textContent = S.glitches + '번'; $('#glitchBox').classList.toggle('hot', S.lowT > 0);
+    })(last);
+    S.okUI = true;
+  } catch (err) { window.DM_err('버튼·미션', err); }
+})();
+</script>
+</body>
+</html>

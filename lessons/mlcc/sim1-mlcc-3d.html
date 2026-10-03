@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>3D MLCC 해부와 만드는 과정</title>
+<script>
+/* 문제 알림: 코드에 오류가 나면 화면 아래에 빨간 상자로 알려 줘요 (선생님 확인용) */
+(function () {
+  function box() {
+    var b = document.getElementById('smErr');
+    if (!b && document.body) {
+      b = document.createElement('div'); b.id = 'smErr';
+      b.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;background:#fdecea;color:#8a1f17;border:2px solid #d9534f;border-radius:12px;padding:10px 14px;font:600 14px/1.5 sans-serif;white-space:pre-wrap';
+      document.body.appendChild(b);
+    }
+    return b;
+  }
+  window.SM_err = function (where, err) {
+    var msg = '[' + where + '] ' + (err && err.message ? err.message : String(err));
+    var show = function () { var b = box(); if (b) b.textContent += (b.textContent ? '\n' : '') + msg; };
+    if (document.body) show(); else document.addEventListener('DOMContentLoaded', show);
+  };
+  window.addEventListener('error', function (e) { window.SM_err('스크립트', { message: e.message + ' (줄 ' + e.lineno + ')' }); });
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      var S = window.SM || {};
+      if (!S.okUI) window.SM_err('실행 안 됨', { message: '안내·버튼 코드가 실행되지 않았어요. 파일이 끝(</html>)까지 들어 있는지 확인해 주세요.' });
+      if (!S.ok3d) { var f = document.getElementById('fail3d'); if (f) f.classList.add('show'); window.SM_err('3D 그림', { message: '3D 그림을 불러오지 못했어요. 인터넷 연결(cdn.jsdelivr.net)을 확인하고 새로고침해 주세요.' }); }
+    }, 9000);
+  });
+})();
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+
+  :root{--bg:#edf3f8;--card:#fff;--ink:#14263b;--ink2:#34495e;--muted:#5a6b7e;--line:#dde6ee;--accent:#0e63b3;--accent-soft:#e3effb;
+    --fab:#4b3fb5;--fab-soft:#ecebfb;--ok:#1f9d5c;--no:#d9534f;
+    --shadow:0 1px 2px rgba(20,38,59,.06),0 8px 24px rgba(20,38,59,.07);--ease:cubic-bezier(.2,.8,.2,1)}
+  *{box-sizing:border-box}html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:"Pretendard",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  button{font:inherit;color:inherit}
+  .app{max-width:1320px;margin:0 auto;padding:14px 16px 28px;display:flex;flex-direction:column;gap:12px}
+  .eyebrow{display:inline-flex;font-size:13px;font-weight:700;color:var(--fab);background:var(--fab-soft);padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(21px,2.4vw,28px);margin:6px 0 2px;letter-spacing:-.02em;word-break:keep-all}
+  .sub{margin:0;color:var(--muted);font-size:15px;word-break:keep-all}
+  .card{background:var(--card);border-radius:20px;box-shadow:var(--shadow);border:1px solid rgba(20,38,59,.04)}
+  .pad{padding:14px 16px}
+  .stage{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(330px,1fr);gap:14px;align-items:start}
+  .viewer{position:sticky;top:10px}
+  .flow{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px}
+  .fs{min-height:54px;border:0;border-radius:12px;background:#eef3f8;font-weight:800;font-size:13px;color:var(--muted);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.2;word-break:keep-all;padding:4px}
+  .fs b{font-size:15px}
+  .fs[aria-selected="true"]{background:var(--fab);color:#fff}
+  .fs.seen:not([aria-selected="true"]){background:#e5f5ec;color:#11703f}
+  .stepname{display:flex;align-items:center;gap:10px;margin:2px 0 6px}
+  .stepname .no{flex:none;width:40px;height:40px;border-radius:12px;background:var(--fab);color:#fff;display:grid;place-items:center;font-weight:900;font-size:19px}
+  .stepname h2{margin:0;font-size:21px;letter-spacing:-.01em;word-break:keep-all}
+  .stepname small{display:block;font-size:13px;color:var(--muted);font-weight:700}
+  .what{font-size:16px;line-height:1.75;color:var(--ink2);margin:0 0 10px;word-break:keep-all}
+  .phase{display:grid;gap:6px;margin:8px 0}
+  .ph{display:grid;grid-template-columns:28px 1fr;gap:8px;align-items:start;padding:7px 10px;border-radius:12px;background:#f7fafc;font-size:15px;line-height:1.55;color:var(--muted);word-break:keep-all;transition:background .3s,color .3s}
+  .ph i{font-style:normal;width:26px;height:26px;border-radius:8px;background:#dfe6ee;display:grid;place-items:center;font-weight:900;font-size:13px;color:#607285}
+  .ph.on{background:var(--fab-soft);color:var(--ink)}.ph.on i{background:var(--fab);color:#fff}
+  .ph.done{color:var(--ink2)}.ph.done i{background:#b9b2ee;color:#fff}
+  .box{border-radius:14px;padding:10px 12px;margin-top:8px;font-size:14.5px;line-height:1.65;word-break:keep-all}
+  .box b.t{display:block;font-size:13px;margin-bottom:2px}
+  .an{background:#fff8e6;border:1px solid #f3dc9a;color:#5b4300}
+  .fact{background:#eef6ff;border:1px solid #cfe2f6;color:#1d3f66}
+  .lnk{background:#ecf8f1;border:1px solid #c6e8d4;color:#0f5a36}
+  .src{display:block;font-size:12px;color:var(--muted);margin-top:3px}
+  .acts{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 0}
+  .btn{min-height:50px;border:0;border-radius:14px;padding:0 16px;font-weight:800;font-size:15.5px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;justify-content:center;word-break:keep-all}
+  .btn:active{transform:scale(.97)}
+  .btn.primary{background:var(--fab);color:#fff}.btn.ghost{background:#eef3f8;color:var(--ink2)}
+  .btn[aria-pressed="true"]{background:#14263b;color:#fff}
+  .btn:disabled{opacity:.4;cursor:default;transform:none}
+  .prog{height:6px;border-radius:3px;background:#e6edf4;margin-top:10px;overflow:hidden}
+  .prog i{display:block;height:100%;width:0;background:linear-gradient(90deg,#8a7ff0,var(--fab))}
+  .credit{text-align:center;font-size:13px;font-weight:700;color:#8495a8;letter-spacing:.02em;margin:6px 0 0}
+  /* ===== 3D 화면 공통 ===== */
+  :root{--Bc:#14a5d0;--Ic:#2fae4a;--Fc:#f0522a;--N:#d8433b;--S:#2f62c9;--P:#7d5ad6}
+  .viewer{position:relative;overflow:hidden;padding:0}
+  .gl-host{position:relative;width:100%;height:min(74vh,700px);min-height:380px;background:linear-gradient(#f6f9fc,#d6e3ef);touch-action:none}
+  .gl-host canvas.gl{display:block;width:100%;height:100%;outline:none}
+  .lbls{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+  .lb{position:absolute;left:0;top:0;white-space:nowrap;font-weight:800;font-size:14px;padding:3px 9px;border-radius:9px;background:rgba(255,255,255,.88);color:#34495e;box-shadow:0 2px 8px rgba(20,38,59,.14);will-change:transform}
+  .lb.small{font-size:12px;font-weight:700;color:#5a6b7e;background:rgba(255,255,255,.72);box-shadow:none}
+  .lb.B{background:var(--Bc);color:#fff}.lb.I{background:var(--Ic);color:#fff}.lb.F{background:var(--Fc);color:#fff;font-size:15px}
+  .lb.P{background:var(--P);color:#fff}
+  .lb.dim{opacity:.35}
+  .vt{position:absolute;display:flex;gap:6px;flex-wrap:wrap;z-index:3}
+  .vt.tl{left:10px;top:10px;max-width:calc(100% - 20px)}
+  .vt.tr{right:10px;top:10px;justify-content:flex-end}
+  .vt.bl{left:10px;bottom:10px;align-items:center}
+  .vb{min-height:44px;padding:0 12px;border-radius:12px;border:1px solid rgba(20,38,59,.12);background:rgba(255,255,255,.9);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);font-weight:800;font-size:14px;color:#34495e;cursor:pointer;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 10px rgba(20,38,59,.08)}
+  .vb:active{transform:scale(.96)}
+  .vb .dot{width:12px;height:12px;border-radius:50%;flex:none}
+  .vb[aria-pressed="false"]{opacity:.62}
+  .vb[aria-pressed="false"] .dot{background:#c2ccd6!important}
+  .vb.sel{background:#14263b;color:#fff;border-color:#14263b}
+  .hint{font-size:12.5px;font-weight:700;color:#5a6b7e;background:rgba(255,255,255,.78);border-radius:10px;padding:6px 10px;word-break:keep-all}
+  .inset{position:absolute;z-index:2;border-radius:18px;border:2px solid rgba(255,255,255,.95);box-shadow:0 10px 30px rgba(20,38,59,.22),inset 0 0 0 1px rgba(20,38,59,.08);pointer-events:none;display:none}
+  .inset.on{display:block}
+  .inset .it{position:absolute;left:8px;top:8px;font-size:12.5px;font-weight:900;color:#14263b;background:rgba(255,255,255,.9);border-radius:8px;padding:3px 8px}
+  .inset .ic{position:absolute;left:6px;right:6px;bottom:6px;display:flex;flex-wrap:wrap;gap:4px;justify-content:center}
+  .inset .ic span{font-size:11.5px;font-weight:800;color:#fff;border-radius:7px;padding:2px 7px;white-space:nowrap}
+  .fail3d{position:absolute;inset:0;display:none;place-items:center;text-align:center;padding:24px;font-size:16px;font-weight:700;color:#7a2a22;line-height:1.7;word-break:keep-all;background:#fff4f2}
+  .fail3d.show{display:grid}
+  .model{font-size:13px;color:var(--muted);text-align:right;margin:0;word-break:keep-all}
+  @media (max-width:900px){.gl-host{height:min(56vh,620px)}}
+  .zoombadge{position:absolute;right:10px;top:62px;z-index:3;font-size:13px;font-weight:800;color:#fff;background:rgba(75,63,181,.9);border-radius:10px;padding:6px 10px;display:none;word-break:keep-all;max-width:60%}
+  .zoombadge.on{display:block}
+  @media (max-width:900px){.stage{grid-template-columns:1fr}.viewer{position:relative;top:0}}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+  /* ===== 이 수업 전용 ===== */
+  :root{--fab:#8a5a34;--fab-soft:#f6eee6;--e:#2f6fd6;--plus:#e0483e}
+  .prog i{background:linear-gradient(90deg,#d8b48a,var(--fab))}
+  .lb.C{background:#a0714a;color:#fff}.lb.M{background:#5d6672;color:#fff}.lb.E{background:var(--e);color:#fff}.lb.Pl{background:var(--plus);color:#fff}.lb.G{background:#1f9d5c;color:#fff}
+  .modes{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px}
+  .md{min-height:52px;border:0;border-radius:14px;background:#eef3f8;font-weight:800;font-size:15.5px;color:var(--muted);cursor:pointer}
+  .md[aria-selected="true"]{background:var(--fab);color:#fff}
+  .seg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:8px 0}
+  .seg button{min-height:50px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:14.5px;cursor:pointer;word-break:keep-all;padding:4px 6px}
+  .seg button[aria-pressed="true"]{border-color:var(--fab);background:var(--fab-soft);color:#5b3a1f}
+  .seg.two{grid-template-columns:1fr 1fr}
+  .tgl{width:100%;min-height:50px;border-radius:12px;border:2px dashed #c9d6e2;background:#fff;font-weight:800;font-size:14.5px;cursor:pointer;margin:2px 0 8px}
+  .tgl[aria-pressed="true"]{border-style:solid;border-color:var(--e);background:#eaf2fd;color:#1c4a99}
+  .rng{display:flex;align-items:center;gap:12px;margin:10px 0 4px;font-weight:800;font-size:15px;color:var(--ink2)}
+  .rng label{flex:none}
+  .rng b{flex:none;min-width:52px;text-align:right;color:#5b3a1f}
+  .rng input{flex:1;min-width:120px;height:44px;-webkit-appearance:none;appearance:none;background:transparent}
+  .rng input::-webkit-slider-runnable-track{height:10px;border-radius:99px;background:linear-gradient(90deg,#e6d2bd,#a0714a)}
+  .rng input::-webkit-slider-thumb{-webkit-appearance:none;width:36px;height:36px;border-radius:50%;background:#fff;border:3px solid var(--fab);margin-top:-13px;box-shadow:0 2px 8px rgba(20,38,59,.25)}
+  .rng input::-moz-range-track{height:10px;border-radius:99px;background:linear-gradient(90deg,#e6d2bd,#a0714a)}
+  .rng input::-moz-range-thumb{width:32px;height:32px;border-radius:50%;background:#fff;border:3px solid var(--fab)}
+  .gauge{margin:10px 0 4px}
+  .gauge .gl{display:flex;justify-content:space-between;font-size:14px;font-weight:800;color:var(--ink2);margin-bottom:6px;word-break:keep-all}
+  .gauge .gt{height:20px;border-radius:99px;background:#eef3f8;overflow:hidden;position:relative}
+  .gauge .gt i{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:99px;background:linear-gradient(90deg,#9fc3f5,var(--e));transition:width .6s var(--ease)}
+  .gauge small{display:block;font-size:12.5px;color:var(--muted);margin-top:4px;word-break:keep-all}
+  .why{margin-top:10px;display:grid;gap:6px}
+  .why .w{display:grid;grid-template-columns:28px 1fr;gap:8px;align-items:start;padding:8px 10px;border-radius:12px;background:#f7fafc;font-size:14.5px;line-height:1.6;color:var(--ink2);word-break:keep-all}
+  .why .w i{font-style:normal;width:26px;height:26px;border-radius:8px;background:var(--fab);color:#fff;display:grid;place-items:center;font-weight:900;font-size:13px}
+  .why h3{margin:6px 0 2px;font-size:16px}
+  .flow{grid-template-columns:repeat(3,1fr)}
+  .ph.done i{background:#d8b48a}
+  [hidden]{display:none!important}
+</style>
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }
+</script>
+</head>
+<body>
+<div class="app">
+  <header>
+    <span class="eyebrow">MLCC 읽기 자료 · 3D 해부</span>
+    <h1>3D MLCC 해부와 만드는 과정</h1>
+    <p class="sub">모래알만 한 MLCC를 크게 키워 속을 열어 보고, 공장에서 만드는 순서를 따라가요. 손가락으로 돌려 보고 두 손가락으로 확대해 보세요.</p>
+  </header>
+
+  <div class="stage">
+    <section class="card viewer">
+      <div class="gl-host" id="host">
+        <div class="vt tl" role="group" aria-label="보는 방향">
+          <button class="vb sel" type="button" id="vAuto">처음 방향으로</button>
+        </div>
+        <div class="vt bl"><span class="hint">한 손가락: 돌리기 · 두 손가락: 확대</span></div>
+        <div class="fail3d" id="fail3d">3D 그림을 불러오지 못했어요.<br>인터넷 연결을 확인하고 새로고침해 주세요.<br>(오른쪽 설명은 그대로 읽을 수 있어요)</div>
+      </div>
+    </section>
+
+    <section class="card pad">
+      <div class="modes" role="tablist">
+        <button class="md" type="button" role="tab" id="mLook" aria-selected="true">속 들여다보기</button>
+        <button class="md" type="button" role="tab" id="mMake" aria-selected="false">만드는 과정</button>
+      </div>
+
+      <div id="paneLook">
+        <div class="stepname"><span class="no">1</span><div><h2>MLCC 속 들여다보기</h2><small>크게 키운 모형 · 실제는 수백 겹</small></div></div>
+        <div class="seg" role="group" aria-label="보는 방법">
+          <button type="button" data-view="whole" aria-pressed="true">통째로</button>
+          <button type="button" data-view="cut" aria-pressed="false">반으로 자르기</button>
+          <button type="button" data-view="open" aria-pressed="false">한 겹씩 펼치기</button>
+        </div>
+        <button type="button" class="tgl" id="vMark" aria-pressed="false">전극이 어느 쪽에 이어졌나 색으로 보기</button>
+        <div class="rng"><label for="nR">내부 전극</label><input type="range" id="nR" min="2" max="16" step="1" value="8"><b id="nV">8장</b></div>
+        <div class="seg two" role="group" aria-label="층 두께">
+          <button type="button" data-thin="0" aria-pressed="true">두꺼운 층</button>
+          <button type="button" data-thin="1" aria-pressed="false">얇은 층</button>
+        </div>
+        <div class="gauge"><div class="gl"><span>담을 수 있는 전기(용량)</span><span id="gTxt"></span></div><div class="gt"><i id="gFill"></i></div><small>눈금 없이 크기만 비교하는 막대예요.</small></div>
+        <div class="why">
+          <h3>왜 그럴까?</h3>
+          <div class="w"><i>1</i><span>이웃한 내부 전극 두 장과 그 사이 세라믹 층이 <b>축전기 하나</b>예요. 전극은 왼쪽·오른쪽 외부 전극에 번갈아 이어져 있어요.</span></div>
+          <div class="w"><i>2</i><span>전극을 한 장 더 쌓으면 마주 보는 짝이 하나 늘어나, <b>축전기 하나를 더 붙인 것</b>과 같아요.</span></div>
+          <div class="w"><i>3</i><span>층이 얇으면 판 사이가 가까워져 짝마다 더 많이 담고, <b>같은 높이에 더 많이</b> 쌓을 수 있어요.</span></div>
+        </div>
+        <div class="box fact"><b class="t">실제 MLCC는</b>세라믹 층과 내부 전극을 <b>수백 겹</b>(많게는 약 600겹) 쌓아요. 한 층은 머리카락 굵기보다 훨씬 얇아요.<span class="src">삼성전기 발표 보도 기준</span></div>
+      </div>
+
+      <div id="paneMake" hidden>
+        <div class="flow" id="flow" role="tablist"></div>
+        <div class="stepname"><span class="no" id="sNo">1</span><div><h2 id="sName"></h2><small id="sPart"></small></div></div>
+        <p class="what" id="sWhat"></p>
+        <div class="phase" id="sPhase"></div>
+        <div id="sBoxes"></div>
+        <div class="prog"><i id="prog"></i></div>
+        <div class="acts">
+          <button class="btn ghost" id="bPrev" type="button">이전 단계</button>
+          <button class="btn ghost" id="bAgain" type="button">다시 보기</button>
+          <button class="btn primary" id="bNext" type="button">다음 단계</button>
+          <button class="btn ghost" id="bAuto" type="button" aria-pressed="false">처음부터 끝까지 자동으로</button>
+        </div>
+      </div>
+    </section>
+  </div>
+  <p class="model">3D 모양·크기·색·겹 수는 개념 이해를 위한 모형이에요. 실제 공정은 더 많은 단계로 이루어지며, 여기서는 핵심 순서만 보여 줘요.</p>
+  <p class="credit">MLCC 읽기 자료 &nbsp;|&nbsp; 제작 · 성안중학교 이삭 T</p>
+</div>
+
+<script>
+/* ===== 블록 1: 안내와 버튼 (선생님이 고치기 쉽게 STEPS에 모았어요) ===== */
+window.SM = window.SM || {};
+(() => {
+  'use strict';
+  try {
+    const S = Object.assign(window.SM, { mode: 'look', view: 'whole', mark: false, n: 8, thin: false, step: 0, p: 0, auto: false, home: 0 });
+    const $ = (s) => document.querySelector(s), $$ = (s) => Array.from(document.querySelectorAll(s));
+    const STEPS = [
+      { name: '시트 만들기', part: '얇고 고르게 펴기', what: '세라믹 가루에 여러 재료를 섞어 묽은 반죽을 만들고, 아주 얇고 고르게 펴서 말려 <b>세라믹 시트</b>를 만들어요. 김밥 김처럼 얇은 판이 길게 나와요.',
+        ph: ['세라믹 가루를 반죽처럼 섞기', '아주 얇게 펴기', '긴 시트 완성'],
+        boxes: [['fact', '얼마나 얇을까?', '최신 MLCC의 세라믹 층 한 장은 머리카락 굵기보다 훨씬 얇아요. 얇고 고를수록 같은 크기에 더 많이 쌓을 수 있어요.']] },
+      { name: '전극 인쇄', part: '금속 무늬 찍기', what: '시트 위에 금속 가루가 섞인 잉크로 <b>내부 전극</b> 무늬를 찍어요. 판화를 찍듯 한 번에 많은 칸을 찍어요.',
+        ph: ['무늬 판 내리기', '금속 잉크 찍기', '내부 전극 무늬 완성'],
+        boxes: [['lnk', '읽기 ③과 연결', '찍힌 은색 사각형 하나하나가 나중에 MLCC 속 <b>내부 전극</b> 한 장이 돼요.']] },
+      { name: '쌓기', part: '적층', what: '전극을 찍은 시트를 <b>수백 장</b> 쌓아요. 한 장 쌓을 때마다 무늬를 왼쪽·오른쪽으로 조금씩 번갈아 비켜 놓아요. 그래야 내부 전극이 번갈아 양 끝에 닿아요.',
+        ph: ['시트 한 장씩 내려놓기', '무늬를 번갈아 비켜 쌓기', '맨 위에 덮개 층 올리기'],
+        boxes: [['an', '왜 비켜 쌓을까?', '모든 전극이 같은 쪽에 닿으면 마주 보는 짝이 생기지 않아요. 번갈아 비켜야 이웃한 전극이 서로 다른 외부 전극에 이어져요.'], ['fact', '화면과 실제', '화면에는 8장만 쌓았지만 실제로는 수백 장을 쌓아요.']] },
+      { name: '눌러 붙이고 자르기', part: '압착·절단', what: '쌓은 시트를 세게 눌러 <b>한 덩어리</b>로 붙인 뒤, 무늬 칸에 맞춰 잘게 잘라요. 큰 덩어리 하나에서 아주 많은 MLCC 조각이 나와요.',
+        ph: ['위에서 세게 누르기', '칸에 맞춰 자르기', '작은 조각으로 나누기'],
+        boxes: [['fact', '조각 하나 = MLCC 하나', '잘린 조각의 옆면을 보면 전극 끝이 왼쪽, 오른쪽에 번갈아 드러나 있어요.']] },
+      { name: '굽기', part: '아주 뜨거운 가마', what: '조각들을 아주 뜨거운 가마에서 구워 <b>단단한 세라믹</b>으로 만들어요. 흙으로 빚은 그릇을 구워 도자기를 만드는 것과 비슷해요. 구우면 조금 줄어들고 색이 바뀌어요.',
+        ph: ['가마 덮기', '뜨겁게 굽기', '식혀서 꺼내기'],
+        boxes: [['lnk', '세라믹이란?', '흙이나 돌가루 같은 재료를 높은 온도에서 구워 만든 단단한 재료예요. 그릇, 타일도 세라믹이에요.']] },
+      { name: '외부 전극과 검사', part: '마무리', what: '양 끝에 금속을 발라 <b>외부 전극</b>을 만들고, 기판에 잘 붙도록 겉을 한 번 더 입혀요. 마지막으로 하나하나 전기를 잘 담는지 <b>검사</b>해요.',
+        ph: ['양 끝에 금속 바르기', '겉 입히기', '하나하나 검사하기'],
+        boxes: [['lnk', '진로와 연결', '새 세라믹 가루를 연구하는 재료 개발, 쌓고 굽는 공정·설비, 검사하는 품질 관리 등 단계마다 일하는 사람이 있어요. \'정리·글쓰기\' 탭에서 더 알아봐요.']] },
+    ];
+    S.STEPS = STEPS; S.DUR = 5.5;
+    // 모드
+    const setMode = (m) => {
+      S.mode = m; $('#mLook').setAttribute('aria-selected', String(m === 'look')); $('#mMake').setAttribute('aria-selected', String(m === 'make'));
+      $('#paneLook').hidden = m !== 'look'; $('#paneMake').hidden = m !== 'make';
+      if (m === 'make') go(S.step); else { S.auto = false; paintAuto(); S.home++; }
+    };
+    $('#mLook').addEventListener('click', () => setMode('look')); $('#mMake').addEventListener('click', () => setMode('make'));
+    $('#vAuto').addEventListener('click', () => { S.home++; });
+    // 들여다보기
+    $$('[data-view]').forEach((b) => b.addEventListener('click', () => { S.view = b.dataset.view; $$('[data-view]').forEach((o) => o.setAttribute('aria-pressed', String(o === b))); }));
+    $('#vMark').addEventListener('click', () => { S.mark = !S.mark; $('#vMark').setAttribute('aria-pressed', String(S.mark)); if (S.mark && S.view === 'whole') $$('[data-view]')[1].click(); });
+    const gauge = () => {
+      const pairs = S.n - 1, v = pairs * (S.thin ? 1.8 : 1), max = 15 * 1.8;
+      $('#gFill').style.width = Math.max(2, (v / max) * 100) + '%';
+      $('#gTxt').textContent = `마주 보는 짝 ${pairs}개`;
+      $('#nV').textContent = S.n + '장';
+    };
+    $('#nR').addEventListener('input', (e) => { S.n = +e.target.value; gauge(); });
+    $$('[data-thin]').forEach((b) => b.addEventListener('click', () => { S.thin = b.dataset.thin === '1'; $$('[data-thin]').forEach((o) => o.setAttribute('aria-pressed', String(o === b))); gauge(); }));
+    gauge();
+    // 만드는 과정
+    $('#flow').innerHTML = STEPS.map((s, i) => `<button type="button" class="fs" role="tab" data-i="${i}"><b>${i + 1}</b>${s.name}</button>`).join('');
+    const seen = new Set();
+    function go(i) {
+      S.step = Math.max(0, Math.min(STEPS.length - 1, i)); S.p = 0; seen.add(S.step);
+      const s = STEPS[S.step];
+      $$('#flow .fs').forEach((b, k) => { b.setAttribute('aria-selected', String(k === S.step)); b.classList.toggle('seen', seen.has(k)); });
+      $('#sNo').textContent = S.step + 1; $('#sName').textContent = s.name; $('#sPart').textContent = s.part; $('#sWhat').innerHTML = s.what;
+      $('#sPhase').innerHTML = s.ph.map((t, k) => `<div class="ph"><i>${k + 1}</i><span>${t}</span></div>`).join('');
+      $('#sBoxes').innerHTML = s.boxes.map(([c, t, h]) => `<div class="box ${c}"><b class="t">${t}</b>${h}</div>`).join('');
+      $('#bPrev').disabled = S.step === 0; $('#bNext').disabled = S.step === STEPS.length - 1;
+      S.cam = (S.cam || 0) + 1;
+    }
+    S.go = go;
+    $$('#flow .fs').forEach((b) => b.addEventListener('click', () => { S.auto = false; paintAuto(); go(+b.dataset.i); }));
+    $('#bPrev').addEventListener('click', () => go(S.step - 1));
+    $('#bNext').addEventListener('click', () => go(S.step + 1));
+    $('#bAgain').addEventListener('click', () => go(S.step));
+    const paintAuto = () => { $('#bAuto').setAttribute('aria-pressed', String(S.auto)); $('#bAuto').textContent = S.auto ? '자동 멈추기' : '처음부터 끝까지 자동으로'; };
+    $('#bAuto').addEventListener('click', () => { S.auto = !S.auto; paintAuto(); if (S.auto) go(0); });
+    // 진행 막대·단계 표시(3D가 안 떠도 시간은 흘러요)
+    let last = performance.now();
+    (function loop(now) {
+      requestAnimationFrame(loop);
+      const dt = Math.min(0.1, (now - last) / 1000); last = now;
+      if (S.mode !== 'make') return;
+      S.p = Math.min(1, S.p + dt / S.DUR);
+      $('#prog').style.width = (S.p * 100).toFixed(1) + '%';
+      const ph = Math.min(2, Math.floor(S.p * 3.2));
+      $$('#sPhase .ph').forEach((el, k) => { el.classList.toggle('on', k === ph && S.p < 1); el.classList.toggle('done', k < ph || S.p >= 1); });
+      if (S.auto && S.p >= 1) { S.autoWait = (S.autoWait || 0) + dt; if (S.autoWait > 1.2) { S.autoWait = 0; if (S.step < STEPS.length - 1) go(S.step + 1); else { S.auto = false; paintAuto(); } } }
+    })(last);
+    S.okUI = true;
+  } catch (err) { window.SM_err('안내·버튼', err); }
+})();
+</script>
+<script type="module">
+/* ===== 블록 2: 3D (들여다보기 모형, 만드는 과정) ===== */
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+/* ===== 공통 3D 도구 (three.js) =====
+   전자는 파란 알갱이(−), 전자를 잃은 쪽은 빨간 (+) 표시. 크기·개수·빠르기는 개념 이해를 위한 모형이에요(숫자 없음). */
+const C3 = (() => {
+  const REDUCE = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const V = (x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z);
+  const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+  const clamp01 = (t) => Math.max(0, Math.min(1, t));
+
+  // 탭 껍데기에서 보이지 않는 탭이면 그리지 않아요(태블릿 배터리 아끼기)
+  function visibleNow() {
+    if (document.hidden) return false;
+    try { const f = window.frameElement; if (f && f.hasAttribute('data-page') && !f.classList.contains('on')) return false; } catch (e) {}
+    return true;
+  }
+
+  function canvasTex(w, h, draw) {
+    const c = document.createElement('canvas'); c.width = w; c.height = h;
+    draw(c.getContext('2d'), w, h);
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
+    t.userData.canvas = c; return t;
+  }
+  function gradientBg(top, bottom) {
+    return canvasTex(4, 256, (g, w, h) => { const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, top); gr.addColorStop(1, bottom); g.fillStyle = gr; g.fillRect(0, 0, w, h); });
+  }
+  // 나뭇결 책상
+  function woodTex() {
+    const t = canvasTex(1024, 512, (g, w, h) => {
+      const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#c99a6b'); gr.addColorStop(1, '#b8875a'); g.fillStyle = gr; g.fillRect(0, 0, w, h);
+      for (let i = 0; i < 160; i++) {
+        const y = Math.random() * h, a = 0.04 + Math.random() * 0.08; g.strokeStyle = `rgba(${90 + Math.random() * 40},${55 + Math.random() * 25},30,${a})`;
+        g.lineWidth = 1 + Math.random() * 3; g.beginPath(); g.moveTo(0, y);
+        for (let x = 0; x <= w; x += 32) g.lineTo(x, y + Math.sin(x / 90 + i) * 4 + Math.sin(x / 23) * 1.2);
+        g.stroke();
+      }
+    });
+    t.wrapS = t.wrapT = THREE.RepeatWrapping; return t;
+  }
+  // 바닥에 드리우는 부드러운 그림자
+  function blobTex() {
+    return canvasTex(256, 256, (g, w, h) => { const r = g.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2); r.addColorStop(0, 'rgba(20,38,59,.32)'); r.addColorStop(1, 'rgba(20,38,59,0)'); g.fillStyle = r; g.fillRect(0, 0, w, h); });
+  }
+
+  /* 무대: 렌더러·카메라·조명·손가락 조작 */
+  function makeStage(host, opt = {}) {
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = opt.exposure || 1.05;
+    renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.domElement.className = 'gl';
+    host.appendChild(renderer.domElement);
+    const scene = new THREE.Scene();
+    scene.background = gradientBg(opt.top || '#f6f9fc', opt.bottom || '#d6e3ef');
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    scene.environment = pmrem.fromScene(new RoomEnvironment(renderer), 0.04).texture;
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x8a9bb0, 0.55));
+    const sun = new THREE.DirectionalLight(0xffffff, 1.6);
+    sun.position.set(opt.sunX || 5, 11, opt.sunZ || 7); sun.castShadow = true;
+    sun.shadow.mapSize.set(1024, 1024); sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.02;
+    const sc = sun.shadow.camera; sc.left = -9; sc.right = 9; sc.top = 9; sc.bottom = -9; sc.near = 1; sc.far = 40;
+    scene.add(sun);
+    const camera = new THREE.PerspectiveCamera(opt.fov || 34, 1, 0.1, 200);
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true; controls.dampingFactor = 0.09; controls.enablePan = false;
+    controls.rotateSpeed = 0.85; controls.zoomSpeed = 0.9;
+    if (opt.scroll) { controls.enableZoom = false; renderer.domElement.style.touchAction = 'pan-y'; host.style.touchAction = 'pan-y'; }
+    controls.minDistance = opt.minD || 3; controls.maxDistance = opt.maxD || 24; controls.maxPolarAngle = Math.PI * 0.86;
+
+    const overlay = document.createElement('div'); overlay.className = 'lbls'; host.appendChild(overlay);
+    let W = 1, H = 1;
+    function resize() {
+      const r = host.getBoundingClientRect(); W = Math.max(1, r.width); H = Math.max(1, r.height);
+      renderer.setSize(W, H, false); camera.aspect = W / H;
+      if (opt.fitWidth) { // 세로 화면에서 장면이 잘리지 않도록 화각을 넓혀요
+        const base = opt.fov || 34; camera.fov = camera.aspect < 1.15 ? Math.min(62, base * (1.15 / camera.aspect) * 0.92) : base;
+      }
+      camera.updateProjectionMatrix();
+    }
+    try { let rq = 0; new ResizeObserver(() => { cancelAnimationFrame(rq); rq = requestAnimationFrame(resize); }).observe(host); } catch (e) { addEventListener('resize', resize); }
+    resize();
+
+    // 이름표(HTML)를 3D 위치에 붙이기
+    const labels = [];
+    function label(html, cls, at) {
+      const el = document.createElement('div'); el.className = 'lb ' + (cls || ''); el.innerHTML = html; overlay.appendChild(el);
+      const L = { el, at, show: true, set(h) { if (el.innerHTML !== h) el.innerHTML = h; } };
+      labels.push(L); return L;
+    }
+    const tmp = V();
+    function placeLabels() {
+      labels.forEach((L) => {
+        if (!L.show) { L.el.style.display = 'none'; return; }
+        const p = typeof L.at === 'function' ? L.at() : L.at;
+        if (!p) { L.el.style.display = 'none'; return; }
+        tmp.copy(p).project(camera);
+        if (tmp.z > 1 || tmp.z < -1) { L.el.style.display = 'none'; return; }
+        const px = ((tmp.x + 1) / 2) * W, py = ((1 - tmp.y) / 2) * H;
+        L.el.style.display = '';
+        L.el.style.transform = `translate(${px}px,${py}px) translate(-50%,-50%)`;
+      });
+    }
+
+    // 카메라 이동
+    let fly = null;
+    controls.addEventListener('start', () => { fly = null; });
+    function flyTo(pos, target, dur = 1.1) {
+      if (REDUCE || dur <= 0) { camera.position.copy(pos); controls.target.copy(target); controls.update(); return; }
+      fly = { p0: camera.position.clone(), t0: controls.target.clone(), p1: pos.clone(), t1: target.clone(), k: 0, dur };
+    }
+
+    const fns = [];
+    let last = performance.now(), running = true;
+    function tick(now) {
+      requestAnimationFrame(tick);
+      if (!running || !visibleNow()) { last = now; return; }
+      if (opt.scroll) { const hr = host.getBoundingClientRect(); if (hr.bottom < -50 || hr.top > (window.innerHeight || 800) + 50) { last = now; return; } } // 화면 밖이면 쉬기
+      const dt = Math.min(0.05, Math.max(0, (now - last) / 1000)); last = now;
+      if (fly) {
+        fly.k = Math.min(1, fly.k + dt / fly.dur); const e = ease(fly.k);
+        camera.position.lerpVectors(fly.p0, fly.p1, e); controls.target.lerpVectors(fly.t0, fly.t1, e);
+        if (fly.k >= 1) fly = null;
+      }
+      for (let i = 0; i < fns.length; i++) { try { fns[i](dt, now / 1000); } catch (err) { console.error(err); } }
+      controls.update();
+      renderer.render(scene, camera);
+      placeLabels();
+    }
+    requestAnimationFrame(tick);
+    return { renderer, scene, camera, controls, sun, overlay, label, flyTo, onFrame: (f) => fns.push(f), size: () => ({ W, H }), resize };
+  }
+
+  // 관 모양 전선(곡선)
+  function tube(points, r, mat, seg = 80) {
+    const curve = new THREE.CatmullRomCurve3(points, false, 'centripetal');
+    const m = new THREE.Mesh(new THREE.TubeGeometry(curve, seg, r, 10, false), mat); m.castShadow = true; m.curve = curve; return m;
+  }
+
+  // 길을 따라 움직이는 알갱이(전자). 전선에는 전자가 이미 꽉 차 있으므로, 멈춰 있어도 알갱이는 보여요.
+  // setPath(점 배열), update(dt, 빠르기) — 빠르기가 음수면 반대로 움직여요
+  function makeDots(count, color, size = 1) {
+    const geo = new THREE.SphereGeometry(0.06 * size, 14, 10);
+    const mat = new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.55, roughness: 0.3 });
+    const mesh = new THREE.InstancedMesh(geo, mat, count); mesh.frustumCulled = false;
+    let pts = [], cum = [], total = 1, off = 0; const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), p = V(), sc = V(1, 1, 1);
+    function setPath(P) {
+      pts = P; cum = [0];
+      for (let i = 1; i < P.length; i++) cum.push(cum[i - 1] + P[i].distanceTo(P[i - 1]));
+      total = cum[cum.length - 1] || 1;
+    }
+    function at(s, out) {
+      s = ((s % total) + total) % total;
+      let i = 1; while (i < cum.length - 1 && cum[i] < s) i++;
+      const a = pts[i - 1], b = pts[i], seg = cum[i] - cum[i - 1] || 1, k = (s - cum[i - 1]) / seg;
+      out.lerpVectors(a, b, k);
+    }
+    function update(dt, speed) {
+      if (pts.length < 2) { mesh.visible = false; return; }
+      off += dt * speed;
+      const gap = total / count;
+      for (let k = 0; k < count; k++) { at(off + k * gap, p); m4.compose(p, q, sc); mesh.setMatrixAt(k, m4); }
+      mesh.instanceMatrix.needsUpdate = true;
+    }
+    return { mesh, setPath, update, mat };
+  }
+
+  // 책상
+  function addTable(scene, w, d, y = 0) {
+    const tex = woodTex(); tex.repeat.set(w / 10, d / 10);
+    const mat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.55, metalness: 0 });
+    const t = new THREE.Mesh(new RoundedBoxGeometry(w, 0.4, d, 3, 0.12), mat); t.position.y = y - 0.2; t.receiveShadow = true; scene.add(t);
+    return t;
+  }
+  const mesh = (geo, mat, x = 0, y = 0, z = 0) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true; return m; };
+
+  return { REDUCE, V, ease, clamp01, makeStage, canvasTex, gradientBg, blobTex, tube, makeDots, addTable, visibleNow, mesh };
+})();
+
+/* ===== MLCC 모형 =====
+   실제 MLCC: 세라믹 몸체(갈색), 양 끝 외부 전극(은색), 속에는 세라믹 층과 금속 내부 전극이 번갈아 수백 겹.
+   화면의 겹 수는 실제보다 훨씬 적게 그린 모형이에요. */
+const MLCC = (() => {
+  const { canvasTex, mesh } = C3;
+  // 세라믹 겉면: 도자기처럼 고운 알갱이 무늬
+  function ceramicTex(base = '#a77a52') {
+    return canvasTex(512, 512, (g, w, h) => {
+      g.fillStyle = base; g.fillRect(0, 0, w, h);
+      for (let i = 0; i < 9000; i++) { const v = Math.random(); g.fillStyle = v < 0.5 ? `rgba(70,40,20,${0.05 + Math.random() * 0.08})` : `rgba(255,235,210,${0.04 + Math.random() * 0.07})`; g.fillRect(Math.random() * w, Math.random() * h, 1 + Math.random() * 2, 1 + Math.random() * 2); }
+      const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, 'rgba(255,240,220,.10)'); gr.addColorStop(1, 'rgba(40,20,10,.12)'); g.fillStyle = gr; g.fillRect(0, 0, w, h);
+    });
+  }
+  // 자른 면: 세라믹 층 사이에 금속 내부 전극이 왼쪽·오른쪽에 번갈아 붙어 있는 모습
+  function sectionTex(n, opt = {}) {
+    const W = 2048, H = 1024;
+    return canvasTex(W, H, (g) => {
+      const gr = g.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, '#c49a6f'); gr.addColorStop(1, '#a87d55'); g.fillStyle = gr; g.fillRect(0, 0, W, H);
+      for (let i = 0; i < 14000; i++) { g.fillStyle = Math.random() < 0.5 ? 'rgba(80,45,20,.10)' : 'rgba(255,240,215,.10)'; g.fillRect(Math.random() * W, Math.random() * H, 2, 2); }
+      const cover = H * 0.12, span = H - 2 * cover, gap = span / (n - 1), th = Math.max(5, Math.min(22, gap * 0.34)), margin = W * 0.1;
+      for (let k = 0; k < n; k++) {
+        const y = cover + k * gap, left = k % 2 === 0;
+        const x0 = left ? 0 : margin, x1 = left ? W - margin : W;
+        const cs = !opt.mark ? ['#e4e8ed', '#8e98a4', '#5d6672'] : left ? ['#bcd4fa', '#2f6fd6', '#1c4a99'] : ['#fac2bd', '#e0483e', '#9c2a22'];
+        const eg = g.createLinearGradient(0, y - th / 2, 0, y + th / 2); eg.addColorStop(0, cs[0]); eg.addColorStop(0.5, cs[1]); eg.addColorStop(1, cs[2]);
+        g.fillStyle = eg; g.fillRect(x0, y - th / 2, x1 - x0, th);
+      }
+    });
+  }
+  function capMat() { return new THREE.MeshStandardMaterial({ color: 0xc7ccd3, metalness: 0.95, roughness: 0.32 }); }
+
+  // L: 길이(x), H: 높이(y), D: 폭(z). cap: 외부 전극 길이. 반환 group.setCut(0~1)로 앞쪽 절반을 떼어 냄
+  function make(o = {}) {
+    const L = o.L || 4, H = o.H || 2, D = o.D || 2, cap = o.cap || 0.62, n = o.layers || 14;
+    const root = new THREE.Group();
+    const cer = new THREE.MeshStandardMaterial({ map: ceramicTex(o.color), roughness: 0.78, metalness: 0 });
+    const bodyL = L - 2 * cap + 0.1;
+    const whole = new THREE.Group(); root.add(whole);
+    whole.add(mesh(new RoundedBoxGeometry(bodyL, H * 0.97, D * 0.97, 4, Math.min(H, D) * 0.08), cer));
+    const cm = capMat();
+    [-1, 1].forEach((s) => whole.add(mesh(new RoundedBoxGeometry(cap, H, D, 5, Math.min(H, D) * 0.16), cm, s * (L / 2 - cap / 2), 0, 0)));
+    // 자른 모형(뒤쪽 절반 + 떼어 낸 앞쪽 절반)
+    const cut = new THREE.Group(); cut.visible = false; root.add(cut);
+    const back = new THREE.Group(), front = new THREE.Group(); cut.add(back, front);
+    const half = D / 2;
+    const texA = sectionTex(n, {}); let texB = null;
+    const secMat = new THREE.MeshStandardMaterial({ map: texA, roughness: 0.55, metalness: 0.1 });
+    const mk = (z, grp, withFace) => {
+      grp.add(mesh(new THREE.BoxGeometry(bodyL, H * 0.97, half * 0.97), cer, 0, 0, z));
+      [-1, 1].forEach((s) => grp.add(mesh(new THREE.BoxGeometry(cap, H, half), cm, s * (L / 2 - cap / 2), 0, z)));
+      if (withFace) { const f = new THREE.Mesh(new THREE.PlaneGeometry(bodyL, H * 0.97), secMat); f.position.set(0, 0, 0.002); grp.add(f); }
+    };
+    mk(-half / 2, back, true); mk(half / 2, front, false);
+    let cutK = 0;
+    root.setCut = (k) => {
+      cutK = k; whole.visible = k <= 0.001; cut.visible = !whole.visible;
+      front.position.z = k * D * 0.5; front.position.y = k * H * 1.9; front.rotation.x = -k * 0.5;
+      front.visible = k < 0.98;
+    };
+    root.cutK = () => cutK;
+    // 왼쪽(파랑)·오른쪽(빨강) 외부 전극에 이어진 내부 전극 끝을 색으로 표시
+    root.setMark = (on) => { if (on && !texB) texB = sectionTex(n, { mark: true }); secMat.map = on ? texB : texA; secMat.needsUpdate = true; };
+    root.dims = { L, H, D, cap, n };
+    return root;
+  }
+
+  // 초록 회로 기판 무늬
+  function pcbTex() {
+    return canvasTex(1024, 1024, (g, w, h) => {
+      const gr = g.createLinearGradient(0, 0, w, h); gr.addColorStop(0, '#1f6a4c'); gr.addColorStop(1, '#16523a'); g.fillStyle = gr; g.fillRect(0, 0, w, h);
+      g.strokeStyle = 'rgba(214,180,90,.55)'; g.lineWidth = 5; g.lineCap = 'round';
+      for (let i = 0; i < 70; i++) {
+        let x = Math.random() * w, y = Math.random() * h; g.beginPath(); g.moveTo(x, y);
+        for (let k = 0; k < 4; k++) { if (Math.random() < 0.5) x += (Math.random() - 0.5) * 300; else y += (Math.random() - 0.5) * 300; g.lineTo(x, y); }
+        g.stroke();
+      }
+      g.fillStyle = 'rgba(214,180,90,.8)'; for (let i = 0; i < 160; i++) { g.beginPath(); g.arc(Math.random() * w, Math.random() * h, 5, 0, 7); g.fill(); }
+      g.fillStyle = 'rgba(255,255,255,.04)'; for (let i = 0; i < 3000; i++) g.fillRect(Math.random() * w, Math.random() * h, 2, 2);
+    });
+  }
+  return { make, ceramicTex, sectionTex, pcbTex, capMat };
+})();
+
+try {
+  const { V, mesh, ease, clamp01 } = C3, S = window.SM;
+  const st = C3.makeStage(document.getElementById('host'), { fitWidth: true, minD: 2.5, maxD: 20 });
+  const { scene, camera, controls, label } = st;
+  C3.addTable(scene, 14, 9);
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const seg = (p, a, b) => clamp01((p - a) / (b - a));
+
+  /* ---------- 들여다보기 ---------- */
+  const look = new THREE.Group(); scene.add(look);
+  const cer = new THREE.MeshStandardMaterial({ map: MLCC.ceramicTex(), roughness: 0.78 });
+  const capM = MLCC.capMat();
+  const eNeutral = new THREE.MeshStandardMaterial({ color: 0xb9c1ca, metalness: 0.9, roughness: 0.3 });
+  const eL = new THREE.MeshStandardMaterial({ color: 0x2f6fd6, metalness: 0.4, roughness: 0.35, emissive: 0x2f6fd6, emissiveIntensity: 0.25 });
+  const eR = new THREE.MeshStandardMaterial({ color: 0xe0483e, metalness: 0.4, roughness: 0.35, emissive: 0xe0483e, emissiveIntensity: 0.25 });
+  const L = 4.4, D = 2.0, CAP = 0.62, BL = L - 2 * CAP + 0.1, COVER = 0.2;
+  let M = null; // 현재 모형
+  function buildLook(n, thin) {
+    if (M) { look.remove(M.g); M.g.traverse((o) => { if (o.geometry) o.geometry.dispose(); }); }
+    const pitch = thin ? 0.12 : 0.22, H = (n - 1) * pitch + 2 * COVER, g = new THREE.Group();
+    const y0 = H / 2 + 0.02; g.position.y = y0;
+    const body = mesh(new THREE.BoxGeometry(BL, H, D), cer); g.add(body);
+    const caps = [-1, 1].map((s) => { const c = mesh(new RoundedBoxGeometry(CAP, H + 0.06, D + 0.06, 4, 0.1), capM, s * (L / 2 - CAP / 2)); g.add(c); return c; });
+    const eLen = BL * 0.86, eDep = D * 0.84, items = [];
+    // 아래 덮개 → 전극 → 세라믹 층 → 전극 … → 위 덮개 (펼칠 때 순서)
+    const slabG = (h) => new THREE.BoxGeometry(BL, h, D);
+    const ys = []; for (let i = 0; i < n; i++) ys.push(-H / 2 + COVER + i * pitch);
+    items.push({ m: mesh(slabG(COVER), cer, 0, -H / 2 + COVER / 2), slab: true });
+    ys.forEach((y, i) => {
+      const left = i % 2 === 0;
+      const e = mesh(new THREE.BoxGeometry(eLen, 0.03, eDep), eNeutral, (left ? -1 : 1) * (BL / 2 - eLen / 2 + 0.04), y); e.userData.left = left;
+      items.push({ m: e, el: true });
+      if (i < n - 1) items.push({ m: mesh(slabG(pitch - 0.03), cer, 0, y + pitch / 2), slab: true });
+    });
+    items.push({ m: mesh(slabG(COVER), cer, 0, H / 2 - COVER / 2), slab: true });
+    items.forEach((it, r) => { it.y = it.m.position.y; it.r = r; g.add(it.m); });
+    look.add(g);
+    M = { g, body, caps, items, H, n, rmid: (items.length - 1) / 2 };
+  }
+  buildLook(S.n, S.thin);
+  const lCapL = label('외부 전극', 'M', () => (S.mode === 'look' ? V(-L / 2 + CAP / 2 - kOpen * 1.2, M.g.position.y + M.H / 2 + 0.35 + kOpen * 1.6, 0) : null));
+  const lCapR = label('외부 전극', 'M', () => (S.mode === 'look' ? V(L / 2 - CAP / 2 + kOpen * 1.2, M.g.position.y + M.H / 2 + 0.35 + kOpen * 1.6, 0) : null));
+  label('세라믹', 'C', () => (S.mode === 'look' && kCut < 0.5 && kOpen < 0.5 ? V(0, M.g.position.y + M.H / 2 + 0.3, D / 2) : null));
+  label('세라믹 층', 'C', () => (S.mode === 'look' && (kCut > 0.9 || kOpen > 0.9) ? itemPos(2, 0.5) : null));
+  label('내부 전극', 'M', () => (S.mode === 'look' && (kCut > 0.9 || kOpen > 0.9) && !S.mark ? itemPos(M.items.length - 4, -0.6) : null));
+  label('왼쪽에 이어진 전극', 'E', () => (S.mode === 'look' && S.mark && (kCut > 0.9 || kOpen > 0.9) ? itemPos(1, -0.9) : null));
+  label('오른쪽에 이어진 전극', 'Pl', () => (S.mode === 'look' && S.mark && (kCut > 0.9 || kOpen > 0.9) ? itemPos(3, 0.9) : null));
+  const tmpV = V();
+  function itemPos(r, dx) { const it = M.items[Math.min(r, M.items.length - 1)]; if (!it) return null; it.m.getWorldPosition(tmpV); return V(tmpV.x + dx, tmpV.y, kCut > 0.5 ? 0.02 : D / 2); }
+  let kCut = 0, kOpen = 0, built = S.n + ':' + S.thin, mark = null;
+  const lookCam = () => (S.view === 'open' ? { p: V(4.2, 3.6 + M.items.length * 0.12, 9.4), t: V(0, M.H / 2 + M.items.length * 0.1, 0) } : { p: V(3.4, 3.4 + M.H * 0.4, 7.4), t: V(0, M.H / 2 + 0.2, 0) });
+  let lastView = S.view;
+
+  /* ---------- 만드는 과정 ---------- */
+  const make = new THREE.Group(); make.visible = false; scene.add(make);
+  const rawM = new THREE.MeshStandardMaterial({ color: 0xeadcc6, roughness: 0.85 });
+  const inkM = new THREE.MeshStandardMaterial({ color: 0xbfc6cf, metalness: 0.85, roughness: 0.35 });
+  const steel = new THREE.MeshStandardMaterial({ color: 0x8a94a0, metalness: 0.85, roughness: 0.35 });
+  const dark = new THREE.MeshStandardMaterial({ color: 0x2b2f36, roughness: 0.7 });
+  // 컨베이어와 시트
+  const belt = mesh(new RoundedBoxGeometry(9, 0.12, 3.8, 2, 0.05), dark, 0, 0.06, 0); make.add(belt);
+  const hopper = new THREE.Group(); hopper.position.set(-3.7, 0, 0); make.add(hopper);
+  hopper.add(mesh(new RoundedBoxGeometry(1.2, 1.1, 3.6, 3, 0.08), steel, 0, 1.0, 0));
+  hopper.add(mesh(new THREE.BoxGeometry(0.5, 0.35, 3.2), steel, 0.2, 0.32, 0));
+  const slurry = mesh(new THREE.BoxGeometry(1.0, 0.25, 3.3), new THREE.MeshStandardMaterial({ color: 0xf1e6d4, roughness: 0.4 }), 0, 1.62, 0); hopper.add(slurry);
+  const roller = mesh(new THREE.CylinderGeometry(0.22, 0.22, 3.4, 32), steel, 0.65, 0.36, 0); roller.rotation.x = Math.PI / 2; hopper.add(roller);
+  const sheet = mesh(new THREE.BoxGeometry(1, 0.04, 3.0), rawM, -3, 0.14, 0); make.add(sheet);
+  // 인쇄: 무늬 판과 전극 무늬(3열 × 5줄)
+  const COLS = 3, ROWS = 5, PX = 1.2, PZ = 0.56, SX = COLS * PX, SZ = ROWS * PZ;
+  const screen = new THREE.Group(); make.add(screen);
+  screen.add(mesh(new RoundedBoxGeometry(SX + 0.6, 0.12, SZ + 0.6, 2, 0.04), steel));
+  screen.add(mesh(new THREE.BoxGeometry(SX + 0.2, 0.13, SZ + 0.2), new THREE.MeshStandardMaterial({ color: 0x1d2a3a, roughness: 0.6, transparent: true, opacity: 0.85 })));
+  const rectG = new THREE.BoxGeometry(0.95, 0.014, 0.4);
+  function inkGrid(dx) {
+    const im = new THREE.InstancedMesh(rectG, inkM, COLS * ROWS); const m4 = new THREE.Matrix4(); let k = 0;
+    for (let c = 0; c < COLS; c++) for (let r = 0; r < ROWS; r++) { m4.makeTranslation((c - (COLS - 1) / 2) * PX + dx, 0, (r - (ROWS - 1) / 2) * PZ); im.setMatrixAt(k++, m4); }
+    im.castShadow = true; return im;
+  }
+  const printed = inkGrid(0); make.add(printed);
+  // 쌓기: 8장 + 덮개
+  const NL = 8, LT = 0.075, stack = new THREE.Group(); make.add(stack);
+  const layerG = new THREE.BoxGeometry(SX + 0.3, 0.05, SZ + 0.3);
+  const base = mesh(new THREE.BoxGeometry(SX + 0.3, 0.14, SZ + 0.3), rawM, 0, 0.07, 0); stack.add(base);
+  const layers = [];
+  for (let i = 0; i <= NL; i++) {
+    const g = new THREE.Group(); g.add(mesh(layerG, rawM));
+    if (i < NL) { const ink = inkGrid(i % 2 ? 0.13 : -0.13); ink.position.y = 0.032; g.add(ink); }
+    else { g.children[0].scale.y = 2.4; }
+    g.userData.y = 0.14 + 0.025 + i * LT + (i === NL ? 0.035 : 0); stack.add(g); layers.push(g);
+  }
+  const stackTop = 0.14 + (NL + 1) * LT + 0.08;
+  const press = mesh(new RoundedBoxGeometry(SX + 0.8, 0.5, SZ + 0.8, 3, 0.06), steel, 0, 4, 0); make.add(press);
+  const blades = new THREE.Group(); make.add(blades);
+  const bladeM = new THREE.MeshStandardMaterial({ color: 0xdfe6ee, metalness: 0.95, roughness: 0.15, emissive: 0x9fd0ff, emissiveIntensity: 0.4 });
+  for (let c = 1; c < COLS; c++) blades.add(mesh(new THREE.BoxGeometry(0.03, 0.6, SZ + 0.6), bladeM, (c - COLS / 2) * PX, 0, 0));
+  for (let r = 1; r < ROWS; r++) blades.add(mesh(new THREE.BoxGeometry(SX + 0.6, 0.6, 0.03), bladeM, 0, 0, (r - ROWS / 2) * PZ));
+  // 조각(칩): 옆면에 층 무늬
+  const sideTex = C3.canvasTex(256, 128, (g, w, h) => {
+    g.fillStyle = '#ffffff'; g.fillRect(0, 0, w, h);
+    for (let i = 0; i < 9; i++) { const y = 16 + i * 12; g.fillStyle = '#8e98a4'; if (i % 2) g.fillRect(28, y, w - 28, 4); else g.fillRect(0, y, w - 28, 4); }
+  });
+  const chipH = (NL + 1) * LT + 0.14, chips = [];
+  for (let c = 0; c < COLS; c++) for (let r = 0; r < ROWS; r++) {
+    const g = new THREE.Group();
+    const bodyM = new THREE.MeshStandardMaterial({ color: 0xeadcc6, roughness: 0.8, emissive: 0xff7a1a, emissiveIntensity: 0 });
+    const sideM = new THREE.MeshStandardMaterial({ map: sideTex, color: 0xeadcc6, roughness: 0.8, emissive: 0xff7a1a, emissiveIntensity: 0 });
+    const b = mesh(new THREE.BoxGeometry(PX - 0.1, chipH, PZ - 0.1), [bodyM, bodyM, bodyM, bodyM, sideM, sideM]); b.receiveShadow = false; g.add(b);
+    const cm = new THREE.MeshStandardMaterial({ color: 0xa9b1bb, metalness: 0.7, roughness: 0.5, emissive: 0x1f9d5c, emissiveIntensity: 0 });
+    const caps = [-1, 1].map((s) => { const cp = mesh(new RoundedBoxGeometry(0.2, chipH + 0.04, PZ - 0.06, 3, 0.04), cm, s * ((PX - 0.1) / 2), 0, 0); cp.scale.x = 0.001; g.add(cp); return cp; });
+    g.userData = { cx: (c - (COLS - 1) / 2) * PX, cz: (r - (ROWS - 1) / 2) * PZ, bodyM, sideM, cm, caps, k: c * ROWS + r };
+    make.add(g); chips.push(g);
+  }
+  // 가마
+  const kiln = new THREE.Group(); make.add(kiln);
+  const brick = new THREE.MeshStandardMaterial({ color: 0x7a3b22, roughness: 0.9, transparent: true, opacity: 0.38, emissive: 0xff5a1a, emissiveIntensity: 0 });
+  kiln.add(mesh(new RoundedBoxGeometry(6.2, 0.3, 5.0, 3, 0.08), brick, 0, 2.3, 0));
+  [-1, 1].forEach((s) => kiln.add(mesh(new THREE.BoxGeometry(0.3, 2.3, 5.0), brick, s * 2.95, 1.15, 0)));
+  kiln.add(mesh(new THREE.BoxGeometry(6.2, 2.3, 0.3), brick, 0, 1.15, -2.35));
+  const fire = new THREE.PointLight(0xff8a3a, 0, 9); fire.position.set(0, 1.6, 0.4); kiln.add(fire);
+
+  const raw = new THREE.Color(0xeadcc6), fired = new THREE.Color(0xa0714a);
+  const mk = { cam: -1 };
+  const CAMS = [
+    { p: V(0.6, 5.2, 8.6), t: V(-0.4, 0.4, 0) }, { p: V(0.8, 6.4, 6.4), t: V(0, 0.3, 0) }, { p: V(3.6, 3.8, 6.2), t: V(0, 0.6, 0) },
+    { p: V(3.2, 5.0, 6.6), t: V(0, 0.5, 0) }, { p: V(0.4, 4.6, 8.4), t: V(0, 1.0, 0) }, { p: V(2.6, 3.4, 5.0), t: V(0, 0.4, 0) },
+  ];
+  // 단계별 이름표
+  label('세라믹 반죽', 'C', () => (S.mode === 'make' && S.step === 0 ? V(-3.7, 2.1, 0) : null));
+  label('얇은 세라믹 시트', 'C', () => (S.mode === 'make' && S.step === 0 && S.p > 0.3 ? V(sheet.position.x + 0.5, 0.5, 1.2) : null));
+  label('무늬 판', 'M', () => (S.mode === 'make' && S.step === 1 && S.p < 0.85 ? V(0, screen.position.y + 0.45, -SZ / 2) : null));
+  label('내부 전극 무늬', 'M', () => (S.mode === 'make' && S.step === 1 && S.p > 0.6 ? V(0.6, 0.6, SZ / 2 + 0.2) : null));
+  label('번갈아 비켜 쌓기', 'C', () => (S.mode === 'make' && S.step === 2 && S.p > 0.25 ? V(SX / 2 + 0.6, 1.2, 0.6) : null));
+  label('누르기', 'M', () => (S.mode === 'make' && S.step === 3 && S.p < 0.55 ? V(0, press.position.y + 0.5, 0) : null));
+  label('잘린 조각 하나 = MLCC 하나', 'C', () => (S.mode === 'make' && S.step === 3 && S.p > 0.8 ? V(chips[14].position.x, 1.3, chips[14].position.z) : null));
+  label('가마', 'Pl', () => (S.mode === 'make' && S.step === 4 && S.p > 0.15 && S.p < 0.85 ? V(0, kiln.position.y + 2.75, 0) : null));
+  label('외부 전극', 'M', () => (S.mode === 'make' && S.step === 5 && S.p > 0.35 ? V(chips[14].position.x + 0.75, chips[14].position.y + 0.55, chips[14].position.z) : null));
+  label('검사 통과', 'G', () => (S.mode === 'make' && S.step === 5 && S.p > 0.9 ? V(0, 1.4, 0) : null));
+
+  function poseMake(step, p) {
+    const showSheet = step <= 1, showStack = step === 2 || (step === 3 && p < 0.72), showChips = step >= 3;
+    belt.visible = hopper.visible = sheet.visible = showSheet;
+    // 1. 시트
+    if (step === 0) { const k = ease(seg(p, 0.05, 0.9)); sheet.scale.x = Math.max(0.001, 7.4 * k); sheet.position.x = -3.3 + 3.7 * k; roller.rotation.y = 0; roller.rotation.z = p * 30; slurry.scale.y = 1 - 0.6 * k; }
+    else if (step === 1) { sheet.scale.x = 7.4; sheet.position.x = 0.4; slurry.scale.y = 0.4; }
+    screen.visible = step === 1;
+    if (step === 1) { const down = ease(seg(p, 0.08, 0.35)), up = ease(seg(p, 0.55, 0.8)); screen.position.set(0, lerp(lerp(2.6, 0.24, down), 2.6, up), 0); }
+    printed.visible = step === 1 && p > 0.45; printed.position.set(0, 0.168, 0);
+    // 3. 쌓기
+    stack.visible = showStack; press.visible = step === 3; blades.visible = step === 3 && p > 0.55 && p < 0.78;
+    if (step === 2) layers.forEach((g, i) => { const t = seg(p * 1.15, 0.05 + i * 0.09, 0.05 + i * 0.09 + 0.18); g.visible = t > 0; g.position.y = g.userData.y + (1 - ease(t)) * 3.2; });
+    if (step === 3) {
+      layers.forEach((g) => { g.visible = true; g.position.y = g.userData.y; });
+      const dn = ease(seg(p, 0.02, 0.25)), up = ease(seg(p, 0.38, 0.52)), sq = seg(p, 0.22, 0.3) * (1 - seg(p, 0.38, 0.45));
+      press.position.y = lerp(lerp(4, stackTop + 0.25 - 0.06, dn), 4.2, up);
+      stack.scale.y = 1 - 0.07 * sq;
+      blades.position.y = lerp(1.6, chipH / 2 + 0.05, ease(seg(p, 0.55, 0.68)));
+    } else stack.scale.y = 1;
+    // 조각
+    chips.forEach((g) => {
+      const u = g.userData; g.visible = showChips && !(step === 3 && p < 0.72);
+      let spread = 1, y = chipH / 2, glow = 0, col = raw, sc = 1, capK = 0, pass = 0;
+      if (step === 3) spread = lerp(1, 1.5, ease(seg(p, 0.75, 1)));
+      if (step >= 4) spread = 1.5;
+      if (step === 4) { glow = Math.sin(Math.PI * seg(p, 0.25, 0.78)); const f = seg(p, 0.35, 0.75); col = raw.clone().lerp(fired, f); sc = lerp(1, 0.9, f); }
+      if (step === 5) { col = fired; sc = 0.9; capK = ease(seg(p, 0.05, 0.35)); pass = seg(p, 0.65 + (u.k / chips.length) * 0.22, 0.7 + (u.k / chips.length) * 0.22); }
+      g.position.set(u.cx * spread, y * sc, u.cz * spread); g.scale.setScalar(sc);
+      u.bodyM.color.copy(col); u.sideM.color.copy(col); u.bodyM.emissiveIntensity = u.sideM.emissiveIntensity = glow * 1.1;
+      u.caps.forEach((c) => (c.scale.x = Math.max(0.001, capK)));
+      u.cm.color.setHex(p > 0.4 && step === 5 ? 0xd3d8de : 0xa9b1bb); u.cm.metalness = step === 5 && p > 0.4 ? 0.95 : 0.7; u.cm.emissiveIntensity = pass * 0.8;
+    });
+    kiln.visible = step === 4;
+    if (step === 4) { const dn = ease(seg(p, 0.02, 0.22)), up = ease(seg(p, 0.82, 1)); kiln.position.y = lerp(lerp(4.5, 0, dn), 4.8, up); const h = Math.sin(Math.PI * seg(p, 0.22, 0.82)); brick.emissiveIntensity = h * 0.9; fire.intensity = h * 8; }
+  }
+
+  st.onFrame((dt, t) => {
+    const isLook = S.mode === 'look';
+    look.visible = isLook; make.visible = !isLook;
+    if (isLook) {
+      const key = S.n + ':' + S.thin; if (key !== built) { built = key; buildLook(S.n, S.thin); mark = null; }
+      const wc = S.view === 'cut' ? 1 : 0, wo = S.view === 'open' ? 1 : 0, a = Math.min(1, dt * 3.5);
+      kCut += (wc - kCut) * a; kOpen += (wo - kOpen) * a;
+      if (Math.abs(kCut - wc) < 0.002) kCut = wc; if (Math.abs(kOpen - wo) < 0.002) kOpen = wo;
+      const z0 = -D / 4 * kCut, zs = 1 - 0.5 * kCut;
+      M.body.visible = kOpen < 0.02; M.body.scale.z = zs; M.body.position.z = z0;
+      M.caps.forEach((c, i) => { c.scale.z = zs; c.position.z = z0; c.position.x = (i ? 1 : -1) * (L / 2 - CAP / 2 + kOpen * 1.0); });
+      M.items.forEach((it) => {
+        const m = it.m; m.visible = it.el ? (kCut > 0.02 || kOpen > 0.02) : kOpen > 0.02;
+        m.position.y = it.y + kOpen * it.r * 0.2; // 아래부터 위로 펼쳐요
+        if (it.el) { const zf = lerp(1, 0.52, kCut); m.scale.z = zf; m.position.z = -(0.84 * D / 2) * (1 - zf) + 0.004 * kCut; } // 자른 면에서 전극 끝이 살짝 보이게
+        else { m.scale.z = zs; m.position.z = z0; }
+      });
+      if (mark !== S.mark) { mark = S.mark; M.items.forEach((it) => { if (it.el) it.m.material = mark ? (it.m.userData.left ? eL : eR) : eNeutral; }); }
+      if (S.home !== mk.home || S.view !== lastView) { mk.home = S.home; lastView = S.view; const c = lookCam(); st.flyTo(c.p, c.t, 1.0); }
+    } else {
+      if (S.cam !== mk.cam) { mk.cam = S.cam; const c = CAMS[S.step]; st.flyTo(c.p, c.t, 1.1); }
+      if (S.home !== mk.home) { mk.home = S.home; const c = CAMS[S.step]; st.flyTo(c.p, c.t, 1.0); }
+      poseMake(S.step, S.p);
+    }
+  });
+  const c0 = lookCam(); camera.position.copy(c0.p); controls.target.copy(c0.t); mk.home = S.home;
+  S.ok3d = true;
+} catch (err) { window.SM_err('3D 그림', err); const f = document.getElementById('fail3d'); if (f) f.classList.add('show'); }
+</script>
+</body>
+</html>

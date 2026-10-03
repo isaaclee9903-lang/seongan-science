@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>전기를 담는 작은 그릇, MLCC – 읽기</title>
+<script>
+/* 문제 알림: 코드에 오류가 나면 화면 아래에 빨간 상자로 알려 줘요 (선생님 확인용) */
+(function () {
+  function box() {
+    var b = document.getElementById('rdErr');
+    if (!b && document.body) {
+      b = document.createElement('div'); b.id = 'rdErr';
+      b.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;background:#fdecea;color:#8a1f17;border:2px solid #d9534f;border-radius:12px;padding:10px 14px;font:600 14px/1.5 sans-serif;white-space:pre-wrap';
+      document.body.appendChild(b);
+    }
+    return b;
+  }
+  window.RD_err = function (where, err) {
+    var msg = '[' + where + '] ' + (err && err.message ? err.message : String(err));
+    var show = function () { var b = box(); if (b) b.textContent += (b.textContent ? '\n' : '') + msg; };
+    if (document.body) show(); else document.addEventListener('DOMContentLoaded', show);
+  };
+  window.addEventListener('error', function (e) { window.RD_err('스크립트', { message: e.message + ' (줄 ' + e.lineno + ')' }); });
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      var R = window.RD || {}, miss = [];
+      if (!R.ok1) miss.push('기본 기능·퀴즈');
+      if (!R.ok2) miss.push('그림 조작 버튼');
+      if (miss.length) window.RD_err('실행 안 됨', { message: miss.join(', ') + ' 코드가 실행되지 않았어요. 파일이 끝(</html>)까지 들어 있는지 확인해 주세요.' });
+    }, 1500);
+    setTimeout(function () {
+      if (!(window.RD || {}).ok3d) { document.querySelectorAll('.fail3d').forEach(function (f) { f.classList.add('show'); }); window.RD_err('3D 그림', { message: '3D 그림을 불러오지 못했어요. 인터넷 연결(cdn.jsdelivr.net)을 확인하고 새로고침해 주세요.' }); }
+    }, 9000);
+  });
+})();
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+  :root{--bg:#f3f6f9;--paper:#fff;--ink:#15263a;--ink2:#34495e;--muted:#627386;--line:#e1e8ef;--accent:#0e63b3;--accent-soft:#e4f0fb;
+    --V:#2f6fd6;--I:#e89a00;--R:#23a566;--ok:#1f9d5c;--no:#d9534f;--violet:#7d5ad6;
+    --ser:#1784cf;--ser-soft:#e3f2fc;--par:#5e9e1c;--par-soft:#eef7e2;
+    --shadow:0 1px 2px rgba(20,38,59,.05),0 10px 28px rgba(20,38,59,.07);--ease:cubic-bezier(.2,.8,.2,1);--fs:18px}
+  html.big{--fs:20.5px}
+  *{box-sizing:border-box}html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:"Pretendard",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;-webkit-font-smoothing:antialiased;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  button{font:inherit;color:inherit}a{color:var(--accent)}
+  /* 히어로 */
+  .hero{position:relative;color:#fff;overflow:hidden;background:linear-gradient(150deg,#123a6b,#1d6fb8 55%,#4f9a2e)}
+  .hero-in{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:36px 20px 40px;display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.35fr);gap:28px;align-items:center}
+  .hero .kick{display:inline-block;font-size:14px;font-weight:700;background:rgba(255,255,255,.16);padding:6px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.3)}
+  .hero .kick.maker{margin-left:6px;background:rgba(255,255,255,.08)}
+  .hero h1{font-size:clamp(30px,4.4vw,44px);line-height:1.22;letter-spacing:-.03em;margin:14px 0 10px;word-break:keep-all}
+  .hero p{font-size:clamp(16px,2vw,18px);margin:0 0 18px;line-height:1.65;opacity:.95;word-break:keep-all}
+  .route{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px}
+  .route span{font-size:13.5px;font-weight:700;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.28);padding:5px 11px;border-radius:12px}
+  .start{display:inline-flex;align-items:center;gap:10px;white-space:nowrap;background:#fff;color:var(--accent);border:0;border-radius:16px;padding:0 22px;min-height:56px;font-weight:800;font-size:17px;cursor:pointer;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+  .hero svg{width:100%;height:auto;filter:drop-shadow(0 12px 30px rgba(0,0,0,.25))}
+  .msw{cursor:pointer}
+  .msw:focus{outline:none}.msw:focus-visible .rk{stroke:#ffd34d;stroke-width:3}
+  .dev .glow,.dev .lit{transition:opacity .45s var(--ease)}
+  .dev.off .glow,.dev.off .lit{opacity:0}
+  .dev .unlit{opacity:0;transition:opacity .45s}
+  .dev.off .unlit{opacity:1}
+  .fanb{transform-box:fill-box;transform-origin:center;animation:fanspin .45s linear infinite}
+  .dev.off .fanb{animation-duration:6s;animation-play-state:paused}
+  @keyframes fanspin{to{transform:rotate(360deg)}}
+  .credit{text-align:center;font-size:13px;font-weight:700;color:#8495a8;padding:6px 16px 40px;letter-spacing:.02em}
+  /* 진행 */
+  .nav{position:sticky;top:0;z-index:30;background:rgba(255,255,255,.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+  .nav-in{max-width:980px;margin:0 auto;display:flex;align-items:center;gap:6px;padding:8px 12px;overflow-x:auto;scrollbar-width:none}
+  .nav-in::-webkit-scrollbar{display:none}
+  .step{flex:none;display:flex;align-items:center;gap:7px;border:0;background:transparent;border-radius:12px;padding:8px 11px;min-height:44px;font-weight:700;font-size:14.5px;color:var(--muted);cursor:pointer}
+  .step .n{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:12.5px;font-weight:800;background:#e8eef4;color:#607285}
+  .step.active{background:var(--accent-soft);color:var(--accent)}.step.active .n{background:var(--accent);color:#fff}
+  .step.done .n{background:var(--ok);color:#fff}
+  .nav-sp{flex:1}
+  .fsz{flex:none;display:flex;gap:4px}
+  .fsz button{width:44px;height:40px;border:1px solid var(--line);background:#fff;border-radius:10px;font-weight:800;cursor:pointer}
+  .fsz button[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .bar{height:3px}.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--ser),var(--par))}
+  /* 본문 */
+  main{max-width:980px;margin:0 auto;padding:10px 16px 60px}
+  section.part{padding-top:34px;scroll-margin-top:70px}
+  .sec-kick{font-size:14px;font-weight:800;color:var(--accent);display:flex;align-items:center;gap:8px}
+  .sec-kick .time{font-weight:600;color:var(--muted);background:#fff;border:1px solid var(--line);border-radius:999px;padding:2px 10px;font-size:12.5px}
+  h2{font-size:clamp(24px,3.4vw,31px);margin:6px 0 16px;letter-spacing:-.02em;line-height:1.3;word-break:keep-all}
+  h3{font-size:calc(var(--fs) + 3px);margin:0 0 8px;letter-spacing:-.01em;word-break:keep-all}
+  .card{background:var(--paper);border-radius:22px;box-shadow:var(--shadow);border:1px solid rgba(20,38,59,.04)}
+  .read{padding:24px 26px;margin-bottom:16px}
+  .read p{font-size:var(--fs);line-height:1.85;color:var(--ink2);margin:0 0 14px;word-break:keep-all}
+  .read p:last-child{margin-bottom:0}
+  mark{background:linear-gradient(transparent 58%,#fff0a8 58%);color:inherit;padding:0 1px}
+  .term{border:0;background:none;padding:0;font-weight:800;color:var(--accent);border-bottom:2px dotted rgba(14,99,179,.5);cursor:pointer;font-size:inherit;line-height:inherit}
+  .defn{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:14px 0;padding:14px 16px;border-radius:16px;background:#f2f7fd;border:1px solid #d6e5f5;font-size:var(--fs);word-break:keep-all}
+  .defn .k{font-weight:900;color:#fff;padding:4px 12px;border-radius:10px}
+  .defn.ser{background:var(--ser-soft);border-color:#bfe0f5}.defn.ser .k{background:var(--ser)}
+  .defn.par{background:var(--par-soft);border-color:#cfe6b4}.defn.par .k{background:var(--par)}
+  .fig{margin:16px 0;background:#f8fafc;border:1px solid var(--line);border-radius:18px;padding:12px}
+  .fig svg{display:block;width:100%;height:auto}
+  .fig .cap{font-size:14px;color:var(--muted);text-align:center;margin-top:6px;word-break:keep-all;line-height:1.6}
+  .js-reveal .reveal{transform:translateY(18px);transition:transform .7s var(--ease)}
+  .js-reveal .reveal.in{transform:none}
+  details.pause{margin:16px 0 22px;background:linear-gradient(135deg,#fff8e6,#fff);border:2px solid #f6d98a;border-radius:18px;overflow:hidden}
+  details.pause summary{list-style:none;cursor:pointer;padding:15px 18px;display:flex;gap:12px;align-items:center;font-weight:800;font-size:var(--fs);min-height:60px;word-break:keep-all}
+  details.pause summary::-webkit-details-marker{display:none}
+  details.pause .pi{flex:none;width:36px;height:36px;border-radius:12px;background:#f7c948;display:grid;place-items:center}
+  details.pause .tap{margin-left:auto;flex:none;font-size:13px;font-weight:700;color:#9a6b00;background:#fff3cc;padding:4px 10px;border-radius:999px}
+  details.pause[open] .tap{visibility:hidden}
+  details.pause .ans{padding:0 18px 18px 66px;font-size:var(--fs);line-height:1.75;color:#5b4300;word-break:keep-all}
+  .myth{display:flex;gap:14px;align-items:flex-start;background:#fff4f2;border:2px solid #f3c2bb;border-radius:18px;padding:16px 18px;margin:16px 0}
+  .myth .x{flex:none;width:40px;height:40px;border-radius:12px;background:#e0483e;color:#fff;display:grid;place-items:center;font-weight:900;font-size:20px}
+  .myth p{margin:0;font-size:calc(var(--fs) - 1px);line-height:1.7;color:#5e2a25;word-break:keep-all}
+  .formula{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:12px;margin:16px 0;padding:18px;border-radius:20px;background:#f6f9ff;border:1px solid #d6e5f5;font-size:clamp(26px,4vw,36px);font-weight:900;letter-spacing:-.01em}
+  .formula .eqs{font-size:clamp(15px,2vw,17px);font-weight:700;color:var(--muted);flex-basis:100%;text-align:center;word-break:keep-all}
+  .cV{color:var(--V)}.cI{color:var(--I)}.cR{color:var(--R)}.cS{color:var(--ser)}.cP{color:var(--par)}
+  /* 지난 시간 */
+  .recall{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:16px;align-items:center}
+  .backlink{display:inline-flex;align-items:center;gap:8px;min-height:46px;padding:0 16px;border-radius:12px;background:#eef3f8;color:var(--ink2);font-weight:800;font-size:15px;text-decoration:none}
+  /* 직렬·병렬 모형 장면 */
+  .spfig svg{max-width:760px;margin:0 auto}
+  .spfig .etog{display:flex;gap:8px;justify-content:center;margin-bottom:8px;flex-wrap:wrap}
+  .tg{min-height:48px;padding:0 16px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15px;cursor:pointer;transition:all .2s}
+  .tg[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+  .tg.cut{border-style:dashed}
+  .tg.cut[aria-pressed="true"]{border-color:var(--no);background:#fdecea;color:#b33a35;border-style:solid}
+  .tg:disabled{opacity:.35;cursor:default}
+  .mtr{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:10px}
+  .mtr .m{background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px 12px}
+  .mtr .ml{font-size:14px;font-weight:800;color:var(--ink2);word-break:keep-all}
+  .mtr .trk{position:relative;height:16px;border-radius:99px;background:#e9eff5;margin:10px 0 18px}
+  .mtr .fill{position:absolute;left:0;top:0;bottom:0;border-radius:99px;width:0;transition:width .7s var(--ease)}
+  .mtr .ref{position:absolute;top:-4px;bottom:-4px;width:3px;border-radius:2px;background:#14263b;opacity:.55}
+  .mtr .ref::after{content:"전구 1개";position:absolute;top:22px;left:50%;transform:translateX(-50%);font-size:11.5px;font-weight:800;color:#5a6b7e;white-space:nowrap}
+  .mtr .mv{font-size:14.5px;font-weight:800;word-break:keep-all;min-height:22px}
+  /* 왜 그럴까 사슬 */
+  .chain{display:grid;gap:0;margin:16px 0}
+  .ch{display:grid;grid-template-columns:44px 1fr;gap:12px;align-items:start;padding:12px 14px;border-radius:16px;background:#f8fafc;border:1px solid var(--line)}
+  .ch .no{width:36px;height:36px;border-radius:12px;display:grid;place-items:center;font-weight:900;color:#fff}
+  .ch p{margin:0;font-size:calc(var(--fs) - 1px);line-height:1.7;color:var(--ink2);word-break:keep-all}
+  .ch p small{display:block;font-size:calc(var(--fs) - 4px);color:var(--muted);margin-top:2px}
+  .ch-ar{height:22px;display:grid;place-items:center}
+  .ch-ar svg{width:20px;height:20px}
+  .chain.ser .ch .no{background:var(--ser)}.chain.par .ch .no{background:var(--par)}
+  .chain .ch.key{background:#fffdf3;border-color:#f0dc9a}
+  /* 비교표 */
+  .cmp{width:100%;border-collapse:separate;border-spacing:0;margin:8px 0 4px;font-size:calc(var(--fs) - 2px);word-break:keep-all}
+  .cmp th,.cmp td{padding:12px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;line-height:1.6}
+  .cmp thead th{font-size:calc(var(--fs) - 1px);font-weight:900;color:#fff}
+  .cmp thead th:first-child{background:transparent}
+  .cmp thead th.s{background:var(--ser);border-radius:14px 14px 0 0}
+  .cmp thead th.p{background:var(--par);border-radius:14px 14px 0 0}
+  .cmp tbody th{color:var(--muted);font-weight:800;width:24%}
+  .cmp td.s{background:var(--ser-soft)}.cmp td.p{background:var(--par-soft)}
+  .life{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:14px 0}
+  .lc{background:#f8fafc;border:1px solid var(--line);border-radius:18px;padding:14px}
+  .lc svg{display:block;width:100%;height:auto;border-radius:12px;background:#fff}
+  .lc > b{display:block;font-size:calc(var(--fs) - .5px);margin:10px 0 4px}
+  .lc p{margin:0;font-size:calc(var(--fs) - 2px);line-height:1.7;color:var(--ink2);word-break:keep-all}
+  .simlink{display:flex;align-items:center;gap:14px;margin:18px 0 4px;padding:16px 18px;border-radius:18px;background:linear-gradient(120deg,#0e63b3,#1b86c9);color:#fff;text-decoration:none;box-shadow:0 8px 22px rgba(14,99,179,.25)}
+  .simlink .si{flex:none;width:46px;height:46px;border-radius:14px;background:rgba(255,255,255,.18);display:grid;place-items:center}
+  .simlink b{display:block;font-size:17px}.simlink span{font-size:14px;opacity:.9;word-break:keep-all}
+  .simlink .go{margin-left:auto;flex:none}
+  /* 퀴즈 */
+  .quiz{display:flex;flex-direction:column;gap:14px}
+  .qcard{padding:22px 24px}
+  .qhead{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .qno{flex:none;font-weight:800;font-size:13px;color:#fff;background:var(--ink);padding:4px 10px;border-radius:999px}
+  .qtype{font-size:12.5px;font-weight:700;color:var(--muted)}
+  .qstate{margin-left:auto;font-weight:800;font-size:13px;padding:4px 10px;border-radius:999px;display:none}
+  .qcard.right .qstate{display:inline-block;background:#e8f7ef;color:#11703f}
+  .qcard.wrong .qstate{display:inline-block;background:#fdecea;color:#b33a35}
+  .qtext{font-size:calc(var(--fs) + 1px);font-weight:700;line-height:1.65;margin:0 0 16px;word-break:keep-all}
+  .ox{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:420px}
+  .oxb{min-height:80px;border-radius:20px;border:2px solid var(--line);background:#f7fafc;font-size:38px;font-weight:900;cursor:pointer;display:grid;place-items:center}
+  .oxb.o{color:#1f78c8}.oxb.x{color:#d9534f}
+  .mc{display:grid;gap:10px}
+  .mcb{display:flex;align-items:center;gap:12px;text-align:left;min-height:56px;border-radius:16px;border:2px solid var(--line);background:#f7fafc;padding:10px 16px;font-size:var(--fs);font-weight:700;cursor:pointer;word-break:keep-all}
+  .mcb .k{flex:none;width:30px;height:30px;border-radius:50%;background:#fff;border:2px solid #cbd6e1;display:grid;place-items:center;font-size:14px;font-weight:800;color:#5a6b7e}
+  button.good{border-color:var(--ok)!important;background:#e8f7ef!important}
+  button.bad{border-color:var(--no)!important;background:#fdecea!important}
+  button:disabled{cursor:default}
+  .qcard.locked .oxb:not(.good):not(.bad),.qcard.locked .mcb:not(.good):not(.bad){opacity:.55}
+  .sentence{font-size:calc(var(--fs) + 1px);font-weight:700;line-height:2.4;margin:0 0 14px;word-break:keep-all}
+  .slot{display:inline-flex;align-items:center;justify-content:center;min-width:110px;min-height:44px;vertical-align:middle;margin:0 4px;padding:0 14px;border-radius:12px;border:2px dashed #aebdcc;background:#f7fafc;color:var(--muted);font-weight:800;font-size:calc(var(--fs) - 1px);cursor:pointer;line-height:1.2}
+  .slot.filled{border-style:solid;border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+  .slot.cur{box-shadow:0 0 0 4px rgba(14,99,179,.18)}
+  .slot.good{border-style:solid;border-color:var(--ok);background:#e8f7ef;color:#11703f}
+  .slot.bad{border-style:solid;border-color:var(--no);background:#fdecea;color:#b33a35}
+  .bank{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+  .chip{min-height:48px;padding:0 16px;border-radius:14px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:calc(var(--fs) - 1px);cursor:pointer}
+  .chip.used{opacity:.3;pointer-events:none}
+  .btn{min-height:52px;border:0;border-radius:14px;padding:0 20px;font-weight:800;font-size:16px;cursor:pointer}
+  .btn.primary{background:var(--accent);color:#fff}.btn.primary:disabled{opacity:.35}
+  .btn.ghost{background:#eef3f8;color:var(--ink2)}
+  .exp{display:none;margin-top:14px;padding:14px 16px;border-radius:14px;font-size:var(--fs);line-height:1.7;word-break:keep-all}
+  .qcard.right .exp{display:block;background:#e8f7ef;color:#0f5a36}
+  .qcard.wrong .exp{display:block;background:#fff6e8;color:#6d4208}
+  .retry{margin-top:10px}
+  .result{padding:26px;display:grid;grid-template-columns:150px 1fr;gap:24px;align-items:center;margin-top:16px}
+  .ring{width:150px;height:150px;position:relative}.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+  .ring .rv{position:absolute;inset:0;display:grid;place-items:center;text-align:center;font-weight:900;font-size:34px;line-height:1.1}
+  .ring .rv small{display:block;font-size:13px;font-weight:700;color:var(--muted)}
+  .result p{font-size:var(--fs);line-height:1.7;color:var(--ink2);margin:0 0 12px;word-break:keep-all}
+  .wlist{display:flex;flex-wrap:wrap;gap:8px}
+  .wlist button{min-height:44px;border:1px solid #f1c6c3;background:#fdf0ef;color:#b33a35;border-radius:10px;padding:0 12px;font-weight:700;cursor:pointer}
+  .next{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}
+  .next a{text-decoration:none;color:#fff;border-radius:20px;padding:18px;min-height:140px;display:flex;flex-direction:column;justify-content:space-between;box-shadow:var(--shadow)}
+  .next a b{font-size:18px}.next a span{font-size:14px;opacity:.92;word-break:keep-all}
+  .pop{position:absolute;z-index:40;max-width:300px;background:#15263a;color:#fff;border-radius:14px;padding:12px 14px;font-size:15px;line-height:1.6;box-shadow:0 12px 32px rgba(0,0,0,.25);opacity:0;transform:translateY(6px);transition:all .2s;pointer-events:none;word-break:keep-all}
+  .pop.show{opacity:1;transform:none;pointer-events:auto}.pop b{display:block;color:#9fd2ff}
+  @media (max-width:860px){.hero-in{grid-template-columns:1fr}.recall,.life,.next{grid-template-columns:1fr}}
+  @media (max-width:640px){.mtr{grid-template-columns:1fr}}
+  @media (max-width:600px){.read{padding:20px}.result{grid-template-columns:1fr;justify-items:center;text-align:center}.step .t{display:none}.cmp th,.cmp td{padding:10px 8px}}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.js-reveal .reveal{transform:none}}
+
+  .drawln{stroke-dasharray:620;stroke-dashoffset:620;animation:drawln 1.1s var(--ease) forwards}
+  @keyframes drawln{to{stroke-dashoffset:0}}
+
+  /* ===== 3D 화면 공통 ===== */
+  :root{--Bc:#14a5d0;--Ic:#2fae4a;--Fc:#f0522a;--N:#d8433b;--S:#2f62c9;--P:#7d5ad6}
+  .viewer{position:relative;overflow:hidden;padding:0}
+  .gl-host{position:relative;width:100%;height:min(74vh,700px);min-height:380px;background:linear-gradient(#f6f9fc,#d6e3ef);touch-action:none}
+  .gl-host canvas.gl{display:block;width:100%;height:100%;outline:none}
+  .lbls{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+  .lb{position:absolute;left:0;top:0;white-space:nowrap;font-weight:800;font-size:14px;padding:3px 9px;border-radius:9px;background:rgba(255,255,255,.88);color:#34495e;box-shadow:0 2px 8px rgba(20,38,59,.14);will-change:transform}
+  .lb.small{font-size:12px;font-weight:700;color:#5a6b7e;background:rgba(255,255,255,.72);box-shadow:none}
+  .lb.B{background:var(--Bc);color:#fff}.lb.I{background:var(--Ic);color:#fff}.lb.F{background:var(--Fc);color:#fff;font-size:15px}
+  .lb.P{background:var(--P);color:#fff}
+  .lb.dim{opacity:.35}
+  .vt{position:absolute;display:flex;gap:6px;flex-wrap:wrap;z-index:3}
+  .vt.tl{left:10px;top:10px;max-width:calc(100% - 20px)}
+  .vt.tr{right:10px;top:10px;justify-content:flex-end}
+  .vt.bl{left:10px;bottom:10px;align-items:center}
+  .vb{min-height:44px;padding:0 12px;border-radius:12px;border:1px solid rgba(20,38,59,.12);background:rgba(255,255,255,.9);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);font-weight:800;font-size:14px;color:#34495e;cursor:pointer;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 10px rgba(20,38,59,.08)}
+  .vb:active{transform:scale(.96)}
+  .vb .dot{width:12px;height:12px;border-radius:50%;flex:none}
+  .vb[aria-pressed="false"]{opacity:.62}
+  .vb[aria-pressed="false"] .dot{background:#c2ccd6!important}
+  .vb.sel{background:#14263b;color:#fff;border-color:#14263b}
+  .hint{font-size:12.5px;font-weight:700;color:#5a6b7e;background:rgba(255,255,255,.78);border-radius:10px;padding:6px 10px;word-break:keep-all}
+  .inset{position:absolute;z-index:2;border-radius:18px;border:2px solid rgba(255,255,255,.95);box-shadow:0 10px 30px rgba(20,38,59,.22),inset 0 0 0 1px rgba(20,38,59,.08);pointer-events:none;display:none}
+  .inset.on{display:block}
+  .inset .it{position:absolute;left:8px;top:8px;font-size:12.5px;font-weight:900;color:#14263b;background:rgba(255,255,255,.9);border-radius:8px;padding:3px 8px}
+  .inset .ic{position:absolute;left:6px;right:6px;bottom:6px;display:flex;flex-wrap:wrap;gap:4px;justify-content:center}
+  .inset .ic span{font-size:11.5px;font-weight:800;color:#fff;border-radius:7px;padding:2px 7px;white-space:nowrap}
+  .fail3d{position:absolute;inset:0;display:none;place-items:center;text-align:center;padding:24px;font-size:16px;font-weight:700;color:#7a2a22;line-height:1.7;word-break:keep-all;background:#fff4f2}
+  .fail3d.show{display:grid}
+  .model{font-size:13px;color:var(--muted);text-align:right;margin:0;word-break:keep-all}
+  @media (max-width:900px){.gl-host{height:min(56vh,620px)}}
+  /* ===== 이 수업 전용 ===== */
+  :root{--cer:#a0714a;--cer-soft:#f6eee6;--cerD:#6b4528;--metal:#7d8794;--e:#2f6fd6;--plus:#e0483e;--dam:#1b86c9}
+  .hero{background:radial-gradient(90% 80% at 88% 18%,rgba(196,148,104,.38) 0%,transparent 60%),linear-gradient(155deg,#141c2b,#22283a 50%,#3a2c22)}
+  .bar i{background:linear-gradient(90deg,#c49a6f,#9aa6b4)}
+  .heroHost .gl-host{height:440px;min-height:0;border-radius:22px;overflow:hidden;box-shadow:0 18px 50px rgba(0,0,0,.35)}
+  .fig3d .gl-host{height:420px;min-height:0;border-radius:18px;overflow:hidden;border:1px solid var(--line)}
+  .fig3d .lb{font-size:13px}
+  .lb.E{background:var(--e);color:#fff}.lb.Pl{background:var(--plus);color:#fff}.lb.C{background:var(--cer);color:#fff}.lb.M{background:#5d6672;color:#fff}
+  .fig3d .model{text-align:center;margin-top:6px}
+  .ctlrow{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:10px 0 2px}
+  .tg.go{border-color:#c9d6e2}
+  .tg.on{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+  .qmeter{display:flex;align-items:center;gap:12px;margin:10px auto 0;max-width:620px;font-size:14.5px;font-weight:800;color:var(--ink2);word-break:keep-all}
+  .qmeter .trk{flex:1;height:16px;border-radius:99px;background:#e9eff5;overflow:hidden;position:relative}
+  .qmeter .trk i{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:99px;background:linear-gradient(90deg,#7fb0f0,var(--e))}
+  .qstat{text-align:center;font-size:15px;font-weight:700;color:var(--ink2);margin:8px 0 0;min-height:24px;word-break:keep-all}
+  .recall{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:16px;align-items:center}
+  .nums{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0}
+  .num{background:#f8fafc;border:1px solid var(--line);border-radius:16px;padding:12px;text-align:center}
+  .num b{display:block;font-size:clamp(22px,3vw,30px);letter-spacing:-.02em;color:var(--cerD)}
+  .num span{font-size:calc(var(--fs) - 4px);font-weight:700;color:var(--muted);word-break:keep-all}
+  .num small{display:block;font-size:12px;color:#8a98a8;margin-top:2px}
+  .src{display:block;font-size:12.5px;color:var(--muted);margin-top:6px;word-break:keep-all}
+  .sources{font-size:13px;color:var(--muted);line-height:1.7;word-break:keep-all}
+  .sources li{margin:2px 0}
+  .cmp2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}
+  .cmp2 .c{border-radius:18px;padding:14px 16px}
+  .cmp2 .c h4{margin:0 0 6px;font-size:calc(var(--fs) + 1px)}
+  .cmp2 .c p{margin:0;font-size:calc(var(--fs) - 2px);line-height:1.7;word-break:keep-all}
+  .cb{background:#ecebfb;border:1px solid #d6d0f5;color:#2f2770}.cc{background:var(--cer-soft);border:1px solid #ead7c4;color:#4e3019}
+  .units{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+  .units span{font-weight:800;font-size:calc(var(--fs) - 2px);background:#f2f7fd;border:1px solid #d6e5f5;border-radius:12px;padding:6px 12px;color:#1d3f66}
+  .sizefig svg{max-width:820px;margin:0 auto}
+  .next{grid-template-columns:repeat(3,1fr)!important}
+  @media (max-width:860px){.recall,.cmp2{grid-template-columns:1fr}.heroHost .gl-host{height:340px}.nums{grid-template-columns:1fr}}
+</style>
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }
+</script>
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-in">
+    <div>
+      <span class="kick">읽기 자료 · 교양과 진로</span><span class="kick maker">성안중학교 이삭 T</span>
+      <h1>전기를 담는 작은 그릇, MLCC</h1>
+      <p>스마트폰 기판을 확대하면 모래알만 한 갈색 조각이 수백 개 붙어 있어요. 반도체 칩 곁에서 전기를 모아 두었다가 고르게 내주는 부품, MLCC예요. 오른쪽에 크게 키운 MLCC는 속이 보이도록 잘라 두었어요.</p>
+      <div class="route"><span>① 전자 산업의 쌀</span><span>② 축전기의 원리</span><span>③ 수백 겹을 쌓다</span><span>④ 칩 곁의 댐</span></div>
+      <button class="start" type="button" data-go="r1">읽기 시작하기
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg></button>
+    </div>
+    <div class="heroHost"><div class="gl-host" id="heroHost" role="img" aria-label="회로 기판 위 반도체 칩 둘레에 작은 MLCC가 많이 붙어 있고, 그 위에 크게 키운 MLCC가 속을 보이며 떠 있는 3D 그림">
+      <div class="vt bl"><span class="hint">옆으로 밀어 돌려 보세요</span></div>
+      <div class="fail3d">3D 그림을 불러오지 못했어요. 새로고침해 주세요.</div></div></div>
+  </div>
+</header>
+
+<nav class="nav" aria-label="학습 순서">
+  <div class="nav-in">
+    <button class="step" data-go="r1" type="button"><span class="n">1</span><span class="t">전자 산업의 쌀</span></button>
+    <button class="step" data-go="r2" type="button"><span class="n">2</span><span class="t">축전기</span></button>
+    <button class="step" data-go="q1" type="button"><span class="n">3</span><span class="t">퀴즈 ①</span></button>
+    <button class="step" data-go="r3" type="button"><span class="n">4</span><span class="t">수백 겹</span></button>
+    <button class="step" data-go="r4" type="button"><span class="n">5</span><span class="t">칩 곁의 댐</span></button>
+    <button class="step" data-go="q2" type="button"><span class="n">6</span><span class="t">퀴즈 ②</span></button>
+    <span class="nav-sp"></span>
+    <div class="fsz" role="group" aria-label="글자 크기"><button type="button" id="fsN" aria-pressed="true">가</button><button type="button" id="fsB" aria-pressed="false" style="font-size:19px">가</button></div>
+  </div>
+  <div class="bar"><i id="progress"></i></div>
+</nav>
+
+<main>
+  <!-- ① 전자 산업의 쌀 -->
+  <section class="part" id="r1">
+    <div class="sec-kick">읽기 ① <span class="time">약 6분</span></div>
+    <h2>스마트폰 한 대에 약 1,000개, 전자 산업의 쌀</h2>
+    <article class="card read reveal">
+      <div class="recall">
+        <p>지난 읽기 자료에서 반도체 칩은 계산하고 저장하는 <b>두뇌</b>라고 했지요. 그런데 두뇌가 일하려면 전기가 <mark>끊기거나 출렁이지 않고 고르게</mark> 들어와야 해요. 칩 곁에서 그 일을 돕는 부품이 오늘 알아볼 <b>MLCC</b>예요.</p>
+        <a class="backlink" href="../semiconductor/" target="_top">지난 자료 다시 보기: 여기도, 저기도 반도체</a>
+      </div>
+    </article>
+    <article class="card read reveal">
+      <p>MLCC는 영어 이름(Multi-Layer Ceramic Capacitor)의 앞 글자를 딴 말로, 우리말로는 <b>적층 세라믹 콘덴서</b>라고 해요. '적층'은 여러 겹으로 쌓았다는 뜻이고, '세라믹'은 도자기처럼 흙 성분을 높은 온도에서 구워 만든 재료예요. '콘덴서'는 전기를 잠깐 모아 두는 부품인 <button class="term" data-term="축전기">축전기</button>의 다른 이름이에요.</p>
+      <div class="nums">
+        <div class="num"><b>약 1,000개</b><span>최신 스마트폰 한 대</span><small>삼성전기 발표 보도</small></div>
+        <div class="num"><b>1만 개 넘게</b><span>전기 자동차 한 대</span><small>약 1만 8천~2만 개 보도</small></div>
+        <div class="num"><b>모래알만 함</b><span>작은 것의 크기</span><small>길이가 1 mm도 안 됨</small></div>
+      </div>
+      <p>전기로 움직이는 기기라면 거의 모두 MLCC가 들어 있어요. 스마트폰, 노트북, 텔레비전, 냉장고, 자동차, 그리고 AI를 돌리는 서버까지요. 밥상에 늘 오르는 쌀처럼 어디에나, 아주 많이 쓰여서 <b>'전자 산업의 쌀'</b>이라고 불러요.</p>
+      <div class="fig sizefig">
+        <svg viewBox="0 0 820 250" role="img" aria-label="쌀 한 톨과 크기가 다른 MLCC 세 개를 같은 비율로 나란히 그린 그림. 가장 작은 MLCC는 쌀 한 톨보다 훨씬 작다.">
+          <defs>
+            <linearGradient id="szRice" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fffdf6"/><stop offset=".6" stop-color="#f1e9d6"/><stop offset="1" stop-color="#d9ccb0"/></linearGradient>
+            <linearGradient id="szCer" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c79c71"/><stop offset=".55" stop-color="#a0714a"/><stop offset="1" stop-color="#7a5232"/></linearGradient>
+            <linearGradient id="szCap" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4f6f8"/><stop offset=".5" stop-color="#b9c1ca"/><stop offset="1" stop-color="#7d8794"/></linearGradient>
+            <filter id="szSh" x="-30%" y="-30%" width="160%" height="180%"><feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#14263b" flood-opacity=".22"/></filter>
+            <pattern id="szGrid" width="60" height="60" patternUnits="userSpaceOnUse"><path d="M60 0H0V60" fill="none" stroke="#dfe6ee" stroke-width="1.2"/></pattern>
+          </defs>
+          <rect x="10" y="10" width="800" height="170" rx="14" fill="#fbfcfd"/>
+          <rect x="10" y="10" width="800" height="170" rx="14" fill="url(#szGrid)"/>
+          <!-- 자 -->
+          <g transform="translate(40 200)">
+            <rect x="0" y="0" width="600" height="34" rx="6" fill="#f7e7a8" stroke="#d8c06a"/>
+            <g stroke="#6b5a1a" stroke-width="1.5">
+              <path d="M0 0v18M60 0v18M120 0v18M180 0v18M240 0v18M300 0v18M360 0v18M420 0v18M480 0v18M540 0v18M600 0v18"/>
+              <path d="M30 0v10M90 0v10M150 0v10M210 0v10M270 0v10M330 0v10M390 0v10M450 0v10M510 0v10M570 0v10" stroke-width="1"/>
+            </g>
+            <g font-size="13" font-weight="800" fill="#6b5a1a" text-anchor="middle"><text x="0" y="30">0</text><text x="300" y="30">5 mm</text><text x="600" y="30">10 mm</text></g>
+          </g>
+          <!-- 쌀 한 톨: 약 5.5 mm -->
+          <g filter="url(#szSh)"><ellipse cx="205" cy="92" rx="165" ry="44" fill="url(#szRice)" stroke="#cbbd9c" stroke-width="1.5" transform="rotate(-4 205 92)"/></g>
+          <path d="M70 80 C 140 64, 260 62, 340 76" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity=".7"/>
+          <text x="205" y="160" text-anchor="middle" font-size="16" font-weight="800" fill="#5a6b7e">쌀 한 톨</text>
+          <!-- MLCC 3.2 × 1.6 mm -->
+          <g filter="url(#szSh)" transform="translate(420 60)"><rect x="0" y="0" width="192" height="96" rx="10" fill="url(#szCer)"/><rect x="0" y="0" width="36" height="96" rx="9" fill="url(#szCap)"/><rect x="156" y="0" width="36" height="96" rx="9" fill="url(#szCap)"/></g>
+          <text x="516" y="176" text-anchor="middle" font-size="14" font-weight="800" fill="#5a6b7e">큰 편(자동차 등)</text>
+          <!-- MLCC 1.0 × 0.5 mm -->
+          <g filter="url(#szSh)" transform="translate(650 92)"><rect x="0" y="0" width="60" height="30" rx="4" fill="url(#szCer)"/><rect x="0" y="0" width="12" height="30" rx="3" fill="url(#szCap)"/><rect x="48" y="0" width="12" height="30" rx="3" fill="url(#szCap)"/></g>
+          <text x="680" y="150" text-anchor="middle" font-size="14" font-weight="800" fill="#5a6b7e">스마트폰</text>
+          <!-- MLCC 0.4 × 0.2 mm -->
+          <g filter="url(#szSh)" transform="translate(752 101)"><rect x="0" y="0" width="24" height="12" rx="2" fill="url(#szCer)"/><rect x="0" y="0" width="5" height="12" rx="1.5" fill="url(#szCap)"/><rect x="19" y="0" width="5" height="12" rx="1.5" fill="url(#szCap)"/></g>
+          <text x="764" y="150" text-anchor="middle" font-size="14" font-weight="800" fill="#5a6b7e">더 작은 것</text>
+        </svg>
+        <div class="cap">같은 비율로 그린 그림이에요(배경 한 칸 = 1 mm). MLCC의 크기는 쓰임에 따라 여러 가지예요. 갈색은 세라믹 몸체, 양 끝 은색은 회로와 이어지는 외부 전극이에요.</div>
+      </div>
+    </article>
+    <details class="pause reveal"><summary><span class="pi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5b4300" stroke-width="2.4" stroke-linecap="round"><path d="M9 9a3 3 0 1 1 4 2.8c-.7.3-1 .9-1 1.6V14M12 18h.01"/></svg></span>생각 멈춤: 전기 자동차에는 왜 스마트폰보다 MLCC가 훨씬 많이 들어갈까요?<span class="tap">눌러서 확인</span></summary>
+      <div class="ans">전기 자동차에는 전동기를 조절하는 장치, 배터리를 관리하는 장치, 주변을 살피는 센서, 화면 등 <b>반도체 칩이 들어간 장치가 아주 많아요</b>. 칩마다 곁에서 전기를 고르게 대 줄 MLCC가 필요하니, 칩이 많을수록 MLCC도 많이 들어가요.</div></details>
+  </section>
+
+  <!-- ② 축전기 -->
+  <section class="part" id="r2">
+    <div class="sec-kick">읽기 ② <span class="time">약 8분</span></div>
+    <h2>축전기: 금속판 두 장과 그 사이의 얇은 벽</h2>
+    <article class="card read reveal">
+      <p>축전기의 기본 모양은 아주 단순해요. <b>금속판 두 장</b>을 마주 보게 세우고, 그 사이에 전기가 거의 통하지 않는 얇은 층(<button class="term" data-term="부도체">부도체</button>)을 끼운 것이에요. 사이가 막혀 있으니 전류가 그냥 지나가지는 못해요. 그런데 어떻게 전기를 담을까요?</p>
+      <div class="defn"><span class="k" style="background:var(--e)">충전</span>전지를 연결하면 전지의 (-)극 쪽에서 전자가 밀려와 한쪽 판에 모이고, 다른 판의 전자는 전지의 (+)극 쪽으로 빠져나가요. 그래서 한 판은 (-), 다른 판은 (+)를 띠게 돼요.</div>
+      <div class="defn"><span class="k" style="background:#e89a00">방전</span>전지 대신 전구를 연결하면 한쪽 판에 모였던 전자가 전구를 지나 반대쪽 판으로 돌아가요. 그동안 전류가 흘러 전구가 잠깐 켜졌다가, 전자가 다 돌아가면 꺼져요.</div>
+      <div class="fig3d">
+        <div class="gl-host" id="capHost" role="img" aria-label="책상 위에 금속판 두 장과 그 사이의 얇은 층으로 된 축전기, 앞쪽에 전지, 뒤쪽에 전구가 전선으로 이어진 3D 그림. 충전하면 전자가 한쪽 판에 모이고, 방전하면 전구가 잠깐 켜진다.">
+          <div class="vt bl"><span class="hint">옆으로 밀어 돌려 보세요</span></div>
+          <div class="fail3d">3D 그림을 불러오지 못했어요. 새로고침해 주세요.</div></div>
+        <div class="ctlrow">
+          <button type="button" class="tg go" id="cCharge">충전하기: 전지 연결</button>
+          <button type="button" class="tg go" id="cDis">방전하기: 전구 연결</button>
+          <button type="button" class="tg" id="cReset">처음으로</button>
+        </div>
+        <div class="qmeter"><span>판에 모인 전기</span><div class="trk"><i id="qFill"></i></div></div>
+        <p class="qstat" id="qStat">'충전하기'를 눌러 전지를 연결해 보세요.</p>
+        <p class="model">개념 이해를 위한 모형이에요. 파란 알갱이는 전자, 빨간 + 표시는 전자를 잃은 쪽이에요. 전선에는 원래 전자가 꽉 차 있어서 알갱이가 늘 보여요.</p>
+      </div>
+      <p>충전할 때 전자의 흐름을 잘 보세요. 처음에는 빠르게 흐르다가 판에 전자가 많이 모일수록 점점 느려지고, 가득 차면 멈춰요. 전자는 사이의 얇은 층을 <b>건너가지 못해요</b>. 판에 모인 채로 기다리다가, 길이 생기면(방전) 한꺼번에 돌아가요.</p>
+      <p>축전기가 전기를 얼마나 담을 수 있는지를 <b>용량</b>이라고 하고, 단위로 <button class="term" data-term="패럿">패럿</button>(F)을 써요. 패럿은 아주 큰 단위라서 MLCC에는 보통 그보다 훨씬 작은 단위가 적혀 있어요.</p>
+      <div class="units"><span>패럿 F</span><span>마이크로패럿 μF</span><span>피코패럿 pF</span></div>
+      <p class="src">단위는 이름만 알아 두면 돼요. 계산은 고등학교 이후에 배워요.</p>
+    </article>
+    <div class="myth reveal"><span class="x">✕</span><p><b>오개념 바로잡기: "축전기는 아주 작은 전지다?"</b><br>둘 다 전기를 내주지만 하는 일이 달라요. 전지는 오랫동안 꾸준히 전기를 대 주고, 축전기는 <b>순식간에 모았다가 순식간에 내주는</b> 데 뛰어나요. 그래서 축전기는 전지 대신이 아니라, 전지와 칩 사이에서 <b>잠깐 모자란 전기를 메우는</b> 일을 해요.</p></div>
+    <details class="pause reveal"><summary><span class="pi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5b4300" stroke-width="2.4" stroke-linecap="round"><path d="M9 9a3 3 0 1 1 4 2.8c-.7.3-1 .9-1 1.6V14M12 18h.01"/></svg></span>생각 멈춤: 두 판 사이의 층을 구리로 바꾸면 어떻게 될까요?<span class="tap">눌러서 확인</span></summary>
+      <div class="ans">구리는 전기가 잘 통하는 <b>도체</b>라서 전자가 그냥 건너가 버려요. 판에 전자가 모이지 않으니 <b>전기를 담을 수 없어요</b>. 사이 층이 전기가 통하지 않는 물질이어야 하는 까닭이에요.</div></details>
+  </section>
+
+  <section class="part" id="q1">
+    <div class="sec-kick">퀴즈 ① <span class="time">5문항</span></div>
+    <h2>MLCC와 축전기 확인하기</h2>
+    <div class="quiz" data-quiz="q1"></div>
+  </section>
+
+  <!-- ③ 수백 겹 -->
+  <section class="part" id="r3">
+    <div class="sec-kick">읽기 ③ <span class="time">약 7분</span></div>
+    <h2>얇은 세라믹과 금속을 수백 겹 쌓은 샌드위치</h2>
+    <article class="card read reveal">
+      <p>축전기는 판이 넓을수록, 사이 층이 얇을수록 전기를 더 많이 담아요. 그런데 스마트폰 속 부품을 넓게 만들 수는 없지요. 그래서 MLCC는 <mark>얇은 판을 아주 많이 겹쳐 쌓는</mark> 방법을 써요. 넓은 판을 잘게 접어 작은 상자에 넣은 것과 비슷해요.</p>
+      <div class="fig3d">
+        <div class="gl-host" id="secHost" role="img" aria-label="MLCC를 크게 키운 3D 모형. 앞쪽 절반을 떼어 내면 자른 면에 세라믹 층과 금속 내부 전극이 번갈아 쌓인 모습과 양 끝의 외부 전극이 보인다.">
+          <div class="vt bl"><span class="hint">옆으로 밀어 돌려 보세요</span></div>
+          <div class="fail3d">3D 그림을 불러오지 못했어요. 새로고침해 주세요.</div></div>
+        <div class="ctlrow">
+          <button type="button" class="tg" id="sCut" aria-pressed="false">앞쪽 절반 떼어 내기</button>
+          <button type="button" class="tg" id="sMark" aria-pressed="false">전극이 어디에 이어졌나 보기</button>
+          <button type="button" class="tg" id="sNear">자른 면 가까이 보기</button>
+        </div>
+        <p class="model">개념 이해를 위한 모형이에요. 실제 MLCC는 수백 겹이고, 한 층은 머리카락 굵기보다 훨씬 얇아요.</p>
+      </div>
+      <p>자른 면을 보면 갈색 <b>세라믹 층</b>과 은색 <button class="term" data-term="내부 전극">내부 전극</button>이 번갈아 쌓여 있어요. 내부 전극은 한 장씩 번갈아 <b>왼쪽 외부 전극</b>과 <b>오른쪽 외부 전극</b>에 붙어 있어요. 그래서 이웃한 두 장은 언제나 서로 다른 쪽에 이어진 '금속판 두 장'이 되고, 그 사이의 세라믹 층이 얇은 벽이 돼요. 축전기 수백 개를 한 덩어리로 겹쳐 놓은 셈이에요.</p>
+      <p>최신 MLCC는 층을 <b>수백 겹</b>(많게는 약 600겹) 쌓아요. 겹이 많고 얇을수록 같은 크기에 전기를 더 많이 담을 수 있어서, 회사들은 층을 더 얇고 고르게 만드는 기술을 겨뤄요.</p>
+      <div class="cmp2">
+        <div class="c cb"><h4>반도체 HBM</h4><p>D램 <b>칩</b>을 여러 장 쌓고 작은 통로로 이어 <b>데이터</b>를 한꺼번에 많이 주고받아요.</p></div>
+        <div class="c cc"><h4>MLCC</h4><p>세라믹과 금속 <b>층</b>을 수백 겹 쌓아 작은 크기에 <b>전기</b>를 많이 담아요.</p></div>
+      </div>
+      <p class="src">둘 다 '쌓아서 작은 공간을 알차게 쓰는' 기술이에요. 쌓는 것과 쌓는 까닭은 서로 달라요.</p>
+      <a class="simlink" data-link="lab" target="_blank" rel="noopener" style="background:linear-gradient(120deg,#6b4528,#a0714a)">
+        <span class="si"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="7" width="14" height="10" rx="1.5"/><path d="M8 10h8M8 12h8M8 14h8"/></svg></span>
+        <span><b>3D MLCC 해부와 만드는 과정</b><span>층을 펼쳐 보고, 겹 수를 바꿔 보고, 공장에서 만드는 순서를 따라가기</span></span>
+        <svg class="go" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></a>
+    </article>
+    <details class="pause reveal"><summary><span class="pi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5b4300" stroke-width="2.4" stroke-linecap="round"><path d="M9 9a3 3 0 1 1 4 2.8c-.7.3-1 .9-1 1.6V14M12 18h.01"/></svg></span>생각 멈춤: 내부 전극이 모두 왼쪽 외부 전극에만 붙어 있다면 어떻게 될까요?<span class="tap">눌러서 확인</span></summary>
+      <div class="ans">모든 판이 같은 쪽에 이어지면 판끼리 (-)와 (+)로 나뉠 수가 없어요. 이웃한 판이 <b>서로 다른 쪽</b>(왼쪽, 오른쪽)에 번갈아 이어져야 그 사이에 전기를 담을 수 있어요.</div></details>
+  </section>
+
+  <!-- ④ 칩 곁의 댐 -->
+  <section class="part" id="r4">
+    <div class="sec-kick">읽기 ④ <span class="time">약 7분</span></div>
+    <h2>칩 곁의 작은 댐: 전기를 고르게 대 주다</h2>
+    <article class="card read reveal">
+      <p>스마트폰의 두뇌 칩(AP)은 가만히 있다가도 사진을 찍거나 게임을 켜는 순간 <b>갑자기 많은 전기</b>를 써요. 그런데 배터리와 전원 장치는 칩에서 멀리 떨어져 있고 전기가 오는 길도 길어서, 순간적인 변화에 바로 따라가기 어려워요. 그 사이에 칩에 걸리는 전압이 잠깐 뚝 떨어지면 칩이 계산을 틀리거나 멈출 수 있어요.</p>
+      <p>그래서 칩 바로 곁에 MLCC를 여러 개 붙여 둬요. 평소에는 전기를 모아 두었다가, 칩이 갑자기 많이 쓰는 순간 <mark>가장 가까이에서 먼저 전기를 내줘요</mark>. 물을 모아 두었다가 필요한 만큼 일정하게 흘려보내는 <b>댐</b>과 같다고 해서, MLCC를 만드는 회사는 MLCC를 댐에 비유해요. 전압이 잘게 흔들리는 것(노이즈)을 줄이는 일도 해요.</p>
+      <div class="defn"><span class="k" style="background:var(--dam)">수로 모형</span>옴의 법칙 시간의 수로 모형에서 <b>수면의 높이 차가 전압</b>이었지요. 물레방아(칩) 바로 곁에 <b>물탱크(MLCC)</b>를 두면, 물레방아가 갑자기 물을 많이 써도 탱크가 먼저 물을 내줘서 수면이 덜 내려가요.</div>
+      <a class="simlink" data-link="dam" target="_blank" rel="noopener" style="background:linear-gradient(120deg,#0e63b3,#1b9aaa)">
+        <span class="si"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18c2-1.5 4-1.5 6 0s4 1.5 6 0 4-1.5 6 0"/><path d="M6 14V6h12v8"/><path d="M6 10h12"/></svg></span>
+        <span><b>수로 모형으로 보는 MLCC</b><span>칩이 갑자기 바빠질 때, 물탱크가 있을 때와 없을 때 수면(전압)을 비교하기</span></span>
+        <svg class="go" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></a>
+    </article>
+    <article class="card read reveal">
+      <h3>작은 부품, 큰 산업</h3>
+      <p>MLCC는 크기는 작지만 한 해에 아주 많은 개수가 팔리는 부품이에요. 세계 MLCC는 주로 <b>일본과 한국</b>의 기업들이 많이 만들고, 우리나라 기업도 스마트폰·전기 자동차·AI 서버용 MLCC를 만들어 수출해요. 전기 자동차와 AI 서버처럼 MLCC가 많이 들어가는 기기가 늘면서 더 높은 전압을 견디고, 더 작고, 더 많이 담는 MLCC를 만들려는 경쟁이 이어지고 있어요.</p>
+      <p>MLCC 한 알 뒤에도 반도체처럼 여러 사람의 일이 있어요. 새 세라믹 가루를 연구하는 <b>재료 개발</b>, 수백 겹을 고르게 쌓고 굽는 <b>공정·설비</b>, 하나하나 검사하는 <b>품질 관리</b>, 기기에 맞는 MLCC를 골라 쓰게 돕는 <b>제품 개발</b>이 있어요.</p>
+      <p class="src">회사별 순위와 점유율은 조사 기관과 해마다 달라서 적지 않았어요.</p>
+    </article>
+    <details class="pause reveal"><summary><span class="pi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5b4300" stroke-width="2.4" stroke-linecap="round"><path d="M9 9a3 3 0 1 1 4 2.8c-.7.3-1 .9-1 1.6V14M12 18h.01"/></svg></span>생각 멈춤: MLCC를 칩에서 먼 곳이 아니라 칩 바로 곁에 붙이는 까닭은 무엇일까요?<span class="tap">눌러서 확인</span></summary>
+      <div class="ans">칩이 전기를 갑자기 많이 쓰는 순간은 아주 짧아요. 멀리 있으면 전기가 오는 길이 길어 늦게 도착해요. <b>가까울수록 더 빨리</b> 전기를 내줄 수 있어서, 칩 바로 곁에 붙여요. 수로 모형에서도 물탱크가 물레방아 가까이 있어야 수면을 지켜 줄 수 있어요.</div></details>
+  </section>
+
+  <section class="part" id="q2">
+    <div class="sec-kick">퀴즈 ② <span class="time">5문항</span></div>
+    <h2>MLCC의 구조와 하는 일 확인하기</h2>
+    <div class="quiz" data-quiz="q2"></div>
+    <div class="card result reveal">
+      <div class="ring"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="50" fill="none" stroke="#e7edf3" stroke-width="12"/><circle id="ringArc" cx="60" cy="60" r="50" fill="none" stroke="#a0714a" stroke-width="12" stroke-linecap="round" stroke-dasharray="314.16" stroke-dashoffset="314.16" style="transition:stroke-dashoffset 1s"/></svg>
+        <div class="rv"><div><span id="scoreV">0</span><small>/ <span id="scoreT">10</span> 문항</small></div></div></div>
+      <div><h3 id="resTitle">퀴즈를 풀면 결과가 나타나요</h3><p id="resMsg">퀴즈 ①, ②를 모두 풀어 보세요.</p><div class="wlist" id="wlist"></div></div>
+    </div>
+    <div class="next">
+      <a data-link="lab" target="_blank" rel="noopener" style="background:linear-gradient(140deg,#6b4528,#a0714a)"><b>3D MLCC 해부</b><span>층 펼치기, 겹 수 바꾸기, 만드는 과정</span></a>
+      <a data-link="dam" target="_blank" rel="noopener" style="background:linear-gradient(140deg,#0e63b3,#1b9aaa)"><b>수로 모형으로 보는 MLCC</b><span>칩 곁의 물탱크가 수면을 지키는 모습</span></a>
+      <a data-link="summary" target="_blank" rel="noopener" style="background:linear-gradient(140deg,#e07a1f,#e8a400)"><b>정리 · 글쓰기</b><span>짝짓기, 만드는 순서, MLCC 분야의 일, 글쓰기</span></a>
+    </div>
+    <article class="card read reveal" style="margin-top:16px">
+      <h3>자료 출처 (기준 시점)</h3>
+      <ul class="sources">
+        <li>스마트폰 약 1,000개·전기 자동차 약 1만 8천~2만 개, 댐 비유, 최대 약 600층: 삼성전기 뉴스룸·제품 소개(2025년 보도 기준), 언론 보도(이로운넷 등)</li>
+        <li>'전자 산업의 쌀'이라는 별명: 업계와 언론에서 널리 쓰는 표현</li>
+        <li>구조(세라믹 층과 내부 전극을 번갈아 쌓고 눌러 붙인 뒤 높은 온도에서 구움): 한국세라믹학회 『세라미스트』(2016) MLCC 특집, 과학 기사 「금보다 비싼 적층세라믹콘덴서의 비밀」</li>
+        <li>크기 그림: 업계에서 쓰는 MLCC 크기 규격(3.2×1.6 mm, 1.0×0.5 mm, 0.4×0.2 mm)을 같은 비율로 그림. 쌀 한 톨은 약 5~6 mm</li>
+        <li>수로 모형: 옴의 법칙 수업(펌프=전지, 수면의 높이 차=전압)에 물탱크를 더한 선생님 수업 비유</li>
+      </ul>
+    </article>
+  </section>
+</main>
+<footer class="credit">MLCC 읽기 자료 · 교양과 진로 &nbsp;|&nbsp; 제작 · 성안중학교 이삭 T</footer>
+<div class="pop" id="pop" role="tooltip"></div>
+
+<script>
+window.RD = {
+  $: (s, r = document) => r.querySelector(s),
+  $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
+  reduce: !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches),
+  cap: { mode: 'idle', q: 0 }, sec: { cut: false, mark: false, near: 0 },
+};
+</script>
+<script>
+/* ===== 블록 1: 기본 기능 · 퀴즈 ===== */
+(() => {
+  'use strict';
+  try {
+  const LINKS = { lab: 'sim1-mlcc-3d.html', dam: 'sim2-water-dam.html', summary: 'summary-writing.html' };
+  const flag = (n) => { if (new URLSearchParams(location.search).get(n) === '1') return true; try { return !!(window.frameElement && window.frameElement.dataset[n] === '1'); } catch (e) { return false; } };
+  const EMBED = flag('embed');
+  const GLOSSARY = {
+    '축전기': '전기를 잠깐 모아 두었다가 내보내는 부품이에요. 콘덴서, 커패시터라고도 불러요.',
+    '부도체': '전기가 거의 통하지 않는 물질이에요. 유리, 플라스틱, 고무, 세라믹 등이 있어요.',
+    '패럿': '축전기가 전기를 담을 수 있는 정도(용량)의 단위예요. 기호는 F예요.',
+    '내부 전극': 'MLCC 속에 세라믹 층과 번갈아 쌓인 얇은 금속 막이에요. 축전기의 금속판 역할을 해요.',
+  };
+  const QUIZ = {
+    q1: [
+      { type: 'mc', q: '축전기의 기본 구조로 옳은 것은?', options: ['금속판 두 장 사이에 전기가 통하지 않는 얇은 층을 끼운 것', '전지 두 개를 한 줄로 이은 것', '구리선을 코일처럼 여러 번 감은 것', '반도체 스위치를 수억 개 모은 것'], answer: 0, exp: '축전기는 <b>금속판 두 장</b>과 그 사이의 <b>얇은 부도체 층</b>으로 이루어져요.' },
+      { type: 'blank', parts: ['전지를 연결해 축전기에 전기를 모으는 것을 ', 0, ', 모은 전기를 내보내는 것을 ', 1, '이라고 한다.'], answers: ['충전', '방전'], bank: ['충전', '방전', '전류', '저항'], exp: '모으는 것은 <b>충전</b>, 내보내는 것은 <b>방전</b>이에요.' },
+      { type: 'ox', q: '충전할 때 전자는 두 금속판 사이의 얇은 층을 건너 반대쪽 판으로 넘어간다.', answer: false, exp: '<b>X</b> · 사이 층은 전기가 통하지 않아서 전자가 건너가지 못해요. 전자는 <b>전선을 따라</b> 한쪽 판으로 모이고, 다른 판에서는 빠져나가요.' },
+      { type: 'mc', q: '충전한 축전기에 전구를 연결하면 어떻게 될까?', options: ['전구가 잠깐 켜졌다가 점점 어두워지며 꺼진다', '전구가 같은 밝기로 계속 켜져 있다', '전구가 전혀 켜지지 않는다', '전구가 점점 더 밝아진다'], answer: 0, exp: '모였던 전자가 전구를 지나 돌아가는 동안만 전류가 흘러요. 다 돌아가면 전류가 멈추니 전구가 <b>잠깐 켜졌다가 꺼져요</b>.' },
+      { type: 'mc', q: '최신 스마트폰 한 대에 들어가는 MLCC는 대략 몇 개일까?', options: ['약 10개', '약 100개', '약 1,000개', '약 100만 개'], answer: 2, exp: '최신 스마트폰에는 MLCC가 <b>약 1,000개</b> 들어가요. 전기 자동차에는 1만 개가 넘게 들어가요.' },
+    ],
+    q2: [
+      { type: 'mc', q: 'MLCC 속 구조로 옳은 것은?', options: ['세라믹 층과 금속 내부 전극을 번갈아 수백 겹 쌓았다', '속이 금속 덩어리 하나로 꽉 차 있다', '유리관 속이 비어 있는 진공관이다', '속에 전지 물질이 들어 있다'], answer: 0, exp: 'MLCC는 얇은 <b>세라믹 층</b>과 <b>금속 내부 전극</b>을 번갈아 <b>수백 겹</b> 쌓은 부품이에요.' },
+      { type: 'ox', q: 'MLCC 속 내부 전극은 한 장씩 번갈아 왼쪽과 오른쪽 외부 전극에 이어져 있다.', answer: true, exp: '<b>O</b> · 이웃한 두 장이 서로 다른 쪽에 이어져야 그 사이 세라믹 층에 전기를 담을 수 있어요.' },
+      { type: 'mc', q: '크기는 그대로 두고 MLCC에 전기를 더 많이 담으려면 어떻게 해야 할까?', options: ['층을 더 얇게, 더 많이 쌓는다', '겉을 더 반짝이는 은색으로 칠한다', '세라믹 층을 구리로 바꾼다', '쌓는 층의 수를 줄인다'], answer: 0, exp: '판이 넓을수록, 사이 층이 얇을수록 더 많이 담아요. 그래서 <b>더 얇게, 더 많이</b> 쌓는 기술을 겨뤄요. 사이 층을 구리로 바꾸면 전자가 건너가 버려 담을 수 없어요.' },
+      { type: 'blank', parts: ['MLCC는 전기를 모아 두었다가 칩이 필요한 만큼 고르게 내보내서 ', 0, '에 비유된다. 수로 모형에서 칩 곁에 물탱크가 있으면 칩에 걸리는 ', 1, '(수면의 높이 차)이 덜 흔들린다.'], answers: ['댐', '전압'], bank: ['댐', '전압', '수문', '저항'], exp: 'MLCC는 칩 곁의 작은 <b>댐</b>이에요. 수로 모형에서 수면의 높이 차는 <b>전압</b>이었지요.' },
+      { type: 'mc', q: 'MLCC를 \'전자 산업의 쌀\'이라고 부르는 까닭으로 가장 알맞은 것은?', options: ['거의 모든 전자 기기에 아주 많이 들어가서', '쌀을 원료로 만들어서', '쌀알처럼 하얀색이라서', '밥솥에만 들어가서'], answer: 0, exp: '스마트폰, 자동차, 가전제품, 서버까지 <b>어디에나 많이</b> 들어가서 쌀에 빗대어 불러요.' },
+    ],
+  };
+  const { $, $$ } = window.RD;
+  $$('[data-link]').forEach((a) => {
+    const key = a.dataset.link;
+    a.href = LINKS[key];
+    a.addEventListener('click', (e) => { if (!EMBED) return; e.preventDefault(); parent.postMessage({ type: 'ras-nav', target: key }, '*'); });
+  });
+  $$('[data-go]').forEach((b) => b.addEventListener('click', () => document.getElementById(b.dataset.go).scrollIntoView({ behavior: 'smooth', block: 'start' })));
+  const fsN = $('#fsN'), fsB = $('#fsB');
+  const setBig = (v) => { document.documentElement.classList.toggle('big', v); fsN.setAttribute('aria-pressed', String(!v)); fsB.setAttribute('aria-pressed', String(v)); };
+  fsN.addEventListener('click', () => setBig(false)); fsB.addEventListener('click', () => setBig(true));
+
+  const bar = $('#progress'), steps = $$('.step'), parts = ['r1', 'r2', 'q1', 'r3', 'r4', 'q2'].map((id) => document.getElementById(id));
+  function onScroll() {
+    const h = document.documentElement.scrollHeight - innerHeight;
+    bar.style.width = (h > 0 ? (scrollY / h) * 100 : 0) + '%';
+    let cur = -1; parts.forEach((p, i) => { if (p.getBoundingClientRect().top < innerHeight * 0.4) cur = i; });
+    steps.forEach((s, i) => s.classList.toggle('active', i === cur));
+  }
+  addEventListener('scroll', onScroll, { passive: true }); onScroll();
+  // 스크롤 등장 효과: 화면 감지 기능 없이 위치를 직접 계산해요. 글은 항상 보이고 위치만 살짝 움직여요
+  const revs = $$('.reveal');
+  document.documentElement.classList.add('js-reveal');
+  function checkReveal() {
+    const h = window.innerHeight || document.documentElement.clientHeight;
+    if (!h) return;
+    revs.forEach((el) => { if (!el.classList.contains('in')) { const r = el.getBoundingClientRect(); if (r.top < h * 0.92 && r.bottom > 0) el.classList.add('in'); } });
+  }
+  addEventListener('scroll', checkReveal, { passive: true });
+  addEventListener('resize', checkReveal);
+  checkReveal();
+  const revTimer = setInterval(() => { checkReveal(); if (revs.every((el) => el.classList.contains('in'))) clearInterval(revTimer); }, 250);
+  setTimeout(() => {
+    const h = window.innerHeight || document.documentElement.clientHeight;
+    const blind = !h || revs.every((el) => { const r = el.getBoundingClientRect(); return r.top === 0 && r.height === 0; });
+    if (blind) document.documentElement.classList.remove('js-reveal');
+  }, 1500);
+
+  const pop = $('#pop'); let popFor = null;
+  $$('.term').forEach((t) => t.addEventListener('click', (e) => {
+    e.stopPropagation(); if (popFor === t) return hidePop();
+    pop.innerHTML = `<b>${t.dataset.term}</b>${GLOSSARY[t.dataset.term] || ''}`; pop.classList.add('show');
+    const r = t.getBoundingClientRect(), pw = pop.offsetWidth, ph = pop.offsetHeight;
+    let x = Math.max(scrollX + 10, Math.min(r.left + scrollX + r.width / 2 - pw / 2, scrollX + innerWidth - pw - 10));
+    let y = r.top - ph - 10 < 60 ? r.bottom + scrollY + 10 : r.top + scrollY - ph - 10;
+    pop.style.left = x + 'px'; pop.style.top = y + 'px'; popFor = t;
+  }));
+  function hidePop() { pop.classList.remove('show'); popFor = null; }
+  document.addEventListener('click', hidePop);
+
+  /* 퀴즈 엔진 */
+  const results = {}, ALL = []; let qn = 0;
+  Object.entries(QUIZ).forEach(([sec, list]) => {
+    const host = document.querySelector(`[data-quiz="${sec}"]`);
+    list.forEach((q, i) => {
+      qn += 1; const id = `${sec}-${i}`, label = `문제 ${qn}`; ALL.push({ id, sec, label });
+      const card = document.createElement('article'); card.className = 'card qcard'; card.id = id;
+      card.innerHTML = `<div class="qhead"><span class="qno">${label}</span><span class="qtype">${{ ox: 'O / X', mc: '고르기', blank: '빈칸 채우기' }[q.type]}</span><span class="qstate"></span></div><div class="qbody"></div><div class="exp">${q.exp}</div>`;
+      host.appendChild(card); build(card, q, id);
+    });
+  });
+  $('#scoreT').textContent = ALL.length;
+  function mark(card, id, ok) {
+    results[id] = ok; card.classList.remove('right', 'wrong'); card.classList.add(ok ? 'right' : 'wrong', 'locked');
+    $('.qstate', card).textContent = ok ? '정답' : '다시 보기';
+    if (!ok && !$('.retry', card)) {
+      const r = document.createElement('button'); r.type = 'button'; r.className = 'btn ghost retry'; r.textContent = '다시 풀기';
+      r.addEventListener('click', () => { delete results[id]; card.classList.remove('right', 'wrong', 'locked'); r.remove(); build(card, card._q, id); update(); });
+      card.appendChild(r);
+    }
+    update();
+  }
+  function build(card, q, id) {
+    card._q = q; const body = $('.qbody', card);
+    if (q.type === 'ox') {
+      body.innerHTML = `<p class="qtext">${q.q}</p><div class="ox"><button type="button" class="oxb o" data-v="1">O</button><button type="button" class="oxb x" data-v="0">X</button></div>`;
+      $$('.oxb', body).forEach((b) => b.addEventListener('click', () => { const ok = (b.dataset.v === '1') === q.answer; $$('.oxb', body).forEach((o) => { o.disabled = true; if ((o.dataset.v === '1') === q.answer) o.classList.add('good'); }); if (!ok) b.classList.add('bad'); mark(card, id, ok); }));
+    } else if (q.type === 'mc') {
+      body.innerHTML = `<p class="qtext">${q.q}</p><div class="mc">${q.options.map((o, i) => `<button type="button" class="mcb" data-i="${i}"><span class="k">${'①②③④'[i]}</span>${o}</button>`).join('')}</div>`;
+      $$('.mcb', body).forEach((b) => b.addEventListener('click', () => { const ok = +b.dataset.i === q.answer; $$('.mcb', body).forEach((o, j) => { o.disabled = true; if (j === q.answer) o.classList.add('good'); }); if (!ok) b.classList.add('bad'); mark(card, id, ok); }));
+    } else {
+      const fill = q.answers.map(() => null); let cur = 0;
+      body.innerHTML = `<p class="qtext" style="margin-bottom:6px">알맞은 말을 골라 빈칸을 채워 보세요.</p><p class="sentence">${q.parts.map((p) => typeof p === 'number' ? `<button type="button" class="slot">빈칸 ${p + 1}</button>` : `<span>${p}</span>`).join('')}</p>
+        <div class="bank">${q.bank.slice().sort(() => Math.random() - 0.5).map((w) => `<button type="button" class="chip">${w}</button>`).join('')}</div><button type="button" class="btn primary check" disabled>확인하기</button>`;
+      const slots = $$('.slot', body), chips = $$('.chip', body), check = $('.check', body);
+      const paint = () => { slots.forEach((s, i) => { s.textContent = fill[i] ? fill[i].textContent : `빈칸 ${i + 1}`; s.classList.toggle('filled', !!fill[i]); s.classList.toggle('cur', i === cur && !card.classList.contains('locked')); }); if (check.isConnected) check.disabled = fill.some((f) => !f); };
+      chips.forEach((c) => c.addEventListener('click', () => { if (card.classList.contains('locked')) return; if (fill[cur]) fill[cur].classList.remove('used'); fill[cur] = c; c.classList.add('used'); const n = fill.findIndex((f) => !f); cur = n < 0 ? cur : n; paint(); }));
+      slots.forEach((s, i) => s.addEventListener('click', () => { if (card.classList.contains('locked')) return; if (fill[i]) { fill[i].classList.remove('used'); fill[i] = null; } cur = i; paint(); }));
+      check.addEventListener('click', () => {
+        let ok = true; slots.forEach((s, i) => { const g = fill[i].textContent === q.answers[i]; if (!g) ok = false; s.classList.add(g ? 'good' : 'bad'); s.disabled = true; });
+        chips.forEach((c) => (c.disabled = true)); check.remove(); card.classList.add('locked');
+        if (!ok) body.insertAdjacentHTML('beforeend', `<p class="qtext" style="margin:0;font-size:calc(var(--fs) - 1px);color:#6d4208">정답: ${q.answers.map((a, i) => `빈칸 ${i + 1} <b>${a}</b>`).join(' · ')}</p>`);
+        mark(card, id, ok); paint();
+      });
+      paint();
+    }
+  }
+  function update() {
+    const done = ALL.filter((q) => q.id in results), right = done.filter((q) => results[q.id]);
+    [['q1', 2], ['q2', 5]].forEach(([sec, si]) => steps[si].classList.toggle('done', ALL.filter((q) => q.sec === sec).every((q) => q.id in results)));
+    $('#scoreV').textContent = right.length;
+    $('#ringArc').style.strokeDashoffset = 314.16 * (1 - right.length / ALL.length);
+    const t = $('#resTitle'), m = $('#resMsg'), wl = $('#wlist');
+    if (done.length < ALL.length) { t.textContent = `${ALL.length}문항 중 ${done.length}문항을 풀었어요`; m.textContent = '남은 문제도 풀어 보세요. 틀린 문제는 다시 풀 수 있어요.'; }
+    else if (right.length === ALL.length) { t.textContent = '모두 맞혔어요!'; m.textContent = '이제 3D 해부와 수로 모형에서 직접 확인하고, 스스로 정리해 봐요.'; }
+    else { t.textContent = `${ALL.length}문항 중 ${right.length}문항을 맞혔어요`; m.textContent = '틀린 문제를 눌러 다시 읽고 풀어 보세요.'; }
+    wl.innerHTML = '';
+    ALL.filter((q) => results[q.id] === false).forEach((q) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = `${q.label} 다시 보기`; b.addEventListener('click', () => document.getElementById(q.id).scrollIntoView({ behavior: 'smooth', block: 'center' })); wl.appendChild(b); });
+  }
+  update();
+  window.RD.ok1 = true;
+  } catch (err) { window.RD_err && window.RD_err('기본 기능·퀴즈', err); }
+})();
+</script>
+<script>
+/* ===== 블록 2: 그림 조작 버튼 ===== */
+(() => {
+  'use strict';
+  try {
+    const { $ } = window.RD, C = window.RD.cap, S = window.RD.sec;
+    const paintCap = () => { $('#cCharge').classList.toggle('on', C.mode === 'charge'); $('#cDis').classList.toggle('on', C.mode === 'dis'); };
+    $('#cCharge').addEventListener('click', () => { C.mode = 'charge'; paintCap(); });
+    $('#cDis').addEventListener('click', () => { C.mode = 'dis'; paintCap(); });
+    $('#cReset').addEventListener('click', () => { C.mode = 'idle'; C.q = 0; C.reset = true; paintCap(); });
+    // 모인 전기 막대와 안내 문장(3D가 안 떠도 버튼 상태는 보여요)
+    setInterval(() => {
+      $('#qFill').style.width = (C.q * 100).toFixed(1) + '%';
+      let s;
+      if (C.mode === 'charge') s = C.q > 0.97 ? '가득 찼어요. 전자의 흐름이 멈췄어요. 이제 \'방전하기\'를 눌러 보세요.' : C.q > 0.6 ? '판에 전자가 많아질수록 흐름이 느려져요.' : '전지의 (-)극 쪽에서 전자가 밀려와 왼쪽 판에 모여요. 오른쪽 판에서는 전자가 빠져나가요.';
+      else if (C.mode === 'dis') s = C.q < 0.03 ? (C.used ? '전자가 다 돌아가서 전구가 꺼졌어요. 다시 충전해 볼까요?' : '모인 전기가 없어서 전구가 켜지지 않아요. 먼저 충전해 보세요.') : '모였던 전자가 전구를 지나 오른쪽 판으로 돌아가요. 전구가 점점 어두워져요.';
+      else s = C.q > 0.03 ? '전지도 전구도 떼어 냈어요. 판에 모인 전기는 그대로 남아 있어요.' : '\'충전하기\'를 눌러 전지를 연결해 보세요.';
+      if ($('#qStat').textContent !== s) $('#qStat').textContent = s;
+    }, 200);
+    $('#sCut').addEventListener('click', () => { S.cut = !S.cut; $('#sCut').setAttribute('aria-pressed', String(S.cut)); $('#sCut').textContent = S.cut ? '다시 붙이기' : '앞쪽 절반 떼어 내기'; if (!S.cut && S.near) S.near = 0; });
+    $('#sMark').addEventListener('click', () => { S.mark = !S.mark; $('#sMark').setAttribute('aria-pressed', String(S.mark)); if (S.mark && !S.cut) $('#sCut').click(); });
+    $('#sNear').addEventListener('click', () => { if (!S.cut) $('#sCut').click(); S.near = (S.near || 0) + 1; });
+    window.RD.ok2 = true;
+  } catch (err) { window.RD_err('그림 조작 버튼', err); }
+})();
+</script>
+<script type="module">
+/* ===== 블록 3: 3D 그림 (첫 화면 기판, 축전기 충전·방전, MLCC 자른 면) ===== */
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+/* ===== 공통 3D 도구 (three.js) =====
+   전자는 파란 알갱이(−), 전자를 잃은 쪽은 빨간 (+) 표시. 크기·개수·빠르기는 개념 이해를 위한 모형이에요(숫자 없음). */
+const C3 = (() => {
+  const REDUCE = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const V = (x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z);
+  const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+  const clamp01 = (t) => Math.max(0, Math.min(1, t));
+
+  // 탭 껍데기에서 보이지 않는 탭이면 그리지 않아요(태블릿 배터리 아끼기)
+  function visibleNow() {
+    if (document.hidden) return false;
+    try { const f = window.frameElement; if (f && f.hasAttribute('data-page') && !f.classList.contains('on')) return false; } catch (e) {}
+    return true;
+  }
+
+  function canvasTex(w, h, draw) {
+    const c = document.createElement('canvas'); c.width = w; c.height = h;
+    draw(c.getContext('2d'), w, h);
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
+    t.userData.canvas = c; return t;
+  }
+  function gradientBg(top, bottom) {
+    return canvasTex(4, 256, (g, w, h) => { const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, top); gr.addColorStop(1, bottom); g.fillStyle = gr; g.fillRect(0, 0, w, h); });
+  }
+  // 나뭇결 책상
+  function woodTex() {
+    const t = canvasTex(1024, 512, (g, w, h) => {
+      const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#c99a6b'); gr.addColorStop(1, '#b8875a'); g.fillStyle = gr; g.fillRect(0, 0, w, h);
+      for (let i = 0; i < 160; i++) {
+        const y = Math.random() * h, a = 0.04 + Math.random() * 0.08; g.strokeStyle = `rgba(${90 + Math.random() * 40},${55 + Math.random() * 25},30,${a})`;
+        g.lineWidth = 1 + Math.random() * 3; g.beginPath(); g.moveTo(0, y);
+        for (let x = 0; x <= w; x += 32) g.lineTo(x, y + Math.sin(x / 90 + i) * 4 + Math.sin(x / 23) * 1.2);
+        g.stroke();
+      }
+    });
+    t.wrapS = t.wrapT = THREE.RepeatWrapping; return t;
+  }
+  // 바닥에 드리우는 부드러운 그림자
+  function blobTex() {
+    return canvasTex(256, 256, (g, w, h) => { const r = g.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2); r.addColorStop(0, 'rgba(20,38,59,.32)'); r.addColorStop(1, 'rgba(20,38,59,0)'); g.fillStyle = r; g.fillRect(0, 0, w, h); });
+  }
+
+  /* 무대: 렌더러·카메라·조명·손가락 조작 */
+  function makeStage(host, opt = {}) {
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = opt.exposure || 1.05;
+    renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.domElement.className = 'gl';
+    host.appendChild(renderer.domElement);
+    const scene = new THREE.Scene();
+    scene.background = gradientBg(opt.top || '#f6f9fc', opt.bottom || '#d6e3ef');
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    scene.environment = pmrem.fromScene(new RoomEnvironment(renderer), 0.04).texture;
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x8a9bb0, 0.55));
+    const sun = new THREE.DirectionalLight(0xffffff, 1.6);
+    sun.position.set(opt.sunX || 5, 11, opt.sunZ || 7); sun.castShadow = true;
+    sun.shadow.mapSize.set(1024, 1024); sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.02;
+    const sc = sun.shadow.camera; sc.left = -9; sc.right = 9; sc.top = 9; sc.bottom = -9; sc.near = 1; sc.far = 40;
+    scene.add(sun);
+    const camera = new THREE.PerspectiveCamera(opt.fov || 34, 1, 0.1, 200);
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true; controls.dampingFactor = 0.09; controls.enablePan = false;
+    controls.rotateSpeed = 0.85; controls.zoomSpeed = 0.9;
+    if (opt.scroll) { controls.enableZoom = false; renderer.domElement.style.touchAction = 'pan-y'; host.style.touchAction = 'pan-y'; }
+    controls.minDistance = opt.minD || 3; controls.maxDistance = opt.maxD || 24; controls.maxPolarAngle = Math.PI * 0.86;
+
+    const overlay = document.createElement('div'); overlay.className = 'lbls'; host.appendChild(overlay);
+    let W = 1, H = 1;
+    function resize() {
+      const r = host.getBoundingClientRect(); W = Math.max(1, r.width); H = Math.max(1, r.height);
+      renderer.setSize(W, H, false); camera.aspect = W / H;
+      if (opt.fitWidth) { // 세로 화면에서 장면이 잘리지 않도록 화각을 넓혀요
+        const base = opt.fov || 34; camera.fov = camera.aspect < 1.15 ? Math.min(62, base * (1.15 / camera.aspect) * 0.92) : base;
+      }
+      camera.updateProjectionMatrix();
+    }
+    try { let rq = 0; new ResizeObserver(() => { cancelAnimationFrame(rq); rq = requestAnimationFrame(resize); }).observe(host); } catch (e) { addEventListener('resize', resize); }
+    resize();
+
+    // 이름표(HTML)를 3D 위치에 붙이기
+    const labels = [];
+    function label(html, cls, at) {
+      const el = document.createElement('div'); el.className = 'lb ' + (cls || ''); el.innerHTML = html; overlay.appendChild(el);
+      const L = { el, at, show: true, set(h) { if (el.innerHTML !== h) el.innerHTML = h; } };
+      labels.push(L); return L;
+    }
+    const tmp = V();
+    function placeLabels() {
+      labels.forEach((L) => {
+        if (!L.show) { L.el.style.display = 'none'; return; }
+        const p = typeof L.at === 'function' ? L.at() : L.at;
+        if (!p) { L.el.style.display = 'none'; return; }
+        tmp.copy(p).project(camera);
+        if (tmp.z > 1 || tmp.z < -1) { L.el.style.display = 'none'; return; }
+        const px = ((tmp.x + 1) / 2) * W, py = ((1 - tmp.y) / 2) * H;
+        L.el.style.display = '';
+        L.el.style.transform = `translate(${px}px,${py}px) translate(-50%,-50%)`;
+      });
+    }
+
+    // 카메라 이동
+    let fly = null;
+    controls.addEventListener('start', () => { fly = null; });
+    function flyTo(pos, target, dur = 1.1) {
+      if (REDUCE || dur <= 0) { camera.position.copy(pos); controls.target.copy(target); controls.update(); return; }
+      fly = { p0: camera.position.clone(), t0: controls.target.clone(), p1: pos.clone(), t1: target.clone(), k: 0, dur };
+    }
+
+    const fns = [];
+    let last = performance.now(), running = true;
+    function tick(now) {
+      requestAnimationFrame(tick);
+      if (!running || !visibleNow()) { last = now; return; }
+      if (opt.scroll) { const hr = host.getBoundingClientRect(); if (hr.bottom < -50 || hr.top > (window.innerHeight || 800) + 50) { last = now; return; } } // 화면 밖이면 쉬기
+      const dt = Math.min(0.05, Math.max(0, (now - last) / 1000)); last = now;
+      if (fly) {
+        fly.k = Math.min(1, fly.k + dt / fly.dur); const e = ease(fly.k);
+        camera.position.lerpVectors(fly.p0, fly.p1, e); controls.target.lerpVectors(fly.t0, fly.t1, e);
+        if (fly.k >= 1) fly = null;
+      }
+      for (let i = 0; i < fns.length; i++) { try { fns[i](dt, now / 1000); } catch (err) { console.error(err); } }
+      controls.update();
+      renderer.render(scene, camera);
+      placeLabels();
+    }
+    requestAnimationFrame(tick);
+    return { renderer, scene, camera, controls, sun, overlay, label, flyTo, onFrame: (f) => fns.push(f), size: () => ({ W, H }), resize };
+  }
+
+  // 관 모양 전선(곡선)
+  function tube(points, r, mat, seg = 80) {
+    const curve = new THREE.CatmullRomCurve3(points, false, 'centripetal');
+    const m = new THREE.Mesh(new THREE.TubeGeometry(curve, seg, r, 10, false), mat); m.castShadow = true; m.curve = curve; return m;
+  }
+
+  // 길을 따라 움직이는 알갱이(전자). 전선에는 전자가 이미 꽉 차 있으므로, 멈춰 있어도 알갱이는 보여요.
+  // setPath(점 배열), update(dt, 빠르기) — 빠르기가 음수면 반대로 움직여요
+  function makeDots(count, color, size = 1) {
+    const geo = new THREE.SphereGeometry(0.06 * size, 14, 10);
+    const mat = new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.55, roughness: 0.3 });
+    const mesh = new THREE.InstancedMesh(geo, mat, count); mesh.frustumCulled = false;
+    let pts = [], cum = [], total = 1, off = 0; const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), p = V(), sc = V(1, 1, 1);
+    function setPath(P) {
+      pts = P; cum = [0];
+      for (let i = 1; i < P.length; i++) cum.push(cum[i - 1] + P[i].distanceTo(P[i - 1]));
+      total = cum[cum.length - 1] || 1;
+    }
+    function at(s, out) {
+      s = ((s % total) + total) % total;
+      let i = 1; while (i < cum.length - 1 && cum[i] < s) i++;
+      const a = pts[i - 1], b = pts[i], seg = cum[i] - cum[i - 1] || 1, k = (s - cum[i - 1]) / seg;
+      out.lerpVectors(a, b, k);
+    }
+    function update(dt, speed) {
+      if (pts.length < 2) { mesh.visible = false; return; }
+      off += dt * speed;
+      const gap = total / count;
+      for (let k = 0; k < count; k++) { at(off + k * gap, p); m4.compose(p, q, sc); mesh.setMatrixAt(k, m4); }
+      mesh.instanceMatrix.needsUpdate = true;
+    }
+    return { mesh, setPath, update, mat };
+  }
+
+  // 책상
+  function addTable(scene, w, d, y = 0) {
+    const tex = woodTex(); tex.repeat.set(w / 10, d / 10);
+    const mat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.55, metalness: 0 });
+    const t = new THREE.Mesh(new RoundedBoxGeometry(w, 0.4, d, 3, 0.12), mat); t.position.y = y - 0.2; t.receiveShadow = true; scene.add(t);
+    return t;
+  }
+  const mesh = (geo, mat, x = 0, y = 0, z = 0) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true; return m; };
+
+  return { REDUCE, V, ease, clamp01, makeStage, canvasTex, gradientBg, blobTex, tube, makeDots, addTable, visibleNow, mesh };
+})();
+
+/* ===== MLCC 모형 =====
+   실제 MLCC: 세라믹 몸체(갈색), 양 끝 외부 전극(은색), 속에는 세라믹 층과 금속 내부 전극이 번갈아 수백 겹.
+   화면의 겹 수는 실제보다 훨씬 적게 그린 모형이에요. */
+const MLCC = (() => {
+  const { canvasTex, mesh } = C3;
+  // 세라믹 겉면: 도자기처럼 고운 알갱이 무늬
+  function ceramicTex(base = '#a77a52') {
+    return canvasTex(512, 512, (g, w, h) => {
+      g.fillStyle = base; g.fillRect(0, 0, w, h);
+      for (let i = 0; i < 9000; i++) { const v = Math.random(); g.fillStyle = v < 0.5 ? `rgba(70,40,20,${0.05 + Math.random() * 0.08})` : `rgba(255,235,210,${0.04 + Math.random() * 0.07})`; g.fillRect(Math.random() * w, Math.random() * h, 1 + Math.random() * 2, 1 + Math.random() * 2); }
+      const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, 'rgba(255,240,220,.10)'); gr.addColorStop(1, 'rgba(40,20,10,.12)'); g.fillStyle = gr; g.fillRect(0, 0, w, h);
+    });
+  }
+  // 자른 면: 세라믹 층 사이에 금속 내부 전극이 왼쪽·오른쪽에 번갈아 붙어 있는 모습
+  function sectionTex(n, opt = {}) {
+    const W = 2048, H = 1024;
+    return canvasTex(W, H, (g) => {
+      const gr = g.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, '#c49a6f'); gr.addColorStop(1, '#a87d55'); g.fillStyle = gr; g.fillRect(0, 0, W, H);
+      for (let i = 0; i < 14000; i++) { g.fillStyle = Math.random() < 0.5 ? 'rgba(80,45,20,.10)' : 'rgba(255,240,215,.10)'; g.fillRect(Math.random() * W, Math.random() * H, 2, 2); }
+      const cover = H * 0.12, span = H - 2 * cover, gap = span / (n - 1), th = Math.max(5, Math.min(22, gap * 0.34)), margin = W * 0.1;
+      for (let k = 0; k < n; k++) {
+        const y = cover + k * gap, left = k % 2 === 0;
+        const x0 = left ? 0 : margin, x1 = left ? W - margin : W;
+        const cs = !opt.mark ? ['#e4e8ed', '#8e98a4', '#5d6672'] : left ? ['#bcd4fa', '#2f6fd6', '#1c4a99'] : ['#fac2bd', '#e0483e', '#9c2a22'];
+        const eg = g.createLinearGradient(0, y - th / 2, 0, y + th / 2); eg.addColorStop(0, cs[0]); eg.addColorStop(0.5, cs[1]); eg.addColorStop(1, cs[2]);
+        g.fillStyle = eg; g.fillRect(x0, y - th / 2, x1 - x0, th);
+      }
+    });
+  }
+  function capMat() { return new THREE.MeshStandardMaterial({ color: 0xc7ccd3, metalness: 0.95, roughness: 0.32 }); }
+
+  // L: 길이(x), H: 높이(y), D: 폭(z). cap: 외부 전극 길이. 반환 group.setCut(0~1)로 앞쪽 절반을 떼어 냄
+  function make(o = {}) {
+    const L = o.L || 4, H = o.H || 2, D = o.D || 2, cap = o.cap || 0.62, n = o.layers || 14;
+    const root = new THREE.Group();
+    const cer = new THREE.MeshStandardMaterial({ map: ceramicTex(o.color), roughness: 0.78, metalness: 0 });
+    const bodyL = L - 2 * cap + 0.1;
+    const whole = new THREE.Group(); root.add(whole);
+    whole.add(mesh(new RoundedBoxGeometry(bodyL, H * 0.97, D * 0.97, 4, Math.min(H, D) * 0.08), cer));
+    const cm = capMat();
+    [-1, 1].forEach((s) => whole.add(mesh(new RoundedBoxGeometry(cap, H, D, 5, Math.min(H, D) * 0.16), cm, s * (L / 2 - cap / 2), 0, 0)));
+    // 자른 모형(뒤쪽 절반 + 떼어 낸 앞쪽 절반)
+    const cut = new THREE.Group(); cut.visible = false; root.add(cut);
+    const back = new THREE.Group(), front = new THREE.Group(); cut.add(back, front);
+    const half = D / 2;
+    const texA = sectionTex(n, {}); let texB = null;
+    const secMat = new THREE.MeshStandardMaterial({ map: texA, roughness: 0.55, metalness: 0.1 });
+    const mk = (z, grp, withFace) => {
+      grp.add(mesh(new THREE.BoxGeometry(bodyL, H * 0.97, half * 0.97), cer, 0, 0, z));
+      [-1, 1].forEach((s) => grp.add(mesh(new THREE.BoxGeometry(cap, H, half), cm, s * (L / 2 - cap / 2), 0, z)));
+      if (withFace) { const f = new THREE.Mesh(new THREE.PlaneGeometry(bodyL, H * 0.97), secMat); f.position.set(0, 0, 0.002); grp.add(f); }
+    };
+    mk(-half / 2, back, true); mk(half / 2, front, false);
+    let cutK = 0;
+    root.setCut = (k) => {
+      cutK = k; whole.visible = k <= 0.001; cut.visible = !whole.visible;
+      front.position.z = k * D * 0.5; front.position.y = k * H * 1.9; front.rotation.x = -k * 0.5;
+      front.visible = k < 0.98;
+    };
+    root.cutK = () => cutK;
+    // 왼쪽(파랑)·오른쪽(빨강) 외부 전극에 이어진 내부 전극 끝을 색으로 표시
+    root.setMark = (on) => { if (on && !texB) texB = sectionTex(n, { mark: true }); secMat.map = on ? texB : texA; secMat.needsUpdate = true; };
+    root.dims = { L, H, D, cap, n };
+    return root;
+  }
+
+  // 초록 회로 기판 무늬
+  function pcbTex() {
+    return canvasTex(1024, 1024, (g, w, h) => {
+      const gr = g.createLinearGradient(0, 0, w, h); gr.addColorStop(0, '#1f6a4c'); gr.addColorStop(1, '#16523a'); g.fillStyle = gr; g.fillRect(0, 0, w, h);
+      g.strokeStyle = 'rgba(214,180,90,.55)'; g.lineWidth = 5; g.lineCap = 'round';
+      for (let i = 0; i < 70; i++) {
+        let x = Math.random() * w, y = Math.random() * h; g.beginPath(); g.moveTo(x, y);
+        for (let k = 0; k < 4; k++) { if (Math.random() < 0.5) x += (Math.random() - 0.5) * 300; else y += (Math.random() - 0.5) * 300; g.lineTo(x, y); }
+        g.stroke();
+      }
+      g.fillStyle = 'rgba(214,180,90,.8)'; for (let i = 0; i < 160; i++) { g.beginPath(); g.arc(Math.random() * w, Math.random() * h, 5, 0, 7); g.fill(); }
+      g.fillStyle = 'rgba(255,255,255,.04)'; for (let i = 0; i < 3000; i++) g.fillRect(Math.random() * w, Math.random() * h, 2, 2);
+    });
+  }
+  return { make, ceramicTex, sectionTex, pcbTex, capMat };
+})();
+
+try {
+  const { V, mesh } = C3, R = window.RD;
+
+  /* 첫 화면: 기판 위 칩과 MLCC들, 크게 키운 MLCC */
+  {
+    const st = C3.makeStage(document.getElementById('heroHost'), { scroll: true, fitWidth: true, top: '#2b3044', bottom: '#14171f' });
+    const { scene, camera, controls, label } = st;
+    const board = new THREE.Group(); scene.add(board);
+    board.add(mesh(new RoundedBoxGeometry(7.4, 0.14, 4.8, 3, 0.05), new THREE.MeshStandardMaterial({ map: MLCC.pcbTex(), roughness: 0.55, metalness: 0.1 }), 0, -0.07, 0));
+    const ap = new THREE.Group(); ap.position.set(-0.6, 0, 0.1); board.add(ap);
+    ap.add(mesh(new RoundedBoxGeometry(1.7, 0.08, 1.7, 2, 0.02), new THREE.MeshStandardMaterial({ color: 0x2c6b52, roughness: 0.5 }), 0, 0.04, 0));
+    ap.add(mesh(new RoundedBoxGeometry(1.3, 0.16, 1.3, 3, 0.04), new THREE.MeshStandardMaterial({ color: 0x1a1c21, roughness: 0.38, metalness: 0.3 }), 0, 0.16, 0));
+    // 작은 MLCC들(같은 모양을 여러 개)
+    const bodyG = new THREE.BoxGeometry(0.24, 0.12, 0.12), capG = new THREE.BoxGeometry(0.06, 0.13, 0.13);
+    const bodyM = new THREE.MeshStandardMaterial({ map: MLCC.ceramicTex(), roughness: 0.75 }), capM = MLCC.capMat();
+    const spots = [];
+    for (let i = 0; i < 12; i++) { spots.push([-0.6 + (i - 5.5) * 0.15, 1.15]); spots.push([-0.6 + (i - 5.5) * 0.15, -0.95]); }
+    for (let i = 0; i < 9; i++) { spots.push([-1.75, 0.1 + (i - 4) * 0.2]); spots.push([0.55, 0.1 + (i - 4) * 0.2]); }
+    for (let i = 0; i < 26; i++) spots.push([1.4 + (i % 6) * 0.38, -1.8 + Math.floor(i / 6) * 0.75 + (i % 2) * 0.2]);
+    spots.forEach(([x, z], i) => {
+      const g = new THREE.Group(); g.position.set(x, 0.06, z); if ((x > 0.5 && x < 0.6) || x < -1.7) g.rotation.y = Math.PI / 2; if (x > 1.3 && i % 3 === 0) g.rotation.y = Math.PI / 2;
+      g.add(mesh(bodyG, bodyM)); g.add(mesh(capG, capM, -0.12, 0, 0)); g.add(mesh(capG, capM, 0.12, 0, 0)); board.add(g);
+    });
+    const big = MLCC.make({ L: 2.8, H: 1.3, D: 1.3, cap: 0.46, layers: 12 }); big.position.set(1.6, 2.1, 0.6); scene.add(big);
+    label('반도체 칩(AP)', '', V(-0.6, 0.5, 0.1));
+    label('실제 MLCC', 'C', V(-0.6, 0.35, 1.15));
+    label('크게 키워 자른 MLCC', 'M', () => V(big.position.x, big.position.y + 1.25, big.position.z));
+    camera.position.set(1.2, 5.6, 8.2); controls.target.set(0.4, 0.8, 0.2);
+    controls.autoRotate = !C3.REDUCE; controls.autoRotateSpeed = 0.5; controls.addEventListener('start', () => (controls.autoRotate = false));
+    let t0 = null;
+    st.onFrame((dt, t) => {
+      if (t0 === null) t0 = t;
+      const k = Math.min(1, (t - t0) / 2); big.setCut(C3.ease(Math.max(0, Math.min(1, k * 1.4 - 0.3))) * 0.85); // 처음 2초 동안 뚜껑을 들어 올려요
+      big.position.y = 2.1 + (C3.REDUCE ? 0 : Math.sin(t * 1.1) * 0.1); big.rotation.y = -0.5 + (C3.REDUCE ? 0 : Math.sin(t * 0.4) * 0.25);
+    });
+  }
+
+  /* 축전기 충전·방전 */
+  {
+    const st = C3.makeStage(document.getElementById('capHost'), { scroll: true, fitWidth: true, minD: 3 });
+    const { scene, camera, controls, label } = st;
+    C3.addTable(scene, 9, 7.4);
+    const C = R.cap;
+    const metal = new THREE.MeshStandardMaterial({ color: 0xc4cad2, metalness: 0.95, roughness: 0.28 });
+    const cu = new THREE.MeshStandardMaterial({ color: 0xc0703a, metalness: 1, roughness: 0.3 });
+    // 금속판 두 장 + 사이 세라믹 층(반투명)
+    const PY = 1.25;
+    scene.add(mesh(new RoundedBoxGeometry(0.08, 1.8, 1.8, 2, 0.02), metal, -0.36, PY, 0));
+    scene.add(mesh(new RoundedBoxGeometry(0.08, 1.8, 1.8, 2, 0.02), metal, 0.36, PY, 0));
+    const slab = mesh(new THREE.BoxGeometry(0.62, 1.7, 1.7), new THREE.MeshPhysicalMaterial({ color: 0xd8b48a, roughness: 0.6, transparent: true, opacity: 0.42 }), 0, PY, 0); slab.castShadow = false; scene.add(slab);
+    // 받침
+    [-0.36, 0.36].forEach((x) => scene.add(mesh(new RoundedBoxGeometry(0.4, 0.3, 1.0, 2, 0.05), new THREE.MeshStandardMaterial({ color: 0x3d4654, roughness: 0.6 }), x, 0.15, 0)));
+    // 판 위의 전하 표시: 왼쪽 판 안쪽 면에 전자(파랑), 오른쪽 판 안쪽 면에 (+)
+    // 금속판에 가려도 보이도록 전하 표시는 늘 앞에 그려요
+    const N = 36, eG = new THREE.SphereGeometry(0.075, 14, 10), eM = new THREE.MeshStandardMaterial({ color: 0x2f6fd6, emissive: 0x2f6fd6, emissiveIntensity: 0.7, roughness: 0.3, depthTest: false });
+    const pM = new THREE.MeshStandardMaterial({ color: 0xe0483e, emissive: 0xe0483e, emissiveIntensity: 0.7, roughness: 0.3, depthTest: false });
+    const pG1 = new THREE.BoxGeometry(0.03, 0.17, 0.05), pG2 = new THREE.BoxGeometry(0.03, 0.05, 0.17);
+    const minus = [], plus = [];
+    const order = []; for (let i = 0; i < N; i++) order.push(i); order.sort((a, b) => ((a * 7919) % 37) - ((b * 7919) % 37));
+    order.forEach((i) => {
+      const r = Math.floor(i / 6), c = i % 6, y = PY - 0.68 + r * 0.27, z = -0.68 + c * 0.27;
+      const e = new THREE.Mesh(eG, eM); e.position.set(-0.27, y, z); e.renderOrder = 5; e.visible = false; scene.add(e); minus.push(e);
+      const p = new THREE.Group(); p.add(new THREE.Mesh(pG1, pM), new THREE.Mesh(pG2, pM)); p.position.set(0.27, y, z); p.children.forEach((c) => (c.renderOrder = 5)); p.visible = false; scene.add(p); plus.push(p);
+    });
+    // 전선
+    const wy = 0.1, PL = V(-0.42, PY, 0), PR = V(0.42, PY, 0);
+    const JL = V(-2.6, wy, 0), JR = V(2.6, wy, 0);
+    const upL = [PL, V(-1.3, PY, 0), V(-2.3, 0.5, 0), JL], upR = [JR, V(2.3, 0.5, 0), V(1.3, PY, 0), PR];
+    const bm = V(-0.82, 0.36, 2.4), bp = V(0.82, 0.36, 2.4);       // 전지 (-)극, (+)극
+    const LX = 1.5, lL = V(LX - 0.32, 0.22, -2.4), lR = V(LX + 0.32, 0.22, -2.4);     // 전구 받침 양쪽(판에 가리지 않게 오른쪽으로)
+    const batL = [JL, V(-2.6, wy, 2.4), V(-1.0, wy, 2.4), bm], batR = [bp, V(1.0, wy, 2.4), V(2.6, wy, 2.4), JR];
+    const lmpL = [JL, V(-2.6, wy, -2.4), V(LX - 0.5, wy, -2.4), lL], lmpR = [lR, V(LX + 0.5, wy, -2.4), V(2.6, wy, -2.4), JR];
+    [upL, upR, batL, batR, lmpL, lmpR].forEach((p) => scene.add(C3.tube(p.map((v) => v.clone()), 0.04, cu, 60)));
+    // 전지
+    const bat = new THREE.Group(); bat.position.set(0, 0.36, 2.4); scene.add(bat);
+    const bb = mesh(new THREE.CylinderGeometry(0.3, 0.3, 1.4, 32), new THREE.MeshStandardMaterial({ color: 0x2b2f36, roughness: 0.4, metalness: 0.2 })); bb.rotation.z = Math.PI / 2; bat.add(bb);
+    const bc = mesh(new THREE.CylinderGeometry(0.305, 0.305, 0.5, 32), new THREE.MeshStandardMaterial({ color: 0xe89a00, roughness: 0.35, metalness: 0.3 }), 0.45, 0, 0); bc.rotation.z = Math.PI / 2; bat.add(bc);
+    const nub = mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.12, 20), metal, 0.76, 0, 0); nub.rotation.z = Math.PI / 2; bat.add(nub);
+    // 전구
+    const lamp = new THREE.Group(); lamp.position.set(LX, 0, -2.4); scene.add(lamp);
+    lamp.add(mesh(new RoundedBoxGeometry(0.9, 0.24, 0.6, 2, 0.05), new THREE.MeshStandardMaterial({ color: 0x3d4654, roughness: 0.6 }), 0, 0.12, 0));
+    lamp.add(mesh(new THREE.CylinderGeometry(0.17, 0.17, 0.26, 20), metal, 0, 0.37, 0));
+    const glass = new THREE.MeshPhysicalMaterial({ color: 0xfff6d8, roughness: 0.08, transparent: true, opacity: 0.5, emissive: 0xffc94d, emissiveIntensity: 0 });
+    const gl = mesh(new THREE.SphereGeometry(0.34, 28, 20), glass, 0, 0.78, 0); gl.castShadow = false; lamp.add(gl);
+    const fil = new THREE.MeshStandardMaterial({ color: 0x553311, emissive: 0xffa040, emissiveIntensity: 0 });
+    lamp.add(mesh(new THREE.TorusGeometry(0.08, 0.012, 6, 20), fil, 0, 0.8, 0));
+    const lampLight = new THREE.PointLight(0xffc56a, 0, 5); lampLight.position.set(LX, 0.9, -2.4); scene.add(lampLight);
+    // 스위치(전지 쪽, 전구 쪽): 닫히면 막대가 눕고, 열리면 들려요
+    const lever = (x, z) => { const g = new THREE.Group(); g.position.set(x, wy + 0.06, z); const bar = mesh(new RoundedBoxGeometry(0.62, 0.05, 0.12, 2, 0.02), cu, 0.31, 0, 0); g.add(bar); g.add(mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.16, 16), metal, 0, 0, 0)); g.children[1].rotation.x = Math.PI / 2; scene.add(g); return g; };
+    const sBat = lever(-2.2, 2.4), sLmp = lever(-2.2, -2.4);
+    // 전자 알갱이: 전지 회로(전지 (-)극 → 왼쪽 판, 오른쪽 판 → 전지 (+)극), 전구 회로(왼쪽 판 → 전구 → 오른쪽 판)
+    const path = (...segs) => { const out = []; segs.forEach((s) => s.forEach((v) => { if (!out.length || out[out.length - 1].distanceTo(v) > 1e-4) out.push(v.clone()); })); return out; };
+    const dA = C3.makeDots(18, 0x2f6fd6), dB = C3.makeDots(18, 0x2f6fd6), dC = C3.makeDots(36, 0x2f6fd6);
+    dA.setPath(path(batL.slice().reverse(), upL.slice().reverse()));   // 전지 (-)극 → … → 왼쪽 판
+    dB.setPath(path(upR.slice().reverse(), batR.slice().reverse()));   // 오른쪽 판 → … → 전지 (+)극
+    dC.setPath(path(upL, lmpL, [lL, lR], lmpR, upR));                  // 왼쪽 판 → 전구 → 오른쪽 판
+    [dA, dB, dC].forEach((d) => scene.add(d.mesh));
+    label('전지 (-)극', 'E', V(-0.95, 0.9, 2.4)); label('(+)극', 'Pl', V(0.95, 0.9, 2.4));
+    label('금속판', 'M', V(-0.36, PY + 1.15, 0));
+    label('얇은 부도체 층', 'C', V(0, PY - 1.15, 0.95));
+    const lb1 = label('전자가 모인 판 (-)', 'E', () => (C.q > 0.15 ? V(-1.2, PY + 0.85, 0.6) : null));
+    const lb2 = label('전자를 잃은 판 (+)', 'Pl', () => (C.q > 0.15 ? V(1.2, PY + 0.85, 0.6) : null));
+    label('전구', '', V(LX, 1.45, -2.4));
+    camera.position.set(1.4, 4.6, 7.8); controls.target.set(0.1, 0.9, -0.2);
+    let used = false;
+    st.onFrame((dt) => {
+      if (C.reset) { C.reset = false; used = false; C.used = false; }
+      const k = 0.85;
+      let vA = 0, vC = 0;
+      if (C.mode === 'charge') { const r = k * (1 - C.q); C.q = Math.min(1, C.q + r * dt); vA = 3.2 * (1 - C.q) + 0.0; }
+      else if (C.mode === 'dis') { const r = k * C.q; if (C.q > 0.05) { used = true; C.used = true; } C.q = Math.max(0, C.q - r * dt); vC = 3.2 * C.q; }
+      dA.mesh.visible = dB.mesh.visible = C.mode !== 'dis';
+      dC.mesh.visible = C.mode === 'dis';
+      dA.update(dt, vA); dB.update(dt, vA); dC.update(dt, vC);
+      const n = Math.round(C.q * N); minus.forEach((m, i) => (m.visible = i < n)); plus.forEach((m, i) => (m.visible = i < n));
+      // 스위치
+      const tb = C.mode === 'charge' ? 0 : -0.9, tl = C.mode === 'dis' ? 0 : -0.9;
+      sBat.rotation.z += (-tb * 1 - sBat.rotation.z) * Math.min(1, dt * 8); sLmp.rotation.z += (-tl - sLmp.rotation.z) * Math.min(1, dt * 8);
+      // 전구 밝기 = 흐르는 전류(모인 전기가 줄수록 어두워짐)
+      const b = C.mode === 'dis' ? Math.min(1, C.q * 1.3) : 0;
+      glass.emissiveIntensity += (b * 3 - glass.emissiveIntensity) * Math.min(1, dt * 10); fil.emissiveIntensity = glass.emissiveIntensity * 1.2; lampLight.intensity = glass.emissiveIntensity * 2.2;
+    });
+  }
+
+  /* MLCC 자른 면 */
+  {
+    const st = C3.makeStage(document.getElementById('secHost'), { scroll: true, fitWidth: true, minD: 2.2 });
+    const { scene, camera, controls, label } = st;
+    C3.addTable(scene, 10, 7);
+    const S = R.sec;
+    const m = MLCC.make({ L: 4.4, H: 2.0, D: 2.0, cap: 0.66, layers: 14 }); m.position.y = 1.0; scene.add(m);
+    const base = { p: V(2.6, 4.4, 7.6), t: V(0, 1.1, 0) };
+    camera.position.copy(base.p); controls.target.copy(base.t);
+    label('외부 전극', 'M', V(-2.2, 2.35, 0)); label('외부 전극', 'M', V(2.2, 2.35, 0));
+    label('세라믹 몸체', 'C', () => (S.cut ? null : V(0, 2.25, 0.4)));
+    // 자른 면의 층 위치(위에서 k번째 전극): 짝수 번째는 왼쪽, 홀수 번째는 오른쪽 외부 전극에 이어져요
+    const ly = (k) => 1.0 + (0.5 - (0.12 + k * (0.76 / 13))) * 1.94;
+    label('세라믹 층', 'C', () => (m.cutK() > 0.9 ? V(0.55, ly(10.5), 0.05) : null));
+    label('내부 전극(금속)', 'M', () => (m.cutK() > 0.9 ? V(-0.45, ly(4), 0.05) : null));
+    label('왼쪽에 이어진 전극', 'E', () => (S.mark && m.cutK() > 0.9 ? V(-0.4, ly(0), 0.05) : null));
+    label('오른쪽에 이어진 전극', 'Pl', () => (S.mark && m.cutK() > 0.9 ? V(0.4, ly(13), 0.05) : null));
+    let k = 0, near = 0, mark = false;
+    st.onFrame((dt) => {
+      const want = S.cut ? 1 : 0; k += (want - k) * Math.min(1, dt * 3.2); if (Math.abs(want - k) < 0.002) k = want; m.setCut(k);
+      if (S.mark !== mark) { mark = S.mark; m.setMark(mark); }
+      if (S.near !== near) { near = S.near; if (near) st.flyTo(near % 2 ? V(0.2, 1.3, 3.0) : base.p, near % 2 ? V(0, 1.0, 0) : base.t, 1.2); else st.flyTo(base.p, base.t, 1.0); }
+    });
+  }
+  R.ok3d = true;
+} catch (err) { window.RD_err('3D 그림', err); document.querySelectorAll('.fail3d').forEach((x) => x.classList.add('show')); }
+</script>
+</body>
+</html>
