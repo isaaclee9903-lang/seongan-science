@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>3D AI 칩 속으로 – GPU와 HBM</title>
+<script>
+/* 문제 알림: 코드에 오류가 나면 화면 아래에 빨간 상자로 알려 줘요 (선생님 확인용) */
+(function () {
+  function box() {
+    var b = document.getElementById('aiErr');
+    if (!b && document.body) {
+      b = document.createElement('div'); b.id = 'aiErr';
+      b.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;background:#fdecea;color:#8a1f17;border:2px solid #d9534f;border-radius:12px;padding:10px 14px;font:600 14px/1.5 sans-serif;white-space:pre-wrap';
+      document.body.appendChild(b);
+    }
+    return b;
+  }
+  window.AI_err = function (where, err) {
+    var msg = '[' + where + '] ' + (err && err.message ? err.message : String(err));
+    var show = function () { var b = box(); if (b) b.textContent += (b.textContent ? '\n' : '') + msg; };
+    if (document.body) show(); else document.addEventListener('DOMContentLoaded', show);
+  };
+  window.addEventListener('error', function (e) { window.AI_err('스크립트', { message: e.message + ' (줄 ' + e.lineno + ')' }); });
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      var S = window.AI || {};
+      if (!S.okUI) window.AI_err('실행 안 됨', { message: '안내 코드가 실행되지 않았어요. 파일이 끝(</html>)까지 들어 있는지 확인해 주세요.' });
+      if (!S.ok3d) { var f = document.getElementById('fail3d'); if (f) f.classList.add('show'); window.AI_err('3D 그림', { message: '3D 그림을 불러오지 못했어요. 인터넷 연결(cdn.jsdelivr.net)을 확인하고 새로고침해 주세요.' }); }
+    }, 9000);
+  });
+})();
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+  :root{--bg:#edf3f8;--card:#fff;--ink:#14263b;--ink2:#34495e;--muted:#5a6b7e;--line:#dde6ee;--accent:#0e63b3;--accent-soft:#e3effb;
+    --ai:#0f7f8c;--ai-soft:#e2f4f5;--ok:#1f9d5c;--no:#d9534f;
+    --shadow:0 1px 2px rgba(20,38,59,.06),0 8px 24px rgba(20,38,59,.07);--ease:cubic-bezier(.2,.8,.2,1)}
+  *{box-sizing:border-box}html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:"Pretendard",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  button{font:inherit;color:inherit}
+  .app{max-width:1320px;margin:0 auto;padding:14px 16px 28px;display:flex;flex-direction:column;gap:12px}
+  .eyebrow{display:inline-flex;font-size:13px;font-weight:700;color:var(--ai);background:var(--ai-soft);padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(21px,2.4vw,28px);margin:6px 0 2px;letter-spacing:-.02em;word-break:keep-all}
+  .sub{margin:0;color:var(--muted);font-size:15px;word-break:keep-all}
+  .card{background:var(--card);border-radius:20px;box-shadow:var(--shadow);border:1px solid rgba(20,38,59,.04)}
+  .pad{padding:14px 16px}
+  .stage{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(330px,1fr);gap:14px;align-items:start}
+  .viewer{position:sticky;top:10px}
+  .tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px}
+  .tb{min-height:54px;border:0;border-radius:12px;background:#eef3f8;font-weight:800;font-size:13.5px;color:var(--muted);cursor:pointer;line-height:1.25;word-break:keep-all;padding:4px}
+  .tb b{display:block;font-size:15px}
+  .tb[aria-selected="true"]{background:var(--ai);color:#fff}
+  .pane{display:none}.pane.on{display:block;animation:pIn .35s var(--ease)}
+  @keyframes pIn{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:none}}
+  .pane h2{font-size:20px;margin:0 0 6px;letter-spacing:-.01em;word-break:keep-all}
+  .pane p{font-size:16px;line-height:1.75;color:var(--ink2);margin:0 0 10px;word-break:keep-all}
+  .box{border-radius:14px;padding:10px 12px;margin-top:8px;font-size:14.5px;line-height:1.65;word-break:keep-all}
+  .box b.t{display:block;font-size:13px;margin-bottom:2px}
+  .an{background:#fff8e6;border:1px solid #f3dc9a;color:#5b4300}
+  .fact{background:#eef6ff;border:1px solid #cfe2f6;color:#1d3f66}
+  .warn{background:#fff4f2;border:1px solid #f3c2bb;color:#7a2a22}
+  .src{display:block;font-size:12px;color:var(--muted);margin-top:3px}
+  .seg{display:flex;gap:6px;margin:10px 0}
+  .sg{flex:1;min-height:52px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15px;cursor:pointer;word-break:keep-all}
+  .sg[aria-pressed="true"]{border-color:var(--ai);background:var(--ai-soft);color:var(--ai)}
+  .meter{background:#f7fafc;border-radius:14px;padding:10px 12px;margin-top:6px}
+  .meter .ml{font-size:13.5px;font-weight:800;color:var(--muted);margin-bottom:6px;display:flex;justify-content:space-between;word-break:keep-all}
+  .trk{height:16px;border-radius:99px;background:#e6edf4;overflow:hidden}
+  .trk i{display:block;height:100%;width:0;border-radius:99px;transition:width .4s linear}
+  .big{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
+  .big div{background:#f7fafc;border-radius:14px;padding:12px;text-align:center}
+  .big b{display:block;font-size:26px;color:var(--ai);letter-spacing:-.02em}
+  .big span{font-size:13.5px;font-weight:700;color:var(--muted);word-break:keep-all}
+  .btn{min-height:50px;border:0;border-radius:14px;padding:0 16px;font-weight:800;font-size:15.5px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;justify-content:center}
+  .btn.primary{background:var(--ai);color:#fff}.btn.ghost{background:#eef3f8;color:var(--ink2)}
+  .btn[aria-pressed="true"]{background:#14263b;color:#fff}
+  .credit{text-align:center;font-size:13px;font-weight:700;color:#8495a8;letter-spacing:.02em;margin:6px 0 0}
+  /* ===== 3D 화면 공통 ===== */
+  :root{--Bc:#14a5d0;--Ic:#2fae4a;--Fc:#f0522a;--N:#d8433b;--S:#2f62c9;--P:#7d5ad6}
+  .viewer{position:relative;overflow:hidden;padding:0}
+  .gl-host{position:relative;width:100%;height:min(74vh,700px);min-height:380px;background:linear-gradient(#f6f9fc,#d6e3ef);touch-action:none}
+  .gl-host canvas.gl{display:block;width:100%;height:100%;outline:none}
+  .lbls{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+  .lb{position:absolute;left:0;top:0;white-space:nowrap;font-weight:800;font-size:14px;padding:3px 9px;border-radius:9px;background:rgba(255,255,255,.88);color:#34495e;box-shadow:0 2px 8px rgba(20,38,59,.14);will-change:transform}
+  .lb.small{font-size:12px;font-weight:700;color:#5a6b7e;background:rgba(255,255,255,.72);box-shadow:none}
+  .lb.B{background:var(--Bc);color:#fff}.lb.I{background:var(--Ic);color:#fff}.lb.F{background:var(--Fc);color:#fff;font-size:15px}
+  .lb.P{background:var(--P);color:#fff}
+  .lb.dim{opacity:.35}
+  .vt{position:absolute;display:flex;gap:6px;flex-wrap:wrap;z-index:3}
+  .vt.tl{left:10px;top:10px;max-width:calc(100% - 20px)}
+  .vt.tr{right:10px;top:10px;justify-content:flex-end}
+  .vt.bl{left:10px;bottom:10px;align-items:center}
+  .vb{min-height:44px;padding:0 12px;border-radius:12px;border:1px solid rgba(20,38,59,.12);background:rgba(255,255,255,.9);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);font-weight:800;font-size:14px;color:#34495e;cursor:pointer;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 10px rgba(20,38,59,.08)}
+  .vb:active{transform:scale(.96)}
+  .vb .dot{width:12px;height:12px;border-radius:50%;flex:none}
+  .vb[aria-pressed="false"]{opacity:.62}
+  .vb[aria-pressed="false"] .dot{background:#c2ccd6!important}
+  .vb.sel{background:#14263b;color:#fff;border-color:#14263b}
+  .hint{font-size:12.5px;font-weight:700;color:#5a6b7e;background:rgba(255,255,255,.78);border-radius:10px;padding:6px 10px;word-break:keep-all}
+  .inset{position:absolute;z-index:2;border-radius:18px;border:2px solid rgba(255,255,255,.95);box-shadow:0 10px 30px rgba(20,38,59,.22),inset 0 0 0 1px rgba(20,38,59,.08);pointer-events:none;display:none}
+  .inset.on{display:block}
+  .inset .it{position:absolute;left:8px;top:8px;font-size:12.5px;font-weight:900;color:#14263b;background:rgba(255,255,255,.9);border-radius:8px;padding:3px 8px}
+  .inset .ic{position:absolute;left:6px;right:6px;bottom:6px;display:flex;flex-wrap:wrap;gap:4px;justify-content:center}
+  .inset .ic span{font-size:11.5px;font-weight:800;color:#fff;border-radius:7px;padding:2px 7px;white-space:nowrap}
+  .fail3d{position:absolute;inset:0;display:none;place-items:center;text-align:center;padding:24px;font-size:16px;font-weight:700;color:#7a2a22;line-height:1.7;word-break:keep-all;background:#fff4f2}
+  .fail3d.show{display:grid}
+  .model{font-size:13px;color:var(--muted);text-align:right;margin:0;word-break:keep-all}
+  @media (max-width:900px){.gl-host{height:min(56vh,620px)}}
+  @media (max-width:900px){.stage{grid-template-columns:1fr}.viewer{position:relative;top:0}}
+  @media (max-width:520px){.tabs{grid-template-columns:1fr 1fr}}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }
+</script>
+</head>
+<body>
+<div class="app">
+  <header>
+    <span class="eyebrow">반도체 읽기 자료 · 3D 모형</span>
+    <h1>3D AI 칩 속으로: 요리사(GPU)와 고층 창고(HBM)</h1>
+    <p class="sub">AI를 돌리는 칩을 크게 확대한 모형이에요. 데이터가 어떻게 오가는지, 왜 한국의 메모리 반도체가 주목받는지 알아봐요.</p>
+  </header>
+
+  <div class="stage">
+    <section class="card viewer">
+      <div class="gl-host" id="host">
+        <div class="vt bl"><span class="hint">한 손가락: 돌리기 · 두 손가락: 확대</span></div>
+        <div class="fail3d" id="fail3d">3D 그림을 불러오지 못했어요.<br>인터넷 연결을 확인하고 새로고침해 주세요.</div>
+      </div>
+    </section>
+
+    <section class="card pad">
+      <div class="tabs" role="tablist">
+        <button class="tb" role="tab" type="button" data-p="1" aria-selected="true"><b>1</b>AI 칩 둘러보기</button>
+        <button class="tb" role="tab" type="button" data-p="2" aria-selected="false"><b>2</b>데이터가 오가는 길</button>
+        <button class="tb" role="tab" type="button" data-p="3" aria-selected="false"><b>3</b>HBM 펼쳐 보기</button>
+        <button class="tb" role="tab" type="button" data-p="4" aria-selected="false"><b>4</b>한국의 자리</button>
+      </div>
+
+      <div class="pane on" data-p="1">
+        <h2>AI 칩은 두뇌와 창고가 한 몸</h2>
+        <p>AI는 엄청나게 많은 계산을 해요. 가운데 큰 칩 <b>GPU</b>는 계산을 아주 빠르게 하는 <b>시스템 반도체</b>, 양옆에 층층이 쌓인 칩 <b>HBM</b>은 계산할 데이터를 담아 두는 <b>메모리 반도체</b>예요.</p>
+        <div class="box an"><b class="t">비유 · 요리사와 창고</b>GPU는 손이 아주 빠른 <b>요리사</b>, 메모리는 재료를 두는 <b>창고</b>예요. 요리사가 아무리 빨라도 재료가 늦게 오면 기다려야 해요.<span class="src">선생님 비유</span></div>
+        <div class="box fact"><b class="t">왜 칩이 많이 필요할까?</b>큰 AI는 칩 하나에 다 들어가지 않아 많은 GPU를 묶어서 써요. GPU마다 HBM이 붙어 있으니, AI가 커질수록 메모리도 함께 많이 필요해져요.</div>
+      </div>
+
+      <div class="pane" data-p="2">
+        <h2>재료가 오는 길이 좁으면 요리사는 쉰다</h2>
+        <p>두 가지 방식을 바꿔 보며 초록 화살표(데이터)와 GPU의 빛을 비교해 보세요.</p>
+        <div class="seg"><button class="sg" type="button" data-m="far" aria-pressed="true">멀리 있는 보통 메모리</button><button class="sg" type="button" data-m="hbm" aria-pressed="false">바로 옆 HBM</button></div>
+        <div class="meter"><div class="ml"><span>GPU가 일하는 정도</span><span id="mBusyT"></span></div><div class="trk"><i id="mBusy" style="background:linear-gradient(90deg,#7fd3c9,#0f7f8c)"></i></div></div>
+        <div class="meter"><div class="ml"><span>데이터를 기다리는 정도</span><span id="mWaitT"></span></div><div class="trk"><i id="mWait" style="background:linear-gradient(90deg,#ffc4b4,#e0573a)"></i></div></div>
+        <p class="model" style="text-align:left">막대는 개념 이해를 위한 모형이에요(숫자 없음).</p>
+        <div class="box fact"><b class="t">메모리 장벽</b>계산하는 칩은 점점 빨라졌는데, 메모리에서 데이터를 가져오는 속도는 그만큼 빨라지지 못했어요. 그래서 AI처럼 데이터를 끊임없이 쓰는 일에서는 계산보다 <b>데이터 운반</b>이 더 큰 문제가 되었어요. 이것을 '메모리 장벽'이라고 불러요.<span class="src">TrendForce, Memory Wall 해설</span></div>
+      </div>
+
+      <div class="pane" data-p="3">
+        <h2>HBM: 층층이 쌓은 메모리와 수천 개의 엘리베이터</h2>
+        <p><b>HBM</b>(고대역폭 메모리)은 D램 칩 여러 장을 얇게 갈아 <b>위로 쌓고</b>, 칩을 뚫는 아주 작은 통로로 층과 층을 연결한 메모리예요. 그리고 GPU <b>바로 옆</b>에 붙여 한 번에 많은 데이터를 주고받아요.</p>
+        <div class="seg"><button class="sg" type="button" id="bExplode" aria-pressed="false">층 펼치기</button><button class="sg" type="button" id="bLift" aria-pressed="false">엘리베이터 움직이기</button></div>
+        <div class="box an"><b class="t">비유 · 고층 창고</b>창고를 요리사 바로 옆에 <b>여러 층</b>으로 짓고, 층마다 <b>엘리베이터를 수천 개</b> 달아 재료를 한꺼번에 나르는 것과 같아요.<span class="src">선생님 비유</span></div>
+        <div class="box fact"><b class="t">배운 내용과 연결</b>8대 공정의 <b>패키징</b>을 떠올려 보세요. HBM은 칩을 쌓고 잇는 '첨단 패키징' 기술이 핵심이에요.</div>
+      </div>
+
+      <div class="pane" data-p="4">
+        <h2>AI 시대의 창고를 가장 많이 짓는 나라</h2>
+        <p>AI 붐으로 HBM과 D램을 찾는 곳이 크게 늘었어요. 이 메모리를 가장 많이 만드는 곳이 한국의 두 회사예요.</p>
+        <div class="big"><div><b>약 3분의 2</b><span>세계 D램 중 한국 두 회사의 몫</span></div><div><b>약 5분의 4</b><span>세계 HBM 중 한국 두 회사의 몫</span></div></div>
+        <p class="model" style="text-align:left">2026년 2분기 매출 기준, TrendForce·Counterpoint 조사. 분기마다 바뀌어요.</p>
+        <div class="box fact"><b class="t">나라 경제에서도</b>2025년 우리나라 반도체 수출은 약 1,734억 달러로 전체 수출의 약 4분의 1(24.4%)이었어요. 2026년 9월에는 한 달 수출의 약 절반이 반도체였어요. 메모리 값이 크게 오른 영향도 커요.<span class="src">산업통상자원부 발표(2026.1.1.), 언론 보도(2026.10.1.)</span></div>
+        <div class="box an"><b class="t">어떻게 여기까지 왔을까?</b>1983년 우리나라 기업이 64K D램을 미국·일본에 이어 세계 세 번째로 개발했고, 이후 오랫동안 메모리 공장과 기술에 투자해 왔어요.</div>
+        <div class="box warn"><b class="t">아직 숙제도 있어요</b>한국은 창고(메모리)는 가장 잘 짓지만, 두뇌(GPU 같은 시스템 반도체)의 설계·생산과 칩을 만드는 기계는 다른 나라에 많이 기대요. 시스템 반도체 세계 점유율은 약 3%(2022년)예요. 여기에 여러분의 자리가 있어요!</div>
+      </div>
+    </section>
+  </div>
+  <p class="model">3D 모양과 크기, 화살표의 개수와 빠르기는 개념 이해를 위한 모형이에요. 실제 AI 칩은 회사와 제품마다 모양이 달라요.</p>
+  <p class="credit">반도체 읽기 자료 &nbsp;|&nbsp; 제작 · 성안중학교 이삭 T</p>
+</div>
+
+<script>
+/* ===== 블록 1: 안내 ===== */
+window.AI = window.AI || {};
+(() => {
+  'use strict';
+  try {
+    const S = window.AI, $ = (s) => document.querySelector(s), $$ = (s) => Array.from(document.querySelectorAll(s));
+    const st = S.state = { pane: 1, mode: 'far', explode: false, lift: false };
+    function setPane(n) {
+      st.pane = n;
+      $$('.tb').forEach((b) => b.setAttribute('aria-selected', String(+b.dataset.p === n)));
+      $$('.pane').forEach((p) => p.classList.toggle('on', +p.dataset.p === n));
+      if (n === 3) { st.explode = true; st.lift = true; }
+      if (n !== 3) { st.explode = false; }
+      if (n === 2) st.lift = false;
+      sync(); if (S.view) S.view.go(n);
+    }
+    function sync() {
+      $$('.sg[data-m]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.m === st.mode)));
+      $('#bExplode').setAttribute('aria-pressed', String(st.explode)); $('#bLift').setAttribute('aria-pressed', String(st.lift));
+    }
+    $$('.tb').forEach((b) => b.addEventListener('click', () => setPane(+b.dataset.p)));
+    $$('.sg[data-m]').forEach((b) => b.addEventListener('click', () => { st.mode = b.dataset.m; sync(); }));
+    $('#bExplode').addEventListener('click', () => { st.explode = !st.explode; sync(); });
+    $('#bLift').addEventListener('click', () => { st.lift = !st.lift; sync(); });
+    S.meter = (busy, wait) => {
+      $('#mBusy').style.width = (busy * 100).toFixed(0) + '%'; $('#mWait').style.width = (wait * 100).toFixed(0) + '%';
+      $('#mBusyT').textContent = busy > 0.7 ? '쉬지 않고 일해요' : busy > 0.35 ? '가끔 쉬어요' : '자주 쉬어요';
+      $('#mWaitT').textContent = wait > 0.6 ? '오래 기다려요' : wait > 0.3 ? '조금 기다려요' : '거의 안 기다려요';
+    };
+    S.setPane = setPane;
+    sync();
+    S.okUI = true;
+  } catch (err) { window.AI_err('안내', err); }
+})();
+</script>
+
+<script type="module">
+/* ===== 블록 2: 3D AI 칩 ===== */
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+/* ===== 공통 3D 도구 (three.js) =====
+   화살표 색은 교과서 그림 Ⅶ-14~16과 같게: 자기장 하늘색, 전류 초록색, 힘 빨간(주황)색.
+   화살표 길이·움직이는 정도는 개념 이해를 위한 모형이에요(숫자 없음). */
+const C3 = (() => {
+  const COL = { B: 0x14a5d0, I: 0x2fae4a, F: 0xf0522a, N: 0xd8433b, S: 0x2f62c9, Cu: 0xc0703a, P: 0x7d5ad6 };
+  const REDUCE = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const V = (x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z);
+  const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+
+  // 탭 껍데기에서 보이지 않는 탭이면 그리지 않아요(태블릿 배터리 아끼기)
+  function visibleNow() {
+    if (document.hidden) return false;
+    try { const f = window.frameElement; if (f && f.hasAttribute('data-page') && !f.classList.contains('on')) return false; } catch (e) {}
+    return true;
+  }
+
+  function canvasTex(w, h, draw) {
+    const c = document.createElement('canvas'); c.width = w; c.height = h;
+    draw(c.getContext('2d'), w, h);
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
+    t.userData.canvas = c; return t;
+  }
+  function gradientBg(top, bottom) {
+    return canvasTex(4, 256, (g, w, h) => { const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, top); gr.addColorStop(1, bottom); g.fillStyle = gr; g.fillRect(0, 0, w, h); });
+  }
+  // 극 표시(N, S) 글자 판
+  function letterTex(ch, bg) {
+    return canvasTex(256, 256, (g, w, h) => {
+      g.fillStyle = bg; g.fillRect(0, 0, w, h);
+      g.fillStyle = 'rgba(255,255,255,.96)'; g.font = '900 190px Pretendard, Arial, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.fillText(ch, w / 2, h / 2 + 10);
+    });
+  }
+  // 나뭇결 책상
+  function woodTex() {
+    const t = canvasTex(1024, 512, (g, w, h) => {
+      const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#c99a6b'); gr.addColorStop(1, '#b8875a'); g.fillStyle = gr; g.fillRect(0, 0, w, h);
+      for (let i = 0; i < 160; i++) {
+        const y = Math.random() * h, a = 0.04 + Math.random() * 0.08; g.strokeStyle = `rgba(${90 + Math.random() * 40},${55 + Math.random() * 25},30,${a})`;
+        g.lineWidth = 1 + Math.random() * 3; g.beginPath(); g.moveTo(0, y);
+        for (let x = 0; x <= w; x += 32) g.lineTo(x, y + Math.sin(x / 90 + i) * 4 + Math.sin(x / 23) * 1.2);
+        g.stroke();
+      }
+    });
+    t.wrapS = t.wrapT = THREE.RepeatWrapping; return t;
+  }
+  // 바닥에 드리우는 부드러운 그림자
+  function blobTex() {
+    return canvasTex(256, 256, (g, w, h) => { const r = g.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2); r.addColorStop(0, 'rgba(20,38,59,.32)'); r.addColorStop(1, 'rgba(20,38,59,0)'); g.fillStyle = r; g.fillRect(0, 0, w, h); });
+  }
+
+  /* 무대: 렌더러·카메라·조명·손가락 조작 */
+  function makeStage(host, opt = {}) {
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = opt.exposure || 1.05;
+    renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.domElement.className = 'gl';
+    host.appendChild(renderer.domElement);
+    const scene = new THREE.Scene();
+    scene.background = gradientBg(opt.top || '#f6f9fc', opt.bottom || '#d6e3ef');
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    scene.environment = pmrem.fromScene(new RoomEnvironment(renderer), 0.04).texture;
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x8a9bb0, 0.55));
+    const sun = new THREE.DirectionalLight(0xffffff, 1.6);
+    sun.position.set(opt.sunX || 5, 11, opt.sunZ || 7); sun.castShadow = true;
+    sun.shadow.mapSize.set(1024, 1024); sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.02;
+    const sc = sun.shadow.camera; sc.left = -9; sc.right = 9; sc.top = 9; sc.bottom = -9; sc.near = 1; sc.far = 40;
+    scene.add(sun);
+    const camera = new THREE.PerspectiveCamera(opt.fov || 34, 1, 0.1, 200);
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true; controls.dampingFactor = 0.09; controls.enablePan = false;
+    controls.rotateSpeed = 0.85; controls.zoomSpeed = 0.9;
+    if (opt.scroll) { controls.enableZoom = false; renderer.domElement.style.touchAction = 'pan-y'; host.style.touchAction = 'pan-y'; }
+    controls.minDistance = opt.minD || 4; controls.maxDistance = opt.maxD || 24; controls.maxPolarAngle = Math.PI * 0.86;
+
+    const overlay = document.createElement('div'); overlay.className = 'lbls'; host.appendChild(overlay);
+    let W = 1, H = 1;
+    function resize() {
+      const r = host.getBoundingClientRect(); W = Math.max(1, r.width); H = Math.max(1, r.height);
+      renderer.setSize(W, H, false); camera.aspect = W / H;
+      if (opt.fitWidth) { // 세로 화면에서 장면이 잘리지 않도록 화각을 넓혀요
+        const base = opt.fov || 34; camera.fov = camera.aspect < 1.15 ? Math.min(62, base * (1.15 / camera.aspect) * 0.92) : base;
+      }
+      camera.updateProjectionMatrix();
+    }
+    try { let rq = 0; new ResizeObserver(() => { cancelAnimationFrame(rq); rq = requestAnimationFrame(resize); }).observe(host); } catch (e) { addEventListener('resize', resize); }
+    resize();
+
+    // 이름표(HTML)를 3D 위치에 붙이기
+    const labels = [];
+    function label(html, cls, at) {
+      const el = document.createElement('div'); el.className = 'lb ' + (cls || ''); el.innerHTML = html; overlay.appendChild(el);
+      const L = { el, at, show: true, set(h) { el.innerHTML = h; } };
+      labels.push(L); return L;
+    }
+    const tmp = V();
+    function placeLabels() {
+      labels.forEach((L) => {
+        if (!L.show) { L.el.style.display = 'none'; return; }
+        const p = typeof L.at === 'function' ? L.at() : L.at;
+        if (!p) { L.el.style.display = 'none'; return; }
+        tmp.copy(p).project(camera);
+        if (tmp.z > 1 || tmp.z < -1) { L.el.style.display = 'none'; return; }
+        const px = ((tmp.x + 1) / 2) * W, py = ((1 - tmp.y) / 2) * H;
+        // 작은 창(오른손 등)에 가려지는 이름표는 숨겨요
+        if (insets.some((I) => I.on && I.last && px > I.last.x - 30 && px < I.last.x + I.last.w + 30 && py > I.last.y - 12 && py < I.last.y + I.last.h + 12)) { L.el.style.display = 'none'; return; }
+        L.el.style.display = '';
+        L.el.style.transform = `translate(${px}px,${py}px) translate(-50%,-50%)`;
+      });
+    }
+
+    // 카메라 이동
+    let fly = null;
+    controls.addEventListener('start', () => { fly = null; });
+    function flyTo(pos, target, dur = 1.1) {
+      if (REDUCE || dur <= 0) { camera.position.copy(pos); controls.target.copy(target); controls.update(); return; }
+      fly = { p0: camera.position.clone(), t0: controls.target.clone(), p1: pos.clone(), t1: target.clone(), k: 0, dur };
+    }
+
+    // 작은 창(오른손 보기 등)을 같은 캔버스 귀퉁이에 그리기
+    const insets = [];
+    function addInset(sc2, cam2, rectFn) { const I = { scene: sc2, camera: cam2, rect: rectFn, on: true }; insets.push(I); return I; }
+
+    const fns = [];
+    let last = performance.now(), running = true;
+    function tick(now) {
+      requestAnimationFrame(tick);
+      if (!running || !visibleNow()) { last = now; return; }
+      if (opt.scroll) { const hr = host.getBoundingClientRect(); if (hr.bottom < -50 || hr.top > (window.innerHeight || 800) + 50) { last = now; return; } } // 화면 밖이면 쉬기
+      const dt = Math.min(0.05, Math.max(0, (now - last) / 1000)); last = now;
+      if (fly) {
+        fly.k = Math.min(1, fly.k + dt / fly.dur); const e = ease(fly.k);
+        camera.position.lerpVectors(fly.p0, fly.p1, e); controls.target.lerpVectors(fly.t0, fly.t1, e);
+        if (fly.k >= 1) fly = null;
+      }
+      for (let i = 0; i < fns.length; i++) { try { fns[i](dt, now / 1000); } catch (err) { console.error(err); } }
+      controls.update();
+      renderer.setScissorTest(false); renderer.setViewport(0, 0, W, H);
+      renderer.render(scene, camera);
+      insets.forEach((I) => {
+        if (!I.on) return; const r = I.rect(W, H); I.last = r; if (!r) return;
+        renderer.setScissorTest(true);
+        renderer.setScissor(r.x, H - r.y - r.h, r.w, r.h); renderer.setViewport(r.x, H - r.y - r.h, r.w, r.h);
+        I.camera.aspect = r.w / r.h; I.camera.updateProjectionMatrix();
+        renderer.render(I.scene, I.camera);
+      });
+      renderer.setScissorTest(false);
+      placeLabels();
+    }
+    requestAnimationFrame(tick);
+    return { renderer, scene, camera, controls, sun, overlay, label, flyTo, onFrame: (f) => fns.push(f), addInset, size: () => ({ W, H }), resize };
+  }
+
+  /* 화살표: 원기둥 + 원뿔. setDir(방향, 길이) */
+  const UP = V(0, 1, 0);
+  function makeArrow(color, o = {}) {
+    const r = o.r || 0.06, head = o.head || 0.3, hr = o.hr || r * 2.6;
+    const mat = new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: o.glow == null ? 0.38 : o.glow, roughness: 0.35, metalness: 0.05, transparent: !!o.opacity, opacity: o.opacity || 1 });
+    const g = new THREE.Group();
+    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 1, 20), mat);
+    const cone = new THREE.Mesh(new THREE.ConeGeometry(hr, head, 28), mat);
+    shaft.castShadow = cone.castShadow = !!o.shadow;
+    g.add(shaft, cone);
+    let curLen = 1;
+    g.setDir = (dir, len) => {
+      if (len != null) curLen = len;
+      const L = Math.max(curLen, head * 1.05);
+      shaft.scale.y = L - head; shaft.position.y = (L - head) / 2; cone.position.y = L - head / 2;
+      if (dir) g.quaternion.setFromUnitVectors(UP, tmpD.copy(dir).normalize());
+      return g;
+    };
+    g.mat = mat; g.len = () => curLen;
+    return g;
+  }
+  const tmpD = V();
+
+  /* 오른손 모형
+     손의 기준 방향: 네 손가락 = +Y, 엄지손가락 = +X, 손바닥이 향하는 쪽 = +Z
+     (오른손이므로 엄지(전류) × 네 손가락(자기장) = 손바닥(힘) 방향) */
+  function makeHand(o = {}) {
+    const root = new THREE.Group();
+    const skin = new THREE.MeshStandardMaterial({ color: 0xeebc97, roughness: 0.62, metalness: 0 });
+    const palmSkin = new THREE.MeshStandardMaterial({ color: 0xf8d3b8, roughness: 0.75 });
+    const nailM = new THREE.MeshStandardMaterial({ color: 0xffe9e2, roughness: 0.25 });
+    const sleeve = new THREE.MeshStandardMaterial({ color: 0x35587d, roughness: 0.85 });
+    const add = (m) => { m.castShadow = true; root.add(m); return m; };
+    add(new THREE.Mesh(new RoundedBoxGeometry(0.94, 1.02, 0.34, 4, 0.14), skin));
+    const pad = add(new THREE.Mesh(new RoundedBoxGeometry(0.8, 0.86, 0.05, 3, 0.022), palmSkin)); pad.position.set(0, -0.02, 0.155);
+    // 손바닥 주름(손바닥 쪽임을 알아보기 쉽게)
+    const crease = new THREE.MeshStandardMaterial({ color: 0xdca184, roughness: 0.8 });
+    [[-0.05, 0.12, 0.62, -0.2], [0.02, -0.12, 0.55, 0.35]].forEach(([x, y, w, rz]) => { const c = new THREE.Mesh(new THREE.CapsuleGeometry(0.012, w, 2, 6), crease); c.rotation.z = Math.PI / 2 + rz; c.position.set(x, y, 0.182); root.add(c); });
+    const F = [[0.34, 0.8], [0.115, 0.9], [-0.115, 0.84], [-0.33, 0.66]];
+    F.forEach(([x, L]) => {
+      const r = 0.102;
+      const f = add(new THREE.Mesh(new THREE.CapsuleGeometry(r, L - 2 * r, 6, 16), skin)); f.position.set(x, 0.44 + L / 2, 0);
+      const n = add(new THREE.Mesh(new THREE.SphereGeometry(0.074, 16, 10), nailM)); n.scale.set(1, 1.35, 0.32); n.position.set(x, 0.44 + L - 0.14, -0.088);
+      // 마디 주름
+      const k = new THREE.Mesh(new THREE.TorusGeometry(r * 0.98, 0.006, 4, 18, Math.PI), crease); k.rotation.x = Math.PI / 2; k.rotation.z = Math.PI; k.position.set(x, 0.44 + L * 0.42, 0); root.add(k);
+    });
+    // 엄지: +X 방향으로 곧게
+    const th = add(new THREE.Mesh(new THREE.CapsuleGeometry(0.118, 0.5, 6, 16), skin)); th.rotation.z = -Math.PI / 2; th.position.set(0.78, -0.16, 0.04);
+    const tn = add(new THREE.Mesh(new THREE.SphereGeometry(0.08, 16, 10), nailM)); tn.scale.set(1.35, 1, 0.32); tn.position.set(0.98, -0.16, -0.075);
+    const mound = add(new THREE.Mesh(new THREE.SphereGeometry(0.3, 20, 14), skin)); mound.scale.set(1.1, 1.05, 0.62); mound.position.set(0.36, -0.2, 0.04);
+    const wrist = add(new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.33, 0.55, 24), skin)); wrist.scale.z = 0.62; wrist.position.y = -0.74;
+    const cuff = add(new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.42, 0.62, 28), sleeve)); cuff.scale.z = 0.72; cuff.position.y = -1.25;
+    // 세 화살표
+    const aB = makeArrow(COL.B, { r: 0.05, head: 0.24 }); aB.position.set(0, 1.5, 0); aB.setDir(V(0, 1, 0), 0.75);
+    const aI = makeArrow(COL.I, { r: 0.05, head: 0.24 }); aI.position.set(1.22, -0.16, 0.04); aI.setDir(V(1, 0, 0), 0.75);
+    const aF = makeArrow(COL.F, { r: 0.065, head: 0.3 }); aF.position.set(0, 0.0, 0.2); aF.setDir(V(0, 0, 1), o.fLen || 1.15);
+    root.add(aB, aI, aF);
+    root.arrows = { B: aB, I: aI, F: aF };
+    root.tips = { B: V(0, 2.42, 0), I: V(2.2, -0.16, 0.04), F: V(0, 0, 1.6) };
+    return root;
+  }
+  // 엄지 = 전류 방향, 네 손가락 = 자기장 방향이 되도록 손을 돌리는 회전값
+  function handQuat(iDir, bDir) {
+    const x = iDir.clone().normalize(), y = bDir.clone().normalize(), z = V().crossVectors(x, y).normalize();
+    return new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(x, y, z));
+  }
+
+  /* 7-세그먼트 숫자(디지털 전원 장치 화면) */
+  const SEG = { '0': 'abcdef', '1': 'bc', '2': 'abged', '3': 'abgcd', '4': 'fgbc', '5': 'afgcd', '6': 'afgedc', '7': 'abc', '8': 'abcdefg', '9': 'abcdfg', '-': 'g', ' ': '' };
+  function seg7(g, txt, x, y, s, on, off) {
+    let cx = x;
+    for (const ch of txt) {
+      if (ch === '.') { g.fillStyle = on; g.beginPath(); g.arc(cx - s * 0.12, y + s * 1.9, s * 0.11, 0, 7); g.fill(); continue; }
+      const segs = SEG[ch] || '', w = s, t = s * 0.2, h = s * 0.95;
+      const R = { a: [cx + t, y, w - 2 * t, t], d: [cx + t, y + 2 * h, w - 2 * t, t], g: [cx + t, y + h, w - 2 * t, t], f: [cx, y + t * 0.6, t, h - t * 0.4], b: [cx + w - t, y + t * 0.6, t, h - t * 0.4], e: [cx, y + h + t * 0.6, t, h - t * 0.4], c: [cx + w - t, y + h + t * 0.6, t, h - t * 0.4] };
+      Object.keys(R).forEach((k) => { g.fillStyle = segs.includes(k) ? on : off; const r = R[k]; g.fillRect(r[0], r[1], r[2], r[3]); });
+      cx += w * 1.35;
+    }
+  }
+
+  // 관 모양 전선(곡선)
+  function tube(points, r, mat, seg = 80) {
+    const curve = new THREE.CatmullRomCurve3(points, false, 'centripetal');
+    const m = new THREE.Mesh(new THREE.TubeGeometry(curve, seg, r, 10, false), mat); m.castShadow = true; m.curve = curve; return m;
+  }
+
+  // 길을 따라 움직이는 전류 화살표(작은 원뿔). setPath(점 배열), update(dt, 빠르기, 방향)
+  function makeFlow(count, color, size = 1) {
+    const geo = new THREE.ConeGeometry(0.055 * size, 0.17 * size, 12); geo.rotateX(Math.PI / 2); // 원뿔 끝 = +Z
+    const mat = new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.9, roughness: 0.3 });
+    const mesh = new THREE.InstancedMesh(geo, mat, count); mesh.frustumCulled = false;
+    let pts = [], cum = [], total = 1, off = 0; const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), p = V(), d = V(), sc = V(1, 1, 1), Z = V(0, 0, 1);
+    function setPath(P) {
+      pts = P; cum = [0];
+      for (let i = 1; i < P.length; i++) cum.push(cum[i - 1] + P[i].distanceTo(P[i - 1]));
+      total = cum[cum.length - 1] || 1;
+    }
+    function at(s, out, dir) {
+      s = ((s % total) + total) % total;
+      let i = 1; while (i < cum.length - 1 && cum[i] < s) i++;
+      const a = pts[i - 1], b = pts[i], seg = cum[i] - cum[i - 1] || 1, k = (s - cum[i - 1]) / seg;
+      out.lerpVectors(a, b, k); dir.subVectors(b, a).normalize();
+    }
+    function update(dt, speed, sign, visible) {
+      mesh.visible = !!visible && pts.length > 1;
+      if (!mesh.visible) return;
+      off += dt * speed * sign;
+      const gap = total / count;
+      for (let k = 0; k < count; k++) {
+        at(off + k * gap, p, d);
+        if (sign < 0) d.negate();
+        q.setFromUnitVectors(Z, d); m4.compose(p, q, sc); mesh.setMatrixAt(k, m4);
+      }
+      mesh.instanceMatrix.needsUpdate = true;
+    }
+    return { mesh, setPath, update, mat };
+  }
+
+  // 책상과 그림자 받는 바닥
+  function addTable(scene, w, d, y = 0) {
+    const tex = woodTex(); tex.repeat.set(w / 10, d / 10);
+    const mat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.55, metalness: 0 });
+    const t = new THREE.Mesh(new RoundedBoxGeometry(w, 0.4, d, 3, 0.12), mat); t.position.y = y - 0.2; t.receiveShadow = true; scene.add(t);
+    return t;
+  }
+
+  return { COL, REDUCE, V, ease, makeStage, makeArrow, makeHand, handQuat, letterTex, canvasTex, blobTex, seg7, tube, makeFlow, addTable, visibleNow };
+})();
+try {
+  const S = window.AI, st = S.state, { V } = C3;
+  const host = document.getElementById('host');
+  const stage = C3.makeStage(host, { fitWidth: true, minD: 3, maxD: 26, top: '#eef7f8', bottom: '#cfe0e6' });
+  const { scene, camera, controls, label } = stage;
+  const mesh = (geo, mat, x = 0, y = 0, z = 0) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true; return m; };
+  const M = {
+    pcb: new THREE.MeshStandardMaterial({ color: 0x1d6a4a, roughness: 0.55 }),
+    pcb2: new THREE.MeshStandardMaterial({ color: 0x175a3e, roughness: 0.6 }),
+    inter: new THREE.MeshStandardMaterial({ color: 0x9aa4b2, metalness: 0.6, roughness: 0.35 }),
+    gpuSide: new THREE.MeshStandardMaterial({ color: 0x3b4150, metalness: 0.5, roughness: 0.35 }),
+    dram: new THREE.MeshStandardMaterial({ color: 0x4a5160, metalness: 0.55, roughness: 0.3 }),
+    dramTop: new THREE.MeshPhysicalMaterial({ color: 0x5b4fa8, metalness: 0.5, roughness: 0.3, iridescence: 0.5 }),
+    base: new THREE.MeshStandardMaterial({ color: 0x2f3542, metalness: 0.5, roughness: 0.35 }),
+    gold: new THREE.MeshStandardMaterial({ color: 0xe0b44c, metalness: 1, roughness: 0.25, emissive: 0x6b4a00, emissiveIntensity: 0.0 }),
+    cu: new THREE.MeshStandardMaterial({ color: 0xd07a3a, metalness: 1, roughness: 0.3 }),
+    black: new THREE.MeshStandardMaterial({ color: 0x1d2024, roughness: 0.5 }),
+  };
+  C3.addTable(scene, 18, 12, -0.6);
+  // 큰 기판
+  scene.add(mesh(new RoundedBoxGeometry(12, 0.24, 7.6, 3, 0.08), M.pcb, 0, -0.48, 0));
+  // 기판 무늬(가는 구리 길)
+  for (let i = 0; i < 26; i++) { const z = -3.4 + i * 0.27; const l = mesh(new THREE.BoxGeometry(11.4, 0.006, 0.03), new THREE.MeshStandardMaterial({ color: 0x2a8a5f, roughness: 0.5 }), 0, -0.355, z); l.castShadow = false; scene.add(l); }
+  // 중간 판(실리콘 다리 역할)
+  scene.add(mesh(new RoundedBoxGeometry(6.6, 0.12, 4.2, 2, 0.03), M.inter, 0, -0.3, 0));
+  // GPU
+  const gpuTex = C3.canvasTex(512, 512, (g, w, h) => {
+    const gr = g.createLinearGradient(0, 0, w, h); gr.addColorStop(0, '#3b3570'); gr.addColorStop(1, '#1e3a5a'); g.fillStyle = gr; g.fillRect(0, 0, w, h);
+    g.strokeStyle = 'rgba(255,215,140,.35)'; g.lineWidth = 2;
+    for (let i = 0; i < 16; i++) for (let j = 0; j < 16; j++) g.strokeRect(16 + i * 30, 16 + j * 30, 24, 24);
+    g.fillStyle = 'rgba(255,255,255,.9)'; g.font = '900 86px Pretendard, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('GPU', w / 2, h / 2);
+  });
+  const gpuTop = new THREE.MeshPhysicalMaterial({ map: gpuTex, metalness: 0.5, roughness: 0.3, emissive: 0x2fd0c0, emissiveIntensity: 0.0, emissiveMap: gpuTex });
+  const gpu = mesh(new THREE.BoxGeometry(2.6, 0.22, 2.6), [M.gpuSide, M.gpuSide, gpuTop, M.gpuSide, M.gpuSide, M.gpuSide], 0, -0.13, 0); scene.add(gpu);
+  // HBM 4개 (양옆 2개씩)
+  const NL = 8, LH = 0.075;
+  const stacks = [[-2.35, -1.05], [-2.35, 1.05], [2.35, -1.05], [2.35, 1.05]].map(([x, z]) => {
+    const g = new THREE.Group(); g.position.set(x, -0.24, z); scene.add(g);
+    const base = mesh(new THREE.BoxGeometry(1.1, 0.08, 1.4), M.base, 0, 0.04, 0); g.add(base);
+    const layers = [];
+    for (let k = 0; k < NL; k++) { const L = mesh(new THREE.BoxGeometry(1.06, LH * 0.82, 1.36), [M.dram, M.dram, M.dramTop, M.dram, M.dram, M.dram], 0, 0.08 + LH * (k + 0.5), 0); g.add(L); layers.push(L); }
+    const tsv = [];
+    for (let i = -2; i <= 2; i++) for (let j = -3; j <= 3; j++) { const t = mesh(new THREE.CylinderGeometry(0.018, 0.018, 1, 6), M.gold, i * 0.18, 0, j * 0.17); t.castShadow = false; g.add(t); tsv.push(t); }
+    return { g, layers, tsv, x, z };
+  });
+  // 멀리 있는 보통 메모리(막대 모양 메모리 2개)
+  const dimms = [-1, 1].map((sz) => {
+    const g = new THREE.Group(); g.position.set(5.1, -0.36, sz * 1.6); scene.add(g);
+    g.add(mesh(new RoundedBoxGeometry(0.16, 1.1, 2.6, 2, 0.03), M.pcb2, 0, 0.55, 0));
+    for (let k = 0; k < 4; k++) g.add(mesh(new THREE.BoxGeometry(0.06, 0.42, 0.5), M.black, 0.1, 0.6, -0.9 + k * 0.6));
+    return g;
+  });
+  // 데이터 흐름(초록 화살표)
+  const DATA = 0x37c98a;
+  const farFlows = [-1, 1].map((sz) => { const f = C3.makeFlow(7, DATA, 1.5); scene.add(f.mesh); return { f, sz }; });
+  const farPath = (sz) => [V(5.0, 0.15, sz * 1.6), V(4.2, -0.33, sz * 1.6), V(3.4, -0.33, sz * 1.0), V(1.5, -0.33, sz * 0.3), V(1.0, 0.05, sz * 0.2)];
+  farFlows.forEach(({ f, sz }) => f.setPath(farPath(sz)));
+  const hbmFlows = [];
+  stacks.forEach((s) => { for (let l = 0; l < 5; l++) { const f = C3.makeFlow(5, DATA, 1.0); scene.add(f.mesh); const dz = -0.5 + l * 0.25, sx = Math.sign(s.x); f.setPath([V(s.x - sx * 0.45, 0.0, s.z + dz), V(sx * 1.32, 0.0, s.z * 0.55 + dz * 0.6)]); hbmFlows.push(f); } });
+  // 엘리베이터(층 사이 위아래로 움직이는 알갱이)
+  const liftFlows = stacks.map((s) => { const f = C3.makeFlow(10, 0xffd166, 0.9); scene.add(f.mesh); return f; });
+  // 이름표
+  label('GPU (계산하는 칩)', 'B', () => gpu.localToWorld(V(0, 0.45, -1.1)));
+  label('HBM (메모리)', 'P', () => stacks[0].g.localToWorld(V(0, 1.0, -0.6)));
+  label('HBM', 'P', () => stacks[3].g.localToWorld(V(0, 1.0, 0.6)));
+  label('멀리 있는 보통 메모리', '', () => (st.pane === 2 ? dimms[0].localToWorld(V(0, 1.45, 0)) : null));
+  label('층마다 D램 칩', '', () => (expl > 0.5 ? stacks[0].g.localToWorld(V(-0.7, 1.2, 0.7)) : null));
+  label('층을 잇는 통로(엘리베이터)', 'I', () => (expl > 0.5 ? stacks[0].g.localToWorld(V(0.1, 0.7, 0.95)) : null));
+  label('데이터', 'I', () => (st.pane === 2 && st.mode === 'far' ? V(3.0, 0.3, 1.6) : st.pane === 2 ? V(1.8, 0.4, 1.4) : null));
+
+  /* 보는 방향 */
+  const VIEWS = { 1: [V(5.8, 6.2, 8.2), V(0, -0.2, 0)], 2: [V(2.6, 9.6, 9.8), V(1.8, -0.3, 0)], 3: [V(-4.2, 4.4, 7.8), V(-2.0, 0.7, 0.2)], 4: [V(-6.0, 4.4, 6.4), V(-1.2, 0.2, 0)] };
+  camera.position.copy(VIEWS[1][0]); controls.target.copy(VIEWS[1][1]);
+
+  let expl = 0, busy = 0.5, wait = 0.5, mt = 0;
+  stage.onFrame((dt, t) => {
+    // 층 펼치기
+    expl += ((st.explode ? 1 : 0) - expl) * Math.min(1, dt * 3);
+    stacks.forEach((s, si) => {
+      const e = si < 2 ? expl : 0;   // 왼쪽 두 개만 펼쳐요
+      s.layers.forEach((L, k) => (L.position.y = 0.08 + LH * (k + 0.5) + e * k * 0.17));
+      const top = 0.08 + LH * NL + e * (NL - 1) * 0.17;
+      s.tsv.forEach((tv) => { tv.scale.y = top; tv.position.y = top / 2; tv.visible = e > 0.05; });
+      M.gold.emissiveIntensity = st.lift ? 0.6 + 0.3 * Math.sin(t * 6) : 0.0;
+      const f = liftFlows[si];
+      const on = st.lift && e > 0.3;
+      if (on) f.setPath([s.g.localToWorld(V(0.18, 0.08, 0.17)), s.g.localToWorld(V(0.18, top, 0.17)), s.g.localToWorld(V(-0.18, top, -0.17)), s.g.localToWorld(V(-0.18, 0.08, -0.17)), s.g.localToWorld(V(0.18, 0.08, 0.17))]);
+      f.update(dt, 1.3, 1, on);
+    });
+    // 데이터가 오가는 길
+    const p2 = st.pane === 2 || st.pane === 1, far = st.mode === 'far' && st.pane === 2;
+    farFlows.forEach(({ f }) => f.update(dt, 0.9, 1, far));
+    hbmFlows.forEach((f) => f.update(dt, 2.2, 1, p2 && !far));
+    dimms.forEach((d) => (d.visible = st.pane === 2));
+    // GPU 빛: 일하는 정도
+    const tb = far ? 0.25 + 0.25 * Math.max(0, Math.sin(t * 2.2)) : 0.9, tw = far ? 0.75 : 0.12;
+    busy += (tb - busy) * Math.min(1, dt * 2); wait += (tw - wait) * Math.min(1, dt * 2);
+    gpuTop.emissiveIntensity = st.pane === 2 || st.pane === 1 ? busy * 0.9 : 0.3;
+    mt += dt; if (mt > 0.3 && st.pane === 2) { mt = 0; S.meter && S.meter(busy, wait); }
+  });
+  S.view = { go(n) { const v = VIEWS[n]; stage.flyTo(v[0], v[1]); } };
+  S.meter && S.meter(0.3, 0.75);
+  S.ok3d = true;
+} catch (err) { window.AI_err('3D AI 칩', err); const f = document.getElementById('fail3d'); if (f) f.classList.add('show'); }
+</script>
+</body>
+</html>
