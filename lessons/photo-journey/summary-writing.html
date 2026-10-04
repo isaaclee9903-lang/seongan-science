@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>사진 한 장의 여행 정리와 글쓰기</title>
+<script>
+/* 문제 알림: 코드에 오류가 나면 화면 아래에 빨간 상자로 알려 줘요 (선생님 확인용) */
+(function () {
+  function box() {
+    var b = document.getElementById('swErr');
+    if (!b && document.body) {
+      b = document.createElement('div'); b.id = 'swErr';
+      b.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;background:#fdecea;color:#8a1f17;border:2px solid #d9534f;border-radius:12px;padding:10px 14px;font:600 14px/1.5 sans-serif;white-space:pre-wrap';
+      document.body.appendChild(b);
+    }
+    return b;
+  }
+  window.SW_err = function (where, err) {
+    var msg = '[' + where + '] ' + (err && err.message ? err.message : String(err));
+    var show = function () { var b = box(); if (b) b.textContent += (b.textContent ? '\n' : '') + msg; };
+    if (document.body) show(); else document.addEventListener('DOMContentLoaded', show);
+  };
+  window.addEventListener('error', function (e) { window.SW_err('스크립트', { message: e.message + ' (줄 ' + e.lineno + ')' }); });
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      var S = window.SW || {}, miss = [];
+      [['ok1', 'O/X 판단'], ['ok2', '여행 순서'], ['ok3', '0과 1 암호'], ['ok4', '글쓰기']].forEach(function (p) { if (!S[p[0]]) miss.push(p[1]); });
+      if (miss.length) window.SW_err('실행 안 됨', { message: miss.join(', ') + ' 코드가 실행되지 않았어요. 파일이 끝(</html>)까지 들어 있는지 확인해 주세요.' });
+    }, 1500);
+  });
+})();
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+  :root{--bg:#f3f6f9;--card:#fff;--ink:#14263b;--ink2:#34495e;--muted:#5a6b7e;--line:#dde6ee;--accent:#0e63b3;--accent-soft:#e3effb;
+    --ok:#1f9d5c;--no:#d9534f;--violet:#7d5ad6;--ser:#1784cf;--ser-soft:#e3f2fc;--par:#5e9e1c;--par-soft:#eef7e2;
+    --shadow:0 1px 2px rgba(20,38,59,.06),0 8px 24px rgba(20,38,59,.07);--ease:cubic-bezier(.2,.8,.2,1)}
+  *{box-sizing:border-box}html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:"Pretendard",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  button{font:inherit;color:inherit}
+  .app{max-width:1000px;margin:0 auto;padding:16px 16px 28px;display:flex;flex-direction:column;gap:16px}
+  .eyebrow{display:inline-flex;font-size:13px;font-weight:700;color:var(--accent);background:var(--accent-soft);padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(22px,2.8vw,30px);margin:8px 0 2px;letter-spacing:-.02em}
+  .sub{margin:0;color:var(--muted);font-size:15px;word-break:keep-all}
+  .tabs{display:flex;gap:8px;flex-wrap:wrap;position:sticky;top:0;z-index:5;background:rgba(243,246,249,.94);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);padding:8px 0}
+  .tab{display:flex;align-items:center;gap:8px;min-height:46px;padding:0 14px;border:0;border-radius:12px;background:#fff;box-shadow:var(--shadow);font-weight:800;font-size:14.5px;color:var(--muted);cursor:pointer}
+  .tab .n{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:12.5px;background:#e6edf4;color:#607285}
+  .tab.done .n{background:var(--ok);color:#fff}
+  .card{background:var(--card);border-radius:22px;box-shadow:var(--shadow);border:1px solid rgba(20,38,59,.04);padding:20px 22px;scroll-margin-top:70px}
+  h2{font-size:21px;margin:0 0 4px;display:flex;align-items:center;gap:10px}
+  h2 .no{width:30px;height:30px;border-radius:10px;background:var(--accent);color:#fff;display:grid;place-items:center;font-size:15px}
+  .goal{font-size:14.5px;color:var(--muted);margin:0 0 14px;word-break:keep-all}
+  .fb{margin-top:12px;padding:12px 14px;border-radius:14px;font-size:15px;line-height:1.6;word-break:keep-all;display:none}
+  .fb.show{display:block;animation:fade .35s var(--ease)}
+  .fb.ok{background:#e8f7ef;color:#0f5a36}.fb.no{background:#fff5e6;color:#7a4508}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .btn{min-height:50px;border:0;border-radius:14px;padding:0 18px;font-weight:800;font-size:15.5px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;justify-content:center}
+  .btn:active{transform:scale(.97)}
+  .btn.primary{background:var(--accent);color:#fff}.btn.ghost{background:#eef3f8;color:var(--ink2)}.btn.green{background:var(--ok);color:#fff}
+  .btn:disabled{opacity:.4}
+  /* 1. 분류 */
+  .sort{display:grid;gap:10px}
+  .si{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;background:#f7fafc;border:2px solid transparent;border-radius:16px;padding:10px 12px 10px 16px;transition:all .25s}
+  .si p{margin:0;font-weight:700;font-size:16.5px;line-height:1.5;word-break:keep-all}
+  .si .two{display:flex;gap:6px}
+  .si .two button{min-height:48px;min-width:84px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15px;cursor:pointer}
+  .si .two button.s[aria-pressed="true"]{border-color:var(--ser);background:var(--ser-soft);color:var(--ser)}
+  .si .two button.p[aria-pressed="true"]{border-color:var(--par);background:var(--par-soft);color:#3f6e10}
+  .si.good{border-color:#9fdcbb;background:#ecf8f1}.si.bad{border-color:#f3c2bb;background:#fff4f2}
+  /* 2. 잇기 */
+  .chains{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .chn h3{margin:0 0 8px;font-size:16px}
+  .chn.s h3{color:var(--ser)}.chn.p h3{color:var(--par)}
+  .slots{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+  .sl{min-height:50px;border-radius:12px;border:2px dashed #b8c6d4;background:#f7fafc;display:flex;align-items:center;gap:10px;padding:6px 12px;font-weight:800;font-size:15px;color:var(--muted);word-break:keep-all}
+  .sl .k{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:13px;color:#fff;background:#aebdcc}
+  .chn.s .sl.f{border-style:solid;border-color:var(--ser);background:var(--ser-soft);color:#0f4f7d}.chn.s .sl.f .k{background:var(--ser)}
+  .chn.p .sl.f{border-style:solid;border-color:var(--par);background:var(--par-soft);color:#3f6e10}.chn.p .sl.f .k{background:var(--par)}
+  .pool{display:flex;flex-direction:column;gap:6px}
+  .pc{min-height:50px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15px;cursor:pointer;text-align:left;padding:6px 12px;word-break:keep-all}
+  .pc.shake{animation:shake .4s;border-color:var(--no)}
+  @keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+  .pc[hidden]{display:none}
+  /* 3. 생활 */
+  .lq{padding:14px 0;border-bottom:1px dashed var(--line)}
+  .lq:last-child{border-bottom:0;padding-bottom:0}
+  .lq p{margin:0 0 10px;font-weight:700;font-size:16.5px;line-height:1.6;word-break:keep-all}
+  .opts{display:grid;gap:8px}
+  .ob{display:flex;align-items:center;gap:10px;text-align:left;min-height:52px;border-radius:14px;border:2px solid var(--line);background:#f7fafc;padding:8px 14px;font-size:15.5px;font-weight:700;cursor:pointer;word-break:keep-all}
+  .ob .k{flex:none;width:28px;height:28px;border-radius:50%;background:#fff;border:2px solid #cbd6e1;display:grid;place-items:center;font-size:13px;font-weight:800;color:#5a6b7e}
+  .ob.good{border-color:var(--ok);background:#e8f7ef}.ob.bad{border-color:var(--no);background:#fdecea}
+  .ob:disabled{cursor:default}
+  .lexp{display:none;margin-top:10px;padding:12px 14px;border-radius:14px;background:#f2f7fd;font-size:15px;line-height:1.65;word-break:keep-all}
+  .lexp.show{display:block}
+  /* 4. 글쓰기 */
+  .prompts{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+  .pr{border-radius:16px;border:2px solid #d4dee8;background:#fff;padding:12px 14px;text-align:left;cursor:pointer;min-height:96px}
+  .pr b{display:block;font-size:15.5px;margin-bottom:4px}.pr span{font-size:13.5px;color:var(--muted);word-break:keep-all}
+  .pr.sel{border-color:var(--violet);background:#f3effd}
+  .wq{font-size:17px;font-weight:800;background:#f3effd;border-radius:14px;padding:12px 14px;margin-bottom:10px;color:#3d2f73;word-break:keep-all}
+  .starters{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+  .starters button{min-height:44px;border-radius:10px;border:1px dashed #b8a6ec;background:#fff;color:#5a43a8;font-weight:700;font-size:13.5px;padding:0 10px;cursor:pointer}
+  textarea{width:100%;min-height:220px;border-radius:16px;border:2px solid #cbd6e1;padding:14px 16px;font-size:17px;line-height:1.8;resize:vertical;font-family:inherit}
+  textarea:focus{outline:none;border-color:var(--violet);box-shadow:0 0 0 4px rgba(125,90,214,.15)}
+  .wmeta{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-top:8px;font-size:14px;color:var(--muted);font-weight:700}
+  .kw{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+  .kw span{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:6px 12px;font-size:14px;font-weight:800;background:#eef3f8;color:#7a8a9b;transition:all .3s}
+  .kw span.on{background:#e8f7ef;color:#11703f}
+  .kw span::before{content:"○"}.kw span.on::before{content:"●"}
+  .self{display:grid;gap:8px;margin-top:14px}
+  .self label{display:flex;align-items:center;gap:10px;background:#f7fafc;border-radius:12px;padding:10px 12px;font-size:15px;font-weight:700;cursor:pointer;word-break:keep-all;min-height:48px}
+  .self input{width:22px;height:22px;accent-color:var(--ok)}
+  .self .cat{flex:none;font-size:12px;font-weight:800;color:#fff;border-radius:999px;padding:2px 8px}
+  .acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+  .note{font-size:12.5px;color:var(--muted);line-height:1.6;word-break:keep-all}
+  @media (max-width:760px){.chains,.prompts{grid-template-columns:1fr}.si{grid-template-columns:1fr}}
+  @media print{body{background:#fff}.tabs,.card:not(#s4),.acts,.starters,.prompts,.self,.kw,header .sub{display:none!important}#s4{box-shadow:none;border:0}textarea{border:0;min-height:0;height:auto}}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+  /* ===== 이 수업 전용 ===== */
+  :root{--fab:#3b4a8a}
+  h2 .no{background:var(--fab)}
+  .si .two button{min-width:92px}
+  .si .two button.o[aria-pressed="true"]{border-color:#1f78c8;background:#e5f0fb;color:#1f78c8}
+  .si .two button.x[aria-pressed="true"]{border-color:#d9534f;background:#fdecea;color:#b33a35}
+  .order{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin:10px 0}
+  .os{min-height:66px;border-radius:14px;border:2px dashed #aebdcc;background:#f7fafc;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:800;font-size:14.5px;color:var(--muted);cursor:pointer;word-break:keep-all;text-align:center;padding:4px}
+  .os i{font-style:normal;font-size:12px;color:#9aa7b4}
+  .os.f{border-style:solid;border-color:var(--fab);background:#e9ecfa;color:#26306b}
+  .os.good{border-color:var(--ok);background:#e8f7ef;color:#11703f}.os.bad{border-color:var(--no);background:#fdecea;color:#b33a35}
+  .bank{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+  .chip{min-height:48px;padding:6px 14px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15px;cursor:pointer;word-break:keep-all}
+  .chip.used{opacity:.3;pointer-events:none}
+  .code{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;align-items:start}
+  .rows{display:grid;gap:6px}
+  .rw{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center}
+  .rw .lbl{font-family:ui-monospace,Consolas,monospace;font-weight:900;font-size:16px;letter-spacing:.08em;background:#14263b;color:#ffd76a;border-radius:10px;padding:6px 10px}
+  .rw .cells{display:grid;grid-template-columns:repeat(8,1fr);gap:3px}
+  .rw .cells button{aspect-ratio:1;min-height:40px;border-radius:7px;border:2px solid #d4dee8;background:#fff;cursor:pointer;padding:0}
+  .rw .cells button[aria-pressed="true"]{background:#14263b;border-color:#14263b}
+  .rw .ok{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:14px;font-weight:900;color:#fff;background:#d4dee8}
+  .rw.good .ok{background:var(--ok)}
+  .pv{display:grid;grid-template-columns:repeat(8,1fr);gap:3px;margin:0 0 6px;padding-left:calc(var(--lw,0px))}
+  .preview{display:flex;flex-direction:column;align-items:center;gap:10px}
+  .preview canvas{width:100%;max-width:260px;height:auto;image-rendering:pixelated;border-radius:16px;box-shadow:0 8px 22px rgba(20,38,59,.15);background:#fff}
+  .preview p{margin:0;font-size:14.5px;color:var(--ink2);line-height:1.6;word-break:keep-all;text-align:center}
+  .wordq{margin-top:16px;padding-top:14px;border-top:1px dashed var(--line)}
+  .wordq .bytes{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+  .wordq .bytes span{font-family:ui-monospace,Consolas,monospace;font-weight:900;font-size:17px;letter-spacing:.08em;background:#eaf2fd;color:#1d3f66;border-radius:10px;padding:6px 12px}
+  .prompts{grid-template-columns:repeat(4,1fr)}
+  @media (max-width:860px){.order{grid-template-columns:repeat(3,1fr)}.code{grid-template-columns:1fr}.prompts{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <span class="eyebrow">사진 한 장의 여행 · 정리와 글쓰기</span>
+    <h1>사진 한 장의 여행, 내 말로 정리하기</h1>
+    <p class="sub">맞는 말을 고르고, 사진의 여행 순서를 맞추고, 0과 1로 적힌 그림 암호를 푼 뒤, 내 생각을 써 봐요.</p>
+  </header>
+  <nav class="tabs" id="tabs"></nav>
+
+  <section class="card" id="s1">
+    <h2><span class="no">1</span>맞을까, 틀릴까?</h2>
+    <p class="goal">문장마다 '맞다' 또는 '틀리다'를 골라요. 다 고르면 확인!</p>
+    <div class="sort" id="sort"></div>
+    <div class="acts"><button type="button" class="btn primary" id="chk1" disabled>확인하기</button></div>
+    <div class="fb" id="fb1"></div>
+  </section>
+
+  <section class="card" id="s2">
+    <h2><span class="no">2</span>사진 한 장의 여행 순서</h2>
+    <p class="goal">빈칸을 누른 뒤 카드를 눌러 순서대로 채워요. 칸을 다시 누르면 카드가 빠져요.</p>
+    <div class="order" id="order"></div>
+    <div class="bank" id="bank2"></div>
+    <button class="btn primary" id="chk2" type="button" disabled>확인하기</button>
+    <div class="fb" id="fb2"></div>
+  </section>
+
+  <section class="card" id="s3">
+    <h2><span class="no">3</span>0과 1 그림 암호 풀기</h2>
+    <p class="goal">줄마다 적힌 0과 1을 보고, 1인 칸만 눌러 까맣게 칠해요. 여덟 줄을 다 맞히면 그림이 나타나요.</p>
+    <div class="code">
+      <div class="rows" id="rows"></div>
+      <div class="preview"><canvas id="pv" width="8" height="8" aria-label="칠한 그림 미리 보기"></canvas><p id="pvMsg">칠한 칸이 여기에 작은 그림으로 보여요. 이 흑백 그림은 칸 하나에 스위치 1개를 써요.</p></div>
+    </div>
+    <div class="wordq">
+      <p style="margin:0;font-weight:800;font-size:16.5px;word-break:keep-all">덤 문제: 아래 두 바이트는 어떤 영어 낱말일까요? (A = 65, B = 66 …)</p>
+      <div class="bytes"><span>01001111</span><span>01001011</span></div>
+      <div class="opts" id="wq"></div>
+      <div class="lexp" id="wqExp"></div>
+    </div>
+  </section>
+
+  <section class="card" id="s4">
+    <h2><span class="no">4</span>내 말로 설명하는 글쓰기</h2>
+    <p class="goal">주제를 하나 골라 친구에게 설명하듯 써 봐요. 핵심어를 넣으면 초록색으로 바뀌어요.</p>
+    <div class="prompts" id="prompts"></div>
+    <div class="wq" id="wqText"></div>
+    <div class="starters" id="starters"></div>
+    <textarea id="txt" placeholder="여기에 써 보세요."></textarea>
+    <div class="wmeta"><span id="cnt">0자 · 목표 150자 이상</span><span id="saved"></span></div>
+    <div class="kw" id="kw"></div>
+    <div class="self" id="self"></div>
+    <div class="acts">
+      <button class="btn green" id="copyBtn" type="button">글 복사하기</button>
+      <button class="btn ghost" id="printBtn" type="button">인쇄 / PDF로 저장</button>
+    </div>
+    <p class="note" style="margin-top:10px">※ 글은 이 기기의 브라우저에만 임시로 저장되고 어디에도 보내지 않아요. 다 쓰면 '글 복사하기'로 복사해서 선생님이 안내한 곳(패들렛, 학습지 등)에 붙여 넣으세요.</p>
+  </section>
+  <p class="credit" style="margin:20px 0 4px;text-align:center;font-size:13px;font-weight:700;color:#8495a8;letter-spacing:.02em">사진 한 장의 여행 읽기 자료 &nbsp;|&nbsp; 제작 · 성안중학교 이삭 T</p>
+</div>
+
+<script>
+/* ===== 공통 ===== */
+window.SW = {
+  $: (s, r = document) => r.querySelector(s),
+  $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
+  shuffle: (a) => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; },
+  fb: (id, ok, html) => { const f = document.querySelector(id); f.className = 'fb show ' + (ok ? 'ok' : 'no'); f.innerHTML = html; },
+  done: {},
+};
+(() => {
+  const { $, $$ } = window.SW;
+  const TABS = ['맞을까 틀릴까', '여행 순서', '0과 1 암호', '글쓰기'];
+  window.SW.renderTabs = () => {
+    $('#tabs').innerHTML = TABS.map((t, i) => `<button type="button" class="tab${window.SW.done[i + 1] ? ' done' : ''}" data-s="${i + 1}"><span class="n">${i + 1}</span>${t}</button>`).join('');
+    $$('#tabs .tab').forEach((b) => b.addEventListener('click', () => document.getElementById('s' + b.dataset.s).scrollIntoView({ behavior: 'smooth', block: 'start' })));
+  };
+  window.SW.finish = (n) => { window.SW.done[n] = true; window.SW.renderTabs(); };
+  window.SW.renderTabs();
+})();
+</script>
+<script>
+/* ===== 블록 1: 맞을까 틀릴까 ===== */
+(() => {
+  'use strict';
+  try {
+    const { $, $$, shuffle, fb, finish } = window.SW;
+    const ITEMS = [
+      ['스위치 8개(1바이트)로는 0부터 255까지 256가지를 나타낼 수 있다.', true],
+      ['칩 속에는 0과 1이라는 숫자가 실제로 적혀 있다.', false],
+      ['LED는 같은 밝기에서 백열전구보다 전기를 훨씬 덜 쓰고 덜 뜨겁다.', true],
+      ['태양 전지는 전기를 받아 빛을 내는 부품이다.', false],
+      ['이미지 센서의 칸 하나는 컬러 필터 때문에 한 가지 색의 빛만 받는다.', true],
+      ['셔터를 한 번 누르면 휴대폰은 언제나 딱 한 장만 찍는다.', false],
+      ['스위치 두 개를 직렬로 이으면 둘 다 닫혀야 전구가 켜진다(그리고).', true],
+      ['D램에 잠깐 올려 둔 사진은 전원이 꺼지면 사라지지만, 낸드 플래시에 저장한 사진은 남는다.', true],
+    ];
+    const list = shuffle(ITEMS.slice()), pick = list.map(() => null);
+    $('#sort').innerHTML = list.map((it, i) => `<div class="si" data-i="${i}"><p>${it[0]}</p><div class="two"><button type="button" class="o" data-v="1" aria-pressed="false">맞다</button><button type="button" class="x" data-v="0" aria-pressed="false">틀리다</button></div></div>`).join('');
+    $$('#sort .si').forEach((row) => {
+      const i = +row.dataset.i;
+      $$('button', row).forEach((b) => b.addEventListener('click', () => { pick[i] = b.dataset.v === '1'; row.classList.remove('good', 'bad'); $$('button', row).forEach((o) => o.setAttribute('aria-pressed', String(o === b))); $('#chk1').disabled = pick.some((p) => p === null); }));
+    });
+    $('#chk1').addEventListener('click', () => {
+      let wrong = 0;
+      $$('#sort .si').forEach((row) => { const i = +row.dataset.i, ok = pick[i] === list[i][1]; row.classList.toggle('good', ok); row.classList.toggle('bad', !ok); if (!ok) wrong++; });
+      if (!wrong) { fb('#fb1', true, '모두 맞았어요! 틀린 문장 고쳐 보기: 칩 속에는 숫자가 아니라 스위치의 <b>켜짐·꺼짐</b>이 있어요 · 태양 전지는 <b>빛을 받아 전기</b>를 만들어요 · 휴대폰은 <b>여러 장</b>을 찍어 합치기도 해요.'); finish(1); }
+      else fb('#fb1', false, `빨간 문장 ${wrong}개를 다시 생각해 보세요.`);
+    });
+    window.SW.ok1 = true;
+  } catch (err) { window.SW_err('O/X 판단', err); }
+})();
+</script>
+<script>
+/* ===== 블록 2: 여행 순서 ===== */
+(() => {
+  'use strict';
+  try {
+    const { $, $$, shuffle, fb, finish } = window.SW;
+    const ORDER = ['빛이 렌즈로', '이미지 센서', 'AP(ISP)', 'D램', '낸드 플래시', '화면'];
+    const HINT = ['빛이 들어와요', '빛 → 전기 신호 → 숫자', '여러 장을 합치고 다듬어요', 'AP가 일하는 동안 잠깐 올려 둬요', '완성된 사진을 오래 보관해요', '작은 점들이 다시 빛을 내요'];
+    $('#order').innerHTML = ORDER.map((_, i) => `<button type="button" class="os" data-i="${i}"><i>${i + 1}번째</i><span>빈칸</span></button>`).join('');
+    $('#bank2').innerHTML = shuffle(ORDER.slice()).map((w) => `<button type="button" class="chip">${w}</button>`).join('');
+    const slots = $$('#order .os'), chips = $$('#bank2 .chip'), fill = ORDER.map(() => null); let cur = 0, locked = false;
+    const paint = () => { slots.forEach((s, i) => { $('span', s).textContent = fill[i] ? fill[i].textContent : '빈칸'; s.classList.toggle('f', !!fill[i]); s.style.boxShadow = i === cur && !locked ? '0 0 0 4px rgba(59,74,138,.2)' : ''; }); $('#chk2').disabled = locked || fill.some((f) => !f); };
+    chips.forEach((c) => c.addEventListener('click', () => { if (locked) return; if (fill[cur]) fill[cur].classList.remove('used'); fill[cur] = c; c.classList.add('used'); const n = fill.findIndex((f) => !f); if (n >= 0) cur = n; paint(); }));
+    slots.forEach((s, i) => s.addEventListener('click', () => { if (locked) return; if (fill[i]) { fill[i].classList.remove('used'); fill[i] = null; } cur = i; slots.forEach((x) => x.classList.remove('good', 'bad')); paint(); }));
+    $('#chk2').addEventListener('click', () => {
+      let wrong = 0; slots.forEach((s, i) => { const ok = fill[i].textContent === ORDER[i]; s.classList.toggle('good', ok); s.classList.toggle('bad', !ok); if (!ok) wrong++; });
+      if (!wrong) { locked = true; paint(); fb('#fb2', true, '완벽해요! ' + ORDER.map((o, i) => `<b>${o}</b>(${HINT[i]})`).join(' → ')); finish(2); }
+      else fb('#fb2', false, `빨간 칸 ${wrong}개를 다시 생각해 봐요. 힌트: 빛을 숫자로 바꾸는 칩이 먼저이고, 잠깐 올려 두는 곳(D램)과 오래 보관하는 곳(낸드 플래시)은 서로 달라요.`);
+    });
+    paint();
+    window.SW.ok2 = true;
+  } catch (err) { window.SW_err('여행 순서', err); }
+})();
+</script>
+<script>
+/* ===== 블록 3: 0과 1 그림 암호 ===== */
+(() => {
+  'use strict';
+  try {
+    const { $, $$, finish } = window.SW;
+    // 8 × 8 그림(카메라). 1은 칠하는 칸
+    const PIC = ['00011100', '11111111', '10000001', '10011001', '10100101', '10011001', '10000001', '11111111'];
+    const grid = PIC.map(() => Array(8).fill(false));
+    $('#rows').innerHTML = PIC.map((r, j) => `<div class="rw" data-j="${j}"><span class="lbl">${r}</span><div class="cells">${Array.from({ length: 8 }, (_, i) => `<button type="button" data-i="${i}" aria-pressed="false" aria-label="${j + 1}번째 줄 ${i + 1}번째 칸"></button>`).join('')}</div><span class="ok">✓</span></div>`).join('');
+    const cv = $('#pv'), g = cv.getContext('2d');
+    function paint() {
+      let good = 0;
+      $$('#rows .rw').forEach((row) => {
+        const j = +row.dataset.j; $$('.cells button', row).forEach((b, i) => b.setAttribute('aria-pressed', String(grid[j][i])));
+        const ok = grid[j].map((x) => (x ? '1' : '0')).join('') === PIC[j]; row.classList.toggle('good', ok); if (ok) good++;
+      });
+      g.fillStyle = '#fff'; g.fillRect(0, 0, 8, 8); g.fillStyle = '#14263b';
+      grid.forEach((r, j) => r.forEach((on, i) => { if (on) g.fillRect(i, j, 1, 1); }));
+      if (good === 8) { $('#pvMsg').innerHTML = '<b>카메라 그림 완성!</b> 이 흑백 그림은 칸 하나에 스위치 1개, 모두 64개로 저장했어요. 색이 있는 사진은 칸 하나에 스위치 24개(3바이트)를 써요.'; finish(3); }
+      else $('#pvMsg').textContent = `맞은 줄 ${good} / 8. 칠한 칸이 여기에 작은 그림으로 보여요.`;
+    }
+    $$('#rows .rw').forEach((row) => { const j = +row.dataset.j; $$('.cells button', row).forEach((b) => b.addEventListener('click', () => { const i = +b.dataset.i; grid[j][i] = !grid[j][i]; paint(); })); });
+    paint();
+    // 덤 문제
+    const OPTS = [['OK', true], ['NO', false], ['HI', false], ['GO', false]];
+    $('#wq').innerHTML = OPTS.map((o, k) => `<button type="button" class="ob" data-k="${k}"><span class="k">${'①②③④'[k]}</span>${o[0]}</button>`).join('');
+    $$('#wq .ob').forEach((b) => b.addEventListener('click', () => {
+      const ok = OPTS[+b.dataset.k][1];
+      $$('#wq .ob').forEach((o) => { o.disabled = true; if (OPTS[+o.dataset.k][1]) o.classList.add('good'); }); if (!ok) b.classList.add('bad');
+      const e = $('#wqExp'); e.classList.add('show'); e.innerHTML = '01001111 = 64 + 8 + 4 + 2 + 1 = <b>79 → O</b>, 01001011 = 64 + 8 + 2 + 1 = <b>75 → K</b>. 정답은 <b>OK</b>예요.';
+    }));
+    window.SW.ok3 = true;
+  } catch (err) { window.SW_err('0과 1 암호', err); }
+})();
+</script>
+<script>
+/* ===== 블록 4: 글쓰기 (저장하지 않고 복사·인쇄만) ===== */
+(() => {
+  'use strict';
+  try {
+    const { $, $$, finish } = window.SW;
+    const PROMPTS = [
+      { t: '사진 한 장의 여행', s: '읽기 ①·④', q: '사진을 찍은 순간부터 갤러리에 저장되고 화면에 보이기까지, 사진이 어떤 칩을 지나가는지 친구에게 설명해 보세요.', kw: ['빛', '이미지 센서', 'AP', 'D램', '낸드'], st: ['셔터를 누르면 먼저', '이미지 센서는', 'AP는', '사진은 D램에', '마지막으로'] },
+      { t: '0과 1로 사진 나타내기', s: '읽기 ② · 스위치 실험실', q: '켜짐·꺼짐뿐인 스위치로 어떻게 색과 사진을 나타낼 수 있는지 설명해 보세요.', kw: ['스위치', '비트', '바이트', '픽셀', '255'], st: ['스위치 하나는', '스위치 8개를 묶으면', '색 하나는', '사진은 픽셀이'] },
+      { t: '빛을 다루는 반도체', s: '읽기 ③ · 빛 실험실', q: 'LED, 태양 전지, 이미지 센서가 각각 무엇을 무엇으로 바꾸는지 비교하고, LED가 백열전구보다 좋은 점을 써 보세요.', kw: ['LED', '태양 전지', '이미지 센서', '빛', '전기'], st: ['LED는', '태양 전지는', '이미지 센서는', '백열전구와 비교하면'] },
+      { t: '내가 만들 카메라', s: '진로 · 상상', q: '어두운 곳에서도 잘 찍히는 카메라를 만든다면 어떤 부품을 어떻게 바꾸고 싶은지, 오늘 배운 내용을 근거로 써 보세요.', kw: ['빛', '칸', '묶', '여러 장', '까닭'], st: ['어두운 곳에서 사진이 거친 까닭은', '나는', '그러면', '이 일을 하려면'] },
+    ];
+    const SELF = [['지식·이해', '#2f6fd6', '사진 한 장이 이미지 센서, AP, D램, 낸드 플래시, 화면을 거치는 과정을 설명할 수 있다.'], ['과정·기능', '#23a566', '스위치의 켜짐·꺼짐으로 수, 글자, 색을 나타낼 수 있다.'], ['가치·태도', '#7d5ad6', '빛과 반도체 기술, 관련 진로에 관심을 가질 수 있다.']];
+    const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); return true; } catch (e) { return false; } } };
+    let pi = 0; const txt = $('#txt');
+    function renderPrompt() {
+      $('#prompts').innerHTML = PROMPTS.map((p, i) => `<button type="button" class="pr${i === pi ? ' sel' : ''}" data-i="${i}"><b>${p.t}</b><span>${p.s}</span></button>`).join('');
+      $$('#prompts .pr').forEach((b) => b.addEventListener('click', () => { pi = +b.dataset.i; renderPrompt(); }));
+      const p = PROMPTS[pi];
+      $('#wqText').textContent = p.q;
+      $('#starters').innerHTML = p.st.map((s) => `<button type="button">${s}</button>`).join('');
+      $$('#starters button').forEach((b) => b.addEventListener('click', () => { const add = (txt.value && !/[\s\n]$/.test(txt.value) ? ' ' : '') + b.textContent + ' '; txt.value += add; txt.focus(); onInput(); }));
+      txt.value = store.get('photo-write-' + pi) || '';
+      onInput();
+    }
+    function onInput() {
+      const v = txt.value, p = PROMPTS[pi];
+      const ok = store.set('photo-write-' + pi, v);
+      $('#saved').textContent = v ? (ok ? '이 기기에 임시 저장됨' : '') : '';
+      const n = v.replace(/\s/g, '').length, hit = p.kw.filter((k) => v.includes(k)).length;
+      $('#cnt').textContent = `${n}자 · 목표 150자 이상`;
+      $('#kw').innerHTML = p.kw.map((k) => `<span class="${v.includes(k) ? 'on' : ''}">${k}</span>`).join('');
+      if (n >= 150 && hit >= 3) finish(4);
+    }
+    txt.addEventListener('input', onInput);
+    $('#self').innerHTML = SELF.map(([c, col, t]) => `<label><input type="checkbox"><span class="cat" style="background:${col}">${c}</span>${t}</label>`).join('');
+    $('#copyBtn').addEventListener('click', async () => {
+      const out = `[${PROMPTS[pi].t}]\n${PROMPTS[pi].q}\n\n${txt.value}`;
+      try { await navigator.clipboard.writeText(out); $('#copyBtn').textContent = '복사했어요!'; }
+      catch (e) { txt.select(); try { document.execCommand('copy'); $('#copyBtn').textContent = '복사했어요!'; } catch (e2) { $('#copyBtn').textContent = '길게 눌러 직접 복사해 주세요'; } }
+      setTimeout(() => ($('#copyBtn').textContent = '글 복사하기'), 2200);
+    });
+    $('#printBtn').addEventListener('click', () => window.print());
+    renderPrompt();
+    window.SW.ok4 = true;
+  } catch (err) { window.SW_err('글쓰기', err); }
+})();
+</script>
+</body>
+</html>
