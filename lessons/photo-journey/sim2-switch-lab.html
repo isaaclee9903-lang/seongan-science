@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>3D 스위치 실험실</title>
+<script>
+/* 문제 알림: 코드에 오류가 나면 화면 아래에 빨간 상자로 알려 줘요 (선생님 확인용) */
+(function () {
+  function box() {
+    var b = document.getElementById('smErr');
+    if (!b && document.body) {
+      b = document.createElement('div'); b.id = 'smErr';
+      b.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;background:#fdecea;color:#8a1f17;border:2px solid #d9534f;border-radius:12px;padding:10px 14px;font:600 14px/1.5 sans-serif;white-space:pre-wrap';
+      document.body.appendChild(b);
+    }
+    return b;
+  }
+  window.SM_err = function (where, err) {
+    var msg = '[' + where + '] ' + (err && err.message ? err.message : String(err));
+    var show = function () { var b = box(); if (b) b.textContent += (b.textContent ? '\n' : '') + msg; };
+    if (document.body) show(); else document.addEventListener('DOMContentLoaded', show);
+  };
+  window.addEventListener('error', function (e) { window.SM_err('스크립트', { message: e.message + ' (줄 ' + e.lineno + ')' }); });
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      var S = window.SM || {};
+      if (!S.okUI) window.SM_err('실행 안 됨', { message: '안내·버튼 코드가 실행되지 않았어요. 파일이 끝(</html>)까지 들어 있는지 확인해 주세요.' });
+      if (!S.ok3d) { var f = document.getElementById('fail3d'); if (f) f.classList.add('show'); window.SM_err('3D 그림', { message: '3D 그림을 불러오지 못했어요. 인터넷 연결(cdn.jsdelivr.net)을 확인하고 새로고침해 주세요.' }); }
+    }, 9000);
+  });
+})();
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+
+  :root{--bg:#edf3f8;--card:#fff;--ink:#14263b;--ink2:#34495e;--muted:#5a6b7e;--line:#dde6ee;--accent:#0e63b3;--accent-soft:#e3effb;
+    --fab:#4b3fb5;--fab-soft:#ecebfb;--ok:#1f9d5c;--no:#d9534f;
+    --shadow:0 1px 2px rgba(20,38,59,.06),0 8px 24px rgba(20,38,59,.07);--ease:cubic-bezier(.2,.8,.2,1)}
+  *{box-sizing:border-box}html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:"Pretendard",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  button{font:inherit;color:inherit}
+  .app{max-width:1320px;margin:0 auto;padding:14px 16px 28px;display:flex;flex-direction:column;gap:12px}
+  .eyebrow{display:inline-flex;font-size:13px;font-weight:700;color:var(--fab);background:var(--fab-soft);padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(21px,2.4vw,28px);margin:6px 0 2px;letter-spacing:-.02em;word-break:keep-all}
+  .sub{margin:0;color:var(--muted);font-size:15px;word-break:keep-all}
+  .card{background:var(--card);border-radius:20px;box-shadow:var(--shadow);border:1px solid rgba(20,38,59,.04)}
+  .pad{padding:14px 16px}
+  .stage{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(330px,1fr);gap:14px;align-items:start}
+  .viewer{position:sticky;top:10px}
+  .flow{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px}
+  .fs{min-height:54px;border:0;border-radius:12px;background:#eef3f8;font-weight:800;font-size:13px;color:var(--muted);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.2;word-break:keep-all;padding:4px}
+  .fs b{font-size:15px}
+  .fs[aria-selected="true"]{background:var(--fab);color:#fff}
+  .fs.seen:not([aria-selected="true"]){background:#e5f5ec;color:#11703f}
+  .stepname{display:flex;align-items:center;gap:10px;margin:2px 0 6px}
+  .stepname .no{flex:none;width:40px;height:40px;border-radius:12px;background:var(--fab);color:#fff;display:grid;place-items:center;font-weight:900;font-size:19px}
+  .stepname h2{margin:0;font-size:21px;letter-spacing:-.01em;word-break:keep-all}
+  .stepname small{display:block;font-size:13px;color:var(--muted);font-weight:700}
+  .what{font-size:16px;line-height:1.75;color:var(--ink2);margin:0 0 10px;word-break:keep-all}
+  .phase{display:grid;gap:6px;margin:8px 0}
+  .ph{display:grid;grid-template-columns:28px 1fr;gap:8px;align-items:start;padding:7px 10px;border-radius:12px;background:#f7fafc;font-size:15px;line-height:1.55;color:var(--muted);word-break:keep-all;transition:background .3s,color .3s}
+  .ph i{font-style:normal;width:26px;height:26px;border-radius:8px;background:#dfe6ee;display:grid;place-items:center;font-weight:900;font-size:13px;color:#607285}
+  .ph.on{background:var(--fab-soft);color:var(--ink)}.ph.on i{background:var(--fab);color:#fff}
+  .ph.done{color:var(--ink2)}.ph.done i{background:#b9b2ee;color:#fff}
+  .box{border-radius:14px;padding:10px 12px;margin-top:8px;font-size:14.5px;line-height:1.65;word-break:keep-all}
+  .box b.t{display:block;font-size:13px;margin-bottom:2px}
+  .an{background:#fff8e6;border:1px solid #f3dc9a;color:#5b4300}
+  .fact{background:#eef6ff;border:1px solid #cfe2f6;color:#1d3f66}
+  .lnk{background:#ecf8f1;border:1px solid #c6e8d4;color:#0f5a36}
+  .src{display:block;font-size:12px;color:var(--muted);margin-top:3px}
+  .acts{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 0}
+  .btn{min-height:50px;border:0;border-radius:14px;padding:0 16px;font-weight:800;font-size:15.5px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;justify-content:center;word-break:keep-all}
+  .btn:active{transform:scale(.97)}
+  .btn.primary{background:var(--fab);color:#fff}.btn.ghost{background:#eef3f8;color:var(--ink2)}
+  .btn[aria-pressed="true"]{background:#14263b;color:#fff}
+  .btn:disabled{opacity:.4;cursor:default;transform:none}
+  .prog{height:6px;border-radius:3px;background:#e6edf4;margin-top:10px;overflow:hidden}
+  .prog i{display:block;height:100%;width:0;background:linear-gradient(90deg,#8a7ff0,var(--fab))}
+  .credit{text-align:center;font-size:13px;font-weight:700;color:#8495a8;letter-spacing:.02em;margin:6px 0 0}
+  /* ===== 3D 화면 공통 ===== */
+  :root{--Bc:#14a5d0;--Ic:#2fae4a;--Fc:#f0522a;--N:#d8433b;--S:#2f62c9;--P:#7d5ad6}
+  .viewer{position:relative;overflow:hidden;padding:0}
+  .gl-host{position:relative;width:100%;height:min(74vh,700px);min-height:380px;background:linear-gradient(#f6f9fc,#d6e3ef);touch-action:none}
+  .gl-host canvas.gl{display:block;width:100%;height:100%;outline:none}
+  .lbls{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+  .lb{position:absolute;left:0;top:0;white-space:nowrap;font-weight:800;font-size:14px;padding:3px 9px;border-radius:9px;background:rgba(255,255,255,.88);color:#34495e;box-shadow:0 2px 8px rgba(20,38,59,.14);will-change:transform}
+  .lb.small{font-size:12px;font-weight:700;color:#5a6b7e;background:rgba(255,255,255,.72);box-shadow:none}
+  .lb.B{background:var(--Bc);color:#fff}.lb.I{background:var(--Ic);color:#fff}.lb.F{background:var(--Fc);color:#fff;font-size:15px}
+  .lb.P{background:var(--P);color:#fff}
+  .lb.dim{opacity:.35}
+  .vt{position:absolute;display:flex;gap:6px;flex-wrap:wrap;z-index:3}
+  .vt.tl{left:10px;top:10px;max-width:calc(100% - 20px)}
+  .vt.tr{right:10px;top:10px;justify-content:flex-end}
+  .vt.bl{left:10px;bottom:10px;align-items:center}
+  .vb{min-height:44px;padding:0 12px;border-radius:12px;border:1px solid rgba(20,38,59,.12);background:rgba(255,255,255,.9);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);font-weight:800;font-size:14px;color:#34495e;cursor:pointer;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 10px rgba(20,38,59,.08)}
+  .vb:active{transform:scale(.96)}
+  .vb .dot{width:12px;height:12px;border-radius:50%;flex:none}
+  .vb[aria-pressed="false"]{opacity:.62}
+  .vb[aria-pressed="false"] .dot{background:#c2ccd6!important}
+  .vb.sel{background:#14263b;color:#fff;border-color:#14263b}
+  .hint{font-size:12.5px;font-weight:700;color:#5a6b7e;background:rgba(255,255,255,.78);border-radius:10px;padding:6px 10px;word-break:keep-all}
+  .inset{position:absolute;z-index:2;border-radius:18px;border:2px solid rgba(255,255,255,.95);box-shadow:0 10px 30px rgba(20,38,59,.22),inset 0 0 0 1px rgba(20,38,59,.08);pointer-events:none;display:none}
+  .inset.on{display:block}
+  .inset .it{position:absolute;left:8px;top:8px;font-size:12.5px;font-weight:900;color:#14263b;background:rgba(255,255,255,.9);border-radius:8px;padding:3px 8px}
+  .inset .ic{position:absolute;left:6px;right:6px;bottom:6px;display:flex;flex-wrap:wrap;gap:4px;justify-content:center}
+  .inset .ic span{font-size:11.5px;font-weight:800;color:#fff;border-radius:7px;padding:2px 7px;white-space:nowrap}
+  .fail3d{position:absolute;inset:0;display:none;place-items:center;text-align:center;padding:24px;font-size:16px;font-weight:700;color:#7a2a22;line-height:1.7;word-break:keep-all;background:#fff4f2}
+  .fail3d.show{display:grid}
+  .model{font-size:13px;color:var(--muted);text-align:right;margin:0;word-break:keep-all}
+  @media (max-width:900px){.gl-host{height:min(56vh,620px)}}
+  .zoombadge{position:absolute;right:10px;top:62px;z-index:3;font-size:13px;font-weight:800;color:#fff;background:rgba(75,63,181,.9);border-radius:10px;padding:6px 10px;display:none;word-break:keep-all;max-width:60%}
+  .zoombadge.on{display:block}
+  @media (max-width:900px){.stage{grid-template-columns:1fr}.viewer{position:relative;top:0}}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+  /* ===== 이 수업 전용 ===== */
+  :root{--fab:#3b4a8a;--fab-soft:#e9ecfa;--Rr:#e5484d;--Gg:#30a46c;--Bb:#3e63dd}
+  .lb small{font-weight:700;opacity:.85;margin-left:4px;font-size:.86em}
+  .lb.Y{background:#f6c344;color:#3d2c00}.lb.R{background:var(--Rr);color:#fff}.lb.G{background:var(--Gg);color:#fff}.lb.Bl{background:var(--Bb);color:#fff}.lb.D{background:#14263b;color:#fff}.lb.S{background:var(--ser);color:#fff}.lb.P{background:var(--par);color:#fff}
+  :root{--ser:#1784cf;--par:#5e9e1c}
+  .modes{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px}
+  .md{min-height:54px;border:0;border-radius:14px;background:#eef3f8;font-weight:800;font-size:15px;color:var(--muted);cursor:pointer;word-break:keep-all;padding:4px 6px}
+  .md[aria-selected="true"]{background:var(--fab);color:#fff}
+  .stepname .no{background:var(--fab)}
+  .bits8{display:grid;grid-template-columns:repeat(8,1fr);gap:5px;margin:10px 0}
+  .bt{min-height:64px;border-radius:12px;border:2px solid #d4dee8;background:#fff;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:900;padding:2px}
+  .bt .pv{font-size:11.5px;font-weight:800;color:var(--muted)}
+  .bt .bv{font-size:22px;line-height:1.1;color:#9aa7b4}
+  .bt[aria-pressed="true"]{border-color:#e8a400;background:linear-gradient(180deg,#fff8dc,#ffeeb0)}
+  .bt[aria-pressed="true"] .bv{color:#8a5a00}
+  .bt.r[aria-pressed="true"]{border-color:var(--Rr);background:#fde8e8}.bt.r[aria-pressed="true"] .bv{color:#b0252b}
+  .bt.g[aria-pressed="true"]{border-color:var(--Gg);background:#e3f6ec}.bt.g[aria-pressed="true"] .bv{color:#1a6f47}
+  .bt.b[aria-pressed="true"]{border-color:var(--Bb);background:#e6ecfd}.bt.b[aria-pressed="true"] .bv{color:#2a47a8}
+  .rowh{display:flex;align-items:center;justify-content:space-between;font-weight:900;font-size:14.5px;margin-top:8px}
+  .rowh em{font-style:normal;font-family:ui-monospace,Consolas,monospace;font-size:16px}
+  .bits8.small .bt{min-height:48px}.bits8.small .bt .bv{font-size:18px}
+  .out{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:10px 0;padding:12px 14px;border-radius:14px;background:#14263b;color:#fff}
+  .out .bin{font-family:ui-monospace,Consolas,monospace;font-size:22px;font-weight:900;letter-spacing:.1em;color:#ffd76a}
+  .out .dec{font-size:24px;font-weight:900}
+  .out .sum{flex-basis:100%;font-size:14px;font-weight:700;opacity:.88;word-break:keep-all}
+  .out .ch{margin-left:auto;min-width:64px;height:64px;border-radius:14px;background:#fff;color:#14263b;display:grid;place-items:center;font-size:36px;font-weight:900}
+  .out .ch.no{font-size:13px;font-weight:800;color:#8a97a6;text-align:center;line-height:1.3;padding:4px}
+  .chal{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+  .chal button{min-height:46px;border-radius:12px;border:2px dashed #b6bfe0;background:#fff;font-weight:800;font-size:14px;padding:0 12px;cursor:pointer;color:#3b4a8a}
+  .chal button.done{border-style:solid;border-color:var(--ok);background:#e8f7ef;color:#11703f}
+  .chal button.cur{border-style:solid;background:var(--fab-soft)}
+  details.tbl{margin:8px 0;border:1px solid var(--line);border-radius:14px;background:#f8fafc}
+  details.tbl summary{cursor:pointer;min-height:48px;display:flex;align-items:center;padding:0 14px;font-weight:800;font-size:14.5px}
+  .abc{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:4px;padding:0 10px 10px}
+  .abc span{background:#fff;border:1px solid var(--line);border-radius:8px;text-align:center;font-size:13px;font-weight:800;padding:4px 0}
+  .abc span b{display:block;font-size:17px}
+  .sw{display:flex;align-items:center;gap:14px;margin:10px 0}
+  .sw i{flex:none;width:84px;height:84px;border-radius:18px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12),0 6px 16px rgba(20,38,59,.15)}
+  .sw span{font-size:15px;font-weight:700;color:var(--ink2);line-height:1.6;word-break:keep-all}
+  .presets{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+  .presets button{min-height:44px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:14px;padding:0 10px 0 6px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+  .presets button i{width:26px;height:26px;border-radius:8px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)}
+  .seg{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:8px 0}
+  .seg button{min-height:50px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15px;cursor:pointer}
+  .seg button[aria-pressed="true"].s{border-color:var(--ser);background:#e3f2fc;color:#0f4f7d}
+  .seg button[aria-pressed="true"].p{border-color:var(--par);background:#eef7e2;color:#3f6e10}
+  .ab{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}
+  .ab button{min-height:60px;border-radius:14px;border:2px solid #d4dee8;background:#fff;font-weight:900;font-size:16px;cursor:pointer}
+  .ab button[aria-pressed="true"]{border-color:#e8a400;background:#fff6dc;color:#6d4100}
+  .tt{width:100%;border-collapse:separate;border-spacing:0 4px;font-size:15px;margin:6px 0}
+  .tt th{font-size:13px;color:var(--muted);font-weight:800;padding:2px 6px}
+  .tt td{text-align:center;background:#f7fafc;padding:8px 6px;font-weight:800}
+  .tt td:first-child{border-radius:10px 0 0 10px}.tt td:last-child{border-radius:0 10px 10px 0}
+  .tt tr.now td{background:#fff6dc}
+  .tt td.on{color:#8a5a00}.tt td.off{color:#8a97a6}
+  .tt td.q{color:#b8c2cd}
+  .why{margin-top:10px;display:grid;gap:6px}
+  .why h3{margin:6px 0 2px;font-size:16px}
+  .why .w{display:grid;grid-template-columns:28px 1fr;gap:8px;align-items:start;padding:8px 10px;border-radius:12px;background:#f7fafc;font-size:14.5px;line-height:1.6;color:var(--ink2);word-break:keep-all}
+  .why .w i{font-style:normal;width:26px;height:26px;border-radius:8px;background:var(--fab);color:#fff;display:grid;place-items:center;font-weight:900;font-size:13px}
+  @media (max-width:520px){.bt .pv{font-size:10px}}
+  [hidden]{display:none!important}
+</style>
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }
+</script>
+</head>
+<body>
+<div class="app">
+  <header>
+    <span class="eyebrow">사진 한 장의 여행 · 3D 실험실 ①</span>
+    <h1>3D 스위치 실험실: 0과 1로 만들고 판단하기</h1>
+    <p class="sub">켜짐(1)과 꺼짐(0)뿐인 스위치로 수와 글자, 색을 만들고, 스위치 두 개로 '그리고·또는'을 판단해 봐요. 전구를 직접 눌러도 돼요.</p>
+  </header>
+
+  <div class="stage">
+    <section class="card viewer">
+      <div class="gl-host" id="host">
+        <div class="vt tl" role="group" aria-label="보는 방향"><button class="vb sel" type="button" id="vHome">처음 방향으로</button></div>
+        <div class="vt bl"><span class="hint">전구·스위치 누르기 · 돌리기 · 확대</span></div>
+        <div class="fail3d" id="fail3d">3D 그림을 불러오지 못했어요.<br>인터넷 연결을 확인하고 새로고침해 주세요.<br>(오른쪽 단추는 그대로 쓸 수 있어요)</div>
+      </div>
+    </section>
+
+    <section class="card pad">
+      <div class="modes" role="tablist">
+        <button class="md" type="button" role="tab" data-m="num" aria-selected="true">① 수와 글자</button>
+        <button class="md" type="button" role="tab" data-m="rgb" aria-selected="false">② 색 만들기</button>
+        <button class="md" type="button" role="tab" data-m="logic" aria-selected="false">③ 그리고 · 또는</button>
+      </div>
+
+      <div id="pNum">
+        <div class="stepname"><span class="no">1</span><div><h2>스위치 8개 = 1바이트</h2><small>켜진 칸의 수를 더해요</small></div></div>
+        <div class="bits8" id="b8"></div>
+        <div class="out"><span class="bin" id="nBin">00000000</span><span>=</span><span class="dec" id="nDec">0</span><span class="ch no" id="nCh">글자<br>아님</span><span class="sum" id="nSum">켜진 전구가 없어요.</span></div>
+        <div class="chal" id="nChal"></div>
+        <details class="tbl"><summary>영어 대문자 번호표 (A = 65)</summary><div class="abc" id="abc"></div></details>
+        <div class="why">
+          <h3>왜 그럴까?</h3>
+          <div class="w"><i>1</i><span>카드는 오른쪽부터 1, 2, 4, 8 … 128처럼 <b>왼쪽으로 갈수록 2배</b>예요. 켜진 카드의 수만 더하면 돼요.</span></div>
+          <div class="w"><i>2</i><span>모두 켜면 128 + 64 + 32 + 16 + 8 + 4 + 2 + 1 = <b>255</b>, 모두 끄면 <b>0</b>. 그래서 1바이트는 <b>256가지</b>예요.</span></div>
+          <div class="w"><i>3</i><span>글자마다 번호를 정해 두었어요(A = 65, B = 66 …). 컴퓨터는 이 번호를 0과 1로 적어 글자를 저장해요.</span></div>
+        </div>
+      </div>
+
+      <div id="pRgb" hidden>
+        <div class="stepname"><span class="no">2</span><div><h2>스위치 24개 = 색 하나</h2><small>빨강·초록·파랑 밝기를 0~255로</small></div></div>
+        <div class="sw"><i id="rgbSw"></i><span id="rgbTxt"></span></div>
+        <div class="presets" id="presets"></div>
+        <div class="rowh" style="color:var(--Rr)"><span>빨강</span><em id="vR">0</em></div><div class="bits8 small" id="bR"></div>
+        <div class="rowh" style="color:var(--Gg)"><span>초록</span><em id="vG">0</em></div><div class="bits8 small" id="bG"></div>
+        <div class="rowh" style="color:var(--Bb)"><span>파랑</span><em id="vB">0</em></div><div class="bits8 small" id="bB"></div>
+        <div class="box fact"><b class="t">픽셀 하나 = 3바이트 = 24비트</b>색마다 256단계이니 256 × 256 × 256 = <b>16,777,216가지</b> 색을 만들 수 있어요. 사람의 눈으로는 이웃한 단계의 차이를 거의 구별하지 못할 만큼 많아요.</div>
+      </div>
+
+      <div id="pLogic" hidden>
+        <div class="stepname"><span class="no">3</span><div><h2>스위치로 판단하기</h2><small>저항의 연결 시간의 직렬·병렬</small></div></div>
+        <div class="seg" role="group" aria-label="연결 방법">
+          <button type="button" class="s" data-w="ser" aria-pressed="true">직렬로 잇기</button>
+          <button type="button" class="p" data-w="par" aria-pressed="false">병렬로 잇기</button>
+        </div>
+        <div class="ab"><button type="button" id="swA" aria-pressed="false">스위치 A: 열림</button><button type="button" id="swB" aria-pressed="false">스위치 B: 열림</button></div>
+        <table class="tt"><thead><tr><th>A</th><th>B</th><th>전구</th></tr></thead><tbody id="tt"></tbody></table>
+        <div class="box fact" id="lMsg"></div>
+        <div class="why">
+          <h3>왜 그럴까?</h3>
+          <div class="w"><i>1</i><span><b>직렬</b>은 전류가 지나는 길이 하나뿐이에요. A와 B 중 하나라도 열리면 길이 끊겨요. → A <b>그리고</b> B</span></div>
+          <div class="w"><i>2</i><span><b>병렬</b>은 길이 두 갈래예요. 한 갈래만 닫혀 있어도 전류가 흘러요. → A <b>또는</b> B</span></div>
+          <div class="w"><i>3</i><span>칩 속의 아주 작은 스위치들도 이렇게 '그리고·또는'을 엄청나게 많이, 빠르게 판단해요. 사진의 색을 채우고 여러 장을 합치는 계산도 이런 판단이 쌓인 거예요.</span></div>
+        </div>
+      </div>
+    </section>
+  </div>
+  <p class="credit">사진 한 장의 여행 읽기 자료 &nbsp;|&nbsp; 제작 · 성안중학교 이삭 T</p>
+</div>
+
+<script>
+window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
+  mode: 'num', num: Array(8).fill(false), rgb: { R: Array(8).fill(false), G: Array(8).fill(false), B: Array(8).fill(false) }, logic: { wire: 'ser', A: false, B: false }, home: 0 };
+</script>
+<script>
+/* ===== 블록 1: 안내·버튼 ===== */
+(() => {
+  'use strict';
+  try {
+    const { $, $$ } = window.SM, S = window.SM;
+    const PV = [128, 64, 32, 16, 8, 4, 2, 1];
+    const val = (arr) => arr.reduce((a, on, i) => a + (on ? PV[i] : 0), 0);
+    const setBits = (arr, v) => PV.forEach((p, i) => { arr[i] = v >= p; if (v >= p) v -= p; });
+    const PANES = { num: '#pNum', rgb: '#pRgb', logic: '#pLogic' };
+    $$('.md').forEach((b) => b.addEventListener('click', () => { S.mode = b.dataset.m; $$('.md').forEach((o) => o.setAttribute('aria-selected', String(o === b))); Object.entries(PANES).forEach(([k, s]) => ($(s).hidden = k !== S.mode)); S.home++; }));
+    $('#vHome').addEventListener('click', () => S.home++);
+    const mk = (host, cls, arr, onCh) => {
+      $(host).innerHTML = PV.map((p, i) => `<button type="button" class="bt ${cls}" data-i="${i}" aria-pressed="false"><span class="pv">${p}</span><span class="bv">0</span></button>`).join('');
+      $$(host + ' .bt').forEach((b) => b.addEventListener('click', () => { const i = +b.dataset.i; arr[i] = !arr[i]; onCh(); }));
+    };
+    const paintRow = (host, arr) => $$(host + ' .bt').forEach((b, i) => { b.setAttribute('aria-pressed', String(arr[i])); $('.bv', b).textContent = arr[i] ? '1' : '0'; });
+
+    /* ① 수와 글자 */
+    const GOALS = [['A 만들기', 65], ['Z 만들기', 90], ['100 만들기', 100], ['가장 큰 수', 255]];
+    let goal = null; const done = {};
+    $('#nChal').innerHTML = GOALS.map((g, k) => `<button type="button" data-k="${k}">${g[0]}</button>`).join('');
+    $$('#nChal button').forEach((b) => b.addEventListener('click', () => { goal = +b.dataset.k; S.num.fill(false); paintNum(); }));
+    $('#abc').innerHTML = Array.from({ length: 26 }, (_, k) => `<span><b>${String.fromCharCode(65 + k)}</b>${65 + k}</span>`).join('');
+    function paintNum() {
+      paintRow('#b8', S.num);
+      const v = val(S.num);
+      $('#nBin').textContent = S.num.map((x) => (x ? '1' : '0')).join(''); $('#nDec').textContent = v;
+      const on = PV.filter((_, i) => S.num[i]);
+      const isCh = (v >= 65 && v <= 90) || (v >= 97 && v <= 122);
+      const ch = $('#nCh'); ch.className = 'ch' + (isCh ? '' : ' no'); ch.innerHTML = isCh ? String.fromCharCode(v) : '글자<br>아님';
+      let msg = on.length ? on.join(' + ') + ' = ' + v : '켜진 전구가 없어요. (0)';
+      if (isCh) msg += ` · 번호 ${v}는 영어 글자 '${String.fromCharCode(v)}'예요.`;
+      if (goal !== null) { const g = GOALS[goal]; if (v === g[1]) { done[goal] = true; msg = `성공! ${g[0].replace(' 만들기', '')} → ${v} = ${on.join(' + ')}`; goal = null; } else msg += ` · 목표: ${g[1]}`; }
+      $('#nSum').textContent = msg;
+      $$('#nChal button').forEach((b) => { b.classList.toggle('done', !!done[b.dataset.k]); b.classList.toggle('cur', goal === +b.dataset.k); });
+    }
+    mk('#b8', '', S.num, paintNum);
+
+    /* ② 색 만들기 */
+    const PRE = [['빨강', 255, 0, 0], ['노랑', 255, 255, 0], ['하늘', 120, 190, 255], ['노을', 241, 154, 107], ['흰색', 255, 255, 255], ['검정', 0, 0, 0]];
+    $('#presets').innerHTML = PRE.map((p, k) => `<button type="button" data-k="${k}"><i style="background:rgb(${p[1]},${p[2]},${p[3]})"></i>${p[0]}</button>`).join('');
+    $$('#presets button').forEach((b) => b.addEventListener('click', () => { const p = PRE[+b.dataset.k]; setBits(S.rgb.R, p[1]); setBits(S.rgb.G, p[2]); setBits(S.rgb.B, p[3]); paintRgb(); }));
+    function paintRgb() {
+      paintRow('#bR', S.rgb.R); paintRow('#bG', S.rgb.G); paintRow('#bB', S.rgb.B);
+      const r = val(S.rgb.R), g = val(S.rgb.G), b = val(S.rgb.B);
+      $('#vR').textContent = r; $('#vG').textContent = g; $('#vB').textContent = b;
+      $('#rgbSw').style.background = `rgb(${r},${g},${b})`;
+      const n = [...S.rgb.R, ...S.rgb.G, ...S.rgb.B].filter(Boolean).length;
+      $('#rgbTxt').innerHTML = `빨강 <b>${r}</b> · 초록 <b>${g}</b> · 파랑 <b>${b}</b><br>켜진 스위치 ${n}개 / 24개`;
+    }
+    mk('#bR', 'r', S.rgb.R, paintRgb); mk('#bG', 'g', S.rgb.G, paintRgb); mk('#bB', 'b', S.rgb.B, paintRgb);
+
+    /* ③ 그리고 · 또는 */
+    const L = S.logic, seenT = { ser: {}, par: {} };
+    $$('[data-w]').forEach((b) => b.addEventListener('click', () => { L.wire = b.dataset.w; $$('[data-w]').forEach((o) => o.setAttribute('aria-pressed', String(o === b))); paintLogic(); }));
+    $('#swA').addEventListener('click', () => { L.A = !L.A; paintLogic(); });
+    $('#swB').addEventListener('click', () => { L.B = !L.B; paintLogic(); });
+    S.lit = () => (L.wire === 'ser' ? L.A && L.B : L.A || L.B);
+    function paintLogic() {
+      $('#swA').setAttribute('aria-pressed', String(L.A)); $('#swA').textContent = '스위치 A: ' + (L.A ? '닫힘' : '열림');
+      $('#swB').setAttribute('aria-pressed', String(L.B)); $('#swB').textContent = '스위치 B: ' + (L.B ? '닫힘' : '열림');
+      const key = (L.A ? 1 : 0) + '' + (L.B ? 1 : 0); seenT[L.wire][key] = true;
+      const rows = [[0, 0], [0, 1], [1, 0], [1, 1]];
+      $('#tt').innerHTML = rows.map(([a, b]) => { const k = a + '' + b, s = seenT[L.wire][k], on = L.wire === 'ser' ? a && b : a || b; return `<tr class="${k === key ? 'now' : ''}"><td>${a ? '닫힘' : '열림'}</td><td>${b ? '닫힘' : '열림'}</td><td class="${s ? (on ? 'on' : 'off') : 'q'}">${s ? (on ? '켜짐' : '꺼짐') : '?'}</td></tr>`; }).join('');
+      const all = rows.every(([a, b]) => seenT[L.wire][a + '' + b]);
+      $('#lMsg').innerHTML = !all ? `A, B를 눌러 네 가지 경우를 모두 해 보세요. 표의 '?'가 채워져요. (${Object.keys(seenT[L.wire]).length} / 4)`
+        : L.wire === 'ser' ? '<b>직렬</b>: 둘 다 닫혔을 때만 켜져요. A <b>그리고</b> B. 생활 예: 전자레인지는 문이 닫혀 있고 그리고 시작 단추를 눌러야 돌아가요.'
+        : '<b>병렬</b>: 하나라도 닫히면 켜져요. A <b>또는</b> B. 생활 예: 자동차 실내등은 어느 문이든 하나만 열려도 켜져요.';
+    }
+    S.paint = { num: paintNum, rgb: paintRgb, logic: paintLogic };
+    paintNum(); paintRgb(); paintLogic();
+    window.SM.okUI = true;
+  } catch (err) { window.SM_err('안내·버튼', err); }
+})();
+</script>
+<script type="module">
+/* ===== 블록 2: 3D (전구 8개, 전구 24개와 픽셀, 직렬·병렬 스위치) ===== */
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+/* ===== 공통 3D 도구 (three.js) =====
+   전자는 파란 알갱이(−), 전자를 잃은 쪽은 빨간 (+) 표시. 크기·개수·빠르기는 개념 이해를 위한 모형이에요(숫자 없음). */
+const C3 = (() => {
+  const REDUCE = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const V = (x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z);
+  const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+  const clamp01 = (t) => Math.max(0, Math.min(1, t));
+
+  // 탭 껍데기에서 보이지 않는 탭이면 그리지 않아요(태블릿 배터리 아끼기)
+  function visibleNow() {
+    if (document.hidden) return false;
+    try { const f = window.frameElement; if (f && f.hasAttribute('data-page') && !f.classList.contains('on')) return false; } catch (e) {}
+    return true;
+  }
+
+  function canvasTex(w, h, draw) {
+    const c = document.createElement('canvas'); c.width = w; c.height = h;
+    draw(c.getContext('2d'), w, h);
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
+    t.userData.canvas = c; return t;
+  }
+  function gradientBg(top, bottom) {
+    return canvasTex(4, 256, (g, w, h) => { const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, top); gr.addColorStop(1, bottom); g.fillStyle = gr; g.fillRect(0, 0, w, h); });
+  }
+  // 나뭇결 책상
+  function woodTex() {
+    const t = canvasTex(1024, 512, (g, w, h) => {
+      const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#c99a6b'); gr.addColorStop(1, '#b8875a'); g.fillStyle = gr; g.fillRect(0, 0, w, h);
+      for (let i = 0; i < 160; i++) {
+        const y = Math.random() * h, a = 0.04 + Math.random() * 0.08; g.strokeStyle = `rgba(${90 + Math.random() * 40},${55 + Math.random() * 25},30,${a})`;
+        g.lineWidth = 1 + Math.random() * 3; g.beginPath(); g.moveTo(0, y);
+        for (let x = 0; x <= w; x += 32) g.lineTo(x, y + Math.sin(x / 90 + i) * 4 + Math.sin(x / 23) * 1.2);
+        g.stroke();
+      }
+    });
+    t.wrapS = t.wrapT = THREE.RepeatWrapping; return t;
+  }
+  // 바닥에 드리우는 부드러운 그림자
+  function blobTex() {
+    return canvasTex(256, 256, (g, w, h) => { const r = g.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2); r.addColorStop(0, 'rgba(20,38,59,.32)'); r.addColorStop(1, 'rgba(20,38,59,0)'); g.fillStyle = r; g.fillRect(0, 0, w, h); });
+  }
+
+  /* 무대: 렌더러·카메라·조명·손가락 조작 */
+  function makeStage(host, opt = {}) {
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = opt.exposure || 1.05;
+    renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.domElement.className = 'gl';
+    host.appendChild(renderer.domElement);
+    const scene = new THREE.Scene();
+    scene.background = gradientBg(opt.top || '#f6f9fc', opt.bottom || '#d6e3ef');
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    scene.environment = pmrem.fromScene(new RoomEnvironment(renderer), 0.04).texture;
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x8a9bb0, 0.55));
+    const sun = new THREE.DirectionalLight(0xffffff, 1.6);
+    sun.position.set(opt.sunX || 5, 11, opt.sunZ || 7); sun.castShadow = true;
+    sun.shadow.mapSize.set(1024, 1024); sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.02;
+    const sc = sun.shadow.camera; sc.left = -9; sc.right = 9; sc.top = 9; sc.bottom = -9; sc.near = 1; sc.far = 40;
+    scene.add(sun);
+    const camera = new THREE.PerspectiveCamera(opt.fov || 34, 1, 0.1, 200);
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true; controls.dampingFactor = 0.09; controls.enablePan = false;
+    controls.rotateSpeed = 0.85; controls.zoomSpeed = 0.9;
+    if (opt.scroll) { controls.enableZoom = false; renderer.domElement.style.touchAction = 'pan-y'; host.style.touchAction = 'pan-y'; }
+    controls.minDistance = opt.minD || 3; controls.maxDistance = opt.maxD || 24; controls.maxPolarAngle = Math.PI * 0.86;
+
+    const overlay = document.createElement('div'); overlay.className = 'lbls'; host.appendChild(overlay);
+    let W = 1, H = 1;
+    function resize() {
+      const r = host.getBoundingClientRect(); W = Math.max(1, r.width); H = Math.max(1, r.height);
+      renderer.setSize(W, H, false); camera.aspect = W / H;
+      if (opt.fitWidth) { // 세로 화면에서 장면이 잘리지 않도록 화각을 넓혀요
+        const base = opt.fov || 34; camera.fov = camera.aspect < 1.15 ? Math.min(62, base * (1.15 / camera.aspect) * 0.92) : base;
+      }
+      camera.updateProjectionMatrix();
+    }
+    try { let rq = 0; new ResizeObserver(() => { cancelAnimationFrame(rq); rq = requestAnimationFrame(resize); }).observe(host); } catch (e) { addEventListener('resize', resize); }
+    resize();
+
+    // 이름표(HTML)를 3D 위치에 붙이기
+    const labels = [];
+    function label(html, cls, at) {
+      const el = document.createElement('div'); el.className = 'lb ' + (cls || ''); el.innerHTML = html; overlay.appendChild(el);
+      const L = { el, at, show: true, set(h) { if (el.innerHTML !== h) el.innerHTML = h; } };
+      labels.push(L); return L;
+    }
+    const tmp = V();
+    function placeLabels() {
+      labels.forEach((L) => {
+        if (!L.show) { L.el.style.display = 'none'; return; }
+        const p = typeof L.at === 'function' ? L.at() : L.at;
+        if (!p) { L.el.style.display = 'none'; return; }
+        tmp.copy(p).project(camera);
+        if (tmp.z > 1 || tmp.z < -1) { L.el.style.display = 'none'; return; }
+        const px = ((tmp.x + 1) / 2) * W, py = ((1 - tmp.y) / 2) * H;
+        L.el.style.display = '';
+        L.el.style.transform = `translate(${px}px,${py}px) translate(-50%,-50%)`;
+      });
+    }
+
+    // 카메라 이동
+    let fly = null;
+    controls.addEventListener('start', () => { fly = null; });
+    function flyTo(pos, target, dur = 1.1) {
+      if (REDUCE || dur <= 0) { camera.position.copy(pos); controls.target.copy(target); controls.update(); return; }
+      fly = { p0: camera.position.clone(), t0: controls.target.clone(), p1: pos.clone(), t1: target.clone(), k: 0, dur };
+    }
+
+    const fns = [];
+    let last = performance.now(), running = true;
+    function tick(now) {
+      requestAnimationFrame(tick);
+      if (!running || !visibleNow()) { last = now; return; }
+      if (opt.scroll) { const hr = host.getBoundingClientRect(); if (hr.bottom < -50 || hr.top > (window.innerHeight || 800) + 50) { last = now; return; } } // 화면 밖이면 쉬기
+      const dt = Math.min(0.05, Math.max(0, (now - last) / 1000)); last = now;
+      if (fly) {
+        fly.k = Math.min(1, fly.k + dt / fly.dur); const e = ease(fly.k);
+        camera.position.lerpVectors(fly.p0, fly.p1, e); controls.target.lerpVectors(fly.t0, fly.t1, e);
+        if (fly.k >= 1) fly = null;
+      }
+      for (let i = 0; i < fns.length; i++) { try { fns[i](dt, now / 1000); } catch (err) { console.error(err); } }
+      controls.update();
+      renderer.render(scene, camera);
+      placeLabels();
+    }
+    requestAnimationFrame(tick);
+    return { renderer, scene, camera, controls, sun, overlay, label, flyTo, onFrame: (f) => fns.push(f), size: () => ({ W, H }), resize };
+  }
+
+  // 관 모양 전선(곡선)
+  function tube(points, r, mat, seg = 80) {
+    const curve = new THREE.CatmullRomCurve3(points, false, 'centripetal');
+    const m = new THREE.Mesh(new THREE.TubeGeometry(curve, seg, r, 10, false), mat); m.castShadow = true; m.curve = curve; return m;
+  }
+
+  // 길을 따라 움직이는 알갱이(전자). 전선에는 전자가 이미 꽉 차 있으므로, 멈춰 있어도 알갱이는 보여요.
+  // setPath(점 배열), update(dt, 빠르기) — 빠르기가 음수면 반대로 움직여요
+  function makeDots(count, color, size = 1) {
+    const geo = new THREE.SphereGeometry(0.06 * size, 14, 10);
+    const mat = new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.55, roughness: 0.3 });
+    const mesh = new THREE.InstancedMesh(geo, mat, count); mesh.frustumCulled = false;
+    let pts = [], cum = [], total = 1, off = 0; const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), p = V(), sc = V(1, 1, 1);
+    function setPath(P) {
+      pts = P; cum = [0];
+      for (let i = 1; i < P.length; i++) cum.push(cum[i - 1] + P[i].distanceTo(P[i - 1]));
+      total = cum[cum.length - 1] || 1;
+    }
+    function at(s, out) {
+      s = ((s % total) + total) % total;
+      let i = 1; while (i < cum.length - 1 && cum[i] < s) i++;
+      const a = pts[i - 1], b = pts[i], seg = cum[i] - cum[i - 1] || 1, k = (s - cum[i - 1]) / seg;
+      out.lerpVectors(a, b, k);
+    }
+    function update(dt, speed) {
+      if (pts.length < 2) { mesh.visible = false; return; }
+      off += dt * speed;
+      const gap = total / count;
+      for (let k = 0; k < count; k++) { at(off + k * gap, p); m4.compose(p, q, sc); mesh.setMatrixAt(k, m4); }
+      mesh.instanceMatrix.needsUpdate = true;
+    }
+    return { mesh, setPath, update, mat };
+  }
+
+  // 책상
+  function addTable(scene, w, d, y = 0) {
+    const tex = woodTex(); tex.repeat.set(w / 10, d / 10);
+    const mat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.55, metalness: 0 });
+    const t = new THREE.Mesh(new RoundedBoxGeometry(w, 0.4, d, 3, 0.12), mat); t.position.y = y - 0.2; t.receiveShadow = true; scene.add(t);
+    return t;
+  }
+  const mesh = (geo, mat, x = 0, y = 0, z = 0) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true; return m; };
+
+  return { REDUCE, V, ease, clamp01, makeStage, canvasTex, gradientBg, blobTex, tube, makeDots, addTable, visibleNow, mesh };
+})();
+/* ===== 전구 모형 =====
+   kind: 'mini'(실험용 꼬마전구), 'filament'(백열전구), 'led'(LED 전구). tint: 켜졌을 때 빛 색.
+   set(k): 0(꺼짐)~1(가장 밝게). 반환 group.light 는 주변을 비추는 점광원(없을 수도 있음). */
+const BULB = (() => {
+  const { mesh } = C3;
+  const metal = () => new THREE.MeshStandardMaterial({ color: 0xc9ced6, metalness: 0.95, roughness: 0.28 });
+  function make(o = {}) {
+    const kind = o.kind || 'mini', tint = new THREE.Color(o.tint || 0xffc96b), s = o.size || 1, withLight = o.light !== false;
+    const g = new THREE.Group();
+    // 받침(소켓)
+    if (kind === 'mini') {
+      g.add(mesh(new THREE.CylinderGeometry(0.2 * s, 0.24 * s, 0.22 * s, 28), new THREE.MeshStandardMaterial({ color: 0x2c323c, roughness: 0.5 }), 0, 0.11 * s, 0));
+      const th = mesh(new THREE.CylinderGeometry(0.15 * s, 0.15 * s, 0.2 * s, 24), metal(), 0, 0.32 * s, 0); g.add(th);
+      for (let i = 0; i < 4; i++) g.add(mesh(new THREE.TorusGeometry(0.152 * s, 0.012 * s, 6, 24), metal(), 0, (0.25 + i * 0.045) * s, 0)).children;
+    } else {
+      g.add(mesh(new THREE.CylinderGeometry(0.22 * s, 0.26 * s, 0.34 * s, 28), new THREE.MeshStandardMaterial({ color: kind === 'led' ? 0xeef1f5 : 0x8a919c, roughness: kind === 'led' ? 0.45 : 0.3, metalness: kind === 'led' ? 0 : 0.8 }), 0, 0.17 * s, 0));
+    }
+    const gy = kind === 'mini' ? 0.62 * s : 0.7 * s, gr = kind === 'mini' ? 0.28 * s : 0.42 * s;
+    // 유리
+    const glass = new THREE.MeshPhysicalMaterial({
+      color: kind === 'led' ? 0xf4f6fa : 0xfffaf0, roughness: kind === 'led' ? 0.55 : 0.05, metalness: 0,
+      transparent: true, opacity: kind === 'led' ? 0.92 : 0.38, emissive: tint.clone(), emissiveIntensity: 0, depthWrite: false,
+    });
+    const gl = new THREE.Mesh(new THREE.SphereGeometry(gr, 36, 26), glass); gl.position.y = gy; gl.scale.y = kind === 'mini' ? 1.15 : 1.1; g.add(gl);
+    // 속 빛나는 부분: 필라멘트(코일) 또는 LED 칩
+    const coreM = new THREE.MeshStandardMaterial({ color: kind === 'led' ? 0xe8e2c8 : 0x4a3520, emissive: tint.clone(), emissiveIntensity: 0, roughness: 0.4 });
+    if (kind === 'led') {
+      const plate = mesh(new THREE.CylinderGeometry(0.2 * s, 0.2 * s, 0.03 * s, 24), new THREE.MeshStandardMaterial({ color: 0xd9dde3, metalness: 0.6, roughness: 0.35 }), 0, gy - 0.12 * s, 0); g.add(plate);
+      for (let i = 0; i < 6; i++) { const a = (i / 6) * Math.PI * 2; g.add(mesh(new THREE.BoxGeometry(0.06 * s, 0.025 * s, 0.06 * s), coreM, Math.cos(a) * 0.12 * s, gy - 0.1 * s, Math.sin(a) * 0.12 * s)); }
+    } else {
+      const coil = new THREE.Mesh(new THREE.TorusGeometry(0.07 * s, 0.012 * s, 6, 24, Math.PI * 1.6), coreM); coil.position.y = gy + 0.02 * s; coil.rotation.x = Math.PI / 2; g.add(coil);
+      [-1, 1].forEach((d) => g.add(mesh(new THREE.CylinderGeometry(0.008 * s, 0.008 * s, gy * 0.75, 6), new THREE.MeshStandardMaterial({ color: 0x777777, metalness: 0.8, roughness: 0.4 }), d * 0.06 * s, gy * 0.6, 0)));
+    }
+    // 번짐(후광)
+    const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: haloTex(), color: tint.clone(), transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending }));
+    halo.scale.setScalar(gr * (kind === 'mini' ? 3.4 : 3.2)); halo.position.y = gy; g.add(halo);
+    let light = null;
+    if (withLight) { light = new THREE.PointLight(tint.clone(), 0, 4.5 * s, 1.6); light.position.y = gy; g.add(light); }
+    let cur = 0;
+    g.set = (k) => {
+      cur = k;
+      glass.emissiveIntensity = k * (kind === 'led' ? 0.4 : kind === 'mini' ? 1.1 : 0.7);
+      coreM.emissiveIntensity = k * 4.0; glass.opacity = kind === 'led' ? 0.92 : kind === 'mini' ? 0.38 + k * 0.25 : 0.38;
+      halo.material.opacity = k * (kind === 'mini' ? 0.6 : 0.35);
+      if (light) light.intensity = k * 2.4 * (o.lightGain || 1);
+    };
+    g.get = () => cur;
+    g.glass = gl; g.top = gy + gr;
+    g.set(0);
+    return g;
+  }
+  let _halo = null;
+  function haloTex() {
+    if (_halo) return _halo;
+    _halo = C3.canvasTex(128, 128, (g, w, h) => { const r = g.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2); r.addColorStop(0, 'rgba(255,255,255,1)'); r.addColorStop(0.25, 'rgba(255,255,255,.45)'); r.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = r; g.fillRect(0, 0, w, h); });
+    return _halo;
+  }
+  // 똑딱 스위치: set(true)면 닫힘(누움), false면 열림(들림)
+  function toggle(o = {}) {
+    const s = o.size || 1, g = new THREE.Group();
+    g.add(mesh(new RoundedBoxGeometry(0.62 * s, 0.14 * s, 0.4 * s, 2, 0.04 * s), new THREE.MeshStandardMaterial({ color: 0x2d3440, roughness: 0.5 }), 0, 0.07 * s, 0));
+    const pivot = new THREE.Group(); pivot.position.set(-0.2 * s, 0.17 * s, 0); g.add(pivot);
+    const cu = new THREE.MeshStandardMaterial({ color: 0xc0703a, metalness: 1, roughness: 0.3 });
+    pivot.add(mesh(new RoundedBoxGeometry(0.46 * s, 0.04 * s, 0.1 * s, 2, 0.015 * s), cu, 0.23 * s, 0, 0));
+    pivot.add(mesh(new THREE.SphereGeometry(0.05 * s, 14, 10), new THREE.MeshStandardMaterial({ color: 0xd8433b, roughness: 0.4 }), 0.43 * s, 0.03 * s, 0));
+    g.add(mesh(new THREE.BoxGeometry(0.06 * s, 0.08 * s, 0.14 * s), cu, 0.22 * s, 0.17 * s, 0));
+    let want = false, ang = -0.75;
+    g.set = (v) => { want = !!v; };
+    g.step = (dt) => { const tgt = want ? 0 : -0.75; ang += (tgt - ang) * Math.min(1, dt * 12); pivot.rotation.z = -ang; };
+    g.isOn = () => want;
+    g.step(1);
+    return g;
+  }
+  return { make, toggle, haloTex };
+})();
+
+try {
+  const { V, mesh } = C3, S = window.SM;
+  const st = C3.makeStage(document.getElementById('host'), { fitWidth: true, minD: 3, maxD: 24 });
+  const { scene, camera, label } = st;
+  C3.addTable(scene, 13, 8);
+  const wood = new THREE.MeshStandardMaterial({ color: 0x3b2a20, roughness: 0.55 });
+  const cu = new THREE.MeshStandardMaterial({ color: 0xc0703a, metalness: 1, roughness: 0.3 });
+  const PV = [128, 64, 32, 16, 8, 4, 2, 1];
+  const taps = { num: [], rgb: [], logic: [] };
+  const tapable = (obj, key) => { obj.traverse((o) => (o.userData.tap = key)); };
+  const numTex = (txt, col) => C3.canvasTex(256, 192, (g, w, h) => { g.fillStyle = '#fffaf0'; g.fillRect(0, 0, w, h); g.strokeStyle = '#e2d3b0'; g.lineWidth = 8; g.strokeRect(4, 4, w - 8, h - 8); g.fillStyle = col || '#14263b'; g.font = '900 96px Pretendard, Arial, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(txt, w / 2, h / 2 + 4); });
+
+  /* ① 전구 8개 */
+  const G1 = new THREE.Group(); scene.add(G1);
+  G1.add(mesh(new RoundedBoxGeometry(10.4, 0.32, 2.6, 3, 0.08), wood, 0, 0.16, 0.1));
+  const X8 = PV.map((_, i) => -4.2 + i * 1.2);
+  const b8 = [], s8 = [], c8 = [];
+  PV.forEach((p, i) => {
+    const b = BULB.make({ kind: 'mini', size: 1.15, tint: 0xffc56a, lightGain: 0.7 }); b.position.set(X8[i], 0.32, 0.3); G1.add(b); b8.push(b);
+    const s = BULB.toggle({ size: 1.0 }); s.position.set(X8[i], 0.32, 1.0); G1.add(s); s8.push(s);
+    tapable(b, 'n' + i); tapable(s, 'n' + i); taps.num.push(b, s);
+    const tx = numTex(String(p)); const cm = new THREE.MeshStandardMaterial({ map: tx, emissiveMap: tx, emissive: 0xffd76a, emissiveIntensity: 0, roughness: 0.7 });
+    const card = mesh(new THREE.BoxGeometry(0.95, 0.72, 0.04), cm, X8[i], 1.5, -0.8); card.rotation.x = -0.12; G1.add(card); c8.push(cm);
+    G1.add(mesh(new THREE.BoxGeometry(0.1, 0.9, 0.08), wood, X8[i], 0.75, -0.84));
+  });
+  G1.add(C3.tube([V(-4.7, 0.34, 1.35), V(4.7, 0.34, 1.35)], 0.03, cu, 40));
+  G1.add(C3.tube([V(-4.7, 0.34, -0.3), V(4.7, 0.34, -0.3)], 0.03, cu, 40));
+  const l1 = [label('1바이트 = 스위치 8개', 'D', V(0, 2.25, -0.8))];
+
+  /* ② 전구 24개와 픽셀 */
+  const G2 = new THREE.Group(); scene.add(G2);
+  G2.add(mesh(new RoundedBoxGeometry(8.6, 0.3, 4.2, 3, 0.08), wood, -1.3, 0.15, 0));
+  const ROWS = [['R', 0xff4d4d, -1.3], ['G', 0x35d07f, 0], ['B', 0x4d7bff, 1.3]];
+  const b24 = { R: [], G: [], B: [] };
+  ROWS.forEach(([k, col, z]) => {
+    PV.forEach((p, i) => {
+      const b = BULB.make({ kind: 'mini', size: 0.85, tint: col, light: false }); b.position.set(-4.85 + i * 0.95, 0.3, z); G2.add(b); b24[k].push(b);
+      tapable(b, k + i); taps.rgb.push(b);
+    });
+  });
+  const lRGB = [label('빨강', 'R', V(-5.9, 0.7, -1.3)), label('초록', 'G', V(-5.9, 0.7, 0)), label('파랑', 'Bl', V(-5.9, 0.7, 1.3))];
+  // 픽셀(크게 키운 화면의 점 하나)
+  const pixM = new THREE.MeshStandardMaterial({ color: 0x000000, emissive: 0x000000, emissiveIntensity: 1, roughness: 0.35 });
+  const pixel = new THREE.Group(); pixel.position.set(4.3, 0, 0); G2.add(pixel);
+  pixel.add(mesh(new RoundedBoxGeometry(2.3, 0.3, 2.3, 3, 0.08), new THREE.MeshStandardMaterial({ color: 0x1b1f27, roughness: 0.4 }), 0, 0.15, 0));
+  const pixBox = mesh(new RoundedBoxGeometry(1.9, 1.9, 0.3, 4, 0.08), pixM, 0, 1.4, 0); pixBox.rotation.y = -0.35; pixel.add(pixBox);
+  const pixGlow = new THREE.PointLight(0xffffff, 0, 5); pixGlow.position.set(0, 1.4, 0.8); pixel.add(pixGlow);
+  lRGB.push(label('픽셀 하나', 'D', V(4.3, 2.75, 0)));
+
+  /* ③ 직렬·병렬 */
+  const G3 = new THREE.Group(); scene.add(G3);
+  G3.add(mesh(new RoundedBoxGeometry(8.4, 0.3, 4.6, 3, 0.08), new THREE.MeshStandardMaterial({ color: 0x34495e, roughness: 0.6 }), 0, 0.15, 0));
+  const Y = 0.34;
+  const bat = new THREE.Group(); bat.position.set(-3.1, Y, 1.0); G3.add(bat);
+  bat.add(mesh(new RoundedBoxGeometry(1.5, 0.36, 0.8, 2, 0.06), new THREE.MeshStandardMaterial({ color: 0x1f2329, roughness: 0.5 }), 0, 0.18, 0));
+  [-0.2, 0.2].forEach((z) => { const c = mesh(new THREE.CylinderGeometry(0.15, 0.15, 1.2, 24), new THREE.MeshStandardMaterial({ color: 0xe89a00, metalness: 0.3, roughness: 0.35 }), 0, 0.45, z); c.rotation.z = Math.PI / 2; bat.add(c); });
+  const lamp = BULB.make({ kind: 'mini', size: 1.5, tint: 0xffc56a, lightGain: 1.4 }); lamp.position.set(3.1, Y, 0.6); G3.add(lamp);
+  const swA = BULB.toggle({ size: 1.4 }), swB = BULB.toggle({ size: 1.4 }); G3.add(swA, swB); tapable(swA, 'A'); tapable(swB, 'B'); taps.logic.push(swA, swB);
+  const lA = label('A', 'D', () => V(swA.position.x - 0.9, 0.45, swA.position.z + 0.15)), lB = label('B', 'D', () => V(swB.position.x - 0.9, 0.45, swB.position.z + 0.15));
+  const l3 = [lA, lB, label('전지', 'small', V(-3.1, 1.45, 1.0)), label('전구', 'Y', V(3.1, 1.75, 0.6))];
+  let wires = [], wireKind = '';
+  const wireM = new THREE.MeshStandardMaterial({ color: 0xc0703a, metalness: 1, roughness: 0.3, emissive: 0xffa040, emissiveIntensity: 0 });
+  function buildWires(kind) {
+    wires.forEach((w) => { G3.remove(w); w.geometry.dispose(); }); wires = [];
+    const t = (pts) => { const m = C3.tube(pts, 0.04, wireM, 40); G3.add(m); wires.push(m); };
+    const sw = 0.32 * 1.4; // 스위치 받침 가장자리까지의 거리(절반)
+    if (kind === 'ser') {
+      swA.position.set(-1.0, Y, -1.0); swB.position.set(1.0, Y, -1.0);
+      t([V(-3.1 + 0.75, Y, 1.0), V(-2.3, Y, 1.0), V(-2.3, Y, -1.0), V(-1.0 - sw, Y, -1.0)]);
+      t([V(-1.0 + sw - 0.05, Y, -1.0), V(1.0 - sw, Y, -1.0)]);
+      t([V(1.0 + sw - 0.05, Y, -1.0), V(2.3, Y, -1.0), V(2.3, Y, 0.6), V(3.1 - 0.2, Y + 0.05, 0.6)]);
+    } else {
+      swA.position.set(0, Y, -1.9); swB.position.set(0, Y, 0.2);
+      t([V(-3.1 + 0.75, Y, 1.0), V(-2.3, Y, 1.0), V(-2.3, Y, -0.8)]);
+      t([V(-2.3, Y, -0.8), V(-2.3, Y, -1.9), V(-sw, Y, -1.9)]); t([V(-2.3, Y, -0.8), V(-2.3, Y, 0.2), V(-sw, Y, 0.2)]);
+      t([V(sw - 0.05, Y, -1.9), V(2.3, Y, -1.9), V(2.3, Y, -0.8)]); t([V(sw - 0.05, Y, 0.2), V(2.3, Y, 0.2), V(2.3, Y, -0.8)]);
+      t([V(2.3, Y, -0.8), V(2.3, Y, 0.6), V(3.1 - 0.2, Y + 0.05, 0.6)]);
+    }
+    t([V(3.1 + 0.2, Y + 0.05, 0.6), V(3.6, Y, 0.6), V(3.6, Y, 1.9), V(-3.1, Y, 1.9), V(-3.1 - 0.9, Y, 1.9), V(-3.1 - 0.9, Y, 1.0), V(-3.1 - 0.75, Y, 1.0)]);
+    wireKind = kind;
+  }
+
+  /* 누르기 */
+  {
+    const el = st.renderer.domElement, ray = new THREE.Raycaster(), v = new THREE.Vector2(); let sx = 0, sy = 0;
+    el.addEventListener('pointerdown', (e) => { sx = e.clientX; sy = e.clientY; });
+    el.addEventListener('pointerup', (e) => {
+      if (Math.hypot(e.clientX - sx, e.clientY - sy) > 8) return;
+      const r = el.getBoundingClientRect(); v.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+      ray.setFromCamera(v, camera); const hit = ray.intersectObjects(taps[S.mode], true)[0]; if (!hit) return;
+      const k = hit.object.userData.tap; if (k === undefined) return;
+      if (S.mode === 'num') { const i = +k.slice(1); S.num[i] = !S.num[i]; S.paint.num(); }
+      else if (S.mode === 'rgb') { const c = k[0], i = +k.slice(1); S.rgb[c][i] = !S.rgb[c][i]; S.paint.rgb(); }
+      else { S.logic[k] = !S.logic[k]; S.paint.logic(); }
+    });
+  }
+
+  const HOME = { num: { p: V(0.2, 9.0, 14.2), t: V(0.1, 0.9, 0.2) }, rgb: { p: V(0.3, 10.5, 14.5), t: V(0.0, 0.4, 0.3) }, logic: { p: V(0.2, 9.4, 11.6), t: V(0, 0.4, 0.3) } };
+  let mode = '', home = -1;
+  const k8 = Array(8).fill(0), k24 = { R: Array(8).fill(0), G: Array(8).fill(0), B: Array(8).fill(0) }; let kl = 0;
+  const col = new THREE.Color(), PVv = PV;
+  st.onFrame((dt, t) => {
+    if (S.mode !== mode) { mode = S.mode; G1.visible = mode === 'num'; G2.visible = mode === 'rgb'; G3.visible = mode === 'logic'; l1.forEach((l) => (l.show = mode === 'num')); lRGB.forEach((l) => (l.show = mode === 'rgb')); l3.forEach((l) => (l.show = mode === 'logic')); }
+    if (S.home !== home) { home = S.home; const h = HOME[S.mode], k = camera.aspect < 1 ? 1.35 : 1; st.flyTo(h.p.clone().sub(h.t).multiplyScalar(k).add(h.t), h.t, home === 0 ? 0 : 1.0); }
+    const f = Math.min(1, dt * 9);
+    if (mode === 'num') PVv.forEach((_, i) => { s8[i].set(S.num[i]); s8[i].step(dt); k8[i] += ((S.num[i] ? 1 : 0) - k8[i]) * f; b8[i].set(k8[i]); c8[i].emissiveIntensity = k8[i] * 0.35; });
+    if (mode === 'rgb') {
+      let rgb = [0, 0, 0];
+      ['R', 'G', 'B'].forEach((k, n) => PVv.forEach((p, i) => { k24[k][i] += ((S.rgb[k][i] ? 1 : 0) - k24[k][i]) * f; b24[k][i].set(k24[k][i]); if (S.rgb[k][i]) rgb[n] += p; }));
+      col.setRGB(rgb[0] / 255, rgb[1] / 255, rgb[2] / 255).convertSRGBToLinear();
+      pixM.color.lerp(col, f); pixM.emissive.lerp(col, f); pixM.emissiveIntensity = 0.9;
+      pixGlow.color.copy(pixM.emissive); pixGlow.intensity = (rgb[0] + rgb[1] + rgb[2]) / 765 * 2.2;
+    }
+    if (mode === 'logic') {
+      if (wireKind !== S.logic.wire) buildWires(S.logic.wire);
+      swA.set(S.logic.A); swB.set(S.logic.B); swA.step(dt); swB.step(dt);
+      kl += ((S.lit() ? 1 : 0) - kl) * f; lamp.set(kl); wireM.emissiveIntensity = kl * (0.35 + 0.3 * Math.sin(t * 7));
+    }
+  });
+  S.ok3d = true;
+} catch (err) { window.SM_err('3D 그림', err); const f = document.getElementById('fail3d'); if (f) f.classList.add('show'); }
+</script>
+</body>
+</html>
