@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>반도체 공장 물의 여행</title>
+<script>
+/* 문제 알림: 코드에 오류가 나면 화면 아래에 빨간 상자로 알려 줘요 (선생님 확인용) */
+(function () {
+  function box() {
+    var b = document.getElementById('smErr');
+    if (!b && document.body) {
+      b = document.createElement('div'); b.id = 'smErr';
+      b.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;background:#fdecea;color:#8a1f17;border:2px solid #d9534f;border-radius:12px;padding:10px 14px;font:600 14px/1.5 sans-serif;white-space:pre-wrap';
+      document.body.appendChild(b);
+    }
+    return b;
+  }
+  window.SM_err = function (where, err) {
+    var msg = '[' + where + '] ' + (err && err.message ? err.message : String(err));
+    var show = function () { var b = box(); if (b) b.textContent += (b.textContent ? '\n' : '') + msg; };
+    if (document.body) show(); else document.addEventListener('DOMContentLoaded', show);
+  };
+  window.addEventListener('error', function (e) { window.SM_err('스크립트', { message: e.message + ' (줄 ' + e.lineno + ')' }); });
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      var S = window.SM || {};
+      if (!S.okUI) window.SM_err('실행 안 됨', { message: '안내·버튼 코드가 실행되지 않았어요. 파일이 끝(</html>)까지 들어 있는지 확인해 주세요.' });
+      if (document.getElementById('fail3d') && !S.ok3d) { var f = document.getElementById('fail3d'); if (f) f.classList.add('show'); window.SM_err('3D 그림', { message: '3D 그림을 불러오지 못했어요. 인터넷 연결(cdn.jsdelivr.net)을 확인하고 새로고침해 주세요.' }); }
+    }, 9000);
+  });
+})();
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+
+  :root{--bg:#edf3f8;--card:#fff;--ink:#14263b;--ink2:#34495e;--muted:#5a6b7e;--line:#dde6ee;--accent:#0e63b3;--accent-soft:#e3effb;
+    --fab:#4b3fb5;--fab-soft:#ecebfb;--ok:#1f9d5c;--no:#d9534f;
+    --shadow:0 1px 2px rgba(20,38,59,.06),0 8px 24px rgba(20,38,59,.07);--ease:cubic-bezier(.2,.8,.2,1)}
+  *{box-sizing:border-box}html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:"Pretendard",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  button{font:inherit;color:inherit}
+  .app{max-width:1320px;margin:0 auto;padding:14px 16px 28px;display:flex;flex-direction:column;gap:12px}
+  .eyebrow{display:inline-flex;font-size:13px;font-weight:700;color:var(--fab);background:var(--fab-soft);padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(21px,2.4vw,28px);margin:6px 0 2px;letter-spacing:-.02em;word-break:keep-all}
+  .sub{margin:0;color:var(--muted);font-size:15px;word-break:keep-all}
+  .card{background:var(--card);border-radius:20px;box-shadow:var(--shadow);border:1px solid rgba(20,38,59,.04)}
+  .pad{padding:14px 16px}
+  .stage{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(330px,1fr);gap:14px;align-items:start}
+  .viewer{position:sticky;top:10px}
+  .flow{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px}
+  .fs{min-height:54px;border:0;border-radius:12px;background:#eef3f8;font-weight:800;font-size:13px;color:var(--muted);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.2;word-break:keep-all;padding:4px}
+  .fs b{font-size:15px}
+  .fs[aria-selected="true"]{background:var(--fab);color:#fff}
+  .fs.seen:not([aria-selected="true"]){background:#e5f5ec;color:#11703f}
+  .stepname{display:flex;align-items:center;gap:10px;margin:2px 0 6px}
+  .stepname .no{flex:none;width:40px;height:40px;border-radius:12px;background:var(--fab);color:#fff;display:grid;place-items:center;font-weight:900;font-size:19px}
+  .stepname h2{margin:0;font-size:21px;letter-spacing:-.01em;word-break:keep-all}
+  .stepname small{display:block;font-size:13px;color:var(--muted);font-weight:700}
+  .what{font-size:16px;line-height:1.75;color:var(--ink2);margin:0 0 10px;word-break:keep-all}
+  .phase{display:grid;gap:6px;margin:8px 0}
+  .ph{display:grid;grid-template-columns:28px 1fr;gap:8px;align-items:start;padding:7px 10px;border-radius:12px;background:#f7fafc;font-size:15px;line-height:1.55;color:var(--muted);word-break:keep-all;transition:background .3s,color .3s}
+  .ph i{font-style:normal;width:26px;height:26px;border-radius:8px;background:#dfe6ee;display:grid;place-items:center;font-weight:900;font-size:13px;color:#607285}
+  .ph.on{background:var(--fab-soft);color:var(--ink)}.ph.on i{background:var(--fab);color:#fff}
+  .ph.done{color:var(--ink2)}.ph.done i{background:#b9b2ee;color:#fff}
+  .box{border-radius:14px;padding:10px 12px;margin-top:8px;font-size:14.5px;line-height:1.65;word-break:keep-all}
+  .box b.t{display:block;font-size:13px;margin-bottom:2px}
+  .an{background:#fff8e6;border:1px solid #f3dc9a;color:#5b4300}
+  .fact{background:#eef6ff;border:1px solid #cfe2f6;color:#1d3f66}
+  .lnk{background:#ecf8f1;border:1px solid #c6e8d4;color:#0f5a36}
+  .src{display:block;font-size:12px;color:var(--muted);margin-top:3px}
+  .acts{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 0}
+  .btn{min-height:50px;border:0;border-radius:14px;padding:0 16px;font-weight:800;font-size:15.5px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;justify-content:center;word-break:keep-all}
+  .btn:active{transform:scale(.97)}
+  .btn.primary{background:var(--fab);color:#fff}.btn.ghost{background:#eef3f8;color:var(--ink2)}
+  .btn[aria-pressed="true"]{background:#14263b;color:#fff}
+  .btn:disabled{opacity:.4;cursor:default;transform:none}
+  .prog{height:6px;border-radius:3px;background:#e6edf4;margin-top:10px;overflow:hidden}
+  .prog i{display:block;height:100%;width:0;background:linear-gradient(90deg,#8a7ff0,var(--fab))}
+  .credit{text-align:center;font-size:13px;font-weight:700;color:#8495a8;letter-spacing:.02em;margin:6px 0 0}
+  /* ===== 3D 화면 공통 ===== */
+  :root{--Bc:#14a5d0;--Ic:#2fae4a;--Fc:#f0522a;--N:#d8433b;--S:#2f62c9;--P:#7d5ad6}
+  .viewer{position:relative;overflow:hidden;padding:0}
+  .gl-host{position:relative;width:100%;height:min(74vh,700px);min-height:380px;background:linear-gradient(#f6f9fc,#d6e3ef);touch-action:none}
+  .gl-host canvas.gl{display:block;width:100%;height:100%;outline:none}
+  .lbls{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+  .lb{position:absolute;left:0;top:0;white-space:nowrap;font-weight:800;font-size:14px;padding:3px 9px;border-radius:9px;background:rgba(255,255,255,.88);color:#34495e;box-shadow:0 2px 8px rgba(20,38,59,.14);will-change:transform}
+  .lb.small{font-size:12px;font-weight:700;color:#5a6b7e;background:rgba(255,255,255,.72);box-shadow:none}
+  .lb.B{background:var(--Bc);color:#fff}.lb.I{background:var(--Ic);color:#fff}.lb.F{background:var(--Fc);color:#fff;font-size:15px}
+  .lb.P{background:var(--P);color:#fff}
+  .lb.dim{opacity:.35}
+  .vt{position:absolute;display:flex;gap:6px;flex-wrap:wrap;z-index:3}
+  .vt.tl{left:10px;top:10px;max-width:calc(100% - 20px)}
+  .vt.tr{right:10px;top:10px;justify-content:flex-end}
+  .vt.bl{left:10px;bottom:10px;align-items:center}
+  .vb{min-height:44px;padding:0 12px;border-radius:12px;border:1px solid rgba(20,38,59,.12);background:rgba(255,255,255,.9);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);font-weight:800;font-size:14px;color:#34495e;cursor:pointer;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 10px rgba(20,38,59,.08)}
+  .vb:active{transform:scale(.96)}
+  .vb .dot{width:12px;height:12px;border-radius:50%;flex:none}
+  .vb[aria-pressed="false"]{opacity:.62}
+  .vb[aria-pressed="false"] .dot{background:#c2ccd6!important}
+  .vb.sel{background:#14263b;color:#fff;border-color:#14263b}
+  .hint{font-size:12.5px;font-weight:700;color:#5a6b7e;background:rgba(255,255,255,.78);border-radius:10px;padding:6px 10px;word-break:keep-all}
+  .inset{position:absolute;z-index:2;border-radius:18px;border:2px solid rgba(255,255,255,.95);box-shadow:0 10px 30px rgba(20,38,59,.22),inset 0 0 0 1px rgba(20,38,59,.08);pointer-events:none;display:none}
+  .inset.on{display:block}
+  .inset .it{position:absolute;left:8px;top:8px;font-size:12.5px;font-weight:900;color:#14263b;background:rgba(255,255,255,.9);border-radius:8px;padding:3px 8px}
+  .inset .ic{position:absolute;left:6px;right:6px;bottom:6px;display:flex;flex-wrap:wrap;gap:4px;justify-content:center}
+  .inset .ic span{font-size:11.5px;font-weight:800;color:#fff;border-radius:7px;padding:2px 7px;white-space:nowrap}
+  .fail3d{position:absolute;inset:0;display:none;place-items:center;text-align:center;padding:24px;font-size:16px;font-weight:700;color:#7a2a22;line-height:1.7;word-break:keep-all;background:#fff4f2}
+  .fail3d.show{display:grid}
+  .model{font-size:13px;color:var(--muted);text-align:right;margin:0;word-break:keep-all}
+  @media (max-width:900px){.gl-host{height:min(56vh,620px)}}
+  .zoombadge{position:absolute;right:10px;top:62px;z-index:3;font-size:13px;font-weight:800;color:#fff;background:rgba(75,63,181,.9);border-radius:10px;padding:6px 10px;display:none;word-break:keep-all;max-width:60%}
+  .zoombadge.on{display:block}
+  @media (max-width:900px){.stage{grid-template-columns:1fr}.viewer{position:relative;top:0}}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+  /* ===== 이 수업 전용 ===== */
+  :root{--fab:#1b6fb0;--fab-soft:#e3f1fc}
+  .viewer{padding:10px}
+  .svgbox svg{display:block;width:100%;height:auto;border-radius:14px}
+  .modes{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px}
+  .md{min-height:54px;border:0;border-radius:14px;background:#eef3f8;font-weight:800;font-size:15.5px;color:var(--muted);cursor:pointer;word-break:keep-all}
+  .md[aria-selected="true"]{background:var(--fab);color:#fff}
+  .stepname .no{background:var(--fab)}
+  .tgl{width:100%;min-height:50px;border-radius:12px;border:2px dashed #c9d6e2;background:#fff;font-weight:800;font-size:15px;cursor:pointer;margin:8px 0}
+  .tgl[aria-pressed="true"]{border-style:solid;border-color:#b8430a;background:#ffeee6;color:#8a3207}
+  .rng{display:flex;align-items:center;gap:12px;margin:10px 0 4px;font-weight:800;font-size:15px;color:var(--ink2)}
+  .rng label{flex:none;min-width:84px;word-break:keep-all}
+  .rng b{flex:none;min-width:52px;text-align:right;color:#1b4f80;font-size:15px}
+  .rng input{flex:1;min-width:120px;height:44px;-webkit-appearance:none;appearance:none;background:transparent}
+  .rng input::-webkit-slider-runnable-track{height:10px;border-radius:99px;background:linear-gradient(90deg,#cfe7fb,#1b6fb0)}
+  .rng input::-webkit-slider-thumb{-webkit-appearance:none;width:36px;height:36px;border-radius:50%;background:#fff;border:3px solid var(--fab);margin-top:-13px;box-shadow:0 2px 8px rgba(20,38,59,.25)}
+  .rng input::-moz-range-track{height:10px;border-radius:99px;background:linear-gradient(90deg,#cfe7fb,#1b6fb0)}
+  .rng input::-moz-range-thumb{width:32px;height:32px;border-radius:50%;background:#fff;border:3px solid var(--fab)}
+  .gauges{display:grid;gap:8px;margin:12px 0 4px}
+  .gg{display:grid;grid-template-columns:132px 1fr;gap:10px;align-items:center;font-size:14px;font-weight:800;color:var(--ink2);word-break:keep-all}
+  .gg .gt{height:18px;border-radius:99px;background:#eef3f8;overflow:hidden;position:relative}
+  .gg .gt i{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:99px;transition:width .6s var(--ease)}
+  .gnote{font-size:12.5px;color:var(--muted);margin:2px 0 0;word-break:keep-all}
+  .why{margin-top:10px;display:grid;gap:6px}
+  .why h3{margin:6px 0 2px;font-size:16px}
+  .why .w{display:grid;grid-template-columns:28px 1fr;gap:8px;align-items:start;padding:8px 10px;border-radius:12px;background:#f7fafc;font-size:14.5px;line-height:1.6;color:var(--ink2);word-break:keep-all}
+  .why .w i{font-style:normal;width:26px;height:26px;border-radius:8px;background:var(--fab);color:#fff;display:grid;place-items:center;font-weight:900;font-size:13px}
+  .flow{grid-template-columns:repeat(5,1fr)}
+  .fs[aria-selected="true"]{background:var(--fab)}
+  .legend{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+  .legend span{display:inline-flex;align-items:center;gap:6px;font-size:13.5px;font-weight:800;color:var(--ink2);background:#f7fafc;border-radius:10px;padding:4px 10px}
+  .legend i{width:12px;height:12px;border-radius:50%;display:inline-block}
+  .legend span.gone{opacity:.4;text-decoration:line-through}
+  .pure{margin:10px 0}
+  .pure .gl{display:flex;justify-content:space-between;font-size:14px;font-weight:800;color:var(--ink2);margin-bottom:6px}
+  .pure .gt{height:22px;border-radius:99px;background:#eef3f8;overflow:hidden;position:relative}
+  .pure .gt i{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:99px;background:linear-gradient(90deg,#bfe3ff,#1b6fb0);transition:width .8s var(--ease)}
+  [hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <span class="eyebrow">반도체와 지구 · 시뮬레이션 ②</span>
+    <h1>반도체 공장 물의 여행</h1>
+    <p class="sub">강에서 끌어온 물이 초순수가 되어 웨이퍼를 씻고, 다시 쓰이거나 강으로 돌아가는 길을 따라가요. 다시 쓰는 비율을 바꿔 보고, 초순수를 만드는 단계를 하나씩 살펴봐요.</p>
+  </header>
+
+  <div class="stage">
+    <section class="card viewer svgbox">
+      <svg id="wA" viewBox="0 0 760 540" role="img" aria-label="반도체 공장 물의 순환 도식. 강에서 물을 끌어와 초순수를 만들고, 클린룸에서 웨이퍼를 씻은 뒤, 쓴 물을 정화해 일부는 다시 쓰고 나머지는 깨끗하게 처리해 강으로 돌려보낸다.">
+        <defs>
+          <linearGradient id="bgA" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#eef6fc"/><stop offset="1" stop-color="#f7fafc"/></linearGradient>
+          <linearGradient id="riv" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#2b8fd6"/><stop offset="1" stop-color="#1b6fb0"/></linearGradient>
+          <linearGradient id="box" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#eef3f8"/></linearGradient>
+          <linearGradient id="waf" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#d9dde6"/><stop offset=".5" stop-color="#a7b2c6"/><stop offset="1" stop-color="#e6e9f0"/></linearGradient>
+          <filter id="sh" x="-20%" y="-20%" width="140%" height="160%"><feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#14263b" flood-opacity=".16"/></filter>
+          <marker id="ar" viewBox="0 0 10 10" refX="7" refY="5" markerUnits="userSpaceOnUse" markerWidth="18" markerHeight="18" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10Z" fill="#9fc3e6"/></marker>
+          <marker id="arG" viewBox="0 0 10 10" refX="7" refY="5" markerUnits="userSpaceOnUse" markerWidth="18" markerHeight="18" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10Z" fill="#7cc6a6"/></marker>
+        </defs>
+        <rect width="760" height="540" fill="url(#bgA)"/>
+        <!-- 땅과 강 -->
+        <path d="M0 440 C160 420 300 450 420 432 S640 420 760 440 V540 H0Z" fill="#d7e8d9"/>
+        <path id="river" d="M0 478 C120 460 240 492 380 476 S620 456 760 482 V520 C600 498 460 520 350 512 S120 500 0 516Z" fill="url(#riv)"/>
+        <text x="20" y="532" font-size="14" font-weight="900" fill="#fff">강 · 댐</text>
+        <!-- 1 초순수 만들기 -->
+        <g filter="url(#sh)" transform="translate(40 70)"><rect width="210" height="150" rx="16" fill="url(#box)" stroke="#bcd6ee" stroke-width="2"/>
+          <g transform="translate(20 46)"><rect width="34" height="84" rx="10" fill="#e3f1fc" stroke="#7fb3df" stroke-width="2"/><rect x="50" width="34" height="84" rx="10" fill="#d4ebfb" stroke="#7fb3df" stroke-width="2"/><rect x="100" width="34" height="84" rx="10" fill="#c3e3fa" stroke="#7fb3df" stroke-width="2"/><rect x="150" width="20" height="84" rx="8" fill="#b5ddff" stroke="#7fb3df" stroke-width="2"/>
+            <path d="M6 20h22M6 32h22M56 24h22M56 40h22M106 30h22M106 46h22" stroke="#9fc3e6" stroke-width="2"/></g>
+          <text x="105" y="30" text-anchor="middle" font-size="15" font-weight="900" fill="#14263b">① 초순수 만들기</text></g>
+        <!-- 2 클린룸 세척 -->
+        <g filter="url(#sh)" transform="translate(470 60)"><rect width="250" height="170" rx="16" fill="url(#box)" stroke="#bcd6ee" stroke-width="2"/>
+          <text x="125" y="30" text-anchor="middle" font-size="15" font-weight="900" fill="#14263b">② 클린룸에서 웨이퍼 씻기</text>
+          <ellipse cx="125" cy="122" rx="78" ry="24" fill="url(#waf)" stroke="#8f9bb0" stroke-width="2"/>
+          <g stroke="#c8ccd8" stroke-width="1"><path d="M70 116h110M66 124h118M76 132h98"/></g>
+          <rect x="112" y="50" width="26" height="22" rx="5" fill="#9aa7b4"/><g id="spray" fill="#5cc2ff"></g></g>
+        <!-- 3 정화 -->
+        <g filter="url(#sh)" transform="translate(500 290)"><rect width="220" height="120" rx="16" fill="url(#box)" stroke="#bcd6ee" stroke-width="2"/>
+          <path d="M30 60 h160 v40 a8 8 0 0 1 -8 8 h-144 a8 8 0 0 1 -8 -8z" fill="#d9ecf9" stroke="#9fc3e6" stroke-width="2"/><path d="M30 74 C70 66 110 82 190 72" fill="none" stroke="#7fb3df" stroke-width="2"/>
+          <text x="110" y="34" text-anchor="middle" font-size="15" font-weight="900" fill="#14263b">③ 쓴 물 모아 깨끗하게</text></g>
+        <!-- 길 -->
+        <path id="pIn" d="M110 470 C100 380 110 300 130 222" fill="none" stroke="#bfe0f7" stroke-width="7" stroke-linecap="round" marker-end="url(#ar)"/>
+        <path id="pUp" d="M250 140 C330 120 400 130 470 140" fill="none" stroke="#bfe0f7" stroke-width="7" stroke-linecap="round" marker-end="url(#ar)"/>
+        <path id="pDown" d="M610 230 C612 250 612 268 610 290" fill="none" stroke="#bfe0f7" stroke-width="7" stroke-linecap="round" marker-end="url(#ar)"/>
+        <path id="pRe" d="M500 360 C380 370 260 330 200 222" fill="none" stroke="#c9eadb" stroke-width="7" stroke-linecap="round" marker-end="url(#arG)"/>
+        <path id="pOut" d="M640 410 C650 440 660 456 668 474" fill="none" stroke="#bfe0f7" stroke-width="7" stroke-linecap="round" marker-end="url(#ar)"/>
+        <text x="330" y="372" text-anchor="middle" font-size="14" font-weight="900" fill="#0f6b5c">④ 다시 쓰기</text>
+        <text x="690" y="448" font-size="13" font-weight="900" fill="#1b4f80">강으로</text>
+        <text x="138" y="330" font-size="13" font-weight="900" fill="#1b4f80">끌어오기</text>
+        <!-- 가뭄 표시 -->
+        <g id="drought" opacity="0"><path d="M0 470 H760" stroke="#c98a12" stroke-width="3" stroke-dasharray="8 6"/><text x="380" y="462" text-anchor="middle" font-size="13" font-weight="900" fill="#8a5a00">가뭄: 강물이 줄었어요</text></g>
+      </svg>
+      <svg id="wB" viewBox="0 0 760 540" role="img" aria-label="비커 속 물 그림. 단계를 거칠 때마다 먼지, 광물질, 세균, 녹아 있는 기체 알갱이가 사라진다." hidden>
+        <defs>
+          <linearGradient id="bgB" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4f8fc"/><stop offset="1" stop-color="#e8f0f7"/></linearGradient>
+          <linearGradient id="wat" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="rgba(140,200,245,.55)"/><stop offset="1" stop-color="rgba(43,143,214,.75)"/></linearGradient>
+          <linearGradient id="glass" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="rgba(255,255,255,.75)"/><stop offset=".15" stop-color="rgba(255,255,255,.15)"/><stop offset=".85" stop-color="rgba(255,255,255,.1)"/><stop offset="1" stop-color="rgba(255,255,255,.6)"/></linearGradient>
+          <radialGradient id="uv" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="rgba(160,110,255,.55)"/><stop offset="1" stop-color="rgba(160,110,255,0)"/></radialGradient>
+        </defs>
+        <rect width="760" height="540" fill="url(#bgB)"/>
+        <ellipse cx="380" cy="490" rx="230" ry="22" fill="rgba(20,38,59,.12)"/>
+        <g id="uvG" opacity="0"><ellipse cx="380" cy="300" rx="240" ry="220" fill="url(#uv)"/><rect x="560" y="120" width="26" height="300" rx="13" fill="#b79cff"/><text x="573" y="104" text-anchor="middle" font-size="13" font-weight="900" fill="#5b3fc4">자외선 등</text></g>
+        <g id="memG" opacity="0"><rect x="200" y="96" width="360" height="10" rx="5" fill="#7fb3df"/><path d="M210 101 H550" stroke="#fff" stroke-width="2" stroke-dasharray="2 4"/><text x="380" y="86" text-anchor="middle" font-size="13" font-weight="900" fill="#1b4f80">아주 촘촘한 막</text></g>
+        <g id="filG" opacity="0"><rect x="200" y="96" width="360" height="16" rx="6" fill="#c9b79a"/><text x="380" y="86" text-anchor="middle" font-size="13" font-weight="900" fill="#6b5a3a">거름망</text></g>
+        <path d="M230 130 V460 a30 30 0 0 0 30 30 H500 a30 30 0 0 0 30 -30 V130" fill="none" stroke="#9fb3c4" stroke-width="5"/>
+        <rect id="water" x="233" y="170" width="294" height="317" rx="26" fill="url(#wat)"/>
+        <g id="parts"></g>
+        <rect x="233" y="130" width="294" height="357" rx="26" fill="url(#glass)" pointer-events="none"/>
+        <text x="380" y="524" text-anchor="middle" font-size="15" font-weight="900" fill="#14263b" id="glassLbl">수돗물</text>
+      </svg>
+    </section>
+
+    <section class="card pad">
+      <div class="modes" role="tablist">
+        <button class="md" type="button" role="tab" id="mA" aria-selected="true">물의 여행과 다시 쓰기</button>
+        <button class="md" type="button" role="tab" id="mB" aria-selected="false">초순수 만들기 4단계</button>
+      </div>
+
+      <div id="paneA">
+        <div class="rng"><label for="rR">다시 쓰는 물</label><input type="range" id="rR" min="0" max="80" step="10" value="40"><b id="vR">40%</b></div>
+        <button type="button" class="tgl" id="tDry" aria-pressed="false">가뭄이 들었다면?</button>
+        <div class="gauges">
+          <div class="gg"><span>씻는 데 필요한 물</span><div class="gt"><i id="gNeed" style="background:linear-gradient(90deg,#cfe7fb,#7fb3df)"></i></div></div>
+          <div class="gg"><span>강에서 새로 끌어오는 물</span><div class="gt"><i id="gIn" style="background:linear-gradient(90deg,#a9d6fb,#1b6fb0)"></i></div></div>
+          <div class="gg"><span>다시 쓰는 물</span><div class="gt"><i id="gRe" style="background:linear-gradient(90deg,#b7e6d0,#0f6b5c)"></i></div></div>
+          <div class="gg"><span>다시 쓰려고 깨끗이 하는 데 드는 전기</span><div class="gt"><i id="gE" style="background:linear-gradient(90deg,#ffe08a,#f0b429)"></i></div></div>
+        </div>
+        <p class="gnote">막대는 크기만 비교하는 모형이에요(숫자 없음). 실제 비율은 공장과 공정마다 달라요.</p>
+        <div class="box fact" id="aMsg"></div>
+        <div class="why">
+          <h3>왜 그럴까?</h3>
+          <div class="w"><i>1</i><span>웨이퍼를 씻는 데 필요한 물의 양은 그대로예요. 쓴 물을 <b>다시 쓰는 만큼</b> 강에서 새로 끌어오는 물이 줄어요.</span></div>
+          <div class="w"><i>2</i><span>하지만 쓴 물을 다시 초순수로 만들려면 더 꼼꼼하게 걸러야 해서 <b>전기가 더 들어요</b>. 물과 전기 사이에서 균형을 찾아야 해요.</span></div>
+          <div class="w"><i>3</i><span>가뭄이 들면 강물이 줄어 공장과 마을이 물을 나눠 써야 해요. 이때 다시 쓰는 물이 많은 공장일수록 마을에 부담을 덜 줘요.</span></div>
+        </div>
+        <div class="box fact"><b class="t">실제로는</b>삼성전자 반도체 부문은 2025년에 물 약 1억 8천만 톤을 끌어오고, 약 1억 3천만 톤을 처리해 다시 썼다고 공개했어요. SK하이닉스는 다시 쓰기로 하루 평균 약 17만 톤(약 55만 명의 하루 사용량)을 아꼈다고 밝혔어요.<span class="src">회사 공개 자료·보도(2026년). 계산 방식이 회사마다 달라 두 회사를 바로 비교할 수는 없어요.</span></div>
+      </div>
+
+      <div id="paneB" hidden>
+        <div class="flow" id="flow" role="tablist"></div>
+        <div class="stepname"><span class="no" id="sNo">0</span><div><h2 id="sName"></h2><small id="sSub"></small></div></div>
+        <p class="what" id="sWhat"></p>
+        <div class="legend" id="legend"></div>
+        <div class="pure"><div class="gl"><span>물이 깨끗한 정도</span><span id="pTxt"></span></div><div class="gt"><i id="pFill"></i></div></div>
+        <div class="acts">
+          <button class="btn ghost" id="bPrev" type="button">이전 단계</button>
+          <button class="btn primary" id="bNext" type="button">다음 단계</button>
+        </div>
+        <div class="box an"><b class="t">모형 안내</b>실제 공장은 이보다 훨씬 많은 단계를 거쳐요. 여기서는 무엇을 없애는지에 따라 네 단계로 묶어 단순하게 보여 줘요. 단계마다 펌프와 등을 돌리는 데 전기가 들어요.</div>
+      </div>
+    </section>
+  </div>
+  <p class="credit">반도체와 지구 읽기 자료 &nbsp;|&nbsp; 제작 · 성안중학교 이삭 T</p>
+</div>
+
+<script>
+window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) => Array.from(r.querySelectorAll(s)) };
+</script>
+<script>
+/* ===== 2D 도식 도구 (SVG) =====
+   FLOW.dots(path, 옵션): SVG 길(path)을 따라 알갱이(전기·물·열)가 흐르게 해요.
+     옵션 n(개수), r(크기), color, speed(초당 길 몇 바퀴), layer(알갱이를 넣을 g, 생략하면 길의 부모), glow(빛 번짐)
+     반환값.set({ rate: 0~1(보이는 양과 빠르기), color }) 로 바꿔요.
+   FLOW.onFrame(fn): 화면에 보일 때만 매 프레임 fn(dt, t)를 불러요(탭 껍데기에서 숨은 탭이면 쉬어요).
+   FLOW.num(el, 값, 자릿수): 숫자를 부드럽게 바꿔 보여 줘요.
+   크기·개수·빠르기는 개념 이해를 위한 모형이에요. */
+const FLOW = (() => {
+  const NS = 'http://www.w3.org/2000/svg';
+  const REDUCE = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const fns = [];
+  function visibleNow() {
+    if (document.hidden) return false;
+    try { const f = window.frameElement; if (f && f.hasAttribute('data-page') && !f.classList.contains('on')) return false; } catch (e) {}
+    return true;
+  }
+  let last = performance.now();
+  function tick(now) {
+    requestAnimationFrame(tick);
+    const dt = Math.min(0.05, Math.max(0, (now - last) / 1000)); last = now;
+    if (!visibleNow()) return;
+    for (const f of fns) { try { f(dt, now / 1000); } catch (e) { console.error(e); } }
+  }
+  requestAnimationFrame(tick);
+  const onFrame = (f) => fns.push(f);
+  function onScreen(el) { const r = el.getBoundingClientRect(); return r.bottom > -40 && r.top < (window.innerHeight || 800) + 40; }
+
+  function dots(path, o = {}) {
+    const n = o.n || 14, layer = o.layer || path.parentNode, L = path.getTotalLength();
+    const svg = path.ownerSVGElement;
+    const g = document.createElementNS(NS, 'g'); g.setAttribute('pointer-events', 'none'); layer.appendChild(g);
+    const cs = [];
+    for (let k = 0; k < n; k++) {
+      const c = document.createElementNS(NS, 'circle'); c.setAttribute('r', o.r || 4);
+      if (o.glow) c.setAttribute('filter', o.glow);
+      g.appendChild(c); cs.push(c);
+    }
+    let rate = o.rate === undefined ? 1 : o.rate, color = o.color || '#2f6fd6', off = Math.random(), speed = o.speed || 0.12;
+    const paint = () => cs.forEach((c) => c.setAttribute('fill', color)); paint();
+    function place() {
+      const show = Math.round(n * Math.min(1, rate));
+      cs.forEach((c, k) => {
+        if (k >= show) { c.setAttribute('opacity', '0'); return; }
+        const s = ((off + k / n) % 1), p = path.getPointAtLength(s * L);
+        c.setAttribute('cx', p.x.toFixed(1)); c.setAttribute('cy', p.y.toFixed(1));
+        c.setAttribute('opacity', String(Math.min(1, s * 8, (1 - s) * 8)));
+      });
+    }
+    onFrame((dt) => { if (REDUCE || !onScreen(svg)) return; off = (off + dt * speed * (0.25 + 0.75 * Math.min(1, rate))) % 1; place(); });
+    place();
+    return { set(v) { if (v.rate !== undefined) rate = v.rate; if (v.color) { color = v.color; paint(); } if (v.speed) speed = v.speed; place(); }, g };
+  }
+
+  const shown = new WeakMap();
+  function num(el, v, digits = 0) {
+    const from = shown.has(el) ? shown.get(el) : 0; shown.set(el, v);
+    const fmt = (x) => x.toLocaleString('ko-KR', { minimumFractionDigits: digits, maximumFractionDigits: digits });
+    if (REDUCE) { el.textContent = fmt(v); return; }
+    let t = 0; const step = (dt) => { t = Math.min(1, t + dt / 0.5); el.textContent = fmt(from + (v - from) * (1 - Math.pow(1 - t, 3))); return t < 1; };
+    const f = (dt) => { if (!step(dt)) { const i = fns.indexOf(f); if (i >= 0) fns.splice(i, 1); } };
+    fns.push(f);
+  }
+  return { dots, onFrame, num, REDUCE, NS };
+})();
+/* ===== 블록 1: 도식·버튼 ===== */
+(() => {
+  'use strict';
+  try {
+    const { $, $$ } = window.SM, NS = FLOW.NS;
+    const el = (tag, at, parent) => { const e = document.createElementNS(NS, tag); Object.entries(at).forEach(([k, v]) => e.setAttribute(k, v)); if (parent) parent.appendChild(e); return e; };
+    /* A: 물의 여행 */
+    const D = {
+      in: FLOW.dots($('#pIn'), { n: 14, r: 6, color: '#2b8fd6', speed: 0.2 }),
+      up: FLOW.dots($('#pUp'), { n: 12, r: 6, color: '#5cc2ff', speed: 0.24 }),
+      down: FLOW.dots($('#pDown'), { n: 4, r: 6, color: '#8aa9c4', speed: 0.4 }),
+      re: FLOW.dots($('#pRe'), { n: 14, r: 6, color: '#2f9f6a', speed: 0.2 }),
+      out: FLOW.dots($('#pOut'), { n: 5, r: 6, color: '#2b8fd6', speed: 0.35 }),
+    };
+    const spray = $('#spray'); const SP = []; for (let k = 0; k < 10; k++) SP.push(el('circle', { cx: 125, cy: 76, r: 3 }, spray));
+    const S = { r: 0.4, dry: false };
+    function paintA() {
+      const r = S.r, need = 1, inW = need * (1 - r), back = inW * 0.85, elec = 0.18 + r * 0.9;
+      $('#vR').textContent = Math.round(r * 100) + '%';
+      $('#gNeed').style.width = '100%'; $('#gIn').style.width = (inW * 100) + '%'; $('#gRe').style.width = (r * 100) + '%'; $('#gE').style.width = Math.min(100, elec / 0.9 * 100) + '%';
+      $('#tDry').setAttribute('aria-pressed', String(S.dry));
+      D.in.set({ rate: inW }); D.up.set({ rate: 1 }); D.down.set({ rate: 1 }); D.re.set({ rate: r * 1.2 }); D.out.set({ rate: back });
+      $('#pRe').setAttribute('opacity', r > 0 ? '1' : '0.3');
+      $('#river').setAttribute('transform', S.dry ? 'translate(0 14) scale(1 0.7)' : '');
+      $('#river').style.transformOrigin = '0 520px';
+      $('#drought').setAttribute('opacity', S.dry ? '1' : '0');
+      let m;
+      if (S.dry) m = r >= 0.6 ? '가뭄이 들었지만 쓴 물을 <b>많이 다시 쓰고 있어서</b> 강에서 끌어오는 물이 적어요. 마을과 물을 나눠 쓰기 쉬워요.' : '가뭄이 들었는데 <b>강에서 끌어오는 물이 많아요</b>. 마을과 농사에 쓸 물이 모자랄 수 있어요. 다시 쓰는 비율을 높여 보세요.';
+      else if (r === 0) m = '쓴 물을 전혀 다시 쓰지 않으면 씻는 데 필요한 물을 <b>모두 강에서</b> 새로 끌어와야 해요.';
+      else if (r >= 0.7) m = '다시 쓰는 물이 많아 새로 끌어오는 물이 크게 줄었어요. 대신 물을 다시 깨끗하게 만드는 데 <b>전기가 더</b> 들어요.';
+      else m = '다시 쓰는 비율을 높일수록 <b>강에서 끌어오는 물</b>은 줄고 <b>깨끗이 하는 데 드는 전기</b>는 늘어요.';
+      $('#aMsg').innerHTML = m;
+    }
+    $('#rR').addEventListener('input', (e) => { S.r = e.target.value / 100; paintA(); });
+    $('#tDry').addEventListener('click', () => { S.dry = !S.dry; paintA(); });
+    FLOW.onFrame((dt, t) => { SP.forEach((c, k) => { const s = ((t * 0.9 + k / SP.length) % 1); c.setAttribute('cx', (125 + (k - 4.5) * 7 * s).toFixed(1)); c.setAttribute('cy', (76 + s * 40).toFixed(1)); c.setAttribute('opacity', (1 - s).toFixed(2)); }); });
+    paintA();
+
+    /* B: 초순수 만들기 */
+    const TYPES = {
+      dust: { n: '먼지·모래', c: '#8a6a45', make: (x, y) => el('circle', { cx: x, cy: y, r: 6 + Math.random() * 4, fill: '#8a6a45' }) },
+      mineral: { n: '광물질', c: '#ffffff', make: (x, y) => el('rect', { x, y, width: 6, height: 6, fill: '#fff', stroke: '#9fb3c4', 'stroke-width': 1, transform: `rotate(${Math.random() * 90} ${x + 3} ${y + 3})` }) },
+      germ: { n: '세균', c: '#4caf50', make: (x, y) => el('rect', { x, y, width: 14, height: 5, rx: 2.5, fill: '#4caf50', transform: `rotate(${Math.random() * 180} ${x + 7} ${y + 2})` }) },
+      gas: { n: '녹아 있는 기체', c: '#e9f6ff', make: (x, y) => el('circle', { cx: x, cy: y, r: 4, fill: 'rgba(255,255,255,.65)', stroke: '#fff', 'stroke-width': 1.2 }) },
+    };
+    const COUNT = { dust: 14, mineral: 46, germ: 16, gas: 22 };
+    const host = $('#parts'), P = [];
+    Object.keys(COUNT).forEach((k) => { for (let i = 0; i < COUNT[k]; i++) { const x = 250 + Math.random() * 260, y = 190 + Math.random() * 280, e = TYPES[k].make(x, y); host.appendChild(e); P.push({ k, e, x, y, vx: (Math.random() - 0.5) * 10, vy: (Math.random() - 0.5) * 10, out: 0 }); } });
+    const STEPS = [
+      ['수돗물', '시작', '수돗물은 마시기에는 깨끗하지만, 눈에 보이지 않는 먼지, 광물질, 세균, 녹아 있는 기체가 들어 있어요. 웨이퍼를 씻기에는 아직 부족해요.', [], 'none', 20],
+      ['거르기', '큰 알갱이 없애기', '모래와 숯 같은 거름망을 지나면서 먼지·모래처럼 큰 알갱이가 걸러져요.', ['dust'], 'fil', 40],
+      ['촘촘한 막', '광물질 빼기', '물 알갱이만 겨우 지나갈 만큼 아주 촘촘한 막에 물을 세게 밀어 넣어요. 물에 녹아 있던 광물질 대부분이 막을 지나지 못해요. 펌프를 돌리는 데 전기가 많이 들어요.', ['mineral'], 'mem', 70],
+      ['자외선', '세균 없애기', '눈에 보이지 않는 강한 빛(자외선)을 쬐어 세균이 살지 못하게 해요.', ['germ'], 'uv', 85],
+      ['기체 빼기', '마지막 다듬기', '물에 녹아 있는 기체를 빼내고, 남은 아주 작은 알갱이까지 한 번 더 걸러요. 이제 웨이퍼를 씻을 수 있는 초순수가 되었어요.', ['gas'], 'none', 100],
+    ];
+    let step = 0; const seen = { 0: true };
+    $('#flow').innerHTML = STEPS.map((s, i) => `<button type="button" class="fs" role="tab" data-i="${i}" aria-selected="false"><b>${i}</b>${s[0]}</button>`).join('');
+    $$('#flow .fs').forEach((b) => b.addEventListener('click', () => go(+b.dataset.i)));
+    const go = (i) => { step = Math.max(0, Math.min(4, i)); seen[step] = true; paintB(); };
+    $('#bPrev').addEventListener('click', () => go(step - 1)); $('#bNext').addEventListener('click', () => go(step + 1));
+    const removed = () => { const r = new Set(); for (let i = 1; i <= step; i++) STEPS[i][3].forEach((k) => r.add(k)); return r; };
+    function paintB() {
+      const s = STEPS[step], gone = removed();
+      $$('#flow .fs').forEach((b) => { const i = +b.dataset.i; b.setAttribute('aria-selected', String(i === step)); b.classList.toggle('seen', !!seen[i]); });
+      $('#sNo').textContent = step; $('#sName').textContent = s[0]; $('#sSub').textContent = s[1]; $('#sWhat').textContent = s[2];
+      $('#legend').innerHTML = Object.keys(TYPES).map((k) => `<span class="${gone.has(k) ? 'gone' : ''}"><i style="background:${TYPES[k].c};box-shadow:inset 0 0 0 1px #9fb3c4"></i>${TYPES[k].n}</span>`).join('');
+      $('#pFill').style.width = s[5] + '%'; $('#pTxt').textContent = step === 4 ? '초순수' : step === 0 ? '수돗물' : '깨끗해지는 중';
+      $('#glassLbl').textContent = step === 4 ? '초순수' : step === 0 ? '수돗물' : `${step}단계를 지난 물`;
+      ['filG', 'memG', 'uvG'].forEach((id) => $('#' + id).setAttribute('opacity', '0'));
+      if (s[4] !== 'none') $('#' + s[4] + 'G').setAttribute('opacity', '1');
+      $('#bPrev').disabled = step === 0; $('#bNext').disabled = step === 4;
+    }
+    FLOW.onFrame((dt) => {
+      if ($('#wB').hasAttribute('hidden')) return;
+      const gone = removed(), cur = STEPS[step][3];
+      P.forEach((p) => {
+        const want = gone.has(p.k) ? 1 : 0;
+        p.out += (want - p.out) * Math.min(1, dt * 1.6);
+        if (p.out < 0.02) { p.x += p.vx * dt; p.y += p.vy * dt; if (p.x < 248 || p.x > 512) p.vx *= -1; if (p.y < 186 || p.y > 478) p.vy *= -1; }
+        let dx = 0, dy = 0;
+        if (p.out > 0.02) { if (p.k === 'gas') dy = -p.out * 340; else if (p.k === 'germ') dy = 0; else dy = -p.out * 360; }
+        const op = p.k === 'germ' ? 1 - p.out : 1 - Math.max(0, p.out - 0.5) * 2;
+        const tr = `translate(${(p.x - (p.e.tagName === 'circle' ? +p.e.getAttribute('cx') : +p.e.getAttribute('x'))).toFixed(1)} ${(p.y + dy - (p.e.tagName === 'circle' ? +p.e.getAttribute('cy') : +p.e.getAttribute('y'))).toFixed(1)})`;
+        const base = p.e.getAttribute('data-r') || (p.e.getAttribute('transform') || '').replace(/translate\([^)]*\)\s*/, '');
+        if (!p.e.hasAttribute('data-r')) p.e.setAttribute('data-r', base);
+        p.e.setAttribute('transform', tr + ' ' + p.e.getAttribute('data-r'));
+        p.e.setAttribute('opacity', Math.max(0, op).toFixed(2));
+      });
+    });
+    paintB();
+
+    const setMode = (m) => { $('#mA').setAttribute('aria-selected', String(m === 'A')); $('#mB').setAttribute('aria-selected', String(m === 'B')); $('#paneA').hidden = m !== 'A'; $('#paneB').hidden = m !== 'B'; if (m === 'A') { $('#wA').removeAttribute('hidden'); $('#wB').setAttribute('hidden', ''); } else { $('#wB').removeAttribute('hidden'); $('#wA').setAttribute('hidden', ''); } };
+    $('#mA').addEventListener('click', () => setMode('A')); $('#mB').addEventListener('click', () => setMode('B'));
+    window.SM.okUI = true;
+  } catch (err) { window.SM_err('도식·버튼', err); }
+})();
+</script>
+</body>
+</html>
