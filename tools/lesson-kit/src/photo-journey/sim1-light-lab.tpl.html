@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>3D 빛과 반도체 실험실</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+  /* ===== 이 수업 전용 ===== */
+  :root{--fab:#c27400;--fab-soft:#fff3dc;--Rr:#e5484d;--Gg:#30a46c;--Bb:#3e63dd}
+  .eyebrow{color:#8a5200;background:#fff1d6}
+  .lb small{font-weight:700;opacity:.85;margin-left:4px;font-size:.86em}
+  .lb.Y{background:#f6c344;color:#3d2c00}.lb.O{background:#e8590c;color:#fff}.lb.Bl{background:#2b4fa8;color:#fff}.lb.D{background:#14263b;color:#fff}
+  .modes{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px}
+  .md{min-height:54px;border:0;border-radius:14px;background:#eef3f8;font-weight:800;font-size:15.5px;color:var(--muted);cursor:pointer;word-break:keep-all}
+  .md[aria-selected="true"]{background:var(--fab);color:#fff}
+  .seg{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:8px 0}
+  .seg button{min-height:50px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15px;cursor:pointer;word-break:keep-all;padding:4px 6px}
+  .seg button[aria-pressed="true"]{border-color:var(--fab);background:var(--fab-soft);color:#6d4100}
+  .tgl{width:100%;min-height:50px;border-radius:12px;border:2px dashed #c9d6e2;background:#fff;font-weight:800;font-size:15px;cursor:pointer;margin:2px 0 8px}
+  .tgl[aria-pressed="true"]{border-style:solid;border-color:var(--fab);background:var(--fab-soft);color:#6d4100}
+  .rng{display:flex;align-items:center;gap:12px;margin:10px 0 4px;font-weight:800;font-size:15px;color:var(--ink2)}
+  .rng label{flex:none;min-width:84px;word-break:keep-all}
+  .rng b{flex:none;min-width:56px;text-align:right;color:#6d4100;font-size:14px}
+  .rng input{flex:1;min-width:120px;height:44px;-webkit-appearance:none;appearance:none;background:transparent}
+  .rng input::-webkit-slider-runnable-track{height:10px;border-radius:99px;background:linear-gradient(90deg,#ffe7b0,#f0a92e)}
+  .rng input::-webkit-slider-thumb{-webkit-appearance:none;width:36px;height:36px;border-radius:50%;background:#fff;border:3px solid var(--fab);margin-top:-13px;box-shadow:0 2px 8px rgba(20,38,59,.25)}
+  .rng input::-moz-range-track{height:10px;border-radius:99px;background:linear-gradient(90deg,#ffe7b0,#f0a92e)}
+  .rng input::-moz-range-thumb{width:32px;height:32px;border-radius:50%;background:#fff;border:3px solid var(--fab)}
+  .gauges{display:grid;gap:8px;margin:10px 0 4px}
+  .gg{display:grid;grid-template-columns:118px 1fr;gap:10px;align-items:center;font-size:14px;font-weight:800;color:var(--ink2);word-break:keep-all}
+  .gg .gt{height:18px;border-radius:99px;background:#eef3f8;overflow:hidden;position:relative}
+  .gg .gt i{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:99px;transition:width .5s var(--ease)}
+  .gnote{font-size:12.5px;color:var(--muted);margin:2px 0 0;word-break:keep-all}
+  .why{margin-top:10px;display:grid;gap:6px}
+  .why h3{margin:6px 0 2px;font-size:16px}
+  .why .w{display:grid;grid-template-columns:28px 1fr;gap:8px;align-items:start;padding:8px 10px;border-radius:12px;background:#f7fafc;font-size:14.5px;line-height:1.6;color:var(--ink2);word-break:keep-all}
+  .why .w i{font-style:normal;width:26px;height:26px;border-radius:8px;background:var(--fab);color:#fff;display:grid;place-items:center;font-weight:900;font-size:13px}
+  .flow{grid-template-columns:repeat(4,1fr)}
+  .fs[aria-selected="true"]{background:var(--fab)}
+  .stepname .no{background:var(--fab)}
+  .numgrid{display:grid;gap:4px;margin:10px auto 6px;max-width:300px}
+  .numgrid span{display:grid;place-items:center;min-height:52px;border-radius:10px;font-weight:900;font-size:16px;color:#fff;font-family:ui-monospace,Consolas,monospace;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
+  .numgrid span.me{outline:3px solid #ffd34d;outline-offset:1px}
+  .px3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}
+  .px3 div{border-radius:14px;padding:10px;text-align:center;color:#fff}
+  .px3 b{display:block;font-size:24px;font-family:ui-monospace,Consolas,monospace}
+  .px3 small{display:block;font-size:12px;font-weight:700;opacity:.9;word-break:keep-all}
+  .px3 div.calc{opacity:.72;outline:2px dashed rgba(255,255,255,.7);outline-offset:-5px}
+  .pxcolor{display:flex;align-items:center;gap:12px;margin:8px 0;font-weight:800;font-size:15px;color:var(--ink2);word-break:keep-all}
+  .pxcolor i{flex:none;width:58px;height:58px;border-radius:14px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)}
+  .lamps{display:grid;gap:6px;margin:10px 0}
+  .lrow{display:grid;grid-template-columns:52px repeat(8,minmax(0,40px)) 46px;gap:4px;align-items:center;justify-content:space-between}
+  .lrow b{font-size:13.5px;font-weight:900}
+  .lrow em{font-style:normal;font-family:ui-monospace,Consolas,monospace;font-weight:900;font-size:14px;text-align:right;color:var(--ink2)}
+  .lp{aspect-ratio:1;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:900;background:#e3e8ef;color:#8a97a6}
+  .lp.on{color:#3d2c00;box-shadow:0 0 10px 2px rgba(255,200,60,.55)}
+  .bigsum{margin:10px 0;padding:12px 14px;border-radius:14px;background:#14263b;color:#fff;font-size:15px;line-height:1.7;word-break:keep-all}
+  .bigsum b{color:#ffd76a}
+  [hidden]{display:none!important}
+</style>
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }
+</script>
+</head>
+<body>
+<div class="app">
+  <header>
+    <span class="eyebrow">사진 한 장의 여행 · 3D 실험실 ②</span>
+    <h1>3D 빛과 반도체 실험실</h1>
+    <p class="sub">전기를 빛으로 바꾸는 LED, 빛을 전기로 바꾸는 태양 전지, 빛을 숫자로 바꾸는 이미지 센서를 직접 다뤄 봐요. 손가락으로 돌려 보고 두 손가락으로 확대해 보세요.</p>
+  </header>
+
+  <div class="stage">
+    <section class="card viewer">
+      <div class="gl-host" id="host">
+        <div class="vt tl" role="group" aria-label="보는 방향"><button class="vb sel" type="button" id="vHome">처음 방향으로</button></div>
+        <div class="vt bl"><span class="hint" id="hint">한 손가락: 돌리기 · 두 손가락: 확대</span></div>
+        <div class="fail3d" id="fail3d">3D 그림을 불러오지 못했어요.<br>인터넷 연결을 확인하고 새로고침해 주세요.<br>(오른쪽 설명은 그대로 읽을 수 있어요)</div>
+      </div>
+    </section>
+
+    <section class="card pad">
+      <div class="modes" role="tablist">
+        <button class="md" type="button" role="tab" id="mA" aria-selected="true">LED와 태양 전지</button>
+        <button class="md" type="button" role="tab" id="mB" aria-selected="false">이미지 센서 속으로</button>
+      </div>
+
+      <div id="paneA">
+        <div class="stepname"><span class="no">A</span><div><h2>전기 → 빛 → 전기</h2><small>전구 빛을 태양 전지에 비춰 바람개비를 돌려요</small></div></div>
+        <div class="seg" role="group" aria-label="전구 고르기">
+          <button type="button" data-kind="filament" aria-pressed="true">백열전구</button>
+          <button type="button" data-kind="led" aria-pressed="false">LED 전구</button>
+        </div>
+        <div class="rng"><label for="rB">전구 밝기</label><input type="range" id="rB" min="0" max="100" value="70"><b id="vB">밝게</b></div>
+        <div class="rng"><label for="rD">태양 전지까지</label><input type="range" id="rD" min="0" max="100" value="35"><b id="vD">가까이</b></div>
+        <div class="gauges">
+          <div class="gg"><span>전구가 쓰는 전기</span><div class="gt"><i id="gE" style="background:linear-gradient(90deg,#ffd27a,#e89a00)"></i></div></div>
+          <div class="gg"><span>나오는 빛</span><div class="gt"><i id="gL" style="background:linear-gradient(90deg,#fff2b0,#f6c344)"></i></div></div>
+          <div class="gg"><span>나오는 열</span><div class="gt"><i id="gH" style="background:linear-gradient(90deg,#ffb199,#e8590c)"></i></div></div>
+          <div class="gg"><span>태양 전지가 만든 전기</span><div class="gt"><i id="gS" style="background:linear-gradient(90deg,#9db8f2,#2b4fa8)"></i></div></div>
+        </div>
+        <p class="gnote">막대는 크기만 비교하는 모형이에요(눈금·숫자 없음).</p>
+        <div class="box fact" id="aMsg"></div>
+        <p class="what" style="margin:10px 0 0;font-size:15px">태양 전지와 이미지 센서는 둘 다 빛을 받아 전기를 만들어요. 태양 전지는 그 전기를 모아 쓰고, 이미지 센서는 칸마다 전기의 양을 재서 사진을 만들어요.</p>
+        <div class="why">
+          <h3>왜 그럴까?</h3>
+          <div class="w"><i>1</i><span><b>백열전구</b>는 가는 필라멘트를 아주 뜨겁게 달궈서 빛을 내요. 그래서 전기 에너지의 많은 부분이 빛이 아니라 <b>열에너지</b>로 빠져나가요.</span></div>
+          <div class="w"><i>2</i><span><b>LED</b>는 반도체 조각이 전기를 받아 바로 빛을 내요. 같은 밝기의 빛을 내면서 전기를 훨씬 덜 쓰고, 덜 뜨거워요.</span></div>
+          <div class="w"><i>3</i><span><b>태양 전지</b>는 빛에너지를 전기 에너지로 바꿔요. 이 전기가 작은 전동기를 돌려 바람개비가 돌아요.</span></div>
+          <div class="w"><i>4</i><span>빛이 밝을수록, 태양 전지가 가까울수록 받는 빛이 많아져 <b>전기가 더 많이</b> 생겨요.</span></div>
+        </div>
+        <div class="box lnk"><b class="t">지난 시간과 연결</b>전기 에너지 수업에서 배운 에너지 전환이에요. 전구: 전기 에너지 → 빛에너지(+ 열에너지), 태양 전지: 빛에너지 → 전기 에너지, 전동기: 전기 에너지 → 운동 에너지.</div>
+      </div>
+
+      <div id="paneB" hidden>
+        <div class="flow" id="flow" role="tablist"></div>
+        <div class="stepname"><span class="no" id="sNo">1</span><div><h2 id="sName"></h2><small id="sSub"></small></div></div>
+        <p class="what" id="sWhat"></p>
+        <div id="ctl1">
+          <div class="seg" role="group" aria-label="빛의 양">
+            <button type="button" data-light="1" aria-pressed="true">밝은 곳</button>
+            <button type="button" data-light="0" aria-pressed="false">어두운 곳</button>
+          </div>
+          <button type="button" class="tgl" id="tBin" aria-pressed="false">같은 색 4칸 묶기</button>
+        </div>
+        <div id="detail"></div>
+        <div class="acts">
+          <button class="btn ghost" id="bPrev" type="button">이전 단계</button>
+          <button class="btn primary" id="bNext" type="button">다음 단계</button>
+        </div>
+        <div class="box an"><b class="t">모형 안내</b>칸 96개(12 × 8)로 줄인 모형이에요. 실제 스마트폰 센서는 칸이 수천만~2억 개예요. 칸을 누르면 그 칸을 골라 숫자를 볼 수 있어요.</div>
+      </div>
+    </section>
+  </div>
+  <p class="credit">사진 한 장의 여행 읽기 자료 &nbsp;|&nbsp; 제작 · 성안중학교 이삭 T</p>
+</div>
+
+<script>
+window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
+  mode: 'A', A: { kind: 'filament', b: 0.7, d: 0.35 }, B: { step: 1, bright: 1, bin: false, pick: { i: 8, j: 1 } }, home: 0 };
+</script>
+<script>
+/* ===== 블록 1: 안내·버튼 ===== */
+(() => {
+  'use strict';
+  try {
+    const { $, $$ } = window.SM, S = window.SM;
+    const setMode = (m) => { S.mode = m; $('#mA').setAttribute('aria-selected', String(m === 'A')); $('#mB').setAttribute('aria-selected', String(m === 'B')); $('#paneA').hidden = m !== 'A'; $('#paneB').hidden = m !== 'B'; $('#hint').textContent = m === 'A' ? '한 손가락: 돌리기 · 두 손가락: 확대' : '칸을 누르면 그 칸을 골라요 · 돌리기 · 확대'; S.home++; paintB(); };
+    $('#mA').addEventListener('click', () => setMode('A'));
+    $('#mB').addEventListener('click', () => setMode('B'));
+    $('#vHome').addEventListener('click', () => S.home++);
+    /* A: LED와 태양 전지 */
+    const A = S.A;
+    $$('[data-kind]').forEach((b) => b.addEventListener('click', () => { A.kind = b.dataset.kind; $$('[data-kind]').forEach((o) => o.setAttribute('aria-pressed', String(o === b))); paintA(); }));
+    $('#rB').addEventListener('input', (e) => { A.b = e.target.value / 100; paintA(); });
+    $('#rD').addEventListener('input', (e) => { A.d = e.target.value / 100; paintA(); });
+    S.modelA = () => {
+      const led = A.kind === 'led';
+      const light = A.b, elec = A.b * (led ? 0.2 : 1), heat = A.b * (led ? 0.08 : 0.92);
+      const reach = Math.pow(1 - A.d * 0.72, 2), solar = light * reach;
+      return { light, elec, heat, solar, led };
+    };
+    function paintA() {
+      const m = S.modelA();
+      $('#gE').style.width = (m.elec * 100) + '%'; $('#gL').style.width = (m.light * 100) + '%'; $('#gH').style.width = (m.heat * 100) + '%'; $('#gS').style.width = (m.solar * 100) + '%';
+      $('#vB').textContent = A.b < 0.05 ? '꺼짐' : A.b < 0.35 ? '어둡게' : A.b < 0.65 ? '중간' : '밝게';
+      $('#vD').textContent = A.d < 0.34 ? '가까이' : A.d < 0.67 ? '중간' : '멀리';
+      let msg;
+      if (A.b < 0.05) msg = '전구를 껐어요. 빛이 없으니 태양 전지도 전기를 만들지 못해 바람개비가 멈춰요.';
+      else if (m.led) msg = 'LED 전구예요. 나오는 빛은 백열전구와 같은데, <b>쓰는 전기 막대와 열 막대가 훨씬 짧아요</b>. 전구 위로 올라가는 열 알갱이도 거의 없어요.';
+      else msg = '백열전구예요. 빛도 나오지만 <b>열 막대가 아주 길어요</b>. 전구 위로 붉은 열 알갱이가 올라가요. 같은 밝기에서 LED로 바꿔 비교해 보세요.';
+      $('#aMsg').innerHTML = msg;
+    }
+    paintA();
+
+    /* B: 이미지 센서 4단계 */
+    const B = S.B;
+    const STEPS = [
+      ['빛 받기', '칸마다 한 색의 빛을 모아요', '위에서 내려온 빛 알갱이가 렌즈를 지나 컬러 필터를 통과하면, 그 칸의 색만 남아요. 칸 안의 막대가 받은 빛의 양이에요. 하늘과 해처럼 밝은 곳을 받는 칸일수록 막대가 높아요.'],
+      ['숫자로', '빛의 양 → 0~255의 숫자', '센서는 칸마다 받은 빛의 양을 숫자로 바꿔요. 이 모형에서는 0~255로 나타냈어요. 어두우면 0에 가깝고, 아주 밝으면 255에 가까워요. 아래는 고른 칸 둘레 4 × 4칸의 숫자예요.'],
+      ['색 채우기', '빠진 두 색을 계산해 채워요', '칸 하나는 한 색만 쟀어요. 빠진 두 색은 이웃한 칸의 숫자를 보고 계산해서 채워요. 이 일은 AP 속 ISP가 해요. 세 색이 모두 채워지면 칸마다 진짜 색이 나타나 사진이 보여요.'],
+      ['0과 1로', '칸 하나 = 24개의 스위치', '이제 칸(픽셀) 하나는 빨강·초록·파랑 숫자 3개예요. 숫자 하나는 8비트이니, 칸 하나에 스위치 24개가 필요해요. 고른 칸 위로 떠오르는 0과 1의 줄이 칩에서 칩으로 여행해요.'],
+    ];
+    $('#flow').innerHTML = STEPS.map((s, i) => `<button type="button" class="fs" role="tab" data-i="${i + 1}" aria-selected="false"><b>${i + 1}</b>${s[0]}</button>`).join('');
+    const seen = { 1: true };
+    $$('#flow .fs').forEach((b) => b.addEventListener('click', () => go(+b.dataset.i)));
+    const go = (i) => { B.step = Math.max(1, Math.min(4, i)); seen[B.step] = true; paintB(); };
+    $('#bPrev').addEventListener('click', () => go(B.step - 1));
+    $('#bNext').addEventListener('click', () => go(B.step + 1));
+    $$('[data-light]').forEach((b) => b.addEventListener('click', () => { B.bright = b.dataset.light === '1' ? 1 : 0.26; $$('[data-light]').forEach((o) => o.setAttribute('aria-pressed', String(o === b))); paintB(); }));
+    $('#tBin').addEventListener('click', () => { B.bin = !B.bin; $('#tBin').setAttribute('aria-pressed', String(B.bin)); paintB(); });
+    const COLH = { R: '#e5484d', G: '#30a46c', B: '#3e63dd' }, NAME = { R: '빨강', G: '초록', B: '파랑' };
+    const bits = (v) => v.toString(2).padStart(8, '0');
+    function paintB() {
+      const st = STEPS[B.step - 1];
+      $$('#flow .fs').forEach((b) => { const i = +b.dataset.i; b.setAttribute('aria-selected', String(i === B.step)); b.classList.toggle('seen', !!seen[i]); });
+      $('#sNo').textContent = B.step; $('#sName').textContent = st[0]; $('#sSub').textContent = st[1]; $('#sWhat').textContent = st[2];
+      $('#bPrev').disabled = B.step === 1; $('#bNext').disabled = B.step === 4;
+      $('#ctl1').hidden = B.step !== 1 && B.step !== 3;
+      $('#tBin').hidden = B.step !== 1;
+      const sen = S.sensor; const d = $('#detail');
+      if (!sen) { d.innerHTML = ''; return; }
+      const { i, j } = B.pick, c = sen.px[j][i];
+      if (B.step === 1) {
+        d.innerHTML = B.bin ? '<div class="box fact"><b class="t">4칸 묶기</b>같은 색 4칸이 받은 빛을 합쳐 큰 칸 하나처럼 써요. 어두운 곳을 눌러 보면, 4칸을 합친 막대가 밝은 곳의 한 칸만큼 높아져요. 대신 칸의 수는 4분의 1이 돼요.</div>'
+          : B.bright === 1 ? '<div class="box fact"><b class="t">초록 칸이 2배</b>필터 무늬를 보면 초록 칸이 빨강·파랑 칸의 2배예요. 사람의 눈이 초록빛에 가장 예민하기 때문이에요.</div>'
+          : '<div class="box fact"><b class="t">어두운 곳</b>막대가 낮아지고 칸마다 들쭉날쭉 흔들려요. 사진에서는 자글자글한 얼룩(노이즈)으로 보여요. \'같은 색 4칸 묶기\'를 눌러 보세요.</div>';
+      } else if (B.step === 2) {
+        const i0 = Math.max(0, Math.min(sen.nx - 4, i - 1)), j0 = Math.max(0, Math.min(sen.ny - 4, j - 1));
+        let h = '<div class="numgrid" style="grid-template-columns:repeat(4,1fr)">';
+        for (let jj = j0; jj < j0 + 4; jj++) for (let ii = i0; ii < i0 + 4; ii++) { const q = sen.px[jj][ii]; h += `<span class="${ii === i && jj === j ? 'me' : ''}" style="background:${COLH[q.f]};opacity:${0.45 + 0.55 * q.val / 255}">${q.val}</span>`; }
+        h += '</div>';
+        d.innerHTML = h + `<div class="box fact"><b class="t">노란 테두리 칸</b>${NAME[c.f]} 필터 칸이에요. 받은 ${NAME[c.f]} 빛의 양을 <b>${c.val}</b>(으)로 바꿨어요. 다른 칸을 눌러 비교해 보세요.</div>`;
+      } else if (B.step === 3) {
+        const rgb = c.c.map((x) => Math.min(255, Math.round(x * (B.bright === 1 ? 1 : 0.4))));
+        d.innerHTML = `<div class="px3">${['R', 'G', 'B'].map((k, n) => `<div class="${k === c.f ? '' : 'calc'}" style="background:${COLH[k]}"><small>${NAME[k]}</small><b>${rgb[n]}</b><small>${k === c.f ? '센서가 잰 값' : '이웃 칸으로 계산'}</small></div>`).join('')}</div>
+          <div class="pxcolor"><i style="background:rgb(${rgb.join(',')})"></i><span>세 숫자를 합친 이 칸의 색이에요. 3D 모형의 칸들이 모두 이렇게 색을 얻어 사진이 돼요.</span></div>`;
+      } else {
+        const rgb = c.c.map((x) => Math.min(255, Math.round(x)));
+        const row = (k, v) => `<div class="lrow"><b style="color:${COLH[k]}">${NAME[k]}</b>${bits(v).split('').map((x) => `<span class="lp${x === '1' ? ' on' : ''}" style="${x === '1' ? 'background:#ffd76a' : ''}">${x}</span>`).join('')}<em>${v}</em></div>`;
+        d.innerHTML = `<div class="pxcolor"><i style="background:rgb(${rgb.join(',')})"></i><span>고른 칸의 색 = 빨강 ${rgb[0]}, 초록 ${rgb[1]}, 파랑 ${rgb[2]}</span></div>
+          <div class="lamps">${row('R', rgb[0])}${row('G', rgb[1])}${row('B', rgb[2])}</div>
+          <div class="bigsum">칸 하나 = <b>24비트(3바이트)</b><br>이 모형(96칸)은 96 × 24 = <b>2,304개</b>의 스위치면 돼요.<br>2억 화소 사진이면 약 <b>48억 개</b>예요. 그래서 크기를 줄여(압축) 저장해요.</div>`;
+      }
+    }
+    S.paintB = paintB;
+    paintB();
+    window.SM.okUI = true;
+  } catch (err) { window.SM_err('안내·버튼', err); }
+})();
+</script>
+<script type="module">
+/* ===== 블록 2: 3D (LED와 태양 전지, 이미지 센서) ===== */
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+/*@@PART:c3.js@@*/
+/*@@LOCAL:_photo.js@@*/
+/*@@PART:bulb.js@@*/
+/*@@LOCAL:_sensor.js@@*/
+
+try {
+  const { V, mesh, clamp01 } = C3, S = window.SM;
+  const st = C3.makeStage(document.getElementById('host'), { fitWidth: true, minD: 3, maxD: 22, top: '#f4f7fb', bottom: '#cfdbe8' });
+  const { scene, camera, controls, label, overlay } = st;
+  const bgLight = scene.background, bgDark = C3.gradientBg('#2b3352', '#0e111c');
+
+  /* ---------- A: 전구 → 태양 전지 → 바람개비 ---------- */
+  const A = new THREE.Group(); scene.add(A);
+  const table = C3.addTable(A, 12, 7.4);
+  const cu = new THREE.MeshStandardMaterial({ color: 0xc0703a, metalness: 1, roughness: 0.3 });
+  const darkM = new THREE.MeshStandardMaterial({ color: 0x2b313b, roughness: 0.5 });
+  // 전구 받침과 조절기
+  const lampBase = new THREE.Group(); lampBase.position.set(-3.6, 0, 0); A.add(lampBase);
+  lampBase.add(mesh(new RoundedBoxGeometry(1.5, 0.3, 1.5, 3, 0.1), darkM, 0, 0.15, 0));
+  const bulbs = { filament: BULB.make({ kind: 'filament', size: 1.5, tint: 0xffb347, lightGain: 2.2 }), led: BULB.make({ kind: 'led', size: 1.5, tint: 0xfff6e6, lightGain: 2.2 }) };
+  Object.values(bulbs).forEach((b) => { b.position.y = 0.3; lampBase.add(b); });
+  const knob = new THREE.Group(); knob.position.set(-3.6, 0, 1.6); A.add(knob);
+  knob.add(mesh(new RoundedBoxGeometry(0.9, 0.3, 0.6, 2, 0.06), darkM, 0, 0.15, 0));
+  const dial = mesh(new THREE.CylinderGeometry(0.2, 0.22, 0.16, 28), new THREE.MeshStandardMaterial({ color: 0xd9dde3, metalness: 0.6, roughness: 0.3 }), 0, 0.38, 0); knob.add(dial);
+  dial.add(mesh(new THREE.BoxGeometry(0.04, 0.03, 0.14), new THREE.MeshStandardMaterial({ color: 0xd8433b }), 0, 0.09, 0.09));
+  A.add(C3.tube([V(-3.6, 0.05, 1.3), V(-3.6, 0.05, 0.75)], 0.035, darkM, 8));
+  // 태양 전지판
+  const solar = new THREE.Group(); A.add(solar);
+  const cellTex = C3.canvasTex(512, 384, (g, w, h) => {
+    const gr = g.createLinearGradient(0, 0, w, h); gr.addColorStop(0, '#2b4fa8'); gr.addColorStop(1, '#122a66'); g.fillStyle = gr; g.fillRect(0, 0, w, h);
+    const cw = w / 4, ch = h / 3; g.strokeStyle = 'rgba(210,225,255,.85)'; g.lineWidth = 6;
+    for (let i = 0; i <= 4; i++) { g.beginPath(); g.moveTo(i * cw, 0); g.lineTo(i * cw, h); g.stroke(); } for (let j = 0; j <= 3; j++) { g.beginPath(); g.moveTo(0, j * ch); g.lineTo(w, j * ch); g.stroke(); }
+    g.strokeStyle = 'rgba(200,215,240,.35)'; g.lineWidth = 2; for (let i = 0; i < 4; i++) for (let k = 1; k < 6; k++) { g.beginPath(); g.moveTo(i * cw + 4, k * ch / 6 * 3 % ch + Math.floor(k / 2) * 0); }
+    for (let y = 8; y < h; y += 16) { g.beginPath(); g.moveTo(0, y); g.lineTo(w, y); g.stroke(); }
+    const sh = g.createLinearGradient(0, 0, w, 0); sh.addColorStop(0, 'rgba(255,255,255,.18)'); sh.addColorStop(0.5, 'rgba(255,255,255,0)'); sh.addColorStop(1, 'rgba(255,255,255,.08)'); g.fillStyle = sh; g.fillRect(0, 0, w, h);
+  });
+  const panelM = new THREE.MeshStandardMaterial({ map: cellTex, roughness: 0.25, metalness: 0.35, emissive: 0x3a66d8, emissiveIntensity: 0 });
+  const panel = new THREE.Group(); solar.add(panel);
+  panel.add(mesh(new RoundedBoxGeometry(2.3, 1.75, 0.1, 2, 0.03), new THREE.MeshStandardMaterial({ color: 0xc9ced6, metalness: 0.9, roughness: 0.3 })));
+  const face = new THREE.Mesh(new THREE.PlaneGeometry(2.16, 1.62), panelM); face.position.z = 0.052; panel.add(face);
+  panel.position.set(0, 1.25, 0); panel.rotation.set(-0.22, -Math.PI / 2 + 0.55, 0, 'YXZ');
+  solar.add(mesh(new THREE.CylinderGeometry(0.06, 0.06, 1.0, 12), darkM, 0, 0.5, 0));
+  solar.add(mesh(new RoundedBoxGeometry(1.0, 0.12, 0.8, 2, 0.04), darkM, 0, 0.06, 0));
+  // 바람개비(작은 전동기)
+  const fan = new THREE.Group(); fan.position.set(3.3, 0, 1.9); A.add(fan);
+  fan.add(mesh(new RoundedBoxGeometry(0.8, 0.24, 0.8, 2, 0.06), darkM, 0, 0.12, 0));
+  fan.add(mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.9, 12), darkM, 0, 0.66, 0));
+  const motor = mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.42, 24), new THREE.MeshStandardMaterial({ color: 0xc9ced6, metalness: 0.9, roughness: 0.3 }), 0, 1.2, 0); motor.rotation.x = Math.PI / 2; fan.add(motor);
+  const rotor = new THREE.Group(); rotor.position.set(0, 1.2, 0.3); fan.add(rotor);
+  const bladeM = new THREE.MeshStandardMaterial({ color: 0xe8590c, roughness: 0.45, side: THREE.DoubleSide });
+  for (let k = 0; k < 3; k++) { const bl = mesh(new THREE.BoxGeometry(0.16, 0.62, 0.025), bladeM, 0, 0.36, 0); const arm = new THREE.Group(); arm.rotation.z = (k / 3) * Math.PI * 2; bl.rotation.y = 0.5; arm.add(bl); rotor.add(arm); }
+  rotor.add(mesh(new THREE.SphereGeometry(0.08, 16, 12), darkM));
+  // 태양 전지 → 전동기 전선
+  // (위치는 매 프레임 거리 조절에 따라 다시 만들어요)
+  let wire = null;
+  function rewire(x) { if (wire) { A.remove(wire); wire.geometry.dispose(); } wire = C3.tube([V(x + 0.3, 0.06, 0.2), V(x + 0.6, 0.05, 1.3), V(2.6, 0.05, 1.9), V(2.9, 0.1, 1.9)], 0.03, cu, 30); A.add(wire); }
+  // 빛 알갱이(전구 → 태양 전지), 열 알갱이(전구 위로)
+  const NL = 90, lightI = new THREE.InstancedMesh(new THREE.SphereGeometry(0.05, 8, 6), new THREE.MeshBasicMaterial({ color: 0xffd54a, transparent: true, opacity: 0.95, toneMapped: false }), NL); lightI.frustumCulled = false; A.add(lightI);
+  const NH = 40, heatI = new THREE.InstancedMesh(new THREE.SphereGeometry(0.07, 8, 6), new THREE.MeshBasicMaterial({ color: 0xff6a3d, transparent: true, opacity: 0.85, toneMapped: false }), NH); heatI.frustumCulled = false; A.add(heatI);
+  const LP = [], HP = [];
+  for (let k = 0; k < NL; k++) LP.push({ s: Math.random(), y: (Math.random() - 0.5) * 1.3, z: (Math.random() - 0.5) * 1.6 });
+  for (let k = 0; k < NH; k++) HP.push({ s: Math.random(), a: Math.random() * 6.28, r: 0.1 + Math.random() * 0.35 });
+  const labA = [label('전구', 'Y', V(-3.6, 2.45, 0)), label('태양 전지', 'Bl', () => V(solar.position.x, 2.5, 0)), label('전동기와 바람개비', 'O', V(3.0, 2.35, 1.9)), label('밝기 조절', 'small', V(-3.6, 0.75, 1.6))];
+
+  /* ---------- B: 이미지 센서 ---------- */
+  const Bg = new THREE.Group(); scene.add(Bg);
+  const sen = SENSOR.make(Bg, { nx: 12, ny: 8, pitch: 0.56, particles: 260 });
+  S.sensor = sen; S.paintB && S.paintB();
+  // 위쪽의 렌즈
+  const bigLens = new THREE.Mesh(new THREE.SphereGeometry(2.4, 48, 16, 0, Math.PI * 2, 0, 0.5), new THREE.MeshPhysicalMaterial({ color: 0xbfd6ff, roughness: 0.03, clearcoat: 1, transparent: true, opacity: 0.22, depthWrite: false, side: THREE.DoubleSide }));
+  bigLens.position.y = 1.9; bigLens.scale.y = 0.55; Bg.add(bigLens);
+  const lensRing = new THREE.Mesh(new THREE.TorusGeometry(1.15, 0.06, 12, 64), new THREE.MeshStandardMaterial({ color: 0x9aa3ad, metalness: 0.9, roughness: 0.25 })); lensRing.rotation.x = Math.PI / 2; lensRing.position.y = 1.9 + 2.4 * Math.cos(0.5) * 0.55 - 0.0; Bg.add(lensRing);
+  const lbLens = label('렌즈', 'small', V(1.4, 3.3, 0)); lbLens.show = false;
+  const lbPick = label('', 'D', () => { const c = sen.px[S.B.pick.j][S.B.pick.i]; return S.mode === 'B' ? V(c.x, 1.25, c.z) : null; });
+  // 칸 누르기
+  {
+    const el = st.renderer.domElement, ray = new THREE.Raycaster(), v = new THREE.Vector2(); let sx = 0, sy = 0;
+    el.addEventListener('pointerdown', (e) => { sx = e.clientX; sy = e.clientY; });
+    el.addEventListener('pointerup', (e) => {
+      if (S.mode !== 'B' || Math.hypot(e.clientX - sx, e.clientY - sy) > 8) return;
+      const r = el.getBoundingClientRect(); v.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+      ray.setFromCamera(v, camera); const hit = ray.intersectObjects(sen.wells.concat(sen.fills), false)[0];
+      if (hit && hit.object.userData.i !== undefined) { S.B.pick = { i: hit.object.userData.i, j: hit.object.userData.j }; S.paintB(); }
+    });
+  }
+
+  // 4단계: 고른 칸에서 0과 1이 줄지어 떠올라요(빨강·초록·파랑 8개씩)
+  const bitTex = { '0': C3.canvasTex(64, 64, (g) => { g.fillStyle = '#fff'; g.font = '900 52px Consolas, monospace'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('0', 32, 34); }), '1': C3.canvasTex(64, 64, (g) => { g.fillStyle = '#ffd76a'; g.font = '900 52px Consolas, monospace'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('1', 32, 34); }) };
+  const bitSp = [];
+  for (let n = 0; n < 24; n++) { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: bitTex['0'], transparent: true, depthWrite: false, depthTest: false })); sp.scale.setScalar(0.32); sp.visible = false; sp.renderOrder = 9; Bg.add(sp); bitSp.push(sp); }
+  let bitT = 0, bitKey = '';
+  function bitsUp(dt, c) {
+    if (!c) { bitSp.forEach((s) => (s.visible = false)); return; }
+    const key = c.i + ',' + c.j;
+    const str = c.c.map((x) => Math.min(255, x).toString(2).padStart(8, '0')).join('');
+    if (key !== bitKey) { bitKey = key; bitT = 0; bitSp.forEach((s, n) => (s.material.map = bitTex[str[n]])); }
+    bitT += dt;
+    bitSp.forEach((s, n) => {
+      const k = ((bitT * 0.35 + n / 24) % 1);
+      s.visible = true; s.position.set(c.x + Math.sin(n * 1.7) * 0.08, 0.9 + k * 3.6, c.z + (n / 24 - 0.5) * 0.3);
+      s.material.opacity = Math.min(1, k * 6) * (1 - Math.max(0, k - 0.75) * 4);
+      s.material.color.set(n < 8 ? 0xff9a9a : n < 16 ? 0x9af0c0 : 0xa8bcff);
+    });
+  }
+
+  /* ---------- 카메라·장면 바꾸기 ---------- */
+  const HOME = { A: { p: V(0.0, 6.2, 13.6), t: V(-0.3, 0.9, 0.4) }, B: { p: V(4.3, 9.6, 10.4), t: V(0, 0.9, 0.4) } };
+  let home = -1, mode = '';
+  let lit = 0, heat = 0, spin = 0, lastPaint = 0;
+  st.onFrame((dt, t) => {
+    if (S.mode !== mode) { mode = S.mode; A.visible = mode === 'A'; Bg.visible = mode === 'B'; scene.background = mode === 'A' ? bgLight : bgDark; table.visible = mode === 'A'; labA.forEach((l) => (l.show = mode === 'A')); if (mode === 'A') { lbLens.show = false; lbPick.show = false; } }
+    if (S.home !== home) { home = S.home; const h = HOME[S.mode], k = camera.aspect < 1 ? 1.35 : 1; st.flyTo(h.p.clone().sub(h.t).multiplyScalar(k).add(h.t), h.t, home === 0 ? 0 : 1.0); }
+    if (mode === 'A') {
+      const m = S.modelA(), led = m.led;
+      bulbs.filament.visible = !led; bulbs.led.visible = led;
+      lit += (m.light - lit) * Math.min(1, dt * 6); heat += (m.heat - heat) * Math.min(1, dt * 4);
+      (led ? bulbs.led : bulbs.filament).set(lit);
+      dial.rotation.y = -m.light * 4;
+      const sx = -0.8 + S.A.d * 2.6; if (Math.abs(solar.position.x - sx) > 0.001 || !wire) { solar.position.x = sx; rewire(sx); }
+      const out = m.solar; panelM.emissiveIntensity = out * 0.35;
+      spin += (out * 22 - spin) * Math.min(1, dt * 2); rotor.rotation.z -= spin * dt;
+      // 빛 알갱이
+      const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), p = V(), sc = V(1, 1, 1), bx = -3.6, by = 1.35, px2 = solar.position.x - 0.1;
+      const showL = Math.round(NL * lit);
+      for (let k = 0; k < NL; k++) { const a = LP[k]; a.s += dt * 0.9; if (a.s > 1) a.s -= 1; p.set(bx + (px2 - bx) * a.s, by + a.y * a.s * 0.9 - 0.1 * a.s, a.z * a.s); sc.setScalar(k < showL ? 1 : 0); m4.compose(p, q, sc); lightI.setMatrixAt(k, m4); }
+      lightI.instanceMatrix.needsUpdate = true;
+      const showH = Math.round(NH * heat);
+      for (let k = 0; k < NH; k++) { const a = HP[k]; a.s += dt * 0.55; if (a.s > 1) a.s -= 1; p.set(bx + Math.cos(a.a + a.s * 3) * a.r, 2.0 + a.s * 2.2, Math.sin(a.a + a.s * 3) * a.r); sc.setScalar(k < showH ? 1 - a.s * 0.7 : 0); m4.compose(p, q, sc); heatI.setMatrixAt(k, m4); }
+      heatI.instanceMatrix.needsUpdate = true;
+    } else {
+      const B = S.B;
+      sen.S.bright += (B.bright - sen.S.bright) * Math.min(1, dt * 3);
+      sen.S.bin = B.step === 1 && B.bin; sen.S.mode = B.step >= 3 ? 'color' : 'fill'; sen.S.flow = B.step <= 2 ? 1 : 0.35; sen.S.pick = B.step >= 2 ? B.pick : null; sen.S.freeze = B.step >= 2;
+      sen.update(dt, t);
+      bigLens.visible = lensRing.visible = B.step <= 2; lbLens.show = B.step <= 2;
+      const c = sen.px[B.pick.j][B.pick.i];
+      lbPick.show = B.step >= 2;
+      if (B.step === 2) lbPick.set(String(c.val)); else if (B.step >= 3) lbPick.set('고른 칸');
+      bitsUp(dt, B.step === 4 ? c : null);
+    }
+  });
+  rewire(solar.position.x);
+  S.ok3d = true;
+} catch (err) { window.SM_err('3D 그림', err); const f = document.getElementById('fail3d'); if (f) f.classList.add('show'); }
+</script>
+</body>
+</html>

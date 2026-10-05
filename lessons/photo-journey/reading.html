@@ -26,11 +26,11 @@
     setTimeout(function () {
       var R = window.RD || {}, miss = [];
       if (!R.ok1) miss.push('기본 기능·퀴즈');
-      if (!R.ok2) miss.push('그림 조작 버튼');
+      if (!R.ok2 && R.need2 !== false) miss.push('그림 조작 버튼');
       if (miss.length) window.RD_err('실행 안 됨', { message: miss.join(', ') + ' 코드가 실행되지 않았어요. 파일이 끝(</html>)까지 들어 있는지 확인해 주세요.' });
     }, 1500);
     setTimeout(function () {
-      if (!(window.RD || {}).ok3d) { document.querySelectorAll('.fail3d').forEach(function (f) { f.classList.add('show'); }); window.RD_err('3D 그림', { message: '3D 그림을 불러오지 못했어요. 인터넷 연결(cdn.jsdelivr.net)을 확인하고 새로고침해 주세요.' }); }
+      if (document.querySelector('.fail3d') && !(window.RD || {}).ok3d) { document.querySelectorAll('.fail3d').forEach(function (f) { f.classList.add('show'); }); window.RD_err('3D 그림', { message: '3D 그림을 불러오지 못했어요. 인터넷 연결(cdn.jsdelivr.net)을 확인하고 새로고침해 주세요.' }); }
     }, 9000);
   });
 })();
@@ -760,7 +760,7 @@ window.RD = {
     $('#ringArc').style.strokeDashoffset = 314.16 * (1 - right.length / ALL.length);
     const t = $('#resTitle'), m = $('#resMsg'), wl = $('#wlist');
     if (done.length < ALL.length) { t.textContent = `${ALL.length}문항 중 ${done.length}문항을 풀었어요`; m.textContent = '남은 문제도 풀어 보세요. 틀린 문제는 다시 풀 수 있어요.'; }
-    else if (right.length === ALL.length) { t.textContent = '모두 맞혔어요!'; m.textContent = '이제 두 실험실에서 직접 해 보고, 스스로 정리해 봐요.'; }
+    else if (right.length === ALL.length) { t.textContent = '모두 맞혔어요!'; m.textContent = '이제 시뮬레이션에서 직접 해 보고, 스스로 정리해 봐요.'; }
     else { t.textContent = `${ALL.length}문항 중 ${right.length}문항을 맞혔어요`; m.textContent = '틀린 문제를 눌러 다시 읽고 풀어 보세요.'; }
     wl.innerHTML = '';
     ALL.filter((q) => results[q.id] === false).forEach((q) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = `${q.label} 다시 보기`; b.addEventListener('click', () => document.getElementById(q.id).scrollIntoView({ behavior: 'smooth', block: 'center' })); wl.appendChild(b); });
@@ -1000,7 +1000,31 @@ const C3 = (() => {
       placeLabels();
     }
     requestAnimationFrame(tick);
-    return { renderer, scene, camera, controls, sun, overlay, label, flyTo, onFrame: (f) => fns.push(f), size: () => ({ W, H }), resize };
+
+    /* 자동 구도: 물체(또는 여러 물체)가 화면에 꼭 들어오도록 카메라 거리를 찾아요.
+       dir: 카메라가 놓일 방향(물체 중심에서), margin: 가장자리 여백(1.1 = 10%), dur: 이동 시간(초)
+       화면 비율이 바뀌면(가로↔세로) 사용자가 돌리기 전까지 다시 맞춰요. */
+    let lastFit = null, userMoved = false;
+    controls.addEventListener('start', () => { userMoved = true; });
+    const _box = new THREE.Box3(), _v = V(), _c = V();
+    function fitPose(objs, o = {}) {
+      _box.makeEmpty(); (Array.isArray(objs) ? objs : [objs]).forEach((ob) => { ob.updateMatrixWorld(true); _box.expandByObject(ob); });
+      if (o.extra) o.extra.forEach((p) => _box.expandByPoint(p));
+      const ctr = o.target ? o.target.clone() : _box.getCenter(V());
+      const dir = (o.dir ? o.dir.clone() : camera.position.clone().sub(controls.target)).normalize();
+      const pts = []; for (let i = 0; i < 8; i++) pts.push(V(i & 1 ? _box.max.x : _box.min.x, i & 2 ? _box.max.y : _box.min.y, i & 4 ? _box.max.z : _box.min.z));
+      const lim = 1 / (o.margin || 1.1), cam = camera.clone();
+      const ok = (d) => { cam.position.copy(ctr).addScaledVector(dir, d); cam.lookAt(ctr); cam.updateMatrixWorld(); cam.updateProjectionMatrix(); return pts.every((p) => { _c.copy(p).project(cam); return Math.abs(_c.x) <= lim && Math.abs(_c.y) <= lim && _c.z < 1; }); };
+      let lo = 0.5, hi = 200; for (let k = 0; k < 28; k++) { const mid = (lo + hi) / 2; if (ok(mid)) hi = mid; else lo = mid; }
+      return { p: ctr.clone().addScaledVector(dir, hi), t: ctr };
+    }
+    function fit(objs, o = {}) {
+      lastFit = { objs, o: Object.assign({}, o, { dir: o.dir || camera.position.clone().sub(controls.target) }) }; userMoved = false;
+      const f = fitPose(objs, lastFit.o); flyTo(f.p, f.t, o.dur === undefined ? 0 : o.dur); return f;
+    }
+    try { let fr = 0; new ResizeObserver(() => { cancelAnimationFrame(fr); fr = requestAnimationFrame(() => { if (lastFit && !userMoved) { const f = fitPose(lastFit.objs, lastFit.o); flyTo(f.p, f.t, 0); } }); }).observe(host); } catch (e) {}
+
+    return { renderer, scene, camera, controls, sun, overlay, label, flyTo, fit, fitPose, onFrame: (f) => fns.push(f), size: () => ({ W, H }), resize };
   }
 
   // 관 모양 전선(곡선)
