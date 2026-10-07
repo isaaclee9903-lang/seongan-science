@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>언덕길 주행과 주행 거리 계산</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+  /* ===== 이 수업 전용 ===== */
+  :root{--fab:#0f4c81;--fab-soft:#e3f1f8}
+  .eyebrow{color:#0f4c81;background:#e3f1f8}
+  .viewer{padding:10px}
+  .svgbox svg{display:block;width:100%;height:auto;border-radius:14px}
+  .modes{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px}
+  .md{min-height:54px;border:0;border-radius:14px;background:#eef3f8;font-weight:800;font-size:15.5px;color:var(--muted);cursor:pointer;word-break:keep-all}
+  .md[aria-selected="true"]{background:var(--fab);color:#fff}
+  .stepname .no{background:var(--fab)}
+  .seg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:8px 0}
+  .seg.two{grid-template-columns:1fr 1fr}
+  .seg button{min-height:52px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:14.5px;cursor:pointer;word-break:keep-all;padding:4px 6px;line-height:1.3}
+  .seg button[aria-pressed="true"]{border-color:var(--fab);background:var(--fab-soft);color:#0b3a63}
+  .lbl{font-size:14px;font-weight:800;color:var(--ink2);margin:12px 0 0}
+  .tgl{width:100%;min-height:50px;border-radius:12px;border:2px dashed #c9d6e2;background:#fff;font-weight:800;font-size:15px;cursor:pointer;margin:8px 0}
+  .tgl[aria-pressed="true"]{border-style:solid;border-color:#15895a;background:#e2f5ec;color:#0a5540}
+  .rng{display:flex;align-items:center;gap:12px;margin:10px 0 4px;font-weight:800;font-size:15px;color:var(--ink2)}
+  .rng label{flex:none;min-width:76px;word-break:keep-all}
+  .rng b{flex:none;min-width:70px;text-align:right;color:#0b3a63;font-size:14.5px}
+  .rng input{flex:1;min-width:120px;height:44px;-webkit-appearance:none;appearance:none;background:transparent}
+  .rng input::-webkit-slider-runnable-track{height:10px;border-radius:99px;background:linear-gradient(90deg,#cfe6f3,#19a7c9)}
+  .rng input::-webkit-slider-thumb{-webkit-appearance:none;width:36px;height:36px;border-radius:50%;background:#fff;border:3px solid var(--fab);margin-top:-13px;box-shadow:0 2px 8px rgba(20,38,59,.25)}
+  .rng input::-moz-range-track{height:10px;border-radius:99px;background:linear-gradient(90deg,#cfe6f3,#19a7c9)}
+  .rng input::-moz-range-thumb{width:32px;height:32px;border-radius:50%;background:#fff;border:3px solid var(--fab)}
+  .gauges{display:grid;gap:8px;margin:12px 0 4px}
+  .gg{display:grid;grid-template-columns:120px 1fr;gap:10px;align-items:center;font-size:14px;font-weight:800;color:var(--ink2);word-break:keep-all}
+  .gg .gt{height:18px;border-radius:99px;background:#eef3f8;overflow:hidden;position:relative}
+  .gg .gt i{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:99px;transition:width .3s}
+  .gnote{font-size:12.5px;color:var(--muted);margin:2px 0 0;word-break:keep-all}
+  .why{margin-top:10px;display:grid;gap:6px}
+  .why h3{margin:6px 0 2px;font-size:16px}
+  .why .w{display:grid;grid-template-columns:28px 1fr;gap:8px;align-items:start;padding:8px 10px;border-radius:12px;background:#f7fafc;font-size:14.5px;line-height:1.6;color:var(--ink2);word-break:keep-all}
+  .why .w i{font-style:normal;width:26px;height:26px;border-radius:8px;background:var(--fab);color:#fff;display:grid;place-items:center;font-weight:900;font-size:13px}
+  .formula{margin:10px 0;padding:12px 14px;border-radius:14px;background:#14263b;color:#fff;font-size:15.5px;line-height:1.9;word-break:keep-all}
+  .formula b{color:#ffd76a;font-family:ui-monospace,Consolas,monospace}
+  .formula .big{font-size:22px;font-weight:900;color:#ffd76a}
+  .cmp p{margin:0 0 8px;font-size:14.5px;line-height:1.7;color:var(--ink2);word-break:keep-all}
+  .tag{display:inline-block;font-size:11.5px;font-weight:800;border-radius:7px;padding:1px 7px;margin-left:4px;vertical-align:1px}
+  .tag.v{background:#fff1e6;color:#b8430a}
+  [hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <span class="eyebrow">전기 자동차 · 시뮬레이션 ②</span>
+    <h1>언덕길 주행과 주행 거리 계산기</h1>
+    <p class="sub">전기 자동차로 언덕을 넘으며 배터리가 어떻게 줄고 다시 차는지 보고, 배터리와 전비로 갈 수 있는 거리를 계산해 봐요.</p>
+  </header>
+
+  <div class="stage">
+    <section class="card viewer svgbox">
+      <svg id="hill" viewBox="0 0 760 520" role="img" aria-label="왼쪽 평지에서 출발해 언덕을 오르고 내려와 신호등 앞에서 멈추는 길. 전기 자동차가 길을 따라 움직이고, 위쪽에는 배터리 막대와 에너지 흐름 표시가 있다.">
+        <defs>
+          <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#cfe6f6"/><stop offset="1" stop-color="#f3f8fb"/></linearGradient>
+          <linearGradient id="skyC" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c3cfdc"/><stop offset="1" stop-color="#eef2f6"/></linearGradient>
+          <linearGradient id="hillG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8cc79a"/><stop offset="1" stop-color="#4f9a62"/></linearGradient>
+          <linearGradient id="hillC" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e9eef2"/><stop offset="1" stop-color="#bccbd6"/></linearGradient>
+          <linearGradient id="carG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a7bc0"/><stop offset="1" stop-color="#0f4c81"/></linearGradient>
+          <linearGradient id="cellG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5fd39a"/><stop offset="1" stop-color="#1c8a5c"/></linearGradient>
+          <filter id="sh" x="-20%" y="-20%" width="140%" height="160%"><feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#14263b" flood-opacity=".2"/></filter>
+          <filter id="gl" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="1.6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        </defs>
+        <rect id="skyR" width="760" height="520" fill="url(#sky)"/>
+        <g id="snow" opacity="0"></g>
+        <path d="M0 330 C120 300 200 320 300 290 S520 300 760 280 V520 H0Z" fill="#cfe0d2" opacity=".55"/>
+        <path id="ground" d="M0 420 H120 C180 420 230 300 330 230 C360 210 380 210 410 230 C500 300 540 400 620 410 H760 V520 H0Z" fill="url(#hillG)"/>
+        <path id="roadP" d="M0 420 H120 C180 420 230 300 330 230 C360 210 380 210 410 230 C500 300 540 400 620 410 H760" fill="none" stroke="#3a414b" stroke-width="12" stroke-linejoin="round"/>
+        <path d="M0 420 H120 C180 420 230 300 330 230 C360 210 380 210 410 230 C500 300 540 400 620 410 H760" fill="none" stroke="#e8d27a" stroke-width="2" stroke-dasharray="14 12"/>
+        <path id="drive" d="M10 412 H120 C180 412 230 292 330 222 C360 202 380 202 410 222 C500 292 540 392 620 402 H700" fill="none" stroke="none"/>
+        <!-- 신호등 -->
+        <g transform="translate(712 330)"><rect x="-4" y="0" width="8" height="80" fill="#5d6b7a"/><rect x="-14" y="-46" width="28" height="56" rx="8" fill="#14263b"/><circle id="tlR" cx="0" cy="-32" r="8" fill="#5a2a2a"/><circle id="tlG" cx="0" cy="-8" r="8" fill="#1f5a3a"/></g>
+        <text x="200" y="470" font-size="14" font-weight="900" fill="#14263b">오르막</text>
+        <text x="500" y="470" font-size="14" font-weight="900" fill="#14263b">내리막</text>
+        <!-- 차 -->
+        <g id="car"><g transform="translate(-34 -30)" filter="url(#sh)">
+          <path d="M4 22 C6 13 12 9 22 7 L40 6 C50 6 56 10 62 16 L66 18 C69 19 70 22 70 25 V28 H2 V25Z" fill="url(#carG)"/>
+          <path d="M22 9 H38 L48 16 H17Z" fill="#cfe3f2"/>
+          <rect x="12" y="21" width="46" height="5" rx="2" fill="url(#cellG)"/>
+          <circle cx="16" cy="29" r="6.5" fill="#1b2027"/><circle cx="16" cy="29" r="3" fill="#c4ccd4"/>
+          <circle cx="56" cy="29" r="6.5" fill="#1b2027"/><circle cx="56" cy="29" r="3" fill="#c4ccd4"/>
+        </g>
+        <g id="carFx"></g></g>
+        <!-- 위쪽 표시판 -->
+        <g transform="translate(18 18)" filter="url(#sh)">
+          <rect width="300" height="94" rx="14" fill="rgba(255,255,255,.92)"/>
+          <text x="16" y="28" font-size="14" font-weight="900" fill="#14263b">배터리</text>
+          <rect x="16" y="38" width="200" height="22" rx="6" fill="#e8eef3"/><rect id="bLvl" x="16" y="38" width="200" height="22" rx="6" fill="url(#cellG)"/>
+          <text id="bTxt" x="228" y="55" font-size="15" font-weight="900" fill="#0a5540">80%</text>
+          <text id="eTxt" x="16" y="82" font-size="13" font-weight="800" fill="#34495e"></text>
+        </g>
+        <g transform="translate(470 18)" filter="url(#sh)">
+          <rect width="272" height="94" rx="14" fill="rgba(255,255,255,.92)"/>
+          <rect x="16" y="20" width="56" height="30" rx="7" fill="#1b2633"/><rect x="21" y="25" width="46" height="20" rx="3" fill="url(#cellG)"/>
+          <circle cx="210" cy="35" r="16" fill="#c9ced6"/><circle cx="210" cy="35" r="9" fill="#c0703a"/>
+          <path id="flowP" d="M76 35 H192" fill="none" stroke="#e1e8ef" stroke-width="8" stroke-linecap="round"/>
+          <path id="flowGo" d="M76 35 H192" fill="none" stroke="none"/><path id="flowBack" d="M192 35 H76" fill="none" stroke="none"/>
+          <text x="44" y="72" text-anchor="middle" font-size="12" font-weight="900" fill="#0a5540">배터리</text>
+          <text x="210" y="72" text-anchor="middle" font-size="12" font-weight="900" fill="#8a4a20">전동기</text>
+          <text id="fTxt" x="136" y="86" text-anchor="middle" font-size="12" font-weight="800" fill="#627386"></text>
+        </g>
+      </svg>
+      <p class="model" style="text-align:center;margin-top:6px">개념 이해를 위한 모형이에요. 배터리 %와 알갱이 수는 비교만 하는 것이에요(실제 차에서는 언덕 하나로 이만큼 줄지 않아요).</p>
+    </section>
+
+    <section class="card pad">
+      <div class="modes" role="tablist">
+        <button class="md" type="button" role="tab" id="mA" aria-selected="true">언덕길 주행</button>
+        <button class="md" type="button" role="tab" id="mB" aria-selected="false">주행 거리 계산기</button>
+      </div>
+
+      <div id="paneA">
+        <div class="seg two" role="group" aria-label="출발과 멈춤">
+          <button type="button" id="bRun" aria-pressed="true">달리기</button>
+          <button type="button" id="bReset" aria-pressed="false">처음부터 다시</button>
+        </div>
+        <button type="button" class="tgl" id="tRegen" aria-pressed="true">회생 제동 켜짐</button>
+        <div class="seg two" role="group" aria-label="날씨">
+          <button type="button" data-w="warm" aria-pressed="true">따뜻한 날</button>
+          <button type="button" data-w="cold" aria-pressed="false">추운 날</button>
+        </div>
+        <div class="gauges">
+          <div class="gg"><span>쓴 에너지</span><div class="gt"><i id="gUse" style="background:linear-gradient(90deg,#ffe08a,#f0b429)"></i></div></div>
+          <div class="gg"><span>되살린 에너지</span><div class="gt"><i id="gBack" style="background:linear-gradient(90deg,#a7e0c8,#2bb673)"></i></div></div>
+        </div>
+        <p class="gnote">한 번 달릴 때마다 막대가 처음부터 다시 쌓여요. 막대는 크기만 비교하는 모형이에요.</p>
+        <div class="box fact" id="aMsg"></div>
+        <div class="why">
+          <h3>왜 그럴까?</h3>
+          <div class="w"><i>1</i><span><b>오르막</b>에서는 차를 높이 올려야 해서 전동기가 힘을 많이 내요. 배터리의 전기 에너지가 빨리 줄어요.</span></div>
+          <div class="w"><i>2</i><span><b>내리막과 멈출 때</b>는 속도를 줄여야 해요. 회생 제동이 켜져 있으면 운동 에너지의 일부가 전기 에너지로 바뀌어 배터리에 다시 담겨요.</span></div>
+          <div class="w"><i>3</i><span><b>추운 날</b>에는 차 안과 배터리를 데우는 데에도 전기를 써서 같은 길에서 더 많이 줄어요.</span></div>
+        </div>
+        <div class="box lnk"><b class="t">지난 시간과 연결</b>전기 에너지 수업의 에너지 전환이에요. 오르막: 전기 에너지 → 운동 에너지(차를 높이 올림). 회생 제동: 운동 에너지 → 전기 에너지. 회생 제동이 꺼진 차는 브레이크에서 운동 에너지가 대부분 열에너지로 흩어져요.</div>
+      </div>
+
+      <div id="paneB" hidden>
+        <div class="stepname"><span class="no">B</span><div><h2>거리 = 전력량 × 전비</h2><small>전비 = 1 kWh로 갈 수 있는 거리(km/kWh)</small></div></div>
+        <div class="rng"><label for="rK">배터리</label><input type="range" id="rK" min="40" max="100" step="10" value="80"><b id="vK">80 kWh</b></div>
+        <p class="lbl">전비 고르기</p>
+        <div class="seg" role="group" aria-label="전비">
+          <button type="button" data-e="4" aria-pressed="false">4 km/kWh<br><small>큰 차·빠르게</small></button>
+          <button type="button" data-e="5" aria-pressed="true">5 km/kWh<br><small>보통</small></button>
+          <button type="button" data-e="6" aria-pressed="false">6 km/kWh<br><small>작은 차·부드럽게</small></button>
+        </div>
+        <div class="formula" id="fx"></div>
+        <div class="cmp" id="cmp"></div>
+        <svg id="trip" viewBox="0 0 420 150" role="img" aria-label="서울에서 대전, 광주, 부산까지 대략의 거리 위에 갈 수 있는 거리를 막대로 표시한 그림"></svg>
+        <p class="gnote"><span class="tag v">가상</span> 계산하기 쉽게 만든 배터리와 전비예요. 도시까지의 거리는 고속도로 기준 대략의 값이에요. 실제 차는 날씨, 속도, 짐, 에어컨 사용에 따라 달라요.</p>
+      </div>
+    </section>
+  </div>
+  <p class="credit">전기 자동차 읽기 자료</p>
+</div>
+
+<script>
+window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) => Array.from(r.querySelectorAll(s)) };
+</script>
+<script>
+/*@@PART:flow.js@@*/
+/* ===== 블록 1: 도식·버튼 ===== */
+(() => {
+  'use strict';
+  try {
+    const { $, $$ } = window.SM, NS = FLOW.NS;
+    const el = (tag, at, parent) => { const e = document.createElementNS(NS, tag); Object.entries(at).forEach(([k, v]) => e.setAttribute(k, v)); if (parent) parent.appendChild(e); return e; };
+    const snow = $('#snow'); const SN = []; for (let k = 0; k < 50; k++) SN.push(el('circle', { cx: Math.random() * 760, cy: Math.random() * 420, r: 1.5 + Math.random() * 2, fill: '#fff' }, snow));
+    const go = FLOW.dots($('#flowGo'), { n: 9, r: 5, color: '#f0b429', speed: 0.5 });
+    const back = FLOW.dots($('#flowBack'), { n: 7, r: 5, color: '#2bb673', speed: 0.4 });
+    const path = $('#drive'), L = path.getTotalLength();
+    const S = { run: true, regen: true, cold: false, s: 0, lvl: 0.8, used: 0, back: 0, wait: 0 };
+    // 길 위 위치별 상태: 평지, 오르막, 내리막, 멈춤
+    const phaseAt = (s) => { const p = path.getPointAtLength(s * L), q = path.getPointAtLength(Math.min(L, s * L + 6)); const slope = (p.y - q.y) / 6; return { p, slope, stop: s > 0.93 }; };
+    function msg(ph) {
+      let m;
+      if (S.wait > 0) m = '<b class="t">신호등 앞에서 멈췄어요</b>' + (S.regen ? '멈추면서 남은 운동 에너지 일부를 <b>배터리에 다시 담았어요</b>.' : '회생 제동이 꺼져 있어 운동 에너지가 브레이크에서 <b>열</b>로 흩어졌어요.');
+      else if (ph.slope > 0.25) m = '<b class="t">오르막</b>전동기가 힘을 많이 내야 해서 배터리에서 <b>노란 알갱이가 많이</b> 나가요. 배터리가 빨리 줄어요.';
+      else if (ph.slope < -0.25) m = S.regen ? '<b class="t">내리막</b>속도가 너무 빨라지지 않게 줄이면서 <b>초록 알갱이가 배터리로 돌아가요</b>. 배터리가 조금 늘어나요.' : '<b class="t">내리막(회생 제동 꺼짐)</b>브레이크로만 속도를 줄여서 배터리가 늘지 않아요. 운동 에너지가 열로 흩어져요.';
+      else m = '<b class="t">평지</b>일정하게 달리면 배터리에서 에너지가 <b>조금씩</b> 나가요.';
+      if (S.cold) m += ' 추운 날이라 차 안을 데우는 데에도 전기를 써요.';
+      $('#aMsg').innerHTML = m;
+    }
+    let lastKey = '';
+    function paintCtl() {
+      $('#bRun').setAttribute('aria-pressed', String(S.run)); $('#bRun').textContent = S.run ? '잠깐 멈추기' : '달리기';
+      $('#tRegen').setAttribute('aria-pressed', String(S.regen)); $('#tRegen').textContent = S.regen ? '회생 제동 켜짐' : '회생 제동 꺼짐';
+      $$('[data-w]').forEach((b) => b.setAttribute('aria-pressed', String((b.dataset.w === 'cold') === S.cold)));
+      $('#skyR').setAttribute('fill', S.cold ? 'url(#skyC)' : 'url(#sky)'); $('#ground').setAttribute('fill', S.cold ? 'url(#hillC)' : 'url(#hillG)'); $('#snow').setAttribute('opacity', S.cold ? '1' : '0');
+      lastKey = '';
+    }
+    const reset = () => { S.s = 0; S.lvl = 0.8; S.used = 0; S.back = 0; S.wait = 0; };
+    $('#bRun').addEventListener('click', () => { S.run = !S.run; paintCtl(); });
+    $('#bReset').addEventListener('click', () => { reset(); S.run = true; paintCtl(); });
+    $('#tRegen').addEventListener('click', () => { S.regen = !S.regen; paintCtl(); });
+    $$('[data-w]').forEach((b) => b.addEventListener('click', () => { S.cold = b.dataset.w === 'cold'; paintCtl(); }));
+    paintCtl();
+    FLOW.onFrame((dt) => {
+      let ph = phaseAt(S.s), out = 0, inn = 0;
+      if (S.run) {
+        if (S.wait > 0) { S.wait -= dt; if (S.wait <= 0) { S.s = 0; S.used = 0; S.back = 0; } }
+        else {
+          const v = ph.slope > 0.25 ? 0.045 : ph.slope < -0.25 ? 0.085 : 0.07;
+          S.s = Math.min(1, S.s + dt * v);
+          out = ph.slope > 0.25 ? 1 : ph.slope < -0.25 ? 0.05 : 0.35; if (S.cold) out += 0.25;
+          inn = S.regen && (ph.slope < -0.25 || ph.stop) ? 0.7 : 0;
+          if (S.s >= 1) { S.wait = 2.2; if (S.regen) { S.lvl = Math.min(0.95, S.lvl + 0.015); S.back += 0.15; } }
+        }
+      }
+      if (S.wait > 0 && S.regen) inn = 0.5;
+      S.lvl = Math.max(0.05, Math.min(0.95, S.lvl - dt * (out * 0.016 - inn * 0.014)));
+      if (S.lvl <= 0.06) S.lvl = 0.8;
+      S.used += dt * out * 0.05; S.back += dt * inn * 0.05;
+      const p = ph.p, q = path.getPointAtLength(Math.min(L, S.s * L + 4)), ang = Math.atan2(q.y - p.y, q.x - p.x) * 180 / Math.PI;
+      $('#car').setAttribute('transform', `translate(${p.x.toFixed(1)} ${p.y.toFixed(1)}) rotate(${(S.s >= 1 ? 0 : ang).toFixed(1)})`);
+      $('#bLvl').setAttribute('width', (200 * S.lvl).toFixed(1)); $('#bLvl').setAttribute('fill', S.lvl < 0.2 ? '#e8590c' : 'url(#cellG)');
+      $('#bTxt').textContent = Math.round(S.lvl * 100) + '%';
+      $('#eTxt').textContent = out > 0.6 ? '전기 에너지 → 운동 에너지(많이)' : inn > 0 ? '운동 에너지 → 전기 에너지(다시 담기)' : S.run ? '전기 에너지 → 운동 에너지(조금)' : '멈춤';
+      go.set({ rate: S.run && S.wait <= 0 ? Math.min(1, out) : 0 }); back.set({ rate: inn > 0 ? 1 : 0 });
+      $('#fTxt').textContent = inn > 0 ? '배터리로 다시 담기' : out > 0 ? '배터리에서 전동기로' : '';
+      $('#tlR').setAttribute('fill', S.wait > 0 ? '#ff4d4d' : '#5a2a2a'); $('#tlG').setAttribute('fill', S.wait > 0 ? '#1f5a3a' : '#3ddc84');
+      $('#gUse').style.width = Math.min(100, S.used * 100) + '%'; $('#gBack').style.width = Math.min(100, S.back * 100) + '%';
+      const key = (S.wait > 0 ? 'w' : ph.slope > 0.25 ? 'u' : ph.slope < -0.25 ? 'd' : 'f') + S.regen + S.cold;
+      if (key !== lastKey) { lastKey = key; msg(ph); }
+      if (S.cold) SN.forEach((s, i) => { let y = +s.getAttribute('cy') + dt * (16 + (i % 4) * 5); if (y > 430) y = 0; s.setAttribute('cy', y.toFixed(1)); });
+    });
+
+    /* B: 주행 거리 계산기 */
+    let K = 80, E = 5;
+    const CITY = [['대전', 150], ['광주', 300], ['부산', 400]];
+    function paintB() {
+      $('#vK').textContent = K + ' kWh';
+      $$('[data-e]').forEach((b) => b.setAttribute('aria-pressed', String(+b.dataset.e === E)));
+      const d = K * E;
+      $('#fx').innerHTML = `거리 = 전력량 × 전비<br>= <b>${K} kWh</b> × <b>${E} km/kWh</b><br><span class="big">= ${d} km</span>`;
+      const reach = CITY.filter((c) => c[1] <= d).map((c) => c[0]);
+      let c = `<p>${K} kWh = ${(K * 1000).toLocaleString('ko-KR')} Wh예요. 같은 배터리라도 전비가 1 달라지면 거리가 <b>${K} km</b>씩 달라져요.</p>`;
+      c += `<p>서울에서 출발하면 ${reach.length ? '<b>' + reach.join(', ') + '</b>까지 한 번에 갈 수 있어요.' : '대전까지도 가기 어려워요.'}</p>`;
+      c += `<p>거꾸로, 서울에서 부산(약 400 km)까지 가는 데 필요한 전력량 = 400 ÷ ${E} = <b>${Math.round(400 / E)} kWh</b>${400 % E ? '(약)' : ''}예요.</p>`;
+      $('#cmp').innerHTML = c;
+      const sx = (km) => 20 + km / 600 * 380;
+      let s = `<line x1="20" y1="90" x2="400" y2="90" stroke="#c9d6e2" stroke-width="3"/>`;
+      s += `<rect x="20" y="52" width="${(sx(d) - 20).toFixed(1)}" height="22" rx="11" fill="#19a7c9"/><text x="${Math.min(392, sx(d) + 6).toFixed(1)}" y="68" font-size="13" font-weight="900" fill="#0b3a63" ${sx(d) > 330 ? 'text-anchor="end"' : ''}>${d} km</text>`;
+      s += `<circle cx="20" cy="90" r="7" fill="#14263b"/><text x="20" y="116" text-anchor="middle" font-size="12.5" font-weight="900" fill="#14263b">서울</text>`;
+      CITY.forEach(([n, km]) => { const x = sx(km), ok = km <= d; s += `<circle cx="${x}" cy="90" r="7" fill="${ok ? '#2bb673' : '#c9d6e2'}"/><text x="${x}" y="116" text-anchor="middle" font-size="12.5" font-weight="900" fill="${ok ? '#0a5540' : '#8a98a8'}">${n}</text><text x="${x}" y="134" text-anchor="middle" font-size="11" font-weight="700" fill="#8a98a8">약 ${km} km</text>`; });
+      s += `<text x="20" y="30" font-size="13" font-weight="800" fill="#5a6b7e">한 번 충전으로 갈 수 있는 거리</text>`;
+      $('#trip').innerHTML = s;
+    }
+    $('#rK').addEventListener('input', (e) => { K = +e.target.value; paintB(); });
+    $$('[data-e]').forEach((b) => b.addEventListener('click', () => { E = +b.dataset.e; paintB(); }));
+    paintB();
+    const setMode = (m) => { $('#mA').setAttribute('aria-selected', String(m === 'A')); $('#mB').setAttribute('aria-selected', String(m === 'B')); $('#paneA').hidden = m !== 'A'; $('#paneB').hidden = m !== 'B'; };
+    $('#mA').addEventListener('click', () => setMode('A')); $('#mB').addEventListener('click', () => setMode('B'));
+    window.SM.okUI = true;
+  } catch (err) { window.SM_err('도식·버튼', err); }
+})();
+</script>
+</body>
+</html>

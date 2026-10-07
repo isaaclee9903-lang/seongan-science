@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>전기 자동차 – 읽기</title>
+<script>
+/* 문제 알림: 코드에 오류가 나면 화면 아래에 빨간 상자로 알려 줘요 (선생님 확인용) */
+(function () {
+  function box() {
+    var b = document.getElementById('rdErr');
+    if (!b && document.body) {
+      b = document.createElement('div'); b.id = 'rdErr';
+      b.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;background:#fdecea;color:#8a1f17;border:2px solid #d9534f;border-radius:12px;padding:10px 14px;font:600 14px/1.5 sans-serif;white-space:pre-wrap';
+      document.body.appendChild(b);
+    }
+    return b;
+  }
+  window.RD_err = function (where, err) {
+    var msg = '[' + where + '] ' + (err && err.message ? err.message : String(err));
+    var show = function () { var b = box(); if (b) b.textContent += (b.textContent ? '\n' : '') + msg; };
+    if (document.body) show(); else document.addEventListener('DOMContentLoaded', show);
+  };
+  window.addEventListener('error', function (e) { window.RD_err('스크립트', { message: e.message + ' (줄 ' + e.lineno + ')' }); });
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      var R = window.RD || {}, miss = [];
+      if (!R.ok1) miss.push('기본 기능·퀴즈');
+      if (!R.ok2 && R.need2 !== false) miss.push('그림 조작 버튼');
+      if (miss.length) window.RD_err('실행 안 됨', { message: miss.join(', ') + ' 코드가 실행되지 않았어요. 파일이 끝(</html>)까지 들어 있는지 확인해 주세요.' });
+    }, 1500);
+    setTimeout(function () {
+      if (document.querySelector('.fail3d') && !(window.RD || {}).ok3d) { document.querySelectorAll('.fail3d').forEach(function (f) { f.classList.add('show'); }); window.RD_err('3D 그림', { message: '3D 그림을 불러오지 못했어요. 인터넷 연결(cdn.jsdelivr.net)을 확인하고 새로고침해 주세요.' }); }
+    }, 9000);
+  });
+})();
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+  :root{--bg:#f3f6f9;--paper:#fff;--ink:#15263a;--ink2:#34495e;--muted:#627386;--line:#e1e8ef;--accent:#0e63b3;--accent-soft:#e4f0fb;
+    --V:#2f6fd6;--I:#e89a00;--R:#23a566;--ok:#1f9d5c;--no:#d9534f;--violet:#7d5ad6;
+    --ser:#1784cf;--ser-soft:#e3f2fc;--par:#5e9e1c;--par-soft:#eef7e2;
+    --shadow:0 1px 2px rgba(20,38,59,.05),0 10px 28px rgba(20,38,59,.07);--ease:cubic-bezier(.2,.8,.2,1);--fs:18px}
+  html.big{--fs:20.5px}
+  *{box-sizing:border-box}html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:"Pretendard",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;-webkit-font-smoothing:antialiased;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  button{font:inherit;color:inherit}a{color:var(--accent)}
+  /* 히어로 */
+  .hero{position:relative;color:#fff;overflow:hidden;background:linear-gradient(150deg,#123a6b,#1d6fb8 55%,#4f9a2e)}
+  .hero-in{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:36px 20px 40px;display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.35fr);gap:28px;align-items:center}
+  .hero .kick{display:inline-block;font-size:14px;font-weight:700;background:rgba(255,255,255,.16);padding:6px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.3)}
+  .hero .kick.maker{margin-left:6px;background:rgba(255,255,255,.08)}
+  .hero h1{font-size:clamp(30px,4.4vw,44px);line-height:1.22;letter-spacing:-.03em;margin:14px 0 10px;word-break:keep-all}
+  .hero p{font-size:clamp(16px,2vw,18px);margin:0 0 18px;line-height:1.65;opacity:.95;word-break:keep-all}
+  .route{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px}
+  .route span{font-size:13.5px;font-weight:700;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.28);padding:5px 11px;border-radius:12px}
+  .start{display:inline-flex;align-items:center;gap:10px;white-space:nowrap;background:#fff;color:var(--accent);border:0;border-radius:16px;padding:0 22px;min-height:56px;font-weight:800;font-size:17px;cursor:pointer;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+  .hero svg{width:100%;height:auto;filter:drop-shadow(0 12px 30px rgba(0,0,0,.25))}
+  .msw{cursor:pointer}
+  .msw:focus{outline:none}.msw:focus-visible .rk{stroke:#ffd34d;stroke-width:3}
+  .dev .glow,.dev .lit{transition:opacity .45s var(--ease)}
+  .dev.off .glow,.dev.off .lit{opacity:0}
+  .dev .unlit{opacity:0;transition:opacity .45s}
+  .dev.off .unlit{opacity:1}
+  .fanb{transform-box:fill-box;transform-origin:center;animation:fanspin .45s linear infinite}
+  .dev.off .fanb{animation-duration:6s;animation-play-state:paused}
+  @keyframes fanspin{to{transform:rotate(360deg)}}
+  .credit{text-align:center;font-size:13px;font-weight:700;color:#8495a8;padding:6px 16px 40px;letter-spacing:.02em}
+  /* 진행 */
+  .nav{position:sticky;top:0;z-index:30;background:rgba(255,255,255,.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+  .nav-in{max-width:980px;margin:0 auto;display:flex;align-items:center;gap:6px;padding:8px 12px;overflow-x:auto;scrollbar-width:none}
+  .nav-in::-webkit-scrollbar{display:none}
+  .step{flex:none;display:flex;align-items:center;gap:7px;border:0;background:transparent;border-radius:12px;padding:8px 11px;min-height:44px;font-weight:700;font-size:14.5px;color:var(--muted);cursor:pointer}
+  .step .n{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:12.5px;font-weight:800;background:#e8eef4;color:#607285}
+  .step.active{background:var(--accent-soft);color:var(--accent)}.step.active .n{background:var(--accent);color:#fff}
+  .step.done .n{background:var(--ok);color:#fff}
+  .nav-sp{flex:1}
+  .fsz{flex:none;display:flex;gap:4px}
+  .fsz button{width:44px;height:40px;border:1px solid var(--line);background:#fff;border-radius:10px;font-weight:800;cursor:pointer}
+  .fsz button[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .bar{height:3px}.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--ser),var(--par))}
+  /* 본문 */
+  main{max-width:980px;margin:0 auto;padding:10px 16px 60px}
+  section.part{padding-top:34px;scroll-margin-top:70px}
+  .sec-kick{font-size:14px;font-weight:800;color:var(--accent);display:flex;align-items:center;gap:8px}
+  .sec-kick .time{font-weight:600;color:var(--muted);background:#fff;border:1px solid var(--line);border-radius:999px;padding:2px 10px;font-size:12.5px}
+  h2{font-size:clamp(24px,3.4vw,31px);margin:6px 0 16px;letter-spacing:-.02em;line-height:1.3;word-break:keep-all}
+  h3{font-size:calc(var(--fs) + 3px);margin:0 0 8px;letter-spacing:-.01em;word-break:keep-all}
+  .card{background:var(--paper);border-radius:22px;box-shadow:var(--shadow);border:1px solid rgba(20,38,59,.04)}
+  .read{padding:24px 26px;margin-bottom:16px}
+  .read p{font-size:var(--fs);line-height:1.85;color:var(--ink2);margin:0 0 14px;word-break:keep-all}
+  .read p:last-child{margin-bottom:0}
+  mark{background:linear-gradient(transparent 58%,#fff0a8 58%);color:inherit;padding:0 1px}
+  .term{border:0;background:none;padding:0;font-weight:800;color:var(--accent);border-bottom:2px dotted rgba(14,99,179,.5);cursor:pointer;font-size:inherit;line-height:inherit}
+  .defn{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:14px 0;padding:14px 16px;border-radius:16px;background:#f2f7fd;border:1px solid #d6e5f5;font-size:var(--fs);word-break:keep-all}
+  .defn .k{font-weight:900;color:#fff;padding:4px 12px;border-radius:10px}
+  .defn.ser{background:var(--ser-soft);border-color:#bfe0f5}.defn.ser .k{background:var(--ser)}
+  .defn.par{background:var(--par-soft);border-color:#cfe6b4}.defn.par .k{background:var(--par)}
+  .fig{margin:16px 0;background:#f8fafc;border:1px solid var(--line);border-radius:18px;padding:12px}
+  .fig svg{display:block;width:100%;height:auto}
+  .fig .cap{font-size:14px;color:var(--muted);text-align:center;margin-top:6px;word-break:keep-all;line-height:1.6}
+  .js-reveal .reveal{transform:translateY(18px);transition:transform .7s var(--ease)}
+  .js-reveal .reveal.in{transform:none}
+  details.pause{margin:16px 0 22px;background:linear-gradient(135deg,#fff8e6,#fff);border:2px solid #f6d98a;border-radius:18px;overflow:hidden}
+  details.pause summary{list-style:none;cursor:pointer;padding:15px 18px;display:flex;gap:12px;align-items:center;font-weight:800;font-size:var(--fs);min-height:60px;word-break:keep-all}
+  details.pause summary::-webkit-details-marker{display:none}
+  details.pause .pi{flex:none;width:36px;height:36px;border-radius:12px;background:#f7c948;display:grid;place-items:center}
+  details.pause .tap{margin-left:auto;flex:none;font-size:13px;font-weight:700;color:#9a6b00;background:#fff3cc;padding:4px 10px;border-radius:999px}
+  details.pause[open] .tap{visibility:hidden}
+  details.pause .ans{padding:0 18px 18px 66px;font-size:var(--fs);line-height:1.75;color:#5b4300;word-break:keep-all}
+  .myth{display:flex;gap:14px;align-items:flex-start;background:#fff4f2;border:2px solid #f3c2bb;border-radius:18px;padding:16px 18px;margin:16px 0}
+  .myth .x{flex:none;width:40px;height:40px;border-radius:12px;background:#e0483e;color:#fff;display:grid;place-items:center;font-weight:900;font-size:20px}
+  .myth p{margin:0;font-size:calc(var(--fs) - 1px);line-height:1.7;color:#5e2a25;word-break:keep-all}
+  .formula{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:12px;margin:16px 0;padding:18px;border-radius:20px;background:#f6f9ff;border:1px solid #d6e5f5;font-size:clamp(26px,4vw,36px);font-weight:900;letter-spacing:-.01em}
+  .formula .eqs{font-size:clamp(15px,2vw,17px);font-weight:700;color:var(--muted);flex-basis:100%;text-align:center;word-break:keep-all}
+  .cV{color:var(--V)}.cI{color:var(--I)}.cR{color:var(--R)}.cS{color:var(--ser)}.cP{color:var(--par)}
+  /* 지난 시간 */
+  .recall{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:16px;align-items:center}
+  .backlink{display:inline-flex;align-items:center;gap:8px;min-height:46px;padding:0 16px;border-radius:12px;background:#eef3f8;color:var(--ink2);font-weight:800;font-size:15px;text-decoration:none}
+  /* 직렬·병렬 모형 장면 */
+  .spfig svg{max-width:760px;margin:0 auto}
+  .spfig .etog{display:flex;gap:8px;justify-content:center;margin-bottom:8px;flex-wrap:wrap}
+  .tg{min-height:48px;padding:0 16px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15px;cursor:pointer;transition:all .2s}
+  .tg[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+  .tg.cut{border-style:dashed}
+  .tg.cut[aria-pressed="true"]{border-color:var(--no);background:#fdecea;color:#b33a35;border-style:solid}
+  .tg:disabled{opacity:.35;cursor:default}
+  .mtr{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:10px}
+  .mtr .m{background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px 12px}
+  .mtr .ml{font-size:14px;font-weight:800;color:var(--ink2);word-break:keep-all}
+  .mtr .trk{position:relative;height:16px;border-radius:99px;background:#e9eff5;margin:10px 0 18px}
+  .mtr .fill{position:absolute;left:0;top:0;bottom:0;border-radius:99px;width:0;transition:width .7s var(--ease)}
+  .mtr .ref{position:absolute;top:-4px;bottom:-4px;width:3px;border-radius:2px;background:#14263b;opacity:.55}
+  .mtr .ref::after{content:"전구 1개";position:absolute;top:22px;left:50%;transform:translateX(-50%);font-size:11.5px;font-weight:800;color:#5a6b7e;white-space:nowrap}
+  .mtr .mv{font-size:14.5px;font-weight:800;word-break:keep-all;min-height:22px}
+  /* 왜 그럴까 사슬 */
+  .chain{display:grid;gap:0;margin:16px 0}
+  .ch{display:grid;grid-template-columns:44px 1fr;gap:12px;align-items:start;padding:12px 14px;border-radius:16px;background:#f8fafc;border:1px solid var(--line)}
+  .ch .no{width:36px;height:36px;border-radius:12px;display:grid;place-items:center;font-weight:900;color:#fff}
+  .ch p{margin:0;font-size:calc(var(--fs) - 1px);line-height:1.7;color:var(--ink2);word-break:keep-all}
+  .ch p small{display:block;font-size:calc(var(--fs) - 4px);color:var(--muted);margin-top:2px}
+  .ch-ar{height:22px;display:grid;place-items:center}
+  .ch-ar svg{width:20px;height:20px}
+  .chain.ser .ch .no{background:var(--ser)}.chain.par .ch .no{background:var(--par)}
+  .chain .ch.key{background:#fffdf3;border-color:#f0dc9a}
+  /* 비교표 */
+  .cmp{width:100%;border-collapse:separate;border-spacing:0;margin:8px 0 4px;font-size:calc(var(--fs) - 2px);word-break:keep-all}
+  .cmp th,.cmp td{padding:12px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;line-height:1.6}
+  .cmp thead th{font-size:calc(var(--fs) - 1px);font-weight:900;color:#fff}
+  .cmp thead th:first-child{background:transparent}
+  .cmp thead th.s{background:var(--ser);border-radius:14px 14px 0 0}
+  .cmp thead th.p{background:var(--par);border-radius:14px 14px 0 0}
+  .cmp tbody th{color:var(--muted);font-weight:800;width:24%}
+  .cmp td.s{background:var(--ser-soft)}.cmp td.p{background:var(--par-soft)}
+  .life{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:14px 0}
+  .lc{background:#f8fafc;border:1px solid var(--line);border-radius:18px;padding:14px}
+  .lc svg{display:block;width:100%;height:auto;border-radius:12px;background:#fff}
+  .lc > b{display:block;font-size:calc(var(--fs) - .5px);margin:10px 0 4px}
+  .lc p{margin:0;font-size:calc(var(--fs) - 2px);line-height:1.7;color:var(--ink2);word-break:keep-all}
+  .simlink{display:flex;align-items:center;gap:14px;margin:18px 0 4px;padding:16px 18px;border-radius:18px;background:linear-gradient(120deg,#0e63b3,#1b86c9);color:#fff;text-decoration:none;box-shadow:0 8px 22px rgba(14,99,179,.25)}
+  .simlink .si{flex:none;width:46px;height:46px;border-radius:14px;background:rgba(255,255,255,.18);display:grid;place-items:center}
+  .simlink b{display:block;font-size:17px}.simlink span{font-size:14px;opacity:.9;word-break:keep-all}
+  .simlink .go{margin-left:auto;flex:none}
+  /* 퀴즈 */
+  .quiz{display:flex;flex-direction:column;gap:14px}
+  .qcard{padding:22px 24px}
+  .qhead{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .qno{flex:none;font-weight:800;font-size:13px;color:#fff;background:var(--ink);padding:4px 10px;border-radius:999px}
+  .qtype{font-size:12.5px;font-weight:700;color:var(--muted)}
+  .qstate{margin-left:auto;font-weight:800;font-size:13px;padding:4px 10px;border-radius:999px;display:none}
+  .qcard.right .qstate{display:inline-block;background:#e8f7ef;color:#11703f}
+  .qcard.wrong .qstate{display:inline-block;background:#fdecea;color:#b33a35}
+  .qtext{font-size:calc(var(--fs) + 1px);font-weight:700;line-height:1.65;margin:0 0 16px;word-break:keep-all}
+  .ox{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:420px}
+  .oxb{min-height:80px;border-radius:20px;border:2px solid var(--line);background:#f7fafc;font-size:38px;font-weight:900;cursor:pointer;display:grid;place-items:center}
+  .oxb.o{color:#1f78c8}.oxb.x{color:#d9534f}
+  .mc{display:grid;gap:10px}
+  .mcb{display:flex;align-items:center;gap:12px;text-align:left;min-height:56px;border-radius:16px;border:2px solid var(--line);background:#f7fafc;padding:10px 16px;font-size:var(--fs);font-weight:700;cursor:pointer;word-break:keep-all}
+  .mcb .k{flex:none;width:30px;height:30px;border-radius:50%;background:#fff;border:2px solid #cbd6e1;display:grid;place-items:center;font-size:14px;font-weight:800;color:#5a6b7e}
+  button.good{border-color:var(--ok)!important;background:#e8f7ef!important}
+  button.bad{border-color:var(--no)!important;background:#fdecea!important}
+  button:disabled{cursor:default}
+  .qcard.locked .oxb:not(.good):not(.bad),.qcard.locked .mcb:not(.good):not(.bad){opacity:.55}
+  .sentence{font-size:calc(var(--fs) + 1px);font-weight:700;line-height:2.4;margin:0 0 14px;word-break:keep-all}
+  .slot{display:inline-flex;align-items:center;justify-content:center;min-width:110px;min-height:44px;vertical-align:middle;margin:0 4px;padding:0 14px;border-radius:12px;border:2px dashed #aebdcc;background:#f7fafc;color:var(--muted);font-weight:800;font-size:calc(var(--fs) - 1px);cursor:pointer;line-height:1.2}
+  .slot.filled{border-style:solid;border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+  .slot.cur{box-shadow:0 0 0 4px rgba(14,99,179,.18)}
+  .slot.good{border-style:solid;border-color:var(--ok);background:#e8f7ef;color:#11703f}
+  .slot.bad{border-style:solid;border-color:var(--no);background:#fdecea;color:#b33a35}
+  .bank{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+  .chip{min-height:48px;padding:0 16px;border-radius:14px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:calc(var(--fs) - 1px);cursor:pointer}
+  .chip.used{opacity:.3;pointer-events:none}
+  .btn{min-height:52px;border:0;border-radius:14px;padding:0 20px;font-weight:800;font-size:16px;cursor:pointer}
+  .btn.primary{background:var(--accent);color:#fff}.btn.primary:disabled{opacity:.35}
+  .btn.ghost{background:#eef3f8;color:var(--ink2)}
+  .exp{display:none;margin-top:14px;padding:14px 16px;border-radius:14px;font-size:var(--fs);line-height:1.7;word-break:keep-all}
+  .qcard.right .exp{display:block;background:#e8f7ef;color:#0f5a36}
+  .qcard.wrong .exp{display:block;background:#fff6e8;color:#6d4208}
+  .retry{margin-top:10px}
+  .result{padding:26px;display:grid;grid-template-columns:150px 1fr;gap:24px;align-items:center;margin-top:16px}
+  .ring{width:150px;height:150px;position:relative}.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+  .ring .rv{position:absolute;inset:0;display:grid;place-items:center;text-align:center;font-weight:900;font-size:34px;line-height:1.1}
+  .ring .rv small{display:block;font-size:13px;font-weight:700;color:var(--muted)}
+  .result p{font-size:var(--fs);line-height:1.7;color:var(--ink2);margin:0 0 12px;word-break:keep-all}
+  .wlist{display:flex;flex-wrap:wrap;gap:8px}
+  .wlist button{min-height:44px;border:1px solid #f1c6c3;background:#fdf0ef;color:#b33a35;border-radius:10px;padding:0 12px;font-weight:700;cursor:pointer}
+  .next{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}
+  .next a{text-decoration:none;color:#fff;border-radius:20px;padding:18px;min-height:140px;display:flex;flex-direction:column;justify-content:space-between;box-shadow:var(--shadow)}
+  .next a b{font-size:18px}.next a span{font-size:14px;opacity:.92;word-break:keep-all}
+  .pop{position:absolute;z-index:40;max-width:300px;background:#15263a;color:#fff;border-radius:14px;padding:12px 14px;font-size:15px;line-height:1.6;box-shadow:0 12px 32px rgba(0,0,0,.25);opacity:0;transform:translateY(6px);transition:all .2s;pointer-events:none;word-break:keep-all}
+  .pop.show{opacity:1;transform:none;pointer-events:auto}.pop b{display:block;color:#9fd2ff}
+  @media (max-width:860px){.hero-in{grid-template-columns:1fr}.recall,.life,.next{grid-template-columns:1fr}}
+  @media (max-width:640px){.mtr{grid-template-columns:1fr}}
+  @media (max-width:600px){.read{padding:20px}.result{grid-template-columns:1fr;justify-items:center;text-align:center}.step .t{display:none}.cmp th,.cmp td{padding:10px 8px}}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.js-reveal .reveal{transform:none}}
+
+  .drawln{stroke-dasharray:620;stroke-dashoffset:620;animation:drawln 1.1s var(--ease) forwards}
+  @keyframes drawln{to{stroke-dashoffset:0}}
+
+  /* ===== 3D 화면 공통 ===== */
+  :root{--Bc:#14a5d0;--Ic:#2fae4a;--Fc:#f0522a;--N:#d8433b;--S:#2f62c9;--P:#7d5ad6}
+  .viewer{position:relative;overflow:hidden;padding:0}
+  .gl-host{position:relative;width:100%;height:min(74vh,700px);min-height:380px;background:linear-gradient(#f6f9fc,#d6e3ef);touch-action:none}
+  .gl-host canvas.gl{display:block;width:100%;height:100%;outline:none}
+  .lbls{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+  .lb{position:absolute;left:0;top:0;white-space:nowrap;font-weight:800;font-size:14px;padding:3px 9px;border-radius:9px;background:rgba(255,255,255,.88);color:#34495e;box-shadow:0 2px 8px rgba(20,38,59,.14);will-change:transform}
+  .lb.small{font-size:12px;font-weight:700;color:#5a6b7e;background:rgba(255,255,255,.72);box-shadow:none}
+  .lb.B{background:var(--Bc);color:#fff}.lb.I{background:var(--Ic);color:#fff}.lb.F{background:var(--Fc);color:#fff;font-size:15px}
+  .lb.P{background:var(--P);color:#fff}
+  .lb.dim{opacity:.35}
+  .vt{position:absolute;display:flex;gap:6px;flex-wrap:wrap;z-index:3}
+  .vt.tl{left:10px;top:10px;max-width:calc(100% - 20px)}
+  .vt.tr{right:10px;top:10px;justify-content:flex-end}
+  .vt.bl{left:10px;bottom:10px;align-items:center}
+  .vb{min-height:44px;padding:0 12px;border-radius:12px;border:1px solid rgba(20,38,59,.12);background:rgba(255,255,255,.9);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);font-weight:800;font-size:14px;color:#34495e;cursor:pointer;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 10px rgba(20,38,59,.08)}
+  .vb:active{transform:scale(.96)}
+  .vb .dot{width:12px;height:12px;border-radius:50%;flex:none}
+  .vb[aria-pressed="false"]{opacity:.62}
+  .vb[aria-pressed="false"] .dot{background:#c2ccd6!important}
+  .vb.sel{background:#14263b;color:#fff;border-color:#14263b}
+  .hint{font-size:12.5px;font-weight:700;color:#5a6b7e;background:rgba(255,255,255,.78);border-radius:10px;padding:6px 10px;word-break:keep-all}
+  .inset{position:absolute;z-index:2;border-radius:18px;border:2px solid rgba(255,255,255,.95);box-shadow:0 10px 30px rgba(20,38,59,.22),inset 0 0 0 1px rgba(20,38,59,.08);pointer-events:none;display:none}
+  .inset.on{display:block}
+  .inset .it{position:absolute;left:8px;top:8px;font-size:12.5px;font-weight:900;color:#14263b;background:rgba(255,255,255,.9);border-radius:8px;padding:3px 8px}
+  .inset .ic{position:absolute;left:6px;right:6px;bottom:6px;display:flex;flex-wrap:wrap;gap:4px;justify-content:center}
+  .inset .ic span{font-size:11.5px;font-weight:800;color:#fff;border-radius:7px;padding:2px 7px;white-space:nowrap}
+  .fail3d{position:absolute;inset:0;display:none;place-items:center;text-align:center;padding:24px;font-size:16px;font-weight:700;color:#7a2a22;line-height:1.7;word-break:keep-all;background:#fff4f2}
+  .fail3d.show{display:grid}
+  .model{font-size:13px;color:var(--muted);text-align:right;margin:0;word-break:keep-all}
+  @media (max-width:900px){.gl-host{height:min(56vh,620px)}}
+  /* ===== 이 수업 전용 ===== */
+  :root{--ev:#0f4c81;--ev2:#19a7c9;--ev-soft:#e3f1f8;--el:#f0b429;--rg:#2bb673;--accent:#0f4c81;--accent-soft:#e3f1f8}
+  .hero{background:radial-gradient(60% 70% at 88% 12%,rgba(25,167,201,.4) 0%,transparent 60%),radial-gradient(60% 60% at 10% 100%,rgba(240,180,41,.2) 0%,transparent 60%),linear-gradient(160deg,#08182b,#0e2c4a 55%,#10314f)}
+  .start{color:var(--ev)}
+  .bar i{background:linear-gradient(90deg,var(--el),var(--ev2),var(--ev))}
+  .hfig{border-radius:22px;overflow:hidden;box-shadow:0 18px 50px rgba(0,0,0,.4);background:#0b1d31}
+  .hfig svg{display:block;width:100%;height:auto;filter:none}
+  .defn{display:block;line-height:1.8}.defn .k{display:inline-block;margin-right:8px;vertical-align:1px}
+  .defn.ev{background:var(--ev-soft);border-color:#bfdced}.defn.ev .k{background:var(--ev)}
+  .src{display:block;font-size:12.5px;color:var(--muted);margin-top:6px;word-break:keep-all}
+  .sources{font-size:13px;color:var(--muted);line-height:1.7;word-break:keep-all}
+  .sources li{margin:2px 0}
+  .recall{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:16px;align-items:center}
+  .backs{display:flex;flex-direction:column;gap:8px}
+  .nums{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:14px 0}
+  .num{background:#f8fafc;border:1px solid var(--line);border-radius:16px;padding:14px 12px;text-align:center}
+  .num b{display:block;font-size:clamp(21px,2.8vw,28px);letter-spacing:-.02em;line-height:1.25;color:var(--ev)}
+  .num span{display:block;font-size:calc(var(--fs) - 3.5px);font-weight:700;color:var(--ink2);word-break:keep-all;margin-top:4px;line-height:1.5}
+  .num small{display:block;font-size:12px;color:#8a98a8;margin-top:4px;word-break:keep-all}
+  .calc{margin:16px 0;border-radius:20px;background:linear-gradient(135deg,#fffaf0,#fff);border:2px solid #f3dc9a;padding:16px 18px}
+  .calc h4{margin:0 0 8px;font-size:calc(var(--fs) + 1px);display:flex;align-items:center;gap:8px;word-break:keep-all}
+  .calc h4 i{font-style:normal;font-size:12.5px;font-weight:900;color:#fff;background:#b07800;border-radius:8px;padding:2px 8px;flex:none}
+  .calc .row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;font-size:calc(var(--fs) - 1px);font-weight:800;color:var(--ink2);margin:6px 0;word-break:keep-all}
+  .calc .row .eq{font-family:ui-monospace,Consolas,monospace;background:#14263b;color:#ffd76a;border-radius:10px;padding:4px 10px;font-size:15px;white-space:nowrap}
+  .calc p{margin:6px 0 0;font-size:calc(var(--fs) - 2px);line-height:1.7;color:var(--ink2);word-break:keep-all}
+  .fig2{margin:14px 0;background:#f8fafc;border:1px solid var(--line);border-radius:18px;padding:12px}
+  .fig2 svg{display:block;width:100%;height:auto}
+  .fig2 .cap{font-size:13.5px;color:var(--muted);text-align:center;margin-top:6px;word-break:keep-all;line-height:1.6}
+  .ctlrow{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:8px 0 2px}
+  .tg{min-height:48px;padding:0 18px;border-radius:14px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15.5px;cursor:pointer}
+  .tg.on{border-color:var(--ev);background:var(--ev-soft);color:var(--ev)}
+  .tg.rg.on{border-color:#15895a;background:#e2f5ec;color:#0a5540}
+  .stat{text-align:center;font-size:15.5px;font-weight:700;color:var(--ink2);margin:8px 0 0;min-height:24px;word-break:keep-all;line-height:1.65}
+  .ways{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:14px 0}
+  .way{display:grid;grid-template-columns:44px 1fr;gap:10px;align-items:start;border-radius:16px;padding:12px 14px;background:#f8fafc;border:1px solid var(--line)}
+  .way .ic{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;font-weight:900;font-size:18px}
+  .way .ic svg{width:24px;height:24px}
+  .way>div>b{display:block;font-size:calc(var(--fs) - .5px);margin-bottom:2px;word-break:keep-all}
+  .way p{margin:0;font-size:calc(var(--fs) - 3px);line-height:1.65;color:var(--ink2);word-break:keep-all}
+  .way small{display:block;font-size:12px;color:var(--muted);margin-top:4px;word-break:keep-all}
+  .case{border-radius:20px;border:2px solid #bfdced;background:linear-gradient(135deg,#eef7fc,#fff);padding:16px 18px;margin:14px 0}
+  .case h4{margin:0 0 8px;font-size:calc(var(--fs) + 1px);color:var(--ev);word-break:keep-all}
+  .case ul{margin:6px 0 0;padding-left:20px}
+  .case li{font-size:calc(var(--fs) - 2px);line-height:1.75;color:var(--ink2);word-break:keep-all;margin:2px 0}
+  .case p{font-size:calc(var(--fs) - 2px)!important;margin:6px 0 0!important}
+  .jobs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:14px 0}
+  .job{border-radius:16px;padding:12px 14px;background:#fff;border:1px solid var(--line);box-shadow:0 1px 2px rgba(20,38,59,.04)}
+  .job b{display:block;font-size:calc(var(--fs) - 1px);color:var(--ev);margin-bottom:4px;word-break:keep-all}
+  .job p{margin:0!important;font-size:calc(var(--fs) - 3.5px)!important;line-height:1.6!important;color:var(--ink2);word-break:keep-all}
+  .chips{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:14px 0}
+  .chipc{border-radius:16px;padding:14px;background:#14263b;color:#fff;text-align:center}
+  .chipc b{display:block;font-size:clamp(22px,3vw,30px);color:#ffd76a;letter-spacing:-.02em}
+  .chipc span{display:block;font-size:calc(var(--fs) - 3px);font-weight:700;line-height:1.5;margin-top:4px;word-break:keep-all}
+  .chipc small{display:block;font-size:12px;color:#9fb3c4;margin-top:4px;word-break:keep-all}
+  .dots{display:flex;flex-wrap:wrap;gap:2px;margin-top:8px;justify-content:center}
+  .dots i{width:6px;height:6px;border-radius:2px;background:#3a5470}
+  .dots i.on{background:#ffd76a}
+  .next{grid-template-columns:repeat(3,1fr)!important}
+  .legend{display:flex;flex-wrap:wrap;gap:10px 16px;justify-content:center;font-size:13.5px;font-weight:800;color:var(--ink2);margin-top:4px}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .legend i{width:12px;height:12px;border-radius:50%;display:inline-block}
+  @media (max-width:860px){.recall,.ways,.chips{grid-template-columns:1fr}.nums{grid-template-columns:1fr}.jobs{grid-template-columns:1fr 1fr}}
+  @media (max-width:520px){.jobs{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-in">
+    <div>
+      <span class="kick">읽기 자료 · 교양과 진로</span>
+      <h1>전기 자동차 한 대 뜯어보기</h1>
+      <p>전기 자동차에는 지금까지 배운 것이 모두 들어 있어요. 바닥의 배터리, 바퀴를 돌리는 전동기, 수천 개의 반도체와 MLCC까지. 그림 속 노란 알갱이는 배터리에서 전동기로 가는 전기 에너지예요. 차 한 대를 뜯어보며 배운 것을 다시 만나 봐요.</p>
+      <div class="route"><span>① 엔진 대신 전동기</span><span>② 차 속 에너지의 길</span><span>③ 얼마나 갈까, 어떻게 채울까</span><span>④ 도로 위의 변화와 진로</span></div>
+      <button class="start" type="button" data-go="r1">읽기 시작하기
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg></button>
+    </div>
+    <div class="hfig">
+      <svg id="heroSvg" viewBox="0 0 640 440" role="img" aria-label="옆에서 본 투명한 전기 자동차. 바닥에 배터리 팩이 깔려 있고, 뒷바퀴 쪽 전동기로 노란 에너지 알갱이가 흘러가며 바퀴가 돈다.">
+        <defs>
+          <linearGradient id="hBg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0f2740"/><stop offset="1" stop-color="#091726"/></linearGradient>
+          <linearGradient id="hBody" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="rgba(220,236,250,.22)"/><stop offset="1" stop-color="rgba(160,200,235,.1)"/></linearGradient>
+          <linearGradient id="hGlass" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="rgba(120,190,240,.35)"/><stop offset="1" stop-color="rgba(60,120,180,.15)"/></linearGradient>
+          <linearGradient id="hCell" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5fd39a"/><stop offset="1" stop-color="#1c8a5c"/></linearGradient>
+          <linearGradient id="hMetal" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e3e8ee"/><stop offset="1" stop-color="#8a98a8"/></linearGradient>
+          <linearGradient id="hRoad" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#25303d"/><stop offset="1" stop-color="#151c25"/></linearGradient>
+          <filter id="hGlow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="2.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          <filter id="hSh" x="-20%" y="-20%" width="140%" height="160%"><feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#000" flood-opacity=".45"/></filter>
+        </defs>
+        <rect width="640" height="440" fill="url(#hBg)"/>
+        <g opacity=".07" stroke="#9fd2ff"><path d="M0 70 H640 M0 140 H640 M0 210 H640 M0 280 H640"/><path d="M80 0 V300 M160 0 V300 M240 0 V300 M320 0 V300 M400 0 V300 M480 0 V300 M560 0 V300"/></g>
+        <rect x="0" y="372" width="640" height="68" fill="url(#hRoad)"/>
+        <g id="hDash" fill="#f0d27a" opacity=".7"></g>
+        <!-- 차 몸체 -->
+        <path d="M66 326 C60 296 66 268 92 258 L176 236 C214 190 250 168 316 166 L400 166 C450 168 486 196 516 232 L566 248 C590 256 600 286 596 326 Z" fill="url(#hBody)" stroke="rgba(190,220,250,.75)" stroke-width="2.5"/>
+        <path d="M196 236 C226 198 258 182 312 180 L330 180 L330 236 Z" fill="url(#hGlass)" stroke="rgba(190,220,250,.5)" stroke-width="1.5"/>
+        <path d="M344 180 L396 180 C436 182 462 204 486 236 L344 236 Z" fill="url(#hGlass)" stroke="rgba(190,220,250,.5)" stroke-width="1.5"/>
+        <!-- 배터리 팩 -->
+        <g filter="url(#hSh)"><rect x="150" y="292" width="340" height="30" rx="6" fill="#1b2633" stroke="#5d6b7a" stroke-width="1.5"/></g>
+        <g id="hCells"></g>
+        <!-- 전기를 바꿔 주는 장치 -->
+        <g filter="url(#hSh)"><rect x="404" y="256" width="44" height="30" rx="6" fill="#0f4c81" stroke="#7cc4ea" stroke-width="1.5"/><g fill="#0b1d31"><rect x="412" y="264" width="10" height="10" rx="2"/><rect x="428" y="264" width="10" height="10" rx="2"/></g></g>
+        <!-- 전동기 -->
+        <g filter="url(#hSh)"><circle cx="478" cy="306" r="24" fill="url(#hMetal)"/><circle cx="478" cy="306" r="16" fill="#c0703a"/><circle cx="478" cy="306" r="7" fill="#5d6b7a"/></g>
+        <!-- 에너지 길 -->
+        <path id="hE1" d="M330 300 C370 296 394 286 410 276" fill="none" stroke="rgba(240,180,41,.35)" stroke-width="4" stroke-linecap="round"/>
+        <path id="hE2" d="M446 272 C462 278 472 288 476 296" fill="none" stroke="rgba(240,180,41,.35)" stroke-width="4" stroke-linecap="round"/>
+        <!-- 바퀴 -->
+        <g id="hW1" transform="translate(172 336)"><circle r="40" fill="#11161d" stroke="#3a4656" stroke-width="3"/><circle r="24" fill="url(#hMetal)"/><g class="sp" stroke="#5d6b7a" stroke-width="4" stroke-linecap="round"><path d="M0 -20 V20 M-20 0 H20 M-14 -14 L14 14 M14 -14 L-14 14"/></g><circle r="6" fill="#3a4656"/></g>
+        <g id="hW2" transform="translate(478 336)"><circle r="40" fill="#11161d" stroke="#3a4656" stroke-width="3"/><circle r="24" fill="url(#hMetal)"/><g class="sp" stroke="#5d6b7a" stroke-width="4" stroke-linecap="round"><path d="M0 -20 V20 M-20 0 H20 M-14 -14 L14 14 M14 -14 L-14 14"/></g><circle r="6" fill="#3a4656"/></g>
+        <!-- 충전구 -->
+        <g transform="translate(560 262)"><rect x="-10" y="-10" width="20" height="20" rx="4" fill="#0f4c81" stroke="#7cc4ea" stroke-width="1.5"/><path d="M2 -6 L-4 1 H0 L-2 6 L4 -1 H0Z" fill="#ffd34d"/></g>
+        <!-- 이름표 -->
+        <g font-size="13" font-weight="900">
+          <rect x="196" y="130" width="96" height="26" rx="8" fill="#2bb673"/><text x="244" y="148" text-anchor="middle" fill="#fff">배터리 팩</text>
+          <path d="M244 156 L244 290" stroke="#2bb673" stroke-width="1.5" stroke-dasharray="3 4"/>
+          <rect x="474" y="118" width="74" height="26" rx="8" fill="#c0703a"/><text x="511" y="136" text-anchor="middle" fill="#fff">전동기</text>
+          <path d="M500 144 L484 282" stroke="#c0703a" stroke-width="1.5" stroke-dasharray="3 4"/>
+          <rect x="330" y="96" width="124" height="26" rx="8" fill="#0f4c81" stroke="#7cc4ea"/><text x="392" y="114" text-anchor="middle" fill="#fff">전기 바꾸는 장치</text>
+          <path d="M410 122 L424 254" stroke="#7cc4ea" stroke-width="1.5" stroke-dasharray="3 4"/>
+          <text x="560" y="300" text-anchor="middle" font-size="11.5" fill="#9fd2ff">충전구</text>
+        </g>
+        <g font-size="12" font-weight="800" transform="translate(30 40)"><circle cx="6" cy="-4" r="6" fill="#f0b429"/><text x="18" y="0" fill="#ffd76a">전기 에너지의 흐름</text></g>
+      </svg>
+    </div>
+  </div>
+</header>
+
+<nav class="nav" aria-label="학습 순서">
+  <div class="nav-in">
+    <button class="step" data-go="r1" type="button"><span class="n">1</span><span class="t">엔진 대신 전동기</span></button>
+    <button class="step" data-go="r2" type="button"><span class="n">2</span><span class="t">에너지의 길</span></button>
+    <button class="step" data-go="q1" type="button"><span class="n">3</span><span class="t">퀴즈 ①</span></button>
+    <button class="step" data-go="r3" type="button"><span class="n">4</span><span class="t">얼마나 갈까</span></button>
+    <button class="step" data-go="r4" type="button"><span class="n">5</span><span class="t">변화와 진로</span></button>
+    <button class="step" data-go="q2" type="button"><span class="n">6</span><span class="t">퀴즈 ②</span></button>
+    <span class="nav-sp"></span>
+    <div class="fsz" role="group" aria-label="글자 크기"><button type="button" id="fsN" aria-pressed="true">가</button><button type="button" id="fsB" aria-pressed="false" style="font-size:19px">가</button></div>
+  </div>
+  <div class="bar"><i id="progress"></i></div>
+</nav>
+
+<main>
+  <!-- ① -->
+  <section class="part" id="r1">
+    <div class="sec-kick">읽기 ① <span class="time">약 7분</span></div>
+    <h2>엔진 대신 전동기</h2>
+    <article class="card read reveal">
+      <div class="recall">
+        <p>전동기 수업 교과서에 이런 문장이 있었지요. "스마트폰의 진동을 일으키는 것처럼 크기가 작은 것도 있고, <b>전기 자동차를 움직이는 것처럼 큰 것도 있다.</b>" 오늘은 그 큰 전동기가 들어 있는 전기 자동차를 뜯어보며, 지금까지 배운 <mark>배터리, 반도체, MLCC, 전력량</mark>을 차 한 대 안에서 다시 만나 봐요.</p>
+        <div class="backs">
+          <a class="backlink" href="../motor-force/" target="_top">지난 수업: 자기장 속 코일이 받는 힘(전동기)</a>
+          <a class="backlink" href="../battery/" target="_top">지난 자료: 배터리, 전기를 오래 담는 그릇</a>
+          <a class="backlink" href="../electric-energy/" target="_top">지난 수업: 전기 에너지와 소비 전력</a>
+        </div>
+      </div>
+    </article>
+    <article class="card read reveal">
+      <p>엔진 자동차는 연료 탱크의 휘발유나 경유를 엔진 속에서 태워 그 힘으로 바퀴를 돌려요. 전기 자동차에는 엔진도, 연료 탱크도, 배기관도 없어요. 대신 바닥의 <b>배터리 팩</b>에 담아 둔 전기로 <b>전동기</b>를 돌려 바퀴를 굴려요. 아래 단추로 두 자동차 속을 비교해 보세요.</p>
+      <div class="fig2">
+        <svg id="cmpSvg" viewBox="0 0 760 300" role="img" aria-label="같은 차 모양 안에 엔진 자동차의 엔진, 변속기, 연료 탱크, 배기관 또는 전기 자동차의 배터리 팩, 전동기, 전기 바꾸는 장치, 충전구를 바꿔 보여 주는 그림.">
+          <defs>
+            <linearGradient id="cBody" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#eef5fb"/><stop offset="1" stop-color="#dbe8f3"/></linearGradient>
+            <linearGradient id="cEng" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8a98a8"/><stop offset="1" stop-color="#4a5563"/></linearGradient>
+            <linearGradient id="cCell" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5fd39a"/><stop offset="1" stop-color="#1c8a5c"/></linearGradient>
+          </defs>
+          <rect x="4" y="4" width="752" height="292" rx="18" fill="#fff" stroke="#e1e8ef" stroke-width="2"/>
+          <path d="M70 232 C64 206 70 182 96 172 L190 150 C232 106 270 88 340 86 L430 86 C486 88 524 114 556 150 L640 166 C670 174 684 202 680 232 Z" fill="url(#cBody)" stroke="#9fb3c4" stroke-width="2.5"/>
+          <path d="M214 150 C246 114 280 100 332 98 L352 98 L352 150 Z M368 98 L428 98 C470 100 500 122 526 150 L368 150 Z" fill="#cfe3f2" stroke="#9fb3c4" stroke-width="1.5"/>
+          <g fill="#14263b"><circle cx="176" cy="240" r="36"/><circle cx="560" cy="240" r="36"/></g><g fill="#c9d2db"><circle cx="176" cy="240" r="18"/><circle cx="560" cy="240" r="18"/></g>
+          <!-- 엔진차 -->
+          <g id="gIce">
+            <rect x="590" y="170" width="70" height="52" rx="8" fill="url(#cEng)"/><g fill="#2b313b"><rect x="598" y="160" width="14" height="14" rx="2"/><rect x="618" y="160" width="14" height="14" rx="2"/><rect x="638" y="160" width="14" height="14" rx="2"/></g>
+            <text x="625" y="202" text-anchor="middle" font-size="13" font-weight="900" fill="#fff">엔진</text>
+            <rect x="520" y="194" width="62" height="28" rx="6" fill="#6b7787"/><text x="551" y="213" text-anchor="middle" font-size="11.5" font-weight="900" fill="#fff">변속기</text>
+            <path d="M520 214 H206" stroke="#6b7787" stroke-width="7" stroke-linecap="round"/>
+            <rect x="200" y="176" width="74" height="34" rx="8" fill="#e8a000"/><text x="237" y="198" text-anchor="middle" font-size="12" font-weight="900" fill="#fff">연료 탱크</text>
+            <path d="M600 226 C560 238 300 240 120 236 L76 236" fill="none" stroke="#8a98a8" stroke-width="5" stroke-linecap="round"/>
+            <text x="96" y="262" text-anchor="middle" font-size="12" font-weight="800" fill="#627386">배기관</text>
+            <g id="smoke" fill="rgba(130,140,150,.4)"><circle cx="64" cy="232" r="7"/><circle cx="48" cy="226" r="9"/><circle cx="30" cy="218" r="11"/></g>
+          </g>
+          <!-- 전기차 -->
+          <g id="gEv" opacity="0">
+            <rect x="196" y="200" width="344" height="26" rx="6" fill="#1b2633"/>
+            <g id="cmpCells"></g>
+            <text x="368" y="252" text-anchor="middle" font-size="13" font-weight="900" fill="#0a5540">배터리 팩(바닥)</text>
+            <circle cx="560" cy="200" r="22" fill="#c9ced6" stroke="#8a98a8" stroke-width="2"/><circle cx="560" cy="200" r="13" fill="#c0703a"/>
+            <text x="600" y="154" text-anchor="middle" font-size="12.5" font-weight="900" fill="#8a4a20">전동기</text>
+            <rect x="488" y="160" width="42" height="26" rx="6" fill="#0f4c81"/><text x="509" y="150" text-anchor="middle" font-size="11.5" font-weight="900" fill="#0f4c81">전기 바꾸는 장치</text>
+            <rect x="654" y="176" width="18" height="18" rx="4" fill="#0f4c81"/><path d="M665 179 L659 186 H663 L661 191 L667 184 H663Z" fill="#ffd34d"/>
+            <text x="663" y="214" text-anchor="middle" font-size="11.5" font-weight="900" fill="#0f4c81">충전구</text>
+            <path id="cmpE" d="M470 213 C496 206 500 190 509 186 M530 176 C546 182 552 190 556 196" fill="none" stroke="rgba(240,180,41,.45)" stroke-width="3"/>
+          </g>
+          <text id="cmpT" x="380" y="40" text-anchor="middle" font-size="17" font-weight="900" fill="#14263b">엔진 자동차</text>
+        </svg>
+        <div class="ctlrow"><button type="button" class="tg on" id="cIce">엔진 자동차</button><button type="button" class="tg" id="cEv">전기 자동차</button></div>
+        <p class="stat" id="cmpStat"></p>
+      </div>
+      <div class="nums">
+        <div class="num"><b>약 3만 개</b><span>엔진 자동차 한 대의 부품</span><small>한국고용정보원 분석 보도(2026-08)</small></div>
+        <div class="num"><b>약 37%</b><span>그 가운데 전기 자동차에는 필요 없는 부품(약 1만 1천 개)</span><small>같은 보도</small></div>
+        <div class="num"><b>조용해요</b><span>엔진 소리 대신 전동기가 도는 작은 소리만 나요</span><small>그래서 저속에서 일부러 소리를 내기도 해요</small></div>
+      </div>
+      <p>부품이 줄면 엔진 부품을 만들던 회사와 사람들의 일도 바뀌어요. 대신 배터리, 전동기, 반도체, 소프트웨어를 만드는 일이 늘어나요. 읽기 ④에서 이 변화를 다시 살펴봐요.</p>
+    </article>
+    <details class="pause reveal"><summary><span class="pi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5b4300" stroke-width="2.4" stroke-linecap="round"><path d="M9 9a3 3 0 1 1 4 2.8c-.7.3-1 .9-1 1.6V14M12 18h.01"/></svg></span>생각 멈춤: 엔진 자동차의 '연료 탱크'에 해당하는 전기 자동차 부품은 무엇일까요?<span class="tap">눌러서 확인</span></summary>
+      <div class="ans"><b>배터리 팩</b>이에요. 현대자동차그룹도 배터리를 "엔진 자동차의 연료 탱크에 해당"한다고 설명해요. 다만 연료 탱크는 연료를 넣으면 바로 채워지지만, 배터리는 충전기로 전기를 넣어 <b>충전</b>해야 하고 시간이 걸려요.</div></details>
+  </section>
+
+  <!-- ② -->
+  <section class="part" id="r2">
+    <div class="sec-kick">읽기 ② <span class="time">약 9분</span></div>
+    <h2>차 속 에너지의 길</h2>
+    <article class="card read reveal">
+      <p>전기 자동차 안에서 에너지는 정해진 길을 따라가요. 회사가 설명하는 부품의 역할을 쉬운 말로 정리하면 이래요.</p>
+      <div class="ways">
+        <div class="way"><span class="ic" style="background:#e2f5ec;color:#0a5540">1</span><div><b>배터리 팩</b><p>차 바닥에 넓게 깔린 셀 수백 개. 전기 에너지를 담아 둬요. 관리 장치(BMS)가 셀마다 온도와 남은 양을 지켜봐요.</p></div></div>
+        <div class="way"><span class="ic" style="background:var(--ev-soft);color:var(--ev)">2</span><div><b>전기를 바꿔 주는 장치</b><p>배터리의 전기를 전동기가 쓰기 좋은 모양으로 바꿔요(인버터라고 불러요). 큰 전기를 아주 빠르게 켜고 끄는 <b>전력 반도체</b>가 들어 있어요.</p></div></div>
+        <div class="way"><span class="ic" style="background:#fbeee5;color:#8a4a20">3</span><div><b>전동기(구동 모터)</b><p>자석과 코일로 된 큰 전동기예요. <b>전기 에너지를 운동 에너지로</b> 바꿔 바퀴를 굴려요. 전동기 수업에서 본 원리 그대로예요.</p></div></div>
+        <div class="way"><span class="ic" style="background:#f1f3f5;color:#5a6b7e">4</span><div><b>감속기와 바퀴</b><p>전동기는 아주 빠르게 돌아요. 감속기가 그 회전을 바퀴에 알맞게 느리게 바꿔 전해요.</p></div></div>
+      </div>
+      <p>그런데 전기 자동차에는 엔진 자동차에 없는 재주가 하나 더 있어요. 속도를 줄일 때 달리던 차의 <b>운동 에너지를 전기 에너지로 바꿔 배터리에 다시 담는</b> 거예요. 이것을 <button class="term" data-term="회생 제동">회생 제동</button>이라고 해요. 아래 도식에서 세 가지 순간을 비교해 보세요.</p>
+      <div class="fig2">
+        <svg id="flowSvg" viewBox="0 0 760 300" role="img" aria-label="배터리 팩에서 전기 바꾸는 장치, 전동기, 감속기, 바퀴로 이어지는 에너지의 길. 출발할 때는 노란 알갱이가 많이 빠르게 흐르고, 속도를 줄일 때는 초록 알갱이가 바퀴에서 배터리 쪽으로 거꾸로 흐른다.">
+          <defs>
+            <linearGradient id="fBox" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#eef3f8"/></linearGradient>
+            <linearGradient id="fCell" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5fd39a"/><stop offset="1" stop-color="#1c8a5c"/></linearGradient>
+            <filter id="fSh" x="-20%" y="-20%" width="140%" height="160%"><feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#14263b" flood-opacity=".14"/></filter>
+          </defs>
+          <rect x="4" y="4" width="752" height="292" rx="18" fill="#f6f9fc"/>
+          <path id="fPath" d="M150 150 H232 M332 150 H402 M498 150 H552 M616 150 H660" fill="none" stroke="#d5dee8" stroke-width="10" stroke-linecap="round"/>
+          <path id="fGo" d="M150 150 H670" fill="none" stroke="none"/>
+          <path id="fBack" d="M670 150 H150" fill="none" stroke="none"/>
+          <g filter="url(#fSh)">
+            <g transform="translate(30 92)"><rect width="120" height="116" rx="14" fill="url(#fBox)" stroke="#bfe6d2" stroke-width="2"/><rect x="16" y="20" width="88" height="70" rx="8" fill="#e8eef3"/><rect id="fLvl" x="16" y="20" width="88" height="70" rx="8" fill="url(#fCell)"/><text x="60" y="108" text-anchor="middle" font-size="13" font-weight="900" fill="#0a5540">배터리 팩</text></g>
+            <g transform="translate(232 98)"><rect width="100" height="104" rx="14" fill="url(#fBox)" stroke="#bfdced" stroke-width="2"/><g fill="#14263b"><rect x="22" y="22" width="22" height="22" rx="3"/><rect x="56" y="22" width="22" height="22" rx="3"/><rect x="22" y="52" width="22" height="22" rx="3"/><rect x="56" y="52" width="22" height="22" rx="3"/></g><text x="50" y="96" text-anchor="middle" font-size="11.5" font-weight="900" fill="#0f4c81">전기 바꾸는 장치</text></g>
+            <g transform="translate(402 98)"><rect width="96" height="104" rx="14" fill="url(#fBox)" stroke="#f0cdb5" stroke-width="2"/><circle cx="48" cy="46" r="30" fill="#c9ced6"/><g id="fRotor" transform="translate(48 46)"><circle r="20" fill="#c0703a"/><path d="M0 -20 V20 M-20 0 H20" stroke="#8a4a20" stroke-width="3"/></g><text x="48" y="96" text-anchor="middle" font-size="13" font-weight="900" fill="#8a4a20">전동기</text></g>
+            <g transform="translate(552 108)"><rect width="64" height="84" rx="12" fill="url(#fBox)" stroke="#c9d6e2" stroke-width="2"/><circle cx="32" cy="36" r="20" fill="none" stroke="#5d6b7a" stroke-width="5" stroke-dasharray="5 4"/><text x="32" y="76" text-anchor="middle" font-size="12" font-weight="900" fill="#34495e">감속기</text></g>
+            <g id="fWheel" transform="translate(694 150)"><circle r="44" fill="#14263b"/><circle r="26" fill="#c9d2db"/><path d="M0 -22 V22 M-22 0 H22" stroke="#5d6b7a" stroke-width="5"/></g>
+          </g>
+          <text x="694" y="218" text-anchor="middle" font-size="13" font-weight="900" fill="#14263b">바퀴</text>
+          <text id="fMode" x="380" y="44" text-anchor="middle" font-size="16" font-weight="900" fill="#14263b"></text>
+          <text id="fNote" x="380" y="260" text-anchor="middle" font-size="13.5" font-weight="800" fill="#627386"></text>
+        </svg>
+        <div class="ctlrow"><button type="button" class="tg on" data-fm="go">출발·가속</button><button type="button" class="tg" data-fm="cruise">일정하게 달리기</button><button type="button" class="tg rg" data-fm="regen">속도 줄이기</button></div>
+        <p class="stat" id="fStat"></p>
+        <div class="legend"><span><i style="background:#f0b429"></i>배터리에서 나가는 전기 에너지</span><span><i style="background:#2bb673"></i>다시 담기는 에너지(회생 제동)</span></div>
+        <p class="model" style="text-align:center">개념 이해를 위한 모형이에요. 알갱이 수와 빠르기, 배터리 막대는 비교만 하는 것이에요.</p>
+      </div>
+      <p>회생 제동으로 모든 에너지를 되돌려 받는 것은 아니에요. 일부는 열이나 소리로 빠져나가요. 그래도 신호가 많은 시내나 긴 내리막에서는 배터리를 꽤 다시 채울 수 있어요. 어떤 차는 가속 페달 하나만으로 속도를 줄이며 회생 제동을 쓰게 해 주기도 해요.</p>
+    </article>
+    <article class="card read reveal">
+      <h3>차 한 대에 들어가는 반도체와 MLCC</h3>
+      <p>전기 자동차는 '바퀴 달린 컴퓨터'라고도 불러요. 배터리를 지켜보고, 전동기에 보낼 전기를 조절하고, 화면과 센서를 다루는 일을 모두 반도체가 해요.</p>
+      <div class="chips">
+        <div class="chipc"><b>200~300개 → 2,000개 이상</b><span>엔진 자동차와 전기 자동차에 필요한 반도체 수</span><small>산업통상자원부(2021) 예상치</small><div class="dots" id="chipDots" aria-hidden="true"></div></div>
+        <div class="chipc"><b>3,000~1만 개</b><span>자동차 한 대에 들어가는 MLCC(칩 곁의 작은 댐)</span><small>삼성전기 뉴스룸(2023)</small></div>
+      </div>
+      <p>특히 전기를 바꿔 주는 장치 속 <b>전력 반도체</b>는 배터리의 큰 전기를 1초에 수없이 켜고 끄며 전동기가 쓸 전기를 만들어요. 「여기도, 저기도 반도체」에서 읽은 "최소한의 전기 에너지로 배터리를 효율적으로 사용"하게 해 주는 반도체가 바로 이것이에요.</p>
+      <a class="simlink" data-link="car" target="_blank" rel="noopener" style="background:linear-gradient(120deg,#0f4c81,#19a7c9)">
+        <span class="si"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l9 5v10l-9 5-9-5V7z"/><path d="M12 22V12M21 7l-9 5-9-5"/></svg></span>
+        <span><b>3D 전기 자동차 해부</b><span>몸체를 투명하게 하고 부품 찾기, 엔진차와 비교, 가속·회생 제동 에너지 흐름 보기</span></span>
+        <svg class="go" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></a>
+    </article>
+    <details class="pause reveal"><summary><span class="pi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5b4300" stroke-width="2.4" stroke-linecap="round"><path d="M9 9a3 3 0 1 1 4 2.8c-.7.3-1 .9-1 1.6V14M12 18h.01"/></svg></span>생각 멈춤: 엔진 자동차는 브레이크를 밟을 때 달리던 운동 에너지가 어디로 갈까요?<span class="tap">눌러서 확인</span></summary>
+      <div class="ans">브레이크가 바퀴를 문질러 멈추게 하면서 운동 에너지가 대부분 <b>열에너지</b>로 바뀌어 공기 중으로 흩어져요. 전기 자동차는 이 에너지의 일부를 <b>전기 에너지로 바꿔 배터리에 다시 담아</b> 다음에 써요. 에너지 전환 관점에서 보면 버려지던 에너지를 되살리는 셈이에요.</div></details>
+  </section>
+
+  <section class="part" id="q1">
+    <div class="sec-kick">퀴즈 ① <span class="time">5문항</span></div>
+    <h2>전기 자동차의 구조 확인하기</h2>
+    <div class="quiz" data-quiz="q1"></div>
+  </section>
+
+  <!-- ③ -->
+  <section class="part" id="r3">
+    <div class="sec-kick">읽기 ③ <span class="time">약 8분</span></div>
+    <h2>얼마나 갈까, 어떻게 채울까</h2>
+    <article class="card read reveal">
+      <p>엔진 자동차는 연료 1 L로 몇 km를 가는지(연비)를 따져요. 전기 자동차는 전기 <b>1 kWh로 몇 km를 가는지</b>를 따지고, 이것을 <button class="term" data-term="전비">전비</button>라고 불러요. 전기 에너지 시간에 배운 kWh가 여기에 나와요.</p>
+      <div class="calc">
+        <h4><i>계산</i>배터리 80 kWh, 전비 5 km/kWh인 차는 얼마나 갈까?</h4>
+        <div class="row">갈 수 있는 거리 = 배터리에 담긴 전력량 × 전비</div>
+        <div class="row"><span class="eq">80 kWh × 5 km/kWh = 400 km</span></div>
+        <div class="row">서울에서 부산까지 고속도로로 약 400 km예요. <span class="eq">한 번 충전으로 거의 갈 수 있어요</span></div>
+        <p>계산하기 쉽게 만든 가상의 차예요. 실제 차는 아이오닉 5(84 kWh, 485 km), 캐스퍼 일렉트릭(49 kWh, 315 km)처럼 차종마다 다르고, 인증 방법 때문에 위 계산과 꼭 맞지는 않아요(2024~2025년 발표·보도값).</p>
+      </div>
+      <p>같은 차라도 갈 수 있는 거리는 달라져요. <b>급하게 출발하고 빨리 달리면</b> 전동기가 전기를 더 많이 써요. <b>추운 날</b>에는 배터리가 내놓는 전기가 줄고 차 안을 데우는 데에도 전기를 써서 덜 가요. 반대로 신호가 많은 시내에서는 회생 제동으로 다시 채우는 에너지가 있어 생각보다 잘 가기도 해요.</p>
+      <a class="simlink" data-link="drive" target="_blank" rel="noopener" style="background:linear-gradient(120deg,#b07800,#e0a300)">
+        <span class="si"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18c3-6 6-9 9-9s6 3 9 9"/><circle cx="12" cy="9" r="2"/></svg></span>
+        <span><b>언덕길 주행 · 주행 거리 계산기</b><span>오르막에서 줄고 내리막에서 다시 차는 배터리, 계절과 운전 습관에 따라 바뀌는 거리</span></span>
+        <svg class="go" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></a>
+    </article>
+    <article class="card read reveal">
+      <h3>충전은 어떻게 할까</h3>
+      <div class="ways">
+        <div class="way"><span class="ic" style="background:#fff6dc"><svg viewBox="0 0 24 24" fill="none" stroke="#b07800" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg></span><div><b>급속 충전</b><p>고속도로 휴게소 같은 곳의 큰 충전기예요. 한 차종은 배터리를 10%에서 80%까지 약 <b>18분</b>에 채울 수 있다고 발표했어요(2021년 플랫폼 발표).</p></div></div>
+        <div class="way"><span class="ic" style="background:var(--ev-soft)"><svg viewBox="0 0 24 24" fill="none" stroke="#0f4c81" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M12 13v4"/></svg></span><div><b>완속 충전</b><p>아파트나 회사 주차장에서 밤새 천천히 채워요. 배터리에 부담이 덜하고, 대부분의 충전기가 완속이에요.</p></div></div>
+      </div>
+      <div class="nums">
+        <div class="num"><b>약 51만 기</b><span>전국 전기차 충전기(대부분 완속)</span><small>정부 발표(2026-04-29)</small></div>
+        <div class="num"><b>약 2대</b><span>충전기 1기를 함께 쓰는 전기 자동차 수</span><small>선생님 계산(2026년 상반기 기준)</small></div>
+        <div class="num"><b>18분</b><span>한 차종의 급속 충전 10% → 80%</span><small>현대자동차그룹 발표</small></div>
+      </div>
+      <p>2024년 여름 지하 주차장 전기차 화재 뒤, 정부는 충전 중 이상을 알아채는 똑똑한 충전기와 BMS 점검, 지하 주차장 스프링클러를 늘리기로 했어요. 일부 지역은 지하 주차장에서는 90%까지만 충전하도록 권하기도 했어요.</p>
+    </article>
+    <details class="pause reveal"><summary><span class="pi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5b4300" stroke-width="2.4" stroke-linecap="round"><path d="M9 9a3 3 0 1 1 4 2.8c-.7.3-1 .9-1 1.6V14M12 18h.01"/></svg></span>생각 멈춤: 전비가 6 km/kWh인 차와 4 km/kWh인 차가 있어요. 같은 거리를 가면 어느 차가 전기를 덜 쓸까요?<span class="tap">눌러서 확인</span></summary>
+      <div class="ans">1 kWh로 더 멀리 가는 <b>6 km/kWh</b>인 차예요. 예를 들어 120 km를 가려면 6 km/kWh인 차는 120 ÷ 6 = <b>20 kWh</b>, 4 km/kWh인 차는 120 ÷ 4 = <b>30 kWh</b>를 써요. 가볍고 공기 저항이 작은 차일수록 전비가 좋아요.</div></details>
+  </section>
+
+  <!-- ④ -->
+  <section class="part" id="r4">
+    <div class="sec-kick">읽기 ④ <span class="time">약 9분</span></div>
+    <h2>도로 위의 변화와 진로</h2>
+    <article class="card read reveal">
+      <div class="nums">
+        <div class="num"><b>109.5만 대</b><span>우리나라 전기 자동차(2026년 6월 말, 100만 대 돌파)</span><small>국토교통부</small></div>
+        <div class="num"><b>23%</b><span>2026년 상반기 새로 등록한 차 가운데 전기차(2025년 13%)</span><small>국토교통부 자료 보도</small></div>
+        <div class="num"><b>4대 중 1대</b><span>2025년 세계에서 팔린 새 차 가운데 전기차(2,000만 대 넘게)</span><small>국제에너지기구(IEA, 2026)</small></div>
+      </div>
+      <p>세계 전기 자동차의 약 4분의 3은 중국에서 만들어져요(IEA, 2025년). 우리나라 회사들도 전기차 전용 바닥 구조를 만들어 2021년부터 전용 전기차를 내놓고 있어요. 바닥에 납작한 배터리를 깔고 그 위에 차체를 올리는 이 구조를 선생님은 <b>'배터리 스케이트보드'</b>라고 불러요.</p>
+    </article>
+    <article class="card read reveal">
+      <h3>전기 자동차는 환경에 정말 좋을까</h3>
+      <p>달릴 때 배기가스가 나오지 않는 것은 분명한 장점이에요. 하지만 질문을 더 넓혀 봐야 해요.</p>
+      <div class="ways">
+        <div class="way"><span class="ic" style="background:#ffeee6"><svg viewBox="0 0 24 24" fill="none" stroke="#b8430a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16M6 20V9l5 3V9l5 3V5h3v15"/></svg></span><div><b>만들 때</b><p>배터리를 만드느라 엔진 자동차보다 탄소가 <b>더 많이</b> 나와요.</p></div></div>
+        <div class="way"><span class="ic" style="background:#e2f5ec"><svg viewBox="0 0 24 24" fill="none" stroke="#0a5540" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 15l2-5h14l2 5v3H3z"/><path d="M7 18v2M17 18v2"/></svg></span><div><b>달릴 때</b><p>오래 달릴수록 그 차이를 <b>갚아 나가</b>, 차의 일생 전체로는 대부분 탄소가 줄어요.</p></div></div>
+      </div>
+      <p>얼마나 줄어드는지는 충전하는 <b>전기를 어떻게 만드느냐</b>에 따라 달라요. 햇빛·바람 전기가 많은 곳일수록 더 많이 줄어요(IEA 분석). 「반도체와 지구」에서 본 것처럼, 기술 하나만으로가 아니라 전기를 만드는 방법까지 함께 봐야 해요.</p>
+      <div class="myth"><span class="x">✕</span><p><b>오개념 바로잡기: "전기차 불이 해마다 늘었으니 전기차가 더 위험하다?"</b><br>소방청 자료로 전기차 화재는 2020년 11건에서 2024년 73건으로 늘었어요. 하지만 같은 기간 전기차 수도 몇 배로 늘었어요. 차 수에 견주어 엔진 자동차보다 더 자주 불이 난다고 <b>단정할 수 없어요</b>. 숫자를 볼 때는 무엇에 견준 값인지 확인해야 해요.</p></div>
+    </article>
+    <article class="card read reveal">
+      <h3>전기 자동차 분야에서는 누가 일할까</h3>
+      <div class="jobs">
+        <div class="job"><b>배터리 개발</b><p>더 멀리, 더 안전하게 가는 배터리와 팩을 만들어요.</p></div>
+        <div class="job"><b>전동기 설계</b><p>작고 가벼우면서 힘센 전동기를 설계해요.</p></div>
+        <div class="job"><b>전력 반도체·전자</b><p>배터리 전기를 바꿔 주는 장치와 반도체를 만들어요.</p></div>
+        <div class="job"><b>소프트웨어·자율주행</b><p>차를 움직이고 스스로 판단하게 하는 프로그램을 만들어요.</p></div>
+        <div class="job"><b>열 관리·충전 시설</b><p>배터리 온도를 지키고, 충전기와 충전소를 설치·관리해요.</p></div>
+        <div class="job"><b>전기차 정비</b><p>높은 전압을 다루므로 <b>안전 교육</b>을 받고 정비해요. 전기차를 고칠 수 있는 정비소는 아직 많지 않아요.</p></div>
+      </div>
+      <div class="case">
+        <h4>미래 자동차를 배우는 곳</h4>
+        <ul>
+          <li>자동차 관련 고등학교 가운데에는 학과를 전기차·미래차 중심으로 바꾸는 곳이 생기고 있어요.</li>
+          <li>대학들은 2021년부터 함께 '미래자동차 혁신융합대학'을 운영하며 전기차·자율주행을 가르쳐요.</li>
+          <li>배터리 자료에서 본 'AI 이차전지' 마이스터고(2028년 개교)도 이 분야와 이어져요.</li>
+        </ul>
+        <p class="src">교육부·산업 관련 보도(2021~2026). 학교와 학과 정보는 진학 전에 꼭 다시 확인해요.</p>
+      </div>
+      <p>전기 자동차 한 대에는 전동기(물리), 배터리(화학·재료), 반도체와 프로그램(컴퓨터), 디자인과 환경까지 모두 들어 있어요. 오늘 다시 만난 단원들 가운데 가장 흥미로웠던 부분이 어디였는지 떠올려 보세요.</p>
+    </article>
+    <details class="pause reveal"><summary><span class="pi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5b4300" stroke-width="2.4" stroke-linecap="round"><path d="M9 9a3 3 0 1 1 4 2.8c-.7.3-1 .9-1 1.6V14M12 18h.01"/></svg></span>생각 멈춤: 엔진 자동차 부품의 약 37%가 필요 없어지면, 어떤 일자리는 줄고 어떤 일자리는 늘어날까요?<span class="tap">눌러서 확인</span></summary>
+      <div class="ans">엔진·변속기·배기관 부품을 만들고 고치는 일은 줄어들 수 있어요. 대신 <b>배터리, 전동기, 전력 반도체, 소프트웨어, 충전 시설, 배터리 재활용</b>과 관련된 일은 늘어나요. 그래서 이미 일하는 사람들이 새 기술을 배울 수 있도록 돕는 교육도 중요해지고 있어요.</div></details>
+  </section>
+
+  <section class="part" id="q2">
+    <div class="sec-kick">퀴즈 ② <span class="time">5문항</span></div>
+    <h2>주행 거리·충전·변화 확인하기</h2>
+    <div class="quiz" data-quiz="q2"></div>
+    <div class="card result reveal">
+      <div class="ring"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="50" fill="none" stroke="#e7edf3" stroke-width="12"/><circle id="ringArc" cx="60" cy="60" r="50" fill="none" stroke="#0f4c81" stroke-width="12" stroke-linecap="round" stroke-dasharray="314.16" stroke-dashoffset="314.16" style="transition:stroke-dashoffset 1s"/></svg>
+        <div class="rv"><div><span id="scoreV">0</span><small>/ <span id="scoreT">10</span> 문항</small></div></div></div>
+      <div><h3 id="resTitle">퀴즈를 풀면 결과가 나타나요</h3><p id="resMsg">퀴즈 ①, ②를 모두 풀어 보세요.</p><div class="wlist" id="wlist"></div></div>
+    </div>
+    <div class="next">
+      <a data-link="car" target="_blank" rel="noopener" style="background:linear-gradient(140deg,#0f4c81,#19a7c9)"><b>3D 전기 자동차 해부</b><span>부품 찾기, 엔진차와 비교, 에너지 흐름</span></a>
+      <a data-link="drive" target="_blank" rel="noopener" style="background:linear-gradient(140deg,#b07800,#e0a300)"><b>언덕길 주행 · 주행 거리</b><span>회생 제동, 계절·운전 습관, 거리 계산</span></a>
+      <a data-link="summary" target="_blank" rel="noopener" style="background:linear-gradient(140deg,#26306b,#3b4a8a)"><b>정리 · 글쓰기</b><span>맞을까 틀릴까, 짝짓기, 에너지 순서, 계산, 글쓰기</span></a>
+    </div>
+    <article class="card read reveal" style="margin-top:16px">
+      <h3>자료 출처 (기준 시점)</h3>
+      <ul class="sources">
+        <li>전동기와 전기 자동차: 중학교 과학 교과서 「전류가 흐르는 코일이 받는 힘의 활용」</li>
+        <li>부품 역할(배터리 = 연료 탱크, 구동 모터, 감속기, 인버터, 회생 제동): 현대자동차그룹 HMG저널 「전기차 백과사전」(2020-03-16). 전용 플랫폼·급속 충전 18분: HMG저널(2022-07-27)</li>
+        <li>엔진차 부품 약 3만 개 중 37%: 한국고용정보원 분석 보도(헤럴드경제, 2026-08-09)</li>
+        <li>반도체 200~300개 → 2,000개 이상(예상): 산업통상자원부 보도(2021-03). MLCC 3,000~1만 개: 삼성전기 뉴스룸(2023-05-16)</li>
+        <li>차종 배터리·주행거리: 2024~2025년 발표·보도값. 가상 차(80 kWh, 5 km/kWh)는 계산용</li>
+        <li>충전기 약 51만 기: 정부 발표(2026-04-29). 전기차 2025년 말 89.9만 대, 2026년 6월 말 109.5만 대, 신규 비중 13%·23%: 국토교통부 자료 보도. 충전기 1기당 약 2대는 선생님 계산</li>
+        <li>2024-09-06 전기차 화재 안전 대책: 정부 관계부처. 90% 충전 권고: 일부 지방자치단체(2024)</li>
+        <li>세계 전기차 판매·중국 생산 비중·환경 비교: 국제에너지기구 Global EV Outlook 2026. 화재 건수: 소방청 자료 보도</li>
+        <li>미래자동차 혁신융합대학(2021~), 자동차 고등학교 학과 개편: 교육부·언론 보도</li>
+      </ul>
+    </article>
+  </section>
+</main>
+<footer class="credit">전기 자동차 읽기 자료 · 교양과 진로</footer>
+<div class="pop" id="pop" role="tooltip"></div>
+
+<script>
+window.RD = {
+  $: (s, r = document) => r.querySelector(s),
+  $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
+  reduce: !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches),
+};
+</script>
+<script>
+/* ===== 블록 1: 기본 기능 · 퀴즈 ===== */
+(() => {
+  'use strict';
+  try {
+  const LINKS = { car: 'sim1-car-3d.html', drive: 'sim2-drive-lab.html', summary: 'summary-writing.html' };
+  const flag = (n) => { if (new URLSearchParams(location.search).get(n) === '1') return true; try { return !!(window.frameElement && window.frameElement.dataset[n] === '1'); } catch (e) { return false; } };
+  const EMBED = flag('embed');
+  const GLOSSARY = {
+    '회생 제동': '속도를 줄일 때 달리던 차의 운동 에너지를 전기 에너지로 바꿔 배터리에 다시 담는 일이에요. 버려지던 에너지의 일부를 되살려요.',
+    '전비': '전기 1 kWh로 갈 수 있는 거리예요. 단위는 km/kWh. 엔진 자동차의 연비(연료 1 L로 가는 거리)와 같은 생각이에요.',
+  };
+  const QUIZ = {
+    q1: [
+      { type: 'mc', q: '전기 자동차에서 엔진 자동차의 엔진처럼 바퀴를 돌리는 부품은?', options: ['전동기(구동 모터)', '연료 탱크', '충전구', '감속기'], answer: 0, exp: '<b>전동기</b>가 전기 에너지를 운동 에너지로 바꿔 바퀴를 굴려요. 전동기 수업에서 배운 원리 그대로예요.' },
+      { type: 'ox', q: '전기 자동차는 엔진 자동차보다 부품이 더 많이 필요하다.', answer: false, exp: '<b>X</b> · 엔진 자동차 부품 약 3만 개 가운데 약 <b>37%</b>는 전기 자동차에 필요 없다는 분석이 있어요.' },
+      { type: 'mc', q: '전기 자동차의 배터리 팩은 주로 어디에 넣을까?', options: ['차 바닥에 넓게', '지붕 위에', '앞 유리 안에', '바퀴 속에'], answer: 0, exp: '무거운 배터리 팩을 <b>바닥</b>에 넓게 깔아 차가 낮고 안정적이에요.' },
+      { type: 'blank', parts: ['전동기는 ', 0, ' 에너지를 ', 1, ' 에너지로 바꾼다.'], answers: ['전기', '운동'], bank: ['전기', '운동', '빛', '열'], exp: '전동기: <b>전기 에너지 → 운동 에너지</b>. 전기 에너지 수업의 에너지 전환이에요.' },
+      { type: 'mc', q: '회생 제동에 대한 설명으로 알맞은 것은?', options: ['속도를 줄일 때 운동 에너지를 전기 에너지로 바꿔 배터리에 다시 담는다', '브레이크를 더 뜨겁게 만든다', '연료를 아끼려고 엔진을 끈다', '충전기 없이 배터리를 가득 채운다'], answer: 0, exp: '속도를 줄일 때 <b>운동 에너지를 전기 에너지로</b> 바꿔 배터리에 다시 담아요. 전부는 아니고 일부를 되살려요.' },
+    ],
+    q2: [
+      { type: 'mc', q: '배터리에 40 kWh가 담겨 있고 전비가 5 km/kWh인 차는 몇 km를 갈 수 있을까?', options: ['200 km', '45 km', '8 km', '35 km'], answer: 0, exp: '40 kWh × 5 km/kWh = <b>200 km</b>' },
+      { type: 'blank', parts: ['전비는 전기 1 kWh로 갈 수 있는 ', 0, '이다.'], answers: ['거리'], bank: ['거리', '시간', '무게', '전압'], exp: '전비는 1 kWh로 갈 수 있는 <b>거리</b>(km/kWh)예요.' },
+      { type: 'ox', q: '같은 전기 자동차라도 추운 날에는 갈 수 있는 거리가 줄어든다.', answer: true, exp: '<b>O</b> · 추우면 배터리가 내놓는 전기가 줄고, 차 안을 데우는 데에도 전기를 써요.' },
+      { type: 'mc', q: '전기 자동차가 환경에 주는 영향에 대해 알맞은 것은?', options: ['충전하는 전기를 어떻게 만드느냐에 따라 줄어드는 탄소의 양이 달라진다', '만들 때도 탄소가 전혀 나오지 않는다', '어디에서 충전하든 효과가 똑같다', '엔진 자동차보다 언제나 탄소가 더 나온다'], answer: 0, exp: '만들 때는 배터리 때문에 탄소가 더 나오지만 달리며 갚아요. 얼마나 줄어드는지는 <b>전기를 만드는 방법</b>에 따라 달라요.' },
+      { type: 'mc', q: '전기 자동차를 정비하는 사람에게 특히 필요한 것은?', options: ['높은 전압을 안전하게 다루는 교육', '엔진 오일 교환 기술', '배기관 수리 기술', '연료 탱크 청소 기술'], answer: 0, exp: '전기 자동차는 <b>높은 전압</b>의 배터리를 쓰기 때문에 감전을 막는 안전 교육이 꼭 필요해요.' },
+    ],
+  };
+  const { $, $$ } = window.RD;
+  $$('[data-link]').forEach((a) => {
+    const key = a.dataset.link;
+    a.href = LINKS[key];
+    a.addEventListener('click', (e) => { if (!EMBED) return; e.preventDefault(); parent.postMessage({ type: 'ras-nav', target: key }, '*'); });
+  });
+  $$('[data-go]').forEach((b) => b.addEventListener('click', () => document.getElementById(b.dataset.go).scrollIntoView({ behavior: 'smooth', block: 'start' })));
+  const fsN = $('#fsN'), fsB = $('#fsB');
+  const setBig = (v) => { document.documentElement.classList.toggle('big', v); fsN.setAttribute('aria-pressed', String(!v)); fsB.setAttribute('aria-pressed', String(v)); };
+  fsN.addEventListener('click', () => setBig(false)); fsB.addEventListener('click', () => setBig(true));
+
+  const bar = $('#progress'), steps = $$('.step'), parts = ['r1', 'r2', 'q1', 'r3', 'r4', 'q2'].map((id) => document.getElementById(id));
+  function onScroll() {
+    const h = document.documentElement.scrollHeight - innerHeight;
+    bar.style.width = (h > 0 ? (scrollY / h) * 100 : 0) + '%';
+    let cur = -1; parts.forEach((p, i) => { if (p.getBoundingClientRect().top < innerHeight * 0.4) cur = i; });
+    steps.forEach((s, i) => s.classList.toggle('active', i === cur));
+  }
+  addEventListener('scroll', onScroll, { passive: true }); onScroll();
+  // 스크롤 등장 효과: 화면 감지 기능 없이 위치를 직접 계산해요. 글은 항상 보이고 위치만 살짝 움직여요
+  const revs = $$('.reveal');
+  document.documentElement.classList.add('js-reveal');
+  function checkReveal() {
+    const h = window.innerHeight || document.documentElement.clientHeight;
+    if (!h) return;
+    revs.forEach((el) => { if (!el.classList.contains('in')) { const r = el.getBoundingClientRect(); if (r.top < h * 0.92 && r.bottom > 0) el.classList.add('in'); } });
+  }
+  addEventListener('scroll', checkReveal, { passive: true });
+  addEventListener('resize', checkReveal);
+  checkReveal();
+  const revTimer = setInterval(() => { checkReveal(); if (revs.every((el) => el.classList.contains('in'))) clearInterval(revTimer); }, 250);
+  setTimeout(() => {
+    const h = window.innerHeight || document.documentElement.clientHeight;
+    const blind = !h || revs.every((el) => { const r = el.getBoundingClientRect(); return r.top === 0 && r.height === 0; });
+    if (blind) document.documentElement.classList.remove('js-reveal');
+  }, 1500);
+
+  const pop = $('#pop'); let popFor = null;
+  $$('.term').forEach((t) => t.addEventListener('click', (e) => {
+    e.stopPropagation(); if (popFor === t) return hidePop();
+    pop.innerHTML = `<b>${t.dataset.term}</b>${GLOSSARY[t.dataset.term] || ''}`; pop.classList.add('show');
+    const r = t.getBoundingClientRect(), pw = pop.offsetWidth, ph = pop.offsetHeight;
+    let x = Math.max(scrollX + 10, Math.min(r.left + scrollX + r.width / 2 - pw / 2, scrollX + innerWidth - pw - 10));
+    let y = r.top - ph - 10 < 60 ? r.bottom + scrollY + 10 : r.top + scrollY - ph - 10;
+    pop.style.left = x + 'px'; pop.style.top = y + 'px'; popFor = t;
+  }));
+  function hidePop() { pop.classList.remove('show'); popFor = null; }
+  document.addEventListener('click', hidePop);
+
+  /* 퀴즈 엔진 */
+  const results = {}, ALL = []; let qn = 0;
+  Object.entries(QUIZ).forEach(([sec, list]) => {
+    const host = document.querySelector(`[data-quiz="${sec}"]`);
+    list.forEach((q, i) => {
+      qn += 1; const id = `${sec}-${i}`, label = `문제 ${qn}`; ALL.push({ id, sec, label });
+      const card = document.createElement('article'); card.className = 'card qcard'; card.id = id;
+      card.innerHTML = `<div class="qhead"><span class="qno">${label}</span><span class="qtype">${{ ox: 'O / X', mc: '고르기', blank: '빈칸 채우기' }[q.type]}</span><span class="qstate"></span></div><div class="qbody"></div><div class="exp">${q.exp}</div>`;
+      host.appendChild(card); build(card, q, id);
+    });
+  });
+  $('#scoreT').textContent = ALL.length;
+  function mark(card, id, ok) {
+    results[id] = ok; card.classList.remove('right', 'wrong'); card.classList.add(ok ? 'right' : 'wrong', 'locked');
+    $('.qstate', card).textContent = ok ? '정답' : '다시 보기';
+    if (!ok && !$('.retry', card)) {
+      const r = document.createElement('button'); r.type = 'button'; r.className = 'btn ghost retry'; r.textContent = '다시 풀기';
+      r.addEventListener('click', () => { delete results[id]; card.classList.remove('right', 'wrong', 'locked'); r.remove(); build(card, card._q, id); update(); });
+      card.appendChild(r);
+    }
+    update();
+  }
+  function build(card, q, id) {
+    card._q = q; const body = $('.qbody', card);
+    if (q.type === 'ox') {
+      body.innerHTML = `<p class="qtext">${q.q}</p><div class="ox"><button type="button" class="oxb o" data-v="1">O</button><button type="button" class="oxb x" data-v="0">X</button></div>`;
+      $$('.oxb', body).forEach((b) => b.addEventListener('click', () => { const ok = (b.dataset.v === '1') === q.answer; $$('.oxb', body).forEach((o) => { o.disabled = true; if ((o.dataset.v === '1') === q.answer) o.classList.add('good'); }); if (!ok) b.classList.add('bad'); mark(card, id, ok); }));
+    } else if (q.type === 'mc') {
+      body.innerHTML = `<p class="qtext">${q.q}</p><div class="mc">${q.options.map((o, i) => `<button type="button" class="mcb" data-i="${i}"><span class="k">${'①②③④'[i]}</span>${o}</button>`).join('')}</div>`;
+      $$('.mcb', body).forEach((b) => b.addEventListener('click', () => { const ok = +b.dataset.i === q.answer; $$('.mcb', body).forEach((o, j) => { o.disabled = true; if (j === q.answer) o.classList.add('good'); }); if (!ok) b.classList.add('bad'); mark(card, id, ok); }));
+    } else {
+      const fill = q.answers.map(() => null); let cur = 0;
+      body.innerHTML = `<p class="qtext" style="margin-bottom:6px">알맞은 말을 골라 빈칸을 채워 보세요.</p><p class="sentence">${q.parts.map((p) => typeof p === 'number' ? `<button type="button" class="slot">빈칸 ${p + 1}</button>` : `<span>${p}</span>`).join('')}</p>
+        <div class="bank">${q.bank.slice().sort(() => Math.random() - 0.5).map((w) => `<button type="button" class="chip">${w}</button>`).join('')}</div><button type="button" class="btn primary check" disabled>확인하기</button>`;
+      const slots = $$('.slot', body), chips = $$('.chip', body), check = $('.check', body);
+      const paint = () => { slots.forEach((s, i) => { s.textContent = fill[i] ? fill[i].textContent : `빈칸 ${i + 1}`; s.classList.toggle('filled', !!fill[i]); s.classList.toggle('cur', i === cur && !card.classList.contains('locked')); }); if (check.isConnected) check.disabled = fill.some((f) => !f); };
+      chips.forEach((c) => c.addEventListener('click', () => { if (card.classList.contains('locked')) return; if (fill[cur]) fill[cur].classList.remove('used'); fill[cur] = c; c.classList.add('used'); const n = fill.findIndex((f) => !f); cur = n < 0 ? cur : n; paint(); }));
+      slots.forEach((s, i) => s.addEventListener('click', () => { if (card.classList.contains('locked')) return; if (fill[i]) { fill[i].classList.remove('used'); fill[i] = null; } cur = i; paint(); }));
+      check.addEventListener('click', () => {
+        let ok = true; slots.forEach((s, i) => { const g = fill[i].textContent === q.answers[i]; if (!g) ok = false; s.classList.add(g ? 'good' : 'bad'); s.disabled = true; });
+        chips.forEach((c) => (c.disabled = true)); check.remove(); card.classList.add('locked');
+        if (!ok) body.insertAdjacentHTML('beforeend', `<p class="qtext" style="margin:0;font-size:calc(var(--fs) - 1px);color:#6d4208">정답: ${q.answers.map((a, i) => `빈칸 ${i + 1} <b>${a}</b>`).join(' · ')}</p>`);
+        mark(card, id, ok); paint();
+      });
+      paint();
+    }
+  }
+  function update() {
+    const done = ALL.filter((q) => q.id in results), right = done.filter((q) => results[q.id]);
+    [['q1', 2], ['q2', 5]].forEach(([sec, si]) => steps[si].classList.toggle('done', ALL.filter((q) => q.sec === sec).every((q) => q.id in results)));
+    $('#scoreV').textContent = right.length;
+    $('#ringArc').style.strokeDashoffset = 314.16 * (1 - right.length / ALL.length);
+    const t = $('#resTitle'), m = $('#resMsg'), wl = $('#wlist');
+    if (done.length < ALL.length) { t.textContent = `${ALL.length}문항 중 ${done.length}문항을 풀었어요`; m.textContent = '남은 문제도 풀어 보세요. 틀린 문제는 다시 풀 수 있어요.'; }
+    else if (right.length === ALL.length) { t.textContent = '모두 맞혔어요!'; m.textContent = '이제 시뮬레이션에서 직접 해 보고, 스스로 정리해 봐요.'; }
+    else { t.textContent = `${ALL.length}문항 중 ${right.length}문항을 맞혔어요`; m.textContent = '틀린 문제를 눌러 다시 읽고 풀어 보세요.'; }
+    wl.innerHTML = '';
+    ALL.filter((q) => results[q.id] === false).forEach((q) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = `${q.label} 다시 보기`; b.addEventListener('click', () => document.getElementById(q.id).scrollIntoView({ behavior: 'smooth', block: 'center' })); wl.appendChild(b); });
+  }
+  update();
+  window.RD.ok1 = true;
+  } catch (err) { window.RD_err && window.RD_err('기본 기능·퀴즈', err); }
+})();
+</script>
+<script>
+/* ===== 블록 2: 움직이는 도식 ===== */
+/* ===== 2D 도식 도구 (SVG) =====
+   FLOW.dots(path, 옵션): SVG 길(path)을 따라 알갱이(전기·물·열)가 흐르게 해요.
+     옵션 n(개수), r(크기), color, speed(초당 길 몇 바퀴), layer(알갱이를 넣을 g, 생략하면 길의 부모), glow(빛 번짐)
+     반환값.set({ rate: 0~1(보이는 양과 빠르기), color }) 로 바꿔요.
+   FLOW.onFrame(fn): 화면에 보일 때만 매 프레임 fn(dt, t)를 불러요(탭 껍데기에서 숨은 탭이면 쉬어요).
+   FLOW.num(el, 값, 자릿수): 숫자를 부드럽게 바꿔 보여 줘요.
+   크기·개수·빠르기는 개념 이해를 위한 모형이에요. */
+const FLOW = (() => {
+  const NS = 'http://www.w3.org/2000/svg';
+  const REDUCE = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const fns = [];
+  function visibleNow() {
+    if (document.hidden) return false;
+    try { const f = window.frameElement; if (f && f.hasAttribute('data-page') && !f.classList.contains('on')) return false; } catch (e) {}
+    return true;
+  }
+  let last = performance.now();
+  function tick(now) {
+    requestAnimationFrame(tick);
+    const dt = Math.min(0.05, Math.max(0, (now - last) / 1000)); last = now;
+    if (!visibleNow()) return;
+    for (const f of fns) { try { f(dt, now / 1000); } catch (e) { console.error(e); } }
+  }
+  requestAnimationFrame(tick);
+  const onFrame = (f) => fns.push(f);
+  function onScreen(el) { const r = el.getBoundingClientRect(); return r.bottom > -40 && r.top < (window.innerHeight || 800) + 40; }
+
+  function dots(path, o = {}) {
+    const n = o.n || 14, layer = o.layer || path.parentNode, L = path.getTotalLength();
+    const svg = path.ownerSVGElement;
+    const g = document.createElementNS(NS, 'g'); g.setAttribute('pointer-events', 'none'); layer.appendChild(g);
+    const cs = [];
+    for (let k = 0; k < n; k++) {
+      const c = document.createElementNS(NS, 'circle'); c.setAttribute('r', o.r || 4);
+      if (o.glow) c.setAttribute('filter', o.glow);
+      g.appendChild(c); cs.push(c);
+    }
+    let rate = o.rate === undefined ? 1 : o.rate, color = o.color || '#2f6fd6', off = Math.random(), speed = o.speed || 0.12;
+    const paint = () => cs.forEach((c) => c.setAttribute('fill', color)); paint();
+    function place() {
+      const show = Math.round(n * Math.min(1, rate));
+      cs.forEach((c, k) => {
+        if (k >= show) { c.setAttribute('opacity', '0'); return; }
+        const s = ((off + k / n) % 1), p = path.getPointAtLength(s * L);
+        c.setAttribute('cx', p.x.toFixed(1)); c.setAttribute('cy', p.y.toFixed(1));
+        c.setAttribute('opacity', String(Math.min(1, s * 8, (1 - s) * 8)));
+      });
+    }
+    onFrame((dt) => { if (REDUCE || !onScreen(svg)) return; off = (off + dt * speed * (0.25 + 0.75 * Math.min(1, rate))) % 1; place(); });
+    place();
+    return { set(v) { if (v.rate !== undefined) rate = v.rate; if (v.color) { color = v.color; paint(); } if (v.speed) speed = v.speed; place(); }, g };
+  }
+
+  const shown = new WeakMap();
+  function num(el, v, digits = 0) {
+    const from = shown.has(el) ? shown.get(el) : 0; shown.set(el, v);
+    const fmt = (x) => x.toLocaleString('ko-KR', { minimumFractionDigits: digits, maximumFractionDigits: digits });
+    if (REDUCE) { el.textContent = fmt(v); return; }
+    let t = 0; const step = (dt) => { t = Math.min(1, t + dt / 0.5); el.textContent = fmt(from + (v - from) * (1 - Math.pow(1 - t, 3))); return t < 1; };
+    const f = (dt) => { if (!step(dt)) { const i = fns.indexOf(f); if (i >= 0) fns.splice(i, 1); } };
+    fns.push(f);
+  }
+  return { dots, onFrame, num, REDUCE, NS };
+})();
+(() => {
+  'use strict';
+  try {
+    const { $, $$ } = window.RD, NS = FLOW.NS;
+    const H = (id) => document.getElementById(id);
+    const el = (tag, at, parent) => { const e = document.createElementNS(NS, tag); Object.entries(at).forEach(([k, v]) => e.setAttribute(k, v)); if (parent) parent.appendChild(e); return e; };
+    /* 첫 화면 */
+    const hc = H('hCells'); for (let k = 0; k < 16; k++) el('rect', { x: 156 + k * 20.8, y: 297, width: 17, height: 20, rx: 2, fill: 'url(#hCell)' }, hc);
+    const glow = 'url(#hGlow)';
+    FLOW.dots(H('hE1'), { n: 8, r: 4.5, color: '#ffd04d', speed: 0.5, glow });
+    FLOW.dots(H('hE2'), { n: 5, r: 4.5, color: '#ffd04d', speed: 0.6, glow });
+    const dash = H('hDash'); const DS = []; for (let k = 0; k < 8; k++) DS.push(el('rect', { x: k * 90, y: 402, width: 46, height: 6, rx: 3 }, dash));
+    let road = 0, wr = 0;
+    FLOW.onFrame((dt) => {
+      road = (road + dt * 220) % 90; DS.forEach((d, k) => d.setAttribute('x', (k * 90 - road).toFixed(1)));
+      wr = (wr + dt * 300) % 360; $$('#heroSvg .sp').forEach((s) => s.setAttribute('transform', `rotate(${wr})`));
+    });
+    /* 엔진차·전기차 비교 */
+    const cc = H('cmpCells'); for (let k = 0; k < 16; k++) el('rect', { x: 200 + k * 21.2, y: 204, width: 18, height: 18, rx: 2, fill: 'url(#cCell)' }, cc);
+    const cmpDots = FLOW.dots(H('cmpE'), { n: 6, r: 3.8, color: '#f0b429', speed: 0.5 });
+    let cm = 'ice';
+    const paintC = () => {
+      H('cIce').classList.toggle('on', cm === 'ice'); H('cEv').classList.toggle('on', cm === 'ev');
+      H('cmpT').textContent = cm === 'ice' ? '엔진 자동차' : '전기 자동차';
+      H('cmpStat').innerHTML = cm === 'ice' ? '앞쪽 <b>엔진</b>에서 연료를 태워 생긴 힘이 <b>변속기</b>와 긴 축을 지나 바퀴로 가요. 뒤쪽에는 <b>연료 탱크</b>, 아래로는 <b>배기관</b>이 지나가요.' : '엔진·변속기·연료 탱크·배기관이 사라지고, 바닥에 <b>배터리 팩</b>, 바퀴 가까이에 <b>전동기</b>와 <b>전기를 바꿔 주는 장치</b>가 생겼어요. 연료 대신 <b>충전구</b>로 전기를 넣어요.';
+    };
+    H('cIce').addEventListener('click', () => { cm = 'ice'; paintC(); }); H('cEv').addEventListener('click', () => { cm = 'ev'; paintC(); });
+    paintC();
+    let fade = 0, sm = 0;
+    FLOW.onFrame((dt) => {
+      fade += ((cm === 'ev' ? 1 : 0) - fade) * Math.min(1, dt * 5);
+      H('gEv').setAttribute('opacity', fade.toFixed(2)); H('gIce').setAttribute('opacity', (1 - fade).toFixed(2));
+      sm = (sm + dt) % 2; H('smoke').setAttribute('transform', `translate(${-sm * 8} ${-sm * 4})`); H('smoke').setAttribute('opacity', String(1 - sm / 2));
+      cmpDots.set({ rate: fade });
+    });
+    /* 에너지의 길 */
+    const go = FLOW.dots(H('fGo'), { n: 22, r: 6.5, color: '#f0b429', speed: 0.3 });
+    const back = FLOW.dots(H('fBack'), { n: 14, r: 6.5, color: '#2bb673', speed: 0.22 });
+    const FM = {
+      go: { t: '출발·가속', note: '배터리 → 전기 바꾸는 장치 → 전동기 → 감속기 → 바퀴', stat: '출발하거나 속도를 높일 때는 전동기가 힘을 많이 내야 해서 배터리에서 <b>전기 에너지가 많이, 빠르게</b> 나가요. 배터리 막대가 빨리 줄어요.', rate: 1, sp: 0.38, use: 0.05, wheel: 1 },
+      cruise: { t: '일정하게 달리기', note: '같은 길이지만 흐르는 에너지가 줄어요', stat: '같은 속도로 달릴 때는 공기와 바닥의 저항을 이길 만큼만 쓰면 돼서 <b>에너지가 적게</b> 나가요. 배터리 막대가 천천히 줄어요.', rate: 0.4, sp: 0.22, use: 0.015, wheel: 1 },
+      regen: { t: '속도 줄이기(회생 제동)', note: '바퀴 → 감속기 → 전동기 → 전기 바꾸는 장치 → 배터리', stat: '속도를 줄일 때는 에너지가 <b>거꾸로</b> 흘러요. 달리던 차의 <b>운동 에너지가 전기 에너지로</b> 바뀌어 배터리에 다시 담겨요. 배터리 막대가 조금 늘어나요.', rate: 0, sp: 0.22, use: -0.025, wheel: 0.5 },
+    };
+    let fm = 'go', lvl = 0.85, rot = 0, wrot = 0;
+    const paintF = () => {
+      $$('[data-fm]').forEach((b) => b.classList.toggle('on', b.dataset.fm === fm));
+      const m = FM[fm]; H('fMode').textContent = m.t; H('fNote').textContent = m.note; H('fStat').innerHTML = m.stat;
+      go.set({ rate: m.rate, speed: m.sp }); back.set({ rate: fm === 'regen' ? 1 : 0 });
+    };
+    $$('[data-fm]').forEach((b) => b.addEventListener('click', () => { fm = b.dataset.fm; paintF(); }));
+    paintF();
+    FLOW.onFrame((dt) => {
+      const m = FM[fm]; lvl = Math.max(0.15, Math.min(0.95, lvl - m.use * dt));
+      if (lvl <= 0.15 && fm !== 'regen') lvl = 0.9;
+      H('fLvl').setAttribute('height', (70 * lvl).toFixed(1)); H('fLvl').setAttribute('y', (20 + 70 * (1 - lvl)).toFixed(1));
+      rot = (rot + dt * 360 * (fm === 'go' ? 2.4 : fm === 'cruise' ? 1.6 : 0.8)) % 360; wrot = (wrot + dt * 360 * (fm === 'go' ? 0.6 : fm === 'cruise' ? 0.45 : 0.22)) % 360;
+      H('fRotor').setAttribute('transform', `translate(48 46) rotate(${rot})`); H('fWheel').setAttribute('transform', `translate(694 150) rotate(${wrot})`);
+    });
+    /* 반도체 점 (점 하나 = 반도체 20개) */
+    const cd = H('chipDots'); let ch = ''; for (let k = 0; k < 100; k++) ch += '<i></i>'; cd.innerHTML = ch;
+    const ci = Array.from(cd.children); let lit = 0, t0 = 0;
+    const onS = (e) => { const r = e.getBoundingClientRect(); return r.top < (innerHeight || 800) && r.bottom > 0; };
+    FLOW.onFrame((dt) => { if (!onS(cd)) return; t0 += dt; const target = t0 < 1.2 ? 13 : 100; if (lit < target) { const n = Math.min(target, lit + Math.ceil(dt * 60)); for (let k = lit; k < n; k++) ci[k].classList.add('on'); lit = n; } });
+    if (FLOW.REDUCE) ci.forEach((d) => d.classList.add('on'));
+    window.RD.ok2 = true;
+  } catch (err) { window.RD_err('움직이는 도식', err); }
+})();
+</script>
+</body>
+</html>
