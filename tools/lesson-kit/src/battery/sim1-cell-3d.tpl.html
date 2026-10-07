@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>3D 배터리 속으로</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+  /* ===== 이 수업 전용 ===== */
+  :root{--fab:#0d6b4f;--fab-soft:#e2f5ec}
+  .eyebrow{color:#0d6b4f;background:#e2f5ec}
+  .lb.G{background:#0d6b4f;color:#fff}.lb.Neg{background:#2f62c9;color:#fff}.lb.Pos{background:#d8433b;color:#fff}
+  .lb.Sep{background:#fff;color:#34495e;border:1px solid #c9d6e2}.lb.Ele{background:#2b8fd6;color:#fff}.lb.Y{background:#f6c344;color:#3d2c00}
+  .lb.Cu{background:#b8693a;color:#fff}.lb.Al{background:#8a98a8;color:#fff}.lb.D{background:#14263b;color:#fff}
+  .flow{grid-template-columns:repeat(4,1fr)}
+  .fs[aria-selected="true"]{background:var(--fab)}
+  .fs.seen:not([aria-selected="true"]){background:#e2f5ec;color:#0d6b4f}
+  .stepname .no{background:var(--fab)}
+  .seg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:8px 0}
+  .seg.two{grid-template-columns:1fr 1fr}.seg.four{grid-template-columns:repeat(4,1fr)}
+  .seg button{min-height:50px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:14.5px;cursor:pointer;word-break:keep-all;padding:4px 6px;line-height:1.3}
+  .seg button[aria-pressed="true"]{border-color:var(--fab);background:var(--fab-soft);color:#0a5540}
+  .rng{display:flex;align-items:center;gap:12px;margin:10px 0 4px;font-weight:800;font-size:15px;color:var(--ink2)}
+  .rng label{flex:none;min-width:76px;word-break:keep-all}
+  .rng b{flex:none;min-width:56px;text-align:right;color:#0a5540;font-size:14px}
+  .rng input{flex:1;min-width:120px;height:44px;-webkit-appearance:none;appearance:none;background:transparent}
+  .rng input::-webkit-slider-runnable-track{height:10px;border-radius:99px;background:linear-gradient(90deg,#c8eedb,#2bb673)}
+  .rng input::-webkit-slider-thumb{-webkit-appearance:none;width:36px;height:36px;border-radius:50%;background:#fff;border:3px solid var(--fab);margin-top:-13px;box-shadow:0 2px 8px rgba(20,38,59,.25)}
+  .rng input::-moz-range-track{height:10px;border-radius:99px;background:linear-gradient(90deg,#c8eedb,#2bb673)}
+  .rng input::-moz-range-thumb{width:32px;height:32px;border-radius:50%;background:#fff;border:3px solid var(--fab)}
+  .why{margin-top:10px;display:grid;gap:6px}
+  .why h3{margin:6px 0 2px;font-size:16px}
+  .why .w{display:grid;grid-template-columns:28px 1fr;gap:8px;align-items:start;padding:8px 10px;border-radius:12px;background:#f7fafc;font-size:14.5px;line-height:1.6;color:var(--ink2);word-break:keep-all}
+  .why .w i{font-style:normal;width:26px;height:26px;border-radius:8px;background:var(--fab);color:#fff;display:grid;place-items:center;font-weight:900;font-size:13px}
+  .lvl{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;margin:10px 0 2px;font-weight:800;font-size:14.5px;color:var(--ink2)}
+  .lvl .gt{height:22px;border-radius:99px;background:#eef3f8;overflow:hidden;position:relative;box-shadow:inset 0 0 0 1px #dbe4ec}
+  .lvl .gt i{position:absolute;left:0;top:0;bottom:0;width:100%;border-radius:99px;background:linear-gradient(90deg,#9be3bf,#2bb673)}
+  .lvl b{min-width:52px;text-align:right;color:#0a5540}
+  .legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;font-weight:800;color:var(--ink2);margin:6px 0}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .legend i{width:12px;height:12px;border-radius:50%;display:inline-block}
+  [hidden]{display:none!important}
+</style>
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }
+</script>
+</head>
+<body>
+<div class="app">
+  <header>
+    <span class="eyebrow">배터리 · 3D 시뮬레이션 ①</span>
+    <h1>3D 배터리 속으로</h1>
+    <p class="sub">배터리 한 칸(셀)의 모양을 살펴보고, 층을 펼쳐 네 가지를 찾고, 알갱이와 전자가 움직이는 모습을 본 뒤, 셀을 모아 전기 자동차 배터리를 조립해 봐요. 손가락으로 돌려 보고 두 손가락으로 확대해 보세요.</p>
+  </header>
+
+  <div class="stage">
+    <section class="card viewer">
+      <div class="gl-host" id="host">
+        <div class="vt tl" role="group" aria-label="보는 방향"><button class="vb sel" type="button" id="vHome">처음 방향으로</button></div>
+        <div class="vt bl"><span class="hint" id="hint">한 손가락: 돌리기 · 두 손가락: 확대</span></div>
+        <div class="fail3d" id="fail3d">3D 그림을 불러오지 못했어요.<br>인터넷 연결을 확인하고 새로고침해 주세요.<br>(오른쪽 설명은 그대로 읽을 수 있어요)</div>
+      </div>
+    </section>
+
+    <section class="card pad">
+      <div class="flow" id="flow" role="tablist"></div>
+      <div class="stepname"><span class="no" id="sNo">1</span><div><h2 id="sName"></h2><small id="sSub"></small></div></div>
+      <p class="what" id="sWhat"></p>
+
+      <div id="c1">
+        <div class="seg" role="group" aria-label="셀 모양">
+          <button type="button" data-shape="cyl" aria-pressed="false">원통형</button>
+          <button type="button" data-shape="pri" aria-pressed="false">각형</button>
+          <button type="button" data-shape="pou" aria-pressed="false">파우치형</button>
+        </div>
+        <div class="box fact" id="shapeMsg"></div>
+      </div>
+
+      <div id="c2" hidden>
+        <div class="seg two" role="group" aria-label="만드는 방법">
+          <button type="button" data-build="stack" aria-pressed="true">쌓기(뽑아 쓰는 티슈처럼)</button>
+          <button type="button" data-build="wind" aria-pressed="false">감기(롤 휴지처럼)</button>
+        </div>
+        <div class="rng" id="explodeRow"><label for="rEx">층 펼치기</label><input type="range" id="rEx" min="0" max="100" value="70"><b id="vEx">펼침</b></div>
+        <div class="box fact" id="buildMsg"></div>
+      </div>
+
+      <div id="c3" hidden>
+        <div class="seg two" role="group" aria-label="충전과 방전">
+          <button type="button" data-cm="use" aria-pressed="true">사용(방전): 전구 켜기</button>
+          <button type="button" data-cm="charge" aria-pressed="false">충전: 충전기 꽂기</button>
+        </div>
+        <div class="lvl"><span>남은 양</span><div class="gt"><i id="gLvl"></i></div><b id="vLvl">100%</b></div>
+        <div class="legend"><span><i style="background:#f0b429"></i>알갱이(리튬 이온) · 안쪽 길</span><span><i style="background:#3b8ef0"></i>전자 · 바깥 전선</span></div>
+        <div class="box fact" id="cmMsg"></div>
+      </div>
+
+      <div id="c4" hidden>
+        <div class="seg four" role="group" aria-label="조립 단계">
+          <button type="button" data-ph="0" aria-pressed="true">셀</button>
+          <button type="button" data-ph="1" aria-pressed="false">모듈</button>
+          <button type="button" data-ph="2" aria-pressed="false">팩</button>
+          <button type="button" data-ph="3" aria-pressed="false">자동차에</button>
+        </div>
+        <div class="box fact" id="phMsg"></div>
+      </div>
+
+      <div class="why" id="why"></div>
+      <div class="acts">
+        <button class="btn ghost" id="bPrev" type="button">이전 단계</button>
+        <button class="btn primary" id="bNext" type="button">다음 단계</button>
+      </div>
+      <p class="model" style="margin-top:10px">개념 이해를 위한 모형이에요. 층의 수와 두께, 알갱이 수, 셀 수는 실제보다 줄이거나 키운 것이에요.</p>
+    </section>
+  </div>
+  <p class="credit">배터리 읽기 자료 &nbsp;|&nbsp; 제작 · 성안중학교 이삭 T</p>
+</div>
+
+<script>
+window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
+  step: 1, shape: 'pou', build: 'stack', ex: 0.7, cm: 'use', level: 1, ph: 0, home: 0 };
+</script>
+<script>
+/* ===== 블록 1: 안내·버튼 ===== */
+(() => {
+  'use strict';
+  try {
+    const { $, $$ } = window.SM, S = window.SM;
+    const STEPS = [
+      ['셀 모양', '원통형 · 각형 · 파우치형', '배터리의 가장 작은 한 칸을 셀이라고 해요. 셀은 겉모양에 따라 세 가지로 나뉘어요. 단추를 눌러 하나씩 살펴보세요.'],
+      ['셀 속 네 가지', '양극 · 음극 · 분리막 · 전해질', '셀을 열면 얇은 판들이 겹겹이 들어 있어요. 양극과 음극 사이마다 분리막이 끼어 있고, 그 사이를 전해질이 채워요. 막대를 움직여 층을 펼쳐 보세요.'],
+      ['충전과 방전', '알갱이는 안쪽 길, 전자는 바깥 전선', '양극·분리막·음극 한 쌍을 크게 키웠어요. 사용할 때와 충전할 때 노란 알갱이와 파란 전자가 어느 쪽으로 가는지 비교해 보세요.'],
+      ['셀 → 모듈 → 팩', '전기 자동차 배터리 조립하기', '전기 자동차에는 셀이 수백 개 들어가요. 셀을 묶어 모듈을, 모듈을 모아 팩을 만들고 자동차 바닥에 넣어 보세요.'],
+    ];
+    const WHY = {
+      1: [['원통형', '건전지처럼 생긴 원기둥이에요. 긴 판을 <b>롤 휴지처럼 감아</b> 넣어요. 크기가 정해져 있어 많이 만들기 좋아요.'], ['각형', '단단한 <b>금속 상자</b>에 넣어요. 튼튼해서 충격에 강해요.'], ['파우치형', '얇은 판을 <b>쌓아</b> 부드러운 주머니에 넣어요. 가볍고 모양을 바꾸기 쉬워요.']],
+      2: [['양극(+)', '얇은 <b>알루미늄</b> 판 양면에 재료를 발라요. 알갱이의 \'집\'이에요.'], ['음극(−)', '얇은 <b>구리</b> 판 양면에 재료를 발라요. 알갱이의 \'직장\'이에요.'], ['분리막', '양극과 음극이 닿지 않게 막는 아주 얇은 막. 작은 구멍으로 <b>알갱이만</b> 지나가요.'], ['전해질', '판 사이를 채워 알갱이가 지나가는 <b>안쪽 길</b>이 돼요.']],
+      3: [['두 길', '분리막이 전자를 막기 때문에, 전자는 <b>바깥 전선</b>으로 돌아가며 전구를 켜요.'], ['사용(퇴근)', '알갱이: 음극 → 양극, 전자: (−)극 → 전구 → (+)극'], ['충전(출근)', '충전기가 전자를 거꾸로 밀어 넣고, 알갱이는 양극 → 음극으로 돌아가 에너지를 담아 둬요.']],
+      4: [['모듈', '셀을 틀에 묶어 <b>충격·열·떨림</b>에서 보호해요.'], ['팩', '모듈에 <b>관리 장치(BMS)</b>와 <b>식히는 판</b>을 더한 최종 형태예요.'], ['자동차', '무거운 팩을 <b>바닥</b>에 깔아 차가 낮고 안정적으로 달리게 해요.']],
+    };
+    $('#flow').innerHTML = STEPS.map((s, i) => `<button type="button" class="fs" role="tab" data-i="${i + 1}" aria-selected="false"><b>${i + 1}</b>${s[0]}</button>`).join('');
+    const seen = { 1: true };
+    const go = (i) => { S.step = Math.max(1, Math.min(4, i)); seen[S.step] = true; S.home++; paint(); };
+    $$('#flow .fs').forEach((b) => b.addEventListener('click', () => go(+b.dataset.i)));
+    $('#bPrev').addEventListener('click', () => go(S.step - 1));
+    $('#bNext').addEventListener('click', () => go(S.step + 1));
+    $('#vHome').addEventListener('click', () => S.home++);
+    const SHAPE = {
+      cyl: '<b class="t">원통형 셀</b>건전지와 같은 원기둥 모양이에요. 긴 양극·분리막·음극을 함께 <b>돌돌 감아</b> 금속 통에 넣어요. 작은 셀을 아주 많이 모아 쓰는 전기 자동차도 있어요.',
+      pri: '<b class="t">각형 셀</b>얇은 직육면체 <b>알루미늄 상자</b>에 넣어요. 위쪽에 (+)극과 (−)극 단자가 있어요. 상자가 단단해 셀을 보호하기 좋아요.',
+      pou: '<b class="t">파우치형 셀</b>판을 <b>차곡차곡 쌓아</b> 알루미늄이 들어간 부드러운 주머니에 넣고 가장자리를 붙여요. 한쪽으로 납작한 금속 띠(단자) 두 개가 나와 있어요.',
+    };
+    $$('[data-shape]').forEach((b) => b.addEventListener('click', () => { S.shape = b.dataset.shape; S.home++; paint(); }));
+    $$('[data-build]').forEach((b) => b.addEventListener('click', () => { S.build = b.dataset.build; S.home++; paint(); }));
+    $('#rEx').addEventListener('input', (e) => { S.ex = e.target.value / 100; paint(); });
+    $$('[data-cm]').forEach((b) => b.addEventListener('click', () => { S.cm = b.dataset.cm; paint(); }));
+    $$('[data-ph]').forEach((b) => b.addEventListener('click', () => { S.ph = +b.dataset.ph; S.home++; paint(); }));
+    const PH = [
+      '<b class="t">셀 하나</b>파우치형 셀이에요. 휴대폰에는 이런 셀이 보통 하나 들어가요.',
+      '<b class="t">모듈</b>셀 12개를 나란히 세워 앞뒤 판과 띠로 묶었어요. 셀끼리 이어서 더 많은 전기를 담고 더 높은 전압을 만들어요.',
+      '<b class="t">팩</b>모듈 6개를 단단한 상자에 넣고, 셀마다 온도와 남은 양을 지켜보는 <b>관리 장치(BMS)</b>, 아래쪽에 <b>식히는 판</b>(파란 관)을 달았어요. 이 모형에는 셀이 72개예요. 실제로는 수백 개가 들어가기도 해요(한 차종은 각형 셀 500개).',
+      '<b class="t">자동차에</b>팩은 자동차 <b>바닥</b>에 넓게 깔려요. 무거운 배터리가 아래에 있어 차가 안정적이에요. 팩의 전기는 전동기로 가서 바퀴를 돌려요(전기 에너지 → 운동 에너지).',
+    ];
+    function paint() {
+      const st = STEPS[S.step - 1];
+      $$('#flow .fs').forEach((b) => { const i = +b.dataset.i; b.setAttribute('aria-selected', String(i === S.step)); b.classList.toggle('seen', !!seen[i]); });
+      $('#sNo').textContent = S.step; $('#sName').textContent = st[0]; $('#sSub').textContent = st[1]; $('#sWhat').textContent = st[2];
+      $('#bPrev').disabled = S.step === 1; $('#bNext').disabled = S.step === 4;
+      [1, 2, 3, 4].forEach((i) => ($('#c' + i).hidden = S.step !== i));
+      $$('[data-shape]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.shape === S.shape)));
+      $('#shapeMsg').innerHTML = SHAPE[S.shape];
+      $$('[data-build]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.build === S.build)));
+      $('#explodeRow').hidden = S.build !== 'stack';
+      $('#vEx').textContent = S.ex < 0.1 ? '닫힘' : S.ex < 0.55 ? '조금' : '펼침';
+      $('#buildMsg').innerHTML = S.build === 'stack'
+        ? '<b class="t">쌓기(스태킹)</b>네모나게 자른 음극 · 분리막 · 양극 · 분리막을 <b>뽑아 쓰는 티슈처럼</b> 차곡차곡 쌓아요. 빈틈이 적어 공간을 알뜰하게 써요. 실제 셀에는 이런 층이 수십 겹 들어 있어요.'
+        : '<b class="t">감기(와인딩)</b>길게 자른 양극 · 분리막 · 음극 · 분리막을 겹쳐 <b>롤 휴지처럼</b> 돌돌 말아요. 빠르게 만들 수 있어요. 원통형과 각형 셀에서 많이 써요. 그림은 감은 뭉치를 잘라 본 모습이에요.';
+      $$('[data-cm]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.cm === S.cm)));
+      $('#cmMsg').innerHTML = S.cm === 'use'
+        ? '<b class="t">사용할 때(퇴근)</b>알갱이가 음극(직장)에서 <b>분리막을 지나</b> 양극(집)으로 가요. 그동안 전자는 바깥 전선으로 (−)극 → <b>전구</b> → (+)극으로 흐르며 전구를 켜요.'
+        : '<b class="t">충전할 때(출근)</b>충전기가 펌프처럼 전자를 (+)극 쪽에서 (−)극 쪽으로 <b>거꾸로</b> 밀어 넣어요. 알갱이도 양극(집)에서 음극(직장)으로 돌아가 에너지를 담아 둬요.';
+      $$('[data-ph]').forEach((b) => b.setAttribute('aria-pressed', String(+b.dataset.ph === S.ph)));
+      $('#phMsg').innerHTML = PH[S.ph];
+      $('#why').innerHTML = '<h3>왜 그럴까?</h3>' + WHY[S.step].map((w, i) => `<div class="w"><i>${i + 1}</i><span><b>${w[0]}</b> · ${w[1]}</span></div>`).join('');
+      $('#hint').textContent = '한 손가락: 돌리기 · 두 손가락: 확대';
+    }
+    S.paintLevel = () => { $('#gLvl').style.width = (S.level * 100).toFixed(0) + '%'; $('#vLvl').textContent = Math.round(S.level * 100) + '%'; };
+    S.paint = paint;
+    paint(); S.paintLevel();
+    window.SM.okUI = true;
+  } catch (err) { window.SM_err('안내·버튼', err); }
+})();
+</script>
+<script type="module">
+/* ===== 블록 2: 3D ===== */
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+/*@@PART:c3.js@@*/
+/*@@PART:bulb.js@@*/
+
+try {
+  const { V, mesh } = C3, S = window.SM;
+  const st = C3.makeStage(document.getElementById('host'), { fitWidth: true, minD: 2, maxD: 40, top: '#f4f8f6', bottom: '#cddfd6' });
+  const { scene, camera, label } = st;
+  const table = C3.addTable(scene, 16, 11);
+
+  /* ---------- 재료 ---------- */
+  const M = {
+    alu: new THREE.MeshStandardMaterial({ color: 0xd3d9df, metalness: 0.9, roughness: 0.28 }),
+    cu: new THREE.MeshStandardMaterial({ color: 0xd2804a, metalness: 0.95, roughness: 0.3 }),
+    negC: new THREE.MeshStandardMaterial({ color: 0x2e333c, roughness: 0.85 }),
+    posC: new THREE.MeshStandardMaterial({ color: 0x40343f, roughness: 0.8 }),
+    sep: new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.6, transparent: true, opacity: 0.88 }),
+    ele: new THREE.MeshPhysicalMaterial({ color: 0x8fd0ff, roughness: 0.1, transparent: true, opacity: 0.22, depthWrite: false }),
+    dark: new THREE.MeshStandardMaterial({ color: 0x2b313b, roughness: 0.5 }),
+    frame: new THREE.MeshStandardMaterial({ color: 0x7b8794, metalness: 0.7, roughness: 0.35 }),
+    tray: new THREE.MeshStandardMaterial({ color: 0x252c34, metalness: 0.5, roughness: 0.45 }),
+    green: new THREE.MeshStandardMaterial({ color: 0x0d6b4f, roughness: 0.45, metalness: 0.2 }),
+    cool: new THREE.MeshStandardMaterial({ color: 0x2b8fd6, roughness: 0.3, metalness: 0.3 }),
+  };
+  const foilTex = C3.canvasTex(512, 512, (g, w, h) => { const gr = g.createLinearGradient(0, 0, w, h); gr.addColorStop(0, '#f2f4f7'); gr.addColorStop(0.5, '#c7ced6'); gr.addColorStop(1, '#e6eaee'); g.fillStyle = gr; g.fillRect(0, 0, w, h); g.globalAlpha = 0.12; for (let i = 0; i < 60; i++) { g.strokeStyle = i % 2 ? '#fff' : '#8a98a8'; g.lineWidth = 2 + Math.random() * 6; g.beginPath(); const x = Math.random() * w; g.moveTo(x, 0); g.bezierCurveTo(x + 40, h / 3, x - 40, h * 2 / 3, x + 20, h); g.stroke(); } });
+  M.pouch = new THREE.MeshStandardMaterial({ map: foilTex, metalness: 0.55, roughness: 0.32 });
+  const wrapTex = C3.canvasTex(1024, 512, (g, w, h) => { const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#16956a'); gr.addColorStop(1, '#0b5a42'); g.fillStyle = gr; g.fillRect(0, 0, w, h); g.fillStyle = 'rgba(255,255,255,.9)'; g.font = '900 120px Pretendard, sans-serif'; g.textAlign = 'center'; g.fillText('+', w * 0.25, h * 0.32); g.font = '800 64px Pretendard, sans-serif'; g.fillText('LI-ION', w * 0.25, h * 0.6); g.fillStyle = 'rgba(255,255,255,.22)'; g.fillRect(0, h * 0.78, w, 10); });
+  M.wrap = new THREE.MeshStandardMaterial({ map: wrapTex, roughness: 0.35, metalness: 0.2 });
+
+  /* ---------- 1. 셀 세 가지 ---------- */
+  const G1 = new THREE.Group(); scene.add(G1);
+  // 원통형
+  const cyl = new THREE.Group(); cyl.position.set(-3.4, 0, 0); G1.add(cyl);
+  cyl.add(mesh(new THREE.CylinderGeometry(0.62, 0.62, 2.6, 48), M.wrap, 0, 1.3, 0));
+  cyl.add(mesh(new THREE.CylinderGeometry(0.6, 0.6, 0.06, 48), M.alu, 0, 2.62, 0));
+  cyl.add(mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.12, 32), M.alu, 0, 2.7, 0));
+  { const ring = mesh(new THREE.TorusGeometry(0.6, 0.035, 10, 48), M.alu, 0, 2.6, 0); ring.rotation.x = Math.PI / 2; cyl.add(ring); }
+  // 각형
+  const pri = new THREE.Group(); pri.position.set(0, 0, 0); G1.add(pri);
+  pri.add(mesh(new RoundedBoxGeometry(2.3, 2.5, 0.8, 4, 0.08), M.alu, 0, 1.25, 0));
+  const tN = mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.2, 24), M.cu, -0.7, 2.6, 0); pri.add(tN);
+  const tP = mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.2, 24), M.alu, 0.7, 2.6, 0); pri.add(tP);
+  pri.add(mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.03, 24), M.dark, 0, 2.51, 0));
+  // 파우치형
+  const pou = new THREE.Group(); pou.position.set(3.6, 0, 0); G1.add(pou);
+  const pBody = mesh(new RoundedBoxGeometry(2.2, 2.6, 0.32, 4, 0.12), M.pouch, 0, 1.4, 0); pou.add(pBody);
+  pou.add(mesh(new THREE.BoxGeometry(2.6, 3.0, 0.04), M.pouch, 0, 1.4, 0));
+  pou.add(mesh(new THREE.BoxGeometry(0.42, 0.5, 0.025), M.cu, -0.55, 3.05, 0));
+  pou.add(mesh(new THREE.BoxGeometry(0.42, 0.5, 0.025), M.alu, 0.55, 3.05, 0));
+  pou.rotation.x = -0.12;
+  const L1 = [label('원통형', 'G', V(-3.4, 3.2, 0)), label('각형', 'G', V(0, 3.15, 0)), label('파우치형', 'G', V(3.6, 3.6, 0)),
+    label('(−)', 'Neg', V(3.05, 3.45, 0)), label('(+)', 'Pos', V(4.15, 3.45, 0)), label('(−)', 'Neg', V(-0.7, 2.95, 0)), label('(+)', 'Pos', V(0.7, 2.95, 0))];
+  const shapes = { cyl, pri, pou };
+
+  /* ---------- 2. 셀 속 네 가지 ---------- */
+  const G2 = new THREE.Group(); scene.add(G2);
+  const stack = new THREE.Group(); G2.add(stack);
+  const W2 = 4.0, D2 = 2.8;
+  const LAY = []; // {obj, kind, k}
+  const addLay = (kind) => {
+    const g = new THREE.Group();
+    if (kind === 'neg' || kind === 'pos') {
+      const foil = mesh(new THREE.BoxGeometry(W2, 0.03, D2), kind === 'neg' ? M.cu : M.alu); g.add(foil);
+      g.add(mesh(new THREE.BoxGeometry(W2 - 0.25, 0.06, D2 - 0.2), kind === 'neg' ? M.negC : M.posC, 0, 0.045, 0));
+      g.add(mesh(new THREE.BoxGeometry(W2 - 0.25, 0.06, D2 - 0.2), kind === 'neg' ? M.negC : M.posC, 0, -0.045, 0));
+      const tab = mesh(new THREE.BoxGeometry(0.6, 0.02, 0.7), kind === 'neg' ? M.cu : M.alu, kind === 'neg' ? -1.1 : 1.1, 0, -D2 / 2 - 0.32); g.add(tab);
+    } else if (kind === 'sep') {
+      g.add(mesh(new THREE.BoxGeometry(W2 + 0.2, 0.012, D2 + 0.2), M.sep));
+    } else if (kind === 'ele') {
+      const e = new THREE.Mesh(new THREE.BoxGeometry(W2 - 0.2, 1, D2 - 0.3), M.ele); e.renderOrder = 2; g.add(e);
+    } else if (kind === 'film') {
+      g.add(mesh(new RoundedBoxGeometry(W2 + 0.5, 0.05, D2 + 0.5, 2, 0.02), M.pouch));
+    }
+    stack.add(g); LAY.push({ obj: g, kind });
+  };
+  addLay('film');
+  const ORDER = ['neg', 'sep', 'pos', 'sep', 'neg', 'sep', 'pos', 'sep', 'neg'];
+  ORDER.forEach((k) => addLay(k));
+  addLay('film');
+  // 전해질은 판 사이마다
+  const ELE = []; for (let i = 0; i < ORDER.length - 1; i++) { const e = new THREE.Mesh(new THREE.BoxGeometry(W2 - 0.3, 1, D2 - 0.4), M.ele); e.renderOrder = 2; stack.add(e); ELE.push(e); }
+  const findLay = (kind, n = 0) => LAY.filter((l) => l.kind === kind)[n].obj;
+  const L2 = [label('음극(−) · 구리 판', 'Neg', () => findLay('neg', 1).getWorldPosition(V()).add(V(W2 / 2 + 0.9, 0, 0))),
+    label('양극(+) · 알루미늄 판', 'Pos', () => findLay('pos', 1).getWorldPosition(V()).add(V(W2 / 2 + 1.0, 0, 0))),
+    label('분리막', 'Sep', () => findLay('sep', 3).getWorldPosition(V()).add(V(-W2 / 2 - 0.6, 0, 0))),
+    label('전해질(안쪽 길)', 'Ele', () => ELE[4].getWorldPosition(V()).add(V(-W2 / 2 - 0.9, 0, 0.6))),
+    label('주머니(파우치)', 'small', () => LAY[LAY.length - 1].obj.getWorldPosition(V()).add(V(0, 0.25, 0)))];
+  // 감기(젤리롤) 단면
+  const wind = new THREE.Group(); G2.add(wind);
+  {
+    const cut = Math.PI * 1.55, H = 3.0; const mats = [M.negC, M.sep, M.posC, M.sep];
+    for (let i = 0; i < 16; i++) {
+      const r = 0.25 + i * 0.09, m = mats[i % 4];
+      const c = new THREE.Mesh(new THREE.CylinderGeometry(r, r, H, 72, 1, true, 0, cut), m.clone()); c.material.side = THREE.DoubleSide; c.position.y = H / 2 + 0.05; c.castShadow = true; wind.add(c);
+      // 자른 면(띠)
+      [0, cut].forEach((a) => { const sl = mesh(new THREE.BoxGeometry(0.075, H, 0.001 + 0.02), i % 4 === 1 || i % 4 === 3 ? M.sep : (i % 4 === 0 ? M.negC : M.posC)); sl.position.set(Math.sin(a) * r, H / 2 + 0.05, Math.cos(a) * r); sl.rotation.y = a; wind.add(sl); });
+    }
+    const can = new THREE.Mesh(new THREE.CylinderGeometry(1.82, 1.82, 3.2, 72, 1, true, 0, cut), new THREE.MeshStandardMaterial({ color: 0xc9ced6, metalness: 0.9, roughness: 0.3, side: THREE.DoubleSide })); can.position.y = 1.6; wind.add(can);
+    wind.rotation.y = 0.9;
+  }
+  const L2w = [label('음극', 'Neg', V(0.2, 3.5, 0.9)), label('양극', 'Pos', V(1.0, 3.5, 0.2)), label('분리막', 'Sep', V(-0.9, 3.55, 0.7)), label('금속 통', 'small', V(-1.9, 2.6, -0.4))];
+  function layoutStack(ex) {
+    let y = 0.1; const gap = 0.02 + ex * 0.42;
+    LAY.forEach((l, i) => {
+      const t = l.kind === 'film' ? 0.05 : l.kind === 'sep' ? 0.012 : 0.15;
+      y += t / 2; l.obj.position.y = y; y += t / 2 + (i < LAY.length - 1 ? gap * (l.kind === 'film' ? 1.2 : 1) : 0);
+    });
+    // 전해질: 판 사이(분리막 양쪽) 공간을 채워요
+    for (let i = 0; i < ELE.length; i++) {
+      const a = LAY[i + 1].obj.position.y, b = LAY[i + 2].obj.position.y, h = Math.max(0.01, b - a - 0.09);
+      ELE[i].position.y = (a + b) / 2; ELE[i].scale.y = h; ELE[i].visible = ex > 0.04;
+    }
+    stack.position.y = 0.0;
+  }
+
+  /* ---------- 3. 충전과 방전 ---------- */
+  const G3 = new THREE.Group(); scene.add(G3);
+  const cy3 = 1.6;
+  G3.add(mesh(new RoundedBoxGeometry(6.2, 0.2, 3.2, 2, 0.06), M.dark, 0, 0.1, 0));
+  G3.add(mesh(new THREE.BoxGeometry(0.1, 2.8, 2.6), M.cu, -2.55, cy3, 0));
+  const glassy = (c) => new THREE.MeshPhysicalMaterial({ color: c, roughness: 0.55, transparent: true, opacity: 0.55, depthWrite: false });
+  const negB = mesh(new THREE.BoxGeometry(1.5, 2.6, 2.4), glassy(0x39404c), -1.75, cy3, 0); negB.castShadow = false; negB.renderOrder = 3; G3.add(negB);
+  G3.add(mesh(new THREE.BoxGeometry(0.1, 2.8, 2.6), M.alu, 2.55, cy3, 0));
+  const posB = mesh(new THREE.BoxGeometry(1.5, 2.6, 2.4), glassy(0x4a3c49), 1.75, cy3, 0); posB.castShadow = false; posB.renderOrder = 3; G3.add(posB);
+  const sepTex = C3.canvasTex(256, 256, (g, w, h) => { g.fillStyle = '#ffffff'; g.fillRect(0, 0, w, h); g.fillStyle = 'rgba(120,150,180,.35)'; for (let i = 0; i < 260; i++) { g.beginPath(); g.arc(Math.random() * w, Math.random() * h, 1.5 + Math.random() * 2.5, 0, 6.3); g.fill(); } });
+  const sep3 = mesh(new THREE.BoxGeometry(0.05, 2.9, 2.7), new THREE.MeshStandardMaterial({ map: sepTex, transparent: true, opacity: 0.8, roughness: 0.7 }), 0, cy3, 0); G3.add(sep3);
+  const ele3 = new THREE.Mesh(new THREE.BoxGeometry(2.0, 2.6, 2.4), M.ele); ele3.position.set(0, cy3, 0); ele3.renderOrder = 2; G3.add(ele3);
+  const wirePts = [V(-2.55, cy3 + 1.4, 0), V(-2.55, 4.0, 0), V(-2.3, 4.45, 0), V(-0.4, 4.5, 0), V(0.4, 4.5, 0), V(2.3, 4.45, 0), V(2.55, 4.0, 0), V(2.55, cy3 + 1.4, 0)];
+  const wire = C3.tube(wirePts, 0.06, M.cu, 120); G3.add(wire);
+  const ePath = wire.curve.getPoints(160);
+  const eDots = C3.makeDots(26, 0x3b8ef0, 1.5); G3.add(eDots.mesh); eDots.setPath(ePath);
+  const bulb = BULB.make({ kind: 'mini', size: 1.3, tint: 0xffc96b, lightGain: 2.0 }); bulb.position.set(0, 4.5, 0); G3.add(bulb);
+  const chg = new THREE.Group(); chg.position.set(0, 4.5, 0); G3.add(chg);
+  chg.add(mesh(new RoundedBoxGeometry(1.2, 0.8, 0.8, 3, 0.12), new THREE.MeshStandardMaterial({ color: 0x14263b, roughness: 0.4 })));
+  const boltTex = C3.canvasTex(128, 128, (g) => { g.fillStyle = '#ffd34d'; g.beginPath(); g.moveTo(72, 8); g.lineTo(34, 70); g.lineTo(62, 70); g.lineTo(50, 120); g.lineTo(94, 52); g.lineTo(66, 52); g.closePath(); g.fill(); });
+  const bolt = new THREE.Mesh(new THREE.PlaneGeometry(0.6, 0.6), new THREE.MeshBasicMaterial({ map: boltTex, transparent: true, toneMapped: false })); bolt.position.set(0, 0, 0.41); chg.add(bolt);
+  const NI = 48, ionI = new THREE.InstancedMesh(new THREE.SphereGeometry(0.11, 16, 12), new THREE.MeshStandardMaterial({ color: 0xf0b429, emissive: 0xf0a000, emissiveIntensity: 0.45, roughness: 0.35 }), NI); ionI.frustumCulled = false; G3.add(ionI);
+  const IONS = []; for (let k = 0; k < NI; k++) { const row = k % 8, col = Math.floor(k / 8); IONS.push({ y: cy3 - 1.05 + row * 0.3, z: -0.95 + (col % 3) * 0.95 + (row % 2) * 0.3, xn: -2.25 + (col % 6) * 0.2, xp: 1.25 + (col % 6) * 0.2, s: 0, ph: Math.random() * 6 }); }
+  const L3 = [label('음극(−) · 직장', 'Neg', V(-1.75, cy3 + 1.75, 0.6)), label('양극(+) · 집', 'Pos', V(1.75, cy3 + 1.75, 0.6)), label('분리막', 'Sep', V(0, 0.45, 1.5)), label('전해질', 'Ele', V(0.55, cy3 - 0.9, 1.3)), label('', 'D', V(0, 5.6, 0))];
+
+  /* ---------- 4. 셀 → 모듈 → 팩 → 자동차 ---------- */
+  const G4 = new THREE.Group(); scene.add(G4);
+  const cellGeo = new RoundedBoxGeometry(0.13, 0.9, 1.45, 2, 0.03);
+  const tabGeo = new THREE.BoxGeometry(0.03, 0.14, 0.24);
+  const MODS = [], CELLS = [];
+  const modPos = []; for (let j = 0; j < 2; j++) for (let i = 0; i < 3; i++) modPos.push(V(-2.25 + i * 2.25, 0, -0.95 + j * 1.9));
+  const pack = new THREE.Group(); G4.add(pack);
+  modPos.forEach((p, m) => {
+    const mg = new THREE.Group(); mg.position.copy(p); pack.add(mg);
+    const fr = new THREE.Group(); mg.add(fr);
+    fr.add(mesh(new THREE.BoxGeometry(0.08, 1.02, 1.6), M.frame, -1.0, 0.62, 0));
+    fr.add(mesh(new THREE.BoxGeometry(0.08, 1.02, 1.6), M.frame, 1.0, 0.62, 0));
+    fr.add(mesh(new THREE.BoxGeometry(2.08, 0.05, 0.12), M.frame, 0, 1.14, -0.62));
+    fr.add(mesh(new THREE.BoxGeometry(2.08, 0.05, 0.12), M.frame, 0, 1.14, 0.62));
+    fr.add(mesh(new THREE.BoxGeometry(2.0, 0.06, 1.55), M.frame, 0, 0.12, 0));
+    MODS.push({ g: mg, fr });
+    for (let c = 0; c < 12; c++) {
+      const cg = new THREE.Group();
+      cg.add(mesh(cellGeo, M.pouch));
+      cg.add(mesh(tabGeo, c % 2 ? M.alu : M.cu, 0, 0.5, -0.4)); cg.add(mesh(tabGeo, c % 2 ? M.cu : M.alu, 0, 0.5, 0.4));
+      G4.add(cg);
+      CELLS.push({ g: cg, m, c, loc: V(-0.84 + c * 0.153, 0.62, 0) });
+    }
+  });
+  const trayG = new THREE.Group(); pack.add(trayG);
+  trayG.add(mesh(new RoundedBoxGeometry(8.4, 0.22, 4.6, 2, 0.06), M.tray, 0.5, -0.02, 0));
+  [[0.5, 2.25, 8.4, 0.08], [0.5, -2.25, 8.4, 0.08]].forEach(([x, z, w, d]) => trayG.add(mesh(new THREE.BoxGeometry(w, 0.6, d), M.tray, x, 0.3, z)));
+  [[-3.66, 0], [4.66, 0]].forEach(([x]) => trayG.add(mesh(new THREE.BoxGeometry(0.08, 0.6, 4.6), M.tray, x, 0.3, 0)));
+  const coolG = new THREE.Group(); pack.add(coolG);
+  for (let k = 0; k < 6; k++) { const pipe = mesh(new THREE.CylinderGeometry(0.05, 0.05, 7.2, 12), M.cool, 0, 0.11, -1.5 + k * 0.6); pipe.rotation.z = Math.PI / 2; coolG.add(pipe); }
+  const bms = new THREE.Group(); bms.position.set(3.85, 0, 0); pack.add(bms);
+  bms.add(mesh(new RoundedBoxGeometry(1.1, 0.7, 1.6, 2, 0.06), M.green, 0, 0.45, 0));
+  const chipM = new THREE.MeshStandardMaterial({ color: 0x1a1f26, roughness: 0.4 }); for (let k = 0; k < 3; k++) bms.add(mesh(new THREE.BoxGeometry(0.28, 0.06, 0.28), chipM, -0.25 + (k % 2) * 0.45, 0.83, -0.45 + k * 0.45));
+  // 자동차 몸체(반투명)
+  const car = new THREE.Group(); G4.add(car);
+  const bodyM = new THREE.MeshPhysicalMaterial({ color: 0xe9eef3, metalness: 0.3, roughness: 0.25, transparent: true, opacity: 0.4, depthWrite: false, clearcoat: 1 });
+  const glassM = new THREE.MeshPhysicalMaterial({ color: 0x9fc3e6, roughness: 0.05, transparent: true, opacity: 0.25, depthWrite: false });
+  const lower = new THREE.Mesh(new RoundedBoxGeometry(11.5, 1.5, 5.4, 4, 0.5), bodyM); lower.position.set(0.4, 1.35, 0); car.add(lower);
+  const cabin = new THREE.Mesh(new RoundedBoxGeometry(6.4, 1.5, 4.8, 4, 0.6), glassM); cabin.position.set(0.0, 2.75, 0); car.add(cabin);
+  const tireM = new THREE.MeshStandardMaterial({ color: 0x1c232b, roughness: 0.8 }), rimM = new THREE.MeshStandardMaterial({ color: 0xbfc6cd, metalness: 0.9, roughness: 0.3 });
+  [[-3.4, 2.75], [-3.4, -2.75], [4.0, 2.75], [4.0, -2.75]].forEach(([x, z]) => { const w = mesh(new THREE.CylinderGeometry(0.85, 0.85, 0.5, 36), tireM, x, 0.85, z); w.rotation.x = Math.PI / 2; car.add(w); const r = mesh(new THREE.CylinderGeometry(0.45, 0.45, 0.52, 24), rimM, x, 0.85, z); r.rotation.x = Math.PI / 2; car.add(r); });
+  const motor = mesh(new THREE.CylinderGeometry(0.5, 0.5, 1.2, 28), M.alu, 4.0, 0.95, 0); motor.rotation.x = Math.PI / 2; car.add(motor);
+  const L4 = [label('셀', 'G', V(0, 2.6, 0)), label('모듈', 'G', V(0, 1.75, 0)), label('관리 장치(BMS)', 'D', () => bms.getWorldPosition(V()).add(V(0, 1.2, 0))), label('식히는 판', 'Ele', () => coolG.getWorldPosition(V()).add(V(-2.6, 0.12, 2.35))), label('전동기', 'small', () => motor.getWorldPosition(V()).add(V(0, 0.2, 1.6)))];
+  // 단계별 놓을 자리
+  const tmpV = V();
+  function cellTarget(cl, ph) {
+    if (ph === 0) return cl.m === 0 && cl.c === 0 ? { p: V(0, 1.4, 0), s: 2.4, r: 0.3 } : { p: V(0, 1.4, 0), s: 0.001, r: 0.3 };
+    if (ph === 1 && cl.m !== 0) return { p: modPos[0].clone().add(V(0, 0.6, 0)), s: 0.001, r: 0 };
+    const mp = ph === 1 ? V(0, 0, 0) : modPos[cl.m].clone().add(pack.position);
+    return { p: cl.loc.clone().add(mp), s: 1, r: 0 };
+  }
+
+  // 구도 맞추기용 보이지 않는 상자(움직이는 중에도 최종 크기로 맞춰요)
+  const hb = (w, h, d, x, y, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d)); m.visible = false; m.position.set(x, y, z); scene.add(m); return m; };
+  const HB = [hb(0.4, 2.4, 3.6, 0, 1.4, 0), hb(2.2, 1.3, 1.7, 0, 0.6, 0), hb(8.4, 1.4, 4.6, 0.5, 0.6, 0), hb(12, 3.6, 6.2, 0.4, 1.8, 0)];
+
+  /* ---------- 단계 바꾸기 ---------- */
+  let home = -1, step = 0, shape = '', build = '', ph = -1;
+  const all = [G1, G2, G3, G4];
+  const fitStep = (dur) => {
+    const asp = camera.aspect < 1;
+    if (S.step === 1) st.fit(G1, { dir: V(0.3 + { cyl: -0.35, pri: 0, pou: 0.35 }[S.shape], 0.42, 1), margin: asp ? 1.06 : 1.12, dur, extra: [V(0, 3.9, 0)] });
+    else if (S.step === 2) st.fit(S.build === 'stack' ? stack : wind, { dir: S.build === 'stack' ? V(0.55, 0.75, 1) : V(0.3, 0.9, 1), margin: asp ? 1.15 : 1.35, dur });
+    else if (S.step === 3) st.fit(G3, { dir: V(0.25, 0.3, 1), margin: 1.08, dur });
+    else st.fit(HB[S.ph], { dir: V(0.55, 0.6, 1), margin: S.ph === 0 ? 1.5 : S.ph === 1 ? 1.3 : 1.1, dur });
+  };
+  let expose = 0.7;
+  st.onFrame((dt, t) => {
+    if (S.step !== step) { step = S.step; all.forEach((g, i) => (g.visible = i === step - 1)); }
+    L1.forEach((l) => (l.show = step === 1)); L2.forEach((l) => (l.show = step === 2 && S.build === 'stack')); L2w.forEach((l) => (l.show = step === 2 && S.build === 'wind'));
+    L3.forEach((l) => (l.show = step === 3)); L4.forEach((l, i) => (l.show = step === 4 && (i === 0 ? S.ph === 0 : i === 1 ? S.ph === 1 : i <= 3 ? S.ph >= 2 : S.ph === 3)));
+    if (step === 4 && S.ph !== ph) { ph = S.ph; }
+    if (S.home !== home) { const first = home === -1; home = S.home; // 위치를 먼저 맞춘 다음 구도 잡기
+      if (step === 2) layoutStack(S.ex);
+      requestAnimationFrame(() => fitStep(first ? 0 : 1.0)); }
+    if (step === 1) {
+      Object.entries(shapes).forEach(([k, g]) => { const on = k === S.shape; g.scale.setScalar(g.scale.x + ((on ? 1.08 : 0.92) - g.scale.x) * Math.min(1, dt * 5)); });
+      pri.rotation.y = Math.sin(t * 0.4) * 0.12; cyl.rotation.y = t * 0.3;
+    } else if (step === 2) {
+      stack.visible = S.build === 'stack'; wind.visible = S.build === 'wind';
+      expose += (S.ex - expose) * Math.min(1, dt * 5); layoutStack(expose);
+      wind.rotation.y = 0.9 + Math.sin(t * 0.35) * 0.25;
+    } else if (step === 3) {
+      const use = S.cm === 'use';
+      S.level += (use ? -1 : 1) * dt * 0.07;
+      if (S.level <= 0) { S.level = 0; S.cm = 'charge'; S.paint(); }
+      if (S.level >= 1) { S.level = 1; S.cm = 'use'; S.paint(); }
+      S.paintLevel();
+      bulb.visible = use; chg.visible = !use; bulb.set(use ? 0.85 + 0.15 * Math.sin(t * 7) : 0);
+      eDots.update(dt, use ? 0.9 : -0.9);
+      L3[4].set(use ? '전구: 전자가 일을 해요' : '충전기: 전자를 거꾸로 밀어 넣어요');
+      const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), p = V(), sc = V(1, 1, 1);
+      IONS.forEach((a, k) => {
+        const target = k / NI < S.level ? 0 : 1; a.s += (target - a.s) * Math.min(1, dt * 1.4);
+        const x = a.xn + (a.xp - a.xn) * a.s, bump = Math.sin(a.s * Math.PI);
+        p.set(x, a.y + Math.sin(t * 2 + a.ph) * 0.03 + bump * Math.sin(t * 5 + k) * 0.1, a.z * (1 - bump * 0.35)); m4.compose(p, q, sc); ionI.setMatrixAt(k, m4);
+      });
+      ionI.instanceMatrix.needsUpdate = true;
+    } else {
+      const k = Math.min(1, dt * 3.2);
+      pack.position.lerp(S.ph === 3 ? V(0, 0.55, 0) : V(0, 0, 0), k);
+      CELLS.forEach((cl) => {
+        const tg = cellTarget(cl, S.ph);
+        cl.g.position.lerp(tg.p, k * (0.6 + (cl.c % 6) * 0.07));
+        const s = cl.g.scale.x + (tg.s - cl.g.scale.x) * k; cl.g.scale.setScalar(Math.max(0.001, s));
+        cl.g.rotation.y += (tg.r - cl.g.rotation.y) * k;
+        cl.g.visible = cl.g.scale.x > 0.01;
+      });
+      MODS.forEach((md, i) => {
+        const show = S.ph === 1 ? i === 0 : S.ph >= 2; const target = show ? 1 : 0.001;
+        const s = md.fr.scale.x + (target - md.fr.scale.x) * k; md.fr.scale.setScalar(Math.max(0.001, s)); md.fr.visible = s > 0.01;
+        md.g.position.lerp(S.ph === 1 ? V(0, 0, 0) : modPos[i], k);
+      });
+      [trayG, coolG, bms].forEach((g) => { const s = g.scale.x + ((S.ph >= 2 ? 1 : 0.001) - g.scale.x) * k; g.scale.setScalar(Math.max(0.001, s)); g.visible = s > 0.01; });
+      const cs = car.scale.x + ((S.ph === 3 ? 1 : 0.001) - car.scale.x) * k; car.scale.setScalar(Math.max(0.001, cs)); car.visible = cs > 0.01;
+      table.visible = S.ph < 3;
+    }
+    if (step !== 4) table.visible = true;
+  });
+  // 모듈 위치 정리(셀이 모듈을 따라가요)
+  CELLS.forEach((cl) => { const tg = cellTarget(cl, 0); cl.g.position.copy(tg.p); cl.g.scale.setScalar(tg.s); cl.g.visible = tg.s > 0.01; });
+  MODS.forEach((md) => { md.fr.scale.setScalar(0.001); md.fr.visible = false; });
+  [trayG, coolG, bms].forEach((g) => { g.scale.setScalar(0.001); g.visible = false; });
+  car.scale.setScalar(0.001); car.visible = false;
+  layoutStack(S.ex);
+  camera.position.set(4, 6, 12); st.controls.target.set(0, 1.4, 0);
+  S.ok3d = true;
+} catch (err) { window.SM_err('3D 그림', err); const f = document.getElementById('fail3d'); if (f) f.classList.add('show'); }
+</script>
+</body>
+</html>

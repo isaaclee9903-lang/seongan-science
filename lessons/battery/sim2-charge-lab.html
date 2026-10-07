@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>충전·방전 수로 모형과 계산</title>
+<script>
+/* 문제 알림: 코드에 오류가 나면 화면 아래에 빨간 상자로 알려 줘요 (선생님 확인용) */
+(function () {
+  function box() {
+    var b = document.getElementById('smErr');
+    if (!b && document.body) {
+      b = document.createElement('div'); b.id = 'smErr';
+      b.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;background:#fdecea;color:#8a1f17;border:2px solid #d9534f;border-radius:12px;padding:10px 14px;font:600 14px/1.5 sans-serif;white-space:pre-wrap';
+      document.body.appendChild(b);
+    }
+    return b;
+  }
+  window.SM_err = function (where, err) {
+    var msg = '[' + where + '] ' + (err && err.message ? err.message : String(err));
+    var show = function () { var b = box(); if (b) b.textContent += (b.textContent ? '\n' : '') + msg; };
+    if (document.body) show(); else document.addEventListener('DOMContentLoaded', show);
+  };
+  window.addEventListener('error', function (e) { window.SM_err('스크립트', { message: e.message + ' (줄 ' + e.lineno + ')' }); });
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      var S = window.SM || {};
+      if (!S.okUI) window.SM_err('실행 안 됨', { message: '안내·버튼 코드가 실행되지 않았어요. 파일이 끝(</html>)까지 들어 있는지 확인해 주세요.' });
+      if (document.getElementById('fail3d') && !S.ok3d) { var f = document.getElementById('fail3d'); if (f) f.classList.add('show'); window.SM_err('3D 그림', { message: '3D 그림을 불러오지 못했어요. 인터넷 연결(cdn.jsdelivr.net)을 확인하고 새로고침해 주세요.' }); }
+    }, 9000);
+  });
+})();
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+
+  :root{--bg:#edf3f8;--card:#fff;--ink:#14263b;--ink2:#34495e;--muted:#5a6b7e;--line:#dde6ee;--accent:#0e63b3;--accent-soft:#e3effb;
+    --fab:#4b3fb5;--fab-soft:#ecebfb;--ok:#1f9d5c;--no:#d9534f;
+    --shadow:0 1px 2px rgba(20,38,59,.06),0 8px 24px rgba(20,38,59,.07);--ease:cubic-bezier(.2,.8,.2,1)}
+  *{box-sizing:border-box}html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:"Pretendard",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  button{font:inherit;color:inherit}
+  .app{max-width:1320px;margin:0 auto;padding:14px 16px 28px;display:flex;flex-direction:column;gap:12px}
+  .eyebrow{display:inline-flex;font-size:13px;font-weight:700;color:var(--fab);background:var(--fab-soft);padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(21px,2.4vw,28px);margin:6px 0 2px;letter-spacing:-.02em;word-break:keep-all}
+  .sub{margin:0;color:var(--muted);font-size:15px;word-break:keep-all}
+  .card{background:var(--card);border-radius:20px;box-shadow:var(--shadow);border:1px solid rgba(20,38,59,.04)}
+  .pad{padding:14px 16px}
+  .stage{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(330px,1fr);gap:14px;align-items:start}
+  .viewer{position:sticky;top:10px}
+  .flow{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px}
+  .fs{min-height:54px;border:0;border-radius:12px;background:#eef3f8;font-weight:800;font-size:13px;color:var(--muted);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.2;word-break:keep-all;padding:4px}
+  .fs b{font-size:15px}
+  .fs[aria-selected="true"]{background:var(--fab);color:#fff}
+  .fs.seen:not([aria-selected="true"]){background:#e5f5ec;color:#11703f}
+  .stepname{display:flex;align-items:center;gap:10px;margin:2px 0 6px}
+  .stepname .no{flex:none;width:40px;height:40px;border-radius:12px;background:var(--fab);color:#fff;display:grid;place-items:center;font-weight:900;font-size:19px}
+  .stepname h2{margin:0;font-size:21px;letter-spacing:-.01em;word-break:keep-all}
+  .stepname small{display:block;font-size:13px;color:var(--muted);font-weight:700}
+  .what{font-size:16px;line-height:1.75;color:var(--ink2);margin:0 0 10px;word-break:keep-all}
+  .phase{display:grid;gap:6px;margin:8px 0}
+  .ph{display:grid;grid-template-columns:28px 1fr;gap:8px;align-items:start;padding:7px 10px;border-radius:12px;background:#f7fafc;font-size:15px;line-height:1.55;color:var(--muted);word-break:keep-all;transition:background .3s,color .3s}
+  .ph i{font-style:normal;width:26px;height:26px;border-radius:8px;background:#dfe6ee;display:grid;place-items:center;font-weight:900;font-size:13px;color:#607285}
+  .ph.on{background:var(--fab-soft);color:var(--ink)}.ph.on i{background:var(--fab);color:#fff}
+  .ph.done{color:var(--ink2)}.ph.done i{background:#b9b2ee;color:#fff}
+  .box{border-radius:14px;padding:10px 12px;margin-top:8px;font-size:14.5px;line-height:1.65;word-break:keep-all}
+  .box b.t{display:block;font-size:13px;margin-bottom:2px}
+  .an{background:#fff8e6;border:1px solid #f3dc9a;color:#5b4300}
+  .fact{background:#eef6ff;border:1px solid #cfe2f6;color:#1d3f66}
+  .lnk{background:#ecf8f1;border:1px solid #c6e8d4;color:#0f5a36}
+  .src{display:block;font-size:12px;color:var(--muted);margin-top:3px}
+  .acts{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 0}
+  .btn{min-height:50px;border:0;border-radius:14px;padding:0 16px;font-weight:800;font-size:15.5px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;justify-content:center;word-break:keep-all}
+  .btn:active{transform:scale(.97)}
+  .btn.primary{background:var(--fab);color:#fff}.btn.ghost{background:#eef3f8;color:var(--ink2)}
+  .btn[aria-pressed="true"]{background:#14263b;color:#fff}
+  .btn:disabled{opacity:.4;cursor:default;transform:none}
+  .prog{height:6px;border-radius:3px;background:#e6edf4;margin-top:10px;overflow:hidden}
+  .prog i{display:block;height:100%;width:0;background:linear-gradient(90deg,#8a7ff0,var(--fab))}
+  .credit{text-align:center;font-size:13px;font-weight:700;color:#8495a8;letter-spacing:.02em;margin:6px 0 0}
+  /* ===== 3D 화면 공통 ===== */
+  :root{--Bc:#14a5d0;--Ic:#2fae4a;--Fc:#f0522a;--N:#d8433b;--S:#2f62c9;--P:#7d5ad6}
+  .viewer{position:relative;overflow:hidden;padding:0}
+  .gl-host{position:relative;width:100%;height:min(74vh,700px);min-height:380px;background:linear-gradient(#f6f9fc,#d6e3ef);touch-action:none}
+  .gl-host canvas.gl{display:block;width:100%;height:100%;outline:none}
+  .lbls{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+  .lb{position:absolute;left:0;top:0;white-space:nowrap;font-weight:800;font-size:14px;padding:3px 9px;border-radius:9px;background:rgba(255,255,255,.88);color:#34495e;box-shadow:0 2px 8px rgba(20,38,59,.14);will-change:transform}
+  .lb.small{font-size:12px;font-weight:700;color:#5a6b7e;background:rgba(255,255,255,.72);box-shadow:none}
+  .lb.B{background:var(--Bc);color:#fff}.lb.I{background:var(--Ic);color:#fff}.lb.F{background:var(--Fc);color:#fff;font-size:15px}
+  .lb.P{background:var(--P);color:#fff}
+  .lb.dim{opacity:.35}
+  .vt{position:absolute;display:flex;gap:6px;flex-wrap:wrap;z-index:3}
+  .vt.tl{left:10px;top:10px;max-width:calc(100% - 20px)}
+  .vt.tr{right:10px;top:10px;justify-content:flex-end}
+  .vt.bl{left:10px;bottom:10px;align-items:center}
+  .vb{min-height:44px;padding:0 12px;border-radius:12px;border:1px solid rgba(20,38,59,.12);background:rgba(255,255,255,.9);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);font-weight:800;font-size:14px;color:#34495e;cursor:pointer;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 10px rgba(20,38,59,.08)}
+  .vb:active{transform:scale(.96)}
+  .vb .dot{width:12px;height:12px;border-radius:50%;flex:none}
+  .vb[aria-pressed="false"]{opacity:.62}
+  .vb[aria-pressed="false"] .dot{background:#c2ccd6!important}
+  .vb.sel{background:#14263b;color:#fff;border-color:#14263b}
+  .hint{font-size:12.5px;font-weight:700;color:#5a6b7e;background:rgba(255,255,255,.78);border-radius:10px;padding:6px 10px;word-break:keep-all}
+  .inset{position:absolute;z-index:2;border-radius:18px;border:2px solid rgba(255,255,255,.95);box-shadow:0 10px 30px rgba(20,38,59,.22),inset 0 0 0 1px rgba(20,38,59,.08);pointer-events:none;display:none}
+  .inset.on{display:block}
+  .inset .it{position:absolute;left:8px;top:8px;font-size:12.5px;font-weight:900;color:#14263b;background:rgba(255,255,255,.9);border-radius:8px;padding:3px 8px}
+  .inset .ic{position:absolute;left:6px;right:6px;bottom:6px;display:flex;flex-wrap:wrap;gap:4px;justify-content:center}
+  .inset .ic span{font-size:11.5px;font-weight:800;color:#fff;border-radius:7px;padding:2px 7px;white-space:nowrap}
+  .fail3d{position:absolute;inset:0;display:none;place-items:center;text-align:center;padding:24px;font-size:16px;font-weight:700;color:#7a2a22;line-height:1.7;word-break:keep-all;background:#fff4f2}
+  .fail3d.show{display:grid}
+  .model{font-size:13px;color:var(--muted);text-align:right;margin:0;word-break:keep-all}
+  @media (max-width:900px){.gl-host{height:min(56vh,620px)}}
+  .zoombadge{position:absolute;right:10px;top:62px;z-index:3;font-size:13px;font-weight:800;color:#fff;background:rgba(75,63,181,.9);border-radius:10px;padding:6px 10px;display:none;word-break:keep-all;max-width:60%}
+  .zoombadge.on{display:block}
+  @media (max-width:900px){.stage{grid-template-columns:1fr}.viewer{position:relative;top:0}}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+  /* ===== 이 수업 전용 ===== */
+  :root{--fab:#0d6b4f;--fab-soft:#e2f5ec}
+  .eyebrow{color:#0d6b4f;background:#e2f5ec}
+  .viewer{padding:10px}
+  .svgbox svg{display:block;width:100%;height:auto;border-radius:14px}
+  .modes{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px}
+  .md{min-height:54px;border:0;border-radius:14px;background:#eef3f8;font-weight:800;font-size:15.5px;color:var(--muted);cursor:pointer;word-break:keep-all}
+  .md[aria-selected="true"]{background:var(--fab);color:#fff}
+  .stepname .no{background:var(--fab)}
+  .seg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:8px 0}
+  .seg.two{grid-template-columns:1fr 1fr}
+  .seg button{min-height:52px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:14.5px;cursor:pointer;word-break:keep-all;padding:4px 6px;line-height:1.3}
+  .seg button[aria-pressed="true"]{border-color:var(--fab);background:var(--fab-soft);color:#0a5540}
+  .lbl{font-size:14px;font-weight:800;color:var(--ink2);margin:12px 0 0}
+  .tgl{width:100%;min-height:50px;border-radius:12px;border:2px dashed #c9d6e2;background:#fff;font-weight:800;font-size:15px;cursor:pointer;margin:8px 0}
+  .tgl[aria-pressed="true"]{border-style:solid;border-color:#1b6fb0;background:#e3f1fc;color:#1b4f80}
+  .lvl{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;margin:10px 0 2px;font-weight:800;font-size:14.5px;color:var(--ink2)}
+  .lvl .gt{height:22px;border-radius:99px;background:#eef3f8;overflow:hidden;position:relative;box-shadow:inset 0 0 0 1px #dbe4ec}
+  .lvl .gt i{position:absolute;left:0;top:0;bottom:0;width:100%;border-radius:99px;background:linear-gradient(90deg,#9be3bf,#2bb673)}
+  .lvl b{min-width:52px;text-align:right;color:#0a5540}
+  .why{margin-top:10px;display:grid;gap:6px}
+  .why h3{margin:6px 0 2px;font-size:16px}
+  .why .w{display:grid;grid-template-columns:28px 1fr;gap:8px;align-items:start;padding:8px 10px;border-radius:12px;background:#f7fafc;font-size:14.5px;line-height:1.6;color:var(--ink2);word-break:keep-all}
+  .why .w i{font-style:normal;width:26px;height:26px;border-radius:8px;background:var(--fab);color:#fff;display:grid;place-items:center;font-weight:900;font-size:13px}
+  .map{display:grid;grid-template-columns:1fr auto 1fr;gap:4px 8px;align-items:center;font-size:14.5px;font-weight:800;color:var(--ink2);margin:10px 0;word-break:keep-all}
+  .map span:nth-child(3n+2){color:#8a98a8;font-weight:900}
+  .map .w1{background:#e3f1fc;color:#1b4f80;border-radius:10px;padding:6px 10px}
+  .map .c1{background:#e2f5ec;color:#0a5540;border-radius:10px;padding:6px 10px}
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:8px 0}
+  .cd{min-height:84px;border-radius:14px;border:2px solid #d4dee8;background:#fff;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:6px 4px;font-weight:800;font-size:13.5px;word-break:keep-all;text-align:center;line-height:1.3}
+  .cd svg{width:30px;height:30px}
+  .cd small{font-size:12px;color:var(--muted);font-weight:700}
+  .cd[aria-pressed="true"]{border-color:var(--fab);background:var(--fab-soft)}
+  .cards.dev .cd[aria-pressed="true"]{border-color:#b07800;background:#fff6dc}
+  .formula{margin:10px 0;padding:12px 14px;border-radius:14px;background:#14263b;color:#fff;font-size:15.5px;line-height:1.9;word-break:keep-all}
+  .formula b{color:#ffd76a;font-family:ui-monospace,Consolas,monospace}
+  .formula .big{font-size:22px;font-weight:900;color:#ffd76a}
+  .cmp p{margin:0 0 8px;font-size:14.5px;line-height:1.7;color:var(--ink2);word-break:keep-all}
+  .tag{display:inline-block;font-size:11.5px;font-weight:800;border-radius:7px;padding:1px 7px;margin-left:4px;vertical-align:1px}
+  .tag.t{background:#e3effb;color:#0e63b3}.tag.e{background:#f1f3f5;color:#5a6b7e}.tag.v{background:#fff1e6;color:#b8430a}
+  .gnote{font-size:12.5px;color:var(--muted);margin:2px 0 0;word-break:keep-all}
+  .chart svg{display:block;width:100%;height:auto}
+  [hidden]{display:none!important}
+  @media (max-width:520px){.cards{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <span class="eyebrow">배터리 · 시뮬레이션 ②</span>
+    <h1>충전·방전 수로 모형과 배터리 계산기</h1>
+    <p class="sub">옴의 법칙 시간의 수로 모형으로 충전과 방전을 다시 보고, 교과서 식(전력량 = 소비 전력 × 시간)으로 배터리를 얼마나 쓸 수 있는지 계산해 봐요.</p>
+  </header>
+
+  <div class="stage">
+    <section class="card viewer svgbox">
+      <svg id="wm" viewBox="0 0 760 540" role="img" aria-label="왼쪽은 수로 모형, 오른쪽은 같은 순간의 배터리 회로. 충전하면 펌프가 물을 높은 물탱크로 올리고, 충전기가 전자를 밀어 넣는다. 사용하면 물탱크의 물이 내려오며 물레방아를 돌리고, 전자가 전구를 지나 전구가 켜진다.">
+        <defs>
+          <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e6f1f8"/><stop offset="1" stop-color="#f6f9fb"/></linearGradient>
+          <linearGradient id="water" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5bb7f5"/><stop offset="1" stop-color="#1b6fb0"/></linearGradient>
+          <linearGradient id="tankG" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#d9e2ea"/><stop offset=".5" stop-color="#f4f7fa"/><stop offset="1" stop-color="#c3cfda"/></linearGradient>
+          <linearGradient id="stone" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#cdbfa8"/><stop offset="1" stop-color="#a8977c"/></linearGradient>
+          <linearGradient id="pipe" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#9aa6b2"/><stop offset=".5" stop-color="#e6ebf0"/><stop offset="1" stop-color="#8a98a8"/></linearGradient>
+          <linearGradient id="cellG" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#aab5c0"/><stop offset=".45" stop-color="#eef1f4"/><stop offset="1" stop-color="#9aa6b2"/></linearGradient>
+          <linearGradient id="wood" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#c99a6b"/><stop offset="1" stop-color="#9c6e44"/></linearGradient>
+          <radialGradient id="bulbG" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="rgba(255,214,90,.95)"/><stop offset="1" stop-color="rgba(255,214,90,0)"/></radialGradient>
+          <clipPath id="tankClip"><rect id="tankClipR" x="236" y="82" width="148" height="150" rx="6"/></clipPath>
+          <filter id="sh" x="-20%" y="-20%" width="140%" height="160%"><feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#14263b" flood-opacity=".16"/></filter>
+          <filter id="gl" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="1.8" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        </defs>
+        <rect width="760" height="540" fill="url(#sky)"/>
+        <text x="24" y="34" font-size="16" font-weight="900" fill="#1b4f80">수로 모형</text>
+        <text x="104" y="34" font-size="12.5" font-weight="700" fill="#627386">(선생님이 만든 비유)</text>
+        <text x="478" y="34" font-size="16" font-weight="900" fill="#0a5540">배터리 회로</text>
+        <path d="M454 20 V520" stroke="#d5dee8" stroke-width="2" stroke-dasharray="4 7"/>
+
+        <!-- 땅과 아래 연못 -->
+        <path d="M0 440 H452 V540 H0Z" fill="#cfe0d2"/>
+        <rect x="30" y="448" width="400" height="58" rx="22" fill="url(#water)" opacity=".9"/>
+        <path d="M60 468 C100 462 130 472 170 466 M250 474 C290 468 330 478 370 470" stroke="rgba(255,255,255,.4)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <text x="230" y="530" text-anchor="middle" font-size="13" font-weight="800" fill="#1b4f80">낮은 곳의 물</text>
+
+        <!-- 탑(물탱크 받침) -->
+        <rect x="246" y="232" width="20" height="210" fill="url(#stone)"/>
+        <rect x="354" y="232" width="20" height="210" fill="url(#stone)"/>
+        <path d="M246 300 L374 360 M374 300 L246 360" stroke="#b5a68d" stroke-width="5"/>
+        <!-- 물탱크 -->
+        <g filter="url(#sh)"><rect id="tankBox" x="230" y="76" width="160" height="162" rx="12" fill="url(#tankG)" stroke="#9fb3c4" stroke-width="2.5"/></g>
+        <g clip-path="url(#tankClip)">
+          <rect id="tankW" x="236" y="82" width="148" height="150" fill="url(#water)"/>
+          <path id="tankWave" d="" fill="rgba(255,255,255,.35)"/>
+        </g>
+        <rect id="tankGlass" x="236" y="82" width="148" height="150" rx="6" fill="none" stroke="rgba(255,255,255,.7)" stroke-width="2"/>
+        <text id="tankT" x="310" y="66" text-anchor="middle" font-size="14" font-weight="900" fill="#14263b">물탱크 = 배터리</text>
+        <!-- 높이 차 -->
+        <g id="hgt"><path d="M206 232 V448" stroke="#7d5ad6" stroke-width="2.5" stroke-dasharray="5 5"/><path d="M198 240 L206 228 L214 240 M198 440 L206 452 L214 440" fill="none" stroke="#7d5ad6" stroke-width="2.5"/><text x="194" y="346" text-anchor="end" font-size="13" font-weight="900" fill="#5b3fc4">높이 차</text><text x="194" y="364" text-anchor="end" font-size="12" font-weight="800" fill="#5b3fc4">= 전압</text></g>
+
+        <!-- 펌프(충전기) 길: 연못 → 펌프 → 탱크 위 -->
+        <path d="M86 448 V180 C86 130 110 104 150 104 H232" fill="none" stroke="url(#pipe)" stroke-width="16" stroke-linecap="round"/>
+        <path id="pUp" d="M86 448 V180 C86 130 110 104 150 104 H244" fill="none" stroke="none"/>
+        <g id="pump" transform="translate(86 330)" filter="url(#sh)">
+          <rect x="-38" y="-34" width="76" height="68" rx="14" fill="#14263b"/>
+          <circle r="22" fill="#25374d" stroke="#3a5470" stroke-width="2"/>
+          <g id="pumpRot"><path d="M0 -18 L5 -4 L18 0 L5 4 L0 18 L-5 4 L-18 0 L-5 -4Z" fill="#ffd34d"/></g>
+        </g>
+        <text x="86" y="386" text-anchor="middle" font-size="13.5" font-weight="900" fill="#14263b">펌프</text>
+        <text x="86" y="402" text-anchor="middle" font-size="12" font-weight="800" fill="#627386">= 충전기</text>
+
+        <!-- 내려가는 길: 탱크 → 물레방아 → 연못 -->
+        <path d="M384 210 H410 C420 210 424 216 424 226 V300" fill="none" stroke="url(#pipe)" stroke-width="16" stroke-linecap="round"/>
+        <path id="pDown" d="M380 210 H410 C420 210 424 216 424 226 V318" fill="none" stroke="none"/>
+        <path id="pFall" d="M424 318 C424 360 420 400 414 452" fill="none" stroke="none"/>
+        <g id="wheel" transform="translate(396 350)">
+          <circle r="44" fill="none" stroke="url(#wood)" stroke-width="7"/>
+          <circle r="8" fill="#7a5233"/>
+          <g id="wheelRot"></g>
+        </g>
+        <rect x="392" y="350" width="8" height="92" fill="#8a6440"/>
+        <text x="344" y="420" text-anchor="end" font-size="13.5" font-weight="900" fill="#14263b">물레방아</text>
+        <text x="344" y="436" text-anchor="end" font-size="12" font-weight="800" fill="#627386">= 전구·휴대폰</text>
+        <text id="valveT" x="300" y="262" text-anchor="middle" font-size="12" font-weight="800" fill="#627386"></text>
+
+        <!-- ===== 오른쪽: 회로 ===== -->
+        <path id="cWire" d="M560 300 V120 C560 100 572 90 592 90 H690 C710 90 720 100 720 120 V300 C720 460 720 470 700 470 H580 C566 470 560 462 560 448 V420" fill="none" stroke="#c0703a" stroke-width="6" stroke-linecap="round" opacity=".35"/>
+        <path id="eUse" d="M560 420 V448 C560 462 566 470 580 470 H700 C720 470 720 460 720 300 V120 C720 100 710 90 690 90 H592 C572 90 560 100 560 120 V300" fill="none" stroke="none"/>
+        <path id="eChg" d="M560 300 V120 C560 100 572 90 592 90 H690 C710 90 720 100 720 120 V300 C720 460 720 470 700 470 H580 C566 470 560 462 560 448 V420" fill="none" stroke="none"/>
+        <!-- 위쪽 전선의 전구 / 아래 전선의 충전기 -->
+        <g id="cBulb" transform="translate(640 90)"><circle r="40" fill="url(#bulbG)" id="cGlow"/><circle r="18" fill="#fff6d6" stroke="#d9b44a" stroke-width="2.5"/><path d="M-6 4 C-3 -7 3 -7 6 4" fill="none" stroke="#e8a000" stroke-width="2.4"/><rect x="-9" y="16" width="18" height="9" rx="2" fill="#9aa6b2"/></g>
+        <text x="640" y="146" text-anchor="middle" font-size="13" font-weight="900" fill="#7a5600">전구</text>
+        <g id="cChg" transform="translate(640 470)"><rect x="-40" y="-22" width="80" height="44" rx="11" fill="#14263b"/><path d="M4 -14 L-9 4 H0 L-4 16 L10 -4 H1 L5 -14Z" fill="#ffd34d" id="cBolt"/></g>
+        <text x="640" y="512" text-anchor="middle" font-size="13" font-weight="900" fill="#14263b">충전기</text>
+        <!-- 셀 -->
+        <g filter="url(#sh)" transform="translate(520 290)">
+          <rect x="22" y="-8" width="36" height="12" rx="3" fill="#9aa6b2"/>
+          <rect x="0" y="0" width="80" height="140" rx="12" fill="url(#cellG)" stroke="#8a98a8" stroke-width="2"/>
+          <rect x="8" y="8" width="64" height="124" rx="7" fill="#e8eef3"/>
+          <rect id="cLvl" x="8" y="8" width="64" height="124" rx="7" fill="#2bb673"/>
+          <text x="40" y="28" text-anchor="middle" font-size="16" font-weight="900" fill="#d8433b">+</text>
+          <text x="40" y="128" text-anchor="middle" font-size="18" font-weight="900" fill="#2f62c9">−</text>
+        </g>
+        <text x="600" y="276" font-size="12.5" font-weight="800" fill="#627386">배터리</text>
+        <text id="cMsg" x="640" y="200" text-anchor="middle" font-size="12" font-weight="900" fill="#2f62c9"></text>
+      </svg>
+      <div style="display:flex;flex-wrap:wrap;gap:6px 16px;justify-content:center;font-size:13px;font-weight:800;color:#34495e;margin-top:6px">
+        <span><i style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#2b8fd6;vertical-align:-1px"></i> 물 = 전류</span>
+        <span><i style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#3b8ef0;vertical-align:-1px"></i> 전자</span>
+        <span>물탱크의 물 = 배터리에 담긴 전기 에너지</span>
+      </div>
+      <p class="model" style="text-align:center;margin-top:4px">개념 이해를 위한 모형이에요. 물의 양과 빠르기는 비교만 하는 것이에요(숫자 없음).</p>
+    </section>
+
+    <section class="card pad">
+      <div class="modes" role="tablist">
+        <button class="md" type="button" role="tab" id="mA" aria-selected="true">충전·방전 수로 모형</button>
+        <button class="md" type="button" role="tab" id="mB" aria-selected="false">배터리 계산기</button>
+      </div>
+
+      <div id="paneA">
+        <div class="seg" role="group" aria-label="무엇을 할까">
+          <button type="button" data-act="charge" aria-pressed="false">충전하기<br><small>펌프 켜기</small></button>
+          <button type="button" data-act="use" aria-pressed="true">사용하기<br><small>전구 켜기</small></button>
+          <button type="button" data-act="rest" aria-pressed="false">쉬기<br><small>모두 멈춤</small></button>
+        </div>
+        <div class="lvl"><span>담긴 양</span><div class="gt"><i id="gLvl"></i></div><b id="vLvl">100%</b></div>
+        <button type="button" class="tgl" id="tDam" aria-pressed="false">작은 댐(MLCC)으로 바꿔 보기</button>
+        <div class="box fact" id="aMsg"></div>
+        <div class="map">
+          <span class="w1">펌프</span><span>↔</span><span class="c1">충전기</span>
+          <span class="w1">높은 물탱크의 물</span><span>↔</span><span class="c1">배터리에 담긴 전기 에너지</span>
+          <span class="w1">높이 차</span><span>↔</span><span class="c1">전압</span>
+          <span class="w1">물레방아</span><span>↔</span><span class="c1">전구 · 휴대폰</span>
+        </div>
+        <div class="why">
+          <h3>왜 그럴까?</h3>
+          <div class="w"><i>1</i><span><b>충전</b>은 펌프로 물을 높은 물탱크에 퍼 올려 담아 두는 일과 같아요. 충전기가 전기 에너지를 배터리에 넣어요.</span></div>
+          <div class="w"><i>2</i><span><b>사용(방전)</b>하면 탱크의 물이 내려오며 물레방아를 돌려요. 배터리의 전기 에너지가 전구에서 빛에너지로 바뀌어요.</span></div>
+          <div class="w"><i>3</i><span>배터리는 <b>큰 저수지</b>라 오래 쓸 수 있어요. 작은 댐(MLCC)은 금방 차고 금방 비어서, 아주 짧은 순간 칩을 받쳐 주는 데 써요.</span></div>
+        </div>
+        <div class="box lnk"><b class="t">지난 시간과 연결</b>옴의 법칙의 수로 모형에서 전지는 펌프였어요. 충전할 수 있는 배터리는 '높은 곳에 물을 담아 두는 탱크'와 '그 탱크를 채우는 펌프(충전기)'로 나누어 볼 수 있어요.</div>
+      </div>
+
+      <div id="paneB" hidden>
+        <div class="stepname"><span class="no">B</span><div><h2>시간 = 전력량 ÷ 소비 전력</h2><small>전력량 = 소비 전력 × 시간에서 거꾸로 구해요</small></div></div>
+        <p class="lbl">배터리 고르기</p>
+        <div class="cards" id="bats"></div>
+        <p class="lbl">전기를 쓸 기구 고르기</p>
+        <div class="cards dev" id="devs"></div>
+        <div class="formula" id="fx"></div>
+        <div class="cmp" id="cmp"></div>
+        <div class="chart" id="chart"></div>
+        <p class="gnote"><span class="tag t">교과서</span> 교과서 그림의 소비 전력 · <span class="tag e">예시</span> 이해를 돕는 예시 값(제품마다 다름) · <span class="tag v">가상</span> 계산하기 쉽게 만든 값. 실제로는 충전·사용할 때 일부가 열로 빠져나가 계산보다 조금 짧아요.</p>
+      </div>
+    </section>
+  </div>
+  <p class="credit">배터리 읽기 자료 &nbsp;|&nbsp; 제작 · 성안중학교 이삭 T</p>
+</div>
+
+<script>
+window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) => Array.from(r.querySelectorAll(s)) };
+</script>
+<script>
+/* ===== 2D 도식 도구 (SVG) =====
+   FLOW.dots(path, 옵션): SVG 길(path)을 따라 알갱이(전기·물·열)가 흐르게 해요.
+     옵션 n(개수), r(크기), color, speed(초당 길 몇 바퀴), layer(알갱이를 넣을 g, 생략하면 길의 부모), glow(빛 번짐)
+     반환값.set({ rate: 0~1(보이는 양과 빠르기), color }) 로 바꿔요.
+   FLOW.onFrame(fn): 화면에 보일 때만 매 프레임 fn(dt, t)를 불러요(탭 껍데기에서 숨은 탭이면 쉬어요).
+   FLOW.num(el, 값, 자릿수): 숫자를 부드럽게 바꿔 보여 줘요.
+   크기·개수·빠르기는 개념 이해를 위한 모형이에요. */
+const FLOW = (() => {
+  const NS = 'http://www.w3.org/2000/svg';
+  const REDUCE = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const fns = [];
+  function visibleNow() {
+    if (document.hidden) return false;
+    try { const f = window.frameElement; if (f && f.hasAttribute('data-page') && !f.classList.contains('on')) return false; } catch (e) {}
+    return true;
+  }
+  let last = performance.now();
+  function tick(now) {
+    requestAnimationFrame(tick);
+    const dt = Math.min(0.05, Math.max(0, (now - last) / 1000)); last = now;
+    if (!visibleNow()) return;
+    for (const f of fns) { try { f(dt, now / 1000); } catch (e) { console.error(e); } }
+  }
+  requestAnimationFrame(tick);
+  const onFrame = (f) => fns.push(f);
+  function onScreen(el) { const r = el.getBoundingClientRect(); return r.bottom > -40 && r.top < (window.innerHeight || 800) + 40; }
+
+  function dots(path, o = {}) {
+    const n = o.n || 14, layer = o.layer || path.parentNode, L = path.getTotalLength();
+    const svg = path.ownerSVGElement;
+    const g = document.createElementNS(NS, 'g'); g.setAttribute('pointer-events', 'none'); layer.appendChild(g);
+    const cs = [];
+    for (let k = 0; k < n; k++) {
+      const c = document.createElementNS(NS, 'circle'); c.setAttribute('r', o.r || 4);
+      if (o.glow) c.setAttribute('filter', o.glow);
+      g.appendChild(c); cs.push(c);
+    }
+    let rate = o.rate === undefined ? 1 : o.rate, color = o.color || '#2f6fd6', off = Math.random(), speed = o.speed || 0.12;
+    const paint = () => cs.forEach((c) => c.setAttribute('fill', color)); paint();
+    function place() {
+      const show = Math.round(n * Math.min(1, rate));
+      cs.forEach((c, k) => {
+        if (k >= show) { c.setAttribute('opacity', '0'); return; }
+        const s = ((off + k / n) % 1), p = path.getPointAtLength(s * L);
+        c.setAttribute('cx', p.x.toFixed(1)); c.setAttribute('cy', p.y.toFixed(1));
+        c.setAttribute('opacity', String(Math.min(1, s * 8, (1 - s) * 8)));
+      });
+    }
+    onFrame((dt) => { if (REDUCE || !onScreen(svg)) return; off = (off + dt * speed * (0.25 + 0.75 * Math.min(1, rate))) % 1; place(); });
+    place();
+    return { set(v) { if (v.rate !== undefined) rate = v.rate; if (v.color) { color = v.color; paint(); } if (v.speed) speed = v.speed; place(); }, g };
+  }
+
+  const shown = new WeakMap();
+  function num(el, v, digits = 0) {
+    const from = shown.has(el) ? shown.get(el) : 0; shown.set(el, v);
+    const fmt = (x) => x.toLocaleString('ko-KR', { minimumFractionDigits: digits, maximumFractionDigits: digits });
+    if (REDUCE) { el.textContent = fmt(v); return; }
+    let t = 0; const step = (dt) => { t = Math.min(1, t + dt / 0.5); el.textContent = fmt(from + (v - from) * (1 - Math.pow(1 - t, 3))); return t < 1; };
+    const f = (dt) => { if (!step(dt)) { const i = fns.indexOf(f); if (i >= 0) fns.splice(i, 1); } };
+    fns.push(f);
+  }
+  return { dots, onFrame, num, REDUCE, NS };
+})();
+/* ===== 블록 1: 도식·버튼 ===== */
+(() => {
+  'use strict';
+  try {
+    const { $, $$ } = window.SM, NS = FLOW.NS;
+    const el = (tag, at, parent) => { const e = document.createElementNS(NS, tag); Object.entries(at).forEach(([k, v]) => e.setAttribute(k, v)); if (parent) parent.appendChild(e); return e; };
+    /* 물레방아 날개 */
+    const wr = $('#wheelRot'); for (let k = 0; k < 8; k++) { const a = k * 45; el('rect', { x: -4, y: -46, width: 8, height: 46, fill: '#a77b52', transform: `rotate(${a})` }, wr); el('rect', { x: -12, y: -52, width: 24, height: 12, rx: 2, fill: '#c99a6b', stroke: '#7a5233', 'stroke-width': 1.5, transform: `rotate(${a})` }, wr); }
+    /* 흐름 알갱이 */
+    const D = {
+      up: FLOW.dots($('#pUp'), { n: 18, r: 5.5, color: '#2b8fd6', speed: 0.14 }),
+      down: FLOW.dots($('#pDown'), { n: 8, r: 5.5, color: '#2b8fd6', speed: 0.3 }),
+      fall: FLOW.dots($('#pFall'), { n: 7, r: 5, color: '#5bb7f5', speed: 0.5 }),
+      eUse: FLOW.dots($('#eUse'), { n: 22, r: 5, color: '#3b8ef0', speed: 0.14, glow: 'url(#gl)' }),
+      eChg: FLOW.dots($('#eChg'), { n: 22, r: 5, color: '#3b8ef0', speed: 0.14, glow: 'url(#gl)' }),
+    };
+    const S = { act: 'use', level: 1, dam: false };
+    const MSG = {
+      charge: '<b class="t">충전하는 중</b>펌프(충전기)가 낮은 곳의 물을 <b>높은 물탱크로 퍼 올려요</b>. 회로에서는 충전기가 전자를 (+)극 쪽에서 (−)극 쪽으로 밀어 넣어 배터리에 전기 에너지를 담아요.',
+      use: '<b class="t">사용하는 중(방전)</b>탱크의 물이 내려오며 <b>물레방아를 돌려요</b>. 회로에서는 전자가 (−)극에서 전구를 지나 (+)극으로 흐르며 전구가 빛나요. 담긴 양이 조금씩 줄어요.',
+      rest: '<b class="t">쉬는 중</b>펌프도 물레방아도 멈췄어요. 물탱크의 물은 그대로 높은 곳에 있어요. 배터리도 쓰지 않으면 전기 에너지를 담은 채로 기다려요.',
+      empty: '<b class="t">다 썼어요</b>물탱크가 비어 물레방아가 멈췄어요. 배터리가 다 닳아 전구가 꺼졌어요. \'충전하기\'를 눌러 다시 채워 보세요.',
+      full: '<b class="t">가득 찼어요</b>물탱크가 가득 차서 펌프가 멈췄어요. 휴대폰도 다 충전되면 관리 장치가 충전을 멈춰요.',
+    };
+    let note = '';
+    function paint() {
+      $$('[data-act]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.act === S.act)));
+      $('#tDam').setAttribute('aria-pressed', String(S.dam));
+      $('#tDam').textContent = S.dam ? '큰 저수지(배터리)로 되돌리기' : '작은 댐(MLCC)으로 바꿔 보기';
+      let m = MSG[S.act];
+      if (S.act === 'use' && S.level <= 0.001) m = MSG.empty;
+      if (S.act === 'charge' && S.level >= 0.999) m = MSG.full;
+      if (S.dam) m += '<br><b>작은 댐</b>이라 물을 조금밖에 담지 못해 <b>순식간에</b> 차고 비어요. MLCC는 칩이 갑자기 전기를 많이 쓰는 아주 짧은 순간을 받쳐 주는 일을 해요.';
+      $('#aMsg').innerHTML = m;
+    }
+    $$('[data-act]').forEach((b) => b.addEventListener('click', () => { S.act = b.dataset.act; paint(); }));
+    $('#tDam').addEventListener('click', () => { S.dam = !S.dam; S.level = Math.min(S.level, 1); paint(); });
+    /* 탱크 크기 */
+    const T = { big: { x: 230, y: 76, w: 160, h: 162 }, small: { x: 230, y: 168, w: 160, h: 70 } };
+    let tk = { ...T.big }, spin = 0, pspin = 0, waveT = 0, last = '';
+    FLOW.onFrame((dt, t) => {
+      const g = S.dam ? T.small : T.big;
+      ['x', 'y', 'w', 'h'].forEach((k) => (tk[k] += (g[k] - tk[k]) * Math.min(1, dt * 4)));
+      $('#tankBox').setAttribute('x', tk.x.toFixed(1)); $('#tankBox').setAttribute('y', tk.y.toFixed(1)); $('#tankBox').setAttribute('width', tk.w.toFixed(1)); $('#tankBox').setAttribute('height', tk.h.toFixed(1));
+      const ix = tk.x + 6, iy = tk.y + 6, iw = tk.w - 12, ih = tk.h - 12;
+      [$('#tankClipR'), $('#tankGlass')].forEach((r) => { r.setAttribute('x', ix.toFixed(1)); r.setAttribute('y', iy.toFixed(1)); r.setAttribute('width', iw.toFixed(1)); r.setAttribute('height', ih.toFixed(1)); });
+      $('#tankT').setAttribute('y', (tk.y - 10).toFixed(1));
+      $('#tankT').textContent = S.dam ? '작은 댐 = MLCC' : '물탱크 = 배터리';
+      // 담긴 양 바꾸기(작은 댐은 아주 빨리)
+      const rate = (S.dam ? 0.9 : 0.06) * dt;
+      if (S.act === 'charge') S.level = Math.min(1, S.level + rate);
+      if (S.act === 'use') S.level = Math.max(0, S.level - rate);
+      const state = S.act + (S.level <= 0.001 ? 'E' : S.level >= 0.999 ? 'F' : '') + S.dam;
+      if (state !== last) { last = state; paint(); }
+      const wy = iy + ih * (1 - S.level);
+      $('#tankW').setAttribute('x', ix.toFixed(1)); $('#tankW').setAttribute('width', iw.toFixed(1)); $('#tankW').setAttribute('y', wy.toFixed(1)); $('#tankW').setAttribute('height', (ih * S.level + 2).toFixed(1));
+      waveT += dt; let d = `M${ix} ${wy + 6}`; for (let x = 0; x <= iw; x += 8) d += ` L${(ix + x).toFixed(1)} ${(wy + Math.sin(x / 14 + waveT * 3) * 2.2).toFixed(1)}`; d += ` L${ix + iw} ${wy + 6}Z`; $('#tankWave').setAttribute('d', S.level > 0.02 ? d : '');
+      const flowUp = S.act === 'charge' && S.level < 0.999, flowDown = S.act === 'use' && S.level > 0.001;
+      D.up.set({ rate: flowUp ? 1 : 0 }); D.down.set({ rate: flowDown ? 1 : 0 }); D.fall.set({ rate: flowDown ? 1 : 0 });
+      D.eUse.set({ rate: flowDown ? 1 : 0 }); D.eChg.set({ rate: flowUp ? 1 : 0 });
+      spin += dt * (flowDown ? 120 : 0); pspin += dt * (flowUp ? 420 : 0);
+      $('#wheelRot').setAttribute('transform', `rotate(${spin % 360})`); $('#pumpRot').setAttribute('transform', `rotate(${pspin % 360})`);
+      $('#cGlow').setAttribute('opacity', flowDown ? String(0.75 + 0.25 * Math.sin(t * 7)) : '0');
+      $('#cBolt').setAttribute('fill', flowUp ? '#ffd34d' : '#5a6b7e');
+      $('#cChg').setAttribute('opacity', S.act === 'charge' ? '1' : '0.3'); $('#cBulb').setAttribute('opacity', S.act === 'charge' ? '0.45' : '1');
+      $('#cLvl').setAttribute('height', (124 * S.level).toFixed(1)); $('#cLvl').setAttribute('y', (8 + 124 * (1 - S.level)).toFixed(1));
+      $('#cLvl').setAttribute('fill', S.level < 0.2 ? '#e8590c' : '#2bb673');
+      $('#cMsg').textContent = flowDown ? '전자: (−)극 → 전구 → (+)극' : flowUp ? '충전기 → 전자를 (−)극 쪽으로' : '';
+      $('#valveT').textContent = '';
+      $('#gLvl').style.width = (S.level * 100).toFixed(0) + '%'; $('#gLvl').style.background = S.level < 0.2 ? 'linear-gradient(90deg,#ffc9a8,#e8590c)' : '';
+      $('#vLvl').textContent = Math.round(S.level * 100) + '%';
+    });
+    paint();
+
+    /* B: 배터리 계산기 */
+    const BAT = [
+      { id: 'phone', n: '스마트폰', wh: 20, src: 'e', ic: '<rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/>' },
+      { id: 'pb100', n: '보조배터리', wh: 100, src: 'e', ic: '<rect x="4" y="6" width="16" height="12" rx="2"/><path d="M8 10v4M11 10v4M14 10v4"/>' },
+      { id: 'pb160', n: '기내 최대 보조배터리', wh: 160, src: 'e', ic: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M12 8l-2 4h4l-2 4"/>' },
+      { id: 'ev69', n: '가상의 전기차', wh: 69000, src: 'v', ic: '<path d="M3 15l2-5h14l2 5v3H3z"/><circle cx="7" cy="18" r="1.6"/><circle cx="17" cy="18" r="1.6"/>' },
+      { id: 'ev80', n: '전기 자동차', wh: 80000, src: 'e', ic: '<path d="M3 15l2-5h14l2 5v3H3z"/><circle cx="7" cy="18" r="1.6"/><circle cx="17" cy="18" r="1.6"/><path d="M12 11l-1.5 2.5h3L12 16"/>' },
+    ];
+    const DEV = [
+      { id: 'fan', n: '선풍기', w: 10, src: 't', ic: '<circle cx="12" cy="10" r="7"/><path d="M12 10l3-5M12 10l-5 1M12 10l2 5M12 17v4M8 21h8"/>' },
+      { id: 'ac', n: '에어컨', w: 690, src: 't', ic: '<rect x="3" y="5" width="18" height="8" rx="2"/><path d="M6 10h12M8 16c0 2 2 2 2 4M12 16c0 2 2 2 2 4M16 16c0 2 2 2 2 4"/>' },
+      { id: 'note', n: '노트북', w: 50, src: 'e', ic: '<rect x="4" y="5" width="16" height="10" rx="1.5"/><path d="M2 19h20"/>' },
+    ];
+    let bat = 'phone', dev = 'fan';
+    const tagOf = (s) => ({ t: '<span class="tag t">교과서</span>', e: '<span class="tag e">예시</span>', v: '<span class="tag v">가상</span>' }[s]);
+    const fmtWh = (x) => (x >= 1000 ? `${(x / 1000).toLocaleString('ko-KR')} kWh` : `${x} Wh`);
+    $('#bats').innerHTML = BAT.map((b) => `<button type="button" class="cd" data-b="${b.id}" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${b.ic}</svg>${b.n}<small>약 ${fmtWh(b.wh)}</small></button>`).join('');
+    $('#devs').innerHTML = DEV.map((d) => `<button type="button" class="cd" data-d="${d.id}" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${d.ic}</svg>${d.n}<small>${d.w.toLocaleString('ko-KR')} W</small></button>`).join('');
+    $$('#bats .cd').forEach((b) => b.addEventListener('click', () => { bat = b.dataset.b; paintB(); }));
+    $$('#devs .cd').forEach((b) => b.addEventListener('click', () => { dev = b.dataset.d; paintB(); }));
+    const f = (x) => x.toLocaleString('ko-KR', { maximumFractionDigits: 1 });
+    function paintB() {
+      const b = BAT.find((x) => x.id === bat), d = DEV.find((x) => x.id === dev);
+      $$('#bats .cd').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.b === bat)));
+      $$('#devs .cd').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.d === dev)));
+      const h = b.wh / d.w, exact = Number.isInteger(h);
+      const kwh = b.wh >= 1000 ? `${f(b.wh / 1000)} kWh = ` : '';
+      $('#fx').innerHTML = `${b.n}${tagOf(b.src)} → ${d.n}${tagOf(d.src)}<br>시간 = 전력량 ÷ 소비 전력<br>= ${kwh}<b>${b.wh.toLocaleString('ko-KR')} Wh</b> ÷ <b>${d.w.toLocaleString('ko-KR')} W</b><br><span class="big">${exact ? '= ' : '≈ 약 '}${f(exact ? h : Math.round(h))}시간</span>`;
+      let c = '';
+      if (h >= 48) c += `<p>${f(Math.round(h))}시간은 약 <b>${f(Math.round(h / 24))}일</b>이에요${h >= 24 * 365 ? ` (약 ${f(Math.round(h / 24 / 365 * 10) / 10)}년)` : ''}.</p>`;
+      const phones = b.wh / 20;
+      if (b.wh > 20) c += `<p>스마트폰 배터리(약 20 Wh)로 바꾸면 <b>${f(Math.round(phones))}개</b> 분량이에요.</p>`;
+      if (b.id === 'ev69' && d.id === 'ac') c += '<p>69,000 ÷ 690 = <b>100</b>으로 딱 나누어떨어지도록 만든 <b>가상의 배터리</b>예요. 실제 전기 자동차의 배터리는 차종마다 달라요.</p>';
+      if (b.id === 'pb160') c += '<p>2026년 4월 20일부터 비행기에 들고 탈 수 있는 보조배터리는 <b>160 Wh 이하, 1인 2개</b>까지예요. 그래서 보조배터리에는 mAh와 함께 Wh가 적혀 있어요.</p>';
+      $('#cmp').innerHTML = c;
+      // 같은 기구로 배터리별 사용 시간 비교(작은 배터리 3개)
+      const small = BAT.filter((x) => x.wh < 1000);
+      const rows = small.map((x) => ({ n: x.n, v: x.wh / d.w, me: x.id === bat }));
+      const max = Math.max(...rows.map((r) => r.v));
+      let svg = `<svg viewBox="0 0 420 ${rows.length * 38 + 30}" role="img" aria-label="${d.n}을 작은 배터리 세 가지로 쓸 수 있는 시간 막대그래프">`;
+      svg += `<text x="0" y="16" font-size="13" font-weight="800" fill="#5a6b7e">${d.n}(${d.w} W)을 쓸 수 있는 시간</text>`;
+      rows.forEach((r, i) => { const y = 26 + i * 38, w = Math.max(3, (r.v / max) * 220); svg += `<text x="0" y="${y + 20}" font-size="13" font-weight="800" fill="#34495e">${r.n.replace('기내 최대 ', '기내 최대')}</text><rect x="136" y="${y + 6}" width="220" height="20" rx="10" fill="#eef3f8"/><rect x="136" y="${y + 6}" width="${w.toFixed(1)}" height="20" rx="10" fill="${r.me ? '#0d6b4f' : '#2bb673'}"/><text x="${Math.min(362, 140 + w)}" y="${y + 21}" font-size="12.5" font-weight="800" fill="#14263b">${f(Math.round(r.v * 10) / 10)}시간</text>`; });
+      svg += '</svg>';
+      $('#chart').innerHTML = b.wh < 1000 ? svg : `<p class="gnote" style="font-size:14px">전기 자동차 배터리는 너무 커서 막대 하나에 다 들어가지 않아요. 스마트폰 배터리 약 ${f(Math.round(phones))}개 분량이에요.</p>`;
+    }
+    paintB();
+    const setMode = (m) => { $('#mA').setAttribute('aria-selected', String(m === 'A')); $('#mB').setAttribute('aria-selected', String(m === 'B')); $('#paneA').hidden = m !== 'A'; $('#paneB').hidden = m !== 'B'; };
+    $('#mA').addEventListener('click', () => setMode('A')); $('#mB').addEventListener('click', () => setMode('B'));
+    window.SM.okUI = true;
+  } catch (err) { window.SM_err('도식·버튼', err); }
+})();
+</script>
+</body>
+</html>

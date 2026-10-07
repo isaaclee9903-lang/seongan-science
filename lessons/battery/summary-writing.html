@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>배터리 정리와 글쓰기</title>
+<script>
+/* 문제 알림: 코드에 오류가 나면 화면 아래에 빨간 상자로 알려 줘요 (선생님 확인용) */
+(function () {
+  function box() {
+    var b = document.getElementById('swErr');
+    if (!b && document.body) {
+      b = document.createElement('div'); b.id = 'swErr';
+      b.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;background:#fdecea;color:#8a1f17;border:2px solid #d9534f;border-radius:12px;padding:10px 14px;font:600 14px/1.5 sans-serif;white-space:pre-wrap';
+      document.body.appendChild(b);
+    }
+    return b;
+  }
+  window.SW_err = function (where, err) {
+    var msg = '[' + where + '] ' + (err && err.message ? err.message : String(err));
+    var show = function () { var b = box(); if (b) b.textContent += (b.textContent ? '\n' : '') + msg; };
+    if (document.body) show(); else document.addEventListener('DOMContentLoaded', show);
+  };
+  window.addEventListener('error', function (e) { window.SW_err('스크립트', { message: e.message + ' (줄 ' + e.lineno + ')' }); });
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      var S = window.SW || {}, miss = [];
+      (window.SW_CHECKS || []).forEach(function (p) { if (!S[p[0]]) miss.push(p[1]); });
+      if (miss.length) window.SW_err('실행 안 됨', { message: miss.join(', ') + ' 코드가 실행되지 않았어요. 파일이 끝(</html>)까지 들어 있는지 확인해 주세요.' });
+    }, 1500);
+  });
+})();
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+  :root{--bg:#f3f6f9;--card:#fff;--ink:#14263b;--ink2:#34495e;--muted:#5a6b7e;--line:#dde6ee;--accent:#0e63b3;--accent-soft:#e3effb;
+    --ok:#1f9d5c;--no:#d9534f;--violet:#7d5ad6;--ser:#1784cf;--ser-soft:#e3f2fc;--par:#5e9e1c;--par-soft:#eef7e2;
+    --shadow:0 1px 2px rgba(20,38,59,.06),0 8px 24px rgba(20,38,59,.07);--ease:cubic-bezier(.2,.8,.2,1)}
+  *{box-sizing:border-box}html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:"Pretendard",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  button{font:inherit;color:inherit}
+  .app{max-width:1000px;margin:0 auto;padding:16px 16px 28px;display:flex;flex-direction:column;gap:16px}
+  .eyebrow{display:inline-flex;font-size:13px;font-weight:700;color:var(--accent);background:var(--accent-soft);padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(22px,2.8vw,30px);margin:8px 0 2px;letter-spacing:-.02em}
+  .sub{margin:0;color:var(--muted);font-size:15px;word-break:keep-all}
+  .tabs{display:flex;gap:8px;flex-wrap:wrap;position:sticky;top:0;z-index:5;background:rgba(243,246,249,.94);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);padding:8px 0}
+  .tab{display:flex;align-items:center;gap:8px;min-height:46px;padding:0 14px;border:0;border-radius:12px;background:#fff;box-shadow:var(--shadow);font-weight:800;font-size:14.5px;color:var(--muted);cursor:pointer}
+  .tab .n{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:12.5px;background:#e6edf4;color:#607285}
+  .tab.done .n{background:var(--ok);color:#fff}
+  .card{background:var(--card);border-radius:22px;box-shadow:var(--shadow);border:1px solid rgba(20,38,59,.04);padding:20px 22px;scroll-margin-top:70px}
+  h2{font-size:21px;margin:0 0 4px;display:flex;align-items:center;gap:10px}
+  h2 .no{width:30px;height:30px;border-radius:10px;background:var(--accent);color:#fff;display:grid;place-items:center;font-size:15px}
+  .goal{font-size:14.5px;color:var(--muted);margin:0 0 14px;word-break:keep-all}
+  .fb{margin-top:12px;padding:12px 14px;border-radius:14px;font-size:15px;line-height:1.6;word-break:keep-all;display:none}
+  .fb.show{display:block;animation:fade .35s var(--ease)}
+  .fb.ok{background:#e8f7ef;color:#0f5a36}.fb.no{background:#fff5e6;color:#7a4508}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .btn{min-height:50px;border:0;border-radius:14px;padding:0 18px;font-weight:800;font-size:15.5px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;justify-content:center}
+  .btn:active{transform:scale(.97)}
+  .btn.primary{background:var(--accent);color:#fff}.btn.ghost{background:#eef3f8;color:var(--ink2)}.btn.green{background:var(--ok);color:#fff}
+  .btn:disabled{opacity:.4}
+  /* 1. 분류 */
+  .sort{display:grid;gap:10px}
+  .si{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;background:#f7fafc;border:2px solid transparent;border-radius:16px;padding:10px 12px 10px 16px;transition:all .25s}
+  .si p{margin:0;font-weight:700;font-size:16.5px;line-height:1.5;word-break:keep-all}
+  .si .two{display:flex;gap:6px}
+  .si .two button{min-height:48px;min-width:84px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15px;cursor:pointer}
+  .si .two button.s[aria-pressed="true"]{border-color:var(--ser);background:var(--ser-soft);color:var(--ser)}
+  .si .two button.p[aria-pressed="true"]{border-color:var(--par);background:var(--par-soft);color:#3f6e10}
+  .si.good{border-color:#9fdcbb;background:#ecf8f1}.si.bad{border-color:#f3c2bb;background:#fff4f2}
+  /* 2. 잇기 */
+  .chains{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .chn h3{margin:0 0 8px;font-size:16px}
+  .chn.s h3{color:var(--ser)}.chn.p h3{color:var(--par)}
+  .slots{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+  .sl{min-height:50px;border-radius:12px;border:2px dashed #b8c6d4;background:#f7fafc;display:flex;align-items:center;gap:10px;padding:6px 12px;font-weight:800;font-size:15px;color:var(--muted);word-break:keep-all}
+  .sl .k{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:13px;color:#fff;background:#aebdcc}
+  .chn.s .sl.f{border-style:solid;border-color:var(--ser);background:var(--ser-soft);color:#0f4f7d}.chn.s .sl.f .k{background:var(--ser)}
+  .chn.p .sl.f{border-style:solid;border-color:var(--par);background:var(--par-soft);color:#3f6e10}.chn.p .sl.f .k{background:var(--par)}
+  .pool{display:flex;flex-direction:column;gap:6px}
+  .pc{min-height:50px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15px;cursor:pointer;text-align:left;padding:6px 12px;word-break:keep-all}
+  .pc.shake{animation:shake .4s;border-color:var(--no)}
+  @keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+  .pc[hidden]{display:none}
+  /* 3. 생활 */
+  .lq{padding:14px 0;border-bottom:1px dashed var(--line)}
+  .lq:last-child{border-bottom:0;padding-bottom:0}
+  .lq p{margin:0 0 10px;font-weight:700;font-size:16.5px;line-height:1.6;word-break:keep-all}
+  .opts{display:grid;gap:8px}
+  .ob{display:flex;align-items:center;gap:10px;text-align:left;min-height:52px;border-radius:14px;border:2px solid var(--line);background:#f7fafc;padding:8px 14px;font-size:15.5px;font-weight:700;cursor:pointer;word-break:keep-all}
+  .ob .k{flex:none;width:28px;height:28px;border-radius:50%;background:#fff;border:2px solid #cbd6e1;display:grid;place-items:center;font-size:13px;font-weight:800;color:#5a6b7e}
+  .ob.good{border-color:var(--ok);background:#e8f7ef}.ob.bad{border-color:var(--no);background:#fdecea}
+  .ob:disabled{cursor:default}
+  .lexp{display:none;margin-top:10px;padding:12px 14px;border-radius:14px;background:#f2f7fd;font-size:15px;line-height:1.65;word-break:keep-all}
+  .lexp.show{display:block}
+  /* 4. 글쓰기 */
+  .prompts{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+  .pr{border-radius:16px;border:2px solid #d4dee8;background:#fff;padding:12px 14px;text-align:left;cursor:pointer;min-height:96px}
+  .pr b{display:block;font-size:15.5px;margin-bottom:4px}.pr span{font-size:13.5px;color:var(--muted);word-break:keep-all}
+  .pr.sel{border-color:var(--violet);background:#f3effd}
+  .wq{font-size:17px;font-weight:800;background:#f3effd;border-radius:14px;padding:12px 14px;margin-bottom:10px;color:#3d2f73;word-break:keep-all}
+  .starters{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+  .starters button{min-height:44px;border-radius:10px;border:1px dashed #b8a6ec;background:#fff;color:#5a43a8;font-weight:700;font-size:13.5px;padding:0 10px;cursor:pointer}
+  textarea{width:100%;min-height:220px;border-radius:16px;border:2px solid #cbd6e1;padding:14px 16px;font-size:17px;line-height:1.8;resize:vertical;font-family:inherit}
+  textarea:focus{outline:none;border-color:var(--violet);box-shadow:0 0 0 4px rgba(125,90,214,.15)}
+  .wmeta{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-top:8px;font-size:14px;color:var(--muted);font-weight:700}
+  .kw{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+  .kw span{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:6px 12px;font-size:14px;font-weight:800;background:#eef3f8;color:#7a8a9b;transition:all .3s}
+  .kw span.on{background:#e8f7ef;color:#11703f}
+  .kw span::before{content:"○"}.kw span.on::before{content:"●"}
+  .self{display:grid;gap:8px;margin-top:14px}
+  .self label{display:flex;align-items:center;gap:10px;background:#f7fafc;border-radius:12px;padding:10px 12px;font-size:15px;font-weight:700;cursor:pointer;word-break:keep-all;min-height:48px}
+  .self input{width:22px;height:22px;accent-color:var(--ok)}
+  .self .cat{flex:none;font-size:12px;font-weight:800;color:#fff;border-radius:999px;padding:2px 8px}
+  .acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+  .note{font-size:12.5px;color:var(--muted);line-height:1.6;word-break:keep-all}
+  @media (max-width:760px){.chains,.prompts{grid-template-columns:1fr}.si{grid-template-columns:1fr}}
+  @media print{body{background:#fff}.tabs,.card:not(#s4),.acts,.starters,.prompts,.self,.kw,header .sub{display:none!important}#s4{box-shadow:none;border:0}textarea{border:0;min-height:0;height:auto}}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+  /* ===== 이 수업 전용 ===== */
+  :root{--fab:#0d6b4f}
+  h2 .no{background:var(--fab)}
+  .si .two button{min-width:92px}
+  .si .two button.o[aria-pressed="true"]{border-color:#1f78c8;background:#e5f0fb;color:#1f78c8}
+  .si .two button.x[aria-pressed="true"]{border-color:#d9534f;background:#fdecea;color:#b33a35}
+  .pairs{display:grid;gap:8px;margin:10px 0}
+  .pr2{display:grid;grid-template-columns:150px 1fr;gap:10px;align-items:stretch}
+  .pr2 .nm{display:flex;align-items:center;justify-content:center;border-radius:14px;font-weight:900;font-size:16px;color:#fff;padding:6px;text-align:center;word-break:keep-all}
+  .slot2{min-height:56px;border-radius:14px;border:2px dashed #aebdcc;background:#f7fafc;display:flex;align-items:center;padding:6px 14px;font-weight:800;font-size:15px;color:var(--muted);cursor:pointer;word-break:keep-all;text-align:left;line-height:1.4}
+  .slot2.f{border-style:solid;border-color:var(--fab);background:#e8f6ef;color:#0a5540}
+  .slot2.cur{box-shadow:0 0 0 4px rgba(13,107,79,.2)}
+  .slot2.good{border-color:var(--ok);background:#e8f7ef;color:#11703f}.slot2.bad{border-color:var(--no);background:#fdecea;color:#b33a35}
+  .order{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin:10px 0}
+  .os{min-height:72px;border-radius:14px;border:2px dashed #aebdcc;background:#f7fafc;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:var(--muted);cursor:pointer;word-break:keep-all;text-align:center;padding:4px;line-height:1.35}
+  .os i{font-style:normal;font-size:12px;color:#9aa7b4}
+  .os.f{border-style:solid;border-color:var(--fab);background:#e8f6ef;color:#0a5540}
+  .os.good{border-color:var(--ok);background:#e8f7ef;color:#11703f}.os.bad{border-color:var(--no);background:#fdecea;color:#b33a35}
+  .bank{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+  .chip{min-height:48px;padding:6px 14px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15px;cursor:pointer;word-break:keep-all;line-height:1.35;text-align:left}
+  .chip.used{opacity:.3;pointer-events:none}
+  .calcq{display:grid;gap:12px;margin-top:8px}
+  .cq{border-radius:16px;border:1px solid var(--line);background:#fbfcfd;padding:12px 14px}
+  .cq p{margin:0 0 8px;font-weight:800;font-size:16.5px;line-height:1.6;word-break:keep-all}
+  .eqh{display:inline-block;font-family:ui-monospace,Consolas,monospace;background:#14263b;color:#ffd76a;border-radius:8px;padding:2px 8px;font-size:14px;font-weight:700}
+  .prompts{grid-template-columns:repeat(4,1fr)}
+  @media (max-width:860px){.order{grid-template-columns:repeat(3,1fr)}.prompts{grid-template-columns:1fr 1fr}.pr2{grid-template-columns:110px 1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <span class="eyebrow">배터리 · 정리와 글쓰기</span>
+    <h1>배터리, 내 말로 정리하기</h1>
+    <p class="sub">맞는 말을 고르고, 배터리 속 부품과 역할을 짝짓고, 만드는 순서를 맞춘 뒤, 교과서 식으로 계산하고 내 생각을 써 봐요.</p>
+  </header>
+  <nav class="tabs" id="tabs"></nav>
+
+  <section class="card" id="s1">
+    <h2><span class="no">1</span>맞을까, 틀릴까?</h2>
+    <p class="goal">문장마다 '맞다' 또는 '틀리다'를 골라요. 다 고르면 확인!</p>
+    <div class="sort" id="sort"></div>
+    <div class="acts"><button type="button" class="btn primary" id="chk1" disabled>확인하기</button></div>
+    <div class="fb" id="fb1"></div>
+  </section>
+
+  <section class="card" id="s2">
+    <h2><span class="no">2</span>부품과 역할 짝짓기</h2>
+    <p class="goal">빈칸을 누른 뒤 아래 카드를 눌러 채워요. 채운 칸을 다시 누르면 카드가 빠져요.</p>
+    <div class="pairs" id="pairs"></div>
+    <div class="bank" id="bank2"></div>
+    <button class="btn primary" id="chk2" type="button" disabled>확인하기</button>
+    <div class="fb" id="fb2"></div>
+  </section>
+
+  <section class="card" id="s3">
+    <h2><span class="no">3</span>배터리를 만드는 순서</h2>
+    <p class="goal">빈칸을 누른 뒤 카드를 눌러 공장에서 일어나는 순서대로 채워요.</p>
+    <div class="order" id="order"></div>
+    <div class="bank" id="bank3"></div>
+    <button class="btn primary" id="chk3" type="button" disabled>확인하기</button>
+    <div class="fb" id="fb3"></div>
+  </section>
+
+  <section class="card" id="s4">
+    <h2><span class="no">4</span>교과서 식으로 계산하기</h2>
+    <p class="goal"><span class="eqh">전력량 = 소비 전력 × 시간</span>과 <span class="eqh">1 kWh = 1,000 Wh</span>를 써서 풀어요. 시간은 전력량 ÷ 소비 전력으로 구해요.</p>
+    <div class="calcq" id="calcq"></div>
+  </section>
+
+  <section class="card" id="s5">
+    <h2><span class="no">5</span>내 말로 설명하는 글쓰기</h2>
+    <p class="goal">주제를 하나 골라 친구에게 설명하듯 써 봐요. 핵심어를 넣으면 초록색으로 바뀌어요.</p>
+    <div class="prompts" id="prompts"></div>
+    <div class="wq" id="wqText"></div>
+    <div class="starters" id="starters"></div>
+    <textarea id="txt" placeholder="여기에 써 보세요."></textarea>
+    <div class="wmeta"><span id="cnt">0자 · 목표 150자 이상</span><span id="saved"></span></div>
+    <div class="kw" id="kw"></div>
+    <div class="self" id="self"></div>
+    <div class="acts">
+      <button class="btn green" id="copyBtn" type="button">글 복사하기</button>
+      <button class="btn ghost" id="printBtn" type="button">인쇄 / PDF로 저장</button>
+    </div>
+    <p class="note" style="margin-top:10px">※ 글은 이 기기의 브라우저에만 임시로 저장되고 어디에도 보내지 않아요. 다 쓰면 '글 복사하기'로 복사해서 선생님이 안내한 곳(패들렛, 학습지 등)에 붙여 넣으세요.</p>
+  </section>
+  <p class="credit" style="margin:20px 0 4px;text-align:center;font-size:13px;font-weight:700;color:#8495a8;letter-spacing:.02em">배터리 읽기 자료 &nbsp;|&nbsp; 제작 · 성안중학교 이삭 T</p>
+</div>
+
+<script>
+/* ===== 공통 ===== */
+window.SW_CHECKS = [['ok1', 'O/X 판단'], ['ok2', '짝짓기'], ['ok3', '만드는 순서'], ['ok4', '계산'], ['ok5', '글쓰기']];
+window.SW = {
+  $: (s, r = document) => r.querySelector(s),
+  $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
+  shuffle: (a) => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; },
+  fb: (id, ok, html) => { const f = document.querySelector(id); f.className = 'fb show ' + (ok ? 'ok' : 'no'); f.innerHTML = html; },
+  done: {},
+};
+(() => {
+  const { $, $$ } = window.SW;
+  const TABS = ['맞을까 틀릴까', '짝짓기', '만드는 순서', '계산', '글쓰기'];
+  window.SW.renderTabs = () => {
+    $('#tabs').innerHTML = TABS.map((t, i) => `<button type="button" class="tab${window.SW.done[i + 1] ? ' done' : ''}" data-s="${i + 1}"><span class="n">${i + 1}</span>${t}</button>`).join('');
+    $$('#tabs .tab').forEach((b) => b.addEventListener('click', () => document.getElementById('s' + b.dataset.s).scrollIntoView({ behavior: 'smooth', block: 'start' })));
+  };
+  window.SW.finish = (n) => { window.SW.done[n] = true; window.SW.renderTabs(); };
+  window.SW.renderTabs();
+})();
+</script>
+<script>
+/* ===== 블록 1: 맞을까 틀릴까 ===== */
+(() => {
+  'use strict';
+  try {
+    const { $, $$, shuffle, fb, finish } = window.SW;
+    const ITEMS = [
+      ['건전지는 1차 전지, 휴대폰 배터리는 2차 전지이다.', true],
+      ['건전지도 충전기에 넣으면 안전하게 다시 쓸 수 있다.', false],
+      ['분리막은 양극과 음극이 서로 닿지 않게 막는다.', true],
+      ['배터리를 쓸 때 전자는 배터리 안쪽의 전해질을 지나간다.', false],
+      ['충전할 때 알갱이는 양극(집)에서 음극(직장)으로 옮겨 간다.', true],
+      ['배터리에 담긴 전기 에너지를 비교할 때는 Wh(와트시)를 본다.', true],
+      ['셀을 묶은 것이 팩이고, 팩을 묶은 것이 모듈이다.', false],
+      ['배터리가 부풀면 바로 사용을 멈춰야 한다.', true],
+    ];
+    const list = shuffle(ITEMS.slice()), pick = list.map(() => null);
+    $('#sort').innerHTML = list.map((it, i) => `<div class="si" data-i="${i}"><p>${it[0]}</p><div class="two"><button type="button" class="o" data-v="1" aria-pressed="false">맞다</button><button type="button" class="x" data-v="0" aria-pressed="false">틀리다</button></div></div>`).join('');
+    $$('#sort .si').forEach((row) => {
+      const i = +row.dataset.i;
+      $$('button', row).forEach((b) => b.addEventListener('click', () => { pick[i] = b.dataset.v === '1'; row.classList.remove('good', 'bad'); $$('button', row).forEach((o) => o.setAttribute('aria-pressed', String(o === b))); $('#chk1').disabled = pick.some((p) => p === null); }));
+    });
+    $('#chk1').addEventListener('click', () => {
+      let wrong = 0;
+      $$('#sort .si').forEach((row) => { const i = +row.dataset.i, ok = pick[i] === list[i][1]; row.classList.toggle('good', ok); row.classList.toggle('bad', !ok); if (!ok) wrong++; });
+      if (!wrong) { fb('#fb1', true, '모두 맞았어요! 틀린 문장 고쳐 보기: 건전지를 충전하면 <b>터질 수 있어 위험해요</b> · 전자는 <b>바깥 전선</b>으로 가요(안쪽 길은 알갱이) · 셀을 묶으면 <b>모듈</b>, 모듈을 묶으면 <b>팩</b>이에요.'); finish(1); }
+      else fb('#fb1', false, `빨간 문장 ${wrong}개를 다시 생각해 보세요.`);
+    });
+    window.SW.ok1 = true;
+  } catch (err) { window.SW_err('O/X 판단', err); }
+})();
+</script>
+<script>
+/* ===== 블록 2: 짝짓기 · 블록 3: 순서 (같은 방식: 칸 고르고 카드 넣기) ===== */
+(() => {
+  'use strict';
+  const { $, $$, shuffle, fb, finish } = window.SW;
+  function slotGame(o) {
+    const slots = $$(o.slots), chips = $$(o.chips), fill = slots.map(() => null); let cur = 0, locked = false;
+    const paint = () => { slots.forEach((s, i) => { o.show(s, fill[i]); s.classList.toggle('f', !!fill[i]); s.classList.toggle('cur', i === cur && !locked); }); $(o.btn).disabled = locked || fill.some((f) => !f); };
+    chips.forEach((c) => c.addEventListener('click', () => { if (locked) return; if (fill[cur]) fill[cur].classList.remove('used'); fill[cur] = c; c.classList.add('used'); const n = fill.findIndex((f) => !f); if (n >= 0) cur = n; slots.forEach((x) => x.classList.remove('good', 'bad')); paint(); }));
+    slots.forEach((s, i) => s.addEventListener('click', () => { if (locked) return; if (fill[i]) { fill[i].classList.remove('used'); fill[i] = null; } cur = i; slots.forEach((x) => x.classList.remove('good', 'bad')); paint(); }));
+    $(o.btn).addEventListener('click', () => {
+      let wrong = 0; slots.forEach((s, i) => { const ok = fill[i].textContent === o.answer[i]; s.classList.toggle('good', ok); s.classList.toggle('bad', !ok); if (!ok) wrong++; });
+      if (!wrong) { locked = true; paint(); o.done(); } else o.miss(wrong);
+    });
+    paint();
+  }
+  try {
+    const PAIRS = [
+      ['양극(+)', '#d8433b', '알갱이가 사는 집'],
+      ['음극(−)', '#2f62c9', '충전하면 알갱이가 모이는 직장'],
+      ['분리막', '#5a6b7e', '두 극이 닿지 않게 막는 칸막이'],
+      ['전해질', '#2b8fd6', '알갱이가 지나가는 안쪽 길'],
+      ['관리 장치(BMS)', '#0d6b4f', '셀의 온도와 남은 양을 지켜보는 반도체 장치'],
+    ];
+    $('#pairs').innerHTML = PAIRS.map((p) => `<div class="pr2"><span class="nm" style="background:${p[1]}">${p[0]}</span><button type="button" class="slot2"><span>빈칸</span></button></div>`).join('');
+    $('#bank2').innerHTML = shuffle(PAIRS.map((p) => p[2])).map((w) => `<button type="button" class="chip">${w}</button>`).join('');
+    slotGame({ slots: '#pairs .slot2', chips: '#bank2 .chip', btn: '#chk2', answer: PAIRS.map((p) => p[2]),
+      show: (s, c) => { $('span', s).textContent = c ? c.textContent : '빈칸'; },
+      done: () => { fb('#fb2', true, '완벽해요! 충전은 알갱이가 집에서 직장으로 <b>출근</b>, 사용은 직장에서 집으로 <b>퇴근</b>. 그동안 전자는 <b>바깥 전선</b>으로 돌아가며 일을 해요.'); finish(2); },
+      miss: (w) => fb('#fb2', false, `빨간 칸 ${w}개를 다시 생각해 봐요. 힌트: 다 쓴 배터리에서 알갱이는 양극에 모여 있어요.`) });
+    window.SW.ok2 = true;
+  } catch (err) { window.SW_err('짝짓기', err); }
+  try {
+    const ORDER = ['재료 반죽 섞기', '금속 포일에 바르고 눌러 펴기', '감기 또는 쌓기', '전해질 넣고 밀봉하기', '첫 충전·방전으로 깨우기', '모듈·팩으로 묶기'];
+    const HINT = ['전극 공정', '전극 공정', '조립 공정', '조립 공정', '활성화 공정', '팩 공정'];
+    $('#order').innerHTML = ORDER.map((_, i) => `<button type="button" class="os"><i>${i + 1}번째</i><span>빈칸</span></button>`).join('');
+    $('#bank3').innerHTML = shuffle(ORDER.slice()).map((w) => `<button type="button" class="chip">${w}</button>`).join('');
+    slotGame({ slots: '#order .os', chips: '#bank3 .chip', btn: '#chk3', answer: ORDER,
+      show: (s, c) => { $('span', s).textContent = c ? c.textContent : '빈칸'; },
+      done: () => { fb('#fb3', true, '완벽해요! ' + ORDER.map((o, i) => `<b>${o}</b>(${HINT[i]})`).join(' → ') + '. 감기는 "롤 휴지처럼", 쌓기는 "뽑아 쓰는 티슈처럼"이었지요.'); finish(3); },
+      miss: (w) => fb('#fb3', false, `빨간 칸 ${w}개를 다시 생각해 봐요. 힌트: 판(전극)을 먼저 만들고, 셀로 조립한 뒤, 깨워서 검사하고, 마지막에 묶어요.`) });
+    window.SW.ok3 = true;
+  } catch (err) { window.SW_err('만드는 순서', err); }
+})();
+</script>
+<script>
+/* ===== 블록 4: 계산 ===== */
+(() => {
+  'use strict';
+  try {
+    const { $, $$, finish } = window.SW;
+    const CQ = [
+      { q: '전기가 100 Wh 담긴 보조배터리로 소비 전력이 10 W인 선풍기를 몇 시간 돌릴 수 있을까?', o: ['10시간', '1,000시간', '1시간', '110시간'], a: 0, e: '시간 = 전력량 ÷ 소비 전력 = 100 Wh ÷ 10 W = <b>10시간</b>' },
+      { q: '기내에 들고 탈 수 있는 가장 큰 보조배터리(160 Wh)로 스마트폰 배터리(20 Wh)를 몇 번 가득 채울 수 있을까?', o: ['8번', '80번', '140번', '3번'], a: 0, e: '160 Wh ÷ 20 Wh = <b>8번</b> (실제로는 충전할 때 일부가 열로 빠져나가 조금 적어요)' },
+      { q: '69 kWh가 담긴 가상의 전기 자동차 배터리로 소비 전력이 690 W인 에어컨을 몇 시간 켤 수 있을까?', o: ['100시간', '10시간', '1,000시간', '0.1시간'], a: 0, e: '69 kWh = 69,000 Wh → 69,000 Wh ÷ 690 W = <b>100시간</b>' },
+      { q: '소비 전력이 50 W인 노트북을 4시간 쓰면 배터리에서 꺼내 쓴 전력량은?', o: ['200 Wh', '54 Wh', '12.5 Wh', '2,000 Wh'], a: 0, e: '전력량 = 소비 전력 × 시간 = 50 W × 4 h = <b>200 Wh</b>' },
+    ];
+    let solved = 0;
+    $('#calcq').innerHTML = CQ.map((c, i) => `<div class="cq" data-i="${i}"><p>${i + 1}. ${c.q}</p><div class="opts">${c.o.map((x, k) => `<button type="button" class="ob" data-k="${k}"><span class="k">${'①②③④'[k]}</span>${x}</button>`).join('')}</div><div class="lexp"></div></div>`).join('');
+    $$('#calcq .cq').forEach((box) => {
+      const c = CQ[+box.dataset.i];
+      $$('.ob', box).forEach((b) => b.addEventListener('click', () => {
+        const ok = +b.dataset.k === c.a;
+        $$('.ob', box).forEach((o) => { o.disabled = true; if (+o.dataset.k === c.a) o.classList.add('good'); }); if (!ok) b.classList.add('bad');
+        const e = $('.lexp', box); e.classList.add('show'); e.innerHTML = (ok ? '정답! ' : '다시 보기: ') + c.e;
+        solved++; if (solved === CQ.length) finish(4);
+      }));
+    });
+    window.SW.ok4 = true;
+  } catch (err) { window.SW_err('계산', err); }
+})();
+</script>
+<script>
+/* ===== 블록 5: 글쓰기 (저장하지 않고 복사·인쇄만) ===== */
+(() => {
+  'use strict';
+  try {
+    const { $, $$, finish } = window.SW;
+    const PROMPTS = [
+      { t: '배터리 속 두 길', s: '읽기 ② · 3D 배터리', q: '배터리를 쓸 때와 충전할 때 알갱이와 전자가 각각 어느 길로, 어느 쪽으로 가는지 집·직장 비유를 써서 설명해 보세요.', kw: ['양극', '음극', '분리막', '전자', '전선'], st: ['배터리 안에는', '사용할 때 알갱이는', '전자는 분리막을 지나지 못해서', '충전할 때는'] },
+      { t: '수로 모형으로 설명하기', s: '수로 모형 · 계산기', q: '충전과 방전을 수로 모형(펌프, 물탱크, 물레방아)으로 설명하고, 배터리와 MLCC가 어떻게 다른지 써 보세요.', kw: ['펌프', '물탱크', '물레방아', '충전', 'MLCC'], st: ['충전기는 수로 모형의', '배터리에 담긴 전기 에너지는', '방전하면', 'MLCC는'] },
+      { t: '배터리 안전 수칙 만들기', s: '읽기 ③', q: '친구들에게 알려 줄 배터리 안전 수칙 세 가지를 만들고, 각각 왜 필요한지 분리막과 열폭주를 이용해 설명해 보세요.', kw: ['분리막', '열', '충전', '부풀', '킥보드'], st: ['첫째,', '왜냐하면', '둘째,', '셋째,'] },
+      { t: '나와 배터리 산업', s: '읽기 ④ · 진로', q: '우리나라 배터리 산업의 지금 위치를 자료로 설명하고, 내가 배터리 분야에서 일한다면 어떤 일을 하고 싶은지 까닭과 함께 써 보세요.', kw: ['중국', '점유율', '재활용', '안전', '까닭'], st: ['자료를 보면', '앞으로는', '내가 배터리 분야에서 일한다면', '그 까닭은'] },
+    ];
+    const SELF = [['지식·이해', '#2f6fd6', '배터리의 네 가지 구성과 충전·방전 때 알갱이와 전자의 움직임을 설명할 수 있다.'], ['과정·기능', '#23a566', '전력량 = 소비 전력 × 시간을 이용해 배터리 사용 시간을 계산할 수 있다.'], ['가치·태도', '#7d5ad6', '배터리를 안전하게 쓰고, 배터리 산업과 관련 진로에 관심을 가질 수 있다.']];
+    const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); return true; } catch (e) { return false; } } };
+    let pi = 0; const txt = $('#txt');
+    function renderPrompt() {
+      $('#prompts').innerHTML = PROMPTS.map((p, i) => `<button type="button" class="pr${i === pi ? ' sel' : ''}" data-i="${i}"><b>${p.t}</b><span>${p.s}</span></button>`).join('');
+      $$('#prompts .pr').forEach((b) => b.addEventListener('click', () => { pi = +b.dataset.i; renderPrompt(); }));
+      const p = PROMPTS[pi];
+      $('#wqText').textContent = p.q;
+      $('#starters').innerHTML = p.st.map((s) => `<button type="button">${s}</button>`).join('');
+      $$('#starters button').forEach((b) => b.addEventListener('click', () => { const add = (txt.value && !/[\s\n]$/.test(txt.value) ? ' ' : '') + b.textContent + ' '; txt.value += add; txt.focus(); onInput(); }));
+      txt.value = store.get('battery-write-' + pi) || '';
+      onInput();
+    }
+    function onInput() {
+      const v = txt.value, p = PROMPTS[pi];
+      const ok = store.set('battery-write-' + pi, v);
+      $('#saved').textContent = v ? (ok ? '이 기기에 임시 저장됨' : '') : '';
+      const n = v.replace(/\s/g, '').length, hit = p.kw.filter((k) => v.includes(k)).length;
+      $('#cnt').textContent = `${n}자 · 목표 150자 이상`;
+      $('#kw').innerHTML = p.kw.map((k) => `<span class="${v.includes(k) ? 'on' : ''}">${k}</span>`).join('');
+      if (n >= 150 && hit >= 3) finish(5);
+    }
+    txt.addEventListener('input', onInput);
+    $('#self').innerHTML = SELF.map(([c, col, t]) => `<label><input type="checkbox"><span class="cat" style="background:${col}">${c}</span>${t}</label>`).join('');
+    $('#copyBtn').addEventListener('click', async () => {
+      const out = `[${PROMPTS[pi].t}]\n${PROMPTS[pi].q}\n\n${txt.value}`;
+      try { await navigator.clipboard.writeText(out); $('#copyBtn').textContent = '복사했어요!'; }
+      catch (e) { txt.select(); try { document.execCommand('copy'); $('#copyBtn').textContent = '복사했어요!'; } catch (e2) { $('#copyBtn').textContent = '길게 눌러 직접 복사해 주세요'; } }
+      setTimeout(() => ($('#copyBtn').textContent = '글 복사하기'), 2200);
+    });
+    $('#printBtn').addEventListener('click', () => window.print());
+    renderPrompt();
+    window.SW.ok5 = true;
+  } catch (err) { window.SW_err('글쓰기', err); }
+})();
+</script>
+</body>
+</html>
