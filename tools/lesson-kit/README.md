@@ -28,7 +28,7 @@ python -m http.server 8770 --directory .              # 저장소 루트에서 �
 python tools/lesson-kit/qa_sheet.py chip-earth        # 가로·세로 모음 사진 + 오류 보고 (tools/lesson-kit/_qa/)
 python tools/lesson-kit/shot.py URL out.png 1280 800 "#선택자" 3 "#버튼1,wait800,#버튼2"   # 한 장면만
 ```
-템플릿 안에서 `/*@@PART:c3.js@@*/`처럼 쓰면 공통 조각이, `/*@@LOCAL:_photo.js@@*/`처럼 쓰면 수업 전용 조각이 들어가요. 빌드는 남은 표시, 숨은 문자(BOM), 제작 표기 누락을 검사해요.
+템플릿 안에서 `/*@@PART:c3.js@@*/`처럼 쓰면 공통 조각이, `/*@@LOCAL:_photo.js@@*/`처럼 쓰면 수업 전용 조각이 들어가요. 빌드는 남은 표시, 숨은 문자(BOM), 제작자 표기가 남아 있는지(2026-10-07부터 넣지 않음)를 검사해요.
 
 **`lessons/` 안의 HTML을 직접 고치지 말고 `src/`를 고친 뒤 다시 빌드해요.** GAS 같은 곳에 옮길 때도 빌드된 단독 HTML을 그대로 쓰면 돼요.
 

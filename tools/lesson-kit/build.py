@@ -33,8 +33,8 @@ def main(name):
             sys.exit(f"{tpl.name}: 남은 표시 {left}")
         if "﻿" in s or "​" in s:
             sys.exit(f"{tpl.name}: 숨은 문자(BOM·폭 없는 공백)")
-        if "제작 · 성안중학교 이삭 T" not in s:
-            sys.exit(f"{tpl.name}: 제작 표기 없음")
+        if "성안중학교 이삭 T" in s:
+            sys.exit(f"{tpl.name}: 제작자 표기가 남아 있음(2026-10-07부터 넣지 않음)")
         name_out = tpl.name.replace(".tpl.html", ".html")
         (out / name_out).write_text(s, encoding="utf-8", newline="\n")
         print("wrote", name_out, len(s.encode("utf-8")), "bytes")
