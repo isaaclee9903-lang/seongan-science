@@ -39,7 +39,9 @@ def main(name):
         (out / name_out).write_text(s, encoding="utf-8", newline="\n")
         print("wrote", name_out, len(s.encode("utf-8")), "bytes")
 
-    # 탭 껍데기
+    # 탭 껍데기 (lesson.json에 "shell": false면 만들지 않음: 한 장짜리 페이지)
+    if cfg.get("shell", True) is False:
+        return
     tabs = cfg["tabs"]
     shell = (KIT / "parts" / "shell.html").read_text(encoding="utf-8")
     tab_html = "\n".join(f'      <button class="tab" role="tab" data-page="{t["id"]}" aria-selected="false"><span class="n">{i + 1}</span>{t["label"]}</button>' for i, t in enumerate(tabs))

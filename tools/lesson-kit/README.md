@@ -15,7 +15,7 @@
   - `flow.js`: 2D SVG 도식 도구. `FLOW.dots(path, {n, r, color, speed})`로 길을 따라 알갱이를 흐르게 하고, `.set({rate})`로 양을 바꿔요
   - `shell.html`: 탭 껍데기 틀
 - `src/<수업>/`: 수업 원본
-  - `lesson.json`: 출력 폴더, 제목, 로고, 탭 목록
+  - `lesson.json`: 출력 폴더, 제목, 로고, 탭 목록. `"shell": false`면 탭 껍데기 없이 `index.tpl.html` 한 장만 만들어요(예: `career-map`)
   - `*.tpl.html`: 페이지 템플릿
   - `_*.js`: 이 수업 전용 조각
   - `qa.json`: 화면 검사 장면 목록
