@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>진로 지도</title>
+<script>
+/* 문제 알림: 코드에 오류가 나면 화면 아래에 빨간 상자로 알려 줘요 (선생님 확인용) */
+(function () {
+  function box() {
+    var b = document.getElementById('swErr');
+    if (!b && document.body) {
+      b = document.createElement('div'); b.id = 'swErr';
+      b.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;background:#fdecea;color:#8a1f17;border:2px solid #d9534f;border-radius:12px;padding:10px 14px;font:600 14px/1.5 sans-serif;white-space:pre-wrap';
+      document.body.appendChild(b);
+    }
+    return b;
+  }
+  window.SW_err = function (where, err) {
+    var msg = '[' + where + '] ' + (err && err.message ? err.message : String(err));
+    var show = function () { var b = box(); if (b) b.textContent += (b.textContent ? '\n' : '') + msg; };
+    if (document.body) show(); else document.addEventListener('DOMContentLoaded', show);
+  };
+  window.addEventListener('error', function (e) { window.SW_err('스크립트', { message: e.message + ' (줄 ' + e.lineno + ')' }); });
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      var S = window.SW || {}, miss = [];
+      (window.SW_CHECKS || []).forEach(function (p) { if (!S[p[0]]) miss.push(p[1]); });
+      if (miss.length) window.SW_err('실행 안 됨', { message: miss.join(', ') + ' 코드가 실행되지 않았어요. 파일이 끝(</html>)까지 들어 있는지 확인해 주세요.' });
+    }, 1500);
+  });
+})();
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+  :root{--bg:#f3f6f9;--card:#fff;--ink:#14263b;--ink2:#34495e;--muted:#5a6b7e;--line:#dde6ee;--accent:#0e63b3;--accent-soft:#e3effb;
+    --ok:#1f9d5c;--no:#d9534f;--violet:#7d5ad6;--ser:#1784cf;--ser-soft:#e3f2fc;--par:#5e9e1c;--par-soft:#eef7e2;
+    --shadow:0 1px 2px rgba(20,38,59,.06),0 8px 24px rgba(20,38,59,.07);--ease:cubic-bezier(.2,.8,.2,1)}
+  *{box-sizing:border-box}html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:"Pretendard",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  button{font:inherit;color:inherit}
+  .app{max-width:1000px;margin:0 auto;padding:16px 16px 28px;display:flex;flex-direction:column;gap:16px}
+  .eyebrow{display:inline-flex;font-size:13px;font-weight:700;color:var(--accent);background:var(--accent-soft);padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(22px,2.8vw,30px);margin:8px 0 2px;letter-spacing:-.02em}
+  .sub{margin:0;color:var(--muted);font-size:15px;word-break:keep-all}
+  .tabs{display:flex;gap:8px;flex-wrap:wrap;position:sticky;top:0;z-index:5;background:rgba(243,246,249,.94);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);padding:8px 0}
+  .tab{display:flex;align-items:center;gap:8px;min-height:46px;padding:0 14px;border:0;border-radius:12px;background:#fff;box-shadow:var(--shadow);font-weight:800;font-size:14.5px;color:var(--muted);cursor:pointer}
+  .tab .n{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:12.5px;background:#e6edf4;color:#607285}
+  .tab.done .n{background:var(--ok);color:#fff}
+  .card{background:var(--card);border-radius:22px;box-shadow:var(--shadow);border:1px solid rgba(20,38,59,.04);padding:20px 22px;scroll-margin-top:70px}
+  h2{font-size:21px;margin:0 0 4px;display:flex;align-items:center;gap:10px}
+  h2 .no{width:30px;height:30px;border-radius:10px;background:var(--accent);color:#fff;display:grid;place-items:center;font-size:15px}
+  .goal{font-size:14.5px;color:var(--muted);margin:0 0 14px;word-break:keep-all}
+  .fb{margin-top:12px;padding:12px 14px;border-radius:14px;font-size:15px;line-height:1.6;word-break:keep-all;display:none}
+  .fb.show{display:block;animation:fade .35s var(--ease)}
+  .fb.ok{background:#e8f7ef;color:#0f5a36}.fb.no{background:#fff5e6;color:#7a4508}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .btn{min-height:50px;border:0;border-radius:14px;padding:0 18px;font-weight:800;font-size:15.5px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;justify-content:center}
+  .btn:active{transform:scale(.97)}
+  .btn.primary{background:var(--accent);color:#fff}.btn.ghost{background:#eef3f8;color:var(--ink2)}.btn.green{background:var(--ok);color:#fff}
+  .btn:disabled{opacity:.4}
+  /* 1. 분류 */
+  .sort{display:grid;gap:10px}
+  .si{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;background:#f7fafc;border:2px solid transparent;border-radius:16px;padding:10px 12px 10px 16px;transition:all .25s}
+  .si p{margin:0;font-weight:700;font-size:16.5px;line-height:1.5;word-break:keep-all}
+  .si .two{display:flex;gap:6px}
+  .si .two button{min-height:48px;min-width:84px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15px;cursor:pointer}
+  .si .two button.s[aria-pressed="true"]{border-color:var(--ser);background:var(--ser-soft);color:var(--ser)}
+  .si .two button.p[aria-pressed="true"]{border-color:var(--par);background:var(--par-soft);color:#3f6e10}
+  .si.good{border-color:#9fdcbb;background:#ecf8f1}.si.bad{border-color:#f3c2bb;background:#fff4f2}
+  /* 2. 잇기 */
+  .chains{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .chn h3{margin:0 0 8px;font-size:16px}
+  .chn.s h3{color:var(--ser)}.chn.p h3{color:var(--par)}
+  .slots{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+  .sl{min-height:50px;border-radius:12px;border:2px dashed #b8c6d4;background:#f7fafc;display:flex;align-items:center;gap:10px;padding:6px 12px;font-weight:800;font-size:15px;color:var(--muted);word-break:keep-all}
+  .sl .k{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:13px;color:#fff;background:#aebdcc}
+  .chn.s .sl.f{border-style:solid;border-color:var(--ser);background:var(--ser-soft);color:#0f4f7d}.chn.s .sl.f .k{background:var(--ser)}
+  .chn.p .sl.f{border-style:solid;border-color:var(--par);background:var(--par-soft);color:#3f6e10}.chn.p .sl.f .k{background:var(--par)}
+  .pool{display:flex;flex-direction:column;gap:6px}
+  .pc{min-height:50px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15px;cursor:pointer;text-align:left;padding:6px 12px;word-break:keep-all}
+  .pc.shake{animation:shake .4s;border-color:var(--no)}
+  @keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+  .pc[hidden]{display:none}
+  /* 3. 생활 */
+  .lq{padding:14px 0;border-bottom:1px dashed var(--line)}
+  .lq:last-child{border-bottom:0;padding-bottom:0}
+  .lq p{margin:0 0 10px;font-weight:700;font-size:16.5px;line-height:1.6;word-break:keep-all}
+  .opts{display:grid;gap:8px}
+  .ob{display:flex;align-items:center;gap:10px;text-align:left;min-height:52px;border-radius:14px;border:2px solid var(--line);background:#f7fafc;padding:8px 14px;font-size:15.5px;font-weight:700;cursor:pointer;word-break:keep-all}
+  .ob .k{flex:none;width:28px;height:28px;border-radius:50%;background:#fff;border:2px solid #cbd6e1;display:grid;place-items:center;font-size:13px;font-weight:800;color:#5a6b7e}
+  .ob.good{border-color:var(--ok);background:#e8f7ef}.ob.bad{border-color:var(--no);background:#fdecea}
+  .ob:disabled{cursor:default}
+  .lexp{display:none;margin-top:10px;padding:12px 14px;border-radius:14px;background:#f2f7fd;font-size:15px;line-height:1.65;word-break:keep-all}
+  .lexp.show{display:block}
+  /* 4. 글쓰기 */
+  .prompts{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+  .pr{border-radius:16px;border:2px solid #d4dee8;background:#fff;padding:12px 14px;text-align:left;cursor:pointer;min-height:96px}
+  .pr b{display:block;font-size:15.5px;margin-bottom:4px}.pr span{font-size:13.5px;color:var(--muted);word-break:keep-all}
+  .pr.sel{border-color:var(--violet);background:#f3effd}
+  .wq{font-size:17px;font-weight:800;background:#f3effd;border-radius:14px;padding:12px 14px;margin-bottom:10px;color:#3d2f73;word-break:keep-all}
+  .starters{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+  .starters button{min-height:44px;border-radius:10px;border:1px dashed #b8a6ec;background:#fff;color:#5a43a8;font-weight:700;font-size:13.5px;padding:0 10px;cursor:pointer}
+  textarea{width:100%;min-height:220px;border-radius:16px;border:2px solid #cbd6e1;padding:14px 16px;font-size:17px;line-height:1.8;resize:vertical;font-family:inherit}
+  textarea:focus{outline:none;border-color:var(--violet);box-shadow:0 0 0 4px rgba(125,90,214,.15)}
+  .wmeta{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-top:8px;font-size:14px;color:var(--muted);font-weight:700}
+  .kw{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+  .kw span{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:6px 12px;font-size:14px;font-weight:800;background:#eef3f8;color:#7a8a9b;transition:all .3s}
+  .kw span.on{background:#e8f7ef;color:#11703f}
+  .kw span::before{content:"○"}.kw span.on::before{content:"●"}
+  .self{display:grid;gap:8px;margin-top:14px}
+  .self label{display:flex;align-items:center;gap:10px;background:#f7fafc;border-radius:12px;padding:10px 12px;font-size:15px;font-weight:700;cursor:pointer;word-break:keep-all;min-height:48px}
+  .self input{width:22px;height:22px;accent-color:var(--ok)}
+  .self .cat{flex:none;font-size:12px;font-weight:800;color:#fff;border-radius:999px;padding:2px 8px}
+  .acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+  .note{font-size:12.5px;color:var(--muted);line-height:1.6;word-break:keep-all}
+  @media (max-width:760px){.chains,.prompts{grid-template-columns:1fr}.si{grid-template-columns:1fr}}
+  @media print{body{background:#fff}.tabs,.card:not(#s4),.acts,.starters,.prompts,.self,.kw,header .sub{display:none!important}#s4{box-shadow:none;border:0}textarea{border:0;min-height:0;height:auto}}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+  /* ===== 진로 지도 전용 ===== */
+  :root{--accent:#26306b;--accent-soft:#e9ecfa}
+  .app{max-width:1080px}
+  .hero{position:relative;border-radius:26px;overflow:hidden;color:#fff;padding:26px 28px;background:radial-gradient(60% 80% at 92% 10%,rgba(25,167,201,.35) 0%,transparent 60%),radial-gradient(50% 70% at 0% 100%,rgba(125,90,214,.35) 0%,transparent 60%),linear-gradient(150deg,#0e1838,#1d2a63 60%,#16365e)}
+  .hero .kick{display:inline-block;font-size:13.5px;font-weight:700;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.28);padding:5px 12px;border-radius:999px}
+  .hero h1{font-size:clamp(28px,4vw,40px);margin:12px 0 8px;letter-spacing:-.03em}
+  .hero p{margin:0;max-width:640px;font-size:16.5px;line-height:1.7;opacity:.94;word-break:keep-all}
+  .hero .stats{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+  .hero .stats span{font-size:14px;font-weight:800;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);border-radius:12px;padding:8px 12px}
+  .hero .stats b{font-size:20px;margin-right:4px;color:#ffd76a}
+  .hero svg.deco{position:absolute;right:-30px;top:-10px;width:360px;opacity:.22;pointer-events:none}
+  .hero .back{display:inline-flex;align-items:center;min-height:36px;margin-right:6px;font-size:13.5px;font-weight:800;color:#fff;text-decoration:none;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.28);padding:0 12px;border-radius:999px}
+  .tabs .tab.on{background:var(--accent);color:#fff}.tabs .tab.on .n{background:rgba(255,255,255,.25);color:#fff}
+  /* 노선도 */
+  .mapwrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:16px;background:linear-gradient(#fbfcfe,#f4f7fb);border:1px solid var(--line)}
+  #map{display:block;width:100%;min-width:720px;height:auto}
+  #map .row{cursor:pointer}
+  #map .row:focus{outline:none}
+  #map .row:focus-visible .hl{stroke:#ffd34d;stroke-width:3}
+  #map .stn{cursor:pointer}
+  .legend{display:flex;flex-wrap:wrap;gap:8px 14px;margin:10px 2px 0;font-size:13.5px;font-weight:800;color:var(--ink2)}
+  .legend button{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 12px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:13.5px;cursor:pointer}
+  .legend button i{width:12px;height:12px;border-radius:50%}
+  .legend button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+  .hint2{font-size:13px;color:var(--muted);margin:8px 2px 0;word-break:keep-all}
+  .detail{margin-top:14px;border-radius:20px;border:2px solid #dfe5f3;background:linear-gradient(135deg,#f7f8fe,#fff);padding:16px 18px;scroll-margin-top:80px}
+  .detail .top{display:flex;flex-wrap:wrap;align-items:center;gap:10px;justify-content:space-between}
+  .detail h3{margin:0;font-size:22px;letter-spacing:-.02em;display:flex;align-items:center;gap:10px}
+  .detail h3 .g{font-size:12.5px;font-weight:900;color:#fff;border-radius:8px;padding:3px 9px}
+  .detail .d{margin:8px 0 10px;font-size:16.5px;line-height:1.7;color:var(--ink2);word-break:keep-all}
+  .detail .subj{font-size:14px;font-weight:800;color:var(--muted)}
+  .detail .subj b{color:var(--ink)}
+  .ats{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:8px;margin-top:10px}
+  .at{display:block;text-decoration:none;color:inherit;border-radius:14px;background:#fff;border:1px solid var(--line);padding:10px 12px;border-left:6px solid var(--c)}
+  .at b{display:block;font-size:13.5px;color:var(--c);margin-bottom:2px}
+  .at span{font-size:14.5px;line-height:1.6;color:var(--ink2);word-break:keep-all}
+  .at small{display:block;margin-top:4px;font-size:12px;font-weight:800;color:var(--muted)}
+  .star{min-height:46px;border-radius:12px;border:2px solid #e0a300;background:#fff;color:#7a5600;font-weight:900;font-size:15px;padding:0 14px;cursor:pointer}
+  .star[aria-pressed="true"]{background:#ffd76a;border-color:#e0a300;color:#3d2c00}
+  /* 질문 */
+  .qs{display:grid;gap:12px}
+  .pq p{margin:0 0 6px;font-weight:800;font-size:16.5px}
+  .opts4{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+  .opts4 button{min-height:52px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:14.5px;cursor:pointer;word-break:keep-all;line-height:1.3;padding:4px 6px}
+  .opts4 button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+  .result{margin-top:14px;display:none}
+  .result.show{display:block}
+  .tops{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:8px}
+  .tp{border-radius:16px;padding:12px 14px;background:#fff;border:2px solid var(--c);cursor:pointer;text-align:left}
+  .tp i{font-style:normal;display:inline-grid;place-items:center;width:26px;height:26px;border-radius:8px;background:var(--c);color:#fff;font-weight:900;font-size:13px;margin-bottom:6px}
+  .tp b{display:block;font-size:17px;margin-bottom:2px}
+  .tp span{font-size:13.5px;color:var(--ink2);line-height:1.55;word-break:keep-all}
+  /* 진학 길 */
+  .paths{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  .pcol{border-radius:18px;background:#f7f9fc;border:1px solid var(--line);padding:14px 16px}
+  .pcol h3{margin:0 0 8px;font-size:17px;display:flex;align-items:center;gap:8px}
+  .pcol h3 i{font-style:normal;width:30px;height:30px;border-radius:10px;display:grid;place-items:center;color:#fff;font-size:14px;font-weight:900}
+  .pcol ul{margin:0;padding-left:18px}
+  .pcol li{font-size:15px;line-height:1.65;color:var(--ink2);margin:4px 0;word-break:keep-all}
+  .pcol li small{display:block;font-size:12px;color:var(--muted)}
+  .note2{font-size:13px;color:var(--muted);margin:10px 0 0;word-break:keep-all}
+  /* 나의 카드 */
+  .mycard{border-radius:22px;padding:18px 20px;color:#fff;background:linear-gradient(140deg,#1d2a63,#26306b 50%,#0f4c81)}
+  .mycard h3{margin:0 0 4px;font-size:19px}
+  .mycard .slots3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}
+  .s3{min-height:84px;border-radius:14px;border:2px dashed rgba(255,255,255,.4);padding:10px 12px;font-size:14px;color:rgba(255,255,255,.75);word-break:keep-all}
+  .s3.f{border-style:solid;border-color:#ffd76a;background:rgba(255,255,255,.08);color:#fff}
+  .s3 b{display:block;font-size:16px;color:#ffd76a}
+  .s3 button{margin-top:6px;min-height:34px;border-radius:9px;border:0;background:rgba(255,255,255,.18);color:#fff;font-weight:800;font-size:12.5px;padding:0 10px;cursor:pointer}
+  .mycard label{display:block;font-size:14px;font-weight:800;margin:10px 0 4px}
+  .mycard textarea{width:100%;min-height:96px;border-radius:12px;border:0;padding:10px 12px;font:inherit;font-size:16px;line-height:1.6;color:#14263b;resize:vertical}
+  .mycard .acts{margin-top:10px}
+  .mycard .btn.ghost{background:rgba(255,255,255,.18);color:#fff}
+  .pickrow{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .pickrow button{min-height:40px;border-radius:10px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.08);color:#fff;font-weight:800;font-size:13.5px;padding:0 10px;cursor:pointer}
+  .pickrow button[aria-pressed="true"]{background:#ffd76a;color:#3d2c00;border-color:#ffd76a}
+  [hidden]{display:none!important}
+  @media (max-width:860px){.paths{grid-template-columns:1fr}.opts4{grid-template-columns:1fr 1fr}.tops,.mycard .slots3{grid-template-columns:1fr}}
+  @media print{.tabs,.hero,#s1,#s2,#s3,.mycard .acts,.pickrow,.credit{display:none!important}body{background:#fff}.mycard{color:#14263b;background:#fff;border:2px solid #26306b}.s3{color:#14263b;border-color:#26306b}.s3 b{color:#26306b}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="hero">
+    <svg class="deco" viewBox="0 0 360 260" aria-hidden="true"><g fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"><path d="M10 60 H120 C150 60 160 100 190 100 H350"/><path d="M10 130 H90 C130 130 140 60 190 60 H350" stroke-dasharray="1 0"/><path d="M10 200 H150 C190 200 200 130 240 130 H350"/></g><g fill="#fff"><circle cx="120" cy="60" r="10"/><circle cx="190" cy="100" r="10"/><circle cx="190" cy="60" r="10"/><circle cx="240" cy="130" r="10"/><circle cx="150" cy="200" r="10"/></g></svg>
+    <a class="back" href="../../" target="_top">← 수업 목록</a> <span class="kick">읽기 자료 · 교양과 진로 · 모아 보기</span>
+    <h1>진로 지도: 전기로 움직이는 세상</h1>
+    <p>지금까지 읽은 자료에 나온 일들을 한 장의 노선도로 모았어요. 같은 일이 여러 자료에 다시 나오기도 해요. 노선을 눌러 하는 일을 살펴보고, 질문에 답해 나와 맞는 일을 찾은 뒤, 나의 진로 카드를 만들어 봐요.</p>
+    <div class="stats"><span><b id="nRead">6</b>편의 읽기 자료</span><span><b id="nJob">13</b>가지 일</span><span><b>5</b>개 분야</span></div>
+  </header>
+  <nav class="tabs" id="tabs"></nav>
+
+  <section class="card" id="s1">
+    <h2><span class="no">1</span>진로 노선도</h2>
+    <p class="goal">가로줄 하나가 일 하나예요. 동그라미(역)는 그 일이 나온 읽기 자료예요. 줄을 누르면 아래에 자세한 설명이 나와요. 위쪽 자료 이름을 누르면 그 자료에 나온 일만 밝게 보여요.</p>
+    <div class="mapwrap"><svg id="map" role="img" aria-label="읽기 자료 6편과 13가지 일을 잇는 진로 노선도"></svg></div>
+    <div class="legend" id="legend"></div>
+    <p class="hint2">화면이 좁으면 노선도를 옆으로 밀어 볼 수 있어요.</p>
+    <div class="detail" id="detail"></div>
+  </section>
+
+  <section class="card" id="s2">
+    <h2><span class="no">2</span>나와 맞는 일 찾기</h2>
+    <p class="goal">네 질문에 답하면 나와 어울리는 일 세 가지가 나와요. 정답은 없어요. 마음이 바뀌면 언제든 다시 골라요.</p>
+    <div class="qs" id="qs"></div>
+    <div class="result" id="result">
+      <p style="margin:0;font-weight:800;font-size:16px">나와 어울리는 일</p>
+      <div class="tops" id="tops"></div>
+      <p class="note2">카드를 누르면 노선도에서 그 일을 보여 줘요.</p>
+    </div>
+  </section>
+
+  <section class="card" id="s3">
+    <h2><span class="no">3</span>이 분야로 가는 길</h2>
+    <p class="goal">읽기 자료에 나온 학교와 학과를 모았어요. 길은 하나가 아니에요.</p>
+    <div class="paths">
+      <div class="pcol"><h3><i style="background:#0f8a6c">지</i>지금 할 수 있는 것</h3><ul>
+        <li>수학, 과학(물리·화학), 정보 기초를 탄탄히</li>
+        <li>궁금한 기술을 골라 탐구 보고서 쓰기</li>
+        <li>과학·코딩·로봇 동아리, 진로 체험 활동</li>
+        <li>반도체·배터리·전기 자동차 뉴스를 읽고 숫자의 출처와 시점 확인하기</li>
+      </ul></div>
+      <div class="pcol"><h3><i style="background:#3e63dd">고</i>고등학교</h3><ul>
+        <li>반도체 분야 마이스터고 2곳 새로 지정, 2028년 3월 첫 신입생<small>교육부 발표(2026년 6월)</small></li>
+        <li>'AI 이차전지' 분야 마이스터고(전북 익산 이리공업고), 2028년 3월 첫 신입생<small>교육부 발표(2026-06-16)</small></li>
+        <li>학과를 전기차·미래차 중심으로 바꾸는 자동차 관련 고등학교<small>언론 보도</small></li>
+        <li>일반고에서 물리·화학·정보 등 관심 과목을 골라 듣기</li>
+      </ul></div>
+      <div class="pcol"><h3><i style="background:#7d5ad6">대</i>대학교</h3><ul>
+        <li>반도체공학, 전기전자공학, 신소재공학, 화학공학, 기계공학, 컴퓨터공학, 환경공학 등</li>
+        <li>회사와 협약해 졸업 후 일자리와 이어지는 계약학과(반도체·배터리)</li>
+        <li>반도체 특성화대학<small>교육부 선정(2023)</small></li>
+        <li>미래자동차 혁신융합대학<small>2021년부터 운영</small></li>
+      </ul></div>
+    </div>
+    <p class="note2">2028년은 지금 중학교 2학년이 고등학교 1학년이 되는 해예요. 학교·학과 정보는 해마다 바뀌므로 진학 전에 학교 누리집과 교육청 안내로 꼭 다시 확인해요.</p>
+  </section>
+
+  <section class="card" id="s4">
+    <h2><span class="no">4</span>나의 진로 카드</h2>
+    <p class="goal">관심 있는 일을 세 가지까지 골라 담고, 왜 끌리는지와 지금 할 수 있는 공부를 써요. 노선도 설명의 '내 카드에 담기'로도 담을 수 있어요.</p>
+    <div class="mycard">
+      <h3>나의 진로 카드</h3>
+      <div class="slots3" id="slots3"></div>
+      <div class="pickrow" id="pickrow" aria-label="일 고르기"></div>
+      <label for="why">이 일들이 끌리는 까닭(읽기 자료에서 기억에 남는 장면과 함께)</label>
+      <textarea id="why" placeholder="예) 배터리 자료에서 분리막 하나가 안전을 지킨다는 게 인상 깊어서, 품질·안전 검사에 관심이 생겼어요."></textarea>
+      <label for="plan">지금 할 수 있는 공부나 활동</label>
+      <textarea id="plan" placeholder="예) 화학 실험 보고서 쓰기, 과학 동아리 들기"></textarea>
+      <div class="acts">
+        <button class="btn green" id="copyBtn" type="button">카드 복사하기</button>
+        <button class="btn ghost" id="printBtn" type="button">인쇄 / PDF로 저장</button>
+      </div>
+    </div>
+    <p class="note2">※ 카드는 이 기기의 브라우저에만 임시로 저장되고 어디에도 보내지 않아요. 다 쓰면 복사해서 선생님이 안내한 곳에 붙여 넣으세요.</p>
+  </section>
+  <p class="credit" style="margin:12px 0 4px;text-align:center;font-size:13px;font-weight:700;color:#8495a8;letter-spacing:.02em">진로 지도 · 교양과 진로 읽기 자료 모아 보기</p>
+</div>
+
+<script>
+/* ===== 데이터: 자료가 늘면 READ와 JOBS의 at에만 추가하면 돼요 ===== */
+window.SW_CHECKS = [['ok1', '노선도'], ['ok2', '나와 맞는 일'], ['ok4', '나의 진로 카드']];
+window.CM = {
+  READ: [
+    { k: 'semi', n: '반도체', full: '여기도, 저기도 반도체', url: '../semiconductor/', c: '#3e63dd' },
+    { k: 'mlcc', n: 'MLCC', full: '전기를 담는 작은 그릇, MLCC', url: '../mlcc/', c: '#a0522d' },
+    { k: 'photo', n: '사진 한 장의|여행', full: '사진 한 장의 여행', url: '../photo-journey/', c: '#d9822b' },
+    { k: 'earth', n: '반도체와|지구', full: '반도체와 지구', url: '../chip-earth/', c: '#0f8a6c' },
+    { k: 'bat', n: '배터리', full: '배터리: 전기를 오래 담는 그릇', url: '../battery/', c: '#16a34a' },
+    { k: 'ev', n: '전기|자동차', full: '전기 자동차 한 대 뜯어보기', url: '../ev/', c: '#0f4c81' },
+  ],
+  GROUPS: { r: ['연구·설계', '#7d5ad6'], c: ['컴퓨터·전자', '#19a7c9'], m: ['생산·장비', '#0e63b3'], e: ['환경·에너지', '#2bb673'], p: ['현장·사람', '#e0a300'] },
+  JOBS: [
+    { id: 'design', n: '칩·회로 설계', g: 'r', d: '칩 속에 들어갈 회로를 컴퓨터로 그리고, 오류가 없는지 시험해요.', s: '수학·정보·물리', at: { semi: 'CPU, AP, 메모리 같은 칩의 회로를 설계해요.', photo: '빛을 숫자로 바꾸는 이미지 센서와 사진을 다듬는 칩을 설계해요.', ev: '전기 자동차에 2,000개 넘게 들어갈 것으로 예상되는 칩을 설계해요.' } },
+    { id: 'material', n: '소재·재료 연구', g: 'r', d: '더 좋은 제품을 만들 새 재료를 실험으로 찾아요.', s: '화학·실험', at: { semi: '공정에 쓰는 새 재료와 약품을 연구해요.', mlcc: '더 얇고 고르게 펴지는 세라믹 가루와 전극 재료를 연구해요.', bat: '더 많이 담고 더 안전한 양극·음극 재료를 연구해요.' } },
+    { id: 'product', n: '제품·부품 설계', g: 'r', d: '쓰임에 맞게 제품의 크기, 구조, 성능을 정해요.', s: '수학·물리', at: { mlcc: '스마트폰·자동차에 맞게 크기와 담는 양, 겹 수를 정해요.', bat: '셀과 모듈·팩의 구조를 설계해요.', ev: '작고 가벼우면서 힘센 전동기를 설계해요.' } },
+    { id: 'power', n: '전력 전자', g: 'c', d: '큰 전기를 다루는 반도체와 장치를 만들어요.', s: '물리·기술', at: { semi: '배터리의 전기를 아껴 쓰게 하는 전력 반도체를 만들어요.', bat: '셀마다 온도와 남은 양을 지켜보는 관리 장치(BMS)를 만들어요.', ev: '배터리 전기를 전동기가 쓰기 좋게 바꾸는 장치를 만들어요.' } },
+    { id: 'software', n: '소프트웨어·AI', g: 'c', d: '기계와 칩이 일하도록 프로그램을 만들고 데이터를 분석해요.', s: '수학·정보', at: { photo: '0과 1로 된 사진 데이터를 다루는 프로그램을 만들어요.', bat: '공장 데이터를 AI로 분석해 불량을 줄이고, BMS 프로그램을 만들어요.', ev: '차를 움직이고 스스로 판단하게 하는 자율주행 프로그램을 만들어요.' } },
+    { id: 'process', n: '공정·양산 기술', g: 'm', d: '공장에서 좋은 제품이 많이 나오도록 공정 조건을 정하고 불량 원인을 찾아요.', s: '과학 전반·문제 해결', at: { semi: '8대 공정의 조건을 정하고 관리해요.', mlcc: '수백 겹을 어긋나지 않게 쌓고 고르게 굽는 조건을 찾아요.', bat: '전극을 바르고, 감거나 쌓고, 깨우는 공정을 관리해요.' } },
+    { id: 'equip', n: '설비(장비)', g: 'm', d: '공장의 커다란 장비를 설치하고 점검하고 고쳐요.', s: '물리·기계·손으로 만들기', at: { semi: '빛으로 회로를 새기는 장비 같은 공정 장비를 다뤄요.', mlcc: '시트를 펴고 찍고 쌓고 자르는 기계를 다뤄요.', bat: '전극을 바르고 감고 쌓는 기계를 설계하고 돌려요.' } },
+    { id: 'quality', n: '품질·안전 검사', g: 'm', d: '하나하나 시험해 불량과 위험을 미리 걸러요.', s: '물리·꼼꼼함', at: { semi: '칩을 검사하고 포장하는 패키지·테스트를 맡아요.', mlcc: '전기를 잘 담는지, 오래 견디는지 시험해요.', bat: '셀 하나하나를 시험해 위험을 미리 걸러요.' } },
+    { id: 'energy', n: '에너지·환경 관리', g: 'e', d: '전기와 물을 아끼고 탄소를 줄이는 방법을 찾아요.', s: '과학·사회', at: { earth: '공장 물을 다시 쓰고, 재생에너지로 바꾸고, 데이터 센터 열을 다시 써요.', bat: '남는 햇빛·바람 전기를 담는 큰 배터리 창고(ESS)를 만들어요.', ev: '전기 자동차가 환경에 주는 영향을 자료로 따져요.' } },
+    { id: 'recycle', n: '재사용·재활용', g: 'e', d: '쓰고 난 제품을 검사해 다시 쓰거나 재료를 되살려요.', s: '화학·환경', at: { bat: '쓰고 난 배터리를 ESS로 다시 쓰거나 금속을 뽑아 되살려요.', ev: '앞으로 쏟아질 전기 자동차 배터리를 검사하고 다시 써요.' } },
+    { id: 'infra', n: '충전·냉각 시설', g: 'p', d: '충전소와 냉각 설비를 설치하고 관리해요.', s: '물리·기술', at: { earth: '데이터 센터의 뜨거운 서버를 식히는 설비를 관리해요.', ev: '충전기와 충전소를 설치·관리하고 배터리 온도를 지켜요.' } },
+    { id: 'service', n: '정비·기술 지원', g: 'p', d: '현장에서 기계를 점검하고 고쳐요.', s: '물리·기계·안전', at: { ev: '높은 전압을 다루는 안전 교육을 받고 전기 자동차를 정비해요.' } },
+    { id: 'marketing', n: '마케팅·기술 영업', g: 'p', d: '어떤 제품이 필요할지 시장을 살피고, 고객에게 맞는 제품을 소개해요.', s: '국어·영어·사회·소통', at: { semi: '어떤 칩이 필요할지 시장을 살피고 칩을 소개해요.', mlcc: '고객 회사의 회로에 맞는 MLCC를 설명하고 소개해요.' } },
+  ],
+  sel: 'process', grp: null, read: null, picks: [],
+  $: (s, r = document) => r.querySelector(s), $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
+  store: { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} } },
+};
+window.SW = { done: {} };
+(() => {
+  const { $, $$ } = window.CM;
+  const TABS = [['s1', '진로 노선도'], ['s2', '나와 맞는 일'], ['s3', '가는 길'], ['s4', '나의 진로 카드']];
+  $('#tabs').innerHTML = TABS.map((t, i) => `<button type="button" class="tab" data-s="${t[0]}"><span class="n">${i + 1}</span>${t[1]}</button>`).join('');
+  $$('#tabs .tab').forEach((b) => b.addEventListener('click', () => document.getElementById(b.dataset.s).scrollIntoView({ behavior: 'smooth', block: 'start' })));
+})();
+</script>
+<script>
+/* ===== 블록 1: 노선도와 설명 ===== */
+(() => {
+  'use strict';
+  try {
+    const C = window.CM, { $, $$, READ, JOBS, GROUPS } = C, NS = 'http://www.w3.org/2000/svg';
+    $('#nRead').textContent = READ.length; $('#nJob').textContent = JOBS.length;
+    const X0 = 214, DX = Math.min(96, 500 / Math.max(1, READ.length - 1)), Y0 = 112, DY = 38, W = X0 + DX * (READ.length - 1) + 50, H = Y0 + DY * JOBS.length + 10;
+    const svg = $('#map'); svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    const sx = (i) => X0 + i * DX, sy = (j) => Y0 + j * DY;
+    let h = `<defs><filter id="ds" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#14263b" flood-opacity=".18"/></filter></defs>`;
+    // 세로 안내선과 역 이름
+    READ.forEach((r, i) => {
+      h += `<line x1="${sx(i)}" y1="${Y0 - 22}" x2="${sx(i)}" y2="${H - 6}" stroke="#e1e8ef" stroke-width="2" stroke-dasharray="3 5"/>`;
+      const lines = r.n.split('|');
+      h += `<g class="stn" data-r="${r.k}" tabindex="0" role="button" aria-label="${r.full} 자료에 나온 일 보기"><rect x="${sx(i) - DX / 2 + 2}" y="0" width="${DX - 4}" height="${Y0 - 18}" rx="12" fill="transparent"/><circle cx="${sx(i)}" cy="${Y0 - 40}" r="17" fill="#fff" stroke="${r.c}" stroke-width="4" filter="url(#ds)"/><text x="${sx(i)}" y="${Y0 - 35}" text-anchor="middle" font-size="14" font-weight="900" fill="${r.c}">${i + 1}</text>`;
+      lines.forEach((ln, k) => (h += `<text x="${sx(i)}" y="${Y0 - 72 + k * 15 - (lines.length - 1) * 15}" text-anchor="middle" font-size="12.5" font-weight="900" fill="#14263b">${ln}</text>`));
+      h += `</g>`;
+    });
+    // 일(노선)
+    JOBS.forEach((j, n) => {
+      const y = sy(n), col = GROUPS[j.g][1], idx = READ.map((r, i) => (j.at[r.k] ? i : -1)).filter((i) => i >= 0);
+      h += `<g class="row" data-j="${j.id}" tabindex="0" role="button" aria-label="${j.n}: ${idx.length}개 자료에 나옴">`;
+      h += `<rect class="hl" x="4" y="${y - 16}" width="${W - 8}" height="32" rx="10" fill="transparent" stroke="none"/>`;
+      h += `<circle cx="18" cy="${y}" r="5.5" fill="${col}"/><text x="30" y="${y + 5}" font-size="14.5" font-weight="800" fill="#14263b">${j.n}</text>`;
+      h += `<line x1="${X0 - 18}" y1="${y}" x2="${sx(READ.length - 1) + 18}" y2="${y}" stroke="#eef2f6" stroke-width="6" stroke-linecap="round"/>`;
+      if (idx.length) h += `<line class="trk" x1="${sx(idx[0])}" y1="${y}" x2="${sx(idx[idx.length - 1])}" y2="${y}" stroke="${col}" stroke-width="7" stroke-linecap="round" opacity=".9"/>`;
+      idx.forEach((i) => (h += `<circle class="dot" data-r="${READ[i].k}" cx="${sx(i)}" cy="${y}" r="8" fill="#fff" stroke="${col}" stroke-width="3.5"/>`));
+      h += `<text x="${sx(READ.length - 1) + 30}" y="${y + 5}" font-size="12" font-weight="800" fill="#8a98a8">${idx.length}</text>`;
+      h += `</g>`;
+    });
+    svg.innerHTML = h;
+    // 분야 단추
+    $('#legend').innerHTML = Object.entries(GROUPS).map(([k, g]) => `<button type="button" data-g="${k}" aria-pressed="false"><i style="background:${g[1]}"></i>${g[0]}</button>`).join('') + '<button type="button" data-g="" aria-pressed="false">모두 보기</button>';
+    const paintMap = () => {
+      $$('#map .row').forEach((row) => {
+        const j = JOBS.find((x) => x.id === row.dataset.j);
+        const dim = (C.grp && j.g !== C.grp) || (C.read && !j.at[C.read]);
+        row.setAttribute('opacity', dim ? '0.18' : '1');
+        const on = j.id === C.sel; const hl = row.querySelector('.hl');
+        hl.setAttribute('fill', on ? '#eef0fb' : 'transparent'); hl.setAttribute('stroke', on ? GROUPS[j.g][1] : 'none'); hl.setAttribute('stroke-width', on ? '2' : '0');
+        row.querySelectorAll('.dot').forEach((d) => d.setAttribute('r', on ? '9.5' : '8'));
+      });
+      $$('#map .stn').forEach((s) => s.setAttribute('opacity', !C.read || s.dataset.r === C.read ? '1' : '0.35'));
+      $$('#legend button').forEach((b) => b.setAttribute('aria-pressed', String((b.dataset.g || null) === C.grp && !C.read)));
+    };
+    C.showJob = (id, scroll) => {
+      C.sel = id; const j = JOBS.find((x) => x.id === id), g = GROUPS[j.g], picked = C.picks.includes(id);
+      const ats = READ.filter((r) => j.at[r.k]).map((r) => `<a class="at" style="--c:${r.c}" href="${r.url}" target="_top"><b>${r.full}</b><span>${j.at[r.k]}</span><small>자료 열기 →</small></a>`).join('');
+      $('#detail').innerHTML = `<div class="top"><h3>${j.n}<span class="g" style="background:${g[1]}">${g[0]}</span></h3><button type="button" class="star" id="starBtn" aria-pressed="${picked}">${picked ? '★ 내 카드에 담김' : '☆ 내 카드에 담기'}</button></div>
+        <p class="d">${j.d}</p><div class="subj">가까운 과목: <b>${j.s}</b></div><div class="ats">${ats}</div>`;
+      $('#starBtn').addEventListener('click', () => { C.togglePick(id); C.showJob(id); });
+      paintMap();
+      if (scroll) document.getElementById('s1').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+    $$('#map .row').forEach((row) => { const go = () => { C.read = null; C.showJob(row.dataset.j); C.$('#detail').scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }; row.addEventListener('click', go); row.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); } }); });
+    $$('#map .stn').forEach((s) => { const go = () => { C.grp = null; C.read = C.read === s.dataset.r ? null : s.dataset.r; const first = JOBS.find((j) => !C.read || j.at[C.read]); C.showJob(first.id); }; s.addEventListener('click', go); s.addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); }); });
+    $$('#legend button').forEach((b) => b.addEventListener('click', () => { C.read = null; C.grp = b.dataset.g || null; const first = JOBS.find((j) => !C.grp || j.g === C.grp); C.showJob(first.id); }));
+    C.paintMap = paintMap;
+    C.showJob(C.sel);
+    window.SW.ok1 = true;
+  } catch (err) { window.SW_err('노선도', err); }
+})();
+</script>
+<script>
+/* ===== 블록 2: 나와 맞는 일 찾기 ===== */
+(() => {
+  'use strict';
+  try {
+    const C = window.CM, { $, $$, JOBS, GROUPS } = C;
+    const QS = [
+      { q: '나는 무엇을 할 때 가장 즐거울까?', o: [['그리고 설계하기', ['design', 'product', 'power']], ['실험하고 관찰하기', ['material', 'process', 'recycle']], ['기계를 만지고 고치기', ['equip', 'service', 'infra']], ['사람들과 이야기하기', ['marketing', 'energy']]] },
+      { q: '좋아하는 과목은?', o: [['수학·정보', ['design', 'software']], ['물리', ['power', 'product', 'equip', 'quality']], ['화학', ['material', 'recycle', 'process']], ['사회·언어', ['marketing', 'energy']]] },
+      { q: '나는 이런 사람에 가까워요.', o: [['원인을 끝까지 파고든다', ['process', 'quality']], ['새로운 걸 떠올린다', ['design', 'material', 'software']], ['꼼꼼하게 안전을 챙긴다', ['quality', 'service', 'infra']], ['세상과 환경 문제에 관심이 많다', ['energy', 'recycle']]] },
+      { q: '어디에서 일하고 싶나요?', o: [['연구소', ['material', 'design', 'product']], ['공장', ['process', 'equip', 'quality']], ['컴퓨터 앞', ['software', 'design', 'power']], ['현장이나 사람들 사이', ['service', 'infra', 'marketing', 'energy']]] },
+    ];
+    const ans = QS.map(() => null);
+    $('#qs').innerHTML = QS.map((q, i) => `<div class="pq" data-i="${i}"><p>${i + 1}. ${q.q}</p><div class="opts4">${q.o.map((o, k) => `<button type="button" data-k="${k}" aria-pressed="false">${o[0]}</button>`).join('')}</div></div>`).join('');
+    function update() {
+      if (ans.some((a) => a == null)) { $('#result').classList.remove('show'); return; }
+      const score = {}; JOBS.forEach((j, n) => (score[j.id] = -n * 0.001));
+      ans.forEach((k, i) => QS[i].o[k][1].forEach((id, r) => (score[id] += 1 - r * 0.05)));
+      const top = JOBS.slice().sort((a, b) => score[b.id] - score[a.id]).slice(0, 3);
+      $('#tops').innerHTML = top.map((j, i) => `<button type="button" class="tp" data-j="${j.id}" style="--c:${GROUPS[j.g][1]}"><i>${i + 1}</i><b>${j.n}</b><span>${j.d}</span></button>`).join('');
+      $$('#tops .tp').forEach((b) => b.addEventListener('click', () => { C.grp = null; C.read = null; C.showJob(b.dataset.j, true); }));
+      $('#result').classList.add('show');
+      window.SW.done2 = true;
+    }
+    $$('#qs .pq').forEach((row) => { const i = +row.dataset.i; $$('button', row).forEach((b) => b.addEventListener('click', () => { ans[i] = +b.dataset.k; $$('button', row).forEach((o) => o.setAttribute('aria-pressed', String(o === b))); update(); })); });
+    window.SW.ok2 = true;
+  } catch (err) { window.SW_err('나와 맞는 일', err); }
+})();
+</script>
+<script>
+/* ===== 블록 3: 나의 진로 카드 (저장하지 않고 복사·인쇄만) ===== */
+(() => {
+  'use strict';
+  try {
+    const C = window.CM, { $, $$, JOBS, READ, store } = C;
+    try { C.picks = JSON.parse(store.get('career-map-picks') || '[]').filter((id) => JOBS.some((j) => j.id === id)).slice(0, 3); } catch (e) { C.picks = []; }
+    const why = $('#why'), plan = $('#plan');
+    why.value = store.get('career-map-why') || ''; plan.value = store.get('career-map-plan') || '';
+    why.addEventListener('input', () => store.set('career-map-why', why.value)); plan.addEventListener('input', () => store.set('career-map-plan', plan.value));
+    function paint() {
+      $('#slots3').innerHTML = [0, 1, 2].map((i) => { const id = C.picks[i]; if (!id) return `<div class="s3">${i + 1}번째 칸이 비어 있어요</div>`; const j = JOBS.find((x) => x.id === id); const rs = READ.filter((r) => j.at[r.k]).map((r) => r.full.split(':')[0].split(',')[0]).join(' · '); return `<div class="s3 f"><b>${j.n}</b>${rs}<br><button type="button" data-rm="${id}">빼기</button></div>`; }).join('');
+      $$('#slots3 [data-rm]').forEach((b) => b.addEventListener('click', () => C.togglePick(b.dataset.rm)));
+      $('#pickrow').innerHTML = JOBS.map((j) => `<button type="button" data-p="${j.id}" aria-pressed="${C.picks.includes(j.id)}">${j.n}</button>`).join('');
+      $$('#pickrow button').forEach((b) => b.addEventListener('click', () => C.togglePick(b.dataset.p)));
+      store.set('career-map-picks', JSON.stringify(C.picks));
+    }
+    C.togglePick = (id) => {
+      const i = C.picks.indexOf(id);
+      if (i >= 0) C.picks.splice(i, 1); else { if (C.picks.length >= 3) C.picks.shift(); C.picks.push(id); }
+      paint(); if (C.sel === id && C.showJob) { const y = window.scrollY; C.showJob(id); window.scrollTo(0, y); }
+    };
+    $('#copyBtn').addEventListener('click', async () => {
+      const names = C.picks.map((id) => JOBS.find((j) => j.id === id).n);
+      const out = `[나의 진로 카드]\n관심 있는 일: ${names.join(', ') || '(아직 고르지 않음)'}\n\n끌리는 까닭: ${why.value}\n\n지금 할 수 있는 공부나 활동: ${plan.value}`;
+      try { await navigator.clipboard.writeText(out); $('#copyBtn').textContent = '복사했어요!'; }
+      catch (e) { $('#copyBtn').textContent = '길게 눌러 직접 복사해 주세요'; }
+      setTimeout(() => ($('#copyBtn').textContent = '카드 복사하기'), 2200);
+    });
+    $('#printBtn').addEventListener('click', () => window.print());
+    paint();
+    window.SW.ok4 = true;
+  } catch (err) { window.SW_err('나의 진로 카드', err); }
+})();
+</script>
+</body>
+</html>
