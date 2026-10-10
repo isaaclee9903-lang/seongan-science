@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>별까지의 거리 – 시차와 연주 시차 읽기</title>
+<script>
+/* 문제 알림: 그림을 그리는 코드에 오류가 나면 화면 아래에 빨간 상자로 알려 줘요 (선생님 확인용) */
+(function () {
+  function box() {
+    var b = document.getElementById('rdErr');
+    if (!b && document.body) {
+      b = document.createElement('div'); b.id = 'rdErr';
+      b.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;background:#fdecea;color:#8a1f17;border:2px solid #d9534f;border-radius:12px;padding:10px 14px;font:600 14px/1.5 sans-serif;white-space:pre-wrap';
+      document.body.appendChild(b);
+    }
+    return b;
+  }
+  window.RD_err = function (where, err) {
+    var msg = '[' + where + '] ' + (err && err.message ? err.message : String(err));
+    var show = function () { var b = box(); if (b) b.textContent += (b.textContent ? '\n' : '') + msg; };
+    if (document.body) show(); else document.addEventListener('DOMContentLoaded', show);
+  };
+  window.addEventListener('error', function (e) { window.RD_err('스크립트', { message: e.message + ' (줄 ' + e.lineno + ')' }); });
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      var R = window.RD || {}, miss = [];
+      if (!R.ok1) miss.push('기본 기능·퀴즈');
+      if (!R.ok2) miss.push('별 하늘 그림');
+      if (!R.ok3) miss.push('움직이는 그림');
+      if (miss.length) window.RD_err('실행 안 됨', { message: miss.join(', ') + ' 코드가 실행되지 않았어요. 파일이 끝(</html>)까지 들어 있는지 확인해 주세요.' });
+    }, 1500);
+  });
+})();
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+  :root{--bg:#f3f6f9;--paper:#fff;--ink:#15263a;--ink2:#34495e;--muted:#627386;--line:#e1e8ef;--accent:#2c5fc9;--accent-soft:#e7eefc;
+    --X:#2f86e0;--Y:#9bb31f;--A:#f08a1c;--ok:#1f9d5c;--no:#d9534f;--violet:#6a4fd0;
+    --shadow:0 1px 2px rgba(20,38,59,.05),0 10px 28px rgba(20,38,59,.07);--ease:cubic-bezier(.2,.8,.2,1);--fs:18px}
+  html.big{--fs:20.5px}
+  *{box-sizing:border-box}html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:"Pretendard",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;-webkit-font-smoothing:antialiased;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  button{font:inherit;color:inherit}a{color:var(--accent)}
+  /* 히어로 */
+  .hero{position:relative;color:#fff;overflow:hidden;background:#070d1c;min-height:440px}
+  .hero canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .hero-in{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:48px 20px 52px}
+  .hero .kick{display:inline-block;font-size:14px;font-weight:700;background:rgba(255,255,255,.12);padding:6px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.25)}
+  .hero h1{font-size:clamp(32px,5vw,52px);line-height:1.2;letter-spacing:-.03em;margin:16px 0 12px;word-break:keep-all;text-shadow:0 4px 30px rgba(0,0,0,.6)}
+  .hero h1 em{font-style:normal;background:linear-gradient(90deg,#8fd3ff,#c9b6ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero p{max-width:560px;font-size:clamp(16px,2vw,18.5px);margin:0 0 20px;line-height:1.7;opacity:.95;word-break:keep-all;text-shadow:0 2px 14px rgba(0,0,0,.7)}
+  .route{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px}
+  .route span{font-size:13.5px;font-weight:700;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.22);padding:5px 11px;border-radius:12px;backdrop-filter:blur(4px)}
+  .start{display:inline-flex;align-items:center;gap:10px;white-space:nowrap;background:#fff;color:#1b3f8f;border:0;border-radius:16px;padding:0 22px;min-height:56px;font-weight:800;font-size:17px;cursor:pointer;box-shadow:0 10px 30px rgba(0,0,0,.4)}
+  .goal{margin-top:22px;display:inline-block;background:rgba(10,20,40,.55);border:1px solid rgba(255,255,255,.18);border-radius:16px;padding:12px 16px;font-size:14.5px;line-height:1.7;backdrop-filter:blur(6px)}
+  .goal b{color:#ffd27a}
+  /* 진행 */
+  .nav{position:sticky;top:0;z-index:30;background:rgba(255,255,255,.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+  .nav-in{max-width:980px;margin:0 auto;display:flex;align-items:center;gap:6px;padding:8px 12px;overflow-x:auto;scrollbar-width:none}
+  .nav-in::-webkit-scrollbar{display:none}
+  .step{flex:none;display:flex;align-items:center;gap:7px;border:0;background:transparent;border-radius:12px;padding:8px 11px;min-height:44px;font-weight:700;font-size:14.5px;color:var(--muted);cursor:pointer}
+  .step .n{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:12.5px;font-weight:800;background:#e8eef4;color:#607285}
+  .step.active{background:var(--accent-soft);color:var(--accent)}.step.active .n{background:var(--accent);color:#fff}
+  .step.done .n{background:var(--ok);color:#fff}
+  .nav-sp{flex:1}
+  .fsz{flex:none;display:flex;gap:4px}
+  .fsz button{width:44px;height:40px;border:1px solid var(--line);background:#fff;border-radius:10px;font-weight:800;cursor:pointer}
+  .fsz button[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .bar{height:3px}.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#2f86e0,#6a4fd0)}
+  /* 본문 */
+  main{max-width:980px;margin:0 auto;padding:10px 16px 60px}
+  section.part{padding-top:34px;scroll-margin-top:70px}
+  .sec-kick{font-size:14px;font-weight:800;color:var(--accent);display:flex;align-items:center;gap:8px}
+  .sec-kick .time{font-weight:600;color:var(--muted);background:#fff;border:1px solid var(--line);border-radius:999px;padding:2px 10px;font-size:12.5px}
+  h2{font-size:clamp(24px,3.4vw,31px);margin:6px 0 16px;letter-spacing:-.02em;line-height:1.3;word-break:keep-all}
+  h3{font-size:calc(var(--fs) + 3px);margin:0 0 8px;letter-spacing:-.01em;word-break:keep-all}
+  .card{background:var(--paper);border-radius:22px;box-shadow:var(--shadow);border:1px solid rgba(20,38,59,.04)}
+  .read{padding:24px 26px;margin-bottom:16px}
+  .read p{font-size:var(--fs);line-height:1.85;color:var(--ink2);margin:0 0 14px;word-break:keep-all}
+  .read p:last-child{margin-bottom:0}
+  .tag{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:800;color:var(--accent);background:var(--accent-soft);padding:4px 10px;border-radius:999px;margin-bottom:10px}
+  mark{background:linear-gradient(transparent 58%,#fff0a8 58%);color:inherit;padding:0 1px}
+  .term{border:0;background:none;padding:0;font-weight:800;color:var(--accent);border-bottom:2px dotted rgba(44,95,201,.5);cursor:pointer;font-size:inherit;line-height:inherit}
+  .defn{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:14px 0;padding:14px 16px;border-radius:16px;background:#f2f6fd;border:1px solid #d6e2f5;font-size:var(--fs);line-height:1.65;word-break:keep-all}
+  .defn .k{font-weight:900;color:#fff;padding:4px 12px;border-radius:10px;flex:none}
+  .defn span:last-child{flex:1;min-width:220px}
+  .fig{margin:16px 0;background:#f8fafc;border:1px solid var(--line);border-radius:18px;padding:12px}
+  .fig svg{display:block;width:100%;height:auto}
+  .fig .cap{font-size:13.5px;color:var(--muted);text-align:center;margin-top:6px;word-break:keep-all}
+  .fig.dark{background:#0b1427;border-color:#1c2b4a}
+  .fig.dark .cap{color:#9fb0cc}
+  .tgs{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:8px 0 4px}
+  .tg{min-height:48px;padding:0 16px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15px;cursor:pointer;transition:all .2s}
+  .tg[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+  .rgline{display:flex;align-items:center;gap:12px;margin:8px 4px 0;flex-wrap:wrap}
+  .rgline label{font-weight:800;font-size:15px;white-space:nowrap}
+  .rgline .end{font-size:13px;color:var(--muted);font-weight:700}
+  .rgline input[type=range]{flex:1;min-width:160px;height:44px;accent-color:var(--accent)}
+  .js-reveal .reveal{transform:translateY(18px);transition:transform .7s var(--ease)}
+  .js-reveal .reveal.in{transform:none}
+  details.pause{margin:16px 0 22px;background:linear-gradient(135deg,#fff8e6,#fff);border:2px solid #f6d98a;border-radius:18px;overflow:hidden}
+  details.pause summary{list-style:none;cursor:pointer;padding:15px 18px;display:flex;gap:12px;align-items:center;font-weight:800;font-size:var(--fs);min-height:60px;word-break:keep-all}
+  details.pause summary::-webkit-details-marker{display:none}
+  details.pause .pi{flex:none;width:36px;height:36px;border-radius:12px;background:#f7c948;display:grid;place-items:center}
+  details.pause .tap{margin-left:auto;flex:none;font-size:13px;font-weight:700;color:#9a6b00;background:#fff3cc;padding:4px 10px;border-radius:999px}
+  details.pause[open] .tap{visibility:hidden}
+  details.pause .ans{padding:0 18px 18px 66px;font-size:var(--fs);line-height:1.75;color:#5b4300;word-break:keep-all}
+  .key-box{border-radius:20px;padding:20px 22px;margin:18px 0;background:linear-gradient(135deg,#ece8fd,#fff);border:2px solid #c9bdf3}
+  .key-box .kt{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:900;color:#fff;background:var(--violet);padding:4px 10px;border-radius:999px;margin-bottom:8px}
+  .key-box p{font-size:var(--fs);line-height:1.8;margin:0 0 10px;color:#2d2350;word-break:keep-all}
+  .key-box p:last-child{margin:0}
+  .units{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:14px 0}
+  .unit{border-radius:18px;padding:16px;background:#fff;border:2px solid var(--line);text-align:center}
+  .unit .sym{font-size:34px;font-weight:900;line-height:1.1}
+  .unit .nm{font-weight:800;margin-top:4px}
+  .unit p{margin:6px 0 0;font-size:calc(var(--fs) - 3px);line-height:1.6;color:var(--muted);word-break:keep-all}
+  .eq{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px;margin:14px 0;padding:16px;border-radius:18px;background:#f6f9ff;border:1px solid #d6e2f5;font-size:calc(var(--fs) + 4px);font-weight:900}
+  .eq .op{color:#9aa7b4}
+  .simlink{display:flex;align-items:center;gap:14px;text-decoration:none;color:#fff;border-radius:18px;padding:16px 18px;margin:16px 0;box-shadow:var(--shadow);min-height:72px}
+  .simlink .si{flex:none;width:46px;height:46px;border-radius:14px;background:rgba(255,255,255,.18);display:grid;place-items:center}
+  .simlink b{display:block;font-size:17px}.simlink span{font-size:14px;opacity:.9}
+  .simlink .go{margin-left:auto;flex:none}
+  .src{font-size:12.5px;color:var(--muted);margin-top:10px;line-height:1.6;word-break:keep-all}
+  .zoom .lvl{font-weight:900;font-size:calc(var(--fs) + 1px);text-align:center;margin:6px 0 2px}
+  .zoom .lvd{font-size:calc(var(--fs) - 2px);text-align:center;color:var(--muted);margin:0 0 4px;word-break:keep-all}
+  /* 퀴즈 */
+  .quiz{display:flex;flex-direction:column;gap:14px}
+  .qcard{padding:22px 24px}
+  .qhead{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .qno{flex:none;font-weight:800;font-size:13px;color:#fff;background:var(--ink);padding:4px 10px;border-radius:999px}
+  .qtype{font-size:12.5px;font-weight:700;color:var(--muted)}
+  .qstate{margin-left:auto;font-weight:800;font-size:13px;padding:4px 10px;border-radius:999px;display:none}
+  .qcard.right .qstate{display:inline-block;background:#e8f7ef;color:#11703f}
+  .qcard.wrong .qstate{display:inline-block;background:#fdecea;color:#b33a35}
+  .qtext{font-size:calc(var(--fs) + 1px);font-weight:700;line-height:1.65;margin:0 0 16px;word-break:keep-all}
+  .ox{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:420px}
+  .oxb{min-height:80px;border-radius:20px;border:2px solid var(--line);background:#f7fafc;font-size:38px;font-weight:900;cursor:pointer;display:grid;place-items:center}
+  .oxb.o{color:#1f78c8}.oxb.x{color:#d9534f}
+  .mc{display:grid;gap:10px}
+  .mcb{display:flex;align-items:center;gap:12px;text-align:left;min-height:56px;border-radius:16px;border:2px solid var(--line);background:#f7fafc;padding:10px 16px;font-size:var(--fs);font-weight:700;cursor:pointer;word-break:keep-all}
+  .mcb .k{flex:none;width:30px;height:30px;border-radius:50%;background:#fff;border:2px solid #cbd6e1;display:grid;place-items:center;font-size:14px;font-weight:800;color:#5a6b7e}
+  button.good{border-color:var(--ok)!important;background:#e8f7ef!important}
+  button.bad{border-color:var(--no)!important;background:#fdecea!important}
+  button:disabled{cursor:default}
+  .qcard.locked .oxb:not(.good):not(.bad),.qcard.locked .mcb:not(.good):not(.bad){opacity:.55}
+  .sentence{font-size:calc(var(--fs) + 1px);font-weight:700;line-height:2.4;margin:0 0 14px;word-break:keep-all}
+  .slot{display:inline-flex;align-items:center;justify-content:center;min-width:110px;min-height:44px;vertical-align:middle;margin:0 4px;padding:0 14px;border-radius:12px;border:2px dashed #aebdcc;background:#f7fafc;color:var(--muted);font-weight:800;font-size:calc(var(--fs) - 1px);cursor:pointer;line-height:1.2}
+  .slot.filled{border-style:solid;border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+  .slot.cur{box-shadow:0 0 0 4px rgba(44,95,201,.18)}
+  .slot.good{border-style:solid;border-color:var(--ok);background:#e8f7ef;color:#11703f}
+  .slot.bad{border-style:solid;border-color:var(--no);background:#fdecea;color:#b33a35}
+  .bank{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+  .chip{min-height:48px;padding:0 16px;border-radius:14px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:calc(var(--fs) - 1px);cursor:pointer}
+  .chip.used{opacity:.3;pointer-events:none}
+  .btn{min-height:52px;border:0;border-radius:14px;padding:0 20px;font-weight:800;font-size:16px;cursor:pointer}
+  .btn.primary{background:var(--accent);color:#fff}.btn.primary:disabled{opacity:.35}
+  .btn.ghost{background:#eef3f8;color:var(--ink2)}
+  .exp{display:none;margin-top:14px;padding:14px 16px;border-radius:14px;font-size:var(--fs);line-height:1.7;word-break:keep-all}
+  .qcard.right .exp{display:block;background:#e8f7ef;color:#0f5a36}
+  .qcard.wrong .exp{display:block;background:#fff6e8;color:#6d4208}
+  .retry{margin-top:12px}
+  .result{padding:26px;display:grid;grid-template-columns:150px 1fr;gap:24px;align-items:center;margin-top:16px}
+  .ring{width:150px;height:150px;position:relative}.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+  .ring .rv{position:absolute;inset:0;display:grid;place-items:center;text-align:center;font-weight:900;font-size:34px;line-height:1.1}
+  .ring .rv small{display:block;font-size:13px;font-weight:700;color:var(--muted)}
+  .result p{font-size:var(--fs);line-height:1.7;color:var(--ink2);margin:0 0 12px;word-break:keep-all}
+  .wlist{display:flex;flex-wrap:wrap;gap:8px}
+  .wlist button{min-height:40px;border:1px solid #f1c6c3;background:#fdf0ef;color:#b33a35;border-radius:10px;padding:0 12px;font-weight:700;cursor:pointer}
+  .next{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}
+  .next a{text-decoration:none;color:#fff;border-radius:20px;padding:18px;min-height:140px;display:flex;flex-direction:column;justify-content:space-between;box-shadow:var(--shadow)}
+  .next a b{font-size:18px}.next a span{font-size:14px;opacity:.92;word-break:keep-all}
+  .pop{position:absolute;z-index:40;max-width:300px;background:#15263a;color:#fff;border-radius:14px;padding:12px 14px;font-size:15px;line-height:1.6;box-shadow:0 12px 32px rgba(0,0,0,.25);opacity:0;transform:translateY(6px);transition:all .2s;pointer-events:none;word-break:keep-all}
+  .pop.show{opacity:1;transform:none;pointer-events:auto}.pop b{display:block;color:#9fd2ff}
+  .credit{text-align:center;font-size:13px;font-weight:700;color:#8495a8;padding:6px 16px 40px;letter-spacing:.02em}
+  .tchr{transition:transform .8s var(--ease)}
+  @media (max-width:860px){.units,.next{grid-template-columns:1fr}}
+  @media (max-width:600px){.read{padding:20px}.result{grid-template-columns:1fr;justify-items:center;text-align:center}.step .t{display:none}details.pause .ans{padding-left:18px}}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.js-reveal .reveal{transform:none}}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <canvas id="heroCv" aria-hidden="true"></canvas>
+  <div class="hero-in">
+    <span class="kick">중2 과학 · 별과 우주</span>
+    <h1>별까지의 거리는<br><em>어떻게 알 수 있을까?</em></h1>
+    <p>별은 너무 멀어서 자로 잴 수도, 직접 가 볼 수도 없어요. 그런데 과학자들은 지구가 태양 둘레를 돈다는 사실을 이용해 별까지의 거리를 비교해요. 그 열쇠는 바로 <b>시차</b>예요.</p>
+    <div class="route"><span>① 시차</span><span>② 시차와 거리</span><span>③ 연주 시차</span><span>④ 별까지의 거리 단위</span></div>
+    <button class="start" type="button" data-go="r1">읽기 시작하기
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg></button>
+    <div><div class="goal"><b>이번 시간에 나는!</b><br>· 시차와 거리의 관계를 설명할 수 있다.<br>· 연주 시차를 이용하여 별까지의 거리를 비교할 수 있다.</div></div>
+  </div>
+</header>
+
+<nav class="nav" aria-label="읽기 진행">
+  <div class="nav-in">
+    <button class="step" data-go="r1"><span class="n">1</span><span class="t">시차</span></button>
+    <button class="step" data-go="r2"><span class="n">2</span><span class="t">시차와 거리</span></button>
+    <button class="step" data-go="q1"><span class="n">Q</span><span class="t">퀴즈 ①</span></button>
+    <button class="step" data-go="r3"><span class="n">3</span><span class="t">연주 시차</span></button>
+    <button class="step" data-go="r4"><span class="n">4</span><span class="t">거리 단위</span></button>
+    <button class="step" data-go="q2"><span class="n">Q</span><span class="t">퀴즈 ②</span></button>
+    <span class="nav-sp"></span>
+    <div class="fsz" role="group" aria-label="글자 크기"><button type="button" id="fsN" aria-pressed="true">가</button><button type="button" id="fsB" aria-pressed="false" style="font-size:18px">가</button></div>
+  </div>
+  <div class="bar"><i id="progress"></i></div>
+</nav>
+
+<main>
+  <!-- 읽기 1 -->
+  <section class="part" id="r1">
+    <div class="sec-kick">읽기 ① <span class="time">약 4분</span></div>
+    <h2>앉은 자리마다 가려지는 글씨가 달라요</h2>
+    <article class="card read reveal">
+      <span class="tag">교실에서 생긴 일</span>
+      <p>칠판 앞에 선생님이 서 계시면 친구들마다 "안 보여요!" 하고 외치는 부분이 달라요. 같은 선생님이 같은 곳에 서 계신데 왜 그럴까요? 아래에서 자리를 바꿔 앉아 보세요.</p>
+      <div class="fig">
+        <svg id="classSvg" viewBox="0 0 720 360" role="img" aria-label="칠판 앞에 선생님이 서 있다. 앉은 자리를 바꾸면 선생님이 가리는 칠판 글씨가 달라진다.">
+          <defs>
+            <linearGradient id="cWall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f4efe6"/><stop offset="1" stop-color="#eae2d3"/></linearGradient>
+            <linearGradient id="cBoard" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2f6b5a"/><stop offset="1" stop-color="#23574a"/></linearGradient>
+          </defs>
+          <rect width="720" height="360" fill="url(#cWall)"/>
+          <rect x="0" y="262" width="720" height="98" fill="#d9c3a2"/>
+          <rect x="44" y="30" width="632" height="196" rx="6" fill="#b88b5a"/>
+          <rect x="54" y="40" width="612" height="176" rx="3" fill="url(#cBoard)"/>
+          <rect x="54" y="216" width="612" height="10" fill="#a07448"/>
+          <g fill="#f3f6ef" font-weight="800" font-size="30" text-anchor="middle" style="font-family:Pretendard,sans-serif">
+            <text x="360" y="100">별까지의 거리는</text>
+            <text x="360" y="150">어떻게 알 수 있을까?</text>
+          </g>
+          <g fill="none" stroke="#f9e79f" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" opacity=".9">
+            <path d="M110 70 l5 10 11 1 -8 7 3 11 -11 -6 -10 6 3 -11 -8 -7 11 -1z"/>
+            <path d="M590 168 l4 8 9 1 -7 6 2 9 -8 -5 -8 5 2 -9 -7 -6 9 -1z"/>
+            <path d="M120 180 h40 M575 75 h50"/>
+          </g>
+          <g id="tchr" class="tchr">
+            <ellipse cx="360" cy="330" rx="56" ry="10" fill="rgba(60,40,20,.22)"/>
+            <rect x="330" y="230" width="22" height="98" rx="9" fill="#3a4a63"/>
+            <rect x="368" y="230" width="22" height="98" rx="9" fill="#3a4a63"/>
+            <path d="M318 150 q42 -22 84 0 l10 92 h-104z" fill="#e07a5f"/>
+            <rect x="300" y="160" width="22" height="80" rx="11" fill="#e07a5f" transform="rotate(8 311 160)"/>
+            <rect x="398" y="160" width="22" height="80" rx="11" fill="#e07a5f" transform="rotate(-8 409 160)"/>
+            <circle cx="360" cy="112" r="32" fill="#f2c9a5"/>
+            <path d="M328 108 q4 -36 34 -36 q30 0 32 34 q-10 -16 -34 -18 q-22 2 -32 20z" fill="#4a3426"/>
+          </g>
+          <g id="seatMark" class="tchr"><path d="M360 352 l-12 -14 h24z" fill="#2c5fc9"/></g>
+        </svg>
+        <div class="tgs" role="group" aria-label="앉은 자리">
+          <button type="button" class="tg" data-seat="-1" aria-pressed="false">왼쪽 자리</button>
+          <button type="button" class="tg" data-seat="0" aria-pressed="true">가운데 자리</button>
+          <button type="button" class="tg" data-seat="1" aria-pressed="false">오른쪽 자리</button>
+        </div>
+        <div class="cap" id="classCap">가운데 자리에서는 칠판 가운데 글씨가 가려져요.</div>
+      </div>
+      <p>하나의 물체를 서로 다른 위치에서 보면, 관측자의 위치에 따라 물체가 보이는 방향이 달라져요. 그래서 물체는 <mark>멀리 있는 배경에 대해 서로 다른 곳에 있는 것처럼</mark> 보여요. 여기서는 선생님이 물체, 칠판이 멀리 있는 배경이에요.</p>
+      <div class="defn"><span class="k" style="background:var(--accent)">시차</span><span>관측자의 위치에 따라 물체가 보이는 방향이 달라지는 정도. 시차의 크기는 <b>두 관측 지점과 물체가 이루는 각도</b>로 나타내요.</span></div>
+      <details class="pause">
+        <summary><span class="pi"><svg width="20" height="20" viewBox="0 0 24 24" fill="#5b4300"><path d="M8 5h3v14H8zM13 5h3v14h-3z"/></svg></span>생각 멈춤 · 엄지손가락으로 직접 해 보기<span class="tap">눌러서 열기</span></summary>
+        <div class="ans">팔을 앞으로 쭉 뻗고 엄지손가락을 세운 뒤, 왼쪽 눈과 오른쪽 눈을 번갈아 감아 보세요. 엄지손가락이 뒤쪽 배경에 대해 왔다 갔다 하는 것처럼 보여요. 두 눈의 위치가 달라서 생기는 <b>시차</b>예요. 이번에는 엄지손가락을 얼굴 가까이 가져와서 다시 해 보세요. 움직임이 더 커졌나요, 작아졌나요?</div>
+      </details>
+    </article>
+  </section>
+
+  <!-- 읽기 2 -->
+  <section class="part" id="r2">
+    <div class="sec-kick">읽기 ② <span class="time">약 4분</span></div>
+    <h2>가까울수록 시차가 크다</h2>
+    <article class="card read reveal">
+      <p>두 관측 지점 A, B에서 같은 물체를 바라보며 선을 그으면, 두 선은 물체에서 만나 각을 이뤄요. 이 각이 바로 시차예요. 아래 슬라이더로 물체를 멀리 옮겨 보세요.</p>
+      <div class="fig">
+        <svg id="pxSvg" viewBox="0 0 720 400" role="img" aria-label="두 관측 지점 A와 B에서 물체를 바라본 선이 물체에서 만나 각을 이룬다. 물체가 멀어질수록 각이 작아진다."></svg>
+        <div class="rgline"><label for="pxR">물체의 위치</label><span class="end">가깝게</span><input type="range" id="pxR" min="0" max="100" value="20"><span class="end">멀게</span></div>
+        <div class="cap" id="pxCap"></div>
+      </div>
+      <p>물체가 가까울 때는 두 선이 크게 벌어져서 시차가 크고, 물체가 멀어지면 두 선이 거의 나란해져서 시차가 작아져요. 즉 <mark>시차는 관측자와 물체 사이의 거리가 멀수록 작아져요.</mark> 거꾸로 생각하면, 시차를 재면 물체까지의 거리를 비교할 수 있어요.</p>
+      <a class="simlink" data-link="board" target="_blank" rel="noopener" style="background:linear-gradient(140deg,#1f8fd6,#46b8ee)">
+        <span class="si"><svg width="26" height="26" viewBox="0 0 24 24" fill="#fff"><path d="M12 2.5l2.7 6 6.5.6-4.9 4.3 1.5 6.4L12 16.5l-5.8 3.3 1.5-6.4L2.8 9.1l6.5-.6z"/></svg></span>
+        <div><b>탐구: 시차 측정 판 가상 실험</b><span>양쪽 구멍으로 별 모형 (가), (나)를 보고 각도기로 시차 재기</span></div>
+        <svg class="go" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </a>
+    </article>
+  </section>
+
+  <section class="part" id="q1">
+    <div class="sec-kick">퀴즈 ① <span class="time">4문항</span></div>
+    <h2>시차와 거리 확인하기</h2>
+    <div class="quiz" data-quiz="q1"></div>
+  </section>
+
+  <!-- 읽기 3 -->
+  <section class="part" id="r3">
+    <div class="sec-kick">읽기 ③ <span class="time">약 5분</span></div>
+    <h2>지구가 움직이면 별도 움직여 보인다: 연주 시차</h2>
+    <article class="card read reveal">
+      <p>별을 관측할 때도 시차가 생겨요. 지구가 태양 둘레를 <button class="term" data-term="공전">공전</button>하면서 위치가 계속 변하기 때문이에요. 지구가 A 위치에 있을 때 별 X는 멀리 있는 별들 사이의 X₁에 있는 것처럼 보이고, <b>반년(6개월) 뒤</b> 지구가 공전 궤도의 반대편 B 위치로 오면 별 X는 X₂에 있는 것처럼 보여요.</p>
+      <div class="fig dark">
+        <svg id="apSvg" viewBox="0 0 720 470" role="img" aria-label="지구가 A에 있을 때 별 X는 X1에, 6개월 뒤 B에 있을 때는 X2에 있는 것처럼 보인다. 별 X의 시차는 각 AXB이고, 그 절반이 연주 시차이다.">
+          <defs>
+            <radialGradient id="aSun"><stop offset="0" stop-color="#fff6cf"/><stop offset=".35" stop-color="#ffbf3f"/><stop offset=".7" stop-color="#ff8a1f" stop-opacity=".35"/><stop offset="1" stop-color="#ff7a1a" stop-opacity="0"/></radialGradient>
+            <radialGradient id="aStar"><stop offset="0" stop-color="#fff"/><stop offset=".2" stop-color="#e9f4ff"/><stop offset=".45" stop-color="#8fd3ff" stop-opacity=".45"/><stop offset="1" stop-color="#8fd3ff" stop-opacity="0"/></radialGradient>
+            <radialGradient id="aEarth" cx=".35" cy=".35"><stop offset="0" stop-color="#d8f1ff"/><stop offset=".5" stop-color="#3d93e3"/><stop offset="1" stop-color="#123e78"/></radialGradient>
+          </defs>
+          <rect width="720" height="470" fill="#0b1427"/>
+          <g id="apBg"></g>
+          <rect x="0" y="22" width="720" height="70" fill="rgba(80,120,200,.22)"/>
+          <text x="708" y="40" text-anchor="end" fill="#a9c2ec" font-size="13" font-weight="700">멀리 있는 별들</text>
+          <line class="drawln" x1="590" y1="392" x2="148" y2="58" stroke="#ff9d3c" stroke-width="2.6"/>
+          <line class="drawln" x1="130" y1="392" x2="572" y2="58" stroke="#ff9d3c" stroke-width="2.6" style="animation-delay:.5s"/>
+          <line x1="360" y1="392" x2="360" y2="218" stroke="#fff" stroke-opacity=".45" stroke-width="1.6" stroke-dasharray="3 6"/>
+          <path d="M 324 245 A 46 46 0 0 0 396 245" fill="rgba(255,157,60,.22)" stroke="#ffb35c" stroke-width="2.5"/>
+          <path d="M 360 288 A 70 70 0 0 0 415.8 260.2" fill="none" stroke="#ffd27a" stroke-width="3.5"/>
+          <g font-size="15" font-weight="900" style="font-family:Pretendard,sans-serif">
+            <rect x="242" y="246" width="66" height="26" rx="13" fill="rgba(5,12,26,.8)"/><text x="275" y="264" text-anchor="middle" fill="#ffb35c">시차</text>
+            <rect x="420" y="276" width="86" height="26" rx="13" fill="rgba(5,12,26,.8)"/><text x="463" y="294" text-anchor="middle" fill="#ffd27a">연주 시차</text>
+          </g>
+          <ellipse cx="360" cy="392" rx="240" ry="54" fill="none" stroke="#7fa3e8" stroke-width="2" stroke-dasharray="7 7"/>
+          <path d="M350 446 l16 0 l-10 -8" fill="none" stroke="#9fb8e6" stroke-width="2.4" stroke-linecap="round"/>
+          <circle cx="360" cy="392" r="62" fill="url(#aSun)"/><circle cx="360" cy="392" r="22" fill="#ffc94d"/>
+          <text x="360" y="438" text-anchor="middle" fill="#ffd27a" font-size="14" font-weight="800">태양</text>
+          <circle cx="590" cy="392" r="14" fill="url(#aEarth)"/><circle cx="130" cy="392" r="14" fill="url(#aEarth)"/>
+          <text x="618" y="398" fill="#ffb347" font-size="22" font-weight="900">A</text>
+          <text x="92" y="398" fill="#ffb347" font-size="22" font-weight="900">B</text>
+          <text x="590" y="428" text-anchor="middle" fill="#cfe0ff" font-size="13" font-weight="700">지구</text>
+          <text x="130" y="428" text-anchor="middle" fill="#cfe0ff" font-size="13" font-weight="700">반년 뒤의 지구</text>
+          <circle cx="360" cy="218" r="30" fill="url(#aStar)"/><circle cx="360" cy="218" r="5" fill="#fff"/>
+          <text x="380" y="210" fill="#bfe3ff" font-size="17" font-weight="900">별 X</text>
+          <circle class="popin" cx="148" cy="58" r="18" fill="url(#aStar)" style="animation-delay:1s"/><circle cx="148" cy="58" r="4" fill="#fff"/>
+          <circle class="popin" cx="572" cy="58" r="18" fill="url(#aStar)" style="animation-delay:1.5s"/><circle cx="572" cy="58" r="4" fill="#fff"/>
+          <text x="128" y="62" text-anchor="end" fill="#bfe3ff" font-size="18" font-weight="900">X₁</text>
+          <text x="592" y="62" fill="#bfe3ff" font-size="18" font-weight="900">X₂</text>
+        </svg>
+        <div class="cap">교과서 그림 Ⅷ-2를 바탕으로 다시 그린 그림이에요. 잘 보이도록 각을 아주 크게 과장했어요.</div>
+      </div>
+      <p>이때 별 X의 시차는 <b>∠AXB</b>가 돼요. 그리고 <mark>시차의 ½을 연주 시차</mark>라고 해요. 연주 시차도 시차처럼 관측자와의 거리에 따라 달라져서, <b>지구와 가까이 있는 별일수록 연주 시차가 커요.</b> 그래서 연주 시차를 이용하면 별까지의 거리를 비교할 수 있어요.</p>
+      <div class="defn"><span class="k" style="background:var(--A)">연주 시차</span><span>지구가 공전 궤도의 양 끝(6개월 간격)에서 별을 볼 때 생기는 시차(∠AXB)의 ½</span></div>
+      <details class="pause">
+        <summary><span class="pi"><svg width="20" height="20" viewBox="0 0 24 24" fill="#5b4300"><path d="M8 5h3v14H8zM13 5h3v14h-3z"/></svg></span>생각 멈춤 · 지구가 공전하지 않는다면 별의 연주 시차는 어떻게 될까요?<span class="tap">눌러서 생각 확인</span></summary>
+        <div class="ans">지구가 공전하지 않으면 6개월 뒤에도 같은 곳에서 별을 보게 돼요. 관측하는 위치가 바뀌지 않으니 별이 보이는 방향도 바뀌지 않아 <b>연주 시차가 나타나지 않아요</b>. 거꾸로 말하면, 별의 연주 시차가 관측된다는 것은 지구가 공전한다는 증거가 돼요.</div>
+      </details>
+      <a class="simlink" data-link="orbit" target="_blank" rel="noopener" style="background:linear-gradient(140deg,#1a2b55,#3b5fb8)">
+        <span class="si"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><ellipse cx="12" cy="14" rx="9" ry="4"/><circle cx="12" cy="14" r="2.2" fill="#ffd27a" stroke="none"/><circle cx="12" cy="5" r="1.8" fill="#fff" stroke="none"/></svg></span>
+        <div><b>시뮬레이션: 연주 시차 관측소</b><span>지구를 A에서 B로 옮겨 사진 두 장을 찍고, 별 X와 별 Y 비교하기</span></div>
+        <svg class="go" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </a>
+    </article>
+  </section>
+
+  <!-- 읽기 4 -->
+  <section class="part" id="r4">
+    <div class="sec-kick">읽기 ④ <span class="time">약 5분</span></div>
+    <h2>아주 작은 각도와 아주 먼 거리를 나타내는 단위</h2>
+    <article class="card read reveal">
+      <span class="tag">각도의 단위 ″(초)</span>
+      <p>태양을 제외한 별은 지구로부터 매우 멀리 떨어져 있어서 별의 연주 시차는 <b>매우 작게</b> 나타나요. 그래서 연주 시차는 °(도)보다 훨씬 작은 단위인 <b>″(초)</b>를 사용해요. 버튼을 눌러 1°를 쪼개 보세요.</p>
+      <div class="fig zoom">
+        <svg id="zSvg" viewBox="0 0 720 230" role="img" aria-label="1도를 60으로 나눈 것이 1분, 1분을 60으로 나눈 것이 1초이다."></svg>
+        <div class="lvl" id="zLvl"></div><p class="lvd" id="zLvd"></p>
+        <div class="tgs" role="group" aria-label="각도 단위">
+          <button type="button" class="tg" data-z="0" aria-pressed="true">1°(도)</button>
+          <button type="button" class="tg" data-z="1" aria-pressed="false">1′(분)</button>
+          <button type="button" class="tg" data-z="2" aria-pressed="false">1″(초)</button>
+        </div>
+      </div>
+      <div class="eq"><span>1°</span><span class="op">=</span><span>60′</span><span class="op">=</span><span>3600″</span></div>
+      <p>1″은 1°의 <b>1/3600</b>이에요. 태양 다음으로 지구에서 가까운 별도 연주 시차가 1″보다 작아요. 이렇게 작은 값을 °로 나타내면 0.000…처럼 0이 길게 이어져서 읽고 비교하기 어려워요.</p>
+      <p class="src">출처: 교과서 '연주 시차와 별까지의 거리', ESA 가이아 미션 소개 자료</p>
+    </article>
+    <article class="card read reveal">
+      <span class="tag">거리의 단위 pc(파섹)과 광년</span>
+      <div class="units">
+        <div class="unit"><div class="sym" style="color:var(--violet)">1 pc</div><div class="nm">파섹</div><p>연주 시차가 <b>1″</b>인 별까지의 거리</p></div>
+        <div class="unit"><div class="sym" style="color:var(--X)">1 광년</div><div class="nm">광년</div><p>빛이 <b>1년 동안</b> 갈 수 있는 거리</p></div>
+        <div class="unit"><div class="sym" style="color:var(--A)">1 pc ≈ 3.26 광년</div><div class="nm">두 단위의 관계</div><p>1 pc은 약 3.26 광년에 해당해요</p></div>
+      </div>
+      <p>별은 너무 멀어서 km로 나타내면 숫자가 지나치게 커져요. 그래서 별까지의 거리는 <button class="term" data-term="파섹">pc(파섹)</button>이나 <button class="term" data-term="광년">광년</button> 같은 단위로 나타내요. 연주 시차가 1″인 별까지의 거리를 <b>1 pc</b>이라고 해요. 연주 시차가 1″보다 작은 별은 1 pc보다 멀리 있어요.</p>
+      <div class="key-box"><span class="kt">측정의 한계</span><p>지구로부터 <b>100 pc 이상</b> 떨어진 별은 연주 시차가 너무 작아서 연주 시차를 측정하여 별까지의 거리를 알기 어려워요.</p></div>
+    </article>
+    <article class="card read reveal">
+      <span class="tag">해 보기 · 가이아 우주 망원경</span>
+      <p><b>2013년</b>에 발사된 <b>가이아 우주 망원경</b>은 별의 위치와 움직임, 그리고 특징을 알아내는 임무를 띠고 있어요. 가이아는 지구와 함께 태양 둘레를 움직이며 별의 위치를 관측해요. 6개월 간격으로 찍은 하늘을 비교하면, 위치가 <b>많이</b> 변한 별은 연주 시차가 커서 가깝고, <b>조금</b> 변한 별은 연주 시차가 작아서 멀리 있다는 것을 알 수 있어요.</p>
+      <a class="simlink" data-link="orbitMis" target="_blank" rel="noopener" style="background:linear-gradient(140deg,#3b2a7a,#6a4fd0)">
+        <span class="si"><svg width="26" height="26" viewBox="0 0 24 24" fill="#fff"><rect x="9" y="9" width="6" height="6" rx="1"/><rect x="2" y="10.5" width="6" height="3"/><rect x="16" y="10.5" width="6" height="3"/></svg></span>
+        <div><b>해 보기: 가이아 사진으로 거리 비교</b><span>6개월 간격의 사진 (가), (나)에서 더 멀리 있는 별 찾기</span></div>
+        <svg class="go" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </a>
+      <p class="src">출처: 교과서 해 보기 '연주 시차로 별까지의 거리 비교하기', 유럽 우주국(ESA) esa.int 가이아 소개</p>
+    </article>
+  </section>
+
+  <section class="part" id="q2">
+    <div class="sec-kick">퀴즈 ② <span class="time">6문항</span></div>
+    <h2>연주 시차와 거리 단위 확인하기</h2>
+    <div class="quiz" data-quiz="q2"></div>
+
+    <div class="card result reveal">
+      <div class="ring"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="50" fill="none" stroke="#e7edf3" stroke-width="12"/><circle id="ringArc" cx="60" cy="60" r="50" fill="none" stroke="#2c5fc9" stroke-width="12" stroke-linecap="round" stroke-dasharray="314.16" stroke-dashoffset="314.16" style="transition:stroke-dashoffset 1s"/></svg>
+        <div class="rv"><div><span id="scoreV">0</span><small>/ <span id="scoreT">10</span> 문항</small></div></div></div>
+      <div><h3 id="resTitle">퀴즈를 풀면 결과가 나타나요</h3><p id="resMsg">퀴즈 ①, ②를 모두 풀어 보세요.</p><div class="wlist" id="wlist"></div></div>
+    </div>
+
+    <div class="next">
+      <a data-link="board" target="_blank" rel="noopener" style="background:linear-gradient(140deg,#1f8fd6,#46b8ee)"><b>시차 측정 판 가상 탐구</b><span>양쪽 구멍으로 보고 표시 → 선 잇기 → 각도기로 시차 재기</span></a>
+      <a data-link="orbit" target="_blank" rel="noopener" style="background:linear-gradient(140deg,#1a2b55,#3b5fb8)"><b>연주 시차 관측소</b><span>지구의 공전으로 생기는 연주 시차 관찰 · 가이아 사진 해 보기</span></a>
+      <a data-link="summary" target="_blank" rel="noopener" style="background:linear-gradient(140deg,#e07a1f,#e8a400)"><b>스스로 정리 · 설명하기</b><span>개념 짝짓기, 거리 비교 연습, 친구에게 설명하는 글 쓰기</span></a>
+    </div>
+  </section>
+</main>
+<footer class="credit">중2 과학 · 별과 우주</footer>
+<div class="pop" id="pop" role="tooltip"></div>
+
+<script>
+/* 공통 도구: 아래 세 블록이 함께 써요 */
+window.RD = {
+  $: function (s, r) { return (r || document).querySelector(s); },
+  $$: function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); },
+  reduce: !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches),
+};
+</script>
+<script>
+/* ===== 블록 1: 기본 기능 · 퀴즈 ===== */
+(() => {
+  'use strict';
+  try {
+  /* ===== 설정: 다른 페이지 주소 ===== */
+  const LINKS = { board: 'sim1-parallax-board.html', orbit: 'sim2-annual-parallax.html', orbitMis: 'sim2-annual-parallax.html?mode=mis', summary: 'summary-writing.html' };
+  const NAV_TARGET = { board: 'board', orbit: 'orbit', orbitMis: 'orbit', summary: 'summary' };
+  const flag = (n) => { if (new URLSearchParams(location.search).get(n) === '1') return true; try { return !!(window.frameElement && window.frameElement.dataset[n] === '1'); } catch (e) { return false; } };
+  const EMBED = flag('embed');
+
+  const GLOSSARY = {
+    '공전': '지구가 태양 둘레를 1년에 한 바퀴씩 도는 것이에요. 6개월(반년) 뒤에는 공전 궤도의 반대편에 있어요.',
+    '파섹': '연주 시차가 1″인 별까지의 거리를 1 pc(파섹)이라고 해요. 1 pc은 약 3.26 광년이에요.',
+    '광년': '빛이 1년 동안 갈 수 있는 거리를 1 광년이라고 해요. 시간이 아니라 거리의 단위예요.',
+  };
+  const QUIZ = {
+    q1: [
+      { type: 'ox', q: '같은 물체라도 관측자의 위치가 달라지면 물체가 보이는 방향이 달라진다.', answer: true, exp: '<b>O</b> · 관측자의 위치에 따라 물체가 멀리 있는 배경에 대해 서로 다른 곳에 있는 것처럼 보여요.' },
+      { type: 'mc', q: '시차의 크기는 무엇으로 나타낼까?', options: ['두 관측 지점 사이의 거리', '두 관측 지점과 물체가 이루는 각도', '물체의 밝기', '물체의 크기'], answer: 1, exp: '시차의 크기는 <b>두 관측 지점과 물체가 이루는 각도</b>로 나타내요.' },
+      { type: 'blank', parts: ['관측자와 물체 사이의 거리가 멀수록 시차는 ', 0, '.'], answers: ['작아진다'], bank: ['커진다', '작아진다', '변하지 않는다'], exp: '물체가 멀어지면 두 선이 거의 나란해져서 시차가 <b>작아져요</b>.' },
+      { type: 'mc', q: '시차 측정 판 탐구에서 별 모형 (가)의 시차는 40°, (나)의 시차는 25°였다. 관측 지점에서 더 가까이 있는 별 모형은?', options: ['(가)', '(나)', '둘 다 같은 거리', '알 수 없다'], answer: 0, exp: '시차가 더 큰 <b>(가)</b>가 더 가까이 있어요. 가까울수록 시차가 커요.' },
+    ],
+    q2: [
+      { type: 'mc', q: '지구가 A에 있을 때와 6개월 뒤 B에 있을 때 별 X를 관측했다. 별 X의 연주 시차는?', options: ['∠AXB', '∠AXB의 ½', '∠AXB의 2배', '지구가 6개월 동안 돈 각도'], answer: 1, exp: '별 X의 시차는 ∠AXB이고, <b>시차의 ½이 연주 시차</b>예요.' },
+      { type: 'blank', parts: ['연주 시차는 지구가 태양 둘레를 ', 0, '하기 때문에 생기며, 보통 ', 1, ' 간격으로 관측한 별의 위치를 비교한다.'], answers: ['공전', '6개월'], bank: ['자전', '공전', '1개월', '6개월'], exp: '지구가 <b>공전</b>하여 <b>6개월</b> 뒤에는 공전 궤도의 반대편에서 별을 보게 돼요.' },
+      { type: 'ox', q: '지구와 가까이 있는 별일수록 연주 시차가 작다.', answer: false, exp: '<b>X</b> · 지구와 가까이 있는 별일수록 연주 시차가 <b>커요</b>.' },
+      { type: 'mc', q: '연주 시차의 단위로 °(도) 대신 ″(초)를 사용하는 까닭은?', options: ['별이 매우 가까워서 연주 시차가 크기 때문에', '별이 매우 멀리 있어서 연주 시차가 매우 작기 때문에', '별이 매우 밝기 때문에', '″가 °보다 큰 단위이기 때문에'], answer: 1, exp: '별은 매우 멀리 있어서 연주 시차가 <b>매우 작아요</b>. 1″은 1°의 1/3600인 작은 단위예요.' },
+      { type: 'blank', parts: ['연주 시차가 1″인 별까지의 거리를 1 ', 0, '이라고 하며, 이는 약 ', 1, ' 광년에 해당한다.'], answers: ['pc', '3.26'], bank: ['pc', '광년', '3.26', '3600'], exp: '연주 시차 1″ → <b>1 pc(파섹)</b>, 1 pc ≈ <b>3.26 광년</b>이에요.' },
+      { type: 'mc', q: '세 별 ㉠, ㉡, ㉢의 연주 시차가 각각 0.1″, 0.5″, 0.02″이다. 지구에서 가장 멀리 있는 별은?', options: ['㉠ (0.1″)', '㉡ (0.5″)', '㉢ (0.02″)', '셋 다 같은 거리'], answer: 2, exp: '연주 시차가 가장 <b>작은</b> ㉢이 가장 멀리 있어요. 가장 가까운 별은 연주 시차가 가장 큰 ㉡이에요.' },
+    ],
+  };
+
+  const { $, $$ } = window.RD;
+  $$('[data-link]').forEach((a) => {
+    const key = a.dataset.link;
+    a.href = LINKS[key];
+    a.addEventListener('click', (e) => { if (!EMBED) return; e.preventDefault(); parent.postMessage({ type: 'ras-nav', target: NAV_TARGET[key], mode: key === 'orbitMis' ? 'mis' : undefined }, '*'); });
+  });
+  $$('[data-go]').forEach((b) => b.addEventListener('click', () => document.getElementById(b.dataset.go).scrollIntoView({ behavior: 'smooth', block: 'start' })));
+  const fsN = $('#fsN'), fsB = $('#fsB');
+  const setBig = (v) => { document.documentElement.classList.toggle('big', v); fsN.setAttribute('aria-pressed', String(!v)); fsB.setAttribute('aria-pressed', String(v)); };
+  fsN.addEventListener('click', () => setBig(false)); fsB.addEventListener('click', () => setBig(true));
+
+  const bar = $('#progress'), steps = $$('.step'), parts = ['r1', 'r2', 'q1', 'r3', 'r4', 'q2'].map((id) => document.getElementById(id));
+  function onScroll() {
+    const h = document.documentElement.scrollHeight - innerHeight;
+    bar.style.width = (h > 0 ? (scrollY / h) * 100 : 0) + '%';
+    let cur = -1; parts.forEach((p, i) => { if (p.getBoundingClientRect().top < innerHeight * 0.4) cur = i; });
+    steps.forEach((s, i) => s.classList.toggle('active', i === cur));
+  }
+  addEventListener('scroll', onScroll, { passive: true }); onScroll();
+  // 스크롤 등장 효과: 화면 감지 기능 없이 위치를 직접 계산해요 (탭 화면의 iframe 안에서도 동작)
+  const revs = $$('.reveal');
+  document.documentElement.classList.add('js-reveal');
+  function checkReveal() {
+    const h = window.innerHeight || document.documentElement.clientHeight;
+    if (!h) return;
+    revs.forEach((el) => { if (!el.classList.contains('in')) { const r = el.getBoundingClientRect(); if (r.top < h * 0.92 && r.bottom > 0) el.classList.add('in'); } });
+  }
+  addEventListener('scroll', checkReveal, { passive: true });
+  addEventListener('resize', checkReveal);
+  checkReveal();
+  const revTimer = setInterval(() => { checkReveal(); if (revs.every((el) => el.classList.contains('in'))) clearInterval(revTimer); }, 250);
+  setTimeout(() => {
+    const h = window.innerHeight || document.documentElement.clientHeight;
+    const blind = !h || revs.every((el) => { const r = el.getBoundingClientRect(); return r.top === 0 && r.height === 0; });
+    if (blind) document.documentElement.classList.remove('js-reveal');
+  }, 1500);
+
+  const pop = $('#pop'); let popFor = null;
+  $$('.term').forEach((t) => t.addEventListener('click', (e) => {
+    e.stopPropagation(); if (popFor === t) return hidePop();
+    pop.innerHTML = `<b>${t.textContent}</b>${GLOSSARY[t.dataset.term] || ''}`; pop.classList.add('show');
+    const r = t.getBoundingClientRect(), pw = pop.offsetWidth, ph = pop.offsetHeight;
+    let x = Math.max(scrollX + 10, Math.min(r.left + scrollX + r.width / 2 - pw / 2, scrollX + innerWidth - pw - 10));
+    let y = r.top - ph - 10 < 60 ? r.bottom + scrollY + 10 : r.top + scrollY - ph - 10;
+    pop.style.left = x + 'px'; pop.style.top = y + 'px'; popFor = t;
+  }));
+  function hidePop() { pop.classList.remove('show'); popFor = null; }
+  document.addEventListener('click', hidePop);
+
+  /* 퀴즈 엔진 */
+  const results = {}, ALL = []; let qn = 0;
+  Object.entries(QUIZ).forEach(([sec, list]) => {
+    const host = document.querySelector(`[data-quiz="${sec}"]`);
+    list.forEach((q, i) => {
+      qn += 1; const id = `${sec}-${i}`, label = `문제 ${qn}`; ALL.push({ id, sec, label });
+      const card = document.createElement('article'); card.className = 'card qcard'; card.id = id;
+      card.innerHTML = `<div class="qhead"><span class="qno">${label}</span><span class="qtype">${{ ox: 'O / X', mc: '고르기', blank: '빈칸 채우기' }[q.type]}</span><span class="qstate"></span></div><div class="qbody"></div><div class="exp">${q.exp}</div>`;
+      host.appendChild(card); build(card, q, id);
+    });
+  });
+  $('#scoreT').textContent = ALL.length;
+  function mark(card, id, ok) {
+    results[id] = ok; card.classList.remove('right', 'wrong'); card.classList.add(ok ? 'right' : 'wrong', 'locked');
+    $('.qstate', card).textContent = ok ? '정답' : '다시 보기';
+    if (!ok && !$('.retry', card)) {
+      const r = document.createElement('button'); r.type = 'button'; r.className = 'btn ghost retry'; r.textContent = '다시 풀기';
+      r.addEventListener('click', () => { delete results[id]; card.classList.remove('right', 'wrong', 'locked'); r.remove(); build(card, card._q, id); update(); });
+      card.appendChild(r);
+    }
+    update();
+  }
+  function build(card, q, id) {
+    card._q = q; const body = $('.qbody', card);
+    if (q.type === 'ox') {
+      body.innerHTML = `<p class="qtext">${q.q}</p><div class="ox"><button type="button" class="oxb o" data-v="1">O</button><button type="button" class="oxb x" data-v="0">X</button></div>`;
+      $$('.oxb', body).forEach((b) => b.addEventListener('click', () => { const ok = (b.dataset.v === '1') === q.answer; $$('.oxb', body).forEach((o) => { o.disabled = true; if ((o.dataset.v === '1') === q.answer) o.classList.add('good'); }); if (!ok) b.classList.add('bad'); mark(card, id, ok); }));
+    } else if (q.type === 'mc') {
+      body.innerHTML = `<p class="qtext">${q.q}</p><div class="mc">${q.options.map((o, i) => `<button type="button" class="mcb" data-i="${i}"><span class="k">${'①②③④'[i]}</span>${o}</button>`).join('')}</div>`;
+      $$('.mcb', body).forEach((b) => b.addEventListener('click', () => { const ok = +b.dataset.i === q.answer; $$('.mcb', body).forEach((o, j) => { o.disabled = true; if (j === q.answer) o.classList.add('good'); }); if (!ok) b.classList.add('bad'); mark(card, id, ok); }));
+    } else {
+      const fill = q.answers.map(() => null); let cur = 0;
+      body.innerHTML = `<p class="qtext" style="margin-bottom:6px">알맞은 말을 골라 빈칸을 채워 보세요.</p><p class="sentence">${q.parts.map((p) => typeof p === 'number' ? `<button type="button" class="slot">빈칸 ${p + 1}</button>` : `<span>${p}</span>`).join('')}</p>
+        <div class="bank">${q.bank.slice().sort(() => Math.random() - 0.5).map((w) => `<button type="button" class="chip">${w}</button>`).join('')}</div><button type="button" class="btn primary check" disabled>확인하기</button>`;
+      const slots = $$('.slot', body), chips = $$('.chip', body), check = $('.check', body);
+      const paint = () => { slots.forEach((s, i) => { s.textContent = fill[i] ? fill[i].textContent : `빈칸 ${i + 1}`; s.classList.toggle('filled', !!fill[i]); s.classList.toggle('cur', i === cur && !card.classList.contains('locked')); }); if (check.isConnected) check.disabled = fill.some((f) => !f); };
+      chips.forEach((c) => c.addEventListener('click', () => { if (card.classList.contains('locked')) return; if (fill[cur]) fill[cur].classList.remove('used'); fill[cur] = c; c.classList.add('used'); const n = fill.findIndex((f) => !f); cur = n < 0 ? cur : n; paint(); }));
+      slots.forEach((s, i) => s.addEventListener('click', () => { if (card.classList.contains('locked')) return; if (fill[i]) { fill[i].classList.remove('used'); fill[i] = null; } cur = i; paint(); }));
+      check.addEventListener('click', () => {
+        let ok = true; slots.forEach((s, i) => { const g = fill[i].textContent === q.answers[i]; if (!g) ok = false; s.classList.add(g ? 'good' : 'bad'); s.disabled = true; });
+        chips.forEach((c) => (c.disabled = true)); check.remove(); card.classList.add('locked');
+        if (!ok) body.insertAdjacentHTML('beforeend', `<p class="qtext" style="margin:0;font-size:calc(var(--fs) - 1px);color:#6d4208">정답: ${q.answers.map((a, i) => `빈칸 ${i + 1} <b>${a}</b>`).join(' · ')}</p>`);
+        mark(card, id, ok); paint();
+      });
+      paint();
+    }
+  }
+  function update() {
+    const done = ALL.filter((q) => q.id in results), right = done.filter((q) => results[q.id]);
+    [['q1', 2], ['q2', 5]].forEach(([sec, si]) => steps[si].classList.toggle('done', ALL.filter((q) => q.sec === sec).every((q) => q.id in results)));
+    $('#scoreV').textContent = right.length;
+    $('#ringArc').style.strokeDashoffset = 314.16 * (1 - right.length / ALL.length);
+    const t = $('#resTitle'), m = $('#resMsg'), wl = $('#wlist');
+    if (done.length < ALL.length) { t.textContent = `${ALL.length}문항 중 ${done.length}문항을 풀었어요`; m.textContent = '남은 문제도 풀어 보세요. 틀린 문제는 다시 풀 수 있어요.'; }
+    else if (right.length === ALL.length) { t.textContent = '모두 맞혔어요!'; m.textContent = '이제 시뮬레이션에서 직접 시차를 재고, 스스로 정리해 봐요.'; }
+    else { t.textContent = `${ALL.length}문항 중 ${right.length}문항을 맞혔어요`; m.textContent = '틀린 문제를 눌러 다시 읽고 풀어 보세요.'; }
+    wl.innerHTML = '';
+    ALL.filter((q) => results[q.id] === false).forEach((q) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = `${q.label} 다시 보기`; b.addEventListener('click', () => document.getElementById(q.id).scrollIntoView({ behavior: 'smooth', block: 'center' })); wl.appendChild(b); });
+  }
+  update();
+  window.RD.ok1 = true;
+  } catch (err) { window.RD_err && window.RD_err('기본 기능·퀴즈', err); }
+})();
+</script>
+<script>
+/* ===== 블록 2: 첫 화면 별 하늘 (빛 번짐 별 + 가까운 별의 작은 흔들림) ===== */
+(function () {
+  'use strict';
+  try {
+  var cv = document.getElementById('heroCv'), reduce = window.RD.reduce;
+  var cache = {};
+  function sprite(rgb) {
+    var k = rgb.join(','); if (cache[k]) return cache[k];
+    var s = document.createElement('canvas'); s.width = s.height = 96;
+    var c = s.getContext('2d'), g = c.createRadialGradient(48, 48, 0, 48, 48, 48);
+    g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(.08, 'rgba(255,255,255,.95)');
+    g.addColorStop(.16, 'rgba(' + k + ',.8)'); g.addColorStop(.35, 'rgba(' + k + ',.22)'); g.addColorStop(1, 'rgba(' + k + ',0)');
+    c.fillStyle = g; c.fillRect(0, 0, 96, 96); cache[k] = s; return s;
+  }
+  function star(c, x, y, sz, rgb, a) {
+    c.globalAlpha = a; c.drawImage(sprite(rgb), x - sz, y - sz, sz * 2, sz * 2);
+    if (sz > 10) {
+      var L = sz * 2.4; c.strokeStyle = 'rgba(' + rgb.join(',') + ',' + (.5 * a) + ')'; c.lineWidth = 1;
+      c.beginPath(); c.moveTo(x - L, y); c.lineTo(x + L, y); c.moveTo(x, y - L); c.lineTo(x, y + L); c.stroke();
+    }
+    c.globalAlpha = 1;
+  }
+  var seed = 9; function R() { seed = (seed * 16807) % 2147483647; return seed / 2147483647; }
+  var T = [[190, 215, 255], [235, 242, 255], [255, 255, 255], [255, 240, 210], [255, 214, 170]];
+  var stars = []; for (var i = 0; i < 420; i++) stars.push({ u: R(), v: R(), m: Math.pow(R(), 3.4), rgb: T[Math.floor(R() * T.length)], ph: R() * 6.28, sp: .8 + R() * 2.4 });
+  var neb = []; for (var j = 0; j < 5; j++) neb.push({ u: R(), v: R(), r: .25 + R() * .3, col: j % 2 ? '120,80,200' : '40,110,210' });
+  var t0 = performance.now();
+  function draw(now) {
+    try {
+      var r = cv.getBoundingClientRect(), dpr = Math.min(2, window.devicePixelRatio || 1), w = r.width, h = r.height;
+      if (w > 0 && h > 0) {
+        if (cv.width !== Math.round(w * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
+        var c = cv.getContext('2d'); c.setTransform(dpr, 0, 0, dpr, 0, 0);
+        var t = (now - t0) / 1000;
+        var g = c.createLinearGradient(0, 0, w, h); g.addColorStop(0, '#060b1a'); g.addColorStop(1, '#101a3a');
+        c.fillStyle = g; c.fillRect(0, 0, w, h);
+        neb.forEach(function (n) { var x = n.u * w, y = n.v * h, rr = n.r * Math.max(w, h), gg = c.createRadialGradient(x, y, 0, x, y, rr); gg.addColorStop(0, 'rgba(' + n.col + ',.18)'); gg.addColorStop(1, 'rgba(' + n.col + ',0)'); c.fillStyle = gg; c.fillRect(0, 0, w, h); });
+        c.globalCompositeOperation = 'lighter';
+        stars.forEach(function (s) {
+          var tw = reduce ? 1 : .7 + .3 * Math.sin(t * s.sp + s.ph), sz = 1 + s.m * 9;
+          if (sz < 2.4) { c.fillStyle = 'rgba(' + s.rgb.join(',') + ',' + ((.3 + s.m) * tw) + ')'; c.fillRect(s.u * w, s.v * h, 1.2, 1.2); }
+          else star(c, s.u * w, s.v * h, sz, s.rgb, (.5 + s.m * .5) * tw);
+        });
+        // 가까운 별 하나: 배경 별들 사이에서 1년 주기로 살짝 오가는 모습 (연주 시차를 아주 과장한 연출)
+        var nx = w * .78 + (reduce ? 0 : Math.sin(t * .6) * 26), ny = h * .36;
+        star(c, nx, ny, 26, [150, 205, 255], 1);
+        c.globalCompositeOperation = 'source-over';
+      }
+    } catch (err) { window.RD_err('별 하늘 그림', err); return; }
+    if (!reduce) requestAnimationFrame(draw);
+  }
+  requestAnimationFrame(draw);
+  if (reduce) setTimeout(function () { draw(performance.now()); }, 50);
+  window.RD.ok2 = true;
+  } catch (err) { window.RD_err && window.RD_err('별 하늘 그림', err); }
+})();
+</script>
+<script>
+/* ===== 블록 3: 움직이는 그림 (교실, 시차와 거리, 각도 단위, 연주 시차 배경) ===== */
+(function () {
+  'use strict';
+  try {
+  var $ = window.RD.$, $$ = window.RD.$$;
+  var NS = 'http://www.w3.org/2000/svg';
+  function mk(t, a, p) { var n = document.createElementNS(NS, t); for (var k in a) n.setAttribute(k, a[k]); if (p) p.appendChild(n); return n; }
+
+  /* 교실: 앉은 자리에 따라 선생님이 가리는 곳 */
+  var CAP = { '-1': '왼쪽 자리에서는 선생님이 칠판의 <b>오른쪽</b> 글씨를 가려요.', '0': '가운데 자리에서는 칠판 <b>가운데</b> 글씨가 가려져요.', '1': '오른쪽 자리에서는 선생님이 칠판의 <b>왼쪽</b> 글씨를 가려요.' };
+  $$('[data-seat]').forEach(function (b) { b.addEventListener('click', function () {
+    var s = +b.dataset.seat;
+    $$('[data-seat]').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); });
+    $('#tchr').style.transform = 'translateX(' + (-s * 92) + 'px)';
+    $('#seatMark').style.transform = 'translateX(' + (s * 250) + 'px)';
+    $('#classCap').innerHTML = CAP[String(s)];
+  }); });
+
+  /* 시차와 거리 */
+  var px = $('#pxSvg'), A = { x: 250, y: 360 }, B = { x: 470, y: 360 }, BGY = 60;
+  function pxDraw(v) {
+    px.innerHTML = '';
+    var d = mk('defs', {}, px), lg = mk('linearGradient', { id: 'pxSky', x1: 0, y1: 0, x2: 0, y2: 1 }, d);
+    mk('stop', { offset: 0, 'stop-color': '#dff0ff' }, lg); mk('stop', { offset: 1, 'stop-color': '#f8fbff' }, lg);
+    mk('rect', { width: 720, height: 400, fill: 'url(#pxSky)' }, px);
+    // 멀리 있는 배경 (산과 눈금)
+    mk('path', { d: 'M0 90 L70 46 L130 74 L210 30 L300 80 L380 40 L460 76 L540 34 L620 70 L720 42 V110 H0Z', fill: '#b9cfe6' }, px);
+    mk('rect', { x: 0, y: 90, width: 720, height: 20, fill: '#9db8d6' }, px);
+    for (var i = 0; i <= 18; i++) mk('line', { x1: i * 40, y1: 92, x2: i * 40, y2: i % 2 ? 100 : 106, stroke: '#5f7fa6', 'stroke-width': 1.5 }, px);
+    var t0 = mk('text', { x: 712, y: 128, 'text-anchor': 'end', fill: '#5f7fa6', 'font-size': 13, 'font-weight': 700 }, px); t0.textContent = '멀리 있는 배경';
+    mk('rect', { x: 0, y: 330, width: 720, height: 70, fill: '#e3ead2' }, px);
+    var oy = 300 - v * 1.7, O = { x: 360, y: oy };
+    // 선
+    [A, B].forEach(function (P, k) {
+      var tt = (BGY + 40 - P.y) / (O.y - P.y), hx = P.x + (O.x - P.x) * tt;
+      mk('line', { x1: P.x, y1: P.y, x2: hx, y2: BGY + 40, stroke: k ? '#7d5ad6' : '#2f86e0', 'stroke-width': 3, 'stroke-linecap': 'round' }, px);
+      mk('circle', { cx: hx, cy: BGY + 40, r: 9, fill: '#fff', stroke: k ? '#7d5ad6' : '#2f86e0', 'stroke-width': 3 }, px);
+      var lt = mk('text', { x: hx, y: BGY + 26, 'text-anchor': 'middle', fill: k ? '#5a3bb8' : '#1d63b0', 'font-size': 14, 'font-weight': 900 }, px); lt.textContent = k ? 'B에서 본 위치' : 'A에서 본 위치';
+    });
+    // 각
+    var aA = Math.atan2(A.y - O.y, A.x - O.x), aB = Math.atan2(B.y - O.y, B.x - O.x), R = 46;
+    mk('path', { d: 'M' + O.x + ' ' + O.y + ' L' + (O.x + Math.cos(aB) * R) + ' ' + (O.y + Math.sin(aB) * R) + ' A' + R + ' ' + R + ' 0 0 1 ' + (O.x + Math.cos(aA) * R) + ' ' + (O.y + Math.sin(aA) * R) + 'Z', fill: 'rgba(240,138,28,.3)', stroke: '#f08a1c', 'stroke-width': 2.5 }, px);
+    var lab = mk('text', { x: O.x, y: O.y + R + 22, 'text-anchor': 'middle', fill: '#c4650a', 'font-size': 16, 'font-weight': 900 }, px); lab.textContent = '시차';
+    // 물체 (깃대)
+    mk('rect', { x: O.x - 3, y: O.y - 46, width: 6, height: 46, rx: 2, fill: '#6b7a8c' }, px);
+    mk('path', { d: 'M' + (O.x + 3) + ' ' + (O.y - 46) + ' l34 10 l-34 10z', fill: '#e8457a' }, px);
+    mk('circle', { cx: O.x, cy: O.y, r: 6, fill: '#15263a' }, px);
+    var on = mk('text', { x: O.x - 14, y: O.y - 26, 'text-anchor': 'end', fill: '#15263a', 'font-size': 15, 'font-weight': 900 }, px); on.textContent = '물체';
+    // 관측자
+    [[A, 'A', '#2f86e0'], [B, 'B', '#7d5ad6']].forEach(function (o) {
+      mk('circle', { cx: o[0].x, cy: o[0].y, r: 18, fill: '#ffd23f', stroke: '#c79a00', 'stroke-width': 2 }, px);
+      mk('ellipse', { cx: o[0].x, cy: o[0].y, rx: 11, ry: 7, fill: '#fff', stroke: '#4a3a10', 'stroke-width': 1.6 }, px);
+      mk('circle', { cx: o[0].x, cy: o[0].y - 1, r: 4, fill: '#4a3a10' }, px);
+      var tx = mk('text', { x: o[0].x, y: o[0].y + 36, 'text-anchor': 'middle', fill: o[2], 'font-size': 15, 'font-weight': 900 }, px); tx.textContent = '관측 지점 ' + o[1];
+    });
+    var ang = Math.abs(aA - aB) * 180 / Math.PI;
+    $('#pxCap').innerHTML = ang > 50 ? '물체가 <b>가까워요</b> → 두 선이 크게 벌어져 <b>시차가 커요</b>. 배경에서 보이는 두 위치도 멀리 떨어져 있어요.'
+      : ang > 28 ? '물체가 조금 멀어졌어요 → 시차가 <b>작아지고</b> 있어요.'
+      : '물체가 <b>멀어요</b> → 두 선이 거의 나란해져 <b>시차가 작아요</b>. 배경에서 보이는 두 위치도 가까워요.';
+  }
+  var pxR = $('#pxR'); pxR.addEventListener('input', function () { pxDraw(+pxR.value); }); pxDraw(+pxR.value);
+
+  /* 각도 단위: 1° → 1′ → 1″ */
+  var z = $('#zSvg'), ZT = [
+    ['1°(도)', '원 한 바퀴는 360°예요. 색칠한 아주 얇은 조각 하나가 1°예요.'],
+    ['1′(분) = 1°의 1/60', '1°를 60조각으로 나눈 것 하나가 1′이에요.'],
+    ['1″(초) = 1′의 1/60 = 1°의 1/3600', '1′를 다시 60조각으로 나눈 것 하나가 1″예요. 별의 연주 시차는 이런 작은 단위로 나타내요.'],
+  ];
+  function zDraw(l) {
+    z.innerHTML = '';
+    $('#zLvl').textContent = ZT[l][0]; $('#zLvd').textContent = ZT[l][1];
+    if (l === 0) {
+      var cx = 230, cy = 115, R = 100;
+      mk('circle', { cx: cx, cy: cy, r: R, fill: '#eef3fb', stroke: '#9fb3cf', 'stroke-width': 2 }, z);
+      for (var i = 0; i < 36; i++) { var a = i * 10 * Math.PI / 180; mk('line', { x1: cx + Math.cos(a) * (R - 8), y1: cy + Math.sin(a) * (R - 8), x2: cx + Math.cos(a) * R, y2: cy + Math.sin(a) * R, stroke: '#9fb3cf', 'stroke-width': 1.5 }, z); }
+      var a1 = -Math.PI / 180;
+      mk('path', { d: 'M' + cx + ' ' + cy + ' L' + (cx + R) + ' ' + cy + ' L' + (cx + Math.cos(a1) * R) + ' ' + (cy + Math.sin(a1) * R) + 'Z', fill: '#f08a1c', stroke: '#f08a1c', 'stroke-width': 1.5 }, z);
+      mk('path', { d: 'M' + (cx + R + 6) + ' ' + (cy - 1) + ' C 380 100, 410 115, 440 115', fill: 'none', stroke: '#f08a1c', 'stroke-width': 2, 'stroke-dasharray': '4 4' }, z);
+      mk('rect', { x: 440, y: 95, width: 240, height: 40, rx: 8, fill: '#f08a1c' }, z);
+      var t = mk('text', { x: 560, y: 121, 'text-anchor': 'middle', fill: '#fff', 'font-size': 18, 'font-weight': 900 }, z); t.textContent = '1° (360조각 중 하나)';
+    } else {
+      var x0 = 40, w = 640, y = 80, h = 60, col = l === 1 ? '#2f86e0' : '#6a4fd0';
+      var tt = mk('text', { x: x0, y: 60, fill: '#34495e', 'font-size': 16, 'font-weight': 800 }, z); tt.textContent = l === 1 ? '1°를 크게 늘린 막대' : '1′를 크게 늘린 막대';
+      mk('rect', { x: x0, y: y, width: w, height: h, rx: 6, fill: l === 1 ? '#fde7cf' : '#dbeafb', stroke: '#9fb3cf', 'stroke-width': 1.5 }, z);
+      for (var j = 0; j <= 60; j++) { var xx = x0 + w * j / 60; mk('line', { x1: xx, y1: y, x2: xx, y2: y + (j % 10 === 0 ? h : j % 5 === 0 ? h * .6 : h * .38), stroke: '#6b7f99', 'stroke-width': j % 10 === 0 ? 1.8 : 1 }, z); }
+      var rr = mk('rect', { x: x0, y: y - 4, width: w / 60, height: h + 8, rx: 2, fill: col }, z);
+      if (!window.RD.reduce) { var an = mk('animate', { attributeName: 'opacity', values: '1;.35;1', dur: '1.4s', repeatCount: 'indefinite' }, rr); }
+      var lb = mk('text', { x: x0 + w / 120, y: y + h + 34, 'text-anchor': 'start', fill: col, 'font-size': 18, 'font-weight': 900 }, z); lb.textContent = l === 1 ? '← 1′ (60조각 중 하나)' : '← 1″ (60조각 중 하나)';
+      var e1 = mk('text', { x: x0 + w, y: 60, 'text-anchor': 'end', fill: '#627386', 'font-size': 14, 'font-weight': 700 }, z); e1.textContent = l === 1 ? '전체 = 1° = 60′' : '전체 = 1′ = 60″';
+    }
+  }
+  $$('[data-z]').forEach(function (b) { b.addEventListener('click', function () { $$('[data-z]').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); zDraw(+b.dataset.z); }); });
+  zDraw(0);
+
+  /* 연주 시차 그림의 배경 별 */
+  var bg = $('#apBg'), s = 5;
+  function r() { s = (s * 16807) % 2147483647; return s / 2147483647; }
+  for (var k = 0; k < 140; k++) { var m = Math.pow(r(), 3); mk('circle', { cx: r() * 720, cy: r() * 470, r: .6 + m * 1.8, fill: '#fff', opacity: .3 + m * .6 }, bg); }
+  window.RD.ok3 = true;
+  } catch (err) { window.RD_err && window.RD_err('움직이는 그림', err); }
+})();
+</script>
+</body>
+</html>
