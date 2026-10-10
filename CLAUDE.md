@@ -3,7 +3,7 @@
 성안중학교 과학 교사 이삭 T의 태블릿 수업 웹 자료 저장소다. GitHub Pages로 배포한다. 사용자에게는 항상 존댓말로 답한다.
 
 ## 구조
-- `index.html` — 학생이 처음 여는 허브(탭별 단원 목차 + RAS 4단계 소개). 새 수업을 만들면 루트 `index.html`(허브) 스크립트 맨 위 `LESSONS`에 한 줄(제목·부제·썸네일 `lessons/<수업>/card.jpg` 또는 `card.svg`)을 넣고, `TABS`의 해당 단원 `lessons`에 수업 이름을 추가한다. 새 단원이면 `TABS`에 단원 한 줄을 추가한다. 지금 배우는 단원은 `now: true`로 표시한다.
+- `index.html` — 학생이 처음 여는 허브(탭별 단원 목차 + RAS 4단계 소개). 새 수업을 만들면 루트 `index.html`(허브) 스크립트 맨 위 `LESSONS`에 한 줄(제목·부제·썸네일 `lessons/<수업>/card.jpg` 또는 `card.svg`)을 넣고, `TABS`의 해당 단원 `lessons`에 수업 이름을 추가한다. 새 단원이면 `TABS`에 단원 한 줄을 추가한다.
 - `lessons/<수업이름>/` — 수업 하나. `index.html`은 탭 껍데기(iframe으로 각 페이지를 불러옴), 나머지는 CSS·JS가 모두 들어 있는 단독 HTML 페이지.
   - 기준 예시: `lessons/ohm/` (읽기·퀴즈, 시뮬레이션 2개, 정리·글쓰기)
 - `curriculum/` — 단원별 교육과정 기준 문서. **수업 콘텐츠를 만들기 전에 반드시 해당 문서를 읽는다.**
