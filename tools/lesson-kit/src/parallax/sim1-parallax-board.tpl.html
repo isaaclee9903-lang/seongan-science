@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>시차 측정 판 가상 탐구</title>
+<script>
+/* 문제 알림: 그림을 그리는 코드에 오류가 나면 화면 아래에 빨간 상자로 알려 줘요 (선생님 확인용) */
+(function () {
+  function box() {
+    var b = document.getElementById('rdErr');
+    if (!b && document.body) {
+      b = document.createElement('div'); b.id = 'rdErr';
+      b.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;background:#fdecea;color:#8a1f17;border:2px solid #d9534f;border-radius:12px;padding:10px 14px;font:600 14px/1.5 sans-serif;white-space:pre-wrap';
+      document.body.appendChild(b);
+    }
+    return b;
+  }
+  window.RD_err = function (where, err) {
+    var msg = '[' + where + '] ' + (err && err.message ? err.message : String(err));
+    var show = function () { var b = box(); if (b) b.textContent += (b.textContent ? '\n' : '') + msg; };
+    if (document.body) show(); else document.addEventListener('DOMContentLoaded', show);
+  };
+  window.addEventListener('error', function (e) { window.RD_err('스크립트', { message: e.message + ' (줄 ' + e.lineno + ')' }); });
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      if (!(window.RD && window.RD.ok1)) window.RD_err('실행 안 됨', { message: '시차 측정 판 코드가 실행되지 않았어요. 파일이 끝(</html>)까지 들어 있는지 확인해 주세요.' });
+    }, 1500);
+  });
+})();
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+  :root{--bg:#edf3f8;--paper:#fff;--ink:#14263b;--ink2:#34495e;--muted:#5a6b7e;--line:#dde6ee;--accent:#0e63b3;--accent-soft:#e3effb;
+    --ga:#f2b705;--na:#e8457a;--ok:#1f9d5c;--no:#d9534f;--board:#46b8ee;
+    --shadow:0 1px 2px rgba(20,38,59,.05),0 10px 28px rgba(20,38,59,.07);--ease:cubic-bezier(.2,.8,.2,1)}
+  *{box-sizing:border-box}html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:"Pretendard",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;-webkit-font-smoothing:antialiased;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  button{font:inherit;color:inherit}
+  .top{display:flex;align-items:center;gap:14px;padding:10px 16px;height:62px;background:#fff;border-bottom:1px solid var(--line)}
+  .top .ic{flex:none;width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#2a8fd6,#46b8ee);display:grid;place-items:center}
+  .top h1{margin:0;font-size:19px;letter-spacing:-.02em;line-height:1.2}
+  .top h1 small{display:block;font-size:12.5px;font-weight:600;color:var(--muted)}
+  .sp{flex:1}
+  .seg{display:inline-flex;background:#eef3f8;border-radius:14px;padding:4px;gap:4px}
+  .seg button{border:0;background:transparent;min-height:42px;padding:0 14px;border-radius:11px;font-weight:800;font-size:14.5px;color:var(--muted);cursor:pointer;white-space:nowrap;transition:all .2s}
+  .seg button[aria-pressed="true"]{background:#fff;color:var(--accent);box-shadow:0 2px 8px rgba(20,38,59,.12)}
+  .lay{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(330px,1fr);gap:12px;padding:12px;height:calc(100vh - 62px);height:calc(100dvh - 62px);min-height:620px}
+  .col{display:flex;flex-direction:column;gap:12px;min-height:0}
+  .card{background:var(--paper);border-radius:20px;box-shadow:var(--shadow);border:1px solid rgba(20,38,59,.04)}
+  .vcard{display:flex;flex-direction:column;min-height:0;padding:10px 12px 12px}
+  .vcard.eye{flex:1}.vcard.topv{flex:1}
+  .vh{display:flex;align-items:center;gap:10px;margin:0 2px 8px;flex-wrap:wrap}
+  .vh b{font-size:15.5px}
+  .vh .lab{font-size:12.5px;font-weight:800;color:#fff;background:var(--ink);border-radius:999px;padding:3px 10px}
+  .cvw{position:relative;flex:1;min-height:200px;border-radius:14px;overflow:hidden}
+  .cvw canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+  .eyetag{position:absolute;left:12px;top:10px;font-size:13px;font-weight:800;color:#fff;background:rgba(10,25,45,.6);border-radius:999px;padding:5px 12px;pointer-events:none;transition:background .3s}
+  .toast{position:absolute;left:50%;bottom:12px;transform:translate(-50%,8px);opacity:0;background:rgba(10,25,45,.86);color:#fff;font-weight:700;font-size:14.5px;border-radius:12px;padding:8px 14px;transition:all .25s;pointer-events:none;max-width:92%;text-align:center;word-break:keep-all}
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+  .toast.good{background:rgba(17,112,63,.92)}.toast.bad{background:rgba(160,40,35,.92)}
+  /* 오른쪽 패널 */
+  .panel{padding:16px;overflow:auto;display:flex;flex-direction:column;gap:12px}
+  .panel h2{margin:0;font-size:18px;letter-spacing:-.01em}
+  .goal{font-size:13.5px;color:var(--muted);margin:2px 0 0;line-height:1.5;word-break:keep-all}
+  .stepper{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+  .stepper div{border-radius:12px;background:#f2f6fa;padding:7px 4px;text-align:center;font-size:12.5px;font-weight:800;color:#8494a6;line-height:1.3;word-break:keep-all}
+  .stepper div i{display:block;font-style:normal;font-size:15px}
+  .stepper div.on{background:var(--accent-soft);color:var(--accent);box-shadow:inset 0 0 0 2px var(--accent)}
+  .stepper div.done{background:#e8f7ef;color:#11703f}
+  .pick{display:flex;gap:8px}
+  .pick button{flex:1;min-height:52px;border-radius:14px;border:2px solid var(--line);background:#fff;font-weight:900;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s}
+  .pick button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+  .pick svg{width:22px;height:22px}
+  .todo{border-radius:16px;background:linear-gradient(135deg,#fff8e6,#fff);border:2px solid #f6d98a;padding:12px 14px}
+  .todo .k{display:inline-block;font-size:12px;font-weight:900;color:#9a6b00;background:#fff0c2;border-radius:999px;padding:2px 9px;margin-bottom:4px}
+  .todo p{margin:0;font-size:16px;font-weight:700;line-height:1.6;color:#4d3a05;word-break:keep-all}
+  .acts{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .btn{min-height:52px;border:0;border-radius:14px;padding:0 14px;font-weight:800;font-size:15.5px;cursor:pointer;transition:all .2s}
+  .btn.primary{background:var(--accent);color:#fff}
+  .btn.ghost{background:#eef3f8;color:var(--ink2)}
+  .btn:disabled{opacity:.35;cursor:default}
+  .btn.pulse:not(:disabled){animation:pulse 1.6s infinite}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(14,99,179,.45)}50%{box-shadow:0 0 0 8px rgba(14,99,179,0)}}
+  table.rec{width:100%;border-collapse:separate;border-spacing:0;font-size:15px;font-variant-numeric:tabular-nums;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  .rec th,.rec td{padding:9px 6px;text-align:center;border-bottom:1px solid var(--line)}
+  .rec tr:last-child td{border-bottom:0}
+  .rec th{background:#f4f7fa;font-size:13px;color:var(--muted)}
+  .rec td.n{font-size:23px;font-weight:800}
+  .rec td.ang{font-weight:900;font-size:18px}
+  .rec td .dot{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+  .rec td.new{animation:flash 1s}
+  @keyframes flash{from{background:#fff3c4}to{background:transparent}}
+  .q{border-radius:16px;border:2px solid #dbe4ec;padding:12px 14px}
+  .q p{margin:0 0 10px;font-weight:800;font-size:15.5px;line-height:1.55;word-break:keep-all}
+  .q .opts{display:flex;gap:8px;flex-wrap:wrap}
+  .q .opts button{flex:1;min-width:110px;min-height:48px;border-radius:12px;border:2px solid var(--line);background:#f7fafc;font-weight:800;font-size:15.5px;cursor:pointer}
+  .q .opts button.good{border-color:var(--ok);background:#e8f7ef;color:#11703f}
+  .q .opts button.bad{border-color:var(--no);background:#fdecea;color:#b33a35}
+  .q .fb{margin-top:10px;font-size:15px;line-height:1.65;border-radius:12px;padding:10px 12px;display:none;word-break:keep-all}
+  .q .fb.show{display:block}
+  .q .fb.good{background:#e8f7ef;color:#0f5a36}.q .fb.bad{background:#fff6e8;color:#6d4208}
+  .concl{border-radius:18px;padding:14px 16px;background:linear-gradient(135deg,#e7f6ee,#fff);border:2px solid #9ad6b4;font-size:16px;line-height:1.7;font-weight:700;color:#0f4d2f;word-break:keep-all}
+  .concl b{color:#0b7a43}
+  .row{display:flex;gap:8px;align-items:center}
+  .rng{display:flex;flex-direction:column;gap:6px}
+  .rng label{display:flex;justify-content:space-between;font-weight:800;font-size:15px}
+  .rng label b{color:var(--accent);font-variant-numeric:tabular-nums}
+  input[type=range]{width:100%;height:44px;accent-color:var(--accent);margin:0}
+  .reads{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .reads div{border-radius:14px;background:#f4f7fa;padding:8px 6px;text-align:center;font-size:12.5px;font-weight:800;color:var(--muted)}
+  .reads b{display:block;font-size:20px;color:var(--ink);font-variant-numeric:tabular-nums;margin-top:2px}
+  .reads .big b{color:var(--accent)}
+  .note{font-size:12.5px;color:var(--muted);line-height:1.55;margin:0;word-break:keep-all}
+  .hide{display:none!important}
+  @media (max-width:900px){
+    .top{flex-wrap:wrap;height:auto}.top .sp{display:none}
+    .lay{grid-template-columns:1fr;height:auto;min-height:0}
+    .vcard.eye .cvw{min-height:300px;flex:none;height:300px}
+    .vcard.topv .cvw{min-height:380px;flex:none;height:380px}
+  }
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header class="top">
+  <span class="ic" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M12 2.5l2.7 6 6.5.6-4.9 4.3 1.5 6.4L12 16.5l-5.8 3.3 1.5-6.4L2.8 9.1l6.5-.6z"/></svg></span>
+  <h1>시차 측정 판 가상 탐구<small>물체까지의 거리와 시차의 관계 알아보기</small></h1>
+  <span class="sp"></span>
+  <div class="seg" role="group" aria-label="탐구 방식">
+    <button type="button" data-mode="guided" aria-pressed="true">탐구 따라 하기</button>
+    <button type="button" data-mode="free" aria-pressed="false">자유 탐구</button>
+  </div>
+</header>
+
+<main class="lay">
+  <div class="col">
+    <section class="card vcard eye">
+      <div class="vh"><span class="lab">구멍으로 본 모습</span>
+        <span class="sp"></span>
+        <div class="seg" role="group" aria-label="보는 구멍">
+          <button type="button" data-eye="L" aria-pressed="true">왼쪽 구멍</button>
+          <button type="button" data-eye="R" aria-pressed="false">오른쪽 구멍</button>
+          <button type="button" data-eye="B" aria-pressed="false">번갈아 보기</button>
+        </div>
+      </div>
+      <div class="cvw"><canvas id="eyeCv" aria-label="구멍으로 본 시차 측정 판. 별 모형 뒤로 ①부터 ⑪까지 눈금이 보인다."></canvas><span class="eyetag" id="eyeTag">왼쪽 구멍으로 보는 중</span><div class="toast" id="toast"></div></div>
+    </section>
+    <section class="card vcard topv">
+      <div class="vh"><span class="lab">위에서 본 시차 측정 판</span><b id="topTitle" style="font-size:13.5px;color:var(--muted)"></b></div>
+      <div class="cvw"><canvas id="topCv" aria-label="위에서 내려다본 시차 측정 판. 왼쪽 끝에 구멍 두 개, 오른쪽 끝에 번호 눈금, 가운데에 별 모형이 있다."></canvas></div>
+    </section>
+  </div>
+
+  <aside class="card panel" id="panelGuided">
+    <div><h2>탐구 따라 하기</h2><p class="goal">양쪽 구멍으로 별 모형을 번갈아 보고, 보이는 위치를 표시해 시차를 재요.</p></div>
+    <div class="stepper" id="stepper">
+      <div data-s="0"><i>①</i>관찰·표시</div><div data-s="1"><i>②</i>선 잇기</div><div data-s="2"><i>③</i>시차 재기</div><div data-s="3"><i>④</i>정리하기</div>
+    </div>
+    <div class="pick" role="group" aria-label="관찰할 별 모형">
+      <button type="button" data-t="ga" aria-pressed="true"><svg viewBox="0 0 24 24"><path fill="#f2b705" stroke="#8a6500" stroke-width="1.2" d="M12 2.5l2.7 6 6.5.6-4.9 4.3 1.5 6.4L12 16.5l-5.8 3.3 1.5-6.4L2.8 9.1l6.5-.6z"/></svg>별 모형 (가)</button>
+      <button type="button" data-t="na" aria-pressed="false"><svg viewBox="0 0 24 24"><path fill="#e8457a" stroke="#8c1f45" stroke-width="1.2" d="M12 2.5l2.7 6 6.5.6-4.9 4.3 1.5 6.4L12 16.5l-5.8 3.3 1.5-6.4L2.8 9.1l6.5-.6z"/></svg>별 모형 (나)</button>
+    </div>
+    <div class="todo"><span class="k">지금 할 일</span><p id="todo"></p></div>
+    <div class="acts">
+      <button type="button" class="btn primary" id="btnLine">선 긋기</button>
+      <button type="button" class="btn primary" id="btnProto">각도기로 재기</button>
+    </div>
+    <table class="rec" aria-label="관찰 기록">
+      <thead><tr><th>별 모형</th><th>왼쪽 구멍</th><th>오른쪽 구멍</th><th>시차</th></tr></thead>
+      <tbody>
+        <tr><td><span class="dot" style="background:var(--ga)"></span><b>(가)</b></td><td class="n" id="r-ga-L">–</td><td class="n" id="r-ga-R">–</td><td class="ang" id="r-ga-A">–</td></tr>
+        <tr><td><span class="dot" style="background:var(--na)"></span><b>(나)</b></td><td class="n" id="r-na-L">–</td><td class="n" id="r-na-R">–</td><td class="ang" id="r-na-A">–</td></tr>
+      </tbody>
+    </table>
+    <div id="qBox" class="hide" style="display:flex;flex-direction:column;gap:10px">
+      <div class="q" id="q1"><p>별 모형 (가)와 (나) 중 시차가 더 큰 것은 무엇인가?</p>
+        <div class="opts"><button type="button" data-v="ga">(가)</button><button type="button" data-v="na">(나)</button></div><div class="fb"></div></div>
+      <div class="q hide" id="q2"><p>관측 지점부터 별 모형까지의 거리가 멀수록 시차는?</p>
+        <div class="opts"><button type="button" data-v="big">커진다</button><button type="button" data-v="small">작아진다</button><button type="button" data-v="same">같다</button></div><div class="fb"></div></div>
+      <div class="concl hide" id="concl">정리 · 관측 지점에서 <b>가까운</b> 별 모형일수록 시차가 <b>크고</b>, <b>멀리</b> 있는 별 모형일수록 시차가 <b>작다</b>. 그래서 시차를 재면 물체까지의 거리를 비교할 수 있어요.</div>
+    </div>
+    <div class="row"><button type="button" class="btn ghost" id="btnReset" style="flex:1">처음부터 다시</button></div>
+    <p class="note">개념 이해를 위한 모형이에요. 실제 측정 판과 크기, 각도가 조금 다를 수 있어요.</p>
+  </aside>
+
+  <aside class="card panel hide" id="panelFree">
+    <div><h2>자유 탐구</h2><p class="goal">별 모형을 앞뒤로 옮기면서 양쪽 구멍으로 본 위치와 시차가 어떻게 바뀌는지 관찰해요.</p></div>
+    <div class="rng"><label>관측 지점에서 별 모형까지의 거리 <b id="fdV">14 cm</b></label>
+      <input type="range" id="fd" min="10" max="28" step="0.5" value="14" aria-label="별 모형까지의 거리"></div>
+    <div class="reads">
+      <div>왼쪽 구멍<b id="fL">–</b></div><div>오른쪽 구멍<b id="fR">–</b></div><div class="big">시차<b id="fA">–</b></div>
+    </div>
+    <button type="button" class="btn primary" id="fRec">이 위치 기록하기</button>
+    <table class="rec" aria-label="자유 탐구 기록">
+      <thead><tr><th>거리</th><th>왼쪽</th><th>오른쪽</th><th>시차</th></tr></thead>
+      <tbody id="fTb"><tr><td colspan="4" style="color:var(--muted);font-size:14px">별 모형을 옮기고 기록해 보세요</td></tr></tbody>
+    </table>
+    <div class="q" id="fq"><p>기록을 보고 알 수 있는 점은?</p>
+      <div class="opts" style="flex-direction:column"><button type="button" data-v="0">거리가 멀수록 시차가 작아진다</button><button type="button" data-v="1">거리가 멀수록 시차가 커진다</button><button type="button" data-v="2">거리와 시차는 관계가 없다</button></div><div class="fb"></div></div>
+    <p class="note">개념 이해를 위한 모형이에요. 실제 측정 판과 크기, 각도가 조금 다를 수 있어요.</p>
+  </aside>
+</main>
+
+<script>
+/* ===== 시차 측정 판 시뮬레이션 ===== */
+window.RD = window.RD || {};
+(function () {
+  'use strict';
+  try {
+  var $ = function (s, r) { return (r || document).querySelector(s); };
+  var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+  var REDUCE = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+
+  /* ----- 모형의 크기 (단위: cm) ----- */
+  var SX = 30;          // 구멍에서 눈금까지
+  var HW = 11;          // 판의 반폭
+  var HY = 4;           // 구멍의 위치 (가운데에서 위아래로 4 cm)
+  var EYE_H = 4;        // 눈높이
+  var NUM_Z = 2.9;      // 눈금 번호 높이
+  var STAR_Z = 4.25;    // 별 모형 머리 높이
+  var CIRC = '①②③④⑤⑥⑦⑧⑨⑩⑪';
+  var COL = { ga: '#f2b705', na: '#e8457a', free: '#f2b705' };
+  var DARK = { ga: '#8a6500', na: '#8c1f45', free: '#8a6500' };
+  var NAME = { ga: '(가)', na: '(나)', free: '' };
+
+  var numAt = function (y) { return 6 - y / 2; };      // 눈금 위치 y → 번호
+  var yAt = function (n) { return (6 - n) * 2; };       // 번호 → y
+  var holeY = function (e) { return e === 'L' ? HY : -HY; };
+  var hitY = function (h, d) { return h * (1 - SX / d); };  // 구멍 h에서 (d,0)의 별을 지나 눈금에 닿는 곳
+  var parallax = function (d) { return 2 * Math.atan(HY / d) * 180 / Math.PI; };
+  var nTxt = function (n) {
+    var r = Math.round(n);
+    if (Math.abs(n - r) < 0.18 && r >= 1 && r <= 11) return CIRC[r - 1];
+    var a = Math.floor(n), b = a + 1;
+    if (a < 1 || b > 11) return '판 밖';
+    return CIRC[a - 1] + '~' + CIRC[b - 1];
+  };
+
+  var S = {
+    mode: 'guided', eye: 'L', eyeY: HY, blinkT: 0, blinkEye: 'L', target: 'ga',
+    stars: { ga: 10, na: 20 }, free: 14,
+    marks: { ga: { L: null, R: null }, na: { L: null, R: null } },
+    line: { ga: 0, na: 0 }, lineGo: { ga: false, na: false },
+    proto: { ga: 0, na: 0 }, protoGo: { ga: false, na: false },
+    measured: { ga: null, na: null }, q1: false, q2: false, flash: null, flashT: 0,
+  };
+
+  var eyeCv = $('#eyeCv'), topCv = $('#topCv');
+  function fit(cv) {
+    var r = cv.getBoundingClientRect(), dpr = Math.min(2, window.devicePixelRatio || 1);
+    var w = Math.max(10, r.width), h = Math.max(10, r.height);
+    var W = Math.round(w * dpr), H = Math.round(h * dpr);
+    if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
+    var c = cv.getContext('2d'); c.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { c: c, w: w, h: h };
+  }
+  function starPath(c, x, y, r, rot) {
+    c.beginPath();
+    for (var i = 0; i < 10; i++) {
+      var a = -Math.PI / 2 + (rot || 0) + i * Math.PI / 5, rr = i % 2 ? r * 0.45 : r;
+      if (i) c.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr); else c.moveTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr);
+    }
+    c.closePath();
+  }
+  function shownStars() {
+    if (S.mode === 'free') return [{ k: 'free', d: S.free }];
+    return [{ k: 'ga', d: S.stars.ga }, { k: 'na', d: S.stars.na }];
+  }
+
+  /* ----- 구멍으로 본 모습 (원근 그림) ----- */
+  var cam = null;
+  function makeCam(w, h, ey) {
+    var fx = SX, fy = -ey, n = Math.hypot(fx, fy); fx /= n; fy /= n;
+    var f = (w / 2) / 0.43;
+    return { x: -0.4, y: ey, fx: fx, fy: fy, rx: fy, ry: -fx, f: f, cx: w / 2, cy: h * 0.5 };
+  }
+  function P(x, y, z) {
+    var dx = x - cam.x, dy = y - cam.y, dep = dx * cam.fx + dy * cam.fy, lat = dx * cam.rx + dy * cam.ry;
+    return { x: cam.cx + cam.f * lat / dep, y: cam.cy - cam.f * (z - EYE_H) / dep, d: dep };
+  }
+  function poly(c, pts) { c.beginPath(); pts.forEach(function (p, i) { if (i) c.lineTo(p.x, p.y); else c.moveTo(p.x, p.y); }); c.closePath(); }
+
+  function drawEye() {
+    var g = fit(eyeCv), c = g.c, w = g.w, h = g.h;
+    cam = makeCam(w, h, S.eyeY);
+    // 교실 벽
+    var wall = c.createLinearGradient(0, 0, 0, h);
+    wall.addColorStop(0, '#dfe7ef'); wall.addColorStop(1, '#eef2f6');
+    c.fillStyle = wall; c.fillRect(0, 0, w, h);
+    // 멀리 있는 칠판(흐릿하게)
+    var bl = P(60, 24, 9), br = P(60, -24, 9), bb = P(60, -24, 1.5), bt = P(60, 24, 1.5);
+    c.fillStyle = '#5f7f72'; c.globalAlpha = .35; poly(c, [bl, br, bb, bt]); c.fill(); c.globalAlpha = 1;
+    // 책상
+    var desk = c.createLinearGradient(0, h * .4, 0, h);
+    desk.addColorStop(0, '#cdb28c'); desk.addColorStop(1, '#a9865c');
+    var d1 = P(1.2, 40, -0.2), d2 = P(1.2, -40, -0.2), d3 = P(70, -40, -0.2), d4 = P(70, 40, -0.2);
+    c.fillStyle = desk; poly(c, [d1, d2, d3, d4]); c.fill();
+    // 판 바닥
+    var p1 = P(1.2, HW, 0), p2 = P(1.2, -HW, 0), p3 = P(SX, -HW, 0), p4 = P(SX, HW, 0);
+    var bg = c.createLinearGradient(0, p4.y, 0, h);
+    bg.addColorStop(0, '#7fd0f5'); bg.addColorStop(1, '#2ea4e3');
+    c.fillStyle = bg; poly(c, [p1, p2, p3, p4]); c.fill();
+    // 판 위 옅은 선 (깊이감)
+    c.strokeStyle = 'rgba(255,255,255,.28)'; c.lineWidth = 1;
+    for (var x = 5; x < SX; x += 5) { var a = P(x, HW, 0), b = P(x, -HW, 0); c.beginPath(); c.moveTo(a.x, a.y); c.lineTo(b.x, b.y); c.stroke(); }
+    // 눈금 판 (접어 세운 부분)
+    var f1 = P(SX, HW, 0), f2 = P(SX, -HW, 0), f3 = P(SX, -HW, 6.2), f4 = P(SX, HW, 6.2);
+    var fg = c.createLinearGradient(0, f4.y, 0, f1.y);
+    fg.addColorStop(0, '#5a8fd8'); fg.addColorStop(1, '#3e6fbe');
+    c.fillStyle = fg; poly(c, [f1, f2, f3, f4]); c.fill();
+    c.strokeStyle = 'rgba(255,255,255,.55)'; c.setLineDash([4, 4]); c.lineWidth = 1.2;
+    var t1 = P(SX, HW, 5.2), t2 = P(SX, -HW, 5.2); c.beginPath(); c.moveTo(t1.x, t1.y); c.lineTo(t2.x, t2.y); c.stroke(); c.setLineDash([]);
+    // 번호 눈금
+    var markN = null, tgt = S.mode === 'free' ? null : S.target;
+    if (tgt && S.eye !== 'B' && S.marks[tgt][S.eye] != null) markN = S.marks[tgt][S.eye];
+    for (var n = 1; n <= 11; n++) {
+      var q = P(SX, yAt(n), NUM_Z), q2 = P(SX, yAt(n), NUM_Z + 0.75), r = Math.abs(q2.y - q.y);
+      var tk1 = P(SX, yAt(n), 5.2), tk2 = P(SX, yAt(n), 4.5);
+      c.strokeStyle = 'rgba(255,255,255,.8)'; c.lineWidth = 1.4; c.beginPath(); c.moveTo(tk1.x, tk1.y); c.lineTo(tk2.x, tk2.y); c.stroke();
+      c.fillStyle = '#fff'; c.beginPath(); c.arc(q.x, q.y, r, 0, Math.PI * 2); c.fill();
+      if (markN === n) { c.strokeStyle = COL[tgt]; c.lineWidth = 4; c.beginPath(); c.arc(q.x, q.y, r + 4, 0, Math.PI * 2); c.stroke(); }
+      if (S.flash && S.flash.n === n && S.flashT > 0) { c.fillStyle = 'rgba(217,83,79,' + (S.flashT * .6).toFixed(2) + ')'; c.beginPath(); c.arc(q.x, q.y, r + 6, 0, Math.PI * 2); c.fill(); }
+      c.fillStyle = '#2d5aa6'; c.font = '800 ' + Math.round(r * 1.25) + 'px Pretendard, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.fillText(String(n), q.x, q.y + 1);
+    }
+    // 별 모형 (먼 것부터)
+    var list = shownStars().map(function (s) { var p = P(s.d, 0, STAR_Z); s.p = p; return s; }).sort(function (a, b) { return b.p.d - a.p.d; });
+    list.forEach(function (s) {
+      var base = P(s.d, 0, 0), top = P(s.d, 0, STAR_Z), sz = Math.abs(P(s.d, 0, STAR_Z + 0.55).y - top.y);
+      // 그림자
+      c.fillStyle = 'rgba(10,40,70,.25)'; c.beginPath(); c.ellipse(base.x, base.y, sz * .55, sz * .16, 0, 0, Math.PI * 2); c.fill();
+      // 받침과 막대
+      c.fillStyle = '#e9eef3'; c.beginPath(); c.ellipse(base.x, base.y, sz * .32, sz * .1, 0, 0, Math.PI * 2); c.fill();
+      c.strokeStyle = '#7a8796'; c.lineWidth = Math.max(2, sz * .1); c.lineCap = 'round';
+      c.beginPath(); c.moveTo(base.x, base.y); c.lineTo(top.x, top.y + sz * .4); c.stroke();
+      // 별
+      var gr = c.createRadialGradient(top.x - sz * .2, top.y - sz * .25, sz * .1, top.x, top.y, sz);
+      gr.addColorStop(0, '#fff8d8'); gr.addColorStop(1, COL[s.k]);
+      starPath(c, top.x, top.y, sz, 0); c.fillStyle = gr; c.fill();
+      c.lineWidth = Math.max(1.5, sz * .07); c.strokeStyle = DARK[s.k]; c.stroke();
+      if (NAME[s.k]) {
+        c.font = '900 ' + Math.max(13, Math.round(sz * .55)) + 'px Pretendard, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'bottom';
+        c.lineWidth = 4; c.strokeStyle = 'rgba(255,255,255,.9)'; c.strokeText(NAME[s.k], top.x, top.y - sz * 1.05);
+        c.fillStyle = DARK[s.k]; c.fillText(NAME[s.k], top.x, top.y - sz * 1.05);
+      }
+    });
+    // 구멍 테두리 (타원 가림)
+    c.save(); c.translate(w / 2, h / 2); c.scale(w / 2, h / 2);
+    var vg = c.createRadialGradient(0, 0, .78, 0, 0, 1.18);
+    vg.addColorStop(0, 'rgba(8,18,32,0)'); vg.addColorStop(.55, 'rgba(8,18,32,.55)'); vg.addColorStop(1, 'rgba(8,18,32,.96)');
+    c.fillStyle = vg; c.fillRect(-1.2, -1.2, 2.4, 2.4); c.restore();
+  }
+
+  /* ----- 위에서 본 판 ----- */
+  var T = null;
+  function W2S(x, y) { return { x: T.ox + x * T.k, y: T.oy - y * T.k }; }
+  function drawTop(now) {
+    var g = fit(topCv), c = g.c, w = g.w, h = g.h;
+    var k = Math.min((w - 24) / 40, (h - 46) / 25.5);
+    T = { k: k, ox: (w - 40 * k) / 2 + 7 * k, oy: 10 + 12.5 * k };
+    c.fillStyle = '#f6f9fc'; c.fillRect(0, 0, w, h);
+    // 판
+    var a = W2S(0, HW), b = W2S(SX, -HW);
+    c.fillStyle = 'rgba(20,60,100,.12)'; c.fillRect(a.x + 4, a.y + 6, b.x - a.x, b.y - a.y);
+    var bg = c.createLinearGradient(a.x, 0, b.x, 0); bg.addColorStop(0, '#3fb0ea'); bg.addColorStop(1, '#55c1f1');
+    c.fillStyle = bg; c.fillRect(a.x, a.y, b.x - a.x, b.y - a.y);
+    // 자 눈금 (아래 가장자리)
+    c.strokeStyle = 'rgba(255,255,255,.75)'; c.fillStyle = 'rgba(255,255,255,.95)'; c.lineWidth = 1;
+    c.font = '700 ' + Math.max(10, Math.round(k * .62)) + 'px Pretendard, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'bottom';
+    for (var x = 0; x <= SX; x++) {
+      var p = W2S(x, -HW), L = x % 5 === 0 ? k * .9 : k * .45;
+      c.beginPath(); c.moveTo(p.x, p.y); c.lineTo(p.x, p.y - L); c.stroke();
+      if (x % 5 === 0 && x > 0 && x < SX) c.fillText(x + '', p.x, p.y - L - 1);
+    }
+    var cmL = W2S(SX - 1.5, -HW); c.textAlign = 'right'; c.fillText('cm', cmL.x, cmL.y - k * 1.0);
+    // 가운데 점선
+    c.setLineDash([5, 6]); c.strokeStyle = 'rgba(255,255,255,.5)'; var m1 = W2S(0, 0), m2 = W2S(SX, 0);
+    c.beginPath(); c.moveTo(m1.x, m1.y); c.lineTo(m2.x, m2.y); c.stroke(); c.setLineDash([]);
+    // 눈금 띠
+    var s1 = W2S(SX, HW), s2 = W2S(SX + 2, -HW);
+    c.fillStyle = '#3b67b8'; c.fillRect(s1.x, s1.y, s2.x - s1.x, s2.y - s1.y);
+    var tgt = S.mode === 'free' ? null : S.target;
+    for (var n = 1; n <= 11; n++) {
+      var q = W2S(SX + 1, yAt(n)), r = k * .72;
+      c.fillStyle = '#fff'; c.beginPath(); c.arc(q.x, q.y, r, 0, Math.PI * 2); c.fill();
+      c.fillStyle = '#2d5aa6'; c.font = '800 ' + Math.round(r * 1.2) + 'px Pretendard, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(n + '', q.x, q.y + 1);
+    }
+    // 구멍 판
+    var hp1 = W2S(-1, HW), hp2 = W2S(0, -HW);
+    c.fillStyle = '#2f8fcc'; c.fillRect(hp1.x, hp1.y, hp2.x - hp1.x, hp2.y - hp1.y);
+    ['L', 'R'].forEach(function (e) {
+      var o = W2S(-0.5, holeY(e)), on = S.eye === e || (S.eye === 'B' && S.blinkEye === e);
+      c.fillStyle = '#0d2a45'; c.beginPath(); c.arc(o.x, o.y, k * .65, 0, Math.PI * 2); c.fill();
+      // 눈 그림
+      var ex = W2S(-4.2, holeY(e));
+      c.fillStyle = on ? '#ffd23f' : '#ffe9a6'; c.beginPath(); c.arc(ex.x, ex.y, k * 1.9, 0, Math.PI * 2); c.fill();
+      if (on) { c.strokeStyle = '#e0a800'; c.lineWidth = 3; c.stroke(); }
+      c.fillStyle = '#fff'; c.beginPath(); c.ellipse(ex.x, ex.y, k * 1.2, k * .7, 0, 0, Math.PI * 2); c.fill();
+      c.strokeStyle = '#4a3a10'; c.lineWidth = 1.6; c.stroke();
+      c.fillStyle = '#4a3a10'; c.beginPath(); c.arc(ex.x + k * .3, ex.y, k * .38, 0, Math.PI * 2); c.fill();
+      c.fillStyle = on ? '#8a6500' : '#a08a4a'; c.font = '800 ' + Math.max(11, Math.round(k * .7)) + 'px Pretendard, sans-serif'; c.textAlign = 'center'; c.textBaseline = e === 'L' ? 'bottom' : 'top';
+      c.fillText(e === 'L' ? '왼쪽 구멍' : '오른쪽 구멍', ex.x + k * .6, e === 'L' ? ex.y - k * 2.1 : ex.y + k * 2.1);
+    });
+    // 시선 (현재 보는 구멍 → 별)
+    var stars = shownStars();
+    var eyeNow = S.eye === 'B' ? S.blinkEye : S.eye;
+    if (S.mode === 'free') {
+      // 자유 탐구: 두 선과 각을 바로 보여 줌
+      var d = S.free;
+      ['L', 'R'].forEach(function (e) { drawLine(c, holeY(e), d, 1, 'free', e === eyeNow); });
+      drawAngle(c, d, 'free', 1, false);
+    } else {
+      // 보는 방향을 옅게
+      stars.forEach(function (s) {
+        var o = W2S(0, holeY(eyeNow)), st = W2S(s.d, 0);
+        c.strokeStyle = 'rgba(255,255,255,.35)'; c.setLineDash([3, 5]); c.lineWidth = 1.2;
+        c.beginPath(); c.moveTo(o.x, o.y); c.lineTo(st.x, st.y); c.stroke(); c.setLineDash([]);
+      });
+      ['ga', 'na'].forEach(function (key) {
+        var d2 = S.stars[key];
+        ['L', 'R'].forEach(function (e) {
+          var m = S.marks[key][e];
+          if (m != null) { var mp = W2S(SX + 1, yAt(m)); c.strokeStyle = COL[key]; c.lineWidth = 3.5; c.beginPath(); c.arc(mp.x, mp.y, k * .72 + 3, 0, Math.PI * 2); c.stroke(); }
+          if (S.line[key] > 0) drawLine(c, holeY(e), d2, S.line[key], key, false);
+        });
+        if (S.proto[key] > 0) drawAngle(c, d2, key, S.proto[key], true);
+      });
+    }
+    // 별 모형
+    stars.forEach(function (s) {
+      var p = W2S(s.d, 0), r = k * 1.15;
+      c.save(); c.shadowColor = 'rgba(0,0,0,.25)'; c.shadowBlur = 6; c.shadowOffsetY = 2;
+      starPath(c, p.x, p.y, r, 0); c.fillStyle = COL[s.k]; c.fill(); c.restore();
+      starPath(c, p.x, p.y, r, 0); c.strokeStyle = DARK[s.k]; c.lineWidth = 1.5; c.stroke();
+      if (NAME[s.k]) { c.font = '900 ' + Math.max(12, Math.round(k * .85)) + 'px Pretendard, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'bottom'; c.lineWidth = 3; c.strokeStyle = 'rgba(255,255,255,.95)'; c.strokeText(NAME[s.k], p.x, p.y - r - 2); c.fillStyle = DARK[s.k]; c.fillText(NAME[s.k], p.x, p.y - r - 2); }
+      if (tgt === s.k) { c.strokeStyle = 'rgba(255,255,255,.9)'; c.lineWidth = 2; c.setLineDash([3, 3]); c.beginPath(); c.arc(p.x, p.y, r + 6, 0, Math.PI * 2); c.stroke(); c.setLineDash([]); }
+    });
+  }
+  function drawLine(c, hy, d, prog, key, bold) {
+    var o = W2S(0, hy), e = W2S(SX, hitY(hy, d));
+    var x = o.x + (e.x - o.x) * prog, y = o.y + (e.y - o.y) * prog;
+    c.lineCap = 'round';
+    c.strokeStyle = 'rgba(10,30,60,.35)'; c.lineWidth = bold ? 6.5 : 5.5; c.beginPath(); c.moveTo(o.x, o.y); c.lineTo(x, y); c.stroke();
+    c.strokeStyle = key === 'na' ? '#ff7aa5' : '#ffe066'; c.lineWidth = bold ? 3.5 : 2.6; c.beginPath(); c.moveTo(o.x, o.y); c.lineTo(x, y); c.stroke();
+  }
+  function drawAngle(c, d, key, prog, withProto) {
+    var st = W2S(d, 0), oL = W2S(0, HY), oR = W2S(0, -HY);
+    var aL = Math.atan2(oL.y - st.y, oL.x - st.x), aR = Math.atan2(oR.y - st.y, oR.x - st.x);
+    var k = T.k, ang = parallax(d), sweep = aR - aL;
+    while (sweep > Math.PI) sweep -= 2 * Math.PI; while (sweep < -Math.PI) sweep += 2 * Math.PI;
+    var dir = sweep < 0 ? -1 : 1;
+    if (withProto) {
+      // 각도기: 0° 선을 왼쪽 구멍 쪽 선에 맞춰요
+      var R = k * 5.2, al = Math.min(1, prog * 1.6);
+      c.save(); c.globalAlpha = .9 * al;
+      c.fillStyle = 'rgba(255,255,255,.62)'; c.strokeStyle = '#27466d'; c.lineWidth = 1.4;
+      c.beginPath(); c.moveTo(st.x, st.y); c.arc(st.x, st.y, R, aL, aL + dir * Math.PI, dir < 0); c.closePath(); c.fill(); c.stroke();
+      for (var t = 0; t <= 180; t += 5) {
+        var th = aL + dir * t * Math.PI / 180, L = t % 10 === 0 ? (t % 30 === 0 ? R * .2 : R * .13) : R * .07;
+        c.beginPath(); c.moveTo(st.x + Math.cos(th) * R, st.y + Math.sin(th) * R); c.lineTo(st.x + Math.cos(th) * (R - L), st.y + Math.sin(th) * (R - L)); c.stroke();
+        if (t % 30 === 0 && t > 0 && t < 180) { c.fillStyle = '#27466d'; c.font = '700 ' + Math.max(9, Math.round(k * .5)) + 'px Pretendard, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(t + '', st.x + Math.cos(th) * (R * .68), st.y + Math.sin(th) * (R * .68)); }
+      }
+      c.restore();
+    }
+    var p2 = withProto ? Math.max(0, Math.min(1, (prog - .35) / .65)) : prog;
+    if (p2 <= 0) return;
+    var shown = ang * p2, R2 = k * 3.1;
+    c.fillStyle = key === 'na' ? 'rgba(232,69,122,.45)' : 'rgba(242,183,5,.5)';
+    c.beginPath(); c.moveTo(st.x, st.y); c.arc(st.x, st.y, R2, aL, aL + dir * shown * Math.PI / 180, dir < 0); c.closePath(); c.fill();
+    c.strokeStyle = key === 'na' ? '#b0234f' : '#8a6500'; c.lineWidth = 2;
+    c.beginPath(); c.arc(st.x, st.y, R2, aL, aL + dir * shown * Math.PI / 180, dir < 0); c.stroke();
+    var mid = aL + dir * shown / 2 * Math.PI / 180, lx = st.x + Math.cos(mid) * (R2 + k * 1.7), ly = st.y + Math.sin(mid) * (R2 + k * 1.7);
+    var txt = '시차 ' + Math.round(shown) + '°';
+    c.font = '900 ' + Math.max(13, Math.round(k * .9)) + 'px Pretendard, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
+    var tw = c.measureText(txt).width + 14, th2 = Math.max(13, Math.round(k * .9)) + 10;
+    c.fillStyle = 'rgba(20,38,59,.88)'; roundRect(c, lx - tw / 2, ly - th2 / 2, tw, th2, 8); c.fill();
+    c.fillStyle = '#fff'; c.fillText(txt, lx, ly + 1);
+  }
+  function roundRect(c, x, y, w, h, r) { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); }
+
+  /* ----- 화면 글 ----- */
+  var toastEl = $('#toast'), toastTimer = 0;
+  function toast(msg, kind) {
+    toastEl.textContent = msg; toastEl.className = 'toast show ' + (kind || '');
+    clearTimeout(toastTimer); toastTimer = setTimeout(function () { toastEl.className = 'toast'; }, 2400);
+  }
+  function setEye(e) {
+    S.eye = e;
+    $$('[data-eye]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.eye === e)); });
+    updateTag(); renderPanel();
+  }
+  function updateTag() {
+    var e = S.eye === 'B' ? S.blinkEye : S.eye;
+    var t = S.eye === 'B' ? '번갈아 보기 · ' + (e === 'L' ? '왼쪽' : '오른쪽') + ' 구멍' : (e === 'L' ? '왼쪽' : '오른쪽') + ' 구멍으로 보는 중';
+    var tag = $('#eyeTag'); tag.textContent = t; tag.style.background = e === 'L' ? 'rgba(14,99,179,.78)' : 'rgba(125,90,214,.8)';
+  }
+  function stage() {
+    var t = S.target, m = S.marks[t];
+    if (m.L == null || m.R == null) return 0;
+    if (S.line[t] < 1) return 1;
+    if (S.measured[t] == null) return 2;
+    return 3;
+  }
+  function renderPanel() {
+    if (S.mode !== 'guided') return;
+    var t = S.target, m = S.marks[t], o = t === 'ga' ? 'na' : 'ga', st = stage(), msg;
+    var allDone = S.measured.ga != null && S.measured.na != null;
+    if (m.L == null && m.R == null) msg = (S.eye === 'B' ? '먼저 위에서 <b>왼쪽 구멍</b>이나 <b>오른쪽 구멍</b>을 골라요. ' : '') + '구멍으로 보이는 별 모형 ' + NAME[t] + ' <b>바로 뒤에 있는 눈금 번호</b>를 손가락으로 눌러 표시해요.';
+    else if (m.L == null) msg = '이번에는 <b>왼쪽 구멍</b>으로 보고, 별 모형 ' + NAME[t] + ' 뒤에 보이는 눈금을 눌러요.';
+    else if (m.R == null) msg = '이번에는 <b>오른쪽 구멍</b>으로 보고, 별 모형 ' + NAME[t] + ' 뒤에 보이는 눈금을 눌러요.';
+    else if (st === 1) msg = '자를 대고 선을 그어요. 왼쪽 구멍 ↔ 왼쪽에서 본 위치, 오른쪽 구멍 ↔ 오른쪽에서 본 위치. <b>선 긋기</b>를 눌러요.';
+    else if (st === 2) msg = '두 선이 별 모형에서 만나요. <b>각도기로 재기</b>를 눌러 두 선이 이루는 각(시차)을 재요.';
+    else if (!allDone) msg = '별 모형 ' + NAME[t] + '의 시차는 <b>' + S.measured[t] + '°</b>예요. 이제 위에서 <b>별 모형 ' + NAME[o] + '</b>를 골라 똑같이 해 봐요.';
+    else msg = '두 별 모형의 시차를 모두 쟀어요. 아래 질문에 답해 봐요.';
+    $('#todo').innerHTML = msg;
+    var stepNow = allDone ? 3 : (st === 3 ? -1 : st), doneTo = allDone ? 3 : st;
+    $$('#stepper div').forEach(function (d, i) { d.classList.toggle('on', i === stepNow); d.classList.toggle('done', i < doneTo || (allDone && S.q2 && i === 3)); });
+    var bl = $('#btnLine'), bp = $('#btnProto');
+    bl.disabled = !(st === 1 && !S.lineGo[t]); bp.disabled = !(st === 2 && !S.protoGo[t]);
+    bl.classList.toggle('pulse', !bl.disabled); bp.classList.toggle('pulse', !bp.disabled);
+    ['ga', 'na'].forEach(function (k) {
+      $('#r-' + k + '-L').textContent = S.marks[k].L != null ? CIRC[S.marks[k].L - 1] : '–';
+      $('#r-' + k + '-R').textContent = S.marks[k].R != null ? CIRC[S.marks[k].R - 1] : '–';
+      $('#r-' + k + '-A').textContent = S.measured[k] != null ? S.measured[k] + '°' : '–';
+    });
+    $('#qBox').classList.toggle('hide', !allDone);
+    $('#topTitle').textContent = '관찰 중: 별 모형 ' + NAME[t];
+  }
+  function flashCell(id) { var el = $(id); el.classList.remove('new'); void el.offsetWidth; el.classList.add('new'); }
+
+  /* ----- 눈금 누르기 ----- */
+  eyeCv.addEventListener('pointerdown', function (ev) {
+    if (S.mode !== 'guided') { toast('자유 탐구에서는 아래 슬라이더로 별 모형을 옮겨 보세요.'); return; }
+    if (S.eye === 'B') { toast('번갈아 보기에서는 표시할 수 없어요. 한쪽 구멍을 골라요.', 'bad'); return; }
+    var r = eyeCv.getBoundingClientRect(), sx = ev.clientX - r.left;
+    var c0 = makeCam(r.width, r.height, holeY(S.eye));
+    var a = (sx - c0.cx) / c0.f, dx = c0.fx + a * c0.rx, dy = c0.fy + a * c0.ry;
+    var tt = (SX - c0.x) / dx, y = c0.y + tt * dy, n = numAt(y);
+    var key = S.target, truth = numAt(hitY(holeY(S.eye), S.stars[key]));
+    if (n < 0.4 || n > 11.6) { toast('눈금 번호가 있는 곳을 눌러요.', 'bad'); return; }
+    if (S.marks[key][S.eye] != null) { toast((S.eye === 'L' ? '왼쪽' : '오른쪽') + ' 구멍 기록은 이미 했어요. 다른 쪽 구멍으로 바꿔 봐요.'); return; }
+    if (Math.abs(n - truth) <= 1.1) {
+      S.marks[key][S.eye] = Math.round(truth);
+      toast((S.eye === 'L' ? '왼쪽' : '오른쪽') + ' 구멍: 별 모형 ' + NAME[key] + '는 ' + CIRC[Math.round(truth) - 1] + ' 앞에 보여요', 'good');
+      flashCell('#r-' + key + '-' + S.eye);
+      renderPanel();
+    } else {
+      S.flash = { n: Math.max(1, Math.min(11, Math.round(n))) }; S.flashT = 1;
+      toast('별 모형 ' + NAME[key] + ' 바로 뒤에 겹쳐 보이는 번호를 다시 찾아봐요.', 'bad');
+    }
+  });
+
+  /* ----- 버튼 ----- */
+  $$('[data-eye]').forEach(function (b) { b.addEventListener('click', function () { setEye(b.dataset.eye); }); });
+  $$('[data-t]').forEach(function (b) { b.addEventListener('click', function () {
+    S.target = b.dataset.t; $$('[data-t]').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); renderPanel();
+  }); });
+  $('#btnLine').addEventListener('click', function () { S.lineGo[S.target] = true; if (REDUCE) S.line[S.target] = 1; renderPanel(); });
+  $('#btnProto').addEventListener('click', function () { S.protoGo[S.target] = true; if (REDUCE) S.proto[S.target] = 1; renderPanel(); });
+  $('#btnReset').addEventListener('click', function () {
+    ['ga', 'na'].forEach(function (k) { S.marks[k] = { L: null, R: null }; S.line[k] = 0; S.lineGo[k] = false; S.proto[k] = 0; S.protoGo[k] = false; S.measured[k] = null; });
+    S.q1 = S.q2 = false; S.target = 'ga';
+    $$('[data-t]').forEach(function (x) { x.setAttribute('aria-pressed', String(x.dataset.t === 'ga')); });
+    $$('#qBox .q').forEach(function (q) { $$('button', q).forEach(function (b) { b.disabled = false; b.className = ''; }); var fb = $('.fb', q); fb.className = 'fb'; fb.textContent = ''; });
+    $('#q2').classList.add('hide'); $('#concl').classList.add('hide');
+    setEye('L');
+  });
+  function wireQ(id, right, goodMsg, badMsg, after) {
+    var q = $(id), fb = $('.fb', q);
+    $$('.opts button', q).forEach(function (b) { b.addEventListener('click', function () {
+      var ok = b.dataset.v === right;
+      $$('.opts button', q).forEach(function (o) { o.classList.remove('bad'); });
+      b.classList.add(ok ? 'good' : 'bad');
+      fb.className = 'fb show ' + (ok ? 'good' : 'bad'); fb.innerHTML = ok ? goodMsg : badMsg;
+      if (ok) { $$('.opts button', q).forEach(function (o) { o.disabled = true; }); if (after) after(); }
+    }); });
+  }
+  wireQ('#q1', 'ga', '맞아요! (가)의 시차가 더 커요. 그런데 (가)와 (나) 중 관측 지점에서 더 가까운 것은 무엇이었나요?',
+    '표의 시차 값을 다시 비교해 봐요. 각이 더 큰 쪽은 어느 별 모형인가요?', function () { S.q1 = true; $('#q2').classList.remove('hide'); });
+  wireQ('#q2', 'small', '맞아요! 가까운 (가)는 시차가 크고, 먼 (나)는 시차가 작아요.',
+    '위에서 본 판을 봐요. 관측 지점에서 먼 (나)의 시차가 큰가요, 작은가요?', function () { S.q2 = true; $('#concl').classList.remove('hide'); renderPanel(); });
+
+  /* ----- 자유 탐구 ----- */
+  var freeLog = [];
+  function renderFree() {
+    var d = S.free;
+    $('#fdV').textContent = (d % 1 ? d.toFixed(1) : d) + ' cm';
+    $('#fL').textContent = nTxt(numAt(hitY(HY, d)));
+    $('#fR').textContent = nTxt(numAt(hitY(-HY, d)));
+    $('#fA').textContent = Math.round(parallax(d)) + '°';
+  }
+  $('#fd').addEventListener('input', function (e) { S.free = +e.target.value; renderFree(); });
+  $('#fRec').addEventListener('click', function () {
+    var d = S.free;
+    if (freeLog.some(function (r) { return r.d === d; })) { toast('이미 기록한 거리예요. 별 모형을 옮겨 봐요.'); return; }
+    freeLog.push({ d: d, L: nTxt(numAt(hitY(HY, d))), R: nTxt(numAt(hitY(-HY, d))), a: Math.round(parallax(d)) });
+    freeLog.sort(function (a, b) { return a.d - b.d; });
+    $('#fTb').innerHTML = freeLog.map(function (r) { return '<tr><td>' + r.d + ' cm</td><td class="n" style="font-size:16px">' + r.L + '</td><td class="n" style="font-size:16px">' + r.R + '</td><td class="ang">' + r.a + '°</td></tr>'; }).join('');
+    toast(d + ' cm → 시차 ' + Math.round(parallax(d)) + '° 기록', 'good');
+  });
+  (function () {
+    var q = $('#fq'), fb = $('.fb', q);
+    $$('.opts button', q).forEach(function (b) { b.addEventListener('click', function () {
+      if (freeLog.length < 3) { fb.className = 'fb show bad'; fb.textContent = '먼저 서로 다른 거리 3곳 이상을 기록해 보세요.'; return; }
+      var ok = b.dataset.v === '0';
+      $$('.opts button', q).forEach(function (o) { o.classList.remove('good', 'bad'); }); b.classList.add(ok ? 'good' : 'bad');
+      fb.className = 'fb show ' + (ok ? 'good' : 'bad');
+      fb.innerHTML = ok ? '맞아요! 별 모형이 멀어질수록 두 선이 이루는 각, 곧 <b>시차가 작아져요</b>.' : '표에서 거리가 커질 때 시차 칸의 값이 어떻게 변하는지 다시 봐요.';
+    }); });
+  })();
+
+  function setMode(m) {
+    S.mode = m;
+    $$('[data-mode]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.mode === m)); });
+    $('#panelGuided').classList.toggle('hide', m !== 'guided');
+    $('#panelFree').classList.toggle('hide', m !== 'free');
+    $('#topTitle').textContent = m === 'free' ? '두 구멍에서 별 모형을 지나는 선' : '관찰 중: 별 모형 ' + NAME[S.target];
+    renderPanel(); renderFree();
+  }
+  $$('[data-mode]').forEach(function (b) { b.addEventListener('click', function () { setMode(b.dataset.mode); }); });
+
+  /* ----- 움직임 ----- */
+  var last = performance.now();
+  function frame(now) {
+    var dt = Math.min(0.05, (now - last) / 1000); last = now;
+    try {
+      if (S.eye === 'B') { S.blinkT += dt; if (S.blinkT > 0.75) { S.blinkT = 0; S.blinkEye = S.blinkEye === 'L' ? 'R' : 'L'; updateTag(); } }
+      var targetY = holeY(S.eye === 'B' ? S.blinkEye : S.eye);
+      S.eyeY += (targetY - S.eyeY) * (REDUCE ? 1 : Math.min(1, dt * 14));
+      if (Math.abs(targetY - S.eyeY) < 0.01) S.eyeY = targetY;
+      ['ga', 'na'].forEach(function (k) {
+        if (S.lineGo[k] && S.line[k] < 1) { S.line[k] = Math.min(1, S.line[k] + dt / 1.1); if (S.line[k] >= 1) renderPanel(); }
+        if (S.protoGo[k] && S.proto[k] < 1) {
+          S.proto[k] = Math.min(1, S.proto[k] + dt / 1.6);
+          if (S.proto[k] >= 1 && S.measured[k] == null) { S.measured[k] = Math.round(parallax(S.stars[k])); flashCell('#r-' + k + '-A'); renderPanel(); }
+        }
+      });
+      if (S.flashT > 0) S.flashT = Math.max(0, S.flashT - dt * 1.5);
+      drawEye(); drawTop(now);
+    } catch (err) { window.RD_err('그리기', err); return; }
+    requestAnimationFrame(frame);
+  }
+  setEye('L'); setMode('guided');
+  requestAnimationFrame(frame);
+  window.RD.ok1 = true;
+  } catch (err) { window.RD_err && window.RD_err('시차 측정 판', err); }
+})();
+</script>
+</body>
+</html>
