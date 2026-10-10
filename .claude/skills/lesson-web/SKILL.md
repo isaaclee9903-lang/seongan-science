@@ -23,7 +23,7 @@ description: 중학교 과학 태블릿 수업 웹 페이지(읽기·퀴즈, 시
   - `sim1-*.html`, `sim2-*.html` — 핵심 개념 시뮬레이션. 교과서 그림 형식을 빌려 와 교과서와 연결한다
   - `summary-*.html` — 짝짓기, 정리표, 짧은 글쓰기(저장하지 않음, 복사·인쇄만)
 - `index.html` — `lessons/ohm/index.html`을 복사해 제목·부제·탭·`PAGES`만 바꾼다.
-- 루트 `index.html`(허브) 스크립트 맨 위 `LESSONS`에 한 줄(제목·부제·썸네일 `lessons/<수업>/card.jpg` 또는 `card.svg`)을 넣고, `TABS`의 해당 단원 `lessons`에 수업 이름을 추가한다. 새 단원이면 `TABS`에 단원 한 줄을 추가한다. 지금 배우는 단원은 `now: true`로 표시한다.
+- 루트 `index.html`(허브) 스크립트 맨 위 `LESSONS`에 한 줄(제목·부제·썸네일 `lessons/<수업>/card.jpg` 또는 `card.svg`)을 넣고, `TABS`의 해당 단원 `lessons`에 수업 이름을 추가한다. 새 단원이면 `TABS`에 단원 한 줄을 추가한다.
 
 ## 3. 제작 규칙
 - **제작 도구 `tools/lesson-kit/`을 쓴다** (README 참고). 원본은 `tools/lesson-kit/src/<수업>/`에 두고 `python tools/lesson-kit/build.py <수업>`으로 `lessons/<수업>/`을 만든다. 공통 블록(오류 상자, CSS, 퀴즈 엔진, 3D 도구, 2D 도식 도구, 탭 껍데기)은 다시 쓰지 않는다.
