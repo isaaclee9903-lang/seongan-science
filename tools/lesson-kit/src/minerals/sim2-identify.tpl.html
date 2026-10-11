@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>광물의 특성 – 광물 구별하기</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+/*@@LOCAL:_css_lab.css@@*/
+  .flow.three3{grid-template-columns:repeat(3,1fr)}
+  .tests{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:6px;margin-top:8px}
+  .tests .act{min-height:52px;font-size:15px}
+  .note2{margin-top:10px;border-radius:14px;background:#f6f8fa;border:1px solid var(--line);padding:8px 10px}
+  .note2 b.h{display:block;font-size:13.5px;color:var(--ink2);margin-bottom:4px}
+  .obs{display:flex;flex-wrap:wrap;gap:6px;min-height:34px}
+  .obs span{font-size:14px;font-weight:800;border-radius:10px;padding:5px 10px;background:#fff;border:1px solid #dfe5eb;word-break:keep-all}
+  .obs span i{font-style:normal;color:var(--muted);font-weight:700;margin-right:4px}
+  .obs .empty{color:var(--muted);border-style:dashed;background:transparent}
+  .names{display:flex;flex-wrap:wrap;gap:6px}
+  .keybox{margin-top:12px;border-radius:16px;border:1px solid #eadfc4;background:linear-gradient(180deg,#fffdf7,#fbf5e6);padding:8px}
+  .keybox h3{margin:2px 4px 6px;font-size:15px}
+  .keybox svg{width:100%;height:auto;display:block}
+  .keybox .kn rect{transition:fill .3s,stroke .3s}
+  .done-ban{margin-top:10px;border-radius:14px;padding:12px 14px;background:#e8f7ef;color:#0f5a36;font-weight:800;font-size:15px;line-height:1.6;word-break:keep-all}
+</style>
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }
+</script>
+</head>
+<body>
+<div class="app">
+  <header>
+    <span class="eyebrow">광물의 특성 · 시뮬레이션 ②</span>
+    <h1>광물 구별하기: 이름 없는 표본의 정체 밝히기</h1>
+    <p class="sub">이름표가 없는 광물 표본에 실험을 해 보고, 관찰한 특성으로 어떤 광물인지 알아내요. 알아낸 방법은 '구별 열쇠'로 정리돼요. (가상 실험이에요)</p>
+  </header>
+  <div class="stage">
+    <section class="card viewer">
+      <div class="gl-host" id="host" role="img" aria-label="실험 책상. 뒤쪽에 이름표 대신 A, B, C 같은 기호가 붙은 광물 표본이 놓여 있고, 조흔판, 클립, 묽은 염산이 준비되어 있다."></div>
+      <div class="vt tr"><button class="vb" type="button" id="vAll">책상 전체 보기</button></div>
+      <div class="toast" id="toast"></div>
+      <span class="hint lhint">손가락으로 돌려 볼 수 있어요</span>
+      <div id="fail3d" class="fail3d">3D 그림을 불러오지 못했어요. 인터넷 연결을 확인하고 새로고침해 주세요.</div>
+    </section>
+    <section class="card pad">
+      <div class="flow three3" id="flow" role="tablist">
+        <button class="fs" type="button" role="tab" data-s="1"><b>1</b>노란 광물 셋</button>
+        <button class="fs" type="button" role="tab" data-s="2"><b>2</b>이름 없는 표본 상자</button>
+        <button class="fs" type="button" role="tab" data-s="3"><b>3</b>구별 방법 정리</button>
+      </div>
+      <div class="stepname"><span class="no" id="sNo">1</span><div><h2 id="sTitle"></h2><small id="sSub"></small></div></div>
+      <p class="what" id="sWhat"></p>
+      <div id="workBox">
+        <p class="lab-l">표본 고르기</p>
+        <div class="picks" id="picks"></div>
+        <div class="tests" id="tests"></div>
+        <div class="note2"><b class="h" id="obsH">관찰 기록</b><div class="obs" id="obs"></div></div>
+        <div class="rec"><p class="lab-l" id="nameQ">이 표본은 어떤 광물일까요?</p><div class="names chips" id="names"></div><div class="fb" id="nameFb"></div></div>
+      </div>
+      <div id="endBox" hidden></div>
+      <div class="keybox"><h3>구별 열쇠 <small style="color:var(--muted);font-weight:700" id="keyNote">· 표본을 알아내면 길이 밝아져요</small></h3><div id="keySvg"></div></div>
+      <div class="acts"><button class="btn ghost" type="button" id="bPrev">이전</button><button class="btn primary" type="button" id="bNext">다음 단계</button></div>
+      <div class="prog"><i id="prog"></i></div>
+      <div class="box an"><b class="t">모형 안내</b>3D 광물은 실제 표본의 생김새를 참고해 만든 모형이고, 실험 장면은 가상이에요. 실제 표본은 같은 광물이라도 생김새와 색이 조금씩 달라요.</div>
+    </section>
+  </div>
+  <p class="credit">광물의 특성 · 광물 구별하기</p>
+</div>
+
+<script>
+window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) => Array.from(r.querySelectorAll(s)), q: new URLSearchParams(location.search) };
+if (window.SM.q.get('slow')) window.LAB_SLOW = 1 / +window.SM.q.get('slow');
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { ConvexGeometry } from 'three/addons/geometries/ConvexGeometry.js';
+import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
+/*@@PART:c3.js@@*/
+/*@@LOCAL:_min3d.js@@*/
+/*@@LOCAL:_lab3d.js@@*/
+const { $, $$, q } = window.SM, S = window.SM;
+const INFO = MIN3D.INFO;
+/* 표본 기호는 열 때마다 섞여요 (검사용 ?fixed=1 이면 고정) */
+const shuffle = (a) => { if (q.get('fixed') === '1') return a; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const SET1 = shuffle(['gold', 'pyrite', 'chalcopyrite']).map((id, i) => ({ key: 'y' + i, id, label: '표본 ' + 'ABC'[i], seed: 50 + i }));
+const SET2 = shuffle(['quartz', 'calcite', 'pyrite', 'chalcopyrite', 'magnetite', 'biotite']).map((id, i) => ({ key: 'u' + i, id, label: '표본 ' + '①②③④⑤⑥'[i], seed: 70 + i }));
+let lab = null, st = null;
+function buildLab(set) {
+  try {
+    if (st) { try { st.stop(); st.renderer.dispose(); st.renderer.forceContextLoss(); } catch (e) {} }
+    const host = $('#host'); host.querySelectorAll('canvas.gl,.lbls').forEach((e) => e.remove());
+    st = C3.makeStage(host, { top: '#f3f0ea', bottom: '#d9d2c6', fov: 32, minD: 1.2, maxD: 14, fitWidth: true });
+    st.controls.maxPolarAngle = Math.PI * 0.47;
+    lab = LAB.make(st, { specimens: set }); S.lab = lab; S.st = st;
+    window.SM.ok3d = true;
+  } catch (err) { window.SM_err('3D 그림', err); }
+}
+try {
+  const STEPS = {
+    1: { t: '광산에서 나온 노란 광물 셋', sub: '스스로 평가 2 · 금, 황철석, 황동석 중 무엇일까?', set: SET1, names: ['금', '황철석', '황동석'],
+      what: '세 표본 모두 겉보기에는 노란색이에요. 표본을 고르고 실험을 해 본 뒤, 어떤 광물인지 골라요. 어떤 실험이 가장 쉽게 구별해 줄까요?' },
+    2: { t: '이름표가 떨어진 표본 상자', sub: '탐구에서 관찰한 여섯 광물', set: SET2, names: ['석영', '방해석', '황철석', '황동석', '자철석', '흑운모'],
+      what: '이름표가 떨어진 표본 여섯 개가 있어요. 먼저 색을 보고, 색이 비슷한 광물끼리는 다른 특성을 비교해 정체를 밝혀요.' },
+    3: { t: '광물을 구별하는 방법 정리', sub: '정리하기 4 · 토의하기', what: '알아낸 방법을 구별 열쇠로 정리했어요. 질문에 답하며 광물의 특성을 이용해 광물을 구별하는 방법을 정리해요.' },
+  };
+  const TESTS = [['observe', '들어서 돌려 보기'], ['white', '흰색 조흔판에 긁기'], ['black', '검은색 조흔판에 긁기'], ['magnet', '클립에 가져다 대기'], ['acid', '묽은 염산 떨어뜨리기']];
+  const SW = { quartz: '#e6e9ec', calcite: '#efe6d2', pyrite: '#d9c27a', chalcopyrite: '#c79a38', magnetite: '#3a3b40', biotite: '#24190f', gold: '#e6b23e' };
+  let step = 1, curKey = null;
+  const obs = {}, solved = {}, tries = {};
+  const toast = (msg, ms = 2600) => { const t = $('#toast'); t.innerHTML = msg; t.classList.add('on'); clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('on'), ms); };
+  const cur = () => (STEPS[step].set || []).find((s) => s.key === curKey);
+
+  /* 구별 열쇠 (SVG) */
+  function keySvg() {
+    const set = step === 1 ? 1 : 2, lit = (id) => Object.keys(solved).some((k) => solved[k] && [...SET1, ...SET2].find((s) => s.key === k).id === id) || step === 3;
+    const box = (x, y, w, h, t, on, cls) => `<g class="kn"><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="10" fill="${on ? (cls || '#7a5a1e') : '#fff'}" stroke="${on ? (cls || '#7a5a1e') : '#d9cfb8'}" stroke-width="2"/><text x="${x + w / 2}" y="${y + h / 2 + 5}" text-anchor="middle" font-size="14" font-weight="800" fill="${on ? '#fff' : '#6b5a3a'}">${t}</text></g>`;
+    const ln = (x1, y1, x2, y2, on, lab) => `<path d="M${x1} ${y1} C${x1} ${(y1 + y2) / 2} ${x2} ${(y1 + y2) / 2} ${x2} ${y2}" fill="none" stroke="${on ? '#b88a2e' : '#dccfb2'}" stroke-width="${on ? 3.5 : 2}"/>${lab ? `<text x="${(x1 + x2) / 2 + (x2 > x1 ? 6 : -6)}" y="${(y1 + y2) / 2 + 4}" text-anchor="${x2 > x1 ? 'start' : 'end'}" font-size="12.5" font-weight="800" fill="${on ? '#6e4d12' : '#a89a7e'}">${lab}</text>` : ''}`;
+    if (set === 1) {
+      const L = { gold: lit('gold'), pyrite: lit('pyrite'), chalcopyrite: lit('chalcopyrite') }, any = L.gold || L.pyrite || L.chalcopyrite;
+      return `<svg viewBox="0 0 560 230" role="img" aria-label="겉보기 노란색 광물을 조흔색으로 구별하는 열쇠">
+        ${box(180, 10, 200, 40, '겉보기 색: 노란색', true, '#c79a38')}
+        ${box(200, 82, 160, 38, '조흔색은?', any)}
+        ${ln(280, 50, 280, 82, any)}
+        ${ln(280, 120, 90, 172, L.gold, '노란색')}${ln(280, 120, 280, 172, L.chalcopyrite, '녹흑색')}${ln(280, 120, 470, 172, L.pyrite, '검은색')}
+        ${box(30, 172, 120, 40, '금', L.gold, '#c79a38')}${box(220, 172, 120, 40, '황동석', L.chalcopyrite, '#9a7a2a')}${box(410, 172, 120, 40, '황철석', L.pyrite, '#8a7a4a')}
+      </svg>`;
+    }
+    const L = {}; ['quartz', 'calcite', 'pyrite', 'chalcopyrite', 'magnetite', 'biotite'].forEach((id) => (L[id] = lit(id)));
+    return `<svg viewBox="0 0 640 330" role="img" aria-label="여섯 광물을 색, 염산 반응, 조흔색, 자성으로 구별하는 열쇠">
+      ${box(240, 8, 160, 38, '겉보기 색은?', true)}
+      ${ln(320, 46, 110, 92, L.quartz || L.calcite, '무색투명')}${ln(320, 46, 320, 92, L.pyrite || L.chalcopyrite, '노란색')}${ln(320, 46, 530, 92, L.magnetite || L.biotite, '검은색')}
+      ${box(30, 92, 160, 38, '염산 반응은?', L.quartz || L.calcite)}${box(240, 92, 160, 38, '조흔색은?', L.pyrite || L.chalcopyrite)}${box(450, 92, 160, 38, '클립이 붙나?', L.magnetite || L.biotite)}
+      ${ln(110, 130, 55, 210, L.calcite, '기포')}${ln(110, 130, 165, 210, L.quartz, '변화 없음')}
+      ${ln(320, 130, 265, 210, L.chalcopyrite, '녹흑색')}${ln(320, 130, 375, 210, L.pyrite, '검은색')}
+      ${ln(530, 130, 475, 210, L.magnetite, '붙음')}${ln(530, 130, 585, 210, L.biotite, '안 붙음')}
+      ${box(10, 210, 92, 40, '방해석', L.calcite)}${box(120, 210, 92, 40, '석영', L.quartz)}${box(220, 210, 92, 40, '황동석', L.chalcopyrite)}${box(330, 210, 92, 40, '황철석', L.pyrite)}${box(430, 210, 92, 40, '자철석', L.magnetite)}${box(540, 210, 92, 40, '흑운모', L.biotite)}
+      <text x="320" y="285" text-anchor="middle" font-size="13" font-weight="700" fill="#8a7a5a">다른 길도 있어요: 석영과 방해석은 서로 긁어 보기, 흑운모는 조흔색(흰색)으로도 구별해요</text>
+      <text x="320" y="308" text-anchor="middle" font-size="13" font-weight="700" fill="#8a7a5a">자철석과 흑운모는 조흔색이 검은색과 흰색으로 달라요</text>
+    </svg>`;
+  }
+  function paintKey() { $('#keySvg').innerHTML = keySvg(); }
+
+  function resultText(a, id) {
+    const I = INFO[id];
+    if (a === 'observe') return ['색', I.color === '무색투명' ? '무색투명' : I.color];
+    if (a === 'white') return ['흰색 조흔판', I.streak === '나타나지 않음' ? '가루가 묻어나지 않음' : I.streak === '흰색' ? '잘 안 보임' : I.streak];
+    if (a === 'black') return ['검은색 조흔판', I.streak === '나타나지 않음' ? '가루가 묻어나지 않음' : I.streak === '흰색' ? '흰색' : '잘 안 보임'];
+    if (a === 'magnet') return ['클립', I.magnet ? '붙음' : '안 붙음'];
+    if (a === 'acid') return ['염산', I.acid ? '기포 생김' : '변화 없음'];
+    return ['', ''];
+  }
+  function paintWork() {
+    const stp = STEPS[step], set = stp.set;
+    $('#workBox').hidden = !set; $('#endBox').hidden = !!set;
+    if (!set) return;
+    $('#picks').innerHTML = set.map((s) => `<button type="button" class="pk${s.key === curKey ? ' sel' : ''}${solved[s.key] ? ' fin' : ''}" data-k="${s.key}"><span class="sw" style="background:${solved[s.key] ? SW[s.id] : '#c9ced4'}"></span>${s.label}${solved[s.key] ? ' · ' + INFO[s.id].name : ''}</button>`).join('');
+    $$('#picks .pk').forEach((b) => b.addEventListener('click', () => pick(b.dataset.k)));
+    const busy = !lab || lab.busy;
+    $('#tests').innerHTML = TESTS.map(([a, l]) => `<button type="button" class="act" data-a="${a}" ${busy || !curKey ? 'disabled' : ''}>${l}</button>`).join('');
+    $$('#tests .act').forEach((b) => b.addEventListener('click', () => act(b.dataset.a)));
+    const c = cur(), o = c ? obs[c.key] || {} : {};
+    $('#obsH').textContent = c ? `${c.label} 관찰 기록` : '관찰 기록';
+    const items = Object.values(o);
+    $('#obs').innerHTML = c ? (items.length ? items.map(([k, v]) => `<span><i>${k}</i>${v}</span>`).join('') : '<span class="empty">실험을 하면 결과가 여기에 쌓여요</span>') : '<span class="empty">먼저 표본을 골라요</span>';
+    const ready = c && items.length > 0;
+    $('#nameQ').textContent = c ? (solved[c.key] ? `${c.label}의 정체를 밝혔어요!` : ready ? `${c.label}은(는) 어떤 광물일까요?` : '실험을 하나 이상 해 본 뒤 고를 수 있어요.') : '표본을 고르면 시작해요.';
+    $('#names').innerHTML = stp.names.map((n) => `<button type="button" class="chip${c && solved[c.key] && INFO[c.id].name === n ? ' on' : ''}" data-n="${n}" ${ready && !solved[c.key] ? '' : 'disabled'}>${n}</button>`).join('');
+    $$('#names .chip').forEach((b) => b.addEventListener('click', () => guess(b.dataset.n)));
+  }
+  function guess(n) {
+    const c = cur(); if (!c) return; const I = INFO[c.id], ok = I.name === n, f = $('#nameFb');
+    tries[c.key] = (tries[c.key] || 0) + 1;
+    f.className = 'fb show ' + (ok ? 'ok' : 'no');
+    if (ok) {
+      solved[c.key] = true;
+      const how = { gold: '조흔색이 <b>노란색</b>이에요. 겉보기 색도 조흔색도 노란색이에요.', pyrite: '겉보기는 노란색이지만 조흔색이 <b>검은색</b>이에요.', chalcopyrite: '겉보기는 노란색이지만 조흔색이 <b>녹흑색</b>이에요.', quartz: '무색투명하고 묽은 염산에 <b>반응하지 않아요</b>. 조흔판에 긁어도 가루가 묻어나지 않아요.', calcite: '무색투명하고 묽은 염산을 떨어뜨리면 <b>기포</b>가 생겨요.', magnetite: '검은색이고 <b>클립이 붙어요</b>(자성).', biotite: '검은색이지만 클립이 붙지 않고, 조흔색이 <b>흰색</b>이에요.' }[c.id];
+      f.innerHTML = `맞아요! ${c.label}은(는) <b>${I.name}</b>이에요. ${how}`;
+      const left = STEPS[step].set.filter((s) => !solved[s.key]);
+      setTimeout(() => toast(left.length ? `남은 표본 ${left.length}개` : '모든 표본의 정체를 밝혔어요! 「다음 단계」로 가요'), 600);
+    } else {
+      const o = obs[c.key] || {}, has = (k) => !!o[k];
+      let hint = '관찰 기록과 맞지 않아요.';
+      if (step === 1) hint = has('white') || has('black') ? '조흔색을 다시 보세요. 금은 노란색, 황동석은 녹흑색, 황철석은 검은색이에요.' : '세 광물 모두 겉보기 색이 노란색이라 색만으로는 구별하기 어려워요. 조흔판에 긁어 보세요.';
+      else if (['quartz', 'calcite'].includes(c.id)) hint = has('acid') ? '염산 반응 결과를 다시 보세요.' : '무색투명한 광물이 둘이에요. 묽은 염산을 떨어뜨려 보세요.';
+      else if (['pyrite', 'chalcopyrite'].includes(c.id)) hint = has('white') ? '조흔색을 다시 보세요.' : '노란색 광물이 둘이에요. 조흔판에 긁어 보세요.';
+      else hint = has('magnet') || has('black') ? '클립이 붙었는지, 조흔색이 무엇인지 다시 보세요.' : '검은색 광물이 둘이에요. 클립을 가져다 대 보세요.';
+      f.innerHTML = '다시 생각해 보세요. ' + hint;
+    }
+    paintWork(); paintKey();
+  }
+  async function pick(k) {
+    if (!lab || lab.busy) return;
+    curKey = k; $('#nameFb').className = 'fb'; paintWork();
+    await lab.select(k); paintWork(); lab.view('work');
+  }
+  async function act(a) {
+    const c = cur(); if (!lab || lab.busy || !c) return;
+    const p = (async () => {
+      if (a === 'observe') await lab.observe();
+      else if (a === 'white' || a === 'black') await lab.streak(a);
+      else if (a === 'magnet') { await lab.magnet(); }
+      else if (a === 'acid') await lab.acid();
+      const [k, v] = resultText(a, c.id); obs[c.key] = obs[c.key] || {}; obs[c.key][a] = [k, v];
+      toast(`${c.label} · ${k}: <b>${v}</b>`);
+      if (a === 'magnet') setTimeout(() => lab.dropClips(), 1200);
+    })();
+    paintWork(); await p; paintWork();
+  }
+  function paintEnd() {
+    if (step !== 3) return;
+    const QS = [
+      { q: '금, 황철석, 황동석처럼 겉보기 색이 비슷한 광물을 가장 쉽게 구별하는 방법은? (스스로 평가 2)', o: ['조흔판에 긁어 조흔색을 비교한다', '겉보기 색을 자세히 본다', '묽은 염산을 떨어뜨린다'], a: 0, e: '세 광물은 겉보기에는 모두 노란색이지만 조흔색이 <b>금은 노란색, 황동석은 녹흑색, 황철석은 검은색</b>이에요.' },
+      { q: '무색투명한 석영과 방해석을 구별하는 방법으로 알맞지 않은 것은?', o: ['겉보기 색을 비교한다', '묽은 염산을 떨어뜨린다', '서로 긁어 본다'], a: 0, e: '둘 다 무색투명해서 색으로는 구별하기 어려워요. 방해석만 <b>염산 반응(기포)</b>이 있고, 서로 긁으면 <b>방해석만 긁혀요</b>.' },
+      { q: '검은색인 자철석과 흑운모를 구별하는 방법은?', o: ['클립을 가져다 대거나 조흔색을 비교한다', '겉보기 색을 비교한다', '묽은 염산을 떨어뜨린다'], a: 0, e: '자철석은 <b>자성</b>이 있어 클립이 붙고, 흑운모는 붙지 않아요. 조흔색도 자철석은 검은색, 흑운모는 <b>흰색</b>이에요.' },
+      { q: '광물을 구별할 때 특성을 하나만 보지 않고 여러 가지를 함께 비교하는 까닭은?', o: ['한 가지 특성이 같은 광물이 여럿 있을 수 있어서', '실험이 재미있어서', '광물의 색은 항상 다르기 때문에'], a: 0, e: '광물은 종류에 따라 <b>고유한 특성</b>을 가지지만, 색처럼 한 가지 특성은 여러 광물이 같을 수 있어요. 그래서 <b>색, 조흔색, 굳기, 자성, 염산 반응</b> 등을 함께 비교해요.' },
+    ];
+    $('#endBox').innerHTML = QS.map((x, i) => `<div class="ask" data-i="${i}"><p>${x.q}</p><div class="three">${x.o.map((o, j) => `<button type="button" data-j="${j}">${o}</button>`).join('')}</div><div class="ans"></div></div>`).join('') +
+      `<div class="done-ban">정리: 광물은 종류에 따라 고유한 특성을 가져요. 먼저 <b>색</b>으로 나누고, 색이 비슷하면 <b>조흔색</b>, <b>자성</b>, <b>염산 반응</b>, <b>굳기</b>를 비교해 구별해요.</div>`;
+    $$('#endBox .ask').forEach((el) => {
+      const x = QS[+el.dataset.i];
+      $$('button', el).forEach((b) => b.addEventListener('click', () => { const j = +b.dataset.j; $$('button', el).forEach((o, k) => { o.className = k === x.a ? 'good' : k === j ? 'bad' : ''; }); $('.ans', el).innerHTML = j === x.a ? x.e : '다시 생각해 보세요. 아래 구별 열쇠를 보면 알 수 있어요.'; }));
+    });
+  }
+  function setStep(n) {
+    const prevSet = STEPS[step].set; step = n; const stp = STEPS[n];
+    $$('#flow .fs').forEach((b) => { const k = +b.dataset.s; b.setAttribute('aria-selected', String(k === n)); if (k < n) b.classList.add('seen'); });
+    $('#sNo').textContent = n; $('#sTitle').textContent = stp.t; $('#sSub').textContent = stp.sub; $('#sWhat').textContent = stp.what;
+    $('#bPrev').disabled = n === 1; $('#bNext').textContent = n === 3 ? '처음 단계로' : '다음 단계';
+    $('#prog').style.width = (n / 3) * 100 + '%'; $('#nameFb').className = 'fb';
+    $('#keyNote').textContent = n === 3 ? '· 두 실험에서 쓴 구별 방법이에요' : '· 표본을 알아내면 길이 밝아져요';
+    if (stp.set && stp.set !== prevSet) { curKey = null; buildLab(stp.set); }
+    else if (!stp.set && lab) lab.view('all');
+    if (n === 3 && !lab) buildLab(SET2);
+    paintWork(); paintKey(); paintEnd();
+  }
+  $$('#flow .fs').forEach((b) => b.addEventListener('click', () => { if (!lab || !lab.busy) setStep(+b.dataset.s); }));
+  $('#bPrev').addEventListener('click', () => { if (step > 1 && (!lab || !lab.busy)) setStep(step - 1); });
+  $('#bNext').addEventListener('click', () => { if (!lab || !lab.busy) setStep(step === 3 ? 1 : step + 1); });
+  $('#vAll').addEventListener('click', () => lab && lab.view('all'));
+  setInterval(() => { if (lab) $$('#tests .act').forEach((b) => (b.disabled = lab.busy || !curKey)); }, 300);
+
+  const s0 = +(q.get('step') || 1);
+  buildLab(STEPS[s0].set || SET2); step = s0; setStep(s0);
+  if (q.get('solve')) { (STEPS[step].set || []).forEach((s) => { solved[s.key] = true; obs[s.key] = { observe: resultText('observe', s.id) }; }); paintWork(); paintKey(); }
+  if (q.get('m')) { (async () => { const k = (STEPS[step].set || [])[+q.get('m')]; if (k) { await pick(k.key); if (q.get('do')) for (const a of q.get('do').split('+')) await act(a); } })(); }
+  window.SM.okUI = true;
+} catch (err) { window.SM_err('안내·버튼', err); }
+</script>
+</body>
+</html>

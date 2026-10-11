@@ -9,7 +9,7 @@ async def main():
     clicks = sys.argv[7].split(',') if len(sys.argv) > 7 and sys.argv[7] else []
     async with async_playwright() as p:
         b = await p.chromium.launch(channel='chrome', args=['--use-angle=d3d11', '--enable-gpu', '--ignore-gpu-blocklist'])
-        pg = await b.new_page(viewport={'width': w, 'height': h})
+        pg = await b.new_page(viewport={'width': w, 'height': h}, reduced_motion='no-preference')  # PC 설정과 상관없이 움직임을 켜고 찍기
         logs = []
         pg.on('console', lambda m: logs.append(f'[{m.type}] {m.text}') if m.type in ('error', 'warning') else None)
         pg.on('pageerror', lambda e: logs.append(f'[pageerror] {e}'))

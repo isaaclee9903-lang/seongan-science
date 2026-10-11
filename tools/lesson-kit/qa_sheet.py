@@ -23,7 +23,7 @@ def font(n):
     return ImageFont.load_default()
 
 async def shoot(br, url, st, vw, vh, path, log):
-    pg = await br.new_page(viewport={"width": vw, "height": vh})
+    pg = await br.new_page(viewport={"width": vw, "height": vh}, reduced_motion="no-preference")  # PC가 애니메이션 줄이기 설정이어도 학생 태블릿처럼 움직이게
     errs = []
     pg.on("console", lambda m: errs.append(m.text) if m.type == "error" and "404" not in m.text else None)
     pg.on("pageerror", lambda e: errs.append(str(e)))
