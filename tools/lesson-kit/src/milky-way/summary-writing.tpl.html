@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>우리은하 – 스스로 정리하기</title>
+<!--@@PART:errbox_sum.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sum.css@@*/
+  /* ===== 이 수업 전용 ===== */
+  :root{--accent:#4a3a8c;--accent-soft:#eeebfa}
+  .si .two button{min-width:92px}
+  .si .two button.o[aria-pressed="true"]{border-color:#1f78c8;background:#e5f0fb;color:#1f78c8}
+  .si .two button.x[aria-pressed="true"]{border-color:#d9534f;background:#fdecea;color:#b33a35}
+  .gfig{max-width:720px;margin-left:auto!important;margin-right:auto!important;border-radius:18px;overflow:hidden;background:#060a16;border:1px solid #1c2340;margin:8px 0}
+  .gfig canvas{display:block;width:100%}
+  #gTop{aspect-ratio:16/12}
+  #gSide{aspect-ratio:16/4.6}
+  .slot{min-height:52px;width:100%;border-radius:12px;border:2px dashed #aebdcc;background:#fff;font-weight:900;font-size:15px;color:var(--muted);cursor:pointer;word-break:keep-all;padding:2px 6px}
+  .slot.f{border-style:solid;border-color:var(--accent);background:var(--accent-soft);color:#2d2266}
+  .slot.cur{box-shadow:0 0 0 4px rgba(74,58,140,.22)}
+  .slot.good{border-color:var(--ok);background:#e8f7ef;color:#11703f}.slot.bad{border-color:var(--no);background:#fdecea;color:#b33a35}
+  .bank{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+  .chip{min-height:48px;padding:6px 16px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:16px;cursor:pointer;word-break:keep-all}
+  .chip.used{opacity:.3;pointer-events:none}
+  .marks{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+  .mk{display:flex;flex-direction:column;gap:6px;align-items:stretch}
+  .mk b{display:flex;align-items:center;justify-content:center;gap:6px;font-size:14px;color:var(--muted)}
+  .mk b i{font-style:normal;width:26px;height:26px;border-radius:50%;background:#ffd56b;color:#2a2000;display:grid;place-items:center;font-weight:900}
+  .cards{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+  .oc{border-radius:16px;background:#f7fafc;border:1px solid var(--line);padding:10px;display:flex;flex-direction:column;gap:8px;align-items:center}
+  .oc canvas{width:100%;max-width:120px;aspect-ratio:1;border-radius:50%;display:block;box-shadow:0 4px 14px rgba(20,20,60,.25)}
+  .oc p{margin:0;font-size:14px;font-weight:700;line-height:1.55;color:var(--ink2);word-break:keep-all;text-align:center;flex:1}
+  .prompts{grid-template-columns:repeat(4,1fr)}
+  @media (max-width:860px){.marks{grid-template-columns:repeat(3,minmax(0,1fr))}.cards{grid-template-columns:repeat(3,minmax(0,1fr))}.prompts{grid-template-columns:1fr 1fr}}
+  @media (max-width:520px){.marks,.cards{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <span class="eyebrow">우리은하 · 스스로 정리하기</span>
+    <h1>우리은하, 성단과 성운 내 말로 정리하기</h1>
+    <p class="sub">맞는 말을 고르고, 우리은하 그림에 이름을 붙이고, 성단과 성운을 구분한 뒤, 내 생각을 써 봐요.</p>
+  </header>
+  <nav class="tabs" id="tabs"></nav>
+
+  <section class="card" id="s1">
+    <h2><span class="no">1</span>맞을까, 틀릴까?</h2>
+    <p class="goal">문장마다 '맞다' 또는 '틀리다'를 골라요. 다 고르면 확인!</p>
+    <div class="sort" id="sort"></div>
+    <div class="acts"><button type="button" class="btn primary" id="chk1" disabled>확인하기</button></div>
+    <div class="fb" id="fb1"></div>
+  </section>
+
+  <section class="card" id="s2">
+    <h2><span class="no">2</span>우리은하 그림에 이름 붙이기</h2>
+    <p class="goal">그림의 번호를 보고 빈칸을 누른 뒤, 아래 낱말을 눌러 채워요.</p>
+    <div class="gfig"><canvas id="gTop" role="img" aria-label="위에서 본 우리은하. ① 가운데 막대 모양 부분, ② 둘레의 나선 모양 부분, ③ 노란 고리로 표시한 곳, ④ 노란 고리와 중심 사이의 거리에 번호가 있다."></canvas><canvas id="gSide" role="img" aria-label="옆에서 본 우리은하. ⑤ 우리은하 전체 지름에 번호가 있다."></canvas></div>
+    <div class="marks" id="marks"></div>
+    <div class="bank" id="bank2"></div>
+    <button class="btn primary" id="chk2" type="button" disabled>확인하기</button>
+    <div class="fb" id="fb2"></div>
+  </section>
+
+  <section class="card" id="s3">
+    <h2><span class="no">3</span>성단일까, 성운일까?</h2>
+    <p class="goal">그림과 설명을 보고 빈칸을 누른 뒤, 알맞은 이름을 눌러 채워요.</p>
+    <div class="cards" id="cards"></div>
+    <div class="bank" id="bank3"></div>
+    <button class="btn primary" id="chk3" type="button" disabled>확인하기</button>
+    <div class="fb" id="fb3"></div>
+  </section>
+
+  <section class="card" id="s4">
+    <h2><span class="no">4</span>내 말로 설명하기</h2>
+    <p class="goal">주제를 하나 골라 친구에게 설명하듯 써 봐요. 핵심어를 넣으면 초록색으로 바뀌어요.</p>
+    <div class="prompts" id="prompts"></div>
+    <div class="wq" id="wqText"></div>
+    <div class="starters" id="starters"></div>
+    <textarea id="txt" placeholder="여기에 써 보세요."></textarea>
+    <div class="wmeta"><span id="cnt">0자 · 목표 100자 이상</span><span id="saved"></span></div>
+    <div class="kw" id="kw"></div>
+    <div class="self" id="self"></div>
+    <div class="acts">
+      <button class="btn green" id="copyBtn" type="button">글 복사하기</button>
+      <button class="btn ghost" id="printBtn" type="button">인쇄 / PDF로 저장</button>
+    </div>
+    <p class="note" style="margin-top:10px">※ 글은 이 기기의 브라우저에만 임시로 저장되고 어디에도 보내지 않아요. 다 쓰면 '글 복사하기'로 복사해서 선생님이 안내한 곳에 붙여 넣으세요.</p>
+  </section>
+  <p class="credit" style="margin:20px 0 4px;text-align:center;font-size:13px;font-weight:700;color:#8495a8;letter-spacing:.02em">우리은하 · 우리은하, 성단과 성운</p>
+</div>
+
+<script>
+/* ===== 공통 ===== */
+window.SW_CHECKS = [['ok1', 'O/X 판단'], ['ok2', '우리은하 이름 붙이기'], ['ok3', '성단·성운 구분'], ['ok4', '글쓰기']];
+window.SW = {
+  $: (s, r = document) => r.querySelector(s),
+  $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
+  shuffle: (a) => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; },
+  fb: (id, ok, html) => { const f = document.querySelector(id); f.className = 'fb show ' + (ok ? 'ok' : 'no'); f.innerHTML = html; },
+  done: {},
+  /* 빈칸 채우기: 빈칸을 누르고 낱말을 눌러 채워요 */
+  slots(slots, chips, chk, onChange) {
+    const fill = slots.map(() => null); let cur = 0, locked = false;
+    const paint = () => { slots.forEach((s, i) => { s.textContent = fill[i] ? fill[i].textContent : '빈칸'; s.classList.toggle('f', !!fill[i]); s.classList.toggle('cur', i === cur && !locked); }); chk.disabled = locked || fill.some((f) => !f); };
+    const clear = () => slots.forEach((x) => x.classList.remove('good', 'bad'));
+    chips.forEach((c) => c.addEventListener('click', () => { if (locked) return; if (fill[cur]) fill[cur].classList.remove('used'); fill[cur] = c; c.classList.add('used'); const n = fill.findIndex((f) => !f); if (n >= 0) cur = n; clear(); paint(); }));
+    slots.forEach((s, i) => s.addEventListener('click', () => { if (locked) return; if (fill[i]) { fill[i].classList.remove('used'); fill[i] = null; } cur = i; clear(); paint(); }));
+    paint();
+    return { fill, lock: () => { locked = true; paint(); } };
+  },
+};
+(() => {
+  const { $, $$ } = window.SW;
+  const TABS = ['맞을까 틀릴까', '이름 붙이기', '성단·성운', '글쓰기'];
+  window.SW.renderTabs = () => {
+    $('#tabs').innerHTML = TABS.map((t, i) => `<button type="button" class="tab${window.SW.done[i + 1] ? ' done' : ''}" data-s="${i + 1}"><span class="n">${i + 1}</span>${t}</button>`).join('');
+    $$('#tabs .tab').forEach((b) => b.addEventListener('click', () => document.getElementById('s' + b.dataset.s).scrollIntoView({ behavior: 'smooth', block: 'start' })));
+  };
+  window.SW.finish = (n) => { window.SW.done[n] = true; window.SW.renderTabs(); };
+  window.SW.renderTabs();
+})();
+</script>
+<script>
+/*@@LOCAL:_mw.js@@*/
+</script>
+<script>
+/* ===== 블록 1: 맞을까 틀릴까 ===== */
+(() => {
+  'use strict';
+  try {
+    const { $, $$, shuffle, fb, finish } = window.SW;
+    const ITEMS = [
+      ['은하수는 지구에서 보이는 우리은하의 일부이다.', true],
+      ['태양계가 속한 은하를 우리은하라고 한다.', true],
+      ['우리은하를 옆에서 보면 막대 모양 중심부와 나선팔이 보인다.', false],
+      ['태양계는 우리은하의 중심에 있다.', false],
+      ['우리은하의 지름은 약 30000 pc이다.', true],
+      ['산개 성단은 수만~수십만 개의 별이 촘촘하게 공 모양으로 모여 있다.', false],
+      ['구상 성단에는 붉은색을 띠는 저온의 별이 많다.', true],
+      ['반사 성운은 별빛을 흡수하여 온도가 높아져 스스로 빛을 낸다.', false],
+    ];
+    const list = shuffle(ITEMS.slice()), pick = list.map(() => null);
+    $('#sort').innerHTML = list.map((it, i) => `<div class="si" data-i="${i}"><p>${it[0]}</p><div class="two"><button type="button" class="o" data-v="1" aria-pressed="false">맞다</button><button type="button" class="x" data-v="0" aria-pressed="false">틀리다</button></div></div>`).join('');
+    $$('#sort .si').forEach((row) => {
+      const i = +row.dataset.i;
+      $$('button', row).forEach((b) => b.addEventListener('click', () => { pick[i] = b.dataset.v === '1'; row.classList.remove('good', 'bad'); $$('button', row).forEach((o) => o.setAttribute('aria-pressed', String(o === b))); $('#chk1').disabled = pick.some((p) => p === null); }));
+    });
+    $('#chk1').addEventListener('click', () => {
+      let wrong = 0;
+      $$('#sort .si').forEach((row) => { const i = +row.dataset.i, ok = pick[i] === list[i][1]; row.classList.toggle('good', ok); row.classList.toggle('bad', !ok); if (!ok) wrong++; });
+      if (!wrong) { fb('#fb1', true, '모두 맞았어요! 틀린 문장 고쳐 보기: 막대 모양 중심부와 나선팔은 <b>위에서</b> 볼 때 보여요 · 태양계는 중심에서 <b>약 8500 pc 떨어진 나선팔</b>에 있어요 · 촘촘한 공 모양은 <b>구상 성단</b>이에요 · 스스로 빛을 내는 것은 <b>방출 성운</b>이에요.'); finish(1); }
+      else fb('#fb1', false, `빨간 문장 ${wrong}개를 다시 생각해 보세요.`);
+    });
+    window.SW.ok1 = true;
+  } catch (err) { window.SW_err('O/X 판단', err); }
+})();
+</script>
+<script>
+/* ===== 블록 2: 우리은하 그림에 이름 붙이기 ===== */
+(() => {
+  'use strict';
+  try {
+    const { $, $$, shuffle, fb, finish } = window.SW, M = window.MW;
+    const ANS = ['막대 모양 중심부', '나선팔', '태양계', '약 8500 pc', '약 30000 pc'];
+    const EXTRA = ['구상 성단', '약 10 pc'];
+    const num = (c, n, x, y) => { c.save(); c.fillStyle = '#ffd56b'; c.beginPath(); c.arc(x, y, 14, 0, Math.PI * 2); c.fill(); c.fillStyle = '#2a2000'; c.font = '900 15px Pretendard, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(n, x, y + 1); c.restore(); };
+    function draw() {
+      const SF = 0.022;
+      let g = M.renderGalaxy($('#gTop'), { elev: 90, rot: 0, cxF: 0.5, cyF: 0.5, sF: SF });
+      let { c, h, P } = g;
+      const s = P(-8.5, 0, 0), o = P(0, 0, 0), b = P(3.4 * Math.cos(0.47), 0, 3.4 * Math.sin(0.47)), a1 = M.galaxy().armPoint(1, 11.3), ap = P(a1[0], 0, a1[2]);
+      c.save(); c.strokeStyle = '#ffe08a'; c.lineWidth = 2; c.beginPath(); c.arc(s[0], s[1], 8, 0, Math.PI * 2); c.stroke(); c.restore();
+      M.dim(c, s[0], h * 0.62, o[0], h * 0.62);
+      num(c, '1', b[0] + 26, b[1] + 22); num(c, '2', ap[0], ap[1]); num(c, '3', s[0], s[1] - 26); num(c, '4', (s[0] + o[0]) / 2, h * 0.62 + 20);
+      g = M.renderGalaxy($('#gSide'), { elev: 1.5, rot: 0, cxF: 0.5, cyF: 0.62, sF: SF, yS: 1.8 });
+      ({ c, h, P } = g); const e1 = P(-15, 0, 0), e2 = P(15, 0, 0);
+      M.dim(c, e1[0], h * 0.2, e2[0], h * 0.2); num(c, '5', (e1[0] + e2[0]) / 2, h * 0.2);
+    }
+    $('#marks').innerHTML = ANS.map((_, i) => `<div class="mk"><b><i>${i + 1}</i></b><button type="button" class="slot">빈칸</button></div>`).join('');
+    $('#bank2').innerHTML = shuffle(ANS.concat(EXTRA)).map((w) => `<button type="button" class="chip">${w}</button>`).join('');
+    const S2 = window.SW.slots($$('#marks .slot'), $$('#bank2 .chip'), $('#chk2'));
+    $('#chk2').addEventListener('click', () => {
+      let wrong = 0; $$('#marks .slot').forEach((s, i) => { const ok = S2.fill[i].textContent === ANS[i]; s.classList.toggle('good', ok); s.classList.toggle('bad', !ok); if (!ok) wrong++; });
+      if (!wrong) { S2.lock(); fb('#fb2', true, '맞았어요! 위에서 보면 <b>막대 모양 중심부</b>와 <b>나선팔</b>, 옆에서 보면 중심부가 볼록한 원반이에요. 지름은 <b>약 30000 pc</b>, 태양계는 중심에서 <b>약 8500 pc</b> 떨어진 나선팔에 있어요.'); finish(2); }
+      else fb('#fb2', false, `빨간 칸 ${wrong}개를 다시 생각해 봐요. 힌트: 노란 고리가 태양계예요. 지름이 더 긴 거리예요.`);
+    });
+    let rq = 0; const re = () => { cancelAnimationFrame(rq); rq = requestAnimationFrame(draw); };
+    addEventListener('resize', re); try { new ResizeObserver(re).observe($('#gTop')); } catch (e) {}
+    draw();
+    window.SW.ok2 = true;
+  } catch (err) { window.SW_err('우리은하 이름 붙이기', err); }
+})();
+</script>
+<script>
+/* ===== 블록 3: 성단일까, 성운일까 ===== */
+(() => {
+  'use strict';
+  try {
+    const { $, $$, shuffle, fb, finish } = window.SW, M = window.MW;
+    const CARDS = shuffle([
+      { k: 'glob', a: '구상 성단', t: '수만~수십만 개의 별이 촘촘하게 공 모양으로 모여 있어요.' },
+      { k: 'open', a: '산개 성단', t: '파란색을 띠는 고온의 별이 엉성하게 모여 있어요.' },
+      { k: 'emit', a: '방출 성운', t: '별빛을 흡수해 온도가 높아져 스스로 빛을 내요.' },
+      { k: 'refl', a: '반사 성운', t: '주변의 별빛을 반사하여 밝게 보여요.' },
+      { k: 'dark', a: '암흑 성운', t: '뒤에서 오는 별빛을 가로막아 어둡게 보여요.' },
+    ]);
+    $('#cards').innerHTML = CARDS.map((c, i) => `<div class="oc"><canvas data-i="${i}" aria-label="${c.t}"></canvas><p>${c.t}</p><button type="button" class="slot">빈칸</button></div>`).join('');
+    $('#bank3').innerHTML = shuffle(CARDS.map((c) => c.a)).map((w) => `<button type="button" class="chip">${w}</button>`).join('');
+    function draw() {
+      $$('#cards canvas').forEach((cv) => {
+        const cd = CARDS[+cv.dataset.i], { c, w } = M.fit(cv), px = Math.round(w * Math.min(2, window.devicePixelRatio || 1));
+        const img = cd.k === 'open' || cd.k === 'glob' ? M.cluster(cd.k, px, cd.k === 'open' ? 4 : 8, { n: cd.k === 'open' ? 50 : undefined }) : M.nebula(cd.k, px, ['emit', 'refl', 'dark'].indexOf(cd.k));
+        c.clearRect(0, 0, w, w); M.disc(c, img, w / 2, w / 2, w / 2 - 1, 'rgba(255,255,255,.35)');
+      });
+    }
+    const S3 = window.SW.slots($$('#cards .slot'), $$('#bank3 .chip'), $('#chk3'));
+    $('#chk3').addEventListener('click', () => {
+      let wrong = 0; $$('#cards .slot').forEach((s, i) => { const ok = S3.fill[i].textContent === CARDS[i].a; s.classList.toggle('good', ok); s.classList.toggle('bad', !ok); if (!ok) wrong++; });
+      if (!wrong) { S3.lock(); fb('#fb3', true, '모두 맞았어요! <b>성단</b>은 별의 무리이고(산개 성단·구상 성단), <b>성운</b>은 성간 물질이 구름처럼 보이는 것이에요(방출·반사·암흑 성운).'); finish(3); }
+      else fb('#fb3', false, `빨간 칸 ${wrong}개를 다시 생각해 봐요. 힌트: 별의 무리는 성단, 성간 물질은 성운이에요. 흡수 → 방출, 반사 → 반사, 가로막음 → 암흑.`);
+    });
+    let rq = 0; const re = () => { cancelAnimationFrame(rq); rq = requestAnimationFrame(draw); };
+    addEventListener('resize', re); try { new ResizeObserver(re).observe($('#cards')); } catch (e) {}
+    draw();
+    window.SW.ok3 = true;
+  } catch (err) { window.SW_err('성단·성운 구분', err); }
+})();
+</script>
+<script>
+/* ===== 블록 4: 글쓰기 (저장하지 않고 복사·인쇄만) ===== */
+(() => {
+  'use strict';
+  try {
+    const { $, $$, finish } = window.SW;
+    const PROMPTS = [
+      { t: '은하수와 우리은하', s: '읽기 ①', q: '은하수와 우리은하는 어떤 관계인지 친구에게 설명해 보세요.', kw: ['은하수', '우리은하', '일부', '태양계', '별'], st: ['우리은하는', '은하수는', '그래서'] },
+      { t: '우리은하의 모습', s: '읽기 ② · 시뮬레이션 ①', q: '우리은하를 위에서 본 모습, 옆에서 본 모습, 크기를 설명해 보세요.', kw: ['막대 모양', '나선팔', '원반', '30000 pc', '8500 pc'], st: ['위에서 보면', '옆에서 보면', '태양계는'] },
+      { t: '두 성단 비교', s: '읽기 ③ · 시뮬레이션 ②', q: '산개 성단과 구상 성단의 차이점을 별의 수, 모인 모습, 별의 색으로 비교해 보세요.', kw: ['산개 성단', '구상 성단', '엉성', '촘촘', '파란색', '붉은색'], st: ['산개 성단은', '구상 성단은', '두 성단의 차이는'] },
+      { t: '세 가지 성운', s: '읽기 ④ · 시뮬레이션 ②', q: '방출 성운, 반사 성운, 암흑 성운이 각각 어떻게 보이는지 별빛과 관련지어 설명해 보세요.', kw: ['성간 물질', '흡수', '반사', '가로막', '스스로 빛'], st: ['방출 성운은', '반사 성운은', '암흑 성운은'] },
+    ];
+    const SELF = [['지식·이해', '#2f6fd6', '우리은하의 구조와 크기를 설명할 수 있다.'], ['과정·기능', '#23a566', '성운과 성단의 특징을 비교할 수 있다.'], ['가치·태도', '#7d5ad6', '밤하늘의 은하수와 여러 천체에 흥미를 가질 수 있다.']];
+    const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); return true; } catch (e) { return false; } } };
+    let pi = 0; const txt = $('#txt');
+    function renderPrompt() {
+      $('#prompts').innerHTML = PROMPTS.map((p, i) => `<button type="button" class="pr${i === pi ? ' sel' : ''}" data-i="${i}"><b>${p.t}</b><span>${p.s}</span></button>`).join('');
+      $$('#prompts .pr').forEach((b) => b.addEventListener('click', () => { pi = +b.dataset.i; renderPrompt(); }));
+      const p = PROMPTS[pi];
+      $('#wqText').textContent = p.q;
+      $('#starters').innerHTML = p.st.map((s) => `<button type="button">${s}</button>`).join('');
+      $$('#starters button').forEach((b) => b.addEventListener('click', () => { const add = (txt.value && !/[\s\n]$/.test(txt.value) ? ' ' : '') + b.textContent + ' '; txt.value += add; txt.focus(); onInput(); }));
+      txt.value = store.get('mw-write-' + pi) || '';
+      onInput();
+    }
+    function onInput() {
+      const v = txt.value, p = PROMPTS[pi];
+      const ok = store.set('mw-write-' + pi, v);
+      $('#saved').textContent = v ? (ok ? '이 기기에 임시 저장됨' : '') : '';
+      const n = v.replace(/\s/g, '').length, hit = p.kw.filter((k) => v.includes(k)).length;
+      $('#cnt').textContent = `${n}자 · 목표 100자 이상`;
+      $('#kw').innerHTML = p.kw.map((k) => `<span class="${v.includes(k) ? 'on' : ''}">${k}</span>`).join('');
+      if (n >= 100 && hit >= 3) finish(4);
+    }
+    txt.addEventListener('input', onInput);
+    $('#self').innerHTML = SELF.map(([c, col, t]) => `<label><input type="checkbox"><span class="cat" style="background:${col}">${c}</span>${t}</label>`).join('');
+    $('#copyBtn').addEventListener('click', async () => {
+      const out = `[${PROMPTS[pi].t}]\n${PROMPTS[pi].q}\n\n${txt.value}`;
+      try { await navigator.clipboard.writeText(out); $('#copyBtn').textContent = '복사했어요!'; }
+      catch (e) { txt.select(); try { document.execCommand('copy'); $('#copyBtn').textContent = '복사했어요!'; } catch (e2) { $('#copyBtn').textContent = '길게 눌러 직접 복사해 주세요'; } }
+      setTimeout(() => ($('#copyBtn').textContent = '글 복사하기'), 2200);
+    });
+    $('#printBtn').addEventListener('click', () => window.print());
+    renderPrompt();
+    window.SW.ok4 = true;
+  } catch (err) { window.SW_err('글쓰기', err); }
+})();
+</script>
+</body>
+</html>
