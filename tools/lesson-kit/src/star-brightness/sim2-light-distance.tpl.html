@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>별의 밝기 – 3D 거리와 빛의 세기</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+  /* ===== 이 수업 전용 ===== */
+  :root{--fab:#c27a12;--fab-soft:#fff3dc;--blue:#3a64c8}
+  .eyebrow{color:#8a5200;background:#fff1d6}
+  .gl-host{background:linear-gradient(#060b1a,#14204a)}
+  .vb{background:rgba(16,26,52,.78);color:#e6ecfa;border-color:rgba(255,255,255,.18)}
+  .vb.sel{background:#fff;color:#14263b;border-color:#fff}
+  .hint{background:rgba(16,26,52,.72);color:#cdd7ee}
+  .lb{background:rgba(12,20,44,.82);color:#e8eefc;box-shadow:none;border:1px solid rgba(255,255,255,.14)}
+  .lb.Y{background:#f2c14e;color:#3d2c00;border:0}
+  .lb.B{background:#3a64c8;color:#fff;border:0}
+  .lb.small{background:rgba(12,20,44,.6);color:#c5d0ea}
+  .lb.dim{opacity:.45}
+  .modes{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px}
+  .md{min-height:54px;border:0;border-radius:14px;background:#eef3f8;font-weight:800;font-size:15.5px;color:var(--muted);cursor:pointer;word-break:keep-all}
+  .md[aria-selected="true"]{background:var(--fab);color:#fff}
+  .stepname .no{background:var(--fab)}
+  .dsel{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:8px 0}
+  .dsel button{min-height:54px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:900;font-size:16px;cursor:pointer;line-height:1.2}
+  .dsel button small{display:block;font-size:12px;font-weight:700;color:var(--muted)}
+  .dsel button[aria-pressed="true"]{border-color:var(--fab);background:var(--fab-soft);color:#6d4100}
+  .chain{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:6px;align-items:center;margin:10px 0}
+  .chain .c{border-radius:14px;padding:10px 6px;text-align:center;background:#f7fafc;border:1px solid var(--line)}
+  .chain .c small{display:block;font-size:12.5px;font-weight:800;color:var(--muted);word-break:keep-all}
+  .chain .c b{display:block;font-size:24px;letter-spacing:-.02em;margin-top:2px}
+  .chain .c.hl{background:linear-gradient(135deg,#fff6d8,#fff);border-color:#f0cf74}
+  .chain .ar{color:#9aa7b4;font-weight:900}
+  .frac{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;line-height:1;font-size:.82em;margin:0 2px}
+  .frac i{font-style:normal;border-bottom:2px solid currentColor;padding:0 3px 2px}
+  .frac em{font-style:normal;padding-top:2px}
+  .tbl{width:100%;border-collapse:separate;border-spacing:0 6px;margin:6px 0}
+  .tbl th{font-size:12.5px;color:var(--muted);font-weight:800;text-align:left;padding:0 8px}
+  .tbl td{background:#f7fafc;padding:8px;font-weight:800;font-size:15px}
+  .tbl td:first-child{border-radius:10px 0 0 10px}.tbl td:last-child{border-radius:0 10px 10px 0;width:44%}
+  .tbl tr.on td{background:#fff3d6}
+  .tbl .bar{height:12px;border-radius:99px;background:#e6edf4;overflow:hidden}
+  .tbl .bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#f6c344,#ffe9a8);transition:width .5s var(--ease)}
+  .why{margin-top:10px;display:grid;gap:6px}
+  .why h3{margin:6px 0 2px;font-size:16px}
+  .why .w{display:grid;grid-template-columns:28px 1fr;gap:8px;align-items:start;padding:8px 10px;border-radius:12px;background:#f7fafc;font-size:14.5px;line-height:1.6;color:var(--ink2);word-break:keep-all;transition:background .3s}
+  .why .w i{font-style:normal;width:26px;height:26px;border-radius:8px;background:var(--fab);color:#fff;display:grid;place-items:center;font-weight:900;font-size:13px}
+  .why .w.on{background:#fff3d6}
+  [hidden]{display:none!important}
+</style>
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }
+</script>
+</head>
+<body>
+<div class="app">
+  <header>
+    <span class="eyebrow">별의 밝기 · 3D 시뮬레이션 ②</span>
+    <h1>3D 거리와 빛의 세기</h1>
+    <p class="sub">광원에서 나온 빛은 사방으로 퍼져 나가요. 거리가 멀어지면 같은 넓이에 들어오는 빛이 얼마나 줄어드는지 직접 확인해 보세요. 손가락으로 돌려 볼 수 있어요.</p>
+  </header>
+  <div class="stage">
+    <section class="card viewer">
+      <div class="gl-host" id="host" role="img" aria-label="가운데 광원에서 빛 알갱이가 퍼져 나간다. 거리 1, 2, 3, 4 배에 놓인 판은 1, 4, 9, 16 칸으로 나뉘어 있고, 노란 한 칸에 들어오는 빛은 멀수록 적다.">
+        <div class="vt tl" role="group" aria-label="보는 방향"><button class="vb sel" type="button" id="vHome">처음 방향으로</button><button class="vb" type="button" id="vEye" hidden>내 자리에서 보기</button></div>
+        <div class="vt bl"><span class="hint" id="hint">한 손가락: 돌리기 · 두 손가락: 확대</span></div>
+        <div class="fail3d" id="fail3d">3D 그림을 불러오지 못했어요.<br>인터넷 연결을 확인하고 새로고침해 주세요.<br>(오른쪽 설명은 그대로 읽을 수 있어요)</div>
+      </div>
+    </section>
+    <section class="card pad">
+      <div class="modes" role="tablist">
+        <button class="md" type="button" role="tab" id="mA" aria-selected="true">빛이 퍼지는 모습</button>
+        <button class="md" type="button" role="tab" id="mB" aria-selected="false">같은 가로등, 다른 거리</button>
+      </div>
+      <div id="paneA">
+        <div class="stepname"><span class="no">A</span><div><h2>멀어질수록 넓게 퍼지는 빛</h2><small>그림 Ⅷ-4처럼 광원에서 거리 1·2·3·4 배에 판을 세웠어요</small></div></div>
+        <div class="dsel" id="dsel" role="group" aria-label="광원으로부터의 거리"></div>
+        <div class="chain">
+          <div class="c"><small>광원으로부터의 거리</small><b id="cD">1 배</b></div><span class="ar">→</span>
+          <div class="c"><small>빛이 비추는 넓이</small><b id="cA">1 칸</b></div><span class="ar">→</span>
+          <div class="c hl"><small>한 칸에 들어오는 빛</small><b id="cL">1 배</b></div>
+        </div>
+        <table class="tbl" id="tbl"><thead><tr><th>거리</th><th>넓이</th><th>한 칸의 빛</th><th></th></tr></thead><tbody></tbody></table>
+        <div class="why" id="whyA">
+          <h3>왜 그럴까?</h3>
+          <div class="w" data-w="1"><i>1</i><span>광원에서 나온 빛은 <b>사방으로 퍼져 나가요</b>. 둥근 껍질이 커지면서 퍼지는 모습을 보세요.</span></div>
+          <div class="w" data-w="2"><i>2</i><span>거리가 2 배가 되면 판의 가로도 2 배, 세로도 2 배가 되어 같은 빛이 <b>4 칸</b>에 퍼져요. 3 배면 9 칸이에요.</span></div>
+          <div class="w" data-w="3"><i>3</i><span>같은 양의 빛을 더 많은 칸이 나누어 가지니, 노란 <b>한 칸에 들어오는 빛</b>은 1/4 배, 1/9 배, 1/16 배로 줄어요. 한 칸을 지나가는 빛 알갱이가 드물어지는 것을 보세요.</span></div>
+          <div class="w" data-w="4"><i>4</i><span>그래서 광원에서 멀어질수록 빛의 세기는 줄어들고 <b>어둡게</b> 보여요. 스스로 빛을 내는 별도 마찬가지예요.</span></div>
+        </div>
+        <div class="box an"><b class="t">모형 안내</b>빛 알갱이는 빛이 퍼지는 모습을 보여 주는 모형이에요. 판은 그림 Ⅷ-4처럼 한쪽 방향만 잘라서 보여 줘요. 실제로는 빛이 모든 방향으로 퍼져요.</div>
+      </div>
+      <div id="paneB" hidden>
+        <div class="stepname"><span class="no">B</span><div><h2>같은 밝기의 가로등</h2><small>모두 같은 가로등인데 멀리 있는 것이 어둡게 보여요</small></div></div>
+        <div class="dsel" id="lsel" role="group" aria-label="가로등 고르기"></div>
+        <div class="chain">
+          <div class="c"><small>나와 가로등 사이 거리</small><b id="lD">1 배</b></div><span class="ar">→</span>
+          <div class="c"><small>가로등의 실제 밝기</small><b>모두 같음</b></div><span class="ar">→</span>
+          <div class="c hl"><small>내 눈에 들어오는 빛</small><b id="lL">1 배</b></div>
+        </div>
+        <table class="tbl" id="tbl2"><thead><tr><th>가로등</th><th>거리</th><th>눈에 들어오는 빛</th><th></th></tr></thead><tbody></tbody></table>
+        <div class="why">
+          <h3>왜 그럴까?</h3>
+          <div class="w"><i>1</i><span>네 가로등은 <b>같은 밝기</b>예요. 그런데 '내 자리에서 보기'를 누르면 멀리 있는 가로등일수록 작고 어둡게 보여요.</span></div>
+          <div class="w"><i>2</i><span>멀리 있는 가로등의 빛은 나에게 오는 동안 더 넓게 퍼져서, 내 눈에 들어오는 빛이 적어요.</span></div>
+          <div class="w"><i>3</i><span>밤하늘의 별도 같아요. 지구에서 보이는 밝기(겉보기 등급)만으로는 별의 <b>실제 밝기</b>를 비교할 수 없어요.</span></div>
+          <div class="w"><i>4</i><span>실제 밝기를 비교하려면 모든 별을 <b>같은 거리</b>에 놓고 비교해야 해요. 다음 시뮬레이션 '10 pc로 옮기기'에서 해 봐요.</span></div>
+        </div>
+      </div>
+    </section>
+  </div>
+  <p class="credit">별의 밝기 · 거리와 빛의 세기</p>
+</div>
+<script>
+window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
+  mode: 'A', d: 1, lamp: 1, home: 0, eye: 0 };
+</script>
+<script>
+/* ===== 블록 1: 안내·버튼 ===== */
+(() => {
+  'use strict';
+  try {
+    const { $, $$ } = window.SM, S = window.SM;
+    const FR = (n) => (n === 1 ? '1 배' : `<span class="frac"><i>1</i><em>${n}</em></span> 배`);
+    const setMode = (m) => {
+      S.mode = m; $('#mA').setAttribute('aria-selected', String(m === 'A')); $('#mB').setAttribute('aria-selected', String(m === 'B'));
+      $('#paneA').hidden = m !== 'A'; $('#paneB').hidden = m !== 'B'; $('#vEye').hidden = m !== 'B';
+      $('#hint').textContent = m === 'A' ? '한 손가락: 돌리기 · 두 손가락: 확대' : '가로등을 누르면 골라져요 · 돌리기 · 확대';
+      S.home++; if (S.on3d) S.on3d();
+    };
+    $('#mA').addEventListener('click', () => setMode('A'));
+    $('#mB').addEventListener('click', () => setMode('B'));
+    $('#vHome').addEventListener('click', () => { S.home++; if (S.on3d) S.on3d(); });
+    $('#vEye').addEventListener('click', () => { S.eye++; if (S.on3d) S.on3d(); });
+    $('#dsel').innerHTML = [1, 2, 3, 4].map((d) => `<button type="button" data-d="${d}" aria-pressed="${d === 1}">${d} 배<small>거리</small></button>`).join('');
+    $('#lsel').innerHTML = [1, 2, 3, 4].map((d) => `<button type="button" data-l="${d}" aria-pressed="${d === 1}">${d}번<small>가로등</small></button>`).join('');
+    $('#tbl tbody').innerHTML = [1, 2, 3, 4].map((d) => `<tr data-d="${d}"><td>${d} 배</td><td>${d * d} 칸</td><td>${FR(d * d)}</td><td><div class="bar"><i style="width:${100 / (d * d)}%"></i></div></td></tr>`).join('');
+    $('#tbl2 tbody').innerHTML = [1, 2, 3, 4].map((d) => `<tr data-d="${d}"><td>${d}번</td><td>${d} 배</td><td>${FR(d * d)}</td><td><div class="bar"><i style="width:${100 / (d * d)}%"></i></div></td></tr>`).join('');
+    S.setD = (d) => {
+      S.d = d; $$('#dsel button').forEach((b) => b.setAttribute('aria-pressed', String(+b.dataset.d === d)));
+      $('#cD').textContent = d + ' 배'; $('#cA').textContent = d * d + ' 칸'; $('#cL').innerHTML = FR(d * d);
+      $$('#tbl tbody tr').forEach((r) => r.classList.toggle('on', +r.dataset.d === d));
+      $$('#whyA .w').forEach((w) => w.classList.toggle('on', d === 1 ? w.dataset.w === '1' : d === 2 ? w.dataset.w === '2' : w.dataset.w === '3'));
+      if (S.on3d) S.on3d();
+    };
+    S.setLamp = (k) => {
+      S.lamp = k; $$('#lsel button').forEach((b) => b.setAttribute('aria-pressed', String(+b.dataset.l === k)));
+      $('#lD').textContent = k + ' 배'; $('#lL').innerHTML = FR(k * k);
+      $$('#tbl2 tbody tr').forEach((r) => r.classList.toggle('on', +r.dataset.d === k));
+      if (S.on3d) S.on3d();
+    };
+    $$('#dsel button').forEach((b) => b.addEventListener('click', () => S.setD(+b.dataset.d)));
+    $$('#lsel button').forEach((b) => b.addEventListener('click', () => S.setLamp(+b.dataset.l)));
+    S.setD(1); S.setLamp(1);
+    const q = new URLSearchParams(location.search);
+    if (q.get('mode') === 'B') setMode('B');
+    if (q.get('d')) S.setD(+q.get('d'));
+    window.SM.okUI = true;
+  } catch (err) { window.SM_err('안내·버튼', err); }
+})();
+</script>
+<script type="module">
+/* ===== 블록 2: 3D (빛이 퍼지는 모습, 가로등 밤길) ===== */
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+/*@@PART:c3.js@@*/
+/*@@LOCAL:_light3d.js@@*/
+/*@@LOCAL:_street3d.js@@*/
+try {
+  const { V } = C3, S = window.SM;
+  const host = document.getElementById('host');
+  const st = C3.makeStage(host, { top: '#050a18', bottom: '#16234d', fov: 36, exposure: 1.0, minD: 3, maxD: 60, fitWidth: true });
+  st.sun.intensity = 0.25; st.scene.children.forEach((o) => { if (o.isHemisphereLight) o.intensity = 0.3; });
+  st.controls.maxPolarAngle = Math.PI * 0.9;
+  // 먼 배경 별
+  (function bgStars() {
+    const n = 900, pos = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) { const u = Math.random() * 2 - 1, a = Math.random() * Math.PI * 2, r = 70; pos[i * 3] = r * Math.sqrt(1 - u * u) * Math.cos(a); pos[i * 3 + 1] = r * u; pos[i * 3 + 2] = r * Math.sqrt(1 - u * u) * Math.sin(a); }
+    const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    st.scene.add(new THREE.Points(geo, new THREE.PointsMaterial({ color: 0xdfe8ff, size: 0.22, transparent: true, opacity: 0.75, depthWrite: false })));
+  })();
+  /* A: 빛이 퍼지는 모습 */
+  const A = LIGHT3D.build(st, { D: 2, u: 1, n: 4 });
+  const labA = [];
+  labA.push(st.label('광원', 'Y', V(0, 0.55, 0)));
+  A.panels.forEach((P) => {
+    P.lbD = st.label(`${P.k} 배`, 'small', V(P.x, -P.side / 2 - 0.35, 0));
+    P.lbA = st.label(`${P.k * P.k} 칸`, 'small', V(P.x, P.side / 2 + 0.35, 0));
+    P.lbL = st.label('', 'Y', V(P.x - 0.05, P.side / 2 - 0.5, -P.side / 2 - 0.9));
+    labA.push(P.lbD, P.lbA, P.lbL);
+  });
+  /* B: 가로등 밤길 */
+  const B = STREET3D.build(st, { L: 7, eyeZ: 3 });
+  const labB = [];
+  B.lamps.forEach((l) => { l.lb = st.label(`${l.k}번 가로등 · 거리 ${l.k} 배`, 'small', () => l.lg.localToWorld(V(0, 7.1, 0))); labB.push(l.lb); });
+  labB.push(st.label('나', 'B', () => B.person.localToWorld(V(0, 2.4, 0))));
+  const frac = (n) => (n === 1 ? '1 배' : `1/${n} 배`);
+  function apply() {
+    const a = S.mode === 'A';
+    A.g.visible = a; B.g.visible = !a;
+    labA.forEach((l) => (l.show = a)); labB.forEach((l) => (l.show = !a));
+    A.setD(S.d);
+    A.panels.forEach((P) => { const on = P.k === S.d; P.lbL.show = a && on; P.lbL.set(`한 칸: ${frac(P.k * P.k)}`); P.lbD.el.classList.toggle('dim', !on); P.lbA.el.classList.toggle('dim', !on); });
+    B.select(S.lamp);
+  }
+  let home = -1, eye = S.eye;
+  function camera() {
+    if (S.home !== home) {
+      home = S.home;
+      B.person.visible = true;
+      if (S.mode === 'A') st.fit([A.src, ...A.panels.map((P) => P.p)], { dir: V(0.36, 0.38, 1), margin: 1.12, dur: 0.9, target: V(4.4, 0, 0) });
+      else st.flyTo(V(16, 11, -2), V(0, 2, -13), 1);
+    }
+    if (S.eye !== eye) { eye = S.eye; if (S.mode === 'B') { B.person.visible = false; st.flyTo(B.eye.clone(), V(2.8, 6.0, -10), 1.2); } }
+  }
+  S.on3d = () => { apply(); camera(); };
+  // 가로등을 눌러 고르기
+  (function tap() {
+    const el = st.renderer.domElement, ray = new THREE.Raycaster(), v = new THREE.Vector2(); let sx = 0, sy = 0, down = false;
+    el.addEventListener('pointerdown', (e) => { sx = e.clientX; sy = e.clientY; down = true; });
+    el.addEventListener('pointerup', (e) => {
+      if (!down) return; down = false; if (Math.hypot(e.clientX - sx, e.clientY - sy) > 8 || S.mode !== 'B') return;
+      const r = el.getBoundingClientRect(); v.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+      ray.setFromCamera(v, st.camera); const hit = ray.intersectObjects(B.lamps.map((l) => l.lg), true)[0];
+      if (hit) { let o = hit.object; while (o && o.userData.tap === undefined) o = o.parent; if (o) S.setLamp(o.userData.tap); }
+    });
+  })();
+  S.home++; S.on3d();
+  window.SM.ok3d = true;
+} catch (err) { window.SM_err('3D', err); }
+</script>
+</body>
+</html>

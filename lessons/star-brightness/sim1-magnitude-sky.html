@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>별의 밝기 – 등급 하늘 지도</title>
+<script>
+/* 문제 알림: 코드에 오류가 나면 화면 아래에 빨간 상자로 알려 줘요 (선생님 확인용) */
+(function () {
+  function box() {
+    var b = document.getElementById('smErr');
+    if (!b && document.body) {
+      b = document.createElement('div'); b.id = 'smErr';
+      b.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;background:#fdecea;color:#8a1f17;border:2px solid #d9534f;border-radius:12px;padding:10px 14px;font:600 14px/1.5 sans-serif;white-space:pre-wrap';
+      document.body.appendChild(b);
+    }
+    return b;
+  }
+  window.SM_err = function (where, err) {
+    var msg = '[' + where + '] ' + (err && err.message ? err.message : String(err));
+    var show = function () { var b = box(); if (b) b.textContent += (b.textContent ? '\n' : '') + msg; };
+    if (document.body) show(); else document.addEventListener('DOMContentLoaded', show);
+  };
+  window.addEventListener('error', function (e) { window.SM_err('스크립트', { message: e.message + ' (줄 ' + e.lineno + ')' }); });
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      var S = window.SM || {};
+      if (!S.okUI) window.SM_err('실행 안 됨', { message: '안내·버튼 코드가 실행되지 않았어요. 파일이 끝(</html>)까지 들어 있는지 확인해 주세요.' });
+      if (document.getElementById('fail3d') && !S.ok3d) { var f = document.getElementById('fail3d'); if (f) f.classList.add('show'); window.SM_err('3D 그림', { message: '3D 그림을 불러오지 못했어요. 인터넷 연결(cdn.jsdelivr.net)을 확인하고 새로고침해 주세요.' }); }
+    }, 9000);
+  });
+})();
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+
+  :root{--bg:#edf3f8;--card:#fff;--ink:#14263b;--ink2:#34495e;--muted:#5a6b7e;--line:#dde6ee;--accent:#0e63b3;--accent-soft:#e3effb;
+    --fab:#4b3fb5;--fab-soft:#ecebfb;--ok:#1f9d5c;--no:#d9534f;
+    --shadow:0 1px 2px rgba(20,38,59,.06),0 8px 24px rgba(20,38,59,.07);--ease:cubic-bezier(.2,.8,.2,1)}
+  *{box-sizing:border-box}html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:"Pretendard",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  button{font:inherit;color:inherit}
+  .app{max-width:1320px;margin:0 auto;padding:14px 16px 28px;display:flex;flex-direction:column;gap:12px}
+  .eyebrow{display:inline-flex;font-size:13px;font-weight:700;color:var(--fab);background:var(--fab-soft);padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(21px,2.4vw,28px);margin:6px 0 2px;letter-spacing:-.02em;word-break:keep-all}
+  .sub{margin:0;color:var(--muted);font-size:15px;word-break:keep-all}
+  .card{background:var(--card);border-radius:20px;box-shadow:var(--shadow);border:1px solid rgba(20,38,59,.04)}
+  .pad{padding:14px 16px}
+  .stage{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(330px,1fr);gap:14px;align-items:start}
+  .viewer{position:sticky;top:10px}
+  .flow{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px}
+  .fs{min-height:54px;border:0;border-radius:12px;background:#eef3f8;font-weight:800;font-size:13px;color:var(--muted);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.2;word-break:keep-all;padding:4px}
+  .fs b{font-size:15px}
+  .fs[aria-selected="true"]{background:var(--fab);color:#fff}
+  .fs.seen:not([aria-selected="true"]){background:#e5f5ec;color:#11703f}
+  .stepname{display:flex;align-items:center;gap:10px;margin:2px 0 6px}
+  .stepname .no{flex:none;width:40px;height:40px;border-radius:12px;background:var(--fab);color:#fff;display:grid;place-items:center;font-weight:900;font-size:19px}
+  .stepname h2{margin:0;font-size:21px;letter-spacing:-.01em;word-break:keep-all}
+  .stepname small{display:block;font-size:13px;color:var(--muted);font-weight:700}
+  .what{font-size:16px;line-height:1.75;color:var(--ink2);margin:0 0 10px;word-break:keep-all}
+  .phase{display:grid;gap:6px;margin:8px 0}
+  .ph{display:grid;grid-template-columns:28px 1fr;gap:8px;align-items:start;padding:7px 10px;border-radius:12px;background:#f7fafc;font-size:15px;line-height:1.55;color:var(--muted);word-break:keep-all;transition:background .3s,color .3s}
+  .ph i{font-style:normal;width:26px;height:26px;border-radius:8px;background:#dfe6ee;display:grid;place-items:center;font-weight:900;font-size:13px;color:#607285}
+  .ph.on{background:var(--fab-soft);color:var(--ink)}.ph.on i{background:var(--fab);color:#fff}
+  .ph.done{color:var(--ink2)}.ph.done i{background:#b9b2ee;color:#fff}
+  .box{border-radius:14px;padding:10px 12px;margin-top:8px;font-size:14.5px;line-height:1.65;word-break:keep-all}
+  .box b.t{display:block;font-size:13px;margin-bottom:2px}
+  .an{background:#fff8e6;border:1px solid #f3dc9a;color:#5b4300}
+  .fact{background:#eef6ff;border:1px solid #cfe2f6;color:#1d3f66}
+  .lnk{background:#ecf8f1;border:1px solid #c6e8d4;color:#0f5a36}
+  .src{display:block;font-size:12px;color:var(--muted);margin-top:3px}
+  .acts{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 0}
+  .btn{min-height:50px;border:0;border-radius:14px;padding:0 16px;font-weight:800;font-size:15.5px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;justify-content:center;word-break:keep-all}
+  .btn:active{transform:scale(.97)}
+  .btn.primary{background:var(--fab);color:#fff}.btn.ghost{background:#eef3f8;color:var(--ink2)}
+  .btn[aria-pressed="true"]{background:#14263b;color:#fff}
+  .btn:disabled{opacity:.4;cursor:default;transform:none}
+  .prog{height:6px;border-radius:3px;background:#e6edf4;margin-top:10px;overflow:hidden}
+  .prog i{display:block;height:100%;width:0;background:linear-gradient(90deg,#8a7ff0,var(--fab))}
+  .credit{text-align:center;font-size:13px;font-weight:700;color:#8495a8;letter-spacing:.02em;margin:6px 0 0}
+  /* ===== 3D 화면 공통 ===== */
+  :root{--Bc:#14a5d0;--Ic:#2fae4a;--Fc:#f0522a;--N:#d8433b;--S:#2f62c9;--P:#7d5ad6}
+  .viewer{position:relative;overflow:hidden;padding:0}
+  .gl-host{position:relative;width:100%;height:min(74vh,700px);min-height:380px;background:linear-gradient(#f6f9fc,#d6e3ef);touch-action:none}
+  .gl-host canvas.gl{display:block;width:100%;height:100%;outline:none}
+  .lbls{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+  .lb{position:absolute;left:0;top:0;white-space:nowrap;font-weight:800;font-size:14px;padding:3px 9px;border-radius:9px;background:rgba(255,255,255,.88);color:#34495e;box-shadow:0 2px 8px rgba(20,38,59,.14);will-change:transform}
+  .lb.small{font-size:12px;font-weight:700;color:#5a6b7e;background:rgba(255,255,255,.72);box-shadow:none}
+  .lb.B{background:var(--Bc);color:#fff}.lb.I{background:var(--Ic);color:#fff}.lb.F{background:var(--Fc);color:#fff;font-size:15px}
+  .lb.P{background:var(--P);color:#fff}
+  .lb.dim{opacity:.35}
+  .vt{position:absolute;display:flex;gap:6px;flex-wrap:wrap;z-index:3}
+  .vt.tl{left:10px;top:10px;max-width:calc(100% - 20px)}
+  .vt.tr{right:10px;top:10px;justify-content:flex-end}
+  .vt.bl{left:10px;bottom:10px;align-items:center}
+  .vb{min-height:44px;padding:0 12px;border-radius:12px;border:1px solid rgba(20,38,59,.12);background:rgba(255,255,255,.9);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);font-weight:800;font-size:14px;color:#34495e;cursor:pointer;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 10px rgba(20,38,59,.08)}
+  .vb:active{transform:scale(.96)}
+  .vb .dot{width:12px;height:12px;border-radius:50%;flex:none}
+  .vb[aria-pressed="false"]{opacity:.62}
+  .vb[aria-pressed="false"] .dot{background:#c2ccd6!important}
+  .vb.sel{background:#14263b;color:#fff;border-color:#14263b}
+  .hint{font-size:12.5px;font-weight:700;color:#5a6b7e;background:rgba(255,255,255,.78);border-radius:10px;padding:6px 10px;word-break:keep-all}
+  .inset{position:absolute;z-index:2;border-radius:18px;border:2px solid rgba(255,255,255,.95);box-shadow:0 10px 30px rgba(20,38,59,.22),inset 0 0 0 1px rgba(20,38,59,.08);pointer-events:none;display:none}
+  .inset.on{display:block}
+  .inset .it{position:absolute;left:8px;top:8px;font-size:12.5px;font-weight:900;color:#14263b;background:rgba(255,255,255,.9);border-radius:8px;padding:3px 8px}
+  .inset .ic{position:absolute;left:6px;right:6px;bottom:6px;display:flex;flex-wrap:wrap;gap:4px;justify-content:center}
+  .inset .ic span{font-size:11.5px;font-weight:800;color:#fff;border-radius:7px;padding:2px 7px;white-space:nowrap}
+  .fail3d{position:absolute;inset:0;display:none;place-items:center;text-align:center;padding:24px;font-size:16px;font-weight:700;color:#7a2a22;line-height:1.7;word-break:keep-all;background:#fff4f2}
+  .fail3d.show{display:grid}
+  .model{font-size:13px;color:var(--muted);text-align:right;margin:0;word-break:keep-all}
+  @media (max-width:900px){.gl-host{height:min(56vh,620px)}}
+  .zoombadge{position:absolute;right:10px;top:62px;z-index:3;font-size:13px;font-weight:800;color:#fff;background:rgba(75,63,181,.9);border-radius:10px;padding:6px 10px;display:none;word-break:keep-all;max-width:60%}
+  .zoombadge.on{display:block}
+  @media (max-width:900px){.stage{grid-template-columns:1fr}.viewer{position:relative;top:0}}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+  /* ===== 이 수업 전용 ===== */
+  :root{--fab:#3550b8;--fab-soft:#e8edfb;--gold:#f2c14e}
+  .eyebrow{color:#2a3f94;background:#e6ebfb}
+  .gl-host{background:#050a17;overflow:hidden}
+  #skymap{position:absolute;inset:0;touch-action:none}
+  #skymap canvas{display:block}
+  #ladder{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .vb{background:rgba(16,26,52,.78);color:#e6ecfa;border-color:rgba(255,255,255,.18)}
+  .vb.sel{background:#fff;color:#14263b;border-color:#fff}
+  .vb.zm{width:48px;justify-content:center;font-size:22px;padding:0}
+  .hint{background:rgba(16,26,52,.72);color:#cdd7ee}
+  .legend{position:absolute;right:10px;bottom:10px;z-index:3;display:flex;align-items:center;gap:8px;background:rgba(16,26,52,.72);color:#dfe6f6;border-radius:12px;padding:6px 10px;font-size:12.5px;font-weight:800}
+  .legend canvas{width:120px;height:26px;display:block}
+  .loading{position:absolute;inset:0;display:grid;place-items:center;color:#cdd7ee;font-weight:800;font-size:16px;pointer-events:none;z-index:2}
+  .modes{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px}
+  .md{min-height:54px;border:0;border-radius:14px;background:#eef3f8;font-weight:800;font-size:15.5px;color:var(--muted);cursor:pointer;word-break:keep-all}
+  .md[aria-selected="true"]{background:var(--fab);color:#fff}
+  .seg{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:8px 0}
+  .seg button{min-height:56px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15px;cursor:pointer;word-break:keep-all;padding:4px 6px;line-height:1.25}
+  .seg button small{display:block;font-size:12.5px;font-weight:700;color:var(--muted)}
+  .seg button[aria-pressed="true"]{border-color:var(--fab);background:var(--fab-soft);color:#22378a}
+  .rng{display:flex;align-items:center;gap:12px;margin:10px 0 4px;font-weight:800;font-size:15px;color:var(--ink2)}
+  .rng label{flex:none;min-width:84px;word-break:keep-all}
+  .rng b{flex:none;min-width:78px;text-align:right;color:#22378a;font-size:14.5px}
+  .rng input{flex:1;min-width:120px;height:44px;-webkit-appearance:none;appearance:none;background:transparent}
+  .rng input::-webkit-slider-runnable-track{height:10px;border-radius:99px;background:linear-gradient(90deg,#fff6d6,#8ea2d8 60%,#26346b)}
+  .rng input::-webkit-slider-thumb{-webkit-appearance:none;width:36px;height:36px;border-radius:50%;background:#fff;border:3px solid var(--fab);margin-top:-13px;box-shadow:0 2px 8px rgba(20,38,59,.25)}
+  .rng input::-moz-range-track{height:10px;border-radius:99px;background:linear-gradient(90deg,#fff6d6,#8ea2d8 60%,#26346b)}
+  .rng input::-moz-range-thumb{width:32px;height:32px;border-radius:50%;background:#fff;border:3px solid var(--fab)}
+  .stat{font-size:14px;color:var(--muted);font-weight:700;margin:2px 0 8px;word-break:keep-all}
+  .pick{border-radius:16px;padding:12px 14px;background:linear-gradient(135deg,#101a36,#1d2c5c);color:#e9eefb;margin:8px 0}
+  .pick .nm{font-size:13px;font-weight:800;color:#a9b8e6}
+  .pick .mv{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:2px 0 8px}
+  .pick .mv b{font-size:30px;letter-spacing:-.02em;color:#fff}
+  .pick .mv span{font-size:14.5px;font-weight:700;color:#cdd7ee;word-break:keep-all}
+  .scale{position:relative;height:56px;margin:4px 4px 0}
+  .scale .tr{position:absolute;left:0;right:0;top:18px;height:12px;border-radius:99px;background:linear-gradient(90deg,#fff3c4 0%,#c9d3ef 55%,#4b5c94 73%,#26315e 100%)}
+  .scale .eye{position:absolute;top:12px;height:24px;border-right:2px dashed #ffd56b}
+  .scale .tk{position:absolute;top:34px;transform:translateX(-50%);font-size:11.5px;font-weight:800;color:#a9b8e6}
+  .scale .mk{position:absolute;top:8px;width:4px;height:32px;margin-left:-2px;border-radius:2px;background:#ffd56b;box-shadow:0 0 10px #ffd56b;transition:left .4s var(--ease)}
+  .scale .ends{position:absolute;top:-2px;left:0;right:0;display:flex;justify-content:space-between;font-size:11.5px;font-weight:800;color:#a9b8e6}
+  .pick .vis{font-size:14px;font-weight:700;color:#ffe08a;margin-top:2px;word-break:keep-all}
+  .why{margin-top:10px;display:grid;gap:6px}
+  .why h3{margin:6px 0 2px;font-size:16px}
+  .why .w{display:grid;grid-template-columns:28px 1fr;gap:8px;align-items:start;padding:8px 10px;border-radius:12px;background:#f7fafc;font-size:14.5px;line-height:1.6;color:var(--ink2);word-break:keep-all}
+  .why .w i{font-style:normal;width:26px;height:26px;border-radius:8px;background:var(--fab);color:#fff;display:grid;place-items:center;font-weight:900;font-size:13px}
+  .stepname .no{background:var(--fab)}
+  .cmp{border-radius:16px;padding:12px 14px;background:#f4f7ff;border:1px solid #d8e1f8;margin:8px 0;font-size:15px;line-height:1.7;color:#1d2f66;word-break:keep-all;min-height:76px}
+  .cmp b.big{font-size:22px;color:#22378a}
+  .pair{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}
+  .pair button{min-height:48px;min-width:60px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:900;font-size:15px;cursor:pointer}
+  .pair button.a{border-color:#e0a400;background:#fff6d8;color:#7a5600}
+  .pair button.b{border-color:var(--fab);background:var(--fab-soft);color:#22378a}
+  [hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <span class="eyebrow">별의 밝기 · 시뮬레이션 ①</span>
+    <h1>등급 하늘 지도</h1>
+    <p class="sub">실제 별 목록으로 그린 밤하늘이에요. 별을 눌러 겉보기 등급을 확인하고, 맨눈과 천체 망원경으로 보이는 별을 비교해 보세요.</p>
+  </header>
+  <div class="stage">
+    <section class="card viewer">
+      <div class="gl-host" id="host">
+        <div id="skymap" role="img" aria-label="겨울철 밤하늘 지도. 오리온자리와 큰개자리의 별이 밝기에 따라 다른 크기로 빛난다."></div>
+        <canvas id="ladder" hidden aria-label="1 등급부터 6 등급까지의 별을 나란히 놓은 그림. 한 등급마다 약 2.5 배, 1 등급과 6 등급은 약 100 배 밝기 차이가 난다."></canvas>
+        <div class="loading" id="loading">밤하늘을 불러오는 중…</div>
+        <div class="vt tl" id="goTo" role="group" aria-label="하늘의 한 곳으로 가기">
+          <button class="vb sel" type="button" data-go="cma">큰개자리</button>
+          <button class="vb" type="button" data-go="ori">오리온자리</button>
+          <button class="vb" type="button" data-go="uma">북두칠성</button>
+        </div>
+        <div class="vt tr" id="zoomBox"><button class="vb zm" type="button" id="zIn" aria-label="확대">+</button><button class="vb zm" type="button" id="zOut" aria-label="축소">−</button></div>
+        <div class="vt bl"><span class="hint" id="hint">별을 누르면 등급이 나와요 · 끌어서 옮기기 · 두 손가락 확대</span></div>
+        <div class="legend" id="legend"><span>밝다</span><canvas id="lgCv" width="240" height="52"></canvas><span>어둡다</span></div>
+        <div class="fail3d" id="failSky">하늘 지도를 불러오지 못했어요.<br>새로고침해 주세요. (오른쪽 설명은 그대로 읽을 수 있어요)</div>
+      </div>
+    </section>
+    <section class="card pad">
+      <div class="modes" role="tablist">
+        <button class="md" type="button" role="tab" id="mA" aria-selected="true">하늘 지도</button>
+        <button class="md" type="button" role="tab" id="mB" aria-selected="false">밝기 계단</button>
+      </div>
+      <div id="paneA">
+        <div class="stepname"><span class="no">A</span><div><h2>지구에서 보이는 밝기</h2><small>지구에서 관측한 별의 상대적인 밝기를 숫자로 = 겉보기 등급</small></div></div>
+        <div class="seg" role="group" aria-label="보는 방법">
+          <button type="button" id="vEye" aria-pressed="true">맨눈으로 보기<small>6 등급까지</small></button>
+          <button type="button" id="vTel" aria-pressed="false">천체 망원경으로 보기<small>7, 8 등급까지</small></button>
+        </div>
+        <div class="rng"><label for="rLim">보이는 별</label><input type="range" id="rLim" min="-1" max="6" step="0.5" value="6"><b id="vLim">6 등급까지</b></div>
+        <p class="stat" id="stat">지도에 그린 별을 세고 있어요.</p>
+        <div class="pick" id="pick">
+          <div class="nm" id="pName">별을 하나 눌러 보세요</div>
+          <div class="mv"><b id="pMag">?</b><span id="pWhat">하늘 지도의 별을 누르면 그 별의 겉보기 등급이 나와요.</span></div>
+          <div class="scale" id="scale"></div>
+          <div class="vis" id="pVis"></div>
+        </div>
+        <div class="why">
+          <h3>왜 그럴까?</h3>
+          <div class="w"><i>1</i><span>히파르코스는 맨눈으로 가장 밝게 보이는 별을 <b>1 등급</b>, 가장 어둡게 보이는 별을 <b>6 등급</b>으로 나누었어요. <b>숫자가 클수록 어두운 별</b>이에요.</span></div>
+          <div class="w"><i>2</i><span>슬라이더를 1 등급 쪽으로 옮기면 밝은 별만 남아요. 별자리 모양을 알아볼 수 있는 별은 대부분 밝은 별이에요.</span></div>
+          <div class="w"><i>3</i><span>천체 망원경으로 보면 맨눈으로 볼 수 없던 어두운 별이 나타나요. 6 등급보다 어두운 별은 <b>7, 8, 9 …… 등급</b>으로 나타내요.</span></div>
+          <div class="w"><i>4</i><span>1 등급보다 밝은 별은 <b>0, −1, −2 …… 등급</b>이에요. 시리우스(−1.5 등급)를 눌러 확인해 보세요.</span></div>
+        </div>
+        <div class="box an"><b class="t">자료 안내</b>별의 위치와 등급은 오픈 소스 하늘 지도 d3-celestial(BSD-3 라이선스)의 별 목록을 줄여서 썼어요. 시리우스와 미르잠은 교과서 값(−1.5 등급, 2.0 등급)으로 나타냈어요. 별은 모두 흰색으로 그렸어요.</div>
+      </div>
+      <div id="paneB" hidden>
+        <div class="stepname"><span class="no">B</span><div><h2>한 등급 차이는 약 2.5 배</h2><small>1 등급인 별은 6 등급인 별보다 100 배 더 밝아요</small></div></div>
+        <p class="what">별 두 개를 차례로 눌러 보세요. 아래 상자에 쌓이는 빛 알갱이는 같은 시간 동안 우리 눈에 들어오는 빛의 양을 나타낸 모형이에요.</p>
+        <div class="pair" id="pair" role="group" aria-label="비교할 별"></div>
+        <div class="cmp" id="cmp">먼저 밝은 별(작은 숫자)을 누르고, 다음에 어두운 별을 눌러 보세요.</div>
+        <div class="acts"><button class="btn ghost" type="button" id="b16">1 등급과 6 등급 비교</button><button class="btn ghost" type="button" id="bClr">다시 고르기</button></div>
+        <div class="why">
+          <h3>왜 그럴까?</h3>
+          <div class="w"><i>1</i><span>19세기에 빛의 밝기를 재는 <b>조도계</b>가 만들어지자 별의 밝기를 더 정확하게 구분할 수 있게 되었어요.</span></div>
+          <div class="w"><i>2</i><span>재어 보니 등급이 하나 작아질 때마다 별은 <b>약 2.5 배</b>씩 밝았어요.</span></div>
+          <div class="w"><i>3</i><span>6 등급에서 1 등급까지는 다섯 계단이에요. 약 2.5 배씩 다섯 번 밝아지면 <b>약 100 배</b>가 돼요. 상자 속 빛 알갱이 수를 비교해 보세요.</span></div>
+        </div>
+      </div>
+    </section>
+  </div>
+  <p class="credit">별의 밝기 · 겉보기 등급</p>
+</div>
+<script>
+window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
+  reduce: !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches),
+  mode: 'A', tel: false, lim: 6, pick: null, a: null, b: null };
+</script>
+<script>
+/* ===== 별 그리기 도구 (빛 번짐 별, 우주 배경) =====
+   별은 모두 흰색으로 그려요(별의 색은 다음 차시 내용). 등급 숫자가 작을수록 크고 밝게 그려요.
+   크기는 '눈에 보이는 느낌'을 위한 모형이라 실제 밝기 비율과 같지 않아요. */
+window.GLOW = (function () {
+  var cache = {};
+  function sprite(tint) {
+    var key = tint || 'w';
+    if (cache[key]) return cache[key];
+    var cv = document.createElement('canvas'); cv.width = cv.height = 128;
+    var c = cv.getContext('2d'), g = c.createRadialGradient(64, 64, 0, 64, 64, 64);
+    var t = tint || '226,236,255';
+    g.addColorStop(0, 'rgba(255,255,255,1)');
+    g.addColorStop(0.08, 'rgba(255,255,255,.97)');
+    g.addColorStop(0.16, 'rgba(' + t + ',.78)');
+    g.addColorStop(0.32, 'rgba(' + t + ',.24)');
+    g.addColorStop(0.62, 'rgba(' + t + ',.06)');
+    g.addColorStop(1, 'rgba(' + t + ',0)');
+    c.fillStyle = g; c.fillRect(0, 0, 128, 128);
+    cache[key] = cv; return cv;
+  }
+  /* 빛 번짐 별 하나. r: 번짐 반지름(px), a: 진하기 */
+  function star(c, x, y, r, a, spikes) {
+    c.save(); c.globalCompositeOperation = 'lighter'; c.globalAlpha = a == null ? 1 : Math.max(0, Math.min(1, a));
+    c.drawImage(sprite(), x - r, y - r, r * 2, r * 2);
+    if (spikes !== false && r > 11) {
+      var L = r * 2.3;
+      [[1, 0], [0, 1]].forEach(function (d) {
+        var g = c.createLinearGradient(x - d[0] * L, y - d[1] * L, x + d[0] * L, y + d[1] * L);
+        g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(0.5, 'rgba(235,242,255,.7)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+        c.strokeStyle = g; c.lineWidth = Math.max(1, r * 0.06);
+        c.beginPath(); c.moveTo(x - d[0] * L, y - d[1] * L); c.lineTo(x + d[0] * L, y + d[1] * L); c.stroke();
+      });
+    }
+    c.restore();
+  }
+  /* 등급 → 번짐 반지름. 6 등급 = base, 한 등급 밝아질 때마다 조금씩 커져요 */
+  function magR(m, base) {
+    var s = Math.pow(10, -0.4 * (m - 6));
+    return (base || 1.3) * Math.pow(s, 0.3);
+  }
+  /* 등급에 맞춰 별 하나 그리기 (어두운 별은 작은 점) */
+  function magStar(c, x, y, m, k, alpha) {
+    var r = magR(m, k);
+    var a = alpha == null ? 1 : alpha;
+    if (r < 1.6) {
+      c.globalAlpha = Math.max(0.12, Math.min(1, 0.3 + r * 0.42)) * a;
+      c.fillStyle = '#eef3ff'; var d = Math.max(1, r * 1.15); c.fillRect(x - d / 2, y - d / 2, d, d);
+      c.globalAlpha = 1;
+    } else star(c, x, y, r * 3.1, Math.min(1, 0.55 + r * 0.09) * a);
+    return r;
+  }
+  function rng(seed) { var s = seed >>> 0; return function () { s += 0x6D2B79F5; var t = s; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+  function space(c, w, h, seed) {
+    var g = c.createLinearGradient(0, 0, 0, h);
+    g.addColorStop(0, '#050a17'); g.addColorStop(0.6, '#0a1327'); g.addColorStop(1, '#0f1931');
+    c.fillStyle = g; c.fillRect(0, 0, w, h);
+    var R = rng(seed || 3);
+    for (var i = 0; i < 4; i++) {
+      var x = R() * w, y = R() * h * 0.8, r = (0.25 + R() * 0.35) * Math.max(w, h);
+      var col = i % 2 ? '86,72,150' : '40,86,160';
+      var n = c.createRadialGradient(x, y, 0, x, y, r);
+      n.addColorStop(0, 'rgba(' + col + ',.15)'); n.addColorStop(1, 'rgba(' + col + ',0)');
+      c.fillStyle = n; c.fillRect(0, 0, w, h);
+    }
+  }
+  function fit(cv) {
+    var r = cv.getBoundingClientRect(), dpr = Math.min(2, window.devicePixelRatio || 1);
+    var w = Math.max(10, r.width), h = Math.max(10, r.height), W = Math.round(w * dpr), H = Math.round(h * dpr);
+    if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
+    var c = cv.getContext('2d'); c.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { c: c, w: w, h: h };
+  }
+  /* 실제 별 자료(d3-celestial에서 줄인 stars6.json)를 한 번만 불러와요 */
+  var starsP = null;
+  function stars6() {
+    if (!starsP) starsP = fetch('sky/data/stars6.json').then(function (r) { if (!r.ok) throw new Error('별 자료 ' + r.status); return r.json(); });
+    return starsP;
+  }
+  return { sprite: sprite, star: star, magR: magR, magStar: magStar, rng: rng, space: space, fit: fit, stars6: stars6 };
+})();
+</script>
+<script src="sky/d3.min.js"></script>
+<script src="sky/d3.geo.projection.min.js"></script>
+<script src="sky/celestial.min.js"></script>
+<script>
+/* ===== 블록 1: 안내·버튼 ===== */
+(() => {
+  'use strict';
+  try {
+    const { $, $$ } = window.SM, S = window.SM;
+    const setMode = (m) => {
+      S.mode = m;
+      $('#mA').setAttribute('aria-selected', String(m === 'A')); $('#mB').setAttribute('aria-selected', String(m === 'B'));
+      $('#paneA').hidden = m !== 'A'; $('#paneB').hidden = m !== 'B';
+      $('#skymap').style.visibility = m === 'A' ? '' : 'hidden'; $('#ladder').hidden = m !== 'B';
+      ['#goTo', '#zoomBox', '#legend'].forEach((s) => ($(s).hidden = m !== 'A'));
+      $('#hint').textContent = m === 'A' ? '별을 누르면 등급이 나와요 · 끌어서 옮기기 · 두 손가락 확대' : '별을 두 개 눌러 밝기를 비교해 보세요';
+      if (m === 'B' && S.ladderStart) S.ladderStart();
+    };
+    $('#mA').addEventListener('click', () => setMode('A'));
+    $('#mB').addEventListener('click', () => setMode('B'));
+    const q = new URLSearchParams(location.search);
+    S.setMode = setMode;
+    /* 맨눈 / 천체 망원경 */
+    const setTel = (t) => {
+      S.tel = t; $('#vEye').setAttribute('aria-pressed', String(!t)); $('#vTel').setAttribute('aria-pressed', String(t));
+      const r = $('#rLim'); r.max = t ? 8 : 6; S.lim = t ? 8 : 6; r.value = S.lim; paintLim();
+      if (S.skyTel) S.skyTel(t);
+    };
+    $('#vEye').addEventListener('click', () => setTel(false));
+    $('#vTel').addEventListener('click', () => setTel(true));
+    const paintLim = () => { $('#vLim').textContent = (S.lim < 0 ? '−' + Math.abs(S.lim) : S.lim) + ' 등급까지'; if (S.skyRedraw) S.skyRedraw(); };
+    $('#rLim').addEventListener('input', (e) => { S.lim = +e.target.value; paintLim(); });
+    /* 고른 별 정보 */
+    const fmt = (m) => (m < 0 ? '−' : '') + Math.abs(m).toFixed(1);
+    const LO = -2, HI = 9, pos = (m) => ((Math.max(LO, Math.min(HI, m)) - LO) / (HI - LO)) * 100;
+    $('#scale').innerHTML = '<div class="ends"><span>밝다</span><span>어둡다</span></div><div class="tr"></div>' +
+      `<div class="eye" style="left:0;width:${pos(6)}%"></div>` +
+      Array.from({ length: HI - LO + 1 }, (_, i) => LO + i).map((v) => `<span class="tk" style="left:${pos(v)}%">${v < 0 ? '−' + Math.abs(v) : v}</span>`).join('') +
+      '<div class="mk" id="mk" style="left:0;opacity:0"></div>';
+    S.showPick = (p) => {
+      S.pick = p;
+      if (!p) return;
+      $('#pName').textContent = p.name ? p.name : '이름이 붙지 않은 별';
+      $('#pMag').textContent = fmt(p.m) + ' 등급';
+      const near = Math.round(p.m);
+      $('#pWhat').textContent = p.m < 1 ? '1 등급보다 밝아서 0이나 음수(−)로 나타내요.' : p.m <= 6 ? `맨눈으로 보이는 별이에요. ${near} 등급 근처예요.` : '맨눈으로는 볼 수 없는 어두운 별이에요.';
+      const mk = $('#mk'); mk.style.left = pos(p.m) + '%'; mk.style.opacity = 1;
+      $('#pVis').textContent = p.m <= 6 ? '노란 점선 안쪽(6 등급까지): 맨눈으로 보여요' : '노란 점선 바깥(6 등급보다 어두움): 천체 망원경으로 보여요';
+    };
+    if (q.get('mode') === 'B') setMode('B');
+    if (q.get('tel') === '1') setTel(true);
+    window.SM.okUI = true;
+  } catch (err) { window.SM_err('안내·버튼', err); }
+})();
+</script>
+<script>
+/* ===== 블록 2: 하늘 지도 (d3-celestial + 빛 번짐 별) ===== */
+(() => {
+  'use strict';
+  try {
+    const { $, $$ } = window.SM, S = window.SM, G = window.GLOW;
+    if (!window.Celestial || !window.d3) throw new Error('하늘 지도 라이브러리(sky/celestial.min.js)를 불러오지 못했어요');
+    const host = $('#host'), map = $('#skymap');
+    const PLACES = { cma: [100, -20], ori: [84, 2], uma: [178, 52] };
+    const TEXTBOOK = { 0: -1.5, 47: 2.0 }; // 시리우스, 미르잠은 교과서 값
+    let cat = [], names = {}, deep = null, deepLoading = false, shown = [], ready = false;
+    const D2R = Math.PI / 180;
+    function addStars(arr, from) {
+      for (let i = 0; i < arr.length; i += 3) {
+        const lon = arr[i] * D2R, lat = arr[i + 1] * D2R, c = Math.cos(lat);
+        const k = (from + i / 3) | 0;
+        cat.push({ lon: arr[i], lat: arr[i + 1], m: TEXTBOOK[k] !== undefined && from === 0 ? TEXTBOOK[k] : arr[i + 2], x: c * Math.cos(lon), y: c * Math.sin(lon), z: Math.sin(lat), name: from === 0 ? names[k] : null });
+      }
+    }
+    /* 화면 크기에 맞춰 지도 만들기 (가로·세로 비율이 바뀌면 다시 만들어요) */
+    let lastRatio = 0, center = PLACES.cma.slice(), zoom0 = 2.6;
+    function config(W, H) {
+      return {
+        width: W, projection: 'stereographic', projectionRatio: W / H, transform: 'equatorial', center: [center[0], center[1], 0], follow: 'center', geopos: null, location: false,
+        zoomlevel: zoom0, zoomextend: 7, adaptable: true, interactive: true, form: false, controls: false, container: 'skymap', datapath: 'sky/data/',
+        lang: '', culture: 'iau', disableAnimations: !!S.reduce,
+        stars: { show: false, data: 'none.json', limit: 6 },
+        dsos: { show: false, data: 'none.json' },
+        planets: { show: false },
+        constellations: { names: true, namesType: 'ko', nameStyle: { fill: 'rgba(168,186,232,.85)', align: 'center', baseline: 'middle', font: ['700 15px Pretendard, sans-serif', '700 13px Pretendard, sans-serif', '600 12px Pretendard, sans-serif'] },
+          lines: true, lineStyle: { stroke: '#8fa6dd', width: 1.2, opacity: 0.38 }, bounds: false },
+        mw: { show: true, style: { fill: '#9fb4ff', opacity: 0.07 } },
+        lines: { graticule: { show: false, lon: { pos: [] }, lat: { pos: [] } }, equatorial: { show: false }, ecliptic: { show: false }, galactic: { show: false }, supergalactic: { show: false } },
+        background: { fill: '#060c1c', opacity: 1, stroke: '#060c1c', width: 0 },
+        horizon: { show: false }, daylight: { show: false },
+      };
+    }
+    function build() {
+      const r = host.getBoundingClientRect(); if (r.width < 50 || r.height < 50) return;
+      lastRatio = r.width / r.height;
+      Celestial.display(config(Math.round(r.width), Math.round(r.height)));
+      Celestial.mapProjection.rotate([-center[0], -center[1], 0]); // 현재 시각의 하늘(천정)로 돌아가지 않게 고정
+    }
+    /* 별 그리기: d3-celestial이 별자리 선·이름·은하수를 그린 뒤 이 함수가 별을 그려요 */
+    let scale0 = 0;
+    function drawStars() {
+      if (!ready) return;
+      const c = Celestial.context, P = Celestial.mapProjection; if (!c || !P) return;
+      const rot = P.rotate(), cl = -rot[0] * D2R, cb = -rot[1] * D2R, cc = Math.cos(cb);
+      const vx = cc * Math.cos(cl), vy = cc * Math.sin(cl), vz = Math.sin(cb);
+      if (!scale0) scale0 = P.scale();
+      const zk = Math.pow(P.scale() / scale0, 0.35);
+      const m = Celestial.metrics(), W = m.width + 40, H = W / lastRatio + 40;
+      shown = [];
+      const lim = S.lim;
+      for (let i = 0; i < cat.length; i++) {
+        const s = cat[i]; if (s.m > lim) continue;
+        if (s.x * vx + s.y * vy + s.z * vz < 0.12) continue;
+        const p = P([s.lon, s.lat]); if (!p || p[0] < -20 || p[1] < -20 || p[0] > W || p[1] > H) continue;
+        const faint = s.m > 6;
+        G.magStar(c, p[0], p[1], s.m, (faint ? 1.15 : 1.3) * zk, faint ? 0.85 : 1);
+        shown.push([p[0], p[1], i]);
+      }
+      // 고른 별 표시
+      if (S.pick && S.pick.i !== undefined) {
+        const s = cat[S.pick.i], p = P([s.lon, s.lat]);
+        if (p && s.x * vx + s.y * vy + s.z * vz > 0.12) {
+          c.save(); c.globalAlpha = 1; c.strokeStyle = '#ffd56b'; c.lineWidth = 2; c.setLineDash([4, 4]);
+          c.beginPath(); c.arc(p[0], p[1], Math.max(12, G.magR(s.m, 1.3 * zk) * 3.4), 0, Math.PI * 2); c.stroke(); c.restore();
+        }
+      }
+      // 교과서에 나온 두 별 이름은 늘 보여 주기
+      c.save(); c.font = '800 14px Pretendard, sans-serif'; c.textAlign = 'left'; c.textBaseline = 'middle';
+      shown.forEach(([x, y, i]) => { const s = cat[i]; if (s.name && (s.m < 1.0 || i === 47 || i === 0)) { c.globalAlpha = 0.95; c.fillStyle = '#ffe6a8'; c.fillText(s.name, x + 12, i === 47 ? y + 14 : y - 12); } });
+      c.restore();
+      $('#stat').textContent = `지금 지도에 그린 별: ${shown.length.toLocaleString()}개`;
+    }
+    S.skyRedraw = () => { try { if (ready) Celestial.redraw(); } catch (e) {} };
+    S.skyTel = (t) => {
+      if (!t || deep || deepLoading) { S.skyRedraw(); return; }
+      deepLoading = true; $('#loading').textContent = '어두운 별 자료를 불러오는 중…'; $('#loading').hidden = false;
+      fetch('sky/data/stars8.json').then((r) => r.json()).then((j) => { deep = j; addStars(j.s, 1e6); $('#loading').hidden = true; S.skyRedraw(); })
+        .catch((e) => { $('#loading').textContent = '어두운 별 자료를 불러오지 못했어요'; window.SM_err('천체 망원경 별 자료', e); });
+    };
+    /* 별 누르기 */
+    let sx = 0, sy = 0, down = false;
+    map.addEventListener('pointerdown', (e) => { sx = e.clientX; sy = e.clientY; down = true; });
+    map.addEventListener('pointerup', (e) => {
+      if (!down) return; down = false;
+      if (Math.hypot(e.clientX - sx, e.clientY - sy) > 8) return;
+      const r = map.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+      let best = null, bd = 1e9;
+      shown.forEach(([px, py, i]) => { const d = Math.hypot(px - x, py - y) - Math.max(0, 6 - cat[i].m) * 2.5; if (Math.hypot(px - x, py - y) < 30 && d < bd) { bd = d; best = i; } });
+      if (best === null) return;
+      const s = cat[best]; S.showPick({ i: best, m: s.m, name: s.name }); S.skyRedraw();
+    });
+    /* 가기 · 확대 */
+    $$('#goTo [data-go]').forEach((b) => b.addEventListener('click', () => {
+      $$('#goTo .vb').forEach((o) => o.classList.toggle('sel', o === b));
+      center = PLACES[b.dataset.go].slice();
+      Celestial.rotate({ center: [center[0], center[1], 0] });
+    }));
+    $('#zIn').addEventListener('click', () => Celestial.zoomBy(1.4));
+    $('#zOut').addEventListener('click', () => Celestial.zoomBy(1 / 1.4));
+    /* 범례 */
+    (function legend() {
+      const cv = $('#lgCv'), c = cv.getContext('2d'); c.scale(2, 2); c.fillStyle = '#0c1430'; c.fillRect(0, 0, 120, 26);
+      [1, 2, 3, 4, 5, 6].forEach((m, i) => G.magStar(c, 10 + i * 20, 13, m, 1.3, 1));
+    })();
+    /* 자료 불러오기 → 지도 만들기 */
+    G.stars6().then((j) => {
+      names = j.n || {}; addStars(j.s, 0);
+      Celestial.add({ type: 'raw', callback: () => {}, redraw: drawStars });
+      build(); ready = true; $('#loading').hidden = true; S.skyRedraw();
+      // 처음에는 시리우스를 골라 둬요
+      const si = 0; S.showPick({ i: si, m: cat[si].m, name: cat[si].name }); S.skyRedraw();
+      // 가로↔세로가 바뀌면 다시 만들기, 폭만 바뀌면 크기만
+      let rq = 0;
+      new ResizeObserver(() => { cancelAnimationFrame(rq); rq = requestAnimationFrame(() => {
+        if (S.mode !== 'A') return;
+        const r = host.getBoundingClientRect(); if (r.width < 50) return;
+        if (Math.abs(r.width / r.height - lastRatio) > 0.02) { const rot = Celestial.mapProjection.rotate(); center = [-rot[0], -rot[1]]; zoom0 = Celestial.zoomBy() || zoom0; scale0 = 0; build(); }
+      }); }).observe(host);
+      window.SM.ok3d = true;
+    }).catch((e) => { $('#failSky').classList.add('show'); $('#loading').hidden = true; window.SM_err('하늘 지도', e); });
+  } catch (err) { document.getElementById('failSky').classList.add('show'); window.SM_err('하늘 지도', err); }
+})();
+</script>
+<script>
+/* ===== 블록 3: 밝기 계단 (1~6 등급, 빛 알갱이 상자) ===== */
+(() => {
+  'use strict';
+  try {
+    const { $, $$ } = window.SM, S = window.SM, G = window.GLOW;
+    const cv = $('#ladder');
+    const MAGS = [1, 2, 3, 4, 5, 6];
+    // 상자에 쌓이는 빛 알갱이 수(그림용): 6 등급 = 1, 1 등급 = 100, 사이는 약 2.5 배씩
+    const Q = MAGS.map((m) => (m === 1 ? 100 : m === 6 ? 1 : 100 / Math.pow(2.5, m - 1)));
+    const filled = MAGS.map(() => 0), parts = [];
+    let running = false, last = 0, t0 = 0;
+    $('#pair').innerHTML = MAGS.map((m) => `<button type="button" data-m="${m}">${m} 등급</button>`).join('');
+    function pick(m) {
+      if (S.a === null || (S.a !== null && S.b !== null)) { S.a = m; S.b = null; }
+      else if (m !== S.a) S.b = m;
+      paint();
+    }
+    $$('#pair button').forEach((b) => b.addEventListener('click', () => pick(+b.dataset.m)));
+    $('#b16').addEventListener('click', () => { S.a = 1; S.b = 6; paint(); });
+    $('#bClr').addEventListener('click', () => { S.a = null; S.b = null; paint(); });
+    function paint() {
+      $$('#pair button').forEach((b) => { const m = +b.dataset.m; b.className = m === S.a ? 'a' : m === S.b ? 'b' : ''; });
+      const el = $('#cmp');
+      if (S.a === null) { el.innerHTML = '먼저 별 하나를 누르고, 다음에 다른 별을 눌러 보세요.'; return; }
+      if (S.b === null) { el.innerHTML = `<b>${S.a} 등급</b>을 골랐어요. 비교할 별을 하나 더 눌러 보세요.`; return; }
+      const br = Math.min(S.a, S.b), dk = Math.max(S.a, S.b), n = dk - br;
+      let msg = `<b>${br} 등급</b>인 별이 <b>${dk} 등급</b>인 별보다 밝아요. 등급 차이는 ${n}이에요.<br>`;
+      if (n === 1) msg += '한 등급 차이 → <b class="big">약 2.5 배</b> 밝아요.';
+      else if (n === 5) msg += '다섯 등급 차이 → 약 2.5 배씩 다섯 번 → <b class="big">약 100 배</b> 밝아요.';
+      else msg += `약 2.5 배씩 <b>${n}번</b> 밝아져요. 상자 속 빛 알갱이 수를 비교해 보세요.`;
+      el.innerHTML = msg;
+    }
+    paint();
+    function size() { return G.fit(cv); }
+    function layout(w, h) {
+      const n = MAGS.length, padX = Math.max(16, w * 0.04), colW = (w - padX * 2) / n;
+      const starY = h * 0.3, boxTop = h * 0.56, boxS = Math.min(colW * 0.82, h * 0.34);
+      return { n, padX, colW, starY, boxTop, boxS, cx: (i) => padX + colW * (i + 0.5) };
+    }
+    function frame(now) {
+      if (!running) return;
+      requestAnimationFrame(frame);
+      if (cv.hidden || document.hidden) { last = now; return; }
+      const dt = Math.min(0.05, (now - last) / 1000 || 0); last = now; t0 += dt;
+      const { c, w, h } = size(), L = layout(w, h);
+      G.space(c, w, h, 11);
+      const Rmax = Math.min(L.colW * 0.36, h * 0.13);
+      // 위쪽 화살표: 밝다 ← → 어둡다
+      c.save(); c.font = '800 15px Pretendard, sans-serif'; c.fillStyle = '#cdd7ee'; c.textBaseline = 'middle';
+      c.textAlign = 'left'; c.fillText('밝다', L.padX, 26); c.textAlign = 'right'; c.fillText('어둡다', w - L.padX, 26);
+      const ag = c.createLinearGradient(L.padX + 40, 0, w - L.padX - 50, 0); ag.addColorStop(0, 'rgba(255,240,190,.9)'); ag.addColorStop(1, 'rgba(110,130,190,.6)');
+      c.strokeStyle = ag; c.lineWidth = 3; c.beginPath(); c.moveTo(L.padX + 44, 26); c.lineTo(w - L.padX - 56, 26); c.stroke(); c.restore();
+      MAGS.forEach((m, i) => {
+        const x = L.cx(i), r = Rmax * Math.pow(Math.pow(2.5, 1 - m), 0.36);
+        const tw = 1 + (S.reduce ? 0 : 0.04 * Math.sin(t0 * 2.2 + i));
+        G.star(c, x, L.starY, r * 2.4 * tw, 1, false);
+        // 고른 별 테두리
+        if (m === S.a || m === S.b) { c.save(); c.strokeStyle = m === S.a ? '#ffd56b' : '#8fb0ff'; c.lineWidth = 2.5; c.setLineDash([5, 5]); c.beginPath(); c.arc(x, L.starY, Math.max(22, r * 1.25), 0, Math.PI * 2); c.stroke(); c.restore(); }
+        c.save(); c.font = '800 16px Pretendard, sans-serif'; c.fillStyle = '#f2f5ff'; c.textAlign = 'center'; c.fillText(m + ' 등급', x, L.starY + Rmax * 1.25 + 18); c.restore();
+        // 약 2.5 배 곡선
+        if (i < MAGS.length - 1) {
+          const x2 = L.cx(i + 1), yA = L.starY - Rmax * 1.1;
+          c.save(); c.strokeStyle = 'rgba(255,170,90,.85)'; c.lineWidth = 2.4; c.beginPath(); c.moveTo(x2 - 8, yA + 6); c.quadraticCurveTo((x + x2) / 2, yA - 26, x + 10, yA + 6); c.stroke();
+          c.fillStyle = 'rgba(255,170,90,.95)'; c.beginPath(); c.moveTo(x + 10, yA + 6); c.lineTo(x + 20, yA - 3); c.lineTo(x + 20, yA + 9); c.fill();
+          c.font = '800 13px Pretendard, sans-serif'; c.fillStyle = '#ffd2a8'; c.textAlign = 'center'; c.fillText('약 2.5 배', (x + x2) / 2, yA - 24); c.restore();
+        }
+        // 빛 알갱이 상자 (10 × 10)
+        const bx = x - L.boxS / 2, by = L.boxTop, cell = L.boxS / 10;
+        c.save(); c.fillStyle = 'rgba(255,255,255,.04)'; c.strokeStyle = 'rgba(160,180,230,.35)'; c.lineWidth = 1.2;
+        c.beginPath(); c.roundRect ? c.roundRect(bx - 4, by - 4, L.boxS + 8, L.boxS + 8, 8) : c.rect(bx - 4, by - 4, L.boxS + 8, L.boxS + 8); c.fill(); c.stroke();
+        const want = Q[i]; filled[i] = Math.min(want, filled[i] + dt * want * (S.reduce ? 99 : 0.5));
+        const full = Math.floor(filled[i]), frac = filled[i] - full;
+        for (let k = 0; k < Math.min(100, Math.ceil(filled[i])); k++) {
+          const cx2 = bx + (k % 10) * cell, cy2 = by + L.boxS - (Math.floor(k / 10) + 1) * cell;
+          const a = k < full ? 1 : frac; c.globalAlpha = 0.25 + 0.75 * a;
+          const g = c.createRadialGradient(cx2 + cell / 2, cy2 + cell / 2, 0, cx2 + cell / 2, cy2 + cell / 2, cell * 0.6);
+          g.addColorStop(0, '#fffbe8'); g.addColorStop(1, 'rgba(255,214,120,.35)');
+          c.fillStyle = g; c.fillRect(cx2 + cell * 0.12, cy2 + cell * 0.12, cell * 0.76, cell * 0.76);
+        }
+        c.restore();
+        // 별에서 상자로 내려오는 빛 알갱이
+        if (!S.reduce && Math.random() < dt * (2 + want * 0.35)) parts.push({ x: x + (Math.random() - 0.5) * r * 0.6, y: L.starY + r * 0.4, tx: bx + Math.random() * L.boxS, ty: by + L.boxS * 0.5, k: 0 });
+      });
+      // 1 등급 ↔ 6 등급 약 100 배
+      const yB = L.boxTop + L.boxS + 24;
+      if (yB < h - 40) {
+        c.save(); const x1 = L.cx(0), x6 = L.cx(5);
+        const gg = c.createLinearGradient(x6, 0, x1, 0); gg.addColorStop(0, 'rgba(255,140,90,.35)'); gg.addColorStop(1, 'rgba(255,140,90,.95)');
+        c.fillStyle = gg; c.beginPath(); c.moveTo(x6, yB - 5); c.lineTo(x1 + 18, yB - 5); c.lineTo(x1 + 18, yB - 13); c.lineTo(x1, yB); c.lineTo(x1 + 18, yB + 13); c.lineTo(x1 + 18, yB + 5); c.lineTo(x6, yB + 5); c.closePath(); c.fill();
+        c.font = '900 17px Pretendard, sans-serif'; c.fillStyle = '#fff'; c.textAlign = 'center'; c.textBaseline = 'top'; c.fillText('약 100 배', (x1 + x6) / 2, yB + 12); c.restore();
+      }
+      for (let k = parts.length - 1; k >= 0; k--) {
+        const p = parts[k]; p.k += dt * 0.9; if (p.k >= 1) { parts.splice(k, 1); continue; }
+        const e = p.k, x = p.x + (p.tx - p.x) * e, y = p.y + (p.ty - p.y) * e;
+        c.save(); c.globalCompositeOperation = 'lighter'; c.globalAlpha = 0.8 * (1 - e * 0.6); c.fillStyle = '#fff3c0'; c.beginPath(); c.arc(x, y, 1.8, 0, Math.PI * 2); c.fill(); c.restore();
+      }
+      c.save(); c.font = '700 12.5px Pretendard, sans-serif'; c.fillStyle = 'rgba(205,215,238,.8)'; c.textAlign = 'right'; c.fillText('상자: 같은 시간 동안 눈에 들어오는 빛의 양(모형)', w - 12, h - 12); c.restore();
+    }
+    S.ladderStart = () => { if (running) return; running = true; last = performance.now(); requestAnimationFrame(frame); };
+    if (S.mode === 'B') S.ladderStart();
+  } catch (err) { window.SM_err('밝기 계단', err); }
+})();
+</script>
+</body>
+</html>
