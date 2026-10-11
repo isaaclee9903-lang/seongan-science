@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>지구 내부 – 3D 지구 속 여행</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+  /* ===== 이 수업 전용 ===== */
+  :root{--fab:#b8431c;--fab-soft:#fcece4}
+  .eyebrow{color:#8a2f12;background:#fbe6dc}
+  .gl-host{background:linear-gradient(#050814,#0d1630)}
+  .lb.L{font-size:14px;font-weight:900;color:#fff;box-shadow:0 2px 10px rgba(0,0,0,.35)}
+  .lb.km{font-size:12.5px;font-weight:800;background:rgba(8,12,26,.78);color:#e8edf8;box-shadow:none}
+  .lb.cap{font-size:14px;font-weight:900;background:#fff;color:#8a2f12;border:2px solid #ff9a5c}
+  .flow{grid-template-columns:repeat(5,1fr)}
+  .stepname .no{background:var(--fab)}
+  .ph.on{background:var(--fab-soft)}.ph.on i{background:var(--fab)}
+  .vb.sel{background:#ff9a5c;color:#2a1200;border-color:#ff9a5c}
+  .vt .hint{background:rgba(8,12,26,.72);color:#dfe6f3}
+  /* 깊이계 */
+  .gauge{position:absolute;right:12px;top:64px;bottom:56px;width:86px;z-index:3;display:flex;flex-direction:column;align-items:stretch;pointer-events:none}
+  .gauge .gv{background:rgba(8,12,26,.82);border:1px solid rgba(255,255,255,.18);border-radius:12px;padding:6px 6px;text-align:center;color:#fff;margin-bottom:6px}
+  .gauge .gv small{display:block;font-size:11.5px;font-weight:700;color:#aab6cc}
+  .gauge .gv b{font-size:19px;font-weight:900;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+  .gauge .col{position:relative;flex:1;border-radius:12px;overflow:hidden;border:2px solid rgba(255,255,255,.75);box-shadow:0 6px 20px rgba(0,0,0,.4)}
+  .gauge .band{position:absolute;left:0;right:0;display:grid;place-items:center;font-size:12px;font-weight:900;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.5);word-break:keep-all;text-align:center;line-height:1.15}
+  .gauge .mk{position:absolute;left:-4px;right:-4px;height:0;border-top:3px solid #fff;transition:top .08s linear}
+  .gauge .mk::before{content:"";position:absolute;left:-2px;top:-9px;border:8px solid transparent;border-left:10px solid #fff}
+  .toast{position:absolute;left:50%;top:64px;transform:translateX(-50%);z-index:4;background:rgba(255,255,255,.95);color:#5a1e08;font-weight:900;font-size:17px;border-radius:14px;padding:10px 16px;box-shadow:0 10px 30px rgba(0,0,0,.35);display:none;white-space:nowrap}
+  .toast.on{display:block;animation:tin .35s ease}
+  @keyframes tin{from{transform:translate(-50%,-8px)}to{transform:translate(-50%,0)}}
+  .crustIn{left:12px;bottom:56px;width:min(44%,330px);aspect-ratio:16/10.5;background:linear-gradient(#bfe0f7,#eaf4fb);overflow:hidden}
+  .crustIn canvas{position:absolute;inset:0;width:100%;height:100%}
+  .ctl{display:grid;gap:8px;margin:10px 0}
+  .row{display:flex;flex-wrap:wrap;gap:8px}
+  .go{min-height:56px;flex:1.4;border-radius:14px;border:0;background:linear-gradient(135deg,#e2662c,#a8380f);color:#fff;font-weight:900;font-size:16.5px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 6px 16px rgba(168,56,15,.3)}
+  .go:active{transform:scale(.97)}.go:disabled{opacity:.45}
+  .rng{display:flex;align-items:center;gap:12px;font-weight:800;font-size:15px;color:var(--ink2)}
+  .rng label{flex:none}
+  .rng input{flex:1;min-width:120px;height:44px;-webkit-appearance:none;appearance:none;background:transparent}
+  .rng input::-webkit-slider-runnable-track{height:12px;border-radius:99px;background:linear-gradient(90deg,#8d6a48 0 8%,#c1401f 8% 47%,#f6a62a 47% 81%,#ffe08a 81%)}
+  .rng input::-webkit-slider-thumb{-webkit-appearance:none;width:36px;height:36px;border-radius:50%;background:#fff;border:3px solid #14263b;margin-top:-12px;box-shadow:0 2px 8px rgba(20,38,59,.3)}
+  .rng input::-moz-range-track{height:12px;border-radius:99px;background:linear-gradient(90deg,#8d6a48 0 8%,#c1401f 8% 47%,#f6a62a 47% 81%,#ffe08a 81%)}
+  .rng input::-moz-range-thumb{width:32px;height:32px;border-radius:50%;background:#fff;border:3px solid #14263b}
+  .lcard{display:grid;grid-template-columns:minmax(0,1fr) 128px;gap:10px;align-items:stretch;border-radius:16px;padding:12px 14px;background:linear-gradient(135deg,#fff7f2,#fff);border:2px solid #f3d6c6;margin:8px 0}
+  .lcard h3{margin:0 0 6px;font-size:19px;display:flex;align-items:center;gap:8px}
+  .lcard h3 .chip{font-size:13px;font-weight:900;border-radius:999px;padding:3px 10px;color:#fff}
+  .lcard dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:4px 10px;font-size:15px;line-height:1.5;word-break:keep-all}
+  .lcard dt{font-weight:900;color:var(--muted)}.lcard dd{margin:0;font-weight:800}
+  .lcard canvas{width:100%;height:100%;min-height:110px;display:block}
+  .dcap{font-size:11.5px;font-weight:800;color:var(--muted);text-align:center;margin-top:-2px}
+  .tbl{width:100%;border-collapse:separate;border-spacing:0 5px;margin:8px 0 2px}
+  .tbl th{font-size:13px;font-weight:900;color:#fff;background:#5a2a16;padding:7px 8px;text-align:center;word-break:keep-all}
+  .tbl th:first-child{border-radius:10px 0 0 10px}.tbl th:last-child{border-radius:0 10px 10px 0}
+  .tbl td{background:#fbf6f3;padding:8px 8px;font-weight:800;font-size:14.5px;text-align:center;word-break:keep-all}
+  .tbl td:first-child{border-radius:10px 0 0 10px;color:#fff}.tbl td:last-child{border-radius:0 10px 10px 0}
+  .tbl td.q{color:#b7a69c}
+  .tbl td.new{animation:pop .6s}
+  @keyframes pop{0%{background:#ffe08a}100%{background:#fbf6f3}}
+  .ask{border-radius:16px;padding:12px 14px;background:#fffaf0;border:1px solid #f3dc9a;margin:10px 0 0}
+  .ask p{margin:0 0 8px;font-size:15.5px;font-weight:800;line-height:1.55;word-break:keep-all;color:#4d3800}
+  .three{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+  .three button{min-height:52px;border-radius:12px;border:2px solid #e3d29a;background:#fff;font-weight:800;font-size:14.5px;cursor:pointer;word-break:keep-all;padding:4px;line-height:1.3}
+  .three button.good{border-color:var(--ok);background:#e8f7ef;color:#11703f}
+  .three button.bad{border-color:var(--no);background:#fdecea;color:#b33a35}
+  .ans{margin-top:8px;font-size:14.5px;line-height:1.65;color:#4d3800;word-break:keep-all;min-height:1px}
+  [hidden]{display:none!important}
+  @media (max-width:520px){.three{grid-template-columns:1fr}.lcard{grid-template-columns:1fr}.crustIn{width:calc(100% - 124px)}}
+</style>
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }
+</script>
+</head>
+<body>
+<div class="app">
+  <header>
+    <span class="eyebrow">지구 내부 · 3D 시뮬레이션 ①</span>
+    <h1>3D 지구 속 여행: 지표에서 지구 중심까지</h1>
+    <p class="sub">탐사 캡슐을 타고 지각, 맨틀, 외핵, 내핵을 차례로 지나 깊이 6400 km 지구 중심까지 내려가 봐요. 정거장마다 탐사 기록장을 채워요.</p>
+  </header>
+  <div class="stage">
+    <section class="card viewer">
+      <div class="gl-host" id="host" role="img" aria-label="4분의 1 조각을 잘라 낸 3D 지구. 잘린 면에 바깥부터 갈색 지각, 붉은 맨틀, 주황색 외핵, 흰빛 내핵이 보인다. 두 단면이 만나는 선을 따라 탐사 캡슐이 지표에서 지구 중심으로 내려간다. 오른쪽에 깊이계가 있다.">
+        <div class="vt tl" role="group" aria-label="보는 방법">
+          <button class="vb sel" type="button" id="vAll">전체 보기</button>
+          <button class="vb" type="button" id="vFollow">캡슐 따라가기</button>
+          <button class="vb" type="button" id="vCrust" aria-pressed="false">지각 확대</button>
+        </div>
+        <div class="gauge" aria-hidden="true"><div class="gv"><small>깊이</small><b id="gKm">0 km</b></div><div class="col" id="gCol"><i class="mk" id="gMk"></i></div></div>
+        <div class="toast" id="toast"></div>
+        <div class="inset crustIn" id="crustIn"><canvas id="crustCv"></canvas><span class="it">지각 확대 (대륙 지각과 해양 지각)</span></div>
+        <div class="vt bl"><span class="hint" id="hint">끌어서 돌리기 · 두 손가락으로 확대</span></div>
+        <div class="fail3d" id="fail3d">3D 그림을 불러오지 못했어요.<br>인터넷 연결을 확인하고 새로고침해 주세요.<br>(오른쪽 설명은 그대로 읽을 수 있어요)</div>
+      </div>
+    </section>
+    <section class="card pad">
+      <div class="flow" id="flow" role="tablist">
+        <button class="fs" type="button" role="tab" data-s="1"><b>1</b>지각</button>
+        <button class="fs" type="button" role="tab" data-s="2"><b>2</b>맨틀</button>
+        <button class="fs" type="button" role="tab" data-s="3"><b>3</b>외핵</button>
+        <button class="fs" type="button" role="tab" data-s="4"><b>4</b>내핵</button>
+        <button class="fs" type="button" role="tab" data-s="5"><b>5</b>지구 중심</button>
+      </div>
+      <div class="stepname"><span class="no" id="sNo">1</span><div><h2 id="sTitle"></h2><small id="sSub"></small></div></div>
+      <p class="what" id="sWhat"></p>
+      <div class="ctl">
+        <div class="row"><button class="go" type="button" id="bGo"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v15M6 13l6 6 6-6"/></svg><span id="bGoT">다음 정거장으로 내려가기</span></button><button class="btn ghost" type="button" id="bUp">지표로 올라가기</button></div>
+        <div class="rng"><label for="rKm">직접 움직이기</label><input type="range" id="rKm" min="0" max="1000" value="0" aria-label="깊이"></div>
+      </div>
+      <div class="lcard" id="lcard">
+        <div><h3><span id="lName">지각</span><span class="chip" id="lState">고체</span></h3>
+          <dl><dt>깊이</dt><dd id="lRange"></dd><dt>이루는 것</dt><dd id="lStuff"></dd></dl></div>
+        <div><canvas id="dCv" aria-label="밀도 비교: 지각, 맨틀, 외핵, 내핵 순서로 막대가 높아진다"></canvas><div class="dcap">밀도 비교 (순서만)</div></div>
+      </div>
+      <div class="phase" id="sPh"></div>
+      <div class="ask"><p id="askQ"></p><div class="three" id="askB"></div><div class="ans" id="askA"></div></div>
+      <h3 style="margin:14px 0 0;font-size:16px">탐사 기록장</h3>
+      <table class="tbl" id="tbl"></table>
+      <div class="acts"><button class="btn ghost" type="button" id="bPrev">이전</button><button class="btn primary" type="button" id="bNext">다음 단계</button></div>
+      <div class="prog"><i id="prog"></i></div>
+      <div class="box an"><b class="t">상상 여행 안내</b>실제로는 사람이 지구 속에 들어갈 수 없어요. 과학자들이 지진파를 분석해 알아낸 모습을 따라가는 상상 여행이에요. 지각 두께는 실제보다 두껍게 그렸어요(실제로는 지구 크기에 비해 아주 얇아요). 층의 색은 교과서 그림을 따른 것이에요.</div>
+    </section>
+  </div>
+  <p class="credit">지구 내부 · 3D 지구 속 여행</p>
+</div>
+<script>
+/*@@LOCAL:_ei.js@@*/
+</script>
+<script>
+window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) => Array.from(r.querySelectorAll(s)), step: 1, km: 0, kmGoal: null, follow: false, seen: {}, rec: {} };
+</script>
+<script>
+/* ===== 블록 1: 안내·버튼·깊이계 ===== */
+(() => {
+  'use strict';
+  try {
+    const { $, $$ } = window.SM, S = window.SM, E = window.EI, L = E.LAYERS;
+    /* 정거장: 캡슐이 멈추는 깊이(km) */
+    const STOP = { 1: 18, 2: 1500, 3: 4000, 4: 5750, 5: 6400 };
+    const STEPS = {
+      1: { t: '정거장 1 · 지각', sub: '지권 가장 바깥의 얇은 층', what: '지표를 출발해 첫 정거장인 지각에 도착했어요. 「지각 확대」를 눌러 대륙 지각과 해양 지각의 두께를 비교해 보세요.',
+        q: '대륙 지각과 해양 지각 중 평균 두께가 더 두꺼운 것은?', opts: ['대륙 지각', '해양 지각', '두께가 같다'], a: 0,
+        exp: '맞아요! 대륙 지각의 평균 두께는 <b>약 35 km</b>(두꺼운 곳은 약 70 km), 해양 지각은 <b>약 5 km</b> 정도예요.', no: '「지각 확대」 그림에서 두께를 비교해 보세요.' },
+      2: { t: '정거장 2 · 맨틀', sub: '지각 아래 ~ 깊이 약 2900 km', what: '지각을 지나 맨틀로 들어왔어요. 깊이계를 보면 맨틀이 얼마나 두꺼운지 알 수 있어요.',
+        q: '맨틀은 지구 전체 부피의 약 몇 %를 차지할까요?', opts: ['약 80 %', '약 50 %', '약 20 %'], a: 0,
+        exp: '맞아요! 맨틀은 지구 전체 부피의 <b>약 80 %</b>를 차지해요.', no: '아래 설명을 다시 읽어 보세요. 맨틀은 지구에서 가장 큰 부분을 차지해요.' },
+      3: { t: '정거장 3 · 외핵', sub: '깊이 약 2900 km ~ 5100 km', what: '맨틀을 지나 외핵에 도착했어요. 단면의 외핵 부분이 다른 층과 어떻게 다르게 보이나요?',
+        q: '외핵은 어떤 상태일까요?', opts: ['액체', '고체', '기체'], a: 0,
+        exp: '맞아요! 외핵은 주로 철과 니켈로 구성되어 있고 <b>액체 상태</b>예요. 그림에서는 일렁이는 모습으로 나타냈어요.', no: '단면의 외핵이 일렁이는 모습을 보세요. 아래 설명도 확인해 봐요.' },
+      4: { t: '정거장 4 · 내핵', sub: '깊이 약 5100 km ~ 6400 km', what: '지구 가장 안쪽 층인 내핵에 들어왔어요. 외핵과 무엇이 같고 무엇이 다른지 탐사 기록장에서 비교해 보세요.',
+        q: '내핵과 외핵을 비교한 것으로 옳은 것은?', opts: ['둘 다 주로 철과 니켈이지만 내핵은 고체', '둘 다 액체', '내핵은 암석, 외핵은 철과 니켈'], a: 0,
+        exp: '맞아요! 내핵은 외핵처럼 주로 <b>철과 니켈</b>로 이루어져 있지만 <b>고체 상태</b>이고, <b>밀도가 가장 커요</b>.', no: '탐사 기록장의 외핵·내핵 칸을 비교해 보세요.' },
+      5: { t: '도착 · 지구 중심', sub: '깊이 6400 km', what: '깊이 6400 km, 지구 중심에 도착했어요! 지나온 층을 탐사 기록장에서 정리해 보세요. 「지표로 올라가기」로 돌아가며 다시 볼 수 있어요.',
+        q: '지표에서 지구 중심까지 지나온 층의 순서는?', opts: ['지각 → 맨틀 → 외핵 → 내핵', '지각 → 외핵 → 맨틀 → 내핵', '맨틀 → 지각 → 내핵 → 외핵'], a: 0,
+        exp: '맞아요! 지구 내부는 지표부터 <b>지각, 맨틀, 외핵, 내핵</b>으로 구분된 <b>층상 구조</b>를 이뤄요.', no: '깊이계의 색 띠를 위에서부터 읽어 보세요.' },
+    };
+    const picked = {};
+    /* 슬라이더 ↔ 깊이: 처음 8 %는 지각(0~70 km)을 크게 보여 줘요 */
+    const s2km = (s) => (s < 0.08 ? (s / 0.08) * 70 : 70 + ((s - 0.08) / 0.92) * 6330);
+    const km2s = (k) => (k < 70 ? (k / 70) * 0.08 : 0.08 + ((k - 70) / 6330) * 0.92);
+    /* 깊이계 띠: 3D 그림과 같은 비율(지각만 두껍게) */
+    const CK = 0.045, gv = (k) => 1 - E.rVis(k, CK);
+    $('#gCol').insertAdjacentHTML('afterbegin', L.map((l) => `<div class="band" style="top:${gv(l.from) * 100}%;height:${(gv(l.to) - gv(l.from)) * 100}%;background:linear-gradient(${l.tagBg},${l.fill})">${l.id === 'crust' ? '' : l.name}</div>`).join(''));
+    function paintGauge() {
+      $('#gKm').textContent = Math.round(S.km).toLocaleString('ko-KR') + ' km';
+      $('#gMk').style.top = gv(S.km) * 100 + '%';
+      if (document.activeElement !== $('#rKm')) $('#rKm').value = Math.round(km2s(S.km) * 1000);
+    }
+    let lastLayer = null;
+    const dCv = $('#dCv');
+    function paintLayer() {
+      const l = E.layerAt(S.km), i = L.indexOf(l);
+      if (l === lastLayer) return; lastLayer = l;
+      $('#lName').textContent = l.name; $('#lState').textContent = l.state; $('#lState').style.background = l.state === '액체' ? '#e58a12' : '#5a6b7e';
+      $('#lRange').textContent = l.range; $('#lStuff').textContent = l.stuff;
+      $('#lcard').style.borderColor = l.tagBg;
+      const { c, w, h } = E.fit(dCv); c.clearRect(0, 0, w, h); E.densityBars(c, 4, 4, w - 8, h - 8, i, 12);
+    }
+    S.onDepth = () => { paintGauge(); paintLayer(); };
+    addEventListener('resize', () => { lastLayer = null; paintLayer(); });
+    /* 경계를 지나면 알림 */
+    let toastT = 0;
+    S.toast = (msg) => { const t = $('#toast'); t.textContent = msg; t.classList.remove('on'); void t.offsetWidth; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 2200); };
+    /* 도착하면 탐사 기록장 채우기 */
+    let fresh = null;
+    S.arrive = (km) => { const l = E.layerAt(km); if (!S.rec[l.id]) { S.rec[l.id] = true; fresh = l.id; paintTbl(); } };
+    function paintTbl() {
+      $('#tbl').innerHTML = '<tr><th>층</th><th>깊이</th><th>상태</th><th>이루는 것</th></tr>' + L.map((l) => {
+        const ok = S.rec[l.id], cls = ok ? (fresh === l.id ? 'new' : '') : 'q';
+        return `<tr><td style="background:${l.tagBg};color:${l.tagFg}">${l.name}</td><td class="${cls}">${ok ? l.range.replace(' (지구 중심)', '').replace(' (해양 약 5 km)', '') : '?'}</td><td class="${cls}">${ok ? l.state : '?'}</td><td class="${cls}">${ok ? l.stuff : '?'}</td></tr>`;
+      }).join('');
+      fresh = null;
+    }
+    function setStep(n, travel) {
+      S.step = n; S.seen[n] = true; const st = STEPS[n], l = L[Math.min(n, 4) - 1];
+      $$('#flow .fs').forEach((b) => { const k = +b.dataset.s; b.setAttribute('aria-selected', String(k === n)); b.classList.toggle('seen', !!S.seen[k]); });
+      $('#sNo').textContent = n; $('#sTitle').textContent = st.t; $('#sSub').textContent = st.sub; $('#sWhat').textContent = st.what;
+      $('#sPh').innerHTML = n < 5 ? l.facts.map((p, i) => `<div class="ph on"><i>${i + 1}</i><span>${p}</span></div>`).join('')
+        : ['지구 내부는 크게 <b>지각, 맨틀, 외핵, 내핵</b>으로 구분된 <b>층상 구조</b>를 이뤄요.', '깊이 들어갈수록 밀도가 커져요. <b>내핵의 밀도가 가장 커요</b>.', '외핵만 <b>액체</b>이고, 지각·맨틀·내핵은 <b>고체</b>예요.'].map((p, i) => `<div class="ph on"><i>${i + 1}</i><span>${p}</span></div>`).join('');
+      $('#askQ').textContent = st.q; paintAsk();
+      $('#bPrev').disabled = n === 1; $('#bNext').textContent = n === 5 ? '처음부터' : '다음 단계';
+      $('#bGoT').textContent = n === 5 ? '지구 중심에 도착했어요' : n === 4 ? '지구 중심까지 내려가기' : '다음 정거장으로 내려가기';
+      $('#bGo').disabled = n === 5;
+      $('#vCrust').hidden = n !== 1; S.setCrust(n === 1 && S.crustOn);
+      $('#prog').style.width = (n / 5) * 100 + '%';
+      S.goTo(STOP[n], travel);
+    }
+    function paintAsk() {
+      const st = STEPS[S.step], p = picked[S.step];
+      $('#askB').innerHTML = st.opts.map((o, i) => `<button type="button" data-i="${i}" class="${p == null ? '' : i === st.a ? 'good' : i === p ? 'bad' : ''}">${o}</button>`).join('');
+      $('#askA').innerHTML = p == null ? '' : p === st.a ? st.exp : st.no;
+      $$('#askB button').forEach((b) => b.addEventListener('click', () => { picked[S.step] = +b.dataset.i; paintAsk(); }));
+    }
+    /* 캡슐 이동: 3D가 없어도 깊이계·기록장은 움직여요 */
+    let raf = 0;
+    S.goTo = (km, travel) => {
+      cancelAnimationFrame(raf);
+      const k0 = S.km, dur = travel && !E.REDUCE ? Math.min(4200, 900 + Math.abs(km - k0) * 0.75) : 0, t0 = performance.now();
+      let prev = E.layerAt(k0);
+      S.moving = dur > 0;
+      const tick = (now) => {
+        const u = dur ? Math.min(1, (now - t0) / dur) : 1, e = u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2;
+        S.km = k0 + (km - k0) * e; S.onDepth();
+        const l = E.layerAt(S.km); if (l !== prev && dur) { S.toast(km > k0 ? `${l.name}에 들어왔어요` : `${l.name}까지 올라왔어요`); } prev = l;
+        if (km > k0) L.forEach((x) => { if (x.from < S.km - 1) S.arrive(Math.min(S.km, (x.from + x.to) / 2)); });
+        if (u < 1) raf = requestAnimationFrame(tick); else { S.moving = false; S.arrive(km); }
+      };
+      raf = requestAnimationFrame(tick);
+    };
+    $('#bGo').addEventListener('click', () => setStep(Math.min(5, S.step + 1), true));
+    $('#bUp').addEventListener('click', () => { S.goTo(0, true); });
+    $('#rKm').addEventListener('input', (e) => { cancelAnimationFrame(raf); S.km = s2km(+e.target.value / 1000); S.onDepth(); S.arrive(S.km); });
+    $('#vAll').addEventListener('click', () => S.setFollow(false));
+    $('#vFollow').addEventListener('click', () => S.setFollow(true));
+    $('#vCrust').addEventListener('click', () => { S.crustOn = !S.crustOn; S.setCrust(S.crustOn); });
+    S.setFollow = (v) => { S.follow = v; $('#vAll').classList.toggle('sel', !v); $('#vFollow').classList.toggle('sel', v); if (S.onFollow) S.onFollow(v); };
+    /* 지각 확대 그림 */
+    const crustCv = $('#crustCv');
+    let crustRaf = 0;
+    S.setCrust = (v) => {
+      $('#crustIn').classList.toggle('on', !!v); $('#vCrust').setAttribute('aria-pressed', String(!!v)); $('#vCrust').classList.toggle('sel', !!v);
+      cancelAnimationFrame(crustRaf);
+      if (!v) return;
+      const loop = (t) => { if (E.visible(crustCv)) { const { c, w, h } = E.fit(crustCv); c.clearRect(0, 0, w, h); E.crustBlock(c, w, h, { t, fs: Math.max(11, Math.min(14, w / 30)) }); } crustRaf = requestAnimationFrame(loop); };
+      crustRaf = requestAnimationFrame(loop);
+    };
+    $$('#flow .fs').forEach((b) => b.addEventListener('click', () => setStep(+b.dataset.s, true)));
+    $('#bPrev').addEventListener('click', () => setStep(Math.max(1, S.step - 1), true));
+    $('#bNext').addEventListener('click', () => { if (S.step === 5) { S.rec = {}; paintTbl(); S.km = 0; setStep(1, false); } else setStep(S.step + 1, true); });
+    S.setStep = setStep;
+    const q = new URLSearchParams(location.search);
+    S.crustOn = q.get('crust') !== '0';
+    paintTbl(); S.onDepth();
+    setStep(+q.get('step') || 1, q.get('step') ? false : true);
+    if (q.get('km')) { S.km = +q.get('km'); S.onDepth(); }
+    window.SM.okUI = true;
+  } catch (err) { window.SM_err('안내·버튼', err); }
+})();
+</script>
+<script type="module">
+/* ===== 블록 2: 3D 지구와 탐사 캡슐 ===== */
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+/*@@PART:c3.js@@*/
+/*@@LOCAL:_earth3d.js@@*/
+try {
+  const { V } = C3, S = window.SM, E = window.EI;
+  const host = document.getElementById('host');
+  const st = C3.makeStage(host, { top: '#03050d', bottom: '#0c1530', fov: 34, minD: 2.5, maxD: 30, fitWidth: true, exposure: 1.05, sunX: -6, sunZ: 8 });
+  st.scene.add(EARTH3D.stars());
+  const earth = EARTH3D.make({ R: 3 }), R = 3;
+  st.scene.add(earth.group);
+  st.sun.position.set(-7, 6, 9);
+
+  /* 탐사 캡슐 */
+  const cap = new THREE.Group(); earth.group.add(cap);
+  const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.075, 0.2, 8, 24), new THREE.MeshPhysicalMaterial({ color: 0xf4f6fa, metalness: 0.6, roughness: 0.25, clearcoat: 1 }));
+  cap.add(body);
+  const band = new THREE.Mesh(new THREE.CylinderGeometry(0.078, 0.078, 0.05, 24), new THREE.MeshStandardMaterial({ color: 0xff7a2e, emissive: 0xff5a10, emissiveIntensity: 0.6 }));
+  cap.add(band);
+  const win = new THREE.Mesh(new THREE.SphereGeometry(0.03, 16, 12), new THREE.MeshStandardMaterial({ color: 0x9fe8ff, emissive: 0x66d8ff, emissiveIntensity: 1.4 }));
+  win.position.set(0, 0.07, 0.07); cap.add(win);
+  const nose = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.12, 24), new THREE.MeshStandardMaterial({ color: 0x8a96a8, metalness: 0.8, roughness: 0.3 }));
+  nose.rotation.x = Math.PI; nose.position.y = -0.2; cap.add(nose);
+  const glowTex = C3.canvasTex(128, 128, (g, w, h) => { const r = g.createRadialGradient(64, 64, 0, 64, 64, 64); r.addColorStop(0, 'rgba(255,230,180,1)'); r.addColorStop(0.3, 'rgba(255,170,90,.55)'); r.addColorStop(1, 'rgba(255,120,40,0)'); g.fillStyle = r; g.fillRect(0, 0, w, h); });
+  const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending })); halo.scale.set(0.7, 0.7, 1); cap.add(halo);
+  /* 지나온 길 (빛나는 줄) */
+  const OFF = 0.045;
+  const trailMat = new THREE.MeshBasicMaterial({ color: 0xffb070, transparent: true, opacity: 0.85 });
+  let trail = null, trailKey = '';
+  function drawTrail(km) {
+    const k = Math.round(km / 10); if (k + '' === trailKey) return; trailKey = k + '';
+    if (trail) { earth.group.remove(trail); trail.geometry.dispose(); }
+    if (km < 5) { trail = null; return; }
+    const a = earth.axisPoint(0, OFF).add(V(0, 0.25, 0)), b = earth.axisPoint(km, OFF);
+    trail = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, a.distanceTo(b), 8), trailMat);
+    trail.position.copy(a).add(b).multiplyScalar(0.5); earth.group.add(trail);
+  }
+  /* 이름표: 층 이름(교과서처럼 색 이름표)과 깊이 눈금 */
+  E.LAYERS.forEach((l) => {
+    const mid = l.id === 'crust' ? 17 : l.id === 'inner' ? 5650 : (l.from + l.to) / 2;
+    const L = st.label(l.name, 'L', () => earth.group.localToWorld(earth.facePoint(mid, { crust: 0.62, mantle: 0.7, outer: 0.75, inner: 0.45 }[l.id], 'A')));
+    L.el.style.background = l.tagBg; L.el.style.color = l.tagFg;
+  });
+  /* 깊이 자 (교과서 그림처럼 반지름을 따라 눈금) */
+  const RA = 2.2, rulerMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.85 });
+  const rp = [earth.facePoint(0, RA, 'A', 0.012), earth.facePoint(6400, RA, 'A', 0.012)];
+  [35, 2900, 5100].forEach((km) => { const c = earth.facePoint(km, RA, 'A', 0.012), d = V(Math.cos(RA), Math.sin(RA), 0).multiplyScalar(0.06); rp.push(c.clone().add(d), c.clone().sub(d)); });
+  earth.group.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(rp), rulerMat));
+  [[35, '약 35 km'], [2900, '2900 km'], [5100, '5100 km']].forEach(([km, t]) => {
+    st.label(t, 'km', () => earth.group.localToWorld(earth.facePoint(km, RA - 0.16, 'A', 0.02)));
+  });
+  st.label('6400 km (중심)', 'km', () => earth.group.localToWorld(earth.facePoint(6400, 0, 'A', 0.02).add(V(0.35, -0.12, 0.45))));
+  const capL = st.label('', 'cap', () => cap.getWorldPosition(V()).add(V(0, 0.34, 0)));
+  const startL = st.label('지표 (출발)', 'km', () => earth.group.localToWorld(earth.axisPoint(0, OFF).add(V(0, 0.55, 0))));
+
+  /* 구도 */
+  const fitAll = () => st.fit([earth.shell], { dir: V(-0.6, 0.42, 1), margin: 0.86 });
+  fitAll();
+  let prevCap = null;
+  S.onFollow = (v) => {
+    if (!v) { prevCap = null; fitAll(); return; }
+    const p = cap.getWorldPosition(V()), dir = V(-1, 0.35, 1.25).normalize();
+    st.flyTo(p.clone().addScaledVector(dir, 3.2), p, 1); prevCap = p.clone();
+  };
+
+  /* 장면 갱신 */
+  let wob = 0;
+  st.onFrame((dt, t) => {
+    earth.update(dt, t);
+    const km = S.km, p = earth.axisPoint(km, OFF);
+    wob += dt;
+    cap.position.copy(p).add(V(0, 0.17 + (C3.REDUCE ? 0 : Math.sin(wob * 2.2) * 0.012), 0));
+    cap.rotation.y = C3.REDUCE ? 0 : wob * (S.moving ? 2.4 : 0.4);
+    halo.material.opacity = 0.75 + (C3.REDUCE ? 0 : Math.sin(wob * 4) * 0.2);
+    drawTrail(km);
+    capL.set(`깊이 ${Math.round(km).toLocaleString('ko-KR')} km`);
+    startL.show = km > 120;
+    if (S.follow) {
+      const w = cap.getWorldPosition(V());
+      if (prevCap) { const d = w.clone().sub(prevCap); st.camera.position.add(d); st.controls.target.add(d); }
+      prevCap = w;
+    }
+  });
+  const q = new URLSearchParams(location.search);
+  if (q.get('follow') === '1') setTimeout(() => S.setFollow(true), 50);
+  document.getElementById('hint').textContent = '끌어서 돌리기 · 두 손가락으로 확대';
+  window.SM.ok3d = true;
+} catch (err) { window.SM_err('3D 지구', err); }
+</script>
+</body>
+</html>

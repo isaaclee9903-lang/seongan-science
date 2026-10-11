@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>지구 내부 – 지구 속 알아내기</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+  /* ===== 이 수업 전용 ===== */
+  :root{--fab:#a8561f;--fab-soft:#fbeee2}
+  .eyebrow{color:#7a3a10;background:#f8e6d6}
+  .scene{position:relative;width:100%;height:min(74vh,700px);min-height:380px;background:#0a0f20;border-radius:20px;overflow:hidden;touch-action:manipulation}
+  .scene canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .scene .hint{position:absolute;left:10px;bottom:10px;z-index:2;background:rgba(8,12,26,.72);color:#dfe6f3}
+  .toast{position:absolute;left:50%;top:14px;transform:translateX(-50%);z-index:4;background:rgba(255,255,255,.96);color:#5a1e08;font-weight:900;font-size:16.5px;border-radius:14px;padding:10px 16px;box-shadow:0 10px 30px rgba(0,0,0,.35);display:none;white-space:nowrap;max-width:92%;overflow:hidden;text-overflow:ellipsis}
+  .toast.on{display:block;animation:tin .35s ease}
+  @keyframes tin{from{transform:translate(-50%,-8px)}to{transform:translate(-50%,0)}}
+  .stepname .no{background:var(--fab)}
+  .ph.on{background:var(--fab-soft)}.ph.on i{background:var(--fab)}
+  .ctl{display:grid;gap:8px;margin:10px 0}
+  .row{display:flex;flex-wrap:wrap;gap:8px}
+  .act{min-height:56px;flex:1.4;border-radius:14px;border:0;background:linear-gradient(135deg,#d9782e,#9a4512);color:#fff;font-weight:900;font-size:16.5px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 6px 16px rgba(154,69,18,.28)}
+  .act:active{transform:scale(.97)}.act:disabled{opacity:.45}
+  .stat{font-size:14.5px;font-weight:800;color:#7a3a10;background:#fbf1e8;border-radius:12px;padding:8px 12px;word-break:keep-all}
+  .ask{border-radius:16px;padding:12px 14px;background:#fffaf0;border:1px solid #f3dc9a;margin:10px 0 0}
+  .ask p{margin:0 0 8px;font-size:15.5px;font-weight:800;line-height:1.55;word-break:keep-all;color:#4d3800}
+  .three{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+  .three button{min-height:52px;border-radius:12px;border:2px solid #e3d29a;background:#fff;font-weight:800;font-size:14.5px;cursor:pointer;word-break:keep-all;padding:4px;line-height:1.3}
+  .three button.good{border-color:var(--ok);background:#e8f7ef;color:#11703f}
+  .three button.bad{border-color:var(--no);background:#fdecea;color:#b33a35}
+  .ans{margin-top:8px;font-size:14.5px;line-height:1.65;color:#4d3800;word-break:keep-all;min-height:1px}
+  .cmpT{width:100%;border-collapse:separate;border-spacing:0 6px;margin:6px 0}
+  .cmpT th{font-size:13px;font-weight:900;color:#fff;background:#5a2a16;padding:8px 6px;word-break:keep-all}
+  .cmpT th:first-child{border-radius:10px 0 0 10px}.cmpT th:last-child{border-radius:0 10px 10px 0}
+  .cmpT td{background:#fbf6f3;padding:6px;text-align:center;font-weight:800;font-size:14.5px;word-break:keep-all}
+  .cmpT td:first-child{border-radius:10px 0 0 10px;text-align:left;padding-left:10px}.cmpT td:last-child{border-radius:0 10px 10px 0}
+  .ox{display:inline-flex;gap:4px}
+  .ox button{min-width:48px;min-height:46px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:900;font-size:17px;cursor:pointer}
+  .ox button[aria-pressed="true"]{border-color:var(--fab);background:var(--fab-soft);color:#7a3a10}
+  .ox button.good{border-color:var(--ok);background:#e8f7ef;color:#11703f}.ox button.bad{border-color:var(--no);background:#fdecea;color:#b33a35}
+  .fb{margin-top:8px;padding:10px 12px;border-radius:12px;font-size:14.5px;line-height:1.6;word-break:keep-all;display:none}
+  .fb.show{display:block}.fb.ok{background:#e8f7ef;color:#0f5a36}.fb.no{background:#fff5e6;color:#7a4508}
+  [hidden]{display:none!important}
+  @media (max-width:900px){.scene{height:min(56vh,620px)}}
+  @media (max-width:520px){.three{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <span class="eyebrow">지구 내부 · 시뮬레이션 ②</span>
+    <h1>지구 속 알아내기: 땅 뚫기, 화산 분출물, 지진파</h1>
+    <p class="sub">직접 볼 수 없는 지구 내부를 알아내는 세 가지 방법을 차례로 해 보고, 무엇을 알 수 있는지 비교해 봐요. (가상 장면이에요)</p>
+  </header>
+  <div class="stage">
+    <section class="card viewer">
+      <div class="scene" id="scene">
+        <canvas id="cv" role="img" aria-label="지구 내부를 조사하는 방법을 보여 주는 장면"></canvas>
+        <div class="toast" id="toast"></div>
+        <span class="hint" id="hint"></span>
+      </div>
+    </section>
+    <section class="card pad">
+      <div class="flow" id="flow" role="tablist">
+        <button class="fs" type="button" role="tab" data-s="1"><b>1</b>땅 뚫기</button>
+        <button class="fs" type="button" role="tab" data-s="2"><b>2</b>화산 분출물</button>
+        <button class="fs" type="button" role="tab" data-s="3"><b>3</b>지진파</button>
+        <button class="fs" type="button" role="tab" data-s="4"><b>4</b>비교하기</button>
+      </div>
+      <div class="stepname"><span class="no" id="sNo">1</span><div><h2 id="sTitle"></h2><small id="sSub"></small></div></div>
+      <p class="what" id="sWhat"></p>
+      <div class="ctl">
+        <div class="row" id="cDrill"><button class="act" type="button" id="bDrill">더 깊이 뚫기</button><button class="btn ghost" type="button" id="bDrillR">처음부터</button></div>
+        <div class="row" id="cLava"><button class="act" type="button" id="bLava">분출물 채취해 조사하기</button></div>
+        <div class="row" id="cQuake"><button class="act" type="button" id="bQuake">지진 일으키기</button><button class="btn ghost" type="button" id="bQuakeR">처음부터</button></div>
+        <div class="stat" id="stat"></div>
+      </div>
+      <div id="cmpBox" hidden>
+        <table class="cmpT" id="cmpT"></table>
+        <button class="btn primary" type="button" id="bCmp" disabled>확인하기</button>
+        <div class="fb" id="fbCmp"></div>
+      </div>
+      <div class="phase" id="sPh"></div>
+      <div class="ask"><p id="askQ"></p><div class="three" id="askB"></div><div class="ans" id="askA"></div></div>
+      <div class="acts"><button class="btn ghost" type="button" id="bPrev">이전</button><button class="btn primary" type="button" id="bNext">다음 단계</button></div>
+      <div class="prog"><i id="prog"></i></div>
+      <div class="box an"><b class="t">모형 안내</b>실제 수업 활동이 아니라 개념 이해를 위한 가상 장면이에요. 땅을 뚫는 깊이, 화산의 크기, 지진파의 물결 모양은 실제와 달라요. 지각 두께는 실제보다 두껍게 그렸어요.</div>
+    </section>
+  </div>
+  <p class="credit">지구 내부 · 지구 속 알아내기</p>
+</div>
+<script>
+/*@@LOCAL:_ei.js@@*/
+</script>
+<script>
+/*@@LOCAL:_volcano.js@@*/
+</script>
+<script>
+window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) => Array.from(r.querySelectorAll(s)), step: 1, drill: 0, cores: [], lava: 0, quakes: [], lv: 0 };
+</script>
+<script>
+/* ===== 블록 1: 안내·버튼 ===== */
+(() => {
+  'use strict';
+  try {
+    const { $, $$ } = window.SM, S = window.SM;
+    const STEPS = {
+      1: { t: '직접 땅을 뚫어 조사하기', sub: '시추', ctl: ['cDrill', 'stat'], hint: '「더 깊이 뚫기」를 여러 번 눌러 보세요',
+        what: '시추기로 땅을 뚫어 땅속 물질을 꺼내 조사해요. 여러 번 뚫어 보고, 오른쪽 위 작은 지구 그림에서 뚫은 깊이를 비교해 보세요.',
+        ph: ['땅을 뚫으면 땅속 물질(암석)을 <b>직접</b> 꺼내 볼 수 있어요.', '하지만 지구 전체 크기에 비하면 뚫은 깊이는 <b>아주 얕아요</b>.', '그래서 이 방법으로는 지구 내부 전체의 모습을 알기 어려워요.'],
+        q: '땅을 뚫어 조사하는 방법으로 알 수 있는 것은?', opts: ['땅속 물질을 직접 알 수 있다', '지구 중심까지의 모습을 알 수 있다', '아무것도 알 수 없다'], a: 0,
+        exp: '맞아요! 땅속 물질을 <b>직접</b> 알아낼 수 있어요. 하지만 지구 내부 <b>전체의 모습을 알기는 어려워요</b>.', no: '꺼낸 암석을 보세요. 그리고 작은 지구 그림에서 뚫은 깊이도 비교해 보세요.' },
+      2: { t: '화산 분출물 조사하기', sub: '화산 활동으로 분출하는 용암 등', ctl: ['cLava', 'stat'], hint: '「분출물 채취해 조사하기」를 눌러 보세요',
+        what: '「분출물 채취해 조사하기」를 누르면 화산이 분출하고, 조사원이 식은 분출물을 채취해 시료 병에 담아 분석해요. 여러 번 해 보세요.',
+        ph: ['땅속에서 올라온 물질이 화산 활동으로 분출해요. 분출한 <b>용암</b> 등을 분석하면 땅속 물질을 알 수 있어요.', '지구 내부를 이루는 물질을 <b>직접</b> 알아낼 수 있어요.', '하지만 화산이 있는 곳에서만 조사할 수 있고, 지구 내부 <b>전체의 모습</b>을 알기는 어려워요.'],
+        q: '땅을 뚫는 방법과 화산 분출물을 조사하는 방법의 공통된 한계는?', opts: ['지구 내부 전체의 모습을 알기 어렵다', '물질을 직접 볼 수 없다', '비용이 들지 않는다'], a: 0,
+        exp: '맞아요! 두 방법 모두 물질을 직접 알아낼 수는 있지만 <b>지구 내부 전체의 모습을 알기는 어려워요</b>.', no: '두 방법 모두 물질을 직접 알 수는 있어요. 그렇다면 무엇이 어려울까요?' },
+      3: { t: '지진파 분석하기', sub: '진동이 지구 전체로 퍼져 나가요', ctl: ['cQuake', 'stat'], hint: '지구 단면의 겉을 누르거나 「지진 일으키기」를 눌러요',
+        what: '지구 내부는 아직 모르는 상태(회색)예요. 여러 곳에서 지진을 일으켜 지진파가 퍼지는 모습을 보세요. 지진파의 모습이 달라지는 곳을 찾으면 내부 구조가 드러나요.',
+        ph: ['수면을 건드리면 물결이 퍼지듯, 지진이 발생하면 진동이 <b>지구 전체로</b> 퍼져 나가요. 이 진동이 <b>지진파</b>예요.', '지진파의 모습이 달라지는 곳은 <b>물질의 성질이 달라지는 경계</b>예요.', '지진파를 분석하면 지구 내부 <b>물질의 상태와 내부 구조</b>를 알아낼 수 있어요.'],
+        q: '지진파를 분석하면 무엇을 알아낼 수 있을까요?', opts: ['지구 내부 물질의 상태와 내부 구조', '지표의 날씨', '화산의 위치만'], a: 0,
+        exp: '맞아요! 지진파를 분석하면 <b>지구 내부 물질의 상태와 내부 구조</b>를 알아낼 수 있어요. 이렇게 지구 내부가 <b>지각, 맨틀, 외핵, 내핵</b>으로 구분된 층상 구조라는 것을 알아냈어요.', no: '지진을 여러 번 일으켜 단면에 무엇이 드러났는지 보세요.' },
+      4: { t: '세 방법 비교하기', sub: '무엇을 알 수 있을까?', ctl: [], hint: '',
+        what: '세 방법으로 무엇을 알 수 있는지 표의 O, X를 골라 확인해 보세요.',
+        ph: ['땅 뚫기와 화산 분출물 조사는 물질을 <b>직접</b> 알아낼 수 있어요.', '지진파는 직접 갈 수 없는 깊은 곳까지 퍼지므로 <b>지구 내부 전체의 구조</b>를 알아낼 수 있어요.', '최근에는 인공위성으로 지구의 중력을 정밀히 측정해 <b>지각과 맨틀의 경계</b>를 밝히기도 해요.'],
+        q: '지진파를 이용해 지구 내부 구조를 조사할 때의 장점으로 알맞은 것은? (스스로 평가 2)', opts: ['직접 갈 수 없는 지구 내부 전체의 구조와 물질의 상태를 알 수 있다', '땅속 암석을 손으로 직접 만져 볼 수 있다', '화산이 있는 곳에서만 조사할 수 있다'], a: 0,
+        exp: '맞아요! 지진파는 지구 전체로 퍼져 나가므로 <b>직접 갈 수 없는 깊은 곳</b>까지 <b>내부 구조와 물질의 상태</b>를 알아낼 수 있어요.', no: '지진파가 어디까지 퍼져 나갔는지 떠올려 보세요.' },
+    };
+    const picked = {};
+    function setStep(n) {
+      S.step = n; const st = STEPS[n];
+      $$('#flow .fs').forEach((b) => { const k = +b.dataset.s; b.setAttribute('aria-selected', String(k === n)); if (k < n) b.classList.add('seen'); });
+      $('#sNo').textContent = n; $('#sTitle').textContent = st.t; $('#sSub').textContent = st.sub; $('#sWhat').textContent = st.what;
+      $('#sPh').innerHTML = st.ph.map((p, i) => `<div class="ph on"><i>${i + 1}</i><span>${p}</span></div>`).join('');
+      ['cDrill', 'cLava', 'cQuake', 'stat'].forEach((id) => { $('#' + id).hidden = !st.ctl.includes(id); });
+      $('#cmpBox').hidden = n !== 4; $('#hint').textContent = st.hint; $('#hint').hidden = !st.hint;
+      $('#askQ').textContent = st.q; paintAsk();
+      $('#bPrev').disabled = n === 1; $('#bNext').textContent = n === 4 ? '처음부터' : '다음 단계';
+      $('#prog').style.width = (n / 4) * 100 + '%';
+      paintStat();
+    }
+    function paintAsk() {
+      const st = STEPS[S.step], p = picked[S.step];
+      $('#askB').innerHTML = st.opts.map((o, i) => `<button type="button" data-i="${i}" class="${p == null ? '' : i === st.a ? 'good' : i === p ? 'bad' : ''}">${o}</button>`).join('');
+      $('#askA').innerHTML = p == null ? '' : p === st.a ? st.exp : st.no;
+      $$('#askB button').forEach((b) => b.addEventListener('click', () => { picked[S.step] = +b.dataset.i; paintAsk(); }));
+    }
+    function paintStat() {
+      const n = S.step;
+      if (n === 1) $('#stat').innerHTML = S.drill >= 1 ? '더 깊이 뚫기 어려워요. 꺼낸 암석은 땅속 물질을 <b>직접</b> 보여 주지만, 작은 지구 그림에서 보면 아주 얕은 곳뿐이에요.' : `꺼낸 암석: ${S.cores.length}개`;
+      else if (n === 2) $('#stat').innerHTML = S.lava ? `채취한 분출물: ${S.lava}번 · 땅속에서 올라온 물질을 <b>직접</b> 분석했어요.` : '아직 채취하지 않았어요.';
+      else if (n === 3) $('#stat').innerHTML = ['아직 내부를 몰라요. 지진을 일으켜 보세요.', '경계 하나를 찾았어요! 약 35 km 부근에서 지진파의 모습이 크게 달라져요(지각과 맨틀의 경계).', '경계를 하나 더 찾았어요! 깊이 약 2900 km(맨틀과 외핵의 경계).', '내부 구조가 모두 드러났어요: 지각, 맨틀, 외핵, 내핵의 층상 구조예요.'][S.lv];
+    }
+    S.paintStat = paintStat;
+    let toastT = 0;
+    S.toast = (msg) => { const t = $('#toast'); t.textContent = msg; t.classList.remove('on'); void t.offsetWidth; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 2600); };
+    $('#bDrill').addEventListener('click', () => S.doDrill && S.doDrill());
+    $('#bDrillR').addEventListener('click', () => { S.drill = 0; S.cores = []; S.drillGoal = 0; paintStat(); });
+    $('#bLava').addEventListener('click', () => S.doLava && S.doLava());
+    $('#bQuake').addEventListener('click', () => S.doQuake && S.doQuake());
+    $('#bQuakeR').addEventListener('click', () => { S.quakes = []; S.lv = 0; paintStat(); });
+    /* 비교 표 */
+    const ROWS = [['땅 뚫기 (시추)', true, false], ['화산 분출물 조사', true, false], ['지진파 분석', false, true]], pick = ROWS.map(() => [null, null]);
+    $('#cmpT').innerHTML = '<tr><th>방법</th><th>물질을 직접 알 수 있다</th><th>내부 전체의 구조를 알 수 있다</th></tr>' + ROWS.map((r, i) => `<tr><td>${r[0]}</td>${[0, 1].map((k) => `<td><span class="ox" data-i="${i}" data-k="${k}"><button type="button" data-v="1" aria-pressed="false">O</button><button type="button" data-v="0" aria-pressed="false">X</button></span></td>`).join('')}</tr>`).join('');
+    $$('#cmpT .ox').forEach((g) => { const i = +g.dataset.i, k = +g.dataset.k; $$('button', g).forEach((b) => b.addEventListener('click', () => { pick[i][k] = b.dataset.v === '1'; $$('button', g).forEach((o) => { o.setAttribute('aria-pressed', String(o === b)); o.classList.remove('good', 'bad'); }); $('#bCmp').disabled = pick.some((p) => p.some((v) => v == null)); })); });
+    $('#bCmp').addEventListener('click', () => {
+      let wrong = 0;
+      $$('#cmpT .ox').forEach((g) => { const i = +g.dataset.i, k = +g.dataset.k, ok = pick[i][k] === ROWS[i][k + 1], b = $(`button[data-v="${pick[i][k] ? 1 : 0}"]`, g); b.classList.add(ok ? 'good' : 'bad'); if (!ok) wrong++; });
+      const f = $('#fbCmp'); f.className = 'fb show ' + (wrong ? 'no' : 'ok');
+      f.innerHTML = wrong ? `빨간 칸 ${wrong}개를 다시 생각해 보세요. 힌트: 지진파는 물질을 손으로 꺼내 볼 수는 없지만, 지구 전체로 퍼져 나가요.` : '모두 맞았어요! 땅 뚫기와 화산 분출물 조사는 <b>물질을 직접</b> 알 수 있지만 전체 모습은 알기 어려워요. 지진파 분석은 <b>지구 내부 전체의 구조와 물질의 상태</b>를 알아낼 수 있어요.';
+    });
+    $$('#flow .fs').forEach((b) => b.addEventListener('click', () => setStep(+b.dataset.s)));
+    $('#bPrev').addEventListener('click', () => setStep(Math.max(1, S.step - 1)));
+    $('#bNext').addEventListener('click', () => setStep(S.step === 4 ? 1 : S.step + 1));
+    S.setStep = setStep;
+    setStep(+new URLSearchParams(location.search).get('step') || 1);
+    window.SM.okUI = true;
+  } catch (err) { window.SM_err('안내·버튼', err); }
+})();
+</script>
+<script>
+/* ===== 블록 2: 장면 그리기 ===== */
+(() => {
+  'use strict';
+  try {
+    const { $ } = window.SM, S = window.SM, E = window.EI, L = E.LAYERS, RED = E.REDUCE;
+    const cv = $('#cv');
+    const fsz = (w) => Math.max(12, Math.min(17, w / 46));
+    /* ----- 1. 땅 뚫기 ----- */
+    const CORE_COL = ['#a8865c', '#8e6c4c', '#6f5446', '#5a4a48', '#4a3a3a'];
+    S.drillGoal = 0;
+    S.doDrill = () => {
+      if (S.drillGoal >= 1) { S.toast('더 깊이 뚫기 어려워요'); return; }
+      S.drillGoal = Math.min(1, S.drillGoal + 0.2); S.drillBusy = true;
+    };
+    function drawDrill(c, w, h, t) {
+      const sz = fsz(w), gy = h * 0.3;
+      E.sky(c, w, gy); E.ground(c, 0, gy, w, h - gy, 11);
+      c.fillStyle = '#6f9b4a'; c.fillRect(0, gy - 3, w, 5);
+      if (S.drill < S.drillGoal) { S.drill = Math.min(S.drillGoal, S.drill + (RED ? 1 : 0.004)); if (S.drill >= S.drillGoal - 1e-6 && S.drillBusy) { S.drillBusy = false; S.cores.push(CORE_COL[Math.min(4, S.cores.length)]); if (S.drill >= 1) S.toast('더 깊이 뚫기 어려워요'); S.paintStat(); } }
+      const s = Math.min(h * 0.3, w * 0.16), maxD = (h - gy) * 0.62;
+      E.rig(c, w * 0.3, gy, s, S.drillBusy ? t : 0, S.drill * maxD);
+      /* 꺼낸 암석(시추 코어) */
+      const tx = w * 0.5, ty = gy - s * 0.06;
+      c.fillStyle = '#3a3f47'; c.beginPath(); c.roundRect(tx - 6, ty - 4, w * 0.2, 10, 4); c.fill();
+      S.cores.forEach((col, i) => { const x = tx + i * (w * 0.036), g = c.createLinearGradient(0, ty - 40, 0, ty); g.addColorStop(0, col); g.addColorStop(1, '#2a2018'); c.fillStyle = g; c.beginPath(); c.roundRect(x, ty - s * 0.4, w * 0.026, s * 0.4, 4); c.fill(); c.strokeStyle = 'rgba(255,255,255,.25)'; c.stroke(); });
+      if (S.cores.length) E.tag(c, '꺼낸 암석', tx + w * 0.08, ty - s * 0.4 - sz * 0.9, { size: sz - 2, bg: 'rgba(60,40,20,.85)' });
+      /* 지구 전체와 비교 (오른쪽 위) */
+      const R = Math.min(w, h) * 0.17, cx = w - R - w * 0.04, cy = R + h * 0.08;
+      c.save(); c.fillStyle = 'rgba(8,12,26,.82)'; c.beginPath(); c.roundRect(cx - R - 14, cy - R - 28, R * 2 + 28, R * 2 + 66, 14); c.fill(); c.restore();
+      E.section(c, cx, cy, R, { crustK: 0.03 });
+      E.tag(c, '지구 전체와 비교', cx, cy + R + 20, { size: sz - 3, bg: 'none', color: '#dfe6f3' });
+      /* 구멍 표시: 지구 크기에 비하면 거의 보이지 않아요 */
+      const holeLen = Math.max(1.5, S.drill * R * 0.004 * 4);
+      c.strokeStyle = '#ff3b3b'; c.lineWidth = 3; c.beginPath(); c.moveTo(cx, cy - R); c.lineTo(cx, cy - R + holeLen); c.stroke();
+      c.strokeStyle = '#ff3b3b'; c.lineWidth = 1.5; c.beginPath(); c.arc(cx, cy - R, 9, 0, Math.PI * 2); c.stroke();
+      E.arrow(c, cx + 34, cy - R - 2, cx + 12, cy - R + 2, '#ff6b6b', 2, 7);
+      E.tag(c, '뚫은 곳', cx + 56, cy - R - 4, { size: sz - 4, bg: '#c62828' });
+    }
+    /* ----- 2. 화산 분출물 (_volcano.js) ----- */
+    const volc = window.VOLC.create((n) => { S.lava = n; S.paintStat(); S.toast('채취한 분출물을 확대해 분석했어요'); $('#bLava').disabled = false; });
+    S.doLava = () => { if (volc.erupt()) { $('#bLava').disabled = true; S.toast('화산이 분출해요!'); setTimeout(() => S.step === 2 && volc.busy() && S.toast('식은 분출물을 채취하러 가요'), 4300); } };
+    function drawVolcano(c, w, h, t, dt) {
+      const sz = fsz(w), G = volc.draw(c, w, h, t, dt), st = volc.st;
+      E.tag(c, '땅속에서 올라온 물질', G.X(0) + G.U * 0.55, G.cy, { size: sz - 2, align: 'left', bg: 'rgba(150,50,10,.9)' });
+      if (st.flows[0].heat > 0.3 && st.flows[0].L > 0.3) E.tag(c, '용암', G.X(-0.62), G.Y(-0.45), { size: sz - 2, bg: 'rgba(190,60,15,.92)' });
+      E.tag(c, '분출물 시료', G.jx, G.jy - sz * 1.6, { size: sz - 3, bg: 'rgba(30,50,80,.88)' });
+      if (st.mag > 0) {
+        const k = 1 - Math.pow(1 - st.mag, 3), R = Math.min(w, h) * 0.14 * k, mx = w - Math.min(w, h) * 0.14 - 18, my = Math.min(w, h) * 0.14 + 22;
+        c.save(); c.setLineDash([5, 5]); c.strokeStyle = 'rgba(30,50,80,.6)'; c.lineWidth = 2; c.beginPath(); c.moveTo(G.jx, G.jy - 4); c.lineTo(mx - R * 0.5, my + R * 0.85); c.stroke(); c.restore();
+        volc.magnifier(c, mx, my, R, st.samples.length);
+        if (k > 0.9) { E.tag(c, '분출물 확대', mx, my - R - 6, { size: sz - 3, bg: 'rgba(30,50,80,.9)' }); E.tag(c, '땅속 물질을 직접 분석해요', mx - R * 0.2, my + R + sz, { size: sz - 3, bg: 'rgba(31,120,80,.92)' }); }
+      }
+    }
+    /* ----- 3. 지진파 ----- */
+    const CK = 0.05, vOf = (x, y) => { const r = Math.hypot(x, y); return r > 1 - CK ? 0.55 : r > E.R_OC ? 1 : r > E.R_IC ? 0.72 : 1.2; };
+    function rays(fx, fy) {
+      const out = [], N = 160;
+      for (let i = 0; i < N; i++) {
+        const a = (i / N) * Math.PI * 2, dx = Math.cos(a), dy = Math.sin(a), P = [[fx, fy, 0]]; let x = fx, y = fy, tt = 0;
+        for (let k = 0; k < 500; k++) { x += dx * 0.006; y += dy * 0.006; tt += 0.006 / vOf(x, y); if (Math.hypot(x, y) > 1) { P.push([x, y, tt, 1]); break; } P.push([x, y, tt]); }
+        out.push(P);
+      }
+      return out;
+    }
+    const at = (P, tau) => { for (let k = 1; k < P.length; k++) if (P[k][2] >= tau) { const p = P[k - 1], q = P[k], u = (tau - p[2]) / ((q[2] - p[2]) || 1); return [p[0] + (q[0] - p[0]) * u, p[1] + (q[1] - p[1]) * u]; } return null; };
+    const PRESET = [-Math.PI / 2, -Math.PI / 2 + 1.1, Math.PI * 0.85, 0.35];
+    let geo = null;
+    S.doQuake = (ang) => {
+      if (ang == null) ang = PRESET[S.quakes.length % PRESET.length];
+      const fx = Math.cos(ang) * 0.965, fy = Math.sin(ang) * 0.965;
+      S.quakes.push({ a: ang, R: rays(fx, fy), t0: performance.now(), fx, fy });
+      if (S.quakes.length > 3) S.quakes.shift();
+      S.qCount = (S.qCount || 0) + 1;
+    };
+    cv.addEventListener('click', (e) => {
+      if (S.step !== 3 || !geo) return;
+      const r = cv.getBoundingClientRect(), x = e.clientX - r.left - geo.cx, y = e.clientY - r.top - geo.cy, d = Math.hypot(x, y);
+      if (d > geo.R * 0.55 && d < geo.R * 1.25) S.doQuake(Math.atan2(y, x));
+    });
+    let revealT = [0, 0, 0];
+    function drawQuake(c, w, h, t) {
+      const sz = fsz(w); c.fillStyle = '#070b18'; c.fillRect(0, 0, w, h);
+      for (let i = 0; i < 120; i++) { const x = (i * 97.3) % w, y = (i * 53.7 + 11) % h; c.fillStyle = `rgba(220,230,255,${0.15 + (i % 5) * 0.08})`; c.fillRect(x, y, 1.5, 1.5); }
+      const R = Math.min(h * 0.42, w * 0.36), cx = w * 0.5, cy = h * 0.53; geo = { cx, cy, R };
+      /* 드러난 정도: 회색 → 경계선 → 색 */
+      const full = S.lv >= 3 ? Math.min(1, revealT[2] += 0.02) : 0;
+      E.section(c, cx, cy, R, { crustK: CK, gray: true });
+      if (full > 0) { c.save(); c.globalAlpha = full; E.section(c, cx, cy, R, { crustK: CK, t }); c.restore(); }
+      if (full < 1) { c.save(); c.globalAlpha = 1 - full; c.font = `900 ${R * 0.35}px Pretendard, sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillStyle = 'rgba(220,230,250,.35)'; c.fillText('?', cx, cy + R * 0.05); c.restore(); }
+      const ring = (rr, k, col) => { if (S.lv < k) return; c.save(); c.setLineDash([8, 6]); c.strokeStyle = col; c.lineWidth = 2.5; c.beginPath(); c.arc(cx, cy, rr * R, 0, Math.PI * 2); c.stroke(); c.restore(); };
+      ring(1 - CK, 1, '#ffe08a'); ring(E.R_OC, 2, '#ffe08a'); ring(E.R_IC, 3, '#ffe08a');
+      /* 지진파 */
+      const now = performance.now();
+      c.save(); c.globalCompositeOperation = 'lighter';
+      S.quakes.forEach((q) => {
+        const tau = RED ? 1.4 : (now - q.t0) / 1600;
+        if (tau > 4.2) return;
+        [0, 0.3, 0.6].forEach((lag, j) => { const tt = tau - lag; if (tt <= 0) return; c.strokeStyle = `rgba(200,235,255,${(0.95 - j * 0.28) * Math.max(0, 1 - tt / 4)})`; c.lineWidth = 2.4 - j * 0.6; c.beginPath(); let pen = false; q.R.forEach((P) => { const p = at(P, tt); if (!p) { pen = false; return; } const X = cx + p[0] * R, Y = cy + p[1] * R; if (pen) c.lineTo(X, Y); else { c.moveTo(X, Y); pen = true; } }); c.stroke(); });
+        /* 경계 발견: 지진파가 그 깊이를 지나면 하나씩 드러나요 */
+        const need = [0.25, 1.05, 2.0];
+        if (!q.found) q.found = 0;
+        while (q.found < 3 && tau > need[q.found]) { q.found++; }
+      });
+      c.restore();
+      /* 지진 표시 */
+      S.quakes.forEach((q) => { const X = cx + q.fx * R, Y = cy + q.fy * R; E.ripples(c, X, Y, 0, t, 'rgba(0,0,0,', 1); });
+      /* 지진계 3곳 (지표) */
+      [-Math.PI * 0.15, Math.PI * 0.5, Math.PI * 1.15].forEach((a, i) => {
+        const X = cx + Math.cos(a) * R * 1.03, Y = cy + Math.sin(a) * R * 1.03; let hit = 0;
+        S.quakes.forEach((q) => { const tau = (now - q.t0) / 1600; let best = 9; q.R.forEach((P) => { const e = P[P.length - 1]; if (e[3] && Math.hypot(e[0] - Math.cos(a), e[1] - Math.sin(a)) < 0.12) best = Math.min(best, e[2]); }); const d = tau - best; if (d > 0 && d < 0.5) hit = Math.max(hit, 1 - d / 0.5); });
+        c.fillStyle = hit ? `rgba(255,230,120,${0.5 + hit * 0.5})` : '#8fa3bd'; c.beginPath(); c.arc(X, Y, 6 + hit * 6, 0, Math.PI * 2); c.fill();
+        c.strokeStyle = '#1b2433'; c.lineWidth = 2; c.stroke();
+      });
+      E.tag(c, '지진계', cx + Math.cos(-Math.PI * 0.15) * R * 1.03 + sz * 2.2, cy + Math.sin(-Math.PI * 0.15) * R * 1.03, { size: sz - 3, bg: 'rgba(30,50,80,.9)' });
+      if (S.lv >= 3) {
+        E.tag(c, '지각', cx - R * 0.98, cy - R * 0.2, { size: sz - 1, bg: L[0].tagBg });
+        E.tag(c, '맨틀', cx - R * 0.76, cy + R * 0.18, { size: sz - 1, bg: L[1].tagBg });
+        E.tag(c, '외핵', cx - R * 0.38, cy + R * 0.12, { size: sz - 1, bg: L[2].tagBg });
+        E.tag(c, '내핵', cx, cy, { size: sz - 1, bg: L[3].tagBg, color: L[3].tagFg });
+      }
+    }
+    /* 드러남 단계 올리기 (지진을 일으킬 때마다 경계 하나씩) */
+    let lastLv = 0;
+    function updateReveal() {
+      const now = performance.now(); let lv = 0;
+      S.quakes.forEach((q) => { if ((now - q.t0) / 1600 > 1.0) lv = Math.max(lv, 1); });
+      lv = Math.min(3, S.qCount ? Math.min(S.qCount, 3) : 0);
+      const ready = S.quakes.length && (now - S.quakes[S.quakes.length - 1].t0) / 1600 > [0, 0.35, 1.1, 2.0][lv];
+      if (lv > S.lv && ready) { S.lv = lv; S.paintStat(); S.toast(['', '경계 발견! 지진파의 모습이 달라지는 곳이 있어요', '경계를 또 찾았어요! 깊이 약 2900 km', '지구 내부의 층상 구조가 드러났어요'][lv]); }
+      if (S.lv === 0) revealT = [0, 0, 0];
+      lastLv = S.lv;
+    }
+    /* ----- 4. 비교하기 ----- */
+    function drawCompare(c, w, h, t) {
+      c.fillStyle = '#0a0f20'; c.fillRect(0, 0, w, h);
+      const port = w < h * 0.9, sz = fsz(w);
+      const panes = port ? [[0, 0, w, h / 3], [0, h / 3, w, h / 3], [0, h * 2 / 3, w, h / 3]] : [[0, 0, w / 3, h], [w / 3, 0, w / 3, h], [w * 2 / 3, 0, w / 3, h]];
+      const names = ['땅 뚫기', '화산 분출물', '지진파 분석'];
+      panes.forEach(([x, y, pw, ph], i) => {
+        c.save(); c.beginPath(); c.rect(x + 4, y + 4, pw - 8, ph - 8); c.clip(); c.translate(x, y);
+        if (i < 2) {
+          const gy = ph * 0.45; E.sky(c, pw, gy); E.ground(c, 0, gy, pw, ph - gy, 20 + i); c.fillStyle = '#6f9b4a'; c.fillRect(0, gy - 2, pw, 4);
+          const s = Math.min(ph * 0.34, pw * 0.3);
+          if (i === 0) E.rig(c, pw * 0.5, gy, s, t, (ph - gy) * 0.3); else E.volcano(c, pw * 0.5, gy, Math.min(s * 1.5, pw * 0.44), t);
+          E.tag(c, '물질을 직접 알 수 있어요', pw / 2, ph - sz * 1.4, { size: sz - 3, bg: 'rgba(31,157,92,.92)' });
+        } else {
+          c.fillStyle = '#070b18'; c.fillRect(0, 0, pw, ph);
+          const R = Math.min(pw, ph) * 0.33; E.section(c, pw / 2, ph * 0.52, R, { crustK: 0.06, t });
+          E.ripples(c, pw / 2, ph * 0.52 - R * 0.96, R * 1.9, t, 'rgba(200,235,255,', 4);
+          E.tag(c, '내부 전체의 구조를 알 수 있어요', pw / 2, ph - sz * 1.4, { size: sz - 3, bg: 'rgba(31,120,200,.92)' });
+        }
+        c.restore();
+        E.tag(c, names[i], x + pw / 2, y + sz * 1.5, { size: sz, bg: 'rgba(20,16,10,.85)' });
+      });
+    }
+    /* 반복 */
+    let last = performance.now();
+    function loop(t) {
+      const dt = Math.min(0.05, (t - last) / 1000); last = t;
+      if (E.visible(cv)) {
+        const { c, w, h } = E.fit(cv);
+        try {
+          if (S.step === 1) drawDrill(c, w, h, t);
+          else if (S.step === 2) drawVolcano(c, w, h, t, dt);
+          else if (S.step === 3) { updateReveal(); drawQuake(c, w, h, t); }
+          else drawCompare(c, w, h, t);
+        } catch (e) { window.SM_err('장면', e); }
+      }
+      requestAnimationFrame(loop);
+    }
+    requestAnimationFrame(loop);
+    const q = new URLSearchParams(location.search);
+    if (q.get('drill')) { for (let i = 0; i < +q.get('drill'); i++) { S.drillGoal = Math.min(1, S.drillGoal + 0.2); S.cores.push(CORE_COL[i]); } S.drill = S.drillGoal; S.paintStat(); }
+    if (q.get('quakes')) { const n = +q.get('quakes'); for (let i = 0; i < n; i++) S.doQuake(); S.quakes.forEach((qq, i) => (qq.t0 -= 2600 - i * 300)); }
+  } catch (err) { window.SM_err('장면', err); }
+})();
+</script>
+</body>
+</html>
