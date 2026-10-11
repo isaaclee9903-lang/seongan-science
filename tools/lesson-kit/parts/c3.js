@@ -150,7 +150,7 @@ const C3 = (() => {
     }
     try { let fr = 0; new ResizeObserver(() => { cancelAnimationFrame(fr); fr = requestAnimationFrame(() => { if (lastFit && !userMoved) { const f = fitPose(lastFit.objs, lastFit.o); flyTo(f.p, f.t, 0); } }); }).observe(host); } catch (e) {}
 
-    return { renderer, scene, camera, controls, sun, overlay, label, flyTo, fit, fitPose, onFrame: (f) => fns.push(f), size: () => ({ W, H }), resize };
+    return { renderer, scene, camera, controls, sun, overlay, label, flyTo, fit, fitPose, onFrame: (f) => fns.push(f), size: () => ({ W, H }), resize, stop: () => { running = false; } };
   }
 
   // 관 모양 전선(곡선)

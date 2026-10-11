@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>광물의 특성 – 3D 광물 실험실</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+/*@@LOCAL:_css_lab.css@@*/
+</style>
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }
+</script>
+</head>
+<body>
+<div class="app">
+  <header>
+    <span class="eyebrow">광물의 특성 · 시뮬레이션 ①</span>
+    <h1>3D 광물 실험실: 광물의 특성 관찰하기</h1>
+    <p class="sub">교과서 탐구처럼 여섯 가지 광물의 색, 조흔색, 자성, 염산 반응, 굳기를 차례로 관찰하고 결과를 표에 기록해요. (가상 실험이에요)</p>
+  </header>
+  <div class="stage">
+    <section class="card viewer">
+      <div class="gl-host" id="host" role="img" aria-label="실험 책상. 뒤쪽에 석영, 방해석, 황철석, 황동석, 자철석, 흑운모 표본이 놓여 있고, 가운데 페트리 접시, 왼쪽에 흰색과 검은색 조흔판, 오른쪽에 색 클립과 묽은 염산 병, 스포이트가 있다."></div>
+      <div class="vt tr"><button class="vb" type="button" id="vAll">책상 전체 보기</button></div>
+      <div class="toast" id="toast"></div>
+      <span class="hint lhint" id="hint">손가락으로 돌려 볼 수 있어요</span>
+      <div id="fail3d" class="fail3d">3D 그림을 불러오지 못했어요. 인터넷 연결을 확인하고 새로고침해 주세요.</div>
+    </section>
+    <section class="card pad">
+      <div class="flow six" id="flow" role="tablist">
+        <button class="fs" type="button" role="tab" data-s="1"><b>1</b>색</button>
+        <button class="fs" type="button" role="tab" data-s="2"><b>2</b>조흔색</button>
+        <button class="fs" type="button" role="tab" data-s="3"><b>3</b>자성</button>
+        <button class="fs" type="button" role="tab" data-s="4"><b>4</b>염산 반응</button>
+        <button class="fs" type="button" role="tab" data-s="5"><b>5</b>굳기</button>
+        <button class="fs" type="button" role="tab" data-s="6"><b>6</b>결과 정리</button>
+      </div>
+      <div class="stepname"><span class="no" id="sNo">1</span><div><h2 id="sTitle"></h2><small id="sSub"></small></div></div>
+      <p class="what" id="sWhat"></p>
+      <div id="pickBox">
+        <p class="lab-l">광물 고르기</p>
+        <div class="picks" id="picks"></div>
+      </div>
+      <div class="row acts2" id="acts"></div>
+      <div class="rec" id="rec" hidden>
+        <p class="lab-l" id="recQ"></p>
+        <div class="chips" id="recChips"></div>
+        <div class="fb" id="recFb"></div>
+      </div>
+      <div id="sumBox" hidden></div>
+      <details class="tblwrap" id="tblWrap" open>
+        <summary>탐구 결과 기록표 <span id="tblCnt"></span></summary>
+        <div class="tscroll"><table class="rt" id="rt"></table></div>
+        <p class="note">(광물에 클립이 붙으면 ○, 붙지 않으면 ×) · 칸은 실험을 해 보고 직접 골라야 채워져요.</p>
+      </details>
+      <div class="acts"><button class="btn ghost" type="button" id="bPrev">이전</button><button class="btn primary" type="button" id="bNext">다음 단계</button></div>
+      <div class="prog"><i id="prog"></i></div>
+      <div class="box an"><b class="t">안전과 모형 안내</b>실제 실험에서는 실험복과 실험용 장갑을 끼고, 묽은 염산이 피부 등에 닿지 않도록 주의해요. 3D 광물은 실제 표본의 생김새를 참고해 만든 모형이고, 크기와 움직임은 실제와 달라요.</div>
+    </section>
+  </div>
+  <p class="credit">광물의 특성 · 3D 광물 실험실</p>
+</div>
+
+<script>
+window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) => Array.from(r.querySelectorAll(s)), q: new URLSearchParams(location.search) };
+if (window.SM.q.get('slow')) window.LAB_SLOW = 1 / +window.SM.q.get('slow');
+</script>
+<script type="module">
+/* ===== 3D 실험실 + 안내·버튼 ===== */
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { ConvexGeometry } from 'three/addons/geometries/ConvexGeometry.js';
+import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
+/*@@PART:c3.js@@*/
+/*@@LOCAL:_min3d.js@@*/
+/*@@LOCAL:_lab3d.js@@*/
+const { $, $$, q } = window.SM, S = window.SM;
+let lab = null;
+try {
+  const st = C3.makeStage($('#host'), { top: '#f3f0ea', bottom: '#d9d2c6', fov: 32, minD: 1.2, maxD: 14, fitWidth: true });
+  st.controls.maxPolarAngle = Math.PI * 0.47;
+  const IDS = ['quartz', 'calcite', 'pyrite', 'chalcopyrite', 'magnetite', 'biotite'];
+  lab = LAB.make(st, { specimens: IDS.map((id) => ({ key: id, id, label: MIN3D.INFO[id].name })) });
+  S.lab = lab; S.st = st;
+  window.SM.ok3d = true;
+} catch (err) { window.SM_err('3D 그림', err); }
+
+try {
+  const INFO = MIN3D.INFO, IDS = ['quartz', 'calcite', 'pyrite', 'chalcopyrite', 'magnetite', 'biotite'];
+  const COLS = [['color', '색'], ['streak', '조흔색'], ['magnet', '클립 붙음'], ['acid', '염산 반응'], ['hard', '긁힘']];
+  const ANS = {};
+  IDS.forEach((id) => { const I = INFO[id]; ANS[id] = { color: I.color, streak: I.streak, magnet: I.magnet ? '○' : '×', acid: I.acid ? '기포 생김' : '변화 없음', hard: id === 'calcite' ? '긁힘' : id === 'quartz' ? '안 긁힘' : null }; });
+  const rec = {}; IDS.forEach((id) => (rec[id] = {}));
+  const did = {}; IDS.forEach((id) => (did[id] = {}));
+  const SW = { quartz: 'linear-gradient(135deg,#ffffff,#d9dde2)', calcite: 'linear-gradient(135deg,#fffaf0,#e9dcc0)', pyrite: 'linear-gradient(135deg,#efe1a6,#a88c45)', chalcopyrite: 'linear-gradient(135deg,#d9ad3e,#5a4fb0)', magnetite: 'linear-gradient(135deg,#55565c,#1c1c20)', biotite: 'linear-gradient(135deg,#3a2e22,#0e0b09)' };
+  const STEPS = {
+    1: { t: '광물의 색 관찰하기', sub: '과정 1 · 겉으로 보이는 색', col: 'color', acts: [['observe', '들어서 돌려 보기']],
+      what: '광물을 고르고 「들어서 돌려 보기」를 눌러 여러 방향에서 관찰해요. 광물은 부분적으로 조금씩 색이 달라요. 전체적으로 어떤 계열의 색인지 골라 기록해요.',
+      recQ: (n) => `${n}의 색은 전체적으로 어떤 색인가요?`, chips: ['무색투명', '노란색', '검은색'] },
+    2: { t: '조흔색 관찰하기', sub: '과정 2 · 조흔판에 긁어 가루의 색 보기', col: 'streak', acts: [['white', '흰색 조흔판에 긁기'], ['black', '검은색 조흔판에 긁기'], ['wipe', '조흔판 닦기', 'ghost']],
+      what: '광물을 조흔판에 대고 긁으면 광물 가루가 묻어나요. 이 가루의 색이 조흔색이에요. 흰색 조흔판에 긁었을 때 색이 잘 보이지 않으면 검은색 조흔판에 긁어 봐요.',
+      recQ: (n) => `${n}의 조흔색은 무엇인가요?`, chips: ['흰색', '노란색', '녹흑색', '검은색', '나타나지 않음'] },
+    3: { t: '클립 가져다 대기', sub: '과정 3 · 자성', col: 'magnet', acts: [['magnet', '클립에 가져다 대기']],
+      what: '광물을 클립 위로 가져가 클립이 광물에 붙는지 확인해요. 철로 된 클립을 끌어당기는 성질을 자성이라고 해요.',
+      recQ: (n) => `클립이 ${n}에 붙었나요?`, chips: ['○', '×'] },
+    4: { t: '묽은 염산 떨어뜨리기', sub: '과정 4 · 염산 반응', col: 'acid', acts: [['acid', '묽은 염산 떨어뜨리기']],
+      what: '스포이트로 묽은 염산을 조금 떨어뜨려 반응이 나타나는지 확인해요. 묽은 염산과 반응하는 광물에서는 어떤 변화가 나타날까요?',
+      recQ: (n) => `${n}에 묽은 염산을 떨어뜨리니 어떻게 되었나요?`, chips: ['기포 생김', '변화 없음'] },
+    5: { t: '석영과 방해석 서로 긁기', sub: '과정 5 · 굳기', col: 'hard', acts: [['q-on-c', '석영으로 방해석 긁기'], ['c-on-q', '방해석으로 석영 긁기']],
+      what: '석영과 방해석을 서로 긁어 어떤 광물이 긁히는지 확인해요. 두 가지를 모두 해 보고 비교해요.',
+      recQ: () => '두 광물을 서로 긁었을 때 흠집이 생긴 광물은?', chips: ['방해석', '석영'] },
+    6: { t: '결과 정리하기', sub: '과정 6 · 정리하기', col: null, acts: [],
+      what: '기록표를 보고 아래 질문에 답해요. 빈칸이 있으면 해당 단계로 돌아가 실험해요.' },
+  };
+  let step = 1, curId = null;
+  const toast = (msg, ms = 2600) => { const t = $('#toast'); t.innerHTML = msg; t.classList.add('on'); clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('on'), ms); };
+  S.toast = toast;
+
+  function paintTable() {
+    const done = IDS.reduce((n, id) => n + COLS.filter(([k]) => ANS[id][k] != null && rec[id][k] === ANS[id][k]).length, 0), total = IDS.reduce((n, id) => n + COLS.filter(([k]) => ANS[id][k] != null).length, 0);
+    $('#tblCnt').textContent = `${done} / ${total}칸`;
+    $('#rt').innerHTML = `<tr><th>구분</th>${COLS.map(([, h]) => `<th>${h}</th>`).join('')}</tr>` + IDS.map((id) => `<tr class="${id === curId ? 'cur' : ''}"><td><span class="sw" style="background:${SW[id]}"></span>${INFO[id].name}</td>${COLS.map(([k]) => {
+      if (ANS[id][k] == null) return '<td class="xx"></td>';
+      const v = rec[id][k]; return `<td class="${v ? 'ok' : ''}">${v || ''}</td>`;
+    }).join('')}</tr>`).join('');
+    S.done = done; S.total = total;
+  }
+  function paintPicks() {
+    const st = STEPS[step];
+    $('#pickBox').hidden = step >= 5;
+    $('#picks').innerHTML = IDS.map((id) => {
+      const k = st.col, fin = k && ANS[id][k] != null && rec[id][k] === ANS[id][k];
+      return `<button type="button" class="pk${id === curId ? ' sel' : ''}${fin ? ' fin' : ''}" data-id="${id}"><span class="sw" style="background:${SW[id]}"></span>${INFO[id].name}</button>`;
+    }).join('');
+    $$('#picks .pk').forEach((b) => b.addEventListener('click', () => pick(b.dataset.id)));
+  }
+  function paintActs() {
+    const st = STEPS[step], busy = !lab || lab.busy;
+    $('#acts').innerHTML = st.acts.map(([k, l, cls]) => `<button type="button" class="${cls === 'ghost' ? 'btn ghost' : 'act'}" data-a="${k}" ${busy || (step < 5 && !curId) ? 'disabled' : ''}>${l}</button>`).join('');
+    $$('#acts [data-a]').forEach((b) => b.addEventListener('click', () => act(b.dataset.a)));
+  }
+  function paintRec() {
+    const st = STEPS[step], id = step === 5 ? 'calcite' : curId;
+    const show = !!st.col && !!id;
+    $('#rec').hidden = !show; if (!show) return;
+    const ready = step === 5 ? did.calcite['q-on-c'] && did.calcite['c-on-q'] : did[id][st.col];
+    $('#recQ').textContent = ready ? st.recQ(INFO[id].name) : (step === 5 ? '두 가지 방법으로 모두 긁어 본 뒤 기록할 수 있어요.' : `먼저 실험을 해 보세요. 그다음 ${INFO[id].name}의 결과를 골라 기록해요.`);
+    const val = step === 5 ? rec.calcite.hard && (rec.calcite.hard === '긁힘' ? '방해석' : '석영') : rec[id][st.col];
+    $('#recChips').innerHTML = st.chips.map((c) => `<button type="button" class="chip${val === c ? ' on' : ''}" data-v="${c}" ${ready ? '' : 'disabled'}>${c}</button>`).join('');
+    $$('#recChips .chip').forEach((b) => b.addEventListener('click', () => record(b.dataset.v)));
+  }
+  const WHY = {
+    color: { quartz: '석영은 일반적으로 무색투명해요.', calcite: '방해석은 일반적으로 무색투명해요.', pyrite: '황철석은 겉보기에 노란색이에요.', chalcopyrite: '황동석은 겉보기에 노란색이에요. 겉이 변해 군데군데 무지갯빛을 띠기도 해요.', magnetite: '자철석은 어두운색(검은색)이에요.', biotite: '흑운모는 검은색이에요.' },
+    streak: { quartz: '석영은 조흔판에 긁어도 가루가 묻어나지 않아요.', calcite: '방해석의 조흔색은 흰색이에요. 흰색 판에서는 잘 안 보여 검은색 판에서 확인해요.', pyrite: '황철석은 겉은 노란색이지만 조흔색은 검은색이에요.', chalcopyrite: '황동석은 겉은 노란색이지만 조흔색은 녹흑색이에요.', magnetite: '자철석의 조흔색은 검은색이에요.', biotite: '흑운모는 겉은 검은색이지만 조흔색은 흰색이에요.' },
+    magnet: { magnetite: '자철석은 자성이 있어 철로 된 클립을 끌어당겨요.' },
+    acid: { calcite: '방해석에 묽은 염산을 떨어뜨리면 이산화 탄소가 발생해 기포가 생겨요.' },
+  };
+  function record(v) {
+    const st = STEPS[step], k = st.col;
+    if (step === 5) {
+      const ok = v === '방해석';
+      if (ok) { rec.calcite.hard = '긁힘'; rec.quartz.hard = '안 긁힘'; }
+      fbShow(ok, ok ? '맞아요! 석영으로 긁으면 <b>방해석에만 흠집</b>이 생기고, 방해석으로 긁어도 석영에는 흠집이 생기지 않아요. 단단한 광물에 무른 광물이 긁혀요. 그러니까 <b>석영이 방해석보다 단단해요</b>.' : '흠집(하얀 줄)이 남은 쪽을 다시 보세요. 석영 조각을 닦아 보면 흠집이 없어요.');
+    } else {
+      const ok = v === ANS[curId][k];
+      if (ok) rec[curId][k] = v;
+      const why = (WHY[k] && WHY[k][curId]) || (k === 'magnet' ? `${INFO[curId].name}에는 클립이 붙지 않아요.` : k === 'acid' ? `${INFO[curId].name}에서는 기포가 생기지 않아요.` : '');
+      fbShow(ok, ok ? `맞아요! ${why}` : `다시 관찰해 보세요. ${k === 'streak' && ['calcite', 'biotite'].includes(curId) && !did[curId].black ? '흰색 판에서 잘 안 보이면 검은색 조흔판에 긁어 봐요.' : k === 'color' ? '부분이 아니라 전체적인 색을 봐요.' : ''}`);
+      if (ok) { const nx = IDS.find((id) => ANS[id][k] != null && rec[id][k] !== ANS[id][k]); if (nx) setTimeout(() => toast(`다음 광물: <b>${INFO[nx].name}</b>을(를) 골라 보세요`), 900); else setTimeout(() => toast('이 단계의 기록을 모두 채웠어요! 「다음 단계」로 가요'), 900); }
+    }
+    paintTable(); paintPicks(); paintRec();
+  }
+  function fbShow(ok, html) { const f = $('#recFb'); f.className = 'fb show ' + (ok ? 'ok' : 'no'); f.innerHTML = html; }
+  async function pick(id) {
+    if (!lab || lab.busy) return;
+    curId = id; $('#recFb').className = 'fb'; paintPicks(); paintActs(); paintRec(); paintTable();
+    await lab.select(id); paintActs();
+    if (step === 1) lab.view('work');
+  }
+  async function act(a) {
+    if (!lab || lab.busy) return; const id = curId; let r = null;
+    const p = (async () => {
+      if (a === 'observe') { await lab.observe(); did[id].color = true; }
+      else if (a === 'white' || a === 'black') {
+        r = await lab.streak(a); did[id][a] = true;
+        if (r) {
+          if (!r.hex) toast(`${INFO[id].name}: 판에 가루가 묻어나지 않아요`);
+          else if (a === 'white' && r.streak === '흰색') toast('흰색 판에서는 가루 색이 잘 보이지 않아요. <b>검은색 조흔판</b>에 긁어 봐요', 3600);
+          else toast(`판에 묻은 가루의 색을 보세요`);
+          if (!r.hex || a === 'black' || r.streak !== '흰색') did[id].streak = true;
+          if (a === 'black') did[id].streak = true;
+        }
+      } else if (a === 'wipe') { lab.clearPlates(); toast('조흔판을 깨끗이 닦았어요'); }
+      else if (a === 'magnet') { r = await lab.magnet(); did[id].magnet = true; if (r) toast(r.stuck ? `클립 ${r.stuck}개가 끌려와 붙었어요!` : '클립이 움직이지 않아요'); }
+      else if (a === 'acid') { r = await lab.acid(); did[id].acid = true; if (r) toast(r.acid ? '보글보글 기포가 생겨요!' : '방울이 그대로 있어요. 변화가 없어요'); }
+      else if (a === 'q-on-c' || a === 'c-on-q') { r = await lab.hardness(a); did.calcite[a] = true; curId = 'calcite'; if (r) toast(a === 'q-on-c' ? '방해석에 하얀 흠집이 생겼어요' : '석영을 닦아 보니 흠집이 없어요. 방해석 가루만 묻었어요', 3200); }
+    })();
+    paintActs(); await p; paintActs(); paintRec(); paintTable();
+  }
+  function paintSummary() {
+    const box = $('#sumBox'); box.hidden = step !== 6; if (step !== 6) return;
+    const QS = [
+      { q: '광물의 색과 조흔색은 서로 비슷하게 나타나나요, 다르게 나타나나요?', o: ['광물에 따라 다를 수 있다', '항상 같다'], a: 0, e: '황철석·황동석은 겉은 노란색인데 조흔색은 검은색·녹흑색, 흑운모는 검은색인데 조흔색은 흰색이에요. <b>색과 조흔색은 다를 수 있어요</b>.' },
+      { q: '정리하기 1 · 석영을 조흔판에 긁었을 때 조흔색이 나타나지 않은 까닭은?', o: ['석영이 조흔판보다 단단해서 가루가 생기지 않으므로', '석영이 투명해서 가루가 보이지 않으므로', '조흔판이 흰색이어서'], a: 0, e: '단단한 광물에 무른 광물이 긁혀요. 석영은 조흔판보다 단단해서 긁어도 <b>석영 가루가 생기지 않아요</b>.' },
+      { q: '정리하기 2 · 석영과 방해석을 구별할 수 있는 방법은?', o: ['묽은 염산을 떨어뜨리거나 서로 긁어 본다', '색을 비교한다', '클립을 가져다 댄다'], a: 0, e: '둘 다 무색투명해서 색으로는 구별하기 어려워요. <b>방해석만 묽은 염산과 반응해 기포가 생기고</b>, 서로 긁으면 <b>방해석만 긁혀요</b>.' },
+      { q: '여섯 광물 가운데 클립이 붙는(자성이 있는) 광물은?', o: ['자철석', '황철석', '흑운모'], a: 0, e: '<b>자철석</b>은 자성이 있어 철로 된 클립을 끌어당겨요.' },
+    ];
+    box.innerHTML = QS.map((x, i) => `<div class="ask" data-i="${i}"><p>${x.q}</p><div class="three">${x.o.map((o, j) => `<button type="button" data-j="${j}">${o}</button>`).join('')}</div><div class="ans"></div></div>`).join('');
+    $$('#sumBox .ask').forEach((el) => {
+      const x = QS[+el.dataset.i];
+      $$('button', el).forEach((b) => b.addEventListener('click', () => { const j = +b.dataset.j; $$('button', el).forEach((o, k) => { o.className = k === x.a ? 'good' : k === j ? 'bad' : ''; }); $('.ans', el).innerHTML = j === x.a ? x.e : '다시 생각해 보세요. 기록표를 보면 알 수 있어요.'; }));
+    });
+  }
+  function setStep(n) {
+    step = n; const st = STEPS[n];
+    $$('#flow .fs').forEach((b) => { const k = +b.dataset.s; b.setAttribute('aria-selected', String(k === n)); if (k < n) b.classList.add('seen'); });
+    $('#sNo').textContent = n; $('#sTitle').textContent = st.t; $('#sSub').textContent = st.sub; $('#sWhat').textContent = st.what;
+    $('#recFb').className = 'fb';
+    $('#bPrev').disabled = n === 1; $('#bNext').textContent = n === 6 ? '처음 단계로' : '다음 단계';
+    $('#prog').style.width = (n / 6) * 100 + '%';
+    if (n === 5) curId = 'calcite';
+    if (lab) {
+      const v = { 1: 'work', 2: 'plates', 3: 'clips', 4: 'acid', 5: 'scratch', 6: 'all' }[n];
+      if (n !== 5) lab.resetTools().then(() => lab.view(v)); else lab.view(v);
+    }
+    $('#tblWrap').open = n === 6 || innerWidth > 900;
+    paintPicks(); paintActs(); paintRec(); paintTable(); paintSummary();
+  }
+  $$('#flow .fs').forEach((b) => b.addEventListener('click', () => { if (!lab || !lab.busy) setStep(+b.dataset.s); }));
+  $('#bPrev').addEventListener('click', () => { if (step > 1 && (!lab || !lab.busy)) setStep(step - 1); });
+  $('#bNext').addEventListener('click', () => { if (!lab || !lab.busy) setStep(step === 6 ? 1 : step + 1); });
+  $('#vAll').addEventListener('click', () => lab && lab.view('all'));
+  setInterval(() => { if (lab) $$('#acts [data-a]').forEach((b) => (b.disabled = lab.busy || (step < 5 && !curId))); }, 300);
+
+  /* 검사용 주소: ?step=2&m=chalcopyrite&do=white&fill=1 */
+  const s0 = +(q.get('step') || 1); setStep(s0);
+  if (q.get('fill') === '1') { IDS.forEach((id) => COLS.forEach(([k]) => { if (ANS[id][k] != null) rec[id][k] = ANS[id][k]; })); paintTable(); }
+  if (q.get('m')) { (async () => { await pick(q.get('m')); if (q.get('do')) { for (const a of q.get('do').split('+')) await act(a); } })(); }
+  else if (q.get('do')) { (async () => { for (const a of q.get('do').split('+')) await act(a); })(); }
+  window.SM.okUI = true;
+} catch (err) { window.SM_err('안내·버튼', err); }
+</script>
+</body>
+</html>
