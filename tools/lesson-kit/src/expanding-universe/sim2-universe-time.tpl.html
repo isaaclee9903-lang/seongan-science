@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>우주 팽창 – 시간에 따른 우주</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+  /* ===== 이 수업 전용 ===== */
+  :root{--fab:#4b3aa8;--fab-soft:#eeebfa}
+  .eyebrow{color:#3a2c7a;background:#ece8fb}
+  .gl-host{background:#04060e;overflow:hidden;touch-action:pan-y;height:min(64vh,620px);min-height:340px}
+  #cv{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:grab}
+  .vb{background:rgba(16,18,44,.78);color:#e6ecfa;border-color:rgba(255,255,255,.18)}
+  .vb.sel{background:#fff;color:#14263b;border-color:#fff}
+  .vb[aria-pressed="true"]{background:#ffd56b;color:#2a2000;border-color:#ffd56b}
+  .vb[aria-pressed="false"]{opacity:1}
+  .hint{display:inline-flex;align-items:center;min-height:34px;padding:0 10px;border-radius:10px;font-size:13px;font-weight:700;background:rgba(16,18,44,.72);color:#cdd7ee;word-break:keep-all}
+  .tbar{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:center;padding:12px 14px 10px;background:linear-gradient(180deg,#0b1024,#121838);color:#e8ecfb}
+  .play{width:56px;height:56px;border-radius:50%;border:0;background:linear-gradient(135deg,#ffb14a,#ff7aa8);color:#2a0d16;display:grid;place-items:center;cursor:pointer;box-shadow:0 6px 18px rgba(255,120,150,.35)}
+  .play:active{transform:scale(.95)}
+  .tl{display:flex;flex-direction:column;gap:2px;min-width:0}
+  .tl input{width:100%;height:44px;-webkit-appearance:none;appearance:none;background:transparent;margin:0}
+  .tl input::-webkit-slider-runnable-track{height:12px;border-radius:99px;background:linear-gradient(90deg,#ffb14a,#ff8fc0 40%,#7b6cf0)}
+  .tl input::-webkit-slider-thumb{-webkit-appearance:none;width:36px;height:36px;border-radius:50%;background:#fff;border:3px solid #ff8fc0;margin-top:-12px;box-shadow:0 2px 10px rgba(0,0,0,.4)}
+  .tl input::-moz-range-track{height:12px;border-radius:99px;background:linear-gradient(90deg,#ffb14a,#ff8fc0 40%,#7b6cf0)}
+  .tl input::-moz-range-thumb{width:32px;height:32px;border-radius:50%;background:#fff;border:3px solid #ff8fc0}
+  .tl .ends{display:flex;justify-content:space-between;font-size:13px;font-weight:800;gap:8px}
+  .tl .ends span:first-child{color:#ffc77a}.tl .ends span:last-child{color:#cfd6ff}
+  .tl .mid{color:#ffc2dc}
+  .stepname .no{background:var(--fab)}
+  .ph.on{background:var(--fab-soft)}.ph.on i{background:var(--fab)}
+  .ask{border-radius:16px;padding:12px 14px;background:#fffaf0;border:1px solid #f3dc9a;margin:10px 0 0}
+  .ask p{margin:0 0 8px;font-size:15.5px;font-weight:800;line-height:1.55;word-break:keep-all;color:#4d3800}
+  .three{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+  .three button{min-height:52px;border-radius:12px;border:2px solid #e3d29a;background:#fff;font-weight:800;font-size:14.5px;cursor:pointer;word-break:keep-all;padding:4px;line-height:1.3}
+  .three button.good{border-color:var(--ok);background:#e8f7ef;color:#11703f}
+  .three button.bad{border-color:var(--no);background:#fdecea;color:#b33a35}
+  .ans{margin-top:8px;font-size:14.5px;line-height:1.65;color:#4d3800;word-break:keep-all;min-height:1px}
+  .why{margin-top:10px;display:grid;gap:6px}
+  .why h3{margin:6px 0 2px;font-size:16px}
+  .why .w{display:grid;grid-template-columns:28px 1fr;gap:8px;align-items:start;padding:8px 10px;border-radius:12px;background:#f7fafc;font-size:14.5px;line-height:1.6;color:var(--ink2);word-break:keep-all}
+  .why .w i{font-style:normal;width:26px;height:26px;border-radius:8px;background:var(--fab);color:#fff;display:grid;place-items:center;font-weight:900;font-size:13px}
+  .tried{font-size:14px;font-weight:800;color:#3a2c7a;background:#f1eeff;border-radius:12px;padding:8px 12px;margin-top:8px;word-break:keep-all}
+  [hidden]{display:none!important}
+  @media (max-width:520px){.three{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <span class="eyebrow">우주 팽창 · 시뮬레이션 ②</span>
+    <h1>시간에 따른 우주의 변화</h1>
+    <p class="sub">대폭발부터 현재까지 시간을 흐르게 하며 우주가 어떻게 변하는지 봐요. 은하 사이에 들어가 중심이 있는지도 확인해요.</p>
+  </header>
+  <div class="stage">
+    <section class="card viewer">
+      <div class="gl-host" id="host">
+        <canvas id="cv" role="img" aria-label="시간에 따른 우주 모형."></canvas>
+        <div class="vt tl" role="group" aria-label="보는 방법">
+          <button class="vb" type="button" data-v="book">교과서 그림</button>
+          <button class="vb" type="button" data-v="whole">우주 전체</button>
+          <button class="vb" type="button" data-v="inside">은하 사이에서</button>
+        </div>
+        <div class="vt tr" style="top:62px"><button class="vb" type="button" id="bGrid" aria-pressed="false">공간 격자</button><button class="vb" type="button" id="bLine" aria-pressed="false">거리 선</button></div>
+        <div class="vt bl"><span class="hint" id="hint">끌어서 돌리기</span></div>
+      </div>
+      <div class="tbar">
+        <button class="play" type="button" id="bPlay" aria-label="재생"><svg id="icPlay" width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button>
+        <div class="tl">
+          <input type="range" id="rT" min="0" max="1000" value="0" aria-label="시간의 흐름">
+          <div class="ends"><span>대폭발 · 약 138억 년 전</span><span class="mid">시간의 흐름 →</span><span>현재</span></div>
+        </div>
+      </div>
+    </section>
+    <section class="card pad">
+      <div class="flow" id="flow" role="tablist">
+        <button class="fs" type="button" role="tab" data-s="1"><b>1</b>대폭발</button>
+        <button class="fs" type="button" role="tab" data-s="2"><b>2</b>점점 팽창</button>
+        <button class="fs" type="button" role="tab" data-s="3"><b>3</b>어디서 보아도</button>
+        <button class="fs" type="button" role="tab" data-s="4"><b>4</b>현재</button>
+      </div>
+      <div class="stepname"><span class="no" id="sNo">1</span><div><h2 id="sTitle"></h2><small id="sSub"></small></div></div>
+      <p class="what" id="sWhat"></p>
+      <div class="phase" id="sPh"></div>
+      <div class="tried" id="tried" hidden></div>
+      <div class="ask"><p id="askQ"></p><div class="three" id="askB"></div><div class="ans" id="askA"></div></div>
+      <div class="why" id="why"></div>
+      <div class="acts"><button class="btn ghost" type="button" id="bPrev">이전</button><button class="btn primary" type="button" id="bNext">다음 단계</button></div>
+      <div class="prog"><i id="prog"></i></div>
+      <div class="box an"><b class="t">모형 안내</b>은하의 수·모양·크기와 우주가 커지는 빠르기는 실제와 달라요. 숫자는 교과서의 '약 138억 년 전'만 썼어요. 우주가 커져도 은하 그림의 크기는 그대로 두었어요.</div>
+    </section>
+  </div>
+  <p class="credit">우주 팽창 · 시간에 따른 우주의 변화</p>
+</div>
+<script>
+window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) => Array.from(r.querySelectorAll(s)), step: 1, view: 'whole', t: 0, play: false, grid: false, line: false, center: -1, tried: {}, seen: {} };
+</script>
+<script>
+/*@@LOCAL:_eu.js@@*/
+</script>
+<script>
+/* ===== 블록 1: 안내·버튼 ===== */
+(() => {
+  'use strict';
+  try {
+    const { $, $$ } = window.SM, S = window.SM;
+    const STEPS = {
+      1: { t: '대폭발', sub: '약 138억 년 전, 우주의 시작', view: 'whole', t0: 0, play: false, grid: false, line: false,
+        what: '시간 막대가 맨 왼쪽(대폭발)에 있어요. 재생 단추를 누르거나 시간 막대를 오른쪽으로 끌어 보세요.',
+        ph: [[0, '우주는 <b>약 138억 년 전</b>에 시작되었어요.'], [0, '처음에는 <b>온도와 밀도가 매우 높은 한 점</b>이었어요.'], [0.04, '그 한 점에서 <b>대폭발</b>이 일어나 우주가 시작되었어요.']],
+        q: '과학자들이 설명하는 우주의 처음 모습은?', opts: ['온도와 밀도가 매우 높은 한 점', '지금과 같은 크기의 우주', '은하 하나'], a: 0,
+        exp: '맞아요! 우주는 온도와 밀도가 매우 높은 <b>한 점</b>에서 대폭발이 일어나 시작되었어요.', no: '시간 막대를 맨 왼쪽으로 옮겨 처음 모습을 다시 보세요. 아주 작고 밝은 한 점이에요.',
+        why: [] },
+      2: { t: '점점 팽창하는 우주', sub: '교과서 그림 Ⅷ-9처럼', view: 'book', t0: 0, play: true, grid: false, line: false,
+        what: '대폭발부터 현재까지 우주가 커지는 모습을 봐요. 멈추고 시간 막대를 앞뒤로 끌며 비교해 보세요. 「우주 전체」를 누르면 한 우주가 커지는 모습을 돌려 볼 수 있어요.',
+        ph: [[0.02, '대폭발 뒤 우주가 <b>점점 팽창</b>해요.'], [0.3, '우주가 커져도 <b>은하의 크기는 그대로</b>예요.'], [0.55, '그래서 <b>은하 사이의 거리</b>가 점점 멀어져요.'], [0.98, '이렇게 팽창하여 <b>현재와 같은 모습</b>이 되었어요.']],
+        q: '시간이 흐르면 은하 사이의 거리는 어떻게 될까요?', opts: ['멀어진다', '가까워진다', '변하지 않는다'], a: 0,
+        exp: '맞아요! 우주가 팽창하면서 은하 사이의 거리가 <b>멀어져요</b>.', no: '시간 막대를 앞뒤로 끌며 은하 사이의 거리를 비교해 보세요.',
+        why: ['은하들이 직접 움직이는 것이 아니에요.', '은하 사이의 <b>우주 공간이 팽창</b>해요.', '풍선 표면이 늘어나면 붙임딱지 사이가 멀어지는 것과 같아요.'] },
+      3: { t: '어느 은하에서 보아도', sub: '팽창에는 중심이 없어요', view: 'inside', t0: 0.3, play: true, grid: true, line: true,
+        what: '은하 사이에 들어와 있어요. 화면의 은하를 아무거나 눌러 그 은하에서 바라보세요. 재생하면 그 은하에서 둘레의 은하들이 어떻게 보이나요?',
+        ph: [[0, '노란 고리가 지금 바라보는 은하예요. 처음은 <b>우리은하</b>예요.'], [0, '격자는 <b>우주 공간</b>이에요. 격자가 늘어나며 은하 사이가 멀어져요.'], [0, '어느 은하를 눌러도 둘레의 은하들이 <b>모두 멀어져요</b>.']],
+        q: '우주가 팽창할 때 팽창의 중심은?', opts: ['없다', '우리은하이다', '가장 밝은 은하이다'], a: 0,
+        exp: '맞아요! 우주 공간은 <b>특정한 중심 없이</b> 모든 방향으로 팽창해요. 어느 지점을 관측해도 대부분의 은하가 서로 멀어져요.', no: '다른 은하를 3개 이상 눌러 보세요. 어느 은하에서 보아도 둘레가 똑같이 멀어지나요?',
+        why: ['격자(우주 공간)가 모든 방향으로 똑같이 늘어나요.', '그래서 어느 은하에서 보아도 다른 은하들이 멀어지는 것으로 보여요.', '특별히 멈춰 있는 <b>중심 은하는 없어요</b>.'] },
+      4: { t: '현재의 우주', sub: '허블이 관측한 것', view: 'whole', t0: 1, play: false, grid: false, line: true,
+        what: '현재의 우주예요. 노란 고리가 우리은하예요. 시간 막대를 조금 왼쪽으로 끌었다가 다시 현재로 와 보세요. 우리은하와 외부 은하 사이의 거리 선이 어떻게 변하나요?',
+        ph: [[0, '우리은하 바깥에 분포하는 은하가 <b>외부 은하</b>예요.'], [0, '허블은 대부분의 외부 은하가 우리은하로부터 <b>멀어지고</b> 있다는 것을 알아내었어요.'], [0, '그 까닭은 <b>우주 공간이 팽창</b>하기 때문이에요.']],
+        q: '대부분의 외부 은하는 우리은하에서 점차 어떻게 될까요?', opts: ['멀어진다', '가까워진다', '그대로이다'], a: 0,
+        exp: '맞아요! 대부분의 외부 은하는 우리은하에서 점차 <b>멀어지고</b> 있어요.', no: '거리 선을 켜고 시간 막대를 왼쪽에서 오른쪽으로 끌어 보세요.',
+        why: ['우주는 약 138억 년 전 대폭발로 시작되었어요.', '그 뒤 우주 공간이 점점 팽창하여 현재와 같은 모습이 되었어요.', '그래서 지금도 대부분의 은하가 서로 멀어지고 있어요.'] },
+    };
+    const picked = {};
+    function setStep(n, keepTime) {
+      S.step = n; S.seen[n] = true; const st = STEPS[n];
+      $$('#flow .fs').forEach((b) => { const k = +b.dataset.s; b.setAttribute('aria-selected', String(k === n)); b.classList.toggle('seen', !!S.seen[k]); });
+      $('#sNo').textContent = n; $('#sTitle').textContent = st.t; $('#sSub').textContent = st.sub; $('#sWhat').textContent = st.what;
+      $('#sPh').innerHTML = st.ph.map((p, i) => `<div class="ph" data-at="${p[0]}"><i>${i + 1}</i><span>${p[1]}</span></div>`).join('');
+      $('#why').innerHTML = st.why.length ? '<h3>왜 그럴까?</h3>' + st.why.map((w, i) => `<div class="w"><i>${i + 1}</i><span>${w}</span></div>`).join('') : '';
+      $('#askQ').textContent = st.q; paintAsk();
+      $('#tried').hidden = n !== 3; paintTried();
+      $('#bPrev').disabled = n === 1; $('#bNext').textContent = n === 4 ? '처음부터' : '다음 단계';
+      $('#prog').style.width = (n / 4) * 100 + '%';
+      setView(st.view); setGrid(st.grid); setLine(st.line);
+      if (n === 3) S.center = -1;
+      if (!keepTime) { S.setT(st.t0); setPlay(st.play); }
+    }
+    function paintAsk() {
+      const st = STEPS[S.step], p = picked[S.step];
+      $('#askB').innerHTML = st.opts.map((o, i) => `<button type="button" data-i="${i}" class="${p == null ? '' : i === st.a ? 'good' : i === p ? 'bad' : ''}">${o}</button>`).join('');
+      $('#askA').innerHTML = p == null ? '' : p === st.a ? st.exp : st.no;
+      $$('#askB button').forEach((b) => b.addEventListener('click', () => { picked[S.step] = +b.dataset.i; paintAsk(); }));
+    }
+    function paintTried() { const n = Object.keys(S.tried).length; $('#tried').textContent = n ? `바라본 은하: ${n}개 ${n >= 3 ? '· 어느 은하에서 보아도 둘레의 은하가 멀어졌나요?' : '· 다른 은하도 눌러 보세요'}` : '화면의 은하를 눌러 보세요. 그 은하에서 바라보게 돼요.'; }
+    S.paintTried = paintTried;
+    /* 시간 막대에 맞춰 단계 글 밝히기 */
+    S.onTime = () => { $$('#sPh .ph').forEach((p) => { const at = +p.dataset.at, on = S.t + 1e-6 >= at; p.classList.toggle('on', on); }); $('#rT').value = Math.round(S.t * 1000); };
+    function setView(v) {
+      S.view = v; $$('.vt.tl .vb').forEach((b) => b.classList.toggle('sel', b.dataset.v === v));
+      $('#hint').textContent = v === 'inside' ? '은하를 눌러 그 은하에서 보기' : v === 'whole' ? '끌어서 돌리기' : '교과서 그림 Ⅷ-9 모양 (모형)';
+      $('#bGrid').hidden = v !== 'inside'; $('#bLine').hidden = v === 'book';
+      $('#cv').setAttribute('aria-label', v === 'book' ? '대폭발에서 시작해 시간의 흐름을 따라 점점 커지는 우주 공들. 가장 큰 공이 현재의 우주이다.' : v === 'whole' ? '우주 전체를 공 모양으로 나타낸 모형. 시간이 흐르면 공이 커지고 은하 사이가 멀어진다. 은하의 크기는 그대로이다.' : '은하들 사이에서 본 모형. 공간을 나타내는 격자가 늘어나며 둘레의 은하들이 모두 멀어진다.');
+    }
+    function setGrid(on) { S.grid = on; $('#bGrid').setAttribute('aria-pressed', String(on)); }
+    function setLine(on) { S.line = on; $('#bLine').setAttribute('aria-pressed', String(on)); }
+    function setPlay(on) {
+      S.play = on; if (on && S.t >= 0.999) S.setT(0);
+      $('#bPlay').setAttribute('aria-label', on ? '멈춤' : '재생');
+      $('#icPlay').innerHTML = on ? '<path d="M7 5h4v14H7zM13 5h4v14h-4z"/>' : '<path d="M8 5v14l11-7z"/>';
+    }
+    S.setPlay = setPlay;
+    $$('.vt.tl .vb').forEach((b) => b.addEventListener('click', () => setView(b.dataset.v)));
+    $('#bGrid').addEventListener('click', () => setGrid(!S.grid));
+    $('#bLine').addEventListener('click', () => setLine(!S.line));
+    $('#bPlay').addEventListener('click', () => setPlay(!S.play));
+    $('#rT').addEventListener('input', (e) => { setPlay(false); S.setT(+e.target.value / 1000); });
+    $$('#flow .fs').forEach((b) => b.addEventListener('click', () => setStep(+b.dataset.s)));
+    $('#bPrev').addEventListener('click', () => setStep(Math.max(1, S.step - 1)));
+    $('#bNext').addEventListener('click', () => setStep(S.step === 4 ? 1 : S.step + 1));
+    S.setT = (v) => { S.t = Math.max(0, Math.min(1, v)); S.onTime(); };
+    const q = new URLSearchParams(location.search);
+    setStep(+q.get('step') || 1);
+    if (q.get('t')) { S.setT(+q.get('t')); setPlay(false); }
+    if (q.get('view')) setView(q.get('view'));
+    if (q.get('grid') === '1') setGrid(true);
+    if (q.get('line') === '1') setLine(true);
+    window.SM.okUI = true;
+  } catch (err) { window.SM_err('안내·버튼', err); }
+})();
+</script>
+<script>
+/* ===== 블록 2: 그림 (교과서 그림, 우주 전체, 은하 사이에서) ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, E = window.EU, R = E.REDUCE;
+    const cv = document.getElementById('cv');
+    const fs = (w) => Math.max(13, Math.min(17, w / 48));
+    const scale = (t) => 0.035 + 0.965 * Math.pow(t, 0.85);   /* 우주 크기 (모형: 커지는 빠르기는 실제와 달라요) */
+    const heatOf = (t) => { const k = E.clamp(1 - t / 0.16, 0, 1); return k * k; };
+    const DUR = 13;  /* 대폭발 → 현재 재생 시간(초) */
+    let yaw = 0.6, pitch = 0.32, last = performance.now();
+    const phaseText = (t) => t < 0.04 ? '대폭발 · 온도와 밀도가 매우 높은 한 점' : t < 0.995 ? '우주가 점점 팽창해요' : '현재';
+
+    /* ----- 우주 전체 (공) ----- */
+    const U = E.universe(9, 80);
+    const MWI = (() => { let b = 0, bd = 9; U.G.forEach((g, i) => { const d = Math.abs(Math.hypot(g.x, g.y, g.z) - 0.45) + Math.abs(g.z) * 0.5; if (g.kind === 'spiral' && d < bd) { bd = d; b = i; } }); return b; })();
+    const nearOf = (i, k) => U.G.map((g, j) => ({ j, d: Math.hypot(g.x - U.G[i].x, g.y - U.G[i].y, g.z - U.G[i].z) })).filter((o) => o.j !== i && o.d > 0.2).sort((a, b) => a.d - b.d).slice(0, k);
+    const MWN = nearOf(MWI, 4);
+    function drawWhole(c, w, h, now) {
+      const sz = fs(w), Rmax = Math.min(w * 0.44, h * 0.43), a = scale(S.t), Rb = Rmax * a, cx = w / 2, cy = h * 0.5, heat = heatOf(S.t);
+      E.space(c, w, h, 21, Math.round(w * h / 2600), '#03050c', '#0a0e22');
+      /* 지나온 크기 */
+      [0.25, 0.5, 0.75].forEach((k) => { if (S.t > k + 0.02) { const r = Rmax * scale(k); c.save(); c.strokeStyle = 'rgba(255,170,205,.35)'; c.setLineDash([5, 6]); c.lineWidth = 1.4; c.beginPath(); c.arc(cx, cy, r, 0, Math.PI * 2); c.stroke(); c.restore(); } });
+      const gs = Math.max(5, Rmax * 0.052);
+      const pts = E.ball(c, cx, cy, Rb, { yaw, pitch, gs, seed: 9, n: 80, heat });
+      if (S.t < 0.1) E.bang(c, cx, cy, Math.max(Rb * 1.6, Rmax * 0.35 * (1 - S.t / 0.1)), 1 - S.t / 0.1, now);
+      const P = {}; pts.forEach((p) => { P[p.i] = p; });
+      const mw = P[MWI];
+      if (mw && S.t > 0.22) {
+        if (S.line) MWN.forEach(({ j }) => { const q = P[j]; if (!q) return; c.save(); c.strokeStyle = 'rgba(255,214,107,.85)'; c.setLineDash([5, 4]); c.lineWidth = 1.8; c.beginPath(); c.moveTo(mw.x, mw.y); c.lineTo(q.x, q.y); c.stroke(); c.restore(); c.save(); c.strokeStyle = 'rgba(255,255,255,.7)'; c.lineWidth = 1.4; c.beginPath(); c.arc(q.x, q.y, gs * 1.1, 0, Math.PI * 2); c.stroke(); c.restore(); });
+        c.save(); c.strokeStyle = '#ffd56b'; c.lineWidth = 2.4; c.beginPath(); c.arc(mw.x, mw.y, gs * 1.5, 0, Math.PI * 2); c.stroke(); c.restore();
+        E.tag(c, '우리은하', mw.x, mw.y - gs * 1.5 - sz * 1.1, { size: sz - 2, color: '#2a2000', bg: '#ffd56b' });
+        if (S.line) E.tag(c, '외부 은하', P[MWN[0].j].x, P[MWN[0].j].y + gs * 1.1 + sz, { size: sz - 3, color: '#eef2fc' });
+      }
+      E.tag(c, phaseText(S.t), w - 12, h - sz * 1.4, { size: sz, align: 'right', color: S.t >= 0.995 ? '#fff' : '#ffe08a', bg: 'rgba(8,14,32,.85)' });
+    }
+
+    /* ----- 은하 사이에서 (공간 격자와 함께) ----- */
+    const F = (() => { const r = E.rng(4242), L = []; for (let i = 0; i < 130; i++) L.push({ x: (r() * 2 - 1) * 3.4, y: (r() * 2 - 1) * 3.4, g: { kind: r() < 0.6 ? 'spiral' : r() < 0.86 ? 'ell' : 'edge', v: Math.floor(r() * 4), rot: r() * 3, sq: 0.45 + r() * 0.55, s: 0.75 + r() * 0.55 } }); L.push({ x: 0.12, y: 0.05, g: { kind: 'spiral', v: 1, rot: 0.6, sq: 0.62, s: 1.25 }, mw: true }); return L; })();
+    const FMW = F.length - 1;
+    let cam = { x: F[FMW].x, y: F[FMW].y }, screen = [];
+    const fNear = (i) => F.map((p, j) => ({ j, d: Math.hypot(p.x - F[i].x, p.y - F[i].y) })).filter((o) => o.j !== i && o.d > 0.3).sort((a, b) => a.d - b.d).slice(0, 5);
+    function drawInside(c, w, h, now, dt) {
+      const sz = fs(w), ci = S.center < 0 ? FMW : S.center, C = F[ci], a = scale(S.t), k = Math.min(w, h) * 0.3 * a, gs = Math.max(6, Math.min(w, h) * 0.03), heat = heatOf(S.t), cx = w / 2, cy = h / 2;
+      const f = R ? 1 : Math.min(1, dt * 5); cam.x += (C.x - cam.x) * f; cam.y += (C.y - cam.y) * f;
+      const P = (p) => [cx + (p.x - cam.x) * k, cy + (p.y - cam.y) * k];
+      const bg = c.createRadialGradient(cx, cy, 0, cx, cy, Math.hypot(w, h) / 2); bg.addColorStop(0, '#111a3c'); bg.addColorStop(1, '#04060e'); c.fillStyle = bg; c.fillRect(0, 0, w, h);
+      if (S.grid) {
+        c.strokeStyle = 'rgba(130,150,235,.22)'; c.lineWidth = 1;
+        for (let g = -14; g <= 14; g++) { const v = g * 0.5, gx = cx + (v - cam.x) * k, gy = cy + (v - cam.y) * k; if (gx > -2 && gx < w + 2) { c.beginPath(); c.moveTo(gx, 0); c.lineTo(gx, h); c.stroke(); } if (gy > -2 && gy < h + 2) { c.beginPath(); c.moveTo(0, gy); c.lineTo(w, gy); c.stroke(); } }
+      }
+      if (S.line && S.t > 0.08) {
+        fNear(ci).forEach(({ j }) => { const q = P(F[j]), dx = q[0] - cx, dy = q[1] - cy, L = Math.hypot(dx, dy), ux = dx / L, uy = dy / L; if (L < gs * 3) return;
+          c.save(); c.setLineDash([6, 5]); c.strokeStyle = 'rgba(255,214,107,.9)'; c.lineWidth = 2; c.beginPath(); c.moveTo(cx + ux * gs * 1.6, cy + uy * gs * 1.6); c.lineTo(q[0] - ux * gs * 1.1, q[1] - uy * gs * 1.1); c.stroke(); c.restore();
+          if (S.play || R) E.arrow(c, q[0] + ux * gs * 1.1, q[1] + uy * gs * 1.1, q[0] + ux * gs * 2.8, q[1] + uy * gs * 2.8, 'rgba(255,160,200,.95)', 2.2, 9); });
+      }
+      c.save(); c.globalCompositeOperation = 'lighter'; screen = [];
+      F.forEach((p, i) => { const q = P(p); if (q[0] < -30 || q[0] > w + 30 || q[1] < -30 || q[1] > h + 30) return; screen.push([i, q[0], q[1]]); E.drawGal(c, p.g, q[0], q[1], gs * p.g.s, 0.85); });
+      c.restore();
+      if (heat > 0.002) { const hg = c.createRadialGradient(cx, cy, 0, cx, cy, Math.hypot(w, h) * 0.6); hg.addColorStop(0, E.rgb([255, 245, 200], heat)); hg.addColorStop(0.5, E.rgb([255, 170, 70], heat * 0.85)); hg.addColorStop(1, E.rgb([230, 90, 40], heat * 0.7)); c.save(); c.globalCompositeOperation = 'lighter'; c.fillStyle = hg; c.fillRect(0, 0, w, h); c.restore(); }
+      const mq = P(F[FMW]);
+      if (ci !== FMW) { c.save(); c.strokeStyle = 'rgba(255,214,107,.6)'; c.lineWidth = 1.6; c.beginPath(); c.arc(mq[0], mq[1], gs * 1.5, 0, Math.PI * 2); c.stroke(); c.restore(); E.tag(c, '우리은하', mq[0], mq[1] + gs * 1.5 + sz, { size: sz - 3, color: '#ffe08a' }); }
+      c.save(); c.strokeStyle = '#ffd56b'; c.lineWidth = 3; c.beginPath(); c.arc(cx, cy, gs * 1.7, 0, Math.PI * 2); c.stroke(); c.restore();
+      E.tag(c, ci === FMW ? '우리은하에서 보기' : '이 은하에서 보기', cx, cy + gs * 1.7 + sz * 1.1, { size: sz - 2, color: '#2a2000', bg: '#ffd56b' });
+      E.tag(c, phaseText(S.t), w - 12, h - sz * 1.4, { size: sz, align: 'right', color: S.t >= 0.995 ? '#fff' : '#ffe08a', bg: 'rgba(8,14,32,.85)' });
+    }
+
+    /* ----- 손가락 조작: 우주 전체는 돌리기, 은하 사이에서는 은하 고르기 ----- */
+    let drag = null;
+    cv.addEventListener('pointerdown', (e) => { drag = { x: e.clientX, y: e.clientY, yaw, pitch, moved: false }; if (S.view === 'whole') cv.setPointerCapture(e.pointerId); });
+    cv.addEventListener('pointermove', (e) => { if (!drag || S.view !== 'whole') return; const dx = e.clientX - drag.x, dy = e.clientY - drag.y; if (Math.abs(dx) + Math.abs(dy) > 4) drag.moved = true; yaw = drag.yaw + dx * 0.008; pitch = E.clamp(drag.pitch + dy * 0.006, -1.2, 1.2); });
+    cv.addEventListener('pointerup', (e) => {
+      if (drag && !drag.moved && S.view === 'inside') {
+        const r = cv.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+        let best = null, bd = 40; screen.forEach(([i, sx, sy]) => { const d = Math.hypot(sx - x, sy - y); if (d < bd) { bd = d; best = i; } });
+        if (best != null) { S.center = best; S.tried[best] = 1; S.paintTried && S.paintTried(); }
+      }
+      drag = null;
+    });
+    cv.addEventListener('pointercancel', () => { drag = null; });
+
+    function frame(now) {
+      const dt = Math.min(0.05, (now - last) / 1000); last = now;
+      if (S.play && !R) { S.setT(S.t + dt / DUR); if (S.t >= 1) S.setPlay(false); }
+      if (S.play && R) { S.setT(1); S.setPlay(false); }
+      if (!E.visible(cv)) return;
+      if (S.view === 'whole' && !drag && !R) yaw += dt * 0.06;
+      const { c, w, h } = E.fit(cv);
+      if (S.view === 'book') E.timeline(c, w, h, S.t, now, {});
+      else if (S.view === 'whole') drawWhole(c, w, h, now);
+      else drawInside(c, w, h, now, dt);
+    }
+    const loop = (now) => { try { frame(now); } catch (e) { window.SM_err('그림', e); return; } requestAnimationFrame(loop); };
+    requestAnimationFrame(loop);
+    window.SM.okDraw = true;
+  } catch (err) { window.SM_err('그림', err); }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>우주 팽창 – 스스로 정리하기</title>
+<script>
+/* 문제 알림: 코드에 오류가 나면 화면 아래에 빨간 상자로 알려 줘요 (선생님 확인용) */
+(function () {
+  function box() {
+    var b = document.getElementById('swErr');
+    if (!b && document.body) {
+      b = document.createElement('div'); b.id = 'swErr';
+      b.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;background:#fdecea;color:#8a1f17;border:2px solid #d9534f;border-radius:12px;padding:10px 14px;font:600 14px/1.5 sans-serif;white-space:pre-wrap';
+      document.body.appendChild(b);
+    }
+    return b;
+  }
+  window.SW_err = function (where, err) {
+    var msg = '[' + where + '] ' + (err && err.message ? err.message : String(err));
+    var show = function () { var b = box(); if (b) b.textContent += (b.textContent ? '\n' : '') + msg; };
+    if (document.body) show(); else document.addEventListener('DOMContentLoaded', show);
+  };
+  window.addEventListener('error', function (e) { window.SW_err('스크립트', { message: e.message + ' (줄 ' + e.lineno + ')' }); });
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      var S = window.SW || {}, miss = [];
+      (window.SW_CHECKS || []).forEach(function (p) { if (!S[p[0]]) miss.push(p[1]); });
+      if (miss.length) window.SW_err('실행 안 됨', { message: miss.join(', ') + ' 코드가 실행되지 않았어요. 파일이 끝(</html>)까지 들어 있는지 확인해 주세요.' });
+    }, 1500);
+  });
+})();
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+  :root{--bg:#f3f6f9;--card:#fff;--ink:#14263b;--ink2:#34495e;--muted:#5a6b7e;--line:#dde6ee;--accent:#0e63b3;--accent-soft:#e3effb;
+    --ok:#1f9d5c;--no:#d9534f;--violet:#7d5ad6;--ser:#1784cf;--ser-soft:#e3f2fc;--par:#5e9e1c;--par-soft:#eef7e2;
+    --shadow:0 1px 2px rgba(20,38,59,.06),0 8px 24px rgba(20,38,59,.07);--ease:cubic-bezier(.2,.8,.2,1)}
+  *{box-sizing:border-box}html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:"Pretendard",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  button{font:inherit;color:inherit}
+  .app{max-width:1000px;margin:0 auto;padding:16px 16px 28px;display:flex;flex-direction:column;gap:16px}
+  .eyebrow{display:inline-flex;font-size:13px;font-weight:700;color:var(--accent);background:var(--accent-soft);padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(22px,2.8vw,30px);margin:8px 0 2px;letter-spacing:-.02em}
+  .sub{margin:0;color:var(--muted);font-size:15px;word-break:keep-all}
+  .tabs{display:flex;gap:8px;flex-wrap:wrap;position:sticky;top:0;z-index:5;background:rgba(243,246,249,.94);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);padding:8px 0}
+  .tab{display:flex;align-items:center;gap:8px;min-height:46px;padding:0 14px;border:0;border-radius:12px;background:#fff;box-shadow:var(--shadow);font-weight:800;font-size:14.5px;color:var(--muted);cursor:pointer}
+  .tab .n{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:12.5px;background:#e6edf4;color:#607285}
+  .tab.done .n{background:var(--ok);color:#fff}
+  .card{background:var(--card);border-radius:22px;box-shadow:var(--shadow);border:1px solid rgba(20,38,59,.04);padding:20px 22px;scroll-margin-top:70px}
+  h2{font-size:21px;margin:0 0 4px;display:flex;align-items:center;gap:10px}
+  h2 .no{width:30px;height:30px;border-radius:10px;background:var(--accent);color:#fff;display:grid;place-items:center;font-size:15px}
+  .goal{font-size:14.5px;color:var(--muted);margin:0 0 14px;word-break:keep-all}
+  .fb{margin-top:12px;padding:12px 14px;border-radius:14px;font-size:15px;line-height:1.6;word-break:keep-all;display:none}
+  .fb.show{display:block;animation:fade .35s var(--ease)}
+  .fb.ok{background:#e8f7ef;color:#0f5a36}.fb.no{background:#fff5e6;color:#7a4508}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .btn{min-height:50px;border:0;border-radius:14px;padding:0 18px;font-weight:800;font-size:15.5px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;justify-content:center}
+  .btn:active{transform:scale(.97)}
+  .btn.primary{background:var(--accent);color:#fff}.btn.ghost{background:#eef3f8;color:var(--ink2)}.btn.green{background:var(--ok);color:#fff}
+  .btn:disabled{opacity:.4}
+  /* 1. 분류 */
+  .sort{display:grid;gap:10px}
+  .si{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;background:#f7fafc;border:2px solid transparent;border-radius:16px;padding:10px 12px 10px 16px;transition:all .25s}
+  .si p{margin:0;font-weight:700;font-size:16.5px;line-height:1.5;word-break:keep-all}
+  .si .two{display:flex;gap:6px}
+  .si .two button{min-height:48px;min-width:84px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15px;cursor:pointer}
+  .si .two button.s[aria-pressed="true"]{border-color:var(--ser);background:var(--ser-soft);color:var(--ser)}
+  .si .two button.p[aria-pressed="true"]{border-color:var(--par);background:var(--par-soft);color:#3f6e10}
+  .si.good{border-color:#9fdcbb;background:#ecf8f1}.si.bad{border-color:#f3c2bb;background:#fff4f2}
+  /* 2. 잇기 */
+  .chains{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .chn h3{margin:0 0 8px;font-size:16px}
+  .chn.s h3{color:var(--ser)}.chn.p h3{color:var(--par)}
+  .slots{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+  .sl{min-height:50px;border-radius:12px;border:2px dashed #b8c6d4;background:#f7fafc;display:flex;align-items:center;gap:10px;padding:6px 12px;font-weight:800;font-size:15px;color:var(--muted);word-break:keep-all}
+  .sl .k{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:13px;color:#fff;background:#aebdcc}
+  .chn.s .sl.f{border-style:solid;border-color:var(--ser);background:var(--ser-soft);color:#0f4f7d}.chn.s .sl.f .k{background:var(--ser)}
+  .chn.p .sl.f{border-style:solid;border-color:var(--par);background:var(--par-soft);color:#3f6e10}.chn.p .sl.f .k{background:var(--par)}
+  .pool{display:flex;flex-direction:column;gap:6px}
+  .pc{min-height:50px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15px;cursor:pointer;text-align:left;padding:6px 12px;word-break:keep-all}
+  .pc.shake{animation:shake .4s;border-color:var(--no)}
+  @keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+  .pc[hidden]{display:none}
+  /* 3. 생활 */
+  .lq{padding:14px 0;border-bottom:1px dashed var(--line)}
+  .lq:last-child{border-bottom:0;padding-bottom:0}
+  .lq p{margin:0 0 10px;font-weight:700;font-size:16.5px;line-height:1.6;word-break:keep-all}
+  .opts{display:grid;gap:8px}
+  .ob{display:flex;align-items:center;gap:10px;text-align:left;min-height:52px;border-radius:14px;border:2px solid var(--line);background:#f7fafc;padding:8px 14px;font-size:15.5px;font-weight:700;cursor:pointer;word-break:keep-all}
+  .ob .k{flex:none;width:28px;height:28px;border-radius:50%;background:#fff;border:2px solid #cbd6e1;display:grid;place-items:center;font-size:13px;font-weight:800;color:#5a6b7e}
+  .ob.good{border-color:var(--ok);background:#e8f7ef}.ob.bad{border-color:var(--no);background:#fdecea}
+  .ob:disabled{cursor:default}
+  .lexp{display:none;margin-top:10px;padding:12px 14px;border-radius:14px;background:#f2f7fd;font-size:15px;line-height:1.65;word-break:keep-all}
+  .lexp.show{display:block}
+  /* 4. 글쓰기 */
+  .prompts{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+  .pr{border-radius:16px;border:2px solid #d4dee8;background:#fff;padding:12px 14px;text-align:left;cursor:pointer;min-height:96px}
+  .pr b{display:block;font-size:15.5px;margin-bottom:4px}.pr span{font-size:13.5px;color:var(--muted);word-break:keep-all}
+  .pr.sel{border-color:var(--violet);background:#f3effd}
+  .wq{font-size:17px;font-weight:800;background:#f3effd;border-radius:14px;padding:12px 14px;margin-bottom:10px;color:#3d2f73;word-break:keep-all}
+  .starters{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+  .starters button{min-height:44px;border-radius:10px;border:1px dashed #b8a6ec;background:#fff;color:#5a43a8;font-weight:700;font-size:13.5px;padding:0 10px;cursor:pointer}
+  textarea{width:100%;min-height:220px;border-radius:16px;border:2px solid #cbd6e1;padding:14px 16px;font-size:17px;line-height:1.8;resize:vertical;font-family:inherit}
+  textarea:focus{outline:none;border-color:var(--violet);box-shadow:0 0 0 4px rgba(125,90,214,.15)}
+  .wmeta{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-top:8px;font-size:14px;color:var(--muted);font-weight:700}
+  .kw{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+  .kw span{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:6px 12px;font-size:14px;font-weight:800;background:#eef3f8;color:#7a8a9b;transition:all .3s}
+  .kw span.on{background:#e8f7ef;color:#11703f}
+  .kw span::before{content:"○"}.kw span.on::before{content:"●"}
+  .self{display:grid;gap:8px;margin-top:14px}
+  .self label{display:flex;align-items:center;gap:10px;background:#f7fafc;border-radius:12px;padding:10px 12px;font-size:15px;font-weight:700;cursor:pointer;word-break:keep-all;min-height:48px}
+  .self input{width:22px;height:22px;accent-color:var(--ok)}
+  .self .cat{flex:none;font-size:12px;font-weight:800;color:#fff;border-radius:999px;padding:2px 8px}
+  .acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+  .note{font-size:12.5px;color:var(--muted);line-height:1.6;word-break:keep-all}
+  @media (max-width:760px){.chains,.prompts{grid-template-columns:1fr}.si{grid-template-columns:1fr}}
+  @media print{body{background:#fff}.tabs,.card:not(#s4),.acts,.starters,.prompts,.self,.kw,header .sub{display:none!important}#s4{box-shadow:none;border:0}textarea{border:0;min-height:0;height:auto}}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+  /* ===== 이 수업 전용 ===== */
+  :root{--accent:#4b3aa8;--accent-soft:#eeebfa}
+  .si .two button{min-width:92px}
+  .si .two button.o[aria-pressed="true"]{border-color:#1f78c8;background:#e5f0fb;color:#1f78c8}
+  .si .two button.x[aria-pressed="true"]{border-color:#d9534f;background:#fdecea;color:#b33a35}
+  .slot{min-height:52px;width:100%;border-radius:12px;border:2px dashed #aebdcc;background:#fff;font-weight:900;font-size:15px;color:var(--muted);cursor:pointer;word-break:keep-all;padding:2px 6px}
+  .slot.f{border-style:solid;border-color:var(--accent);background:var(--accent-soft);color:#2d2266}
+  .slot.cur{box-shadow:0 0 0 4px rgba(75,58,168,.22)}
+  .slot.good{border-color:var(--ok);background:#e8f7ef;color:#11703f}.slot.bad{border-color:var(--no);background:#fdecea;color:#b33a35}
+  .bank{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+  .chip{min-height:48px;padding:6px 16px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:16px;cursor:pointer;word-break:keep-all}
+  .chip.used{opacity:.3;pointer-events:none}
+  .ana{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:16px;align-items:center}
+  .ana canvas{width:100%;aspect-ratio:1/0.82;display:block;border-radius:18px;background:linear-gradient(180deg,#f7f4ff,#ece6fb)}
+  .arow{display:grid;grid-template-columns:minmax(0,1fr) 22px minmax(0,1fr);gap:8px;align-items:center;margin-bottom:8px}
+  .arow b{font-size:15.5px;word-break:keep-all;background:#f7f5fd;border-radius:12px;padding:12px 12px;border:1px solid #e1dcf4;min-height:52px;display:flex;align-items:center}
+  .arow i{font-style:normal;color:var(--accent);font-weight:900;text-align:center}
+  .order{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+  .oc{position:relative;border-radius:16px;background:#0a0f24;border:3px solid transparent;padding:0;cursor:pointer;overflow:hidden;min-height:44px}
+  .oc canvas{width:100%;aspect-ratio:1;display:block}
+  .oc .n{position:absolute;left:8px;top:8px;width:34px;height:34px;border-radius:50%;background:#ffd56b;color:#2a2000;font-weight:900;font-size:17px;display:none;place-items:center}
+  .oc.on{border-color:#ffd56b}.oc.on .n{display:grid}
+  .oc.good{border-color:var(--ok)}.oc.bad{border-color:var(--no)}
+  .oc .lb{position:absolute;left:0;right:0;bottom:0;padding:6px 8px;font-size:13px;font-weight:800;color:#e8ecfb;background:linear-gradient(transparent,rgba(5,8,20,.85));text-align:center;word-break:keep-all}
+  .self2{display:grid;gap:10px;margin-top:16px}
+  .sp{border-radius:16px;background:#f7fafc;border:1px solid var(--line);padding:12px 14px;font-size:16.5px;font-weight:700;line-height:2.1;word-break:keep-all}
+  .sp .tg{display:inline-flex;gap:4px;vertical-align:middle;margin:0 4px}
+  .sp .tg button{min-height:44px;min-width:64px;padding:0 12px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:900;font-size:15.5px;cursor:pointer}
+  .sp .tg button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:#2d2266}
+  .sp .tg button.good{border-color:var(--ok);background:#e8f7ef;color:#11703f}.sp .tg button.bad{border-color:var(--no);background:#fdecea;color:#b33a35}
+  .prompts{grid-template-columns:repeat(4,1fr)}
+  @media (max-width:860px){.prompts{grid-template-columns:1fr 1fr}.order{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  @media (max-width:640px){.ana{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <span class="eyebrow">우주 팽창 · 스스로 정리하기</span>
+    <h1>우주 팽창 내 말로 정리하기</h1>
+    <p class="sub">맞는 말을 고르고, 풍선 모형을 우주에 비유하고, 우주의 변화를 시간 순서로 놓은 뒤, 친구에게 설명하듯 써 봐요.</p>
+  </header>
+  <nav class="tabs" id="tabs"></nav>
+
+  <section class="card" id="s1">
+    <h2><span class="no">1</span>맞을까, 틀릴까?</h2>
+    <p class="goal">문장마다 '맞다' 또는 '틀리다'를 골라요. 다 고르면 확인!</p>
+    <div class="sort" id="sort"></div>
+    <div class="acts"><button type="button" class="btn primary" id="chk1" disabled>확인하기</button></div>
+    <div class="fb" id="fb1"></div>
+  </section>
+
+  <section class="card" id="s2">
+    <h2><span class="no">2</span>풍선 모형을 우주에 비유하기</h2>
+    <p class="goal">빈칸을 누른 뒤, 아래 낱말을 눌러 채워요. (교과서 정리하기 1, 2)</p>
+    <div class="ana">
+      <canvas id="aCv" role="img" aria-label="붙임딱지 1, 2, 3이 붙은 보라색 풍선. 공기를 넣어 커지는 중이다."></canvas>
+      <div id="arows"></div>
+    </div>
+    <div class="bank" id="bank2"></div>
+    <button class="btn primary" id="chk2" type="button" disabled>확인하기</button>
+    <div class="fb" id="fb2"></div>
+  </section>
+
+  <section class="card" id="s3">
+    <h2><span class="no">3</span>시간 순서대로 놓기</h2>
+    <p class="goal">우주의 모습을 대폭발부터 현재까지 순서대로 눌러요. 다시 누르면 취소돼요.</p>
+    <div class="order" id="order"></div>
+    <div class="acts"><button class="btn primary" id="chk3" type="button" disabled>확인하기</button><button class="btn ghost" id="rst3" type="button">다시 놓기</button></div>
+    <div class="fb" id="fb3"></div>
+    <div class="self2">
+      <h3 style="margin:6px 0 0;font-size:17px">스스로 평가</h3>
+      <div class="sp" id="sp"></div>
+      <div class="acts" style="margin:0"><button class="btn primary" id="chk3b" type="button" disabled>확인하기</button></div>
+      <div class="fb" id="fb3b"></div>
+    </div>
+  </section>
+
+  <section class="card" id="s4">
+    <h2><span class="no">4</span>내 말로 설명하기</h2>
+    <p class="goal">주제를 하나 골라 친구에게 설명하듯 써 봐요. 핵심어를 넣으면 초록색으로 바뀌어요.</p>
+    <div class="prompts" id="prompts"></div>
+    <div class="wq" id="wqText"></div>
+    <div class="starters" id="starters"></div>
+    <textarea id="txt" placeholder="여기에 써 보세요."></textarea>
+    <div class="wmeta"><span id="cnt">0자 · 목표 100자 이상</span><span id="saved"></span></div>
+    <div class="kw" id="kw"></div>
+    <div class="self" id="self"></div>
+    <div class="acts">
+      <button class="btn green" id="copyBtn" type="button">글 복사하기</button>
+      <button class="btn ghost" id="printBtn" type="button">인쇄 / PDF로 저장</button>
+    </div>
+    <p class="note" style="margin-top:10px">※ 글은 이 기기의 브라우저에만 임시로 저장되고 어디에도 보내지 않아요. 다 쓰면 '글 복사하기'로 복사해서 선생님이 안내한 곳에 붙여 넣으세요.</p>
+  </section>
+  <p class="credit" style="margin:20px 0 4px;text-align:center;font-size:13px;font-weight:700;color:#8495a8;letter-spacing:.02em">우주 팽창 · 우주의 크기는 항상 일정할까?</p>
+</div>
+
+<script>
+/* ===== 공통 ===== */
+window.SW_CHECKS = [['ok1', 'O/X 판단'], ['ok2', '풍선 모형 비유'], ['ok3', '시간 순서'], ['ok4', '글쓰기']];
+window.SW = {
+  $: (s, r = document) => r.querySelector(s),
+  $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
+  shuffle: (a) => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; },
+  fb: (id, ok, html) => { const f = document.querySelector(id); f.className = 'fb show ' + (ok ? 'ok' : 'no'); f.innerHTML = html; },
+  done: {},
+  /* 빈칸 채우기: 빈칸을 누르고 낱말을 눌러 채워요 */
+  slots(slots, chips, chk) {
+    const fill = slots.map(() => null); let cur = 0, locked = false;
+    const paint = () => { slots.forEach((s, i) => { s.textContent = fill[i] ? fill[i].textContent : '빈칸'; s.classList.toggle('f', !!fill[i]); s.classList.toggle('cur', i === cur && !locked); }); chk.disabled = locked || fill.some((f) => !f); };
+    const clear = () => slots.forEach((x) => x.classList.remove('good', 'bad'));
+    chips.forEach((c) => c.addEventListener('click', () => { if (locked) return; if (fill[cur]) fill[cur].classList.remove('used'); fill[cur] = c; c.classList.add('used'); const n = fill.findIndex((f) => !f); if (n >= 0) cur = n; clear(); paint(); }));
+    slots.forEach((s, i) => s.addEventListener('click', () => { if (locked) return; if (fill[i]) { fill[i].classList.remove('used'); fill[i] = null; } cur = i; clear(); paint(); }));
+    paint();
+    return { fill, lock: () => { locked = true; paint(); } };
+  },
+};
+(() => {
+  const { $, $$ } = window.SW;
+  const TABS = ['맞을까 틀릴까', '풍선 모형 비유', '시간 순서', '글쓰기'];
+  window.SW.renderTabs = () => {
+    $('#tabs').innerHTML = TABS.map((t, i) => `<button type="button" class="tab${window.SW.done[i + 1] ? ' done' : ''}" data-s="${i + 1}"><span class="n">${i + 1}</span>${t}</button>`).join('');
+    $$('#tabs .tab').forEach((b) => b.addEventListener('click', () => document.getElementById('s' + b.dataset.s).scrollIntoView({ behavior: 'smooth', block: 'start' })));
+  };
+  window.SW.finish = (n) => { window.SW.done[n] = true; window.SW.renderTabs(); };
+  window.SW.renderTabs();
+})();
+</script>
+<script>
+/* ===== 우주 팽창 그림 도구 (은하, 우주 공, 대폭발, 시간의 흐름, 풍선) =====
+   - 은하·우주 그림은 사진이 아니라 개념 이해를 위한 모형이에요. 은하의 수·모양·크기는 실제와 달라요.
+   - 우주가 커져도 은하 그림의 크기는 그대로 두고, 은하 사이의 거리만 늘려요(교과서: 은하가 직접 움직이는 것이 아니라 우주 공간이 팽창).
+   - 커지는 빠르기는 모형이에요. 숫자는 '대폭발 약 138억 년 전'과 '현재'만 써요. */
+window.EU = (function () {
+  'use strict';
+  function rng(seed) {
+    var s = (seed >>> 0) || 1;
+    return function () { s = (s + 0x6D2B79F5) | 0; var t = Math.imul(s ^ (s >>> 15), 1 | s); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  }
+  function gauss(r) { var u = 0; while (!u) u = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * r()); }
+  var clamp = function (x, a, b) { return x < a ? a : x > b ? b : x; };
+  var sstep = function (a, b, x) { var t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+  var lerp = function (a, b, t) { return a + (b - a) * t; };
+  function rgb(c, a) { return 'rgba(' + Math.round(c[0]) + ',' + Math.round(c[1]) + ',' + Math.round(c[2]) + ',' + (a == null ? 1 : a) + ')'; }
+  function mix(a, b, t) { b = b || [255, 255, 255]; return [0, 1, 2].map(function (k) { return a[k] + (b[k] - a[k]) * t; }); }
+  var REDUCE = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  function fit(cv, maxDpr) {
+    var r = cv.getBoundingClientRect(), dpr = Math.min(maxDpr || 2, window.devicePixelRatio || 1);
+    var w = Math.max(10, r.width), h = Math.max(10, r.height), W = Math.round(w * dpr), H = Math.round(h * dpr);
+    if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
+    var c = cv.getContext('2d'); c.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { c: c, w: w, h: h, dpr: dpr };
+  }
+  function off(w, h) { var c = document.createElement('canvas'); c.width = Math.max(1, Math.round(w)); c.height = Math.max(1, Math.round(h)); return c; }
+  /* 화면에 보일 때만 움직이기 (탭 껍데기에서 가려진 탭, 화면 밖 그림은 쉬어요) */
+  function visible(el) {
+    if (document.hidden) return false;
+    try { var f = window.frameElement; if (f && f.hasAttribute('data-page') && !f.classList.contains('on')) return false; } catch (e) {}
+    if (!el) return true;
+    var r = el.getBoundingClientRect(); return r.width > 0 && r.bottom > -40 && r.top < (window.innerHeight || 800) + 40;
+  }
+  /* 빛 번짐 점 */
+  var sprites = {};
+  function sprite(col) {
+    var key = col.map(Math.round).join(',');
+    if (sprites[key]) return sprites[key];
+    var s = off(64, 64), g = s.getContext('2d'), gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+    gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.1, rgb(mix(col, null, 0.6), 0.95)); gr.addColorStop(0.28, rgb(col, 0.45));
+    gr.addColorStop(0.6, rgb(col, 0.1)); gr.addColorStop(1, rgb(col, 0));
+    g.fillStyle = gr; g.fillRect(0, 0, 64, 64); sprites[key] = s; return s;
+  }
+  function star(ctx, x, y, r, col, a) {
+    ctx.globalAlpha = a == null ? 1 : clamp(a, 0, 1);
+    ctx.drawImage(sprite(col), x - r, y - r, r * 2, r * 2);
+    ctx.globalAlpha = 1;
+  }
+  /* 우주 배경 */
+  function space(ctx, w, h, seed, n, top, bot) {
+    var g = ctx.createLinearGradient(0, 0, 0, h); g.addColorStop(0, top || '#04070f'); g.addColorStop(1, bot || '#0a1022');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+    var R = rng(seed || 3); ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    var N = n == null ? Math.round(w * h / 3000) : n;
+    for (var i = 0; i < N; i++) { var m = Math.pow(R(), 3); star(ctx, R() * w, R() * h, 1 + m * 4, R() < 0.3 ? [170, 195, 255] : [235, 238, 255], 0.25 + m * 0.5); }
+    ctx.restore();
+  }
+  /* 잡음 무늬(우주 공 안의 옅은 빛) */
+  function noiseTex(seed, size) {
+    var r = rng(seed), P = new Uint8Array(512), G = new Float32Array(256), i, p = [];
+    for (i = 0; i < 256; i++) { p.push(i); G[i] = r(); }
+    for (i = 255; i > 0; i--) { var j = Math.floor(r() * (i + 1)), t = p[i]; p[i] = p[j]; p[j] = t; }
+    for (i = 0; i < 512; i++) P[i] = p[i & 255];
+    function vn(x, y) { var xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi, u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf); xi &= 255; yi &= 255; var a = G[P[P[xi] + yi]], b = G[P[P[xi + 1] + yi]], c = G[P[P[xi] + yi + 1]], d = G[P[P[xi + 1] + yi + 1]]; return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v; }
+    function fbm(x, y) { var s = 0, a = 0.5, f = 1, n = 0; for (var k = 0; k < 5; k++) { s += a * vn(x * f + k * 17.3, y * f - k * 9.1); n += a; f *= 2.03; a *= 0.5; } return s / n; }
+    var cv = off(size, size), g = cv.getContext('2d'), id = g.createImageData(size, size), d = id.data;
+    for (var y = 0; y < size; y++) for (var x = 0; x < size; x++) {
+      var f1 = fbm(x / size * 3.2, y / size * 3.2), f2 = fbm(x / size * 2.4 + 40, y / size * 2.4 + 9);
+      var a1 = clamp((f1 - 0.45) * 2.4, 0, 1), a2 = clamp((f2 - 0.5) * 2.4, 0, 1), k4 = (y * size + x) * 4;
+      d[k4] = 90 * a1 + 150 * a2; d[k4 + 1] = 70 * a1 + 90 * a2; d[k4 + 2] = 190 * a1 + 200 * a2; d[k4 + 3] = 255 * Math.max(a1, a2);
+    }
+    g.putImageData(id, 0, 0); return cv;
+  }
+  var NZ = null; function haze() { return NZ || (NZ = noiseTex(77, 192)); }
+
+  /* ===== 은하 그림 (모형) ===== */
+  var GT = {};
+  function galTex(kind, seed) {
+    var key = kind + seed; if (GT[key]) return GT[key];
+    var S = 128, cv = off(S, S), g = cv.getContext('2d'), r = rng(seed * 31 + 7), c = S / 2;
+    g.globalCompositeOperation = 'lighter';
+    var glow = function (x, y, rad, col, a) { var gr = g.createRadialGradient(x, y, 0, x, y, rad); gr.addColorStop(0, rgb(col, a)); gr.addColorStop(1, rgb(col, 0)); g.fillStyle = gr; g.fillRect(x - rad, y - rad, rad * 2, rad * 2); };
+    if (kind === 'spiral') {
+      var cool = r() < 0.6, armCol = cool ? [150, 185, 255] : [235, 220, 255];
+      glow(c, c, S * 0.46, [130, 150, 230], 0.3); glow(c, c, S * 0.3, armCol, 0.28);
+      var arms = 2, k = 0.3 + r() * 0.1, th0 = r() * Math.PI * 2;
+      for (var a = 0; a < arms; a++) for (var i = 0; i < 700; i++) {
+        var ph = Math.pow(r(), 0.75) * 3.4, rad = 7 * Math.exp(k * ph * 1.3), th = th0 + a * Math.PI + ph + gauss(r) * 0.22;
+        if (rad > S * 0.46) continue;
+        var x = c + rad * Math.cos(th) + gauss(r) * 2.4, y = c + rad * Math.sin(th) + gauss(r) * 2.4, kn = r() < 0.04;
+        star(g, x, y, kn ? 3 : 1.2 + r() * 1.6, kn ? [255, 130, 175] : armCol, kn ? 0.6 : 0.16 + r() * 0.26);
+      }
+      glow(c, c, S * 0.2, [255, 225, 170], 0.9); glow(c, c, S * 0.08, [255, 248, 230], 1);
+    } else if (kind === 'ell') {
+      var warm = [255, 205 + r() * 25, 150 + r() * 30];
+      glow(c, c, S * 0.47, warm, 0.5); glow(c, c, S * 0.25, warm, 0.7); glow(c, c, S * 0.1, [255, 245, 225], 1);
+      for (var j = 0; j < 90; j++) { var rr = Math.abs(gauss(r)) * S * 0.16, aa = r() * Math.PI * 2; star(g, c + rr * Math.cos(aa), c + rr * Math.sin(aa), 1.4 + r() * 1.6, warm, 0.3); }
+    } else { /* 옆에서 본 나선 은하 */
+      g.save(); g.translate(c, c); g.scale(1, 0.2);
+      var gr = g.createRadialGradient(0, 0, 0, 0, 0, S * 0.47); gr.addColorStop(0, 'rgba(255,235,200,.95)'); gr.addColorStop(0.35, 'rgba(190,200,255,.55)'); gr.addColorStop(1, 'rgba(150,170,255,0)');
+      g.fillStyle = gr; g.beginPath(); g.arc(0, 0, S * 0.47, 0, Math.PI * 2); g.fill(); g.restore();
+      glow(c, c, S * 0.13, [255, 225, 175], 0.9);
+      g.globalCompositeOperation = 'source-over'; g.fillStyle = 'rgba(20,14,26,.55)'; g.beginPath(); g.ellipse(c, c + 1.2, S * 0.4, 1.6, 0, 0, Math.PI * 2); g.fill();
+    }
+    GT[key] = cv; return cv;
+  }
+  /* 우주 속 은하 목록: 단위 공 안의 위치(공간과 함께 움직이는 위치) */
+  var UNI = {};
+  function universe(seed, n) {
+    var key = seed + ':' + n; if (UNI[key]) return UNI[key];
+    var r = rng(seed), G = [], S = [];
+    for (var i = 0; i < n; i++) {
+      var u = Math.cbrt(0.04 + r() * 0.96) * 0.86, ct = 2 * r() - 1, st = Math.sqrt(1 - ct * ct), ph = r() * Math.PI * 2;
+      var q = r(), kind = q < 0.58 ? 'spiral' : q < 0.86 ? 'ell' : 'edge';
+      G.push({ x: u * st * Math.cos(ph), y: u * ct, z: u * st * Math.sin(ph), kind: kind, v: Math.floor(r() * 4), rot: r() * Math.PI, sq: kind === 'spiral' ? 0.35 + r() * 0.65 : kind === 'ell' ? 0.6 + r() * 0.4 : 1, s: 0.7 + r() * 0.7 });
+    }
+    for (var k = 0; k < 360; k++) { var uu = Math.cbrt(r()) * 0.95, c2 = 2 * r() - 1, s2 = Math.sqrt(1 - c2 * c2), p2 = r() * Math.PI * 2; S.push({ x: uu * s2 * Math.cos(p2), y: uu * c2, z: uu * s2 * Math.sin(p2), c: r() < 0.5 ? [170, 190, 255] : [255, 225, 200], m: r() }); }
+    return (UNI[key] = { G: G, S: S });
+  }
+  function drawGal(ctx, g, x, y, size, a) {
+    var t = galTex(g.kind, g.v); ctx.save(); ctx.globalAlpha = clamp(a, 0, 1); ctx.translate(x, y); ctx.rotate(g.rot); ctx.scale(1, g.sq);
+    ctx.drawImage(t, -size, -size, size * 2, size * 2); ctx.restore();
+  }
+  /* 3D 회전 투영 */
+  function rot(p, yaw, pitch) {
+    var cy = Math.cos(yaw), sy = Math.sin(yaw), x = p.x * cy + p.z * sy, z = -p.x * sy + p.z * cy;
+    var cp = Math.cos(pitch), sp = Math.sin(pitch), y = p.y * cp - z * sp, z2 = p.y * sp + z * cp;
+    return [x, y, z2];
+  }
+  /* 대폭발: 온도와 밀도가 매우 높은 한 점에서 퍼지는 빛 (그림 표현) */
+  function bang(ctx, x, y, r, a, t) {
+    if (a <= 0.003 || r < 0.5) return;
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = clamp(a, 0, 1);
+    var gr = ctx.createRadialGradient(x, y, 0, x, y, r);
+    gr.addColorStop(0, 'rgba(255,255,250,1)'); gr.addColorStop(0.12, 'rgba(255,246,190,.98)'); gr.addColorStop(0.3, 'rgba(255,196,90,.8)');
+    gr.addColorStop(0.55, 'rgba(255,120,40,.35)'); gr.addColorStop(1, 'rgba(220,60,20,0)');
+    ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+    var n = 14, tt = (t || 0) * 0.00012;
+    for (var i = 0; i < n; i++) {
+      var an = i / n * Math.PI * 2 + tt * (i % 2 ? 1 : -1), L = r * (0.75 + 0.35 * Math.sin(i * 2.7 + tt * 9));
+      var g2 = ctx.createLinearGradient(x, y, x + Math.cos(an) * L, y + Math.sin(an) * L); g2.addColorStop(0, 'rgba(255,240,180,.5)'); g2.addColorStop(1, 'rgba(255,150,60,0)');
+      ctx.strokeStyle = g2; ctx.lineWidth = Math.max(1, r * 0.035); ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + Math.cos(an) * L, y + Math.sin(an) * L); ctx.stroke();
+    }
+    ctx.restore();
+  }
+  /* 우주 공: 반지름 R, 은하 크기 gs(px, 우주가 커져도 그대로), heat(대폭발 빛의 남은 정도) */
+  function ball(ctx, cx, cy, R, o) {
+    o = o || {}; if (R < 0.5) return [];
+    var U = universe(o.seed || 9, o.n || 70), yaw = o.yaw || 0, pitch = o.pitch == null ? 0.32 : o.pitch, heat = o.heat || 0, gs = o.gs || 10, ga = o.ga == null ? 1 : o.ga, out = [];
+    ctx.save();
+    /* 바깥 푸른 테두리 빛 */
+    var halo = ctx.createRadialGradient(cx, cy, R * 0.9, cx, cy, R * 1.18); halo.addColorStop(0, 'rgba(110,140,255,.28)'); halo.addColorStop(1, 'rgba(110,140,255,0)');
+    ctx.fillStyle = halo; ctx.beginPath(); ctx.arc(cx, cy, R * 1.18, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.clip();
+    var body = ctx.createRadialGradient(cx - R * 0.3, cy - R * 0.35, R * 0.05, cx, cy, R);
+    body.addColorStop(0, '#2c3c6c'); body.addColorStop(0.55, '#141d3d'); body.addColorStop(1, '#070b1d');
+    ctx.fillStyle = body; ctx.fillRect(cx - R, cy - R, R * 2, R * 2);
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = 0.32; ctx.drawImage(haze(), cx - R, cy - R, R * 2, R * 2); ctx.globalAlpha = 1;
+    /* 희미한 별빛 알갱이 */
+    U.S.forEach(function (p) { var q = rot(p, yaw, pitch); star(ctx, cx + q[0] * R, cy + q[1] * R, 0.8 + p.m * 1.6 + R * 0.004, p.c, (0.25 + p.m * 0.45) * (0.75 - q[2] * 0.25)); });
+    /* 은하: 뒤에서부터 */
+    var L = U.G.map(function (g, i) { var q = rot(g, yaw, pitch); return { g: g, i: i, x: cx + q[0] * R, y: cy + q[1] * R, z: q[2] }; }).sort(function (a, b) { return b.z - a.z; });
+    var crowd = clamp(R / (gs * 11), 0.3, 1);
+    L.forEach(function (p) { var s = gs * p.g.s * (1 - p.z * 0.18); drawGal(ctx, p.g, p.x, p.y, s, ga * (0.62 - p.z * 0.33) * crowd + (1 - crowd) * 0.25); out.push(p); });
+    /* 대폭발의 빛이 남아 있을 때 */
+    if (heat > 0.002) {
+      var hg = ctx.createRadialGradient(cx, cy, 0, cx, cy, R); hg.addColorStop(0, rgb([255, 245, 200], heat)); hg.addColorStop(0.5, rgb([255, 180, 80], heat * 0.85)); hg.addColorStop(1, rgb([255, 110, 40], heat * 0.6));
+      ctx.fillStyle = hg; ctx.fillRect(cx - R, cy - R, R * 2, R * 2);
+    }
+    ctx.globalCompositeOperation = 'source-over';
+    /* 둥근 공의 입체감: 아래쪽 그늘, 위쪽 반짝임 */
+    var sh = ctx.createRadialGradient(cx - R * 0.35, cy - R * 0.4, R * 0.2, cx, cy, R * 1.02); sh.addColorStop(0, 'rgba(0,0,0,0)'); sh.addColorStop(0.75, 'rgba(0,0,10,.1)'); sh.addColorStop(1, 'rgba(0,0,10,.5)');
+    ctx.fillStyle = sh; ctx.fillRect(cx - R, cy - R, R * 2, R * 2);
+    var hl = ctx.createRadialGradient(cx - R * 0.42, cy - R * 0.5, 0, cx - R * 0.42, cy - R * 0.5, R * 0.55); hl.addColorStop(0, 'rgba(200,215,255,.13)'); hl.addColorStop(1, 'rgba(200,215,255,0)');
+    ctx.fillStyle = hl; ctx.fillRect(cx - R, cy - R, R * 2, R * 2);
+    ctx.restore();
+    ctx.save(); ctx.strokeStyle = 'rgba(150,175,255,.35)'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+    if (heat > 0.002) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; var bl = ctx.createRadialGradient(cx, cy, R * 0.8, cx, cy, R * (1.3 + heat)); bl.addColorStop(0, rgb([255, 170, 70], 0.5 * heat)); bl.addColorStop(1, 'rgba(255,120,40,0)'); ctx.fillStyle = bl; ctx.beginPath(); ctx.arc(cx, cy, R * (1.3 + heat), 0, Math.PI * 2); ctx.fill(); ctx.restore(); }
+    return out;
+  }
+  /* 둥근 이름표 */
+  function tag(ctx, text, x, y, opt) {
+    opt = opt || {};
+    ctx.save(); ctx.font = (opt.weight || 800) + ' ' + (opt.size || 14) + 'px Pretendard, sans-serif'; ctx.textBaseline = 'middle';
+    var tw = ctx.measureText(text).width, pw = 8, ph = (opt.size || 14) * 0.95;
+    var al = opt.align || 'center', x0 = al === 'center' ? x - tw / 2 - pw : al === 'left' ? x : x - tw - pw * 2;
+    if (opt.bg !== 'none') { ctx.fillStyle = opt.bg || 'rgba(8,14,32,.78)'; ctx.beginPath(); ctx.roundRect(x0, y - ph, tw + pw * 2, ph * 2, ph); ctx.fill(); }
+    if (opt.border) { ctx.strokeStyle = opt.border; ctx.lineWidth = 1.5; ctx.stroke(); }
+    ctx.fillStyle = opt.color || '#eef2fc'; ctx.textAlign = 'left'; ctx.fillText(text, x0 + pw, y + 0.5); ctx.restore();
+    return tw + pw * 2;
+  }
+  function arrow(ctx, x1, y1, x2, y2, col, lw, head) {
+    ctx.save(); ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = lw || 2; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+    var a = Math.atan2(y2 - y1, x2 - x1), H = head || 9;
+    ctx.beginPath(); ctx.moveTo(x2 + Math.cos(a) * 2, y2 + Math.sin(a) * 2); ctx.lineTo(x2 - H * Math.cos(a - 0.45), y2 - H * Math.sin(a - 0.45)); ctx.lineTo(x2 - H * Math.cos(a + 0.45), y2 - H * Math.sin(a + 0.45)); ctx.closePath(); ctx.fill(); ctx.restore();
+  }
+
+  /* ===== 그림 Ⅷ-9처럼: 대폭발 → 점점 커지는 우주 → 현재 =====
+     prog: 0~1 (시간이 어디까지 흘렀는지), t: 시각(ms, 천천히 돌기) */
+  var TS = [0, 0.33, 0.63, 1];
+  function tlLayout(w, h) {
+    var R3 = Math.min(h * 0.4, w * 0.26), x3 = w - R3 - w * 0.025;
+    var R2 = R3 * 0.52, x2 = x3 - R3 - R2 * 0.45;
+    var R1 = R3 * 0.27, x1 = x2 - R2 - R1 * 0.35;
+    var x0 = Math.max(w * 0.07, x1 - R1 - h * 0.09);
+    return { st: [[x0, h * 0.6, 0.6], [x1, h * 0.6, R1], [x2, h * 0.56, R2], [x3, h * 0.47, R3]], w: w, h: h, gs: Math.max(4.5, Math.min(h * 0.024, R3 * 0.062)) };
+  }
+  function tlAt(Lay, s) {
+    var i = 0; while (i < 2 && s > TS[i + 1]) i++;
+    var k = clamp((s - TS[i]) / (TS[i + 1] - TS[i]), 0, 1), a = Lay.st[i], b = Lay.st[i + 1];
+    var R = i === 0 ? lerp(0.6, b[2], Math.pow(k, 1.1)) : lerp(a[2], b[2], k);
+    return [lerp(a[0], b[0], k), lerp(a[1], b[1], k), R];
+  }
+  function timeline(ctx, w, h, prog, t, opt) {
+    opt = opt || {}; var Lay = tlLayout(w, h), sz = Math.max(12, Math.min(18, w / 52)), yaw = REDUCE ? 0.5 : (t || 0) * 0.00008;
+    space(ctx, w, h, 61, Math.round(w * h / 2600), '#03050c', '#0b0f24');
+    /* 대폭발 */
+    var b0 = Lay.st[0], flash = prog < 0.06 ? 1.6 - prog * 10 : 1;
+    bang(ctx, b0[0], b0[1], h * 0.11 * flash, 1, t);
+    /* 지나온 우주(정해진 시점) */
+    var labelPts = null;
+    for (var i = 1; i < 4; i++) {
+      if (prog + 1e-6 < TS[i]) break;
+      var st = Lay.st[i], pts = ball(ctx, st[0], st[1], st[2], { yaw: yaw + i, gs: Lay.gs, seed: 9, n: 70, heat: i === 1 ? 0.12 : 0 });
+      if (i === 3) labelPts = pts;
+    }
+    /* 시간의 흐름 화살표 (분홍) */
+    var ay = h * 0.9, ax0 = Lay.st[0][0] + h * 0.02, ax1 = Lay.st[3][0] - Lay.st[3][2] * 0.15, ay1 = Lay.st[3][1] + Lay.st[3][2] * 0.78;
+    ctx.save();
+    var ag = ctx.createLinearGradient(ax0, 0, ax1, 0); ag.addColorStop(0, 'rgba(255,220,235,0)'); ag.addColorStop(0.3, 'rgba(255,200,222,.55)'); ag.addColorStop(1, 'rgba(255,150,190,.95)');
+    ctx.globalAlpha = 0.92; ctx.fillStyle = ag; ctx.beginPath(); ctx.moveTo(ax0, ay - h * 0.012);
+    ctx.quadraticCurveTo((ax0 + ax1) / 2, ay + h * 0.03, ax1 - h * 0.06, ay1 + h * 0.012);
+    ctx.lineTo(ax1 - h * 0.075, ay1 + h * 0.05); ctx.lineTo(ax1 + h * 0.025, ay1 - h * 0.035); ctx.lineTo(ax1 - h * 0.09, ay1 - h * 0.055); ctx.lineTo(ax1 - h * 0.075, ay1 - h * 0.022);
+    ctx.quadraticCurveTo((ax0 + ax1) / 2, ay - h * 0.012, ax0, ay - h * 0.04); ctx.closePath(); ctx.fill(); ctx.restore();
+    var mx = (ax0 + ax1) * 0.62, my = ay - h * 0.025;
+    tag(ctx, '시간의 흐름', Math.min(mx, w - 80), my - sz * 1.4, { size: sz - 1, color: '#ffd6e6', bg: 'rgba(40,10,30,.55)' });
+    /* 지금 커지는 중인 우주 */
+    var cur = null;
+    if (prog > 0 && prog < 1 && TS.indexOf(prog) < 0) {
+      cur = tlAt(Lay, prog); var heat = clamp(1 - prog / 0.22, 0, 1);
+      ball(ctx, cur[0], cur[1], cur[2], { yaw: yaw + prog * 3, gs: Lay.gs, seed: 9, n: 70, heat: heat * heat });
+      ctx.save(); ctx.strokeStyle = 'rgba(255,214,107,.85)'; ctx.setLineDash([5, 5]); ctx.lineWidth = 1.6; ctx.beginPath(); ctx.arc(cur[0], cur[1], cur[2] + 5, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+    }
+    /* 글자 */
+    tag(ctx, '대폭발', b0[0], b0[1] - h * 0.2, { size: sz + 1, color: '#ffb14a', bg: 'none', weight: 900 });
+    tag(ctx, '약 138억 년 전', b0[0], b0[1] - h * 0.2 + sz * 1.35, { size: sz - 1, color: '#ffc77a', bg: 'none' });
+    if (prog >= 1) {
+      var s3 = Lay.st[3];
+      tag(ctx, '현재', s3[0], s3[1] - s3[2] * 0.05, { size: sz + 8, color: '#fff', bg: 'none', weight: 900 });
+      if (labelPts && opt.galLabel !== false) {
+        var best = labelPts.filter(function (p) { return p.z < 0 && p.x > s3[0] + s3[2] * 0.25 && p.y < s3[1] - s3[2] * 0.15; }).sort(function (a, b) { return a.y - b.y; })[0];
+        if (best) { arrow(ctx, best.x, best.y - sz * 2.2, best.x, best.y - Lay.gs * 1.1, '#ffffff', 1.6, 7); tag(ctx, '은하', best.x, best.y - sz * 2.9, { size: sz - 2, bg: 'none' }); }
+      }
+    }
+    if (cur && opt.nowLabel) tag(ctx, opt.nowLabel, cur[0], cur[1] + cur[2] + sz * 1.1, { size: sz - 2, color: '#ffe08a', bg: 'rgba(8,14,32,.8)' });
+    return Lay;
+  }
+
+  /* ===== 풍선(옆에서 본 그림): 붙임딱지는 크기 그대로, 풍선 표면만 늘어나요 ===== */
+  var STK = [[-0.62, -0.28, '1', '#ffd23f'], [0.22, -0.62, '2', '#5ad1a0'], [0.5, 0.18, '3', '#ff8a5c']];
+  function balloon(ctx, cx, cy, R, o) {
+    o = o || {};
+    ctx.save();
+    /* 그림자 */
+    var sh = ctx.createRadialGradient(cx, cy + R * 1.42, 2, cx, cy + R * 1.42, R * 0.9); sh.addColorStop(0, 'rgba(10,20,40,.22)'); sh.addColorStop(1, 'rgba(10,20,40,0)');
+    ctx.fillStyle = sh; ctx.beginPath(); ctx.ellipse(cx, cy + R * 1.42, R * 0.9, R * 0.16, 0, 0, Math.PI * 2); ctx.fill();
+    /* 꼭지와 매듭 */
+    var by = cy + R * 1.04;
+    ctx.fillStyle = '#5a3cb0'; ctx.beginPath(); ctx.moveTo(cx - R * 0.08, by - R * 0.06); ctx.lineTo(cx + R * 0.08, by - R * 0.06); ctx.lineTo(cx + R * 0.05, by + R * 0.07); ctx.lineTo(cx - R * 0.05, by + R * 0.07); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(cx, by + R * 0.09, R * 0.075, R * 0.04, 0, 0, Math.PI * 2); ctx.fill();
+    /* 몸통: 아래가 살짝 좁은 달걀 모양 */
+    ctx.beginPath(); ctx.moveTo(cx, cy - R);
+    ctx.bezierCurveTo(cx + R * 0.58, cy - R, cx + R, cy - R * 0.62, cx + R, cy - R * 0.05);
+    ctx.bezierCurveTo(cx + R, cy + R * 0.5, cx + R * 0.42, cy + R * 0.98, cx, cy + R * 1.0);
+    ctx.bezierCurveTo(cx - R * 0.42, cy + R * 0.98, cx - R, cy + R * 0.5, cx - R, cy - R * 0.05);
+    ctx.bezierCurveTo(cx - R, cy - R * 0.62, cx - R * 0.58, cy - R, cx, cy - R); ctx.closePath();
+    var g = ctx.createRadialGradient(cx - R * 0.35, cy - R * 0.4, R * 0.05, cx, cy, R * 1.15);
+    g.addColorStop(0, '#d9c8ff'); g.addColorStop(0.25, '#9b7bf0'); g.addColorStop(0.7, '#6a46cf'); g.addColorStop(1, '#3e2491');
+    ctx.fillStyle = g; ctx.fill(); ctx.save(); ctx.clip();
+    /* 늘어나는 고무 무늬(얇은 결) */
+    var hl = ctx.createRadialGradient(cx - R * 0.42, cy - R * 0.5, 0, cx - R * 0.42, cy - R * 0.5, R * 0.42); hl.addColorStop(0, 'rgba(255,255,255,.55)'); hl.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = hl; ctx.fillRect(cx - R, cy - R, R * 2, R * 2);
+    ctx.restore();
+    /* 붙임딱지와 거리 */
+    var P = STK.map(function (s) { return [cx + s[0] * R, cy + s[1] * R]; }), ss = o.sticker || 11;
+    if (o.lines) {
+      var gx = (P[0][0] + P[1][0] + P[2][0]) / 3, gy = (P[0][1] + P[1][1] + P[2][1]) / 3, F = o.fs || 13;
+      [[0, 1], [0, 2], [1, 2]].forEach(function (pr, i) {
+        var a = P[pr[0]], b = P[pr[1]], mxp = (a[0] + b[0]) / 2, myp = (a[1] + b[1]) / 2, nx = cx + (mxp - cx) * 1.1, ny = cy + (myp - cy) * 1.1;
+        ctx.save(); ctx.strokeStyle = 'rgba(255,240,170,.95)'; ctx.setLineDash([5, 4]); ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.quadraticCurveTo(nx, ny, b[0], b[1]); ctx.stroke(); ctx.restore();
+        /* 글자는 세 붙임딱지의 가운데에서 바깥쪽으로 밀어 겹치지 않게 */
+        var dx = mxp - gx, dy = myp - gy, L = Math.hypot(dx, dy) || 1, push = F * (i === 1 ? 0.6 : 1.9);
+        if (o.lines[i]) tag(ctx, o.lines[i], mxp + dx / L * push, myp + dy / L * push, { size: F, color: '#2a2000', bg: 'rgba(255,224,120,.95)' });
+      });
+    }
+    P.forEach(function (p, i) {
+      ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowBlur = 4; ctx.fillStyle = STK[i][3]; ctx.beginPath(); ctx.arc(p[0], p[1], ss, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+      ctx.save(); ctx.fillStyle = '#1b1530'; ctx.font = '900 ' + Math.round(ss * 1.25) + 'px Pretendard, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(STK[i][2], p[0], p[1] + 1); ctx.restore();
+    });
+    ctx.restore();
+    return P;
+  }
+
+  return { rng: rng, gauss: gauss, clamp: clamp, sstep: sstep, lerp: lerp, rgb: rgb, mix: mix, fit: fit, off: off, visible: visible, REDUCE: REDUCE,
+    sprite: sprite, star: star, space: space, galTex: galTex, drawGal: drawGal, universe: universe, rot: rot, bang: bang, ball: ball,
+    tag: tag, arrow: arrow, timeline: timeline, tlLayout: tlLayout, tlAt: tlAt, TS: TS, balloon: balloon, STK: STK };
+})();
+</script>
+<script>
+/* ===== 블록 1: 맞을까 틀릴까 ===== */
+(() => {
+  'use strict';
+  try {
+    const { $, $$, shuffle, fb, finish } = window.SW;
+    const ITEMS = [
+      ['우리은하 바깥에 분포하는 은하를 외부 은하라고 한다.', true],
+      ['허블은 대부분의 외부 은하가 우리은하로 다가오고 있다는 것을 알아내었다.', false],
+      ['풍선에 공기를 더 넣으면 붙임딱지 사이의 거리가 모두 멀어진다.', true],
+      ['풍선 모형에서 붙임딱지는 은하에 비유할 수 있다.', true],
+      ['외부 은하가 서로 멀어지는 것은 은하들이 직접 움직이기 때문이다.', false],
+      ['우주 공간은 우리은하를 중심으로 팽창한다.', false],
+      ['우주 어느 지점을 관측해도 대부분의 은하가 서로 멀어지고 있다.', true],
+      ['우주는 약 138억 년 전 대폭발이 일어나 시작된 뒤 점점 팽창하였다.', true],
+    ];
+    const list = shuffle(ITEMS.slice()), pick = list.map(() => null);
+    $('#sort').innerHTML = list.map((it, i) => `<div class="si" data-i="${i}"><p>${it[0]}</p><div class="two"><button type="button" class="o" data-v="1" aria-pressed="false">맞다</button><button type="button" class="x" data-v="0" aria-pressed="false">틀리다</button></div></div>`).join('');
+    $$('#sort .si').forEach((row) => {
+      const i = +row.dataset.i;
+      $$('button', row).forEach((b) => b.addEventListener('click', () => { pick[i] = b.dataset.v === '1'; row.classList.remove('good', 'bad'); $$('button', row).forEach((o) => o.setAttribute('aria-pressed', String(o === b))); $('#chk1').disabled = pick.some((p) => p === null); }));
+    });
+    $('#chk1').addEventListener('click', () => {
+      let wrong = 0;
+      $$('#sort .si').forEach((row) => { const i = +row.dataset.i, ok = pick[i] === list[i][1]; row.classList.toggle('good', ok); row.classList.toggle('bad', !ok); if (!ok) wrong++; });
+      if (!wrong) { fb('#fb1', true, '모두 맞았어요! 틀린 문장 고쳐 보기: 대부분의 외부 은하는 우리은하로부터 <b>멀어지고</b> 있어요 · 은하가 직접 움직이는 것이 아니라 <b>우주 공간이 팽창</b>해요 · 우주 공간은 <b>특정한 중심 없이</b> 팽창해요.'); finish(1); }
+      else fb('#fb1', false, `빨간 문장 ${wrong}개를 다시 생각해 보세요.`);
+    });
+    window.SW.ok1 = true;
+  } catch (err) { window.SW_err('O/X 판단', err); }
+})();
+</script>
+<script>
+/* ===== 블록 2: 풍선 모형을 우주에 비유하기 ===== */
+(() => {
+  'use strict';
+  try {
+    const { $, $$, shuffle, fb, finish } = window.SW, E = window.EU;
+    const ROWS = [['풍선 표면', '우주'], ['공기를 넣어 풍선 표면이 늘어남', '우주의 팽창'], ['풍선 표면에 붙인 붙임딱지', '은하'], ['간격이 달라질 때 기준이 되는 지점', '없다']];
+    const EXTRA = ['대폭발', '있다'];
+    $('#arows').innerHTML = ROWS.map((r) => `<div class="arow"><b>${r[0]}</b><i>→</i><button type="button" class="slot">빈칸</button></div>`).join('');
+    $('#bank2').innerHTML = shuffle(ROWS.map((r) => r[1]).concat(EXTRA)).map((w) => `<button type="button" class="chip">${w}</button>`).join('');
+    const S2 = window.SW.slots($$('#arows .slot'), $$('#bank2 .chip'), $('#chk2'));
+    $('#chk2').addEventListener('click', () => {
+      let wrong = 0; $$('#arows .slot').forEach((s, i) => { const ok = S2.fill[i].textContent === ROWS[i][1]; s.classList.toggle('good', ok); s.classList.toggle('bad', !ok); if (!ok) wrong++; });
+      if (!wrong) { S2.lock(); fb('#fb2', true, '맞았어요! 풍선 표면은 <b>우주</b>, 표면이 늘어나는 것은 <b>우주의 팽창</b>, 붙임딱지는 <b>은하</b>예요. 어느 붙임딱지에서 보아도 나머지가 멀어지므로 기준이 되는 지점은 <b>없어요</b>.'); finish(2); }
+      else fb('#fb2', false, `빨간 칸 ${wrong}개를 다시 생각해 봐요. 힌트: 붙임딱지는 움직이지 않고, 늘어나는 것은 풍선 표면이에요.`);
+    });
+    /* 숨 쉬듯 커졌다 작아지는 풍선 */
+    const cv = $('#aCv');
+    const loop = (t) => {
+      if (E.visible(cv)) { const { c, w, h } = E.fit(cv); c.clearRect(0, 0, w, h); const k = E.REDUCE ? 1 : 0.5 - 0.5 * Math.cos(t / 1400), R = Math.min(w, h) * (0.26 + 0.1 * k); E.balloon(c, w / 2, h * 0.44, R, { sticker: Math.max(9, w * 0.028) }); E.tag(c, '풍선 모형', 12, 20, { size: 14, align: 'left', color: '#fff', bg: '#7b5ce0' }); }
+      requestAnimationFrame(loop);
+    };
+    requestAnimationFrame(loop);
+    window.SW.ok2 = true;
+  } catch (err) { window.SW_err('풍선 모형 비유', err); }
+})();
+</script>
+<script>
+/* ===== 블록 3: 시간 순서대로 놓기 + 스스로 평가 ===== */
+(() => {
+  'use strict';
+  try {
+    const { $, $$, shuffle, fb, finish } = window.SW, E = window.EU;
+    const CARDS = [{ k: 0, t: '온도와 밀도가 매우 높은 한 점에서 대폭발' }, { k: 1, t: '작은 우주' }, { k: 2, t: '점점 팽창한 우주' }, { k: 3, t: '현재의 우주' }];
+    const list = shuffle(CARDS.slice()); let seq = [];
+    $('#order').innerHTML = list.map((c, i) => `<button type="button" class="oc" data-i="${i}"><canvas aria-label="${c.t}"></canvas><span class="n"></span><span class="lb">${c.k === 0 ? c.t : '우주의 모습'}</span></button>`).join('');
+    function draw() {
+      $$('#order .oc').forEach((b) => {
+        const cd = list[+b.dataset.i], cv = $('canvas', b), { c, w, h } = E.fit(cv);
+        E.space(c, w, h, 11 + cd.k, Math.round(w * h / 1800), '#05081a', '#0a1028');
+        const gs = Math.max(3.5, w * 0.03);
+        if (cd.k === 0) E.bang(c, w / 2, h * 0.45, w * 0.36, 1, 0);
+        else E.ball(c, w / 2, h * 0.45, w * [0, 0.16, 0.27, 0.4][cd.k], { yaw: 0.8 + cd.k, gs, seed: 9, n: 70, heat: cd.k === 1 ? 0.15 : 0 });
+      });
+    }
+    function paint() {
+      $$('#order .oc').forEach((b) => { const i = +b.dataset.i, p = seq.indexOf(i); b.classList.toggle('on', p >= 0); b.classList.remove('good', 'bad'); $('.n', b).textContent = p >= 0 ? p + 1 : ''; });
+      $('#chk3').disabled = seq.length < 4;
+    }
+    $$('#order .oc').forEach((b) => b.addEventListener('click', () => { const i = +b.dataset.i, p = seq.indexOf(i); if (p >= 0) seq.splice(p, 1); else if (seq.length < 4) seq.push(i); paint(); }));
+    $('#rst3').addEventListener('click', () => { seq = []; paint(); $('#fb3').className = 'fb'; });
+    $('#chk3').addEventListener('click', () => {
+      let wrong = 0; seq.forEach((i, p) => { const ok = list[i].k === p, b = $(`#order .oc[data-i="${i}"]`); b.classList.add(ok ? 'good' : 'bad'); if (!ok) wrong++; });
+      if (!wrong) { fb('#fb3', true, '맞았어요! 우주는 약 138억 년 전 <b>대폭발</b>로 시작된 뒤 <b>점점 팽창</b>하여 현재와 같은 모습이 되었어요. 우주가 커져도 은하의 크기는 그대로이고, 은하 사이가 멀어졌어요.'); finish(3); }
+      else fb('#fb3', false, '빨간 칸을 다시 생각해 봐요. 힌트: 우주는 시간이 흐를수록 커져요.');
+    });
+    /* 스스로 평가 1 (교과서) */
+    const SP = [['있', '없', 1], ['가까워지고', '멀어지고', 1]], sp = [null, null];
+    $('#sp').innerHTML = `우주가 팽창할 때 팽창의 중심이 <span class="tg" data-q="0">${SP[0].slice(0, 2).map((o, i) => `<button type="button" data-v="${i}" aria-pressed="false">${o}</button>`).join('')}</span>으며, 대부분의 외부 은하는 우리은하에서 점차 <span class="tg" data-q="1">${SP[1].slice(0, 2).map((o, i) => `<button type="button" data-v="${i}" aria-pressed="false">${o}</button>`).join('')}</span> 있다.`;
+    $$('#sp .tg').forEach((g) => { const q = +g.dataset.q; $$('button', g).forEach((b) => b.addEventListener('click', () => { sp[q] = +b.dataset.v; $$('button', g).forEach((o) => { o.setAttribute('aria-pressed', String(o === b)); o.classList.remove('good', 'bad'); }); $('#chk3b').disabled = sp.some((v) => v == null); })); });
+    $('#chk3b').addEventListener('click', () => {
+      let wrong = 0; $$('#sp .tg').forEach((g) => { const q = +g.dataset.q, b = $(`button[data-v="${sp[q]}"]`, g), ok = sp[q] === SP[q][2]; b.classList.add(ok ? 'good' : 'bad'); if (!ok) wrong++; });
+      if (!wrong) fb('#fb3b', true, '맞았어요! 팽창의 중심이 <b>없으며</b>, 대부분의 외부 은하는 우리은하에서 점차 <b>멀어지고</b> 있어요.');
+      else fb('#fb3b', false, '빨간 칸을 다시 골라 봐요. 풍선의 어느 붙임딱지에서 보아도 나머지가 멀어졌지요?');
+    });
+    let rq = 0; const re = () => { cancelAnimationFrame(rq); rq = requestAnimationFrame(draw); };
+    addEventListener('resize', re); try { new ResizeObserver(re).observe($('#order')); } catch (e) {}
+    draw(); paint();
+    window.SW.ok3 = true;
+  } catch (err) { window.SW_err('시간 순서', err); }
+})();
+</script>
+<script>
+/* ===== 블록 4: 글쓰기 (저장하지 않고 복사·인쇄만) ===== */
+(() => {
+  'use strict';
+  try {
+    const { $, $$, finish } = window.SW;
+    const PROMPTS = [
+      { t: '은하가 멀어지는 까닭', s: '스스로 평가 2', q: '대부분의 은하가 서로 점점 멀어지고 있는 까닭을 설명해 보세요.', kw: ['우주 공간', '팽창', '은하', '직접 움직이', '멀어'], st: ['은하들이 멀어지는 까닭은', '은하가 직접', '그래서'] },
+      { t: '풍선 모형으로 비유', s: '친구에게 설명하기', q: '풍선 모형으로 우주의 팽창을 비유해 친구에게 설명해 보세요.', kw: ['풍선 표면', '붙임딱지', '우주', '은하', '팽창'], st: ['풍선 표면은', '붙임딱지는', '풍선을 불면'] },
+      { t: '팽창의 중심', s: '읽기 ③ · 시뮬레이션 ②', q: '우리은하가 우주의 중심이 아닌 까닭을 풍선 모형이나 시뮬레이션 결과로 설명해 보세요.', kw: ['중심', '어느', '멀어', '모든 방향', '붙임딱지'], st: ['우주 공간은', '어느 은하에서 보아도', '그러므로'] },
+      { t: '대폭발과 우주', s: '읽기 ④ · 시뮬레이션 ②', q: '우주가 어떻게 시작되어 현재와 같은 모습이 되었는지 시간 순서대로 설명해 보세요.', kw: ['138억 년', '대폭발', '한 점', '팽창', '현재'], st: ['약 138억 년 전', '그 뒤', '현재는'] },
+    ];
+    const SELF = [['지식·이해', '#2f6fd6', '은하들이 서로 멀어지는 까닭을 추리할 수 있다.'], ['과정·기능', '#23a566', '풍선과 붙임딱지를 이용한 모형실험으로 우주의 팽창을 설명할 수 있다.'], ['가치·태도', '#7d5ad6', '모형을 이용하여 과학 현상을 설명할 수 있음에 흥미를 느낄 수 있다.']];
+    const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); return true; } catch (e) { return false; } } };
+    let pi = 0; const txt = $('#txt');
+    function renderPrompt() {
+      $('#prompts').innerHTML = PROMPTS.map((p, i) => `<button type="button" class="pr${i === pi ? ' sel' : ''}" data-i="${i}"><b>${p.t}</b><span>${p.s}</span></button>`).join('');
+      $$('#prompts .pr').forEach((b) => b.addEventListener('click', () => { pi = +b.dataset.i; renderPrompt(); }));
+      const p = PROMPTS[pi];
+      $('#wqText').textContent = p.q;
+      $('#starters').innerHTML = p.st.map((s) => `<button type="button">${s}</button>`).join('');
+      $$('#starters button').forEach((b) => b.addEventListener('click', () => { const add = (txt.value && !/[\s\n]$/.test(txt.value) ? ' ' : '') + b.textContent + ' '; txt.value += add; txt.focus(); onInput(); }));
+      txt.value = store.get('eu-write-' + pi) || '';
+      onInput();
+    }
+    function onInput() {
+      const v = txt.value, p = PROMPTS[pi];
+      const ok = store.set('eu-write-' + pi, v);
+      $('#saved').textContent = v ? (ok ? '이 기기에 임시 저장됨' : '') : '';
+      const n = v.replace(/\s/g, '').length, hit = p.kw.filter((k) => v.includes(k)).length;
+      $('#cnt').textContent = `${n}자 · 목표 100자 이상`;
+      $('#kw').innerHTML = p.kw.map((k) => `<span class="${v.includes(k) ? 'on' : ''}">${k}</span>`).join('');
+      if (n >= 100 && hit >= 3) finish(4);
+    }
+    txt.addEventListener('input', onInput);
+    $('#self').innerHTML = SELF.map(([c, col, t]) => `<label><input type="checkbox"><span class="cat" style="background:${col}">${c}</span>${t}</label>`).join('');
+    $('#copyBtn').addEventListener('click', async () => {
+      const out = `[${PROMPTS[pi].t}]\n${PROMPTS[pi].q}\n\n${txt.value}`;
+      try { await navigator.clipboard.writeText(out); $('#copyBtn').textContent = '복사했어요!'; }
+      catch (e) { txt.select(); try { document.execCommand('copy'); $('#copyBtn').textContent = '복사했어요!'; } catch (e2) { $('#copyBtn').textContent = '길게 눌러 직접 복사해 주세요'; } }
+      setTimeout(() => ($('#copyBtn').textContent = '글 복사하기'), 2200);
+    });
+    $('#printBtn').addEventListener('click', () => window.print());
+    renderPrompt();
+    window.SW.ok4 = true;
+  } catch (err) { window.SW_err('글쓰기', err); }
+})();
+</script>
+</body>
+</html>
