@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>별의 밝기 – 3D 10 pc로 옮기기</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+  /* ===== 이 수업 전용 ===== */
+  :root{--fab:#6a4fd0;--fab-soft:#efeafd;--gold:#f2c14e}
+  .eyebrow{color:#4b33a8;background:#ece7fc}
+  .gl-host{background:linear-gradient(#050816,#1a1640)}
+  .vb{background:rgba(16,22,52,.78);color:#e6ecfa;border-color:rgba(255,255,255,.18)}
+  .vb.sel{background:#fff;color:#14263b;border-color:#fff}
+  .hint{background:rgba(16,22,52,.72);color:#cdd7ee}
+  .lb{background:rgba(14,18,44,.84);color:#eef1fc;box-shadow:none;border:1px solid rgba(255,255,255,.16);font-size:13px}
+  .lb b{color:#ffe08a}
+  .lb.sel{border-color:#ffd56b;box-shadow:0 0 0 2px rgba(255,213,107,.35)}
+  .lb.P{background:#6a4fd0;color:#fff;border:0}
+  .lb.E{background:#2f86e0;color:#fff;border:0}
+  .skybox{position:absolute;right:10px;bottom:10px;z-index:3;width:min(34%,236px);border-radius:16px;overflow:hidden;border:2px solid rgba(255,255,255,.85);box-shadow:0 10px 30px rgba(0,0,0,.4)}
+  .skybox canvas{display:block;width:100%;aspect-ratio:4/3}
+  .skybox .it{position:absolute;left:8px;top:8px;font-size:12.5px;font-weight:900;color:#14263b;background:rgba(255,255,255,.9);border-radius:8px;padding:3px 8px}
+  .modes{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px}
+  .md{min-height:54px;border:0;border-radius:14px;background:#eef3f8;font-weight:800;font-size:15.5px;color:var(--muted);cursor:pointer;word-break:keep-all}
+  .md[aria-selected="true"]{background:var(--fab);color:#fff}
+  .stepname .no{background:var(--fab)}
+  .ssel{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:8px 0}
+  .ssel button{min-height:52px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:14.5px;cursor:pointer;line-height:1.2;word-break:keep-all;padding:4px}
+  .ssel button[aria-pressed="true"]{border-color:var(--fab);background:var(--fab-soft);color:#3c2794}
+  .ssel button.moved::after{content:" · 10 pc";font-size:11.5px;color:#7a62d8}
+  .mags{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;margin:8px 0}
+  .mags .c{border-radius:14px;padding:10px;text-align:center;background:#f7fafc;border:1px solid var(--line)}
+  .mags .c small{display:block;font-size:12.5px;font-weight:800;color:var(--muted);word-break:keep-all}
+  .mags .c b{display:block;font-size:24px;letter-spacing:-.02em;margin-top:2px}
+  .mags .c.now{background:linear-gradient(135deg,#f1ecff,#fff);border-color:#c9bdf3}
+  .mags .op{font-size:26px;font-weight:900;color:var(--fab);min-width:30px;text-align:center}
+  .ask{border-radius:16px;padding:12px 14px;background:#fffaf0;border:1px solid #f3dc9a;margin:8px 0}
+  .ask p{margin:0 0 8px;font-size:15.5px;font-weight:800;line-height:1.55;word-break:keep-all;color:#4d3800}
+  .three{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+  .three button{min-height:50px;border-radius:12px;border:2px solid #e3d29a;background:#fff;font-weight:800;font-size:14.5px;cursor:pointer;word-break:keep-all;padding:4px}
+  .three button.good{border-color:var(--ok);background:#e8f7ef;color:#11703f}
+  .three button.bad{border-color:var(--no);background:#fdecea;color:#b33a35}
+  .ans{margin-top:8px;font-size:14.5px;line-height:1.65;color:#4d3800;word-break:keep-all}
+  .tbl{width:100%;border-collapse:separate;border-spacing:0 5px;margin:6px 0}
+  .tbl th{font-size:12.5px;color:var(--muted);font-weight:800;text-align:left;padding:0 8px}
+  .tbl td{background:#f7fafc;padding:8px;font-weight:800;font-size:14.5px;word-break:keep-all}
+  .tbl td:first-child{border-radius:10px 0 0 10px}.tbl td:last-child{border-radius:0 10px 10px 0}
+  .tbl tr.on td{background:#f1ecff}
+  .tbl .hide{color:#b4bfcc}
+  .why{margin-top:10px;display:grid;gap:6px}
+  .why h3{margin:6px 0 2px;font-size:16px}
+  .why .w{display:grid;grid-template-columns:28px 1fr;gap:8px;align-items:start;padding:8px 10px;border-radius:12px;background:#f7fafc;font-size:14.5px;line-height:1.6;color:var(--ink2);word-break:keep-all}
+  .why .w i{font-style:normal;width:26px;height:26px;border-radius:8px;background:var(--fab);color:#fff;display:grid;place-items:center;font-weight:900;font-size:13px}
+  .prac{display:grid;gap:8px;margin:8px 0}
+  .pq{border-radius:16px;padding:12px 14px;background:#f7fafc;border:1px solid var(--line)}
+  .pq .top{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+  .pq .nm{font-weight:900;font-size:16px;background:#14263b;color:#fff;border-radius:10px;padding:3px 10px}
+  .pq .vv{font-weight:800;font-size:14.5px;color:var(--ink2)}
+  .pq .vv b{color:#3c2794}
+  .pq .three button{border-color:#d4dee8}
+  .score{font-weight:900;font-size:15px;color:#3c2794;margin:4px 0}
+  [hidden]{display:none!important}
+</style>
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }
+</script>
+</head>
+<body>
+<div class="app">
+  <header>
+    <span class="eyebrow">별의 밝기 · 3D 시뮬레이션 ③</span>
+    <h1>3D 10 pc로 옮기기</h1>
+    <p class="sub">지구에서 보이는 밝기는 별까지의 거리에 따라 달라요. 모든 별을 지구에서 10 pc 떨어진 곳으로 옮겨 실제 밝기를 비교해 보세요.</p>
+  </header>
+  <div class="stage">
+    <section class="card viewer">
+      <div class="gl-host" id="host" role="img" aria-label="지구를 가운데 둔 반지름 10 pc의 투명한 구. 시리우스는 구 안쪽, 미르잠은 구 바깥, 태양은 지구 바로 옆에 있다. 별을 10 pc 구 위로 옮길 수 있다.">
+        <div class="vt tl" role="group" aria-label="보는 방향"><button class="vb sel" type="button" id="vHome">처음 방향으로</button><button class="vb" type="button" id="vTop">위에서 보기</button></div>
+        <div class="vt bl"><span class="hint" id="hint">별을 누르면 골라져요 · 돌리기 · 확대</span></div>
+        <div class="skybox"><canvas id="skyCv" aria-label="지구에서 본 하늘. 별이 보이는 밝기를 빛 번짐 크기로 나타냈다."></canvas><span class="it" id="skyT">지구에서 본 하늘</span></div>
+        <div class="fail3d" id="fail3d">3D 그림을 불러오지 못했어요.<br>인터넷 연결을 확인하고 새로고침해 주세요.<br>(오른쪽 설명은 그대로 읽을 수 있어요)</div>
+      </div>
+    </section>
+    <section class="card pad">
+      <div class="modes" role="tablist">
+        <button class="md" type="button" role="tab" id="mA" aria-selected="true">10 pc로 옮겨 보기</button>
+        <button class="md" type="button" role="tab" id="mB" aria-selected="false">가까울까, 멀까?</button>
+      </div>
+      <div id="paneA">
+        <div class="stepname"><span class="no">A</span><div><h2>모두 같은 거리에서 비교하기</h2><small>모든 별이 10 pc에 있다고 가정한 밝기 = 절대 등급</small></div></div>
+        <div class="ssel" id="ssel" role="group" aria-label="별 고르기"></div>
+        <div class="mags">
+          <div class="c" id="cApp"><small>겉보기 등급</small><b id="vApp">−1.5</b></div>
+          <span class="op" id="vOp">&lt;</span>
+          <div class="c" id="cAbs"><small>절대 등급</small><b id="vAbs">1.4</b></div>
+        </div>
+        <div class="acts" style="margin-top:4px">
+          <button class="btn primary" type="button" id="bMove">이 별을 10 pc로 옮기기</button>
+          <button class="btn ghost" type="button" id="bAll">모두 10 pc로</button>
+        </div>
+        <div class="ask" id="ask">
+          <p id="askQ">옮기기 전에 생각해 봐요. 이 별은 지구에서 10 pc보다 가까울까요, 멀까요?</p>
+          <div class="three" id="askB"><button type="button" data-a="near">10 pc보다 가깝다</button><button type="button" data-a="same">10 pc에 있다</button><button type="button" data-a="far">10 pc보다 멀다</button></div>
+          <div class="ans" id="askA"></div>
+        </div>
+        <table class="tbl" id="tbl"><thead><tr><th>별</th><th>겉보기</th><th>절대</th><th>10 pc보다</th></tr></thead><tbody></tbody></table>
+        <div class="why">
+          <h3>왜 그럴까?</h3>
+          <div class="w"><i>1</i><span>지구에서는 시리우스(−1.5 등급)가 미르잠(2.0 등급)보다 <b>밝게 보여요</b>. 오른쪽 아래 '지구에서 본 하늘'을 보세요.</span></div>
+          <div class="w"><i>2</i><span>두 별을 모두 10 pc로 옮기면 미르잠(−4.1 등급)이 시리우스(1.4 등급)보다 밝아요. <b>실제로는 미르잠이 더 밝은 별</b>이에요.</span></div>
+          <div class="w"><i>3</i><span>시리우스가 더 밝게 보이는 것은 <b>지구에 더 가까이</b> 있기 때문이에요. 10 pc로 옮기면 멀어지니 어두워져요(등급 숫자가 커져요).</span></div>
+          <div class="w"><i>4</i><span>겉보기 등급이 절대 등급보다 <b>작으면 10 pc보다 가깝고</b>, <b>크면 10 pc보다 멀어요</b>. 같으면 10 pc에 있어요.</span></div>
+        </div>
+        <div class="box an"><b class="t">모형 안내</b>별 사이의 거리 비율은 실제와 달라요. 3D 공간의 별 크기는 실제 밝기(절대 등급), '지구에서 본 하늘'의 별 크기는 지구에서 보이는 밝기의 느낌을 나타내요. 등급 값은 교과서 값이에요.</div>
+      </div>
+      <div id="paneB" hidden>
+        <div class="stepname"><span class="no">B</span><div><h2>가까울까, 멀까?</h2><small>겉보기 등급과 절대 등급의 차이로 거리 비교하기</small></div></div>
+        <p class="what">가상의 별 다섯 개예요. 두 등급을 비교해 10 pc보다 가까운지, 먼지 골라 보세요.</p>
+        <div class="prac" id="prac"></div>
+        <p class="score" id="pScore"></p>
+        <div class="acts"><button class="btn ghost" type="button" id="pNew">새 문제</button></div>
+      </div>
+    </section>
+  </div>
+  <p class="credit">별의 밝기 · 겉보기 등급과 절대 등급</p>
+</div>
+<script>
+window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
+  mode: 'A', sel: 'sirius', moved: {}, answered: {}, home: 0, top: 0 };
+</script>
+<script>
+/*@@LOCAL:_glow.js@@*/
+</script>
+<script>
+/* ===== 블록 1: 안내·버튼 ===== */
+(() => {
+  'use strict';
+  try {
+    const { $, $$ } = window.SM, S = window.SM;
+    const LIST = [
+      { id: 'sirius', name: '시리우스', app: -1.5, abs: 1.4 },
+      { id: 'mirzam', name: '미르잠', app: 2.0, abs: -4.1 },
+      { id: 'sun', name: '태양', app: -26.7, abs: 4.8 },
+      { id: 'ten', name: '10 pc 거리의 별', app: null, abs: null },
+    ];
+    S.LIST = LIST;
+    const fmt = (m) => (m < 0 ? '−' : '') + Math.abs(m).toFixed(1);
+    const rel = (s) => (s.app === null ? 'same' : s.app < s.abs ? 'near' : s.app > s.abs ? 'far' : 'same');
+    const REL = { near: '가깝다', same: '10 pc에 있다', far: '멀다' };
+    const setMode = (m) => { S.mode = m; $('#mA').setAttribute('aria-selected', String(m === 'A')); $('#mB').setAttribute('aria-selected', String(m === 'B')); $('#paneA').hidden = m !== 'A'; $('#paneB').hidden = m !== 'B'; };
+    $('#mA').addEventListener('click', () => setMode('A'));
+    $('#mB').addEventListener('click', () => setMode('B'));
+    $('#vHome').addEventListener('click', () => { S.home++; if (S.on3d) S.on3d(); });
+    $('#vTop').addEventListener('click', () => { S.top++; if (S.on3d) S.on3d(); });
+    $('#ssel').innerHTML = LIST.map((s) => `<button type="button" data-id="${s.id}" aria-pressed="false">${s.id === 'ten' ? '10 pc 별' : s.name}</button>`).join('');
+    $$('#ssel button').forEach((b) => b.addEventListener('click', () => S.select(b.dataset.id)));
+    S.select = (id) => { S.sel = id; paint(); if (S.on3d) S.on3d(); };
+    $('#bMove').addEventListener('click', () => { const s = LIST.find((x) => x.id === S.sel); if (s.id === 'ten') return; S.moved[s.id] = !S.moved[s.id]; S.answered[s.id] = S.answered[s.id] || 'seen'; paint(); if (S.on3d) S.on3d(); });
+    $('#bAll').addEventListener('click', () => { const all = LIST.filter((s) => s.id !== 'ten').every((s) => S.moved[s.id]); LIST.forEach((s) => { if (s.id !== 'ten') { S.moved[s.id] = !all; S.answered[s.id] = S.answered[s.id] || 'seen'; } }); paint(); if (S.on3d) S.on3d(); });
+    $$('#askB button').forEach((b) => b.addEventListener('click', () => { const s = LIST.find((x) => x.id === S.sel); S.answered[s.id] = b.dataset.a; paint(); }));
+    function paint() {
+      const s = LIST.find((x) => x.id === S.sel);
+      $$('#ssel button').forEach((b) => { b.setAttribute('aria-pressed', String(b.dataset.id === S.sel)); b.classList.toggle('moved', !!S.moved[b.dataset.id]); });
+      const ten = s.id === 'ten';
+      $('#vApp').textContent = ten ? '같음' : fmt(s.app); $('#vAbs').textContent = ten ? '같음' : fmt(s.abs);
+      $('#vOp').innerHTML = ten ? '=' : s.app < s.abs ? '&lt;' : '&gt;';
+      $('#cApp').classList.toggle('now', !S.moved[s.id]); $('#cAbs').classList.toggle('now', !!S.moved[s.id] || ten);
+      $('#bMove').disabled = ten;
+      $('#bMove').textContent = ten ? '이미 10 pc에 있어요' : S.moved[s.id] ? '제자리로 돌려놓기' : '이 별을 10 pc로 옮기기';
+      $('#bAll').textContent = LIST.filter((x) => x.id !== 'ten').every((x) => S.moved[x.id]) ? '모두 제자리로' : '모두 10 pc로';
+      // 생각해 보기
+      const a = S.answered[s.id], r = rel(s);
+      $('#askQ').textContent = ten ? '10 pc 거리의 별은 어디로 옮겨도 밝기가 같을까요? 이 별의 겉보기 등급과 절대 등급은?' : `${s.name}은(는) 지구에서 10 pc보다 가까울까요, 멀까요? 두 등급을 비교해 골라 보세요.`;
+      $$('#askB button').forEach((b) => { b.classList.remove('good', 'bad'); if (a && a !== 'seen') { if (b.dataset.a === r) b.classList.add('good'); else if (b.dataset.a === a) b.classList.add('bad'); } });
+      let msg = '';
+      if (a && a !== 'seen') {
+        const ok = a === r;
+        if (ten) msg = (ok ? '맞아요! ' : '') + '이미 10 pc에 있으니 <b>겉보기 등급 = 절대 등급</b>이에요.';
+        else if (r === 'near') msg = (ok ? '맞아요! ' : '다시 보세요. ') + `겉보기 등급(${fmt(s.app)})이 절대 등급(${fmt(s.abs)})보다 <b>작아요</b>. 10 pc로 옮기면 멀어져 어두워진다는 뜻이니, 지금은 <b>10 pc보다 가까이</b> 있어요.`;
+        else msg = (ok ? '맞아요! ' : '다시 보세요. ') + `겉보기 등급(${fmt(s.app)})이 절대 등급(${fmt(s.abs)})보다 <b>커요</b>. 10 pc로 옮기면 가까워져 밝아진다는 뜻이니, 지금은 <b>10 pc보다 멀리</b> 있어요.`;
+      } else if (!ten) msg = '고른 뒤 \'이 별을 10 pc로 옮기기\'를 눌러 3D 그림에서 확인해 보세요.';
+      $('#askA').innerHTML = msg;
+      $('#tbl tbody').innerHTML = LIST.map((x) => {
+        const shown = S.answered[x.id];
+        return `<tr class="${x.id === S.sel ? 'on' : ''}"><td>${x.id === 'ten' ? '10 pc 별' : x.name}</td><td>${x.app === null ? '같음' : fmt(x.app)}</td><td>${x.abs === null ? '같음' : fmt(x.abs)}</td><td class="${shown ? '' : 'hide'}">${shown ? REL[rel(x)] : '?'}</td></tr>`;
+      }).join('');
+      if (S.onPaint) S.onPaint();
+    }
+    S.paint = paint;
+    const q = new URLSearchParams(location.search);
+    if (q.get('sel')) S.sel = q.get('sel');
+    if (q.get('all') === '1') ['sirius', 'mirzam', 'sun'].forEach((id) => (S.moved[id] = true));
+    paint();
+    /* B: 가상의 별 연습 */
+    const NAMES = ['가', '나', '다', '라', '마'];
+    function makeSet() {
+      const kinds = ['near', 'far', 'near', 'far', 'same'].sort(() => Math.random() - 0.5);
+      return kinds.map((k, i) => {
+        const a = Math.round((Math.random() * 8 - 2) * 2) / 2;
+        let b = a; if (k === 'near') b = a + (Math.round(Math.random() * 6) / 2 + 0.5); if (k === 'far') b = a - (Math.round(Math.random() * 6) / 2 + 0.5);
+        return { n: NAMES[i], app: a, abs: b, k, pick: null };
+      });
+    }
+    let set = makeSet();
+    function paintB() {
+      $('#prac').innerHTML = set.map((p, i) => `<div class="pq"><div class="top"><span class="nm">별 ${p.n}</span><span class="vv">겉보기 등급 <b>${fmt(p.app)}</b> · 절대 등급 <b>${fmt(p.abs)}</b></span></div>
+        <div class="three">${['near', 'same', 'far'].map((k) => `<button type="button" data-i="${i}" data-k="${k}" class="${p.pick ? (k === p.k ? 'good' : k === p.pick ? 'bad' : '') : ''}" ${p.pick ? 'disabled' : ''}>${k === 'near' ? '10 pc보다 가깝다' : k === 'far' ? '10 pc보다 멀다' : '10 pc에 있다'}</button>`).join('')}</div></div>`).join('');
+      $$('#prac button').forEach((b) => b.addEventListener('click', () => { set[+b.dataset.i].pick = b.dataset.k; paintB(); }));
+      const done = set.filter((p) => p.pick), ok = done.filter((p) => p.pick === p.k);
+      $('#pScore').textContent = done.length ? `${set.length}개 중 ${done.length}개를 풀었어요 · 맞힌 개수 ${ok.length}` : '';
+    }
+    $('#pNew').addEventListener('click', () => { set = makeSet(); paintB(); });
+    paintB();
+    if (q.get('mode') === 'B') setMode('B');
+    window.SM.okUI = true;
+  } catch (err) { window.SM_err('안내·버튼', err); }
+})();
+</script>
+<script type="module">
+/* ===== 블록 2: 3D (10 pc 구, 별 옮기기, 지구에서 본 하늘) ===== */
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+/*@@PART:c3.js@@*/
+/*@@LOCAL:_light3d.js@@*/
+/*@@LOCAL:_tenpc3d.js@@*/
+try {
+  const { V } = C3, S = window.SM;
+  const host = document.getElementById('host');
+  const st = C3.makeStage(host, { top: '#040714', bottom: '#191440', fov: 38, exposure: 1.0, minD: 4, maxD: 70, fitWidth: true });
+  st.sun.intensity = 0.4; st.scene.children.forEach((o) => { if (o.isHemisphereLight) o.intensity = 0.35; });
+  // 먼 배경 별
+  (function bgStars() {
+    const n = 1400, pos = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) { const u = Math.random() * 2 - 1, a = Math.random() * Math.PI * 2, r = 80; pos[i * 3] = r * Math.sqrt(1 - u * u) * Math.cos(a); pos[i * 3 + 1] = r * u; pos[i * 3 + 2] = r * Math.sqrt(1 - u * u) * Math.sin(a); }
+    const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    st.scene.add(new THREE.Points(geo, new THREE.PointsMaterial({ color: 0xdfe8ff, size: 0.25, transparent: true, opacity: 0.7, depthWrite: false })));
+  })();
+  const T = TENPC3D.build(st);
+  st.label('지구', 'E', V(0, -0.85, 0));
+  st.label('10 pc', 'P', T.rDir.clone().multiplyScalar(T.R * 0.55).add(V(0, 0.32, 0)));
+  const fmt = T.fmt;
+  T.stars.forEach((s) => {
+    s.lb = st.label('', '', () => s.grp.position.clone().add(V(0, s.id === 'sun' ? 0.5 : 0.75, 0)));
+  });
+  function labels() {
+    T.stars.forEach((s) => {
+      let h;
+      if (s.same) h = '10 pc 거리의 별 · <b>겉보기 = 절대</b>';
+      else if (s.t <= 0.001) h = `${s.name} · 겉보기 <b>${fmt(s.app)}</b> 등급`;
+      else if (s.t >= 0.999) h = `${s.name} · 절대 <b>${fmt(s.abs)}</b> 등급`;
+      else h = `${s.name} · ${s.goal > 0 ? '10 pc로 옮기는 중' : '제자리로 가는 중'}`;
+      s.lb.set(h); s.lb.el.classList.toggle('sel', s.sel);
+    });
+  }
+  function apply() {
+    T.select(S.sel);
+    T.stars.forEach((s) => { if (!s.same) T.setGoal(s.id, S.moved[s.id] ? 1 : 0); });
+  }
+  let home = -1, top = S.top;
+  const fitAll = () => st.fit([T.shell, T.byId('mirzam').grp], { dir: V(0.28, 0.5, 1), margin: 1.04, dur: 0.9, target: V(1.8, -0.9, 0) });
+  function camera() {
+    if (S.home !== home) { home = S.home; fitAll(); }
+    if (S.top !== top) { top = S.top; st.flyTo(V(0.6, 24, 0.01), V(0.6, 0, 0), 1); }
+    // 태양을 고르면 지구 가까이로
+    if (S.sel === 'sun' && S.zoomSun !== true) { S.zoomSun = true; st.flyTo(V(-0.2, 1.6, 4.2), V(-0.5, 0.2, 0.3), 1); }
+    else if (S.sel !== 'sun' && S.zoomSun) { S.zoomSun = false; fitAll(); }
+  }
+  S.on3d = () => { apply(); camera(); labels(); };
+  // 지구에서 본 하늘
+  const cv = document.getElementById('skyCv'), skyT = document.getElementById('skyT');
+  st.onFrame(() => {
+    labels();
+    const sun = S.sel === 'sun';
+    TENPC3D.drawSky(cv, T, { sunOnly: sun });
+    skyT.textContent = sun ? '지구에서 본 태양' : '지구에서 본 하늘';
+  });
+  // 별 누르기
+  (function tap() {
+    const el = st.renderer.domElement, ray = new THREE.Raycaster(), v = new THREE.Vector2(); let sx = 0, sy = 0, down = false;
+    el.addEventListener('pointerdown', (e) => { sx = e.clientX; sy = e.clientY; down = true; });
+    el.addEventListener('pointerup', (e) => {
+      if (!down) return; down = false; if (Math.hypot(e.clientX - sx, e.clientY - sy) > 8) return;
+      const r = el.getBoundingClientRect(); v.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+      ray.setFromCamera(v, st.camera); ray.params.Sprite = {};
+      const hit = ray.intersectObjects(T.stars.map((s) => s.grp), true)[0];
+      if (hit) { let o = hit.object; while (o && o.userData.tap === undefined) o = o.parent; if (o) S.select(o.userData.tap); }
+    });
+  })();
+  S.home++; S.on3d();
+  window.SM.ok3d = true;
+} catch (err) { window.SM_err('3D', err); }
+</script>
+</body>
+</html>

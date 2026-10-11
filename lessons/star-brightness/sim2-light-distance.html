@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>별의 밝기 – 3D 거리와 빛의 세기</title>
+<script>
+/* 문제 알림: 코드에 오류가 나면 화면 아래에 빨간 상자로 알려 줘요 (선생님 확인용) */
+(function () {
+  function box() {
+    var b = document.getElementById('smErr');
+    if (!b && document.body) {
+      b = document.createElement('div'); b.id = 'smErr';
+      b.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;background:#fdecea;color:#8a1f17;border:2px solid #d9534f;border-radius:12px;padding:10px 14px;font:600 14px/1.5 sans-serif;white-space:pre-wrap';
+      document.body.appendChild(b);
+    }
+    return b;
+  }
+  window.SM_err = function (where, err) {
+    var msg = '[' + where + '] ' + (err && err.message ? err.message : String(err));
+    var show = function () { var b = box(); if (b) b.textContent += (b.textContent ? '\n' : '') + msg; };
+    if (document.body) show(); else document.addEventListener('DOMContentLoaded', show);
+  };
+  window.addEventListener('error', function (e) { window.SM_err('스크립트', { message: e.message + ' (줄 ' + e.lineno + ')' }); });
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      var S = window.SM || {};
+      if (!S.okUI) window.SM_err('실행 안 됨', { message: '안내·버튼 코드가 실행되지 않았어요. 파일이 끝(</html>)까지 들어 있는지 확인해 주세요.' });
+      if (document.getElementById('fail3d') && !S.ok3d) { var f = document.getElementById('fail3d'); if (f) f.classList.add('show'); window.SM_err('3D 그림', { message: '3D 그림을 불러오지 못했어요. 인터넷 연결(cdn.jsdelivr.net)을 확인하고 새로고침해 주세요.' }); }
+    }, 9000);
+  });
+})();
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+
+  :root{--bg:#edf3f8;--card:#fff;--ink:#14263b;--ink2:#34495e;--muted:#5a6b7e;--line:#dde6ee;--accent:#0e63b3;--accent-soft:#e3effb;
+    --fab:#4b3fb5;--fab-soft:#ecebfb;--ok:#1f9d5c;--no:#d9534f;
+    --shadow:0 1px 2px rgba(20,38,59,.06),0 8px 24px rgba(20,38,59,.07);--ease:cubic-bezier(.2,.8,.2,1)}
+  *{box-sizing:border-box}html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:"Pretendard",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  button{font:inherit;color:inherit}
+  .app{max-width:1320px;margin:0 auto;padding:14px 16px 28px;display:flex;flex-direction:column;gap:12px}
+  .eyebrow{display:inline-flex;font-size:13px;font-weight:700;color:var(--fab);background:var(--fab-soft);padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(21px,2.4vw,28px);margin:6px 0 2px;letter-spacing:-.02em;word-break:keep-all}
+  .sub{margin:0;color:var(--muted);font-size:15px;word-break:keep-all}
+  .card{background:var(--card);border-radius:20px;box-shadow:var(--shadow);border:1px solid rgba(20,38,59,.04)}
+  .pad{padding:14px 16px}
+  .stage{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(330px,1fr);gap:14px;align-items:start}
+  .viewer{position:sticky;top:10px}
+  .flow{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px}
+  .fs{min-height:54px;border:0;border-radius:12px;background:#eef3f8;font-weight:800;font-size:13px;color:var(--muted);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.2;word-break:keep-all;padding:4px}
+  .fs b{font-size:15px}
+  .fs[aria-selected="true"]{background:var(--fab);color:#fff}
+  .fs.seen:not([aria-selected="true"]){background:#e5f5ec;color:#11703f}
+  .stepname{display:flex;align-items:center;gap:10px;margin:2px 0 6px}
+  .stepname .no{flex:none;width:40px;height:40px;border-radius:12px;background:var(--fab);color:#fff;display:grid;place-items:center;font-weight:900;font-size:19px}
+  .stepname h2{margin:0;font-size:21px;letter-spacing:-.01em;word-break:keep-all}
+  .stepname small{display:block;font-size:13px;color:var(--muted);font-weight:700}
+  .what{font-size:16px;line-height:1.75;color:var(--ink2);margin:0 0 10px;word-break:keep-all}
+  .phase{display:grid;gap:6px;margin:8px 0}
+  .ph{display:grid;grid-template-columns:28px 1fr;gap:8px;align-items:start;padding:7px 10px;border-radius:12px;background:#f7fafc;font-size:15px;line-height:1.55;color:var(--muted);word-break:keep-all;transition:background .3s,color .3s}
+  .ph i{font-style:normal;width:26px;height:26px;border-radius:8px;background:#dfe6ee;display:grid;place-items:center;font-weight:900;font-size:13px;color:#607285}
+  .ph.on{background:var(--fab-soft);color:var(--ink)}.ph.on i{background:var(--fab);color:#fff}
+  .ph.done{color:var(--ink2)}.ph.done i{background:#b9b2ee;color:#fff}
+  .box{border-radius:14px;padding:10px 12px;margin-top:8px;font-size:14.5px;line-height:1.65;word-break:keep-all}
+  .box b.t{display:block;font-size:13px;margin-bottom:2px}
+  .an{background:#fff8e6;border:1px solid #f3dc9a;color:#5b4300}
+  .fact{background:#eef6ff;border:1px solid #cfe2f6;color:#1d3f66}
+  .lnk{background:#ecf8f1;border:1px solid #c6e8d4;color:#0f5a36}
+  .src{display:block;font-size:12px;color:var(--muted);margin-top:3px}
+  .acts{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 0}
+  .btn{min-height:50px;border:0;border-radius:14px;padding:0 16px;font-weight:800;font-size:15.5px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;justify-content:center;word-break:keep-all}
+  .btn:active{transform:scale(.97)}
+  .btn.primary{background:var(--fab);color:#fff}.btn.ghost{background:#eef3f8;color:var(--ink2)}
+  .btn[aria-pressed="true"]{background:#14263b;color:#fff}
+  .btn:disabled{opacity:.4;cursor:default;transform:none}
+  .prog{height:6px;border-radius:3px;background:#e6edf4;margin-top:10px;overflow:hidden}
+  .prog i{display:block;height:100%;width:0;background:linear-gradient(90deg,#8a7ff0,var(--fab))}
+  .credit{text-align:center;font-size:13px;font-weight:700;color:#8495a8;letter-spacing:.02em;margin:6px 0 0}
+  /* ===== 3D 화면 공통 ===== */
+  :root{--Bc:#14a5d0;--Ic:#2fae4a;--Fc:#f0522a;--N:#d8433b;--S:#2f62c9;--P:#7d5ad6}
+  .viewer{position:relative;overflow:hidden;padding:0}
+  .gl-host{position:relative;width:100%;height:min(74vh,700px);min-height:380px;background:linear-gradient(#f6f9fc,#d6e3ef);touch-action:none}
+  .gl-host canvas.gl{display:block;width:100%;height:100%;outline:none}
+  .lbls{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+  .lb{position:absolute;left:0;top:0;white-space:nowrap;font-weight:800;font-size:14px;padding:3px 9px;border-radius:9px;background:rgba(255,255,255,.88);color:#34495e;box-shadow:0 2px 8px rgba(20,38,59,.14);will-change:transform}
+  .lb.small{font-size:12px;font-weight:700;color:#5a6b7e;background:rgba(255,255,255,.72);box-shadow:none}
+  .lb.B{background:var(--Bc);color:#fff}.lb.I{background:var(--Ic);color:#fff}.lb.F{background:var(--Fc);color:#fff;font-size:15px}
+  .lb.P{background:var(--P);color:#fff}
+  .lb.dim{opacity:.35}
+  .vt{position:absolute;display:flex;gap:6px;flex-wrap:wrap;z-index:3}
+  .vt.tl{left:10px;top:10px;max-width:calc(100% - 20px)}
+  .vt.tr{right:10px;top:10px;justify-content:flex-end}
+  .vt.bl{left:10px;bottom:10px;align-items:center}
+  .vb{min-height:44px;padding:0 12px;border-radius:12px;border:1px solid rgba(20,38,59,.12);background:rgba(255,255,255,.9);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);font-weight:800;font-size:14px;color:#34495e;cursor:pointer;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 10px rgba(20,38,59,.08)}
+  .vb:active{transform:scale(.96)}
+  .vb .dot{width:12px;height:12px;border-radius:50%;flex:none}
+  .vb[aria-pressed="false"]{opacity:.62}
+  .vb[aria-pressed="false"] .dot{background:#c2ccd6!important}
+  .vb.sel{background:#14263b;color:#fff;border-color:#14263b}
+  .hint{font-size:12.5px;font-weight:700;color:#5a6b7e;background:rgba(255,255,255,.78);border-radius:10px;padding:6px 10px;word-break:keep-all}
+  .inset{position:absolute;z-index:2;border-radius:18px;border:2px solid rgba(255,255,255,.95);box-shadow:0 10px 30px rgba(20,38,59,.22),inset 0 0 0 1px rgba(20,38,59,.08);pointer-events:none;display:none}
+  .inset.on{display:block}
+  .inset .it{position:absolute;left:8px;top:8px;font-size:12.5px;font-weight:900;color:#14263b;background:rgba(255,255,255,.9);border-radius:8px;padding:3px 8px}
+  .inset .ic{position:absolute;left:6px;right:6px;bottom:6px;display:flex;flex-wrap:wrap;gap:4px;justify-content:center}
+  .inset .ic span{font-size:11.5px;font-weight:800;color:#fff;border-radius:7px;padding:2px 7px;white-space:nowrap}
+  .fail3d{position:absolute;inset:0;display:none;place-items:center;text-align:center;padding:24px;font-size:16px;font-weight:700;color:#7a2a22;line-height:1.7;word-break:keep-all;background:#fff4f2}
+  .fail3d.show{display:grid}
+  .model{font-size:13px;color:var(--muted);text-align:right;margin:0;word-break:keep-all}
+  @media (max-width:900px){.gl-host{height:min(56vh,620px)}}
+  .zoombadge{position:absolute;right:10px;top:62px;z-index:3;font-size:13px;font-weight:800;color:#fff;background:rgba(75,63,181,.9);border-radius:10px;padding:6px 10px;display:none;word-break:keep-all;max-width:60%}
+  .zoombadge.on{display:block}
+  @media (max-width:900px){.stage{grid-template-columns:1fr}.viewer{position:relative;top:0}}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+  /* ===== 이 수업 전용 ===== */
+  :root{--fab:#c27a12;--fab-soft:#fff3dc;--blue:#3a64c8}
+  .eyebrow{color:#8a5200;background:#fff1d6}
+  .gl-host{background:linear-gradient(#060b1a,#14204a)}
+  .vb{background:rgba(16,26,52,.78);color:#e6ecfa;border-color:rgba(255,255,255,.18)}
+  .vb.sel{background:#fff;color:#14263b;border-color:#fff}
+  .hint{background:rgba(16,26,52,.72);color:#cdd7ee}
+  .lb{background:rgba(12,20,44,.82);color:#e8eefc;box-shadow:none;border:1px solid rgba(255,255,255,.14)}
+  .lb.Y{background:#f2c14e;color:#3d2c00;border:0}
+  .lb.B{background:#3a64c8;color:#fff;border:0}
+  .lb.small{background:rgba(12,20,44,.6);color:#c5d0ea}
+  .lb.dim{opacity:.45}
+  .modes{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px}
+  .md{min-height:54px;border:0;border-radius:14px;background:#eef3f8;font-weight:800;font-size:15.5px;color:var(--muted);cursor:pointer;word-break:keep-all}
+  .md[aria-selected="true"]{background:var(--fab);color:#fff}
+  .stepname .no{background:var(--fab)}
+  .dsel{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:8px 0}
+  .dsel button{min-height:54px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:900;font-size:16px;cursor:pointer;line-height:1.2}
+  .dsel button small{display:block;font-size:12px;font-weight:700;color:var(--muted)}
+  .dsel button[aria-pressed="true"]{border-color:var(--fab);background:var(--fab-soft);color:#6d4100}
+  .chain{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:6px;align-items:center;margin:10px 0}
+  .chain .c{border-radius:14px;padding:10px 6px;text-align:center;background:#f7fafc;border:1px solid var(--line)}
+  .chain .c small{display:block;font-size:12.5px;font-weight:800;color:var(--muted);word-break:keep-all}
+  .chain .c b{display:block;font-size:24px;letter-spacing:-.02em;margin-top:2px}
+  .chain .c.hl{background:linear-gradient(135deg,#fff6d8,#fff);border-color:#f0cf74}
+  .chain .ar{color:#9aa7b4;font-weight:900}
+  .frac{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;line-height:1;font-size:.82em;margin:0 2px}
+  .frac i{font-style:normal;border-bottom:2px solid currentColor;padding:0 3px 2px}
+  .frac em{font-style:normal;padding-top:2px}
+  .tbl{width:100%;border-collapse:separate;border-spacing:0 6px;margin:6px 0}
+  .tbl th{font-size:12.5px;color:var(--muted);font-weight:800;text-align:left;padding:0 8px}
+  .tbl td{background:#f7fafc;padding:8px;font-weight:800;font-size:15px}
+  .tbl td:first-child{border-radius:10px 0 0 10px}.tbl td:last-child{border-radius:0 10px 10px 0;width:44%}
+  .tbl tr.on td{background:#fff3d6}
+  .tbl .bar{height:12px;border-radius:99px;background:#e6edf4;overflow:hidden}
+  .tbl .bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#f6c344,#ffe9a8);transition:width .5s var(--ease)}
+  .why{margin-top:10px;display:grid;gap:6px}
+  .why h3{margin:6px 0 2px;font-size:16px}
+  .why .w{display:grid;grid-template-columns:28px 1fr;gap:8px;align-items:start;padding:8px 10px;border-radius:12px;background:#f7fafc;font-size:14.5px;line-height:1.6;color:var(--ink2);word-break:keep-all;transition:background .3s}
+  .why .w i{font-style:normal;width:26px;height:26px;border-radius:8px;background:var(--fab);color:#fff;display:grid;place-items:center;font-weight:900;font-size:13px}
+  .why .w.on{background:#fff3d6}
+  [hidden]{display:none!important}
+</style>
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }
+</script>
+</head>
+<body>
+<div class="app">
+  <header>
+    <span class="eyebrow">별의 밝기 · 3D 시뮬레이션 ②</span>
+    <h1>3D 거리와 빛의 세기</h1>
+    <p class="sub">광원에서 나온 빛은 사방으로 퍼져 나가요. 거리가 멀어지면 같은 넓이에 들어오는 빛이 얼마나 줄어드는지 직접 확인해 보세요. 손가락으로 돌려 볼 수 있어요.</p>
+  </header>
+  <div class="stage">
+    <section class="card viewer">
+      <div class="gl-host" id="host" role="img" aria-label="가운데 광원에서 빛 알갱이가 퍼져 나간다. 거리 1, 2, 3, 4 배에 놓인 판은 1, 4, 9, 16 칸으로 나뉘어 있고, 노란 한 칸에 들어오는 빛은 멀수록 적다.">
+        <div class="vt tl" role="group" aria-label="보는 방향"><button class="vb sel" type="button" id="vHome">처음 방향으로</button><button class="vb" type="button" id="vEye" hidden>내 자리에서 보기</button></div>
+        <div class="vt bl"><span class="hint" id="hint">한 손가락: 돌리기 · 두 손가락: 확대</span></div>
+        <div class="fail3d" id="fail3d">3D 그림을 불러오지 못했어요.<br>인터넷 연결을 확인하고 새로고침해 주세요.<br>(오른쪽 설명은 그대로 읽을 수 있어요)</div>
+      </div>
+    </section>
+    <section class="card pad">
+      <div class="modes" role="tablist">
+        <button class="md" type="button" role="tab" id="mA" aria-selected="true">빛이 퍼지는 모습</button>
+        <button class="md" type="button" role="tab" id="mB" aria-selected="false">같은 가로등, 다른 거리</button>
+      </div>
+      <div id="paneA">
+        <div class="stepname"><span class="no">A</span><div><h2>멀어질수록 넓게 퍼지는 빛</h2><small>그림 Ⅷ-4처럼 광원에서 거리 1·2·3·4 배에 판을 세웠어요</small></div></div>
+        <div class="dsel" id="dsel" role="group" aria-label="광원으로부터의 거리"></div>
+        <div class="chain">
+          <div class="c"><small>광원으로부터의 거리</small><b id="cD">1 배</b></div><span class="ar">→</span>
+          <div class="c"><small>빛이 비추는 넓이</small><b id="cA">1 칸</b></div><span class="ar">→</span>
+          <div class="c hl"><small>한 칸에 들어오는 빛</small><b id="cL">1 배</b></div>
+        </div>
+        <table class="tbl" id="tbl"><thead><tr><th>거리</th><th>넓이</th><th>한 칸의 빛</th><th></th></tr></thead><tbody></tbody></table>
+        <div class="why" id="whyA">
+          <h3>왜 그럴까?</h3>
+          <div class="w" data-w="1"><i>1</i><span>광원에서 나온 빛은 <b>사방으로 퍼져 나가요</b>. 둥근 껍질이 커지면서 퍼지는 모습을 보세요.</span></div>
+          <div class="w" data-w="2"><i>2</i><span>거리가 2 배가 되면 판의 가로도 2 배, 세로도 2 배가 되어 같은 빛이 <b>4 칸</b>에 퍼져요. 3 배면 9 칸이에요.</span></div>
+          <div class="w" data-w="3"><i>3</i><span>같은 양의 빛을 더 많은 칸이 나누어 가지니, 노란 <b>한 칸에 들어오는 빛</b>은 1/4 배, 1/9 배, 1/16 배로 줄어요. 한 칸을 지나가는 빛 알갱이가 드물어지는 것을 보세요.</span></div>
+          <div class="w" data-w="4"><i>4</i><span>그래서 광원에서 멀어질수록 빛의 세기는 줄어들고 <b>어둡게</b> 보여요. 스스로 빛을 내는 별도 마찬가지예요.</span></div>
+        </div>
+        <div class="box an"><b class="t">모형 안내</b>빛 알갱이는 빛이 퍼지는 모습을 보여 주는 모형이에요. 판은 그림 Ⅷ-4처럼 한쪽 방향만 잘라서 보여 줘요. 실제로는 빛이 모든 방향으로 퍼져요.</div>
+      </div>
+      <div id="paneB" hidden>
+        <div class="stepname"><span class="no">B</span><div><h2>같은 밝기의 가로등</h2><small>모두 같은 가로등인데 멀리 있는 것이 어둡게 보여요</small></div></div>
+        <div class="dsel" id="lsel" role="group" aria-label="가로등 고르기"></div>
+        <div class="chain">
+          <div class="c"><small>나와 가로등 사이 거리</small><b id="lD">1 배</b></div><span class="ar">→</span>
+          <div class="c"><small>가로등의 실제 밝기</small><b>모두 같음</b></div><span class="ar">→</span>
+          <div class="c hl"><small>내 눈에 들어오는 빛</small><b id="lL">1 배</b></div>
+        </div>
+        <table class="tbl" id="tbl2"><thead><tr><th>가로등</th><th>거리</th><th>눈에 들어오는 빛</th><th></th></tr></thead><tbody></tbody></table>
+        <div class="why">
+          <h3>왜 그럴까?</h3>
+          <div class="w"><i>1</i><span>네 가로등은 <b>같은 밝기</b>예요. 그런데 '내 자리에서 보기'를 누르면 멀리 있는 가로등일수록 작고 어둡게 보여요.</span></div>
+          <div class="w"><i>2</i><span>멀리 있는 가로등의 빛은 나에게 오는 동안 더 넓게 퍼져서, 내 눈에 들어오는 빛이 적어요.</span></div>
+          <div class="w"><i>3</i><span>밤하늘의 별도 같아요. 지구에서 보이는 밝기(겉보기 등급)만으로는 별의 <b>실제 밝기</b>를 비교할 수 없어요.</span></div>
+          <div class="w"><i>4</i><span>실제 밝기를 비교하려면 모든 별을 <b>같은 거리</b>에 놓고 비교해야 해요. 다음 시뮬레이션 '10 pc로 옮기기'에서 해 봐요.</span></div>
+        </div>
+      </div>
+    </section>
+  </div>
+  <p class="credit">별의 밝기 · 거리와 빛의 세기</p>
+</div>
+<script>
+window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
+  mode: 'A', d: 1, lamp: 1, home: 0, eye: 0 };
+</script>
+<script>
+/* ===== 블록 1: 안내·버튼 ===== */
+(() => {
+  'use strict';
+  try {
+    const { $, $$ } = window.SM, S = window.SM;
+    const FR = (n) => (n === 1 ? '1 배' : `<span class="frac"><i>1</i><em>${n}</em></span> 배`);
+    const setMode = (m) => {
+      S.mode = m; $('#mA').setAttribute('aria-selected', String(m === 'A')); $('#mB').setAttribute('aria-selected', String(m === 'B'));
+      $('#paneA').hidden = m !== 'A'; $('#paneB').hidden = m !== 'B'; $('#vEye').hidden = m !== 'B';
+      $('#hint').textContent = m === 'A' ? '한 손가락: 돌리기 · 두 손가락: 확대' : '가로등을 누르면 골라져요 · 돌리기 · 확대';
+      S.home++; if (S.on3d) S.on3d();
+    };
+    $('#mA').addEventListener('click', () => setMode('A'));
+    $('#mB').addEventListener('click', () => setMode('B'));
+    $('#vHome').addEventListener('click', () => { S.home++; if (S.on3d) S.on3d(); });
+    $('#vEye').addEventListener('click', () => { S.eye++; if (S.on3d) S.on3d(); });
+    $('#dsel').innerHTML = [1, 2, 3, 4].map((d) => `<button type="button" data-d="${d}" aria-pressed="${d === 1}">${d} 배<small>거리</small></button>`).join('');
+    $('#lsel').innerHTML = [1, 2, 3, 4].map((d) => `<button type="button" data-l="${d}" aria-pressed="${d === 1}">${d}번<small>가로등</small></button>`).join('');
+    $('#tbl tbody').innerHTML = [1, 2, 3, 4].map((d) => `<tr data-d="${d}"><td>${d} 배</td><td>${d * d} 칸</td><td>${FR(d * d)}</td><td><div class="bar"><i style="width:${100 / (d * d)}%"></i></div></td></tr>`).join('');
+    $('#tbl2 tbody').innerHTML = [1, 2, 3, 4].map((d) => `<tr data-d="${d}"><td>${d}번</td><td>${d} 배</td><td>${FR(d * d)}</td><td><div class="bar"><i style="width:${100 / (d * d)}%"></i></div></td></tr>`).join('');
+    S.setD = (d) => {
+      S.d = d; $$('#dsel button').forEach((b) => b.setAttribute('aria-pressed', String(+b.dataset.d === d)));
+      $('#cD').textContent = d + ' 배'; $('#cA').textContent = d * d + ' 칸'; $('#cL').innerHTML = FR(d * d);
+      $$('#tbl tbody tr').forEach((r) => r.classList.toggle('on', +r.dataset.d === d));
+      $$('#whyA .w').forEach((w) => w.classList.toggle('on', d === 1 ? w.dataset.w === '1' : d === 2 ? w.dataset.w === '2' : w.dataset.w === '3'));
+      if (S.on3d) S.on3d();
+    };
+    S.setLamp = (k) => {
+      S.lamp = k; $$('#lsel button').forEach((b) => b.setAttribute('aria-pressed', String(+b.dataset.l === k)));
+      $('#lD').textContent = k + ' 배'; $('#lL').innerHTML = FR(k * k);
+      $$('#tbl2 tbody tr').forEach((r) => r.classList.toggle('on', +r.dataset.d === k));
+      if (S.on3d) S.on3d();
+    };
+    $$('#dsel button').forEach((b) => b.addEventListener('click', () => S.setD(+b.dataset.d)));
+    $$('#lsel button').forEach((b) => b.addEventListener('click', () => S.setLamp(+b.dataset.l)));
+    S.setD(1); S.setLamp(1);
+    const q = new URLSearchParams(location.search);
+    if (q.get('mode') === 'B') setMode('B');
+    if (q.get('d')) S.setD(+q.get('d'));
+    window.SM.okUI = true;
+  } catch (err) { window.SM_err('안내·버튼', err); }
+})();
+</script>
+<script type="module">
+/* ===== 블록 2: 3D (빛이 퍼지는 모습, 가로등 밤길) ===== */
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+/* ===== 공통 3D 도구 (three.js) =====
+   전자는 파란 알갱이(−), 전자를 잃은 쪽은 빨간 (+) 표시. 크기·개수·빠르기는 개념 이해를 위한 모형이에요(숫자 없음). */
+const C3 = (() => {
+  const REDUCE = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const V = (x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z);
+  const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+  const clamp01 = (t) => Math.max(0, Math.min(1, t));
+
+  // 탭 껍데기에서 보이지 않는 탭이면 그리지 않아요(태블릿 배터리 아끼기)
+  function visibleNow() {
+    if (document.hidden) return false;
+    try { const f = window.frameElement; if (f && f.hasAttribute('data-page') && !f.classList.contains('on')) return false; } catch (e) {}
+    return true;
+  }
+
+  function canvasTex(w, h, draw) {
+    const c = document.createElement('canvas'); c.width = w; c.height = h;
+    draw(c.getContext('2d'), w, h);
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
+    t.userData.canvas = c; return t;
+  }
+  function gradientBg(top, bottom) {
+    return canvasTex(4, 256, (g, w, h) => { const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, top); gr.addColorStop(1, bottom); g.fillStyle = gr; g.fillRect(0, 0, w, h); });
+  }
+  // 나뭇결 책상
+  function woodTex() {
+    const t = canvasTex(1024, 512, (g, w, h) => {
+      const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#c99a6b'); gr.addColorStop(1, '#b8875a'); g.fillStyle = gr; g.fillRect(0, 0, w, h);
+      for (let i = 0; i < 160; i++) {
+        const y = Math.random() * h, a = 0.04 + Math.random() * 0.08; g.strokeStyle = `rgba(${90 + Math.random() * 40},${55 + Math.random() * 25},30,${a})`;
+        g.lineWidth = 1 + Math.random() * 3; g.beginPath(); g.moveTo(0, y);
+        for (let x = 0; x <= w; x += 32) g.lineTo(x, y + Math.sin(x / 90 + i) * 4 + Math.sin(x / 23) * 1.2);
+        g.stroke();
+      }
+    });
+    t.wrapS = t.wrapT = THREE.RepeatWrapping; return t;
+  }
+  // 바닥에 드리우는 부드러운 그림자
+  function blobTex() {
+    return canvasTex(256, 256, (g, w, h) => { const r = g.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2); r.addColorStop(0, 'rgba(20,38,59,.32)'); r.addColorStop(1, 'rgba(20,38,59,0)'); g.fillStyle = r; g.fillRect(0, 0, w, h); });
+  }
+
+  /* 무대: 렌더러·카메라·조명·손가락 조작 */
+  function makeStage(host, opt = {}) {
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = opt.exposure || 1.05;
+    renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.domElement.className = 'gl';
+    host.appendChild(renderer.domElement);
+    const scene = new THREE.Scene();
+    scene.background = gradientBg(opt.top || '#f6f9fc', opt.bottom || '#d6e3ef');
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    scene.environment = pmrem.fromScene(new RoomEnvironment(renderer), 0.04).texture;
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x8a9bb0, 0.55));
+    const sun = new THREE.DirectionalLight(0xffffff, 1.6);
+    sun.position.set(opt.sunX || 5, 11, opt.sunZ || 7); sun.castShadow = true;
+    sun.shadow.mapSize.set(1024, 1024); sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.02;
+    const sc = sun.shadow.camera; sc.left = -9; sc.right = 9; sc.top = 9; sc.bottom = -9; sc.near = 1; sc.far = 40;
+    scene.add(sun);
+    const camera = new THREE.PerspectiveCamera(opt.fov || 34, 1, 0.1, 200);
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true; controls.dampingFactor = 0.09; controls.enablePan = false;
+    controls.rotateSpeed = 0.85; controls.zoomSpeed = 0.9;
+    if (opt.scroll) { controls.enableZoom = false; renderer.domElement.style.touchAction = 'pan-y'; host.style.touchAction = 'pan-y'; }
+    controls.minDistance = opt.minD || 3; controls.maxDistance = opt.maxD || 24; controls.maxPolarAngle = Math.PI * 0.86;
+
+    const overlay = document.createElement('div'); overlay.className = 'lbls'; host.appendChild(overlay);
+    let W = 1, H = 1;
+    function resize() {
+      const r = host.getBoundingClientRect(); W = Math.max(1, r.width); H = Math.max(1, r.height);
+      renderer.setSize(W, H, false); camera.aspect = W / H;
+      if (opt.fitWidth) { // 세로 화면에서 장면이 잘리지 않도록 화각을 넓혀요
+        const base = opt.fov || 34; camera.fov = camera.aspect < 1.15 ? Math.min(62, base * (1.15 / camera.aspect) * 0.92) : base;
+      }
+      camera.updateProjectionMatrix();
+    }
+    try { let rq = 0; new ResizeObserver(() => { cancelAnimationFrame(rq); rq = requestAnimationFrame(resize); }).observe(host); } catch (e) { addEventListener('resize', resize); }
+    resize();
+
+    // 이름표(HTML)를 3D 위치에 붙이기
+    const labels = [];
+    function label(html, cls, at) {
+      const el = document.createElement('div'); el.className = 'lb ' + (cls || ''); el.innerHTML = html; overlay.appendChild(el);
+      const L = { el, at, show: true, set(h) { if (el.innerHTML !== h) el.innerHTML = h; } };
+      labels.push(L); return L;
+    }
+    const tmp = V();
+    function placeLabels() {
+      labels.forEach((L) => {
+        if (!L.show) { L.el.style.display = 'none'; return; }
+        const p = typeof L.at === 'function' ? L.at() : L.at;
+        if (!p) { L.el.style.display = 'none'; return; }
+        tmp.copy(p).project(camera);
+        if (tmp.z > 1 || tmp.z < -1) { L.el.style.display = 'none'; return; }
+        const px = ((tmp.x + 1) / 2) * W, py = ((1 - tmp.y) / 2) * H;
+        L.el.style.display = '';
+        L.el.style.transform = `translate(${px}px,${py}px) translate(-50%,-50%)`;
+      });
+    }
+
+    // 카메라 이동
+    let fly = null;
+    controls.addEventListener('start', () => { fly = null; });
+    function flyTo(pos, target, dur = 1.1) {
+      if (REDUCE || dur <= 0) { camera.position.copy(pos); controls.target.copy(target); controls.update(); return; }
+      fly = { p0: camera.position.clone(), t0: controls.target.clone(), p1: pos.clone(), t1: target.clone(), k: 0, dur };
+    }
+
+    const fns = [];
+    let last = performance.now(), running = true;
+    function tick(now) {
+      requestAnimationFrame(tick);
+      if (!running || !visibleNow()) { last = now; return; }
+      if (opt.scroll) { const hr = host.getBoundingClientRect(); if (hr.bottom < -50 || hr.top > (window.innerHeight || 800) + 50) { last = now; return; } } // 화면 밖이면 쉬기
+      const dt = Math.min(0.05, Math.max(0, (now - last) / 1000)); last = now;
+      if (fly) {
+        fly.k = Math.min(1, fly.k + dt / fly.dur); const e = ease(fly.k);
+        camera.position.lerpVectors(fly.p0, fly.p1, e); controls.target.lerpVectors(fly.t0, fly.t1, e);
+        if (fly.k >= 1) fly = null;
+      }
+      for (let i = 0; i < fns.length; i++) { try { fns[i](dt, now / 1000); } catch (err) { console.error(err); } }
+      controls.update();
+      renderer.render(scene, camera);
+      placeLabels();
+    }
+    requestAnimationFrame(tick);
+
+    /* 자동 구도: 물체(또는 여러 물체)가 화면에 꼭 들어오도록 카메라 거리를 찾아요.
+       dir: 카메라가 놓일 방향(물체 중심에서), margin: 가장자리 여백(1.1 = 10%), dur: 이동 시간(초)
+       화면 비율이 바뀌면(가로↔세로) 사용자가 돌리기 전까지 다시 맞춰요. */
+    let lastFit = null, userMoved = false;
+    controls.addEventListener('start', () => { userMoved = true; });
+    const _box = new THREE.Box3(), _v = V(), _c = V();
+    function fitPose(objs, o = {}) {
+      _box.makeEmpty(); (Array.isArray(objs) ? objs : [objs]).forEach((ob) => { ob.updateMatrixWorld(true); _box.expandByObject(ob); });
+      if (o.extra) o.extra.forEach((p) => _box.expandByPoint(p));
+      const ctr = o.target ? o.target.clone() : _box.getCenter(V());
+      const dir = (o.dir ? o.dir.clone() : camera.position.clone().sub(controls.target)).normalize();
+      const pts = []; for (let i = 0; i < 8; i++) pts.push(V(i & 1 ? _box.max.x : _box.min.x, i & 2 ? _box.max.y : _box.min.y, i & 4 ? _box.max.z : _box.min.z));
+      const lim = 1 / (o.margin || 1.1), cam = camera.clone();
+      const ok = (d) => { cam.position.copy(ctr).addScaledVector(dir, d); cam.lookAt(ctr); cam.updateMatrixWorld(); cam.updateProjectionMatrix(); return pts.every((p) => { _c.copy(p).project(cam); return Math.abs(_c.x) <= lim && Math.abs(_c.y) <= lim && _c.z < 1; }); };
+      let lo = 0.5, hi = 200; for (let k = 0; k < 28; k++) { const mid = (lo + hi) / 2; if (ok(mid)) hi = mid; else lo = mid; }
+      return { p: ctr.clone().addScaledVector(dir, hi), t: ctr };
+    }
+    function fit(objs, o = {}) {
+      lastFit = { objs, o: Object.assign({}, o, { dir: o.dir || camera.position.clone().sub(controls.target) }) }; userMoved = false;
+      const f = fitPose(objs, lastFit.o); flyTo(f.p, f.t, o.dur === undefined ? 0 : o.dur); return f;
+    }
+    try { let fr = 0; new ResizeObserver(() => { cancelAnimationFrame(fr); fr = requestAnimationFrame(() => { if (lastFit && !userMoved) { const f = fitPose(lastFit.objs, lastFit.o); flyTo(f.p, f.t, 0); } }); }).observe(host); } catch (e) {}
+
+    return { renderer, scene, camera, controls, sun, overlay, label, flyTo, fit, fitPose, onFrame: (f) => fns.push(f), size: () => ({ W, H }), resize };
+  }
+
+  // 관 모양 전선(곡선)
+  function tube(points, r, mat, seg = 80) {
+    const curve = new THREE.CatmullRomCurve3(points, false, 'centripetal');
+    const m = new THREE.Mesh(new THREE.TubeGeometry(curve, seg, r, 10, false), mat); m.castShadow = true; m.curve = curve; return m;
+  }
+
+  // 길을 따라 움직이는 알갱이(전자). 전선에는 전자가 이미 꽉 차 있으므로, 멈춰 있어도 알갱이는 보여요.
+  // setPath(점 배열), update(dt, 빠르기) — 빠르기가 음수면 반대로 움직여요
+  function makeDots(count, color, size = 1) {
+    const geo = new THREE.SphereGeometry(0.06 * size, 14, 10);
+    const mat = new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.55, roughness: 0.3 });
+    const mesh = new THREE.InstancedMesh(geo, mat, count); mesh.frustumCulled = false;
+    let pts = [], cum = [], total = 1, off = 0; const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), p = V(), sc = V(1, 1, 1);
+    function setPath(P) {
+      pts = P; cum = [0];
+      for (let i = 1; i < P.length; i++) cum.push(cum[i - 1] + P[i].distanceTo(P[i - 1]));
+      total = cum[cum.length - 1] || 1;
+    }
+    function at(s, out) {
+      s = ((s % total) + total) % total;
+      let i = 1; while (i < cum.length - 1 && cum[i] < s) i++;
+      const a = pts[i - 1], b = pts[i], seg = cum[i] - cum[i - 1] || 1, k = (s - cum[i - 1]) / seg;
+      out.lerpVectors(a, b, k);
+    }
+    function update(dt, speed) {
+      if (pts.length < 2) { mesh.visible = false; return; }
+      off += dt * speed;
+      const gap = total / count;
+      for (let k = 0; k < count; k++) { at(off + k * gap, p); m4.compose(p, q, sc); mesh.setMatrixAt(k, m4); }
+      mesh.instanceMatrix.needsUpdate = true;
+    }
+    return { mesh, setPath, update, mat };
+  }
+
+  // 책상
+  function addTable(scene, w, d, y = 0) {
+    const tex = woodTex(); tex.repeat.set(w / 10, d / 10);
+    const mat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.55, metalness: 0 });
+    const t = new THREE.Mesh(new RoundedBoxGeometry(w, 0.4, d, 3, 0.12), mat); t.position.y = y - 0.2; t.receiveShadow = true; scene.add(t);
+    return t;
+  }
+  const mesh = (geo, mat, x = 0, y = 0, z = 0) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true; return m; };
+
+  return { REDUCE, V, ease, clamp01, makeStage, canvasTex, gradientBg, blobTex, tube, makeDots, addTable, visibleNow, mesh };
+})();
+/* ===== 3D: 빛이 퍼지는 모습 (그림 Ⅷ-4처럼 광원에서 거리 1·2·3·4 배인 판) =====
+   읽기 페이지와 시뮬레이션 ②가 같은 모형을 써요. 판의 칸 수와 밝기(1, 1/4, 1/9, 1/16 배)는 교과서 값이에요.
+   빛 알갱이의 수·빠르기는 개념 이해를 위한 모형이에요. */
+const LIGHT3D = (() => {
+  const { V } = C3;
+  function glowTex(inner = 'rgba(255,250,232,1)', mid = 'rgba(255,214,130,.35)') {
+    return C3.canvasTex(128, 128, (g, w, h) => {
+      const r = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+      r.addColorStop(0, inner); r.addColorStop(0.18, 'rgba(255,240,200,.85)'); r.addColorStop(0.42, mid); r.addColorStop(1, 'rgba(255,200,120,0)');
+      g.fillStyle = r; g.fillRect(0, 0, w, h);
+    });
+  }
+  function glowSprite(scale, opacity = 1, tex) {
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex || glowTex(), transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity }));
+    s.scale.set(scale, scale, 1); return s;
+  }
+  /* opt.D: 거리 1 배의 길이, opt.u: 거리 1 배 판의 한 변 */
+  function build(st, opt = {}) {
+    const D = opt.D || 2, u = opt.u || 1, N = opt.n || 4;
+    const g = new THREE.Group(); st.scene.add(g);
+    // 광원
+    const src = new THREE.Mesh(new THREE.SphereGeometry(0.17, 32, 20), new THREE.MeshBasicMaterial({ color: 0xfff6dc }));
+    g.add(src);
+    const halo = glowSprite(2.4); g.add(halo);
+    const halo2 = glowSprite(5.5, 0.35); g.add(halo2);
+    const pl = new THREE.PointLight(0xffe2a6, 30, 30, 1.6); g.add(pl);
+    // 모서리 빛줄기(네 귀퉁이)
+    const far = N + 0.45;
+    const rayMat = new THREE.MeshBasicMaterial({ color: 0xffd98a, transparent: true, opacity: 0.55 });
+    [[1, 1], [1, -1], [-1, 1], [-1, -1]].forEach(([a, b]) => {
+      const end = V(D * far, (a * u * far) / 2, (b * u * far) / 2);
+      const m = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, end.length(), 6), rayMat);
+      m.position.copy(end.clone().multiplyScalar(0.5)); m.quaternion.setFromUnitVectors(V(0, 1, 0), end.clone().normalize()); g.add(m);
+    });
+    // 판 (거리 k 배, 칸 k × k)
+    const panels = [];
+    for (let k = 1; k <= N; k++) {
+      const side = k * u, x = k * D;
+      const p = new THREE.Group(); p.position.x = x; g.add(p);
+      const glass = new THREE.Mesh(new THREE.PlaneGeometry(side, side), new THREE.MeshPhysicalMaterial({ color: 0x5d8be6, transparent: true, opacity: 0.2, roughness: 0.35, metalness: 0, side: THREE.DoubleSide, depthWrite: false, emissive: 0x2a4fa8, emissiveIntensity: 0.25 }));
+      glass.rotation.y = -Math.PI / 2; p.add(glass);
+      const pts = [];
+      for (let i = 0; i <= k; i++) {
+        const t = -side / 2 + i * u;
+        pts.push(V(0, t, -side / 2), V(0, t, side / 2), V(0, -side / 2, t), V(0, side / 2, t));
+      }
+      const grid = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: 0xcfe0ff, transparent: true, opacity: 0.85 }));
+      p.add(grid);
+      // 한 칸(맨 위 왼쪽): 같은 넓이에 들어오는 빛
+      const tileMat = new THREE.MeshBasicMaterial({ color: 0xffe07a, transparent: true, opacity: 0.0, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending });
+      const tile = new THREE.Mesh(new THREE.PlaneGeometry(u * 0.94, u * 0.94), tileMat);
+      tile.rotation.y = -Math.PI / 2; tile.position.set(-0.012, side / 2 - u / 2, -side / 2 + u / 2); p.add(tile);
+      const edge = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.PlaneGeometry(u, u)), new THREE.LineBasicMaterial({ color: 0xffd34d, transparent: true, opacity: 0 }));
+      edge.rotation.y = -Math.PI / 2; edge.position.copy(tile.position).x -= 0.01; p.add(edge);
+      panels.push({ k, p, glass, grid, tile, tileMat, edge, side, x, pulse: 0 });
+    }
+    // 사방으로 퍼지는 빛(퍼져 나가는 둥근 껍질)
+    const shells = [];
+    for (let i = 0; i < 3; i++) {
+      const m = new THREE.Mesh(new THREE.SphereGeometry(1, 48, 24), new THREE.MeshBasicMaterial({ color: 0xffd98a, transparent: true, opacity: 0, side: THREE.BackSide, depthWrite: false, blending: THREE.AdditiveBlending }));
+      g.add(m); shells.push({ m, k: i / 3 });
+    }
+    // 고른 거리의 구면(그림 Ⅷ-4의 파란 껍질)
+    const sphere = new THREE.Mesh(new THREE.SphereGeometry(1, 64, 32), new THREE.MeshPhysicalMaterial({ color: 0x3f73d8, transparent: true, opacity: 0.07, roughness: 0.2, side: THREE.DoubleSide, depthWrite: false }));
+    g.add(sphere);
+    // 빛 알갱이
+    const NP = opt.particles || 700;
+    const pm = new THREE.InstancedMesh(new THREE.SphereGeometry(0.03, 8, 6), new THREE.MeshBasicMaterial({ color: 0xfff1c2 }), NP); pm.frustumCulled = false; g.add(pm);
+    const P = [];
+    const spawn = (q, t) => { q.y = (Math.random() - 0.5) * u; q.z = (Math.random() - 0.5) * u; q.t = t; };
+    for (let i = 0; i < NP; i++) { const q = {}; spawn(q, Math.random() * far); P.push(q); }
+    const m4 = new THREE.Matrix4(), tmp = V(), one = V(1, 1, 1), qq = new THREE.Quaternion();
+    const state = { d: opt.d || 1, speed: 0.5, run: true };
+    function setD(d) {
+      state.d = d;
+      panels.forEach((P) => {
+        const on = P.k === d;
+        P.glass.material.opacity = on ? 0.32 : 0.12; P.grid.material.opacity = on ? 0.95 : 0.35;
+        P.edge.material.opacity = on ? 1 : 0;
+      });
+      sphere.scale.setScalar(Math.hypot(d * D, (d * u) / 2 * 0.7));
+    }
+    setD(state.d);
+    st.onFrame((dt, t) => {
+      const sp = C3.REDUCE ? 0 : state.speed;
+      halo.material.opacity = 0.9 + 0.1 * Math.sin(t * 3);
+      for (let i = 0; i < NP; i++) {
+        const q = P[i], t0 = q.t; q.t += dt * sp;
+        // 고른 판의 한 칸을 지나가면 반짝
+        const pd = panels[state.d - 1];
+        if (t0 < state.d && q.t >= state.d) {
+          const y = q.y * state.d, z = q.z * state.d;
+          if (y > pd.side / 2 - u && z < -pd.side / 2 + u) pd.pulse = Math.min(1, pd.pulse + 0.5);
+        }
+        if (q.t > far) spawn(q, 0.05);
+        tmp.set(D * q.t, q.y * q.t, q.z * q.t); m4.compose(tmp, qq, one); pm.setMatrixAt(i, m4);
+      }
+      pm.instanceMatrix.needsUpdate = true;
+      panels.forEach((P) => {
+        P.pulse = Math.max(0, P.pulse - dt * 2.2);
+        const base = P.k === state.d ? 0.62 / (P.k * P.k) + 0.1 : 0;
+        P.tileMat.opacity = base + (P.k === state.d ? P.pulse * 0.35 : 0);
+      });
+      shells.forEach((s) => {
+        if (!C3.REDUCE) s.k = (s.k + dt * 0.16) % 1;
+        const r = 0.3 + s.k * D * (N + 0.4); s.m.scale.setScalar(r);
+        s.m.material.opacity = 0.05 * (1 - s.k) * (1 - s.k);
+      });
+    });
+    return { g, panels, setD, state, D, u, N, src };
+  }
+  return { build, glowTex, glowSprite };
+})();
+/* ===== 3D: 같은 밝기의 가로등 4개가 거리 1·2·3·4 배에 서 있는 밤길 =====
+   가로등은 모두 같은 모형이에요. 멀리 있을수록 작고 어둡게 보이는 것은 원근(카메라)으로 생기고,
+   '눈에 들어오는 빛' 막대(1, 1/4, 1/9, 1/16 배)는 교과서 값이에요. */
+const STREET3D = (() => {
+  const { V, mesh } = C3;
+  function asphalt() {
+    const t = C3.canvasTex(512, 512, (g, w, h) => {
+      g.fillStyle = '#23272f'; g.fillRect(0, 0, w, h);
+      for (let i = 0; i < 9000; i++) { const v = 30 + Math.random() * 40; g.fillStyle = `rgba(${v},${v + 2},${v + 8},${0.25 + Math.random() * 0.3})`; g.fillRect(Math.random() * w, Math.random() * h, 1.5, 1.5); }
+    });
+    t.wrapS = t.wrapT = THREE.RepeatWrapping; return t;
+  }
+  function poolTex() {
+    return C3.canvasTex(256, 256, (g, w, h) => { const r = g.createRadialGradient(128, 128, 0, 128, 128, 128); r.addColorStop(0, 'rgba(255,214,140,.75)'); r.addColorStop(0.45, 'rgba(255,190,110,.25)'); r.addColorStop(1, 'rgba(255,180,100,0)'); g.fillStyle = r; g.fillRect(0, 0, w, h); });
+  }
+  function coneTex() {
+    return C3.canvasTex(64, 256, (g, w, h) => { const r = g.createLinearGradient(0, 0, 0, h); r.addColorStop(0, 'rgba(255,226,170,.55)'); r.addColorStop(1, 'rgba(255,226,170,0)'); g.fillStyle = r; g.fillRect(0, 0, w, h); });
+  }
+  function build(st, opt = {}) {
+    const L = opt.L || 7, N = 4, eyeZ = opt.eyeZ || 3;
+    const g = new THREE.Group(); st.scene.add(g);
+    // 땅: 차도, 인도, 잔디
+    const tex = asphalt(); tex.repeat.set(3, 18);
+    const road = new THREE.Mesh(new THREE.PlaneGeometry(7, 80), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.9, metalness: 0 }));
+    road.rotation.x = -Math.PI / 2; road.position.set(0, 0, -25); road.receiveShadow = true; g.add(road);
+    const walkMat = new THREE.MeshStandardMaterial({ color: 0x5b5f68, roughness: 0.85 });
+    [-4.8, 4.8].forEach((x) => { const w = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.18, 80), walkMat); w.position.set(x, 0.09, -25); w.receiveShadow = true; g.add(w); });
+    const grass = new THREE.Mesh(new THREE.PlaneGeometry(60, 80), new THREE.MeshStandardMaterial({ color: 0x1b2a22, roughness: 1 }));
+    grass.rotation.x = -Math.PI / 2; grass.position.set(0, -0.02, -25); g.add(grass);
+    const dashMat = new THREE.MeshBasicMaterial({ color: 0xcfc8a8 });
+    for (let z = 4; z > -64; z -= 3.2) { const d = new THREE.Mesh(new THREE.PlaneGeometry(0.16, 1.6), dashMat); d.rotation.x = -Math.PI / 2; d.position.set(0, 0.01, z); g.add(d); }
+    // 가로등 4개
+    const metal = new THREE.MeshStandardMaterial({ color: 0x7c8592, roughness: 0.4, metalness: 0.75 });
+    const pool = poolTex(), cone = coneTex();
+    const lamps = [];
+    for (let k = 1; k <= N; k++) {
+      const z = eyeZ - k * L, x = 4.4;
+      const lg = new THREE.Group(); lg.position.set(x, 0, z); g.add(lg); lg.userData.tap = k;
+      const pole = mesh(new THREE.CylinderGeometry(0.09, 0.13, 6, 16), metal, 0, 3, 0); lg.add(pole);
+      const base = mesh(new THREE.CylinderGeometry(0.22, 0.26, 0.4, 16), metal, 0, 0.2, 0); lg.add(base);
+      const arm = new THREE.Mesh(new THREE.TubeGeometry(new THREE.QuadraticBezierCurve3(V(0, 5.9, 0), V(0, 6.5, 0), V(-1.5, 6.35, 0)), 20, 0.06, 8, false), metal); arm.castShadow = true; lg.add(arm);
+      const head = mesh(new THREE.BoxGeometry(0.9, 0.16, 0.42), metal, -1.6, 6.3, 0); lg.add(head);
+      const bulb = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.05, 0.3), new THREE.MeshBasicMaterial({ color: 0xfff1cf })); bulb.position.set(-1.6, 6.2, 0); lg.add(bulb);
+      const glow = LIGHT3D.glowSprite(2.6, 0.95); glow.position.set(-1.6, 6.12, 0); lg.add(glow);
+      const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 2.4, 6.1, 32, 1, true), new THREE.MeshBasicMaterial({ map: cone, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, opacity: 0.38 }));
+      beam.position.set(-1.6, 3.1, 0); lg.add(beam);
+      const pl = new THREE.Mesh(new THREE.PlaneGeometry(6.5, 6.5), new THREE.MeshBasicMaterial({ map: pool, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0.9 }));
+      pl.rotation.x = -Math.PI / 2; pl.position.set(-1.6, 0.03, 0); lg.add(pl);
+      const spot = new THREE.PointLight(0xffd6a0, 9, 9, 1.8); spot.position.set(-1.6, 5.9, 0); lg.add(spot);
+      const ring = new THREE.Mesh(new THREE.RingGeometry(0.45, 0.56, 40), new THREE.MeshBasicMaterial({ color: 0xffd34d, transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false }));
+      ring.rotation.x = -Math.PI / 2; ring.position.set(0, 0.25, 0); lg.add(ring);
+      lamps.push({ k, lg, glow, ring, bulbPos: () => lg.localToWorld(V(-1.6, 6.2, 0)) });
+    }
+    // 보는 사람(눈 위치 표시)
+    const person = new THREE.Group(); person.position.set(1.2, 0, eyeZ); g.add(person);
+    const cloth = new THREE.MeshStandardMaterial({ color: 0x3b5bd6, roughness: 0.6 }), skin = new THREE.MeshStandardMaterial({ color: 0xf0c7a0, roughness: 0.7 });
+    person.add(mesh(new THREE.CapsuleGeometry(0.28, 0.9, 6, 16), cloth, 0, 1.0, 0));
+    person.add(mesh(new THREE.SphereGeometry(0.22, 24, 16), skin, 0, 1.78, 0));
+    const leg = new THREE.MeshStandardMaterial({ color: 0x24314f, roughness: 0.8 });
+    person.add(mesh(new THREE.CapsuleGeometry(0.1, 0.5, 4, 8), leg, -0.12, 0.35, 0), mesh(new THREE.CapsuleGeometry(0.1, 0.5, 4, 8), leg, 0.12, 0.35, 0));
+    const eye = V(1.2, 1.78, eyeZ);
+    // 뒤쪽 건물 실루엣과 창문 불빛
+    const bmat = new THREE.MeshStandardMaterial({ color: 0x141b2e, roughness: 0.9 });
+    const winTex = C3.canvasTex(128, 256, (gg, w, h) => { gg.fillStyle = '#141b2e'; gg.fillRect(0, 0, w, h); for (let j = 0; j < 16; j++) for (let i = 0; i < 6; i++) if (Math.random() < 0.28) { gg.fillStyle = `rgba(255,${200 + Math.random() * 40},${120 + Math.random() * 60},${0.5 + Math.random() * 0.4})`; gg.fillRect(8 + i * 20, 8 + j * 15, 10, 8); } });
+    for (let i = 0; i < 9; i++) {
+      const hgt = 6 + Math.random() * 12, w = 4 + Math.random() * 4;
+      const b = new THREE.Mesh(new THREE.BoxGeometry(w, hgt, 4), [bmat, bmat, bmat, bmat, new THREE.MeshBasicMaterial({ map: winTex }), bmat]);
+      b.position.set(-12 - Math.random() * 6, hgt / 2, eyeZ - 6 - i * 7.5); b.rotation.y = Math.PI / 2; g.add(b);
+    }
+    let sel = 0;
+    function select(k) { sel = k; lamps.forEach((l) => (l.ring.material.opacity = l.k === k ? 0.95 : 0)); }
+    st.onFrame((dt, t) => { lamps.forEach((l) => { l.glow.material.opacity = 0.9 + 0.05 * Math.sin(t * 2 + l.k); if (l.k === sel) l.ring.rotation.z += dt * 0.8; }); });
+    return { g, lamps, eye, select, L, eyeZ, person };
+  }
+  return { build };
+})();
+try {
+  const { V } = C3, S = window.SM;
+  const host = document.getElementById('host');
+  const st = C3.makeStage(host, { top: '#050a18', bottom: '#16234d', fov: 36, exposure: 1.0, minD: 3, maxD: 60, fitWidth: true });
+  st.sun.intensity = 0.25; st.scene.children.forEach((o) => { if (o.isHemisphereLight) o.intensity = 0.3; });
+  st.controls.maxPolarAngle = Math.PI * 0.9;
+  // 먼 배경 별
+  (function bgStars() {
+    const n = 900, pos = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) { const u = Math.random() * 2 - 1, a = Math.random() * Math.PI * 2, r = 70; pos[i * 3] = r * Math.sqrt(1 - u * u) * Math.cos(a); pos[i * 3 + 1] = r * u; pos[i * 3 + 2] = r * Math.sqrt(1 - u * u) * Math.sin(a); }
+    const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    st.scene.add(new THREE.Points(geo, new THREE.PointsMaterial({ color: 0xdfe8ff, size: 0.22, transparent: true, opacity: 0.75, depthWrite: false })));
+  })();
+  /* A: 빛이 퍼지는 모습 */
+  const A = LIGHT3D.build(st, { D: 2, u: 1, n: 4 });
+  const labA = [];
+  labA.push(st.label('광원', 'Y', V(0, 0.55, 0)));
+  A.panels.forEach((P) => {
+    P.lbD = st.label(`${P.k} 배`, 'small', V(P.x, -P.side / 2 - 0.35, 0));
+    P.lbA = st.label(`${P.k * P.k} 칸`, 'small', V(P.x, P.side / 2 + 0.35, 0));
+    P.lbL = st.label('', 'Y', V(P.x - 0.05, P.side / 2 - 0.5, -P.side / 2 - 0.9));
+    labA.push(P.lbD, P.lbA, P.lbL);
+  });
+  /* B: 가로등 밤길 */
+  const B = STREET3D.build(st, { L: 7, eyeZ: 3 });
+  const labB = [];
+  B.lamps.forEach((l) => { l.lb = st.label(`${l.k}번 가로등 · 거리 ${l.k} 배`, 'small', () => l.lg.localToWorld(V(0, 7.1, 0))); labB.push(l.lb); });
+  labB.push(st.label('나', 'B', () => B.person.localToWorld(V(0, 2.4, 0))));
+  const frac = (n) => (n === 1 ? '1 배' : `1/${n} 배`);
+  function apply() {
+    const a = S.mode === 'A';
+    A.g.visible = a; B.g.visible = !a;
+    labA.forEach((l) => (l.show = a)); labB.forEach((l) => (l.show = !a));
+    A.setD(S.d);
+    A.panels.forEach((P) => { const on = P.k === S.d; P.lbL.show = a && on; P.lbL.set(`한 칸: ${frac(P.k * P.k)}`); P.lbD.el.classList.toggle('dim', !on); P.lbA.el.classList.toggle('dim', !on); });
+    B.select(S.lamp);
+  }
+  let home = -1, eye = S.eye;
+  function camera() {
+    if (S.home !== home) {
+      home = S.home;
+      B.person.visible = true;
+      if (S.mode === 'A') st.fit([A.src, ...A.panels.map((P) => P.p)], { dir: V(0.36, 0.38, 1), margin: 1.12, dur: 0.9, target: V(4.4, 0, 0) });
+      else st.flyTo(V(16, 11, -2), V(0, 2, -13), 1);
+    }
+    if (S.eye !== eye) { eye = S.eye; if (S.mode === 'B') { B.person.visible = false; st.flyTo(B.eye.clone(), V(2.8, 6.0, -10), 1.2); } }
+  }
+  S.on3d = () => { apply(); camera(); };
+  // 가로등을 눌러 고르기
+  (function tap() {
+    const el = st.renderer.domElement, ray = new THREE.Raycaster(), v = new THREE.Vector2(); let sx = 0, sy = 0, down = false;
+    el.addEventListener('pointerdown', (e) => { sx = e.clientX; sy = e.clientY; down = true; });
+    el.addEventListener('pointerup', (e) => {
+      if (!down) return; down = false; if (Math.hypot(e.clientX - sx, e.clientY - sy) > 8 || S.mode !== 'B') return;
+      const r = el.getBoundingClientRect(); v.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+      ray.setFromCamera(v, st.camera); const hit = ray.intersectObjects(B.lamps.map((l) => l.lg), true)[0];
+      if (hit) { let o = hit.object; while (o && o.userData.tap === undefined) o = o.parent; if (o) S.setLamp(o.userData.tap); }
+    });
+  })();
+  S.home++; S.on3d();
+  window.SM.ok3d = true;
+} catch (err) { window.SM_err('3D', err); }
+</script>
+</body>
+</html>
