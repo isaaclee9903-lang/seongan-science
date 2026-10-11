@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>별의 색 – 스스로 정리하기</title>
+<!--@@PART:errbox_sum.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sum.css@@*/
+  /* ===== 이 수업 전용 ===== */
+  :root{--accent:#3a4fb0;--accent-soft:#e8edfb;--violet:#6a4fd0}
+  .si .two button{min-width:92px}
+  .si .two button.o[aria-pressed="true"]{border-color:#1f78c8;background:#e5f0fb;color:#1f78c8}
+  .si .two button.x[aria-pressed="true"]{border-color:#d9534f;background:#fdecea;color:#b33a35}
+  .ends{display:flex;justify-content:space-between;font-size:13.5px;font-weight:900;color:var(--accent);margin:6px 2px}
+  .cb7{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;margin:6px 0 10px;position:relative}
+  .cb7 .col{display:flex;flex-direction:column;align-items:center;gap:6px}
+  .cb7 .ball{width:min(54px,100%);aspect-ratio:1;border-radius:50%;background:radial-gradient(circle at 36% 34%,#fff 0%,var(--c) 58%,var(--d) 100%);box-shadow:0 0 14px var(--c),inset -6px -8px 14px rgba(0,0,0,.2)}
+  .cb7 b{font-size:15px;word-break:keep-all}
+  .slot{min-height:52px;width:100%;border-radius:12px;border:2px dashed #aebdcc;background:#fff;font-weight:900;font-size:15px;color:var(--muted);cursor:pointer;word-break:keep-all;padding:2px}
+  .slot.f{border-style:solid;border-color:var(--accent);background:var(--accent-soft);color:#22378a}
+  .slot.cur{box-shadow:0 0 0 4px rgba(58,79,176,.2)}
+  .slot.good{border-color:var(--ok);background:#e8f7ef;color:#11703f}.slot.bad{border-color:var(--no);background:#fdecea;color:#b33a35}
+  .bank{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+  .chip{min-height:48px;padding:6px 16px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:16px;cursor:pointer;word-break:keep-all}
+  .chip.used{opacity:.3;pointer-events:none}
+  .pairs{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .pk{border-radius:16px;background:#f7fafc;padding:12px 14px;border:2px solid transparent}
+  .pk p{margin:0 0 8px;font-weight:800;font-size:15.5px;word-break:keep-all}
+  .pk .two{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .pk .two button{min-height:52px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;word-break:keep-all;line-height:1.25}
+  .pk .two button i{width:16px;height:16px;border-radius:50%;flex:none;box-shadow:0 0 8px rgba(0,0,0,.15)}
+  .pk .two button small{display:block;font-size:12px;color:var(--muted);font-weight:700}
+  .pk .two button[aria-pressed="true"]{border-color:var(--violet);background:#f1ecff}
+  .pk.good{border-color:#9fdcbb;background:#ecf8f1}.pk.bad{border-color:#f3c2bb;background:#fff4f2}
+  .prompts{grid-template-columns:repeat(4,1fr)}
+  @media (max-width:860px){.cb7{grid-template-columns:repeat(4,minmax(0,1fr))}.pairs{grid-template-columns:1fr}.prompts{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <span class="eyebrow">별의 색 · 스스로 정리하기</span>
+    <h1>별의 색과 표면 온도, 내 말로 정리하기</h1>
+    <p class="sub">맞는 말을 고르고, 별의 색 띠를 완성하고, 두 별의 표면 온도를 비교한 뒤, 내 생각을 써 봐요.</p>
+  </header>
+  <nav class="tabs" id="tabs"></nav>
+
+  <section class="card" id="s1">
+    <h2><span class="no">1</span>맞을까, 틀릴까?</h2>
+    <p class="goal">문장마다 '맞다' 또는 '틀리다'를 골라요. 다 고르면 확인!</p>
+    <div class="sort" id="sort"></div>
+    <div class="acts"><button type="button" class="btn primary" id="chk1" disabled>확인하기</button></div>
+    <div class="fb" id="fb1"></div>
+  </section>
+
+  <section class="card" id="s2">
+    <h2><span class="no">2</span>별의 색 띠 완성하기</h2>
+    <p class="goal">빈칸을 누른 뒤 아래 별 이름을 눌러 채워요. 각 색을 띠는 별을 하나씩 놓아 보세요.</p>
+    <div class="ends"><span>표면 온도 높다</span><span>표면 온도 낮다</span></div>
+    <div class="cb7" id="cb7"></div>
+    <div class="bank" id="bank2"></div>
+    <button class="btn primary" id="chk2" type="button" disabled>확인하기</button>
+    <div class="fb" id="fb2"></div>
+  </section>
+
+  <section class="card" id="s3">
+    <h2><span class="no">3</span>어느 별의 표면 온도가 더 높을까?</h2>
+    <p class="goal">두 별 중 표면 온도가 더 높은 별을 골라요. 별의 색을 보고 판단해요.</p>
+    <div class="pairs" id="pairs"></div>
+    <div class="acts"><button type="button" class="btn primary" id="chk3" disabled>확인하기</button></div>
+    <div class="fb" id="fb3"></div>
+  </section>
+
+  <section class="card" id="s4">
+    <h2><span class="no">4</span>내 말로 설명하기</h2>
+    <p class="goal">주제를 하나 골라 친구에게 설명하듯 써 봐요. 핵심어를 넣으면 초록색으로 바뀌어요.</p>
+    <div class="prompts" id="prompts"></div>
+    <div class="wq" id="wqText"></div>
+    <div class="starters" id="starters"></div>
+    <textarea id="txt" placeholder="여기에 써 보세요."></textarea>
+    <div class="wmeta"><span id="cnt">0자 · 목표 100자 이상</span><span id="saved"></span></div>
+    <div class="kw" id="kw"></div>
+    <div class="self" id="self"></div>
+    <div class="acts">
+      <button class="btn green" id="copyBtn" type="button">글 복사하기</button>
+      <button class="btn ghost" id="printBtn" type="button">인쇄 / PDF로 저장</button>
+    </div>
+    <p class="note" style="margin-top:10px">※ 글은 이 기기의 브라우저에만 임시로 저장되고 어디에도 보내지 않아요. 다 쓰면 '글 복사하기'로 복사해서 선생님이 안내한 곳에 붙여 넣으세요.</p>
+  </section>
+  <p class="credit" style="margin:20px 0 4px;text-align:center;font-size:13px;font-weight:700;color:#8495a8;letter-spacing:.02em">별의 색 · 별의 색과 표면 온도</p>
+</div>
+
+<script>
+/* ===== 공통 ===== */
+window.SW_CHECKS = [['ok1', 'O/X 판단'], ['ok2', '색 띠 완성'], ['ok3', '표면 온도 비교'], ['ok4', '글쓰기']];
+window.SW = {
+  $: (s, r = document) => r.querySelector(s),
+  $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
+  shuffle: (a) => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; },
+  fb: (id, ok, html) => { const f = document.querySelector(id); f.className = 'fb show ' + (ok ? 'ok' : 'no'); f.innerHTML = html; },
+  done: {},
+};
+(() => {
+  const { $, $$ } = window.SW;
+  const TABS = ['맞을까 틀릴까', '색 띠 완성', '표면 온도 비교', '글쓰기'];
+  window.SW.renderTabs = () => {
+    $('#tabs').innerHTML = TABS.map((t, i) => `<button type="button" class="tab${window.SW.done[i + 1] ? ' done' : ''}" data-s="${i + 1}"><span class="n">${i + 1}</span>${t}</button>`).join('');
+    $$('#tabs .tab').forEach((b) => b.addEventListener('click', () => document.getElementById('s' + b.dataset.s).scrollIntoView({ behavior: 'smooth', block: 'start' })));
+  };
+  window.SW.finish = (n) => { window.SW.done[n] = true; window.SW.renderTabs(); };
+  window.SW.renderTabs();
+})();
+</script>
+<script>
+/*@@LOCAL:_color.js@@*/
+</script>
+<script>
+/* ===== 블록 1: 맞을까 틀릴까 ===== */
+(() => {
+  'use strict';
+  try {
+    const { $, $$, shuffle, fb, finish } = window.SW;
+    const ITEMS = [
+      ['빛을 방출하는 물체는 온도에 따라 색이 달라진다.', true],
+      ['전기난로의 열선은 처음에 노란색이었다가 온도가 높아지면 붉은색으로 바뀐다.', false],
+      ['별은 스스로 빛을 내는 천체이다.', true],
+      ['밤하늘의 별은 밝기가 비슷하면 색깔도 모두 같다.', false],
+      ['표면 온도가 높은 별은 파란색 빛을 많이 방출하여 파란색을 띤다.', true],
+      ['붉은색으로 보이는 별은 파란색으로 보이는 별보다 표면 온도가 높다.', false],
+      ['별의 색을 이용해 표면 온도를 비교할 수 있다.', true],
+      ['태양은 표면 온도가 약 6000 ℃로 노란색으로 보인다.', true],
+    ];
+    const list = shuffle(ITEMS.slice()), pick = list.map(() => null);
+    $('#sort').innerHTML = list.map((it, i) => `<div class="si" data-i="${i}"><p>${it[0]}</p><div class="two"><button type="button" class="o" data-v="1" aria-pressed="false">맞다</button><button type="button" class="x" data-v="0" aria-pressed="false">틀리다</button></div></div>`).join('');
+    $$('#sort .si').forEach((row) => {
+      const i = +row.dataset.i;
+      $$('button', row).forEach((b) => b.addEventListener('click', () => { pick[i] = b.dataset.v === '1'; row.classList.remove('good', 'bad'); $$('button', row).forEach((o) => o.setAttribute('aria-pressed', String(o === b))); $('#chk1').disabled = pick.some((p) => p === null); }));
+    });
+    $('#chk1').addEventListener('click', () => {
+      let wrong = 0;
+      $$('#sort .si').forEach((row) => { const i = +row.dataset.i, ok = pick[i] === list[i][1]; row.classList.toggle('good', ok); row.classList.toggle('bad', !ok); if (!ok) wrong++; });
+      if (!wrong) { fb('#fb1', true, '모두 맞았어요! 틀린 문장 고쳐 보기: 열선은 <b>붉은색에서 노란색</b>으로 바뀌어요 · 밝기가 비슷해도 <b>색깔은 조금씩 달라요</b> · 붉은색 별은 파란색 별보다 표면 온도가 <b>낮아요</b>.'); finish(1); }
+      else fb('#fb1', false, `빨간 문장 ${wrong}개를 다시 생각해 보세요.`);
+    });
+    window.SW.ok1 = true;
+  } catch (err) { window.SW_err('O/X 판단', err); }
+})();
+</script>
+<script>
+/* ===== 블록 2: 색 띠 완성 ===== */
+(() => {
+  'use strict';
+  try {
+    const { $, $$, shuffle, fb, finish } = window.SW, C = window.SC;
+    const ANS = ['나오스', '리겔', '베가', '프로키온', '태양', '알데바란', '안타레스'];
+    $('#cb7').innerHTML = C.CLASSES.map((k, i) => `<div class="col" style="--c:${C.rgb(k.c)};--d:${C.rgb(C.mix(k.c, [0, 0, 0], 0.35))}"><span class="ball"></span><b>${k.k}</b><button type="button" class="slot" data-i="${i}">빈칸</button></div>`).join('');
+    $('#bank2').innerHTML = shuffle(ANS.slice()).map((w) => `<button type="button" class="chip">${w}</button>`).join('');
+    const slots = $$('#cb7 .slot'), chips = $$('#bank2 .chip'), fill = slots.map(() => null); let cur = 0, locked = false;
+    const paint = () => { slots.forEach((s, i) => { s.textContent = fill[i] ? fill[i].textContent : '빈칸'; s.classList.toggle('f', !!fill[i]); s.classList.toggle('cur', i === cur && !locked); }); $('#chk2').disabled = locked || fill.some((f) => !f); };
+    chips.forEach((c) => c.addEventListener('click', () => { if (locked) return; if (fill[cur]) fill[cur].classList.remove('used'); fill[cur] = c; c.classList.add('used'); const n = fill.findIndex((f) => !f); if (n >= 0) cur = n; slots.forEach((x) => x.classList.remove('good', 'bad')); paint(); }));
+    slots.forEach((s, i) => s.addEventListener('click', () => { if (locked) return; if (fill[i]) { fill[i].classList.remove('used'); fill[i] = null; } cur = i; slots.forEach((x) => x.classList.remove('good', 'bad')); paint(); }));
+    $('#chk2').addEventListener('click', () => {
+      let wrong = 0; slots.forEach((s, i) => { const ok = fill[i].textContent === ANS[i]; s.classList.toggle('good', ok); s.classList.toggle('bad', !ok); if (!ok) wrong++; });
+      if (!wrong) { locked = true; paint(); fb('#fb2', true, '맞았어요! 청색의 나오스가 표면 온도가 가장 높고, 적색의 안타레스가 가장 낮아요. 태양(약 6000 ℃)은 가운데쯤인 황색이에요.'); finish(2); }
+      else fb('#fb2', false, `빨간 칸 ${wrong}개를 다시 생각해 봐요. 힌트: 읽기 ④의 색 띠나 시뮬레이션 ②의 조사표를 다시 확인해 보세요.`);
+    });
+    paint();
+    window.SW.ok2 = true;
+  } catch (err) { window.SW_err('색 띠 완성', err); }
+})();
+</script>
+<script>
+/* ===== 블록 3: 어느 별의 표면 온도가 더 높을까 ===== */
+(() => {
+  'use strict';
+  try {
+    const { $, $$, fb, finish } = window.SW, C = window.SC;
+    const PAIRS = [['antares', 'dschubba', '전갈자리'], ['rigel', 'betelgeuse', '오리온자리'], ['sun', 'spica', ''], ['arcturus', 'capella', ''], ['vega', 'aldebaran', '']];
+    const pick = PAIRS.map(() => null);
+    const wa = (w) => ((w.charCodeAt(w.length - 1) - 0xac00) % 28 ? '과' : '와');
+    const hot = (p) => (C.byId[p[0]].cl < C.byId[p[1]].cl ? p[0] : p[1]);
+    $('#pairs').innerHTML = PAIRS.map((p, i) => `<div class="pk" data-i="${i}"><p>${p[2] ? p[2] + ': ' : ''}${C.byId[p[0]].n}${wa(C.byId[p[0]].n)} ${C.byId[p[1]].n} 중 표면 온도가 높은 별은?</p><div class="two">${p.slice(0, 2).map((id) => { const s = C.byId[id]; return `<button type="button" data-id="${id}" aria-pressed="false"><i style="background:${C.rgb(C.CLASSES[s.cl].c)}"></i><span>${s.n}<small>${C.CLASSES[s.cl].k}</small></span></button>`; }).join('')}</div></div>`).join('');
+    $$('#pairs .pk').forEach((row) => { const i = +row.dataset.i; $$('button', row).forEach((b) => b.addEventListener('click', () => { pick[i] = b.dataset.id; row.classList.remove('good', 'bad'); $$('button', row).forEach((o) => o.setAttribute('aria-pressed', String(o === b))); $('#chk3').disabled = pick.some((p) => !p); })); });
+    $('#chk3').addEventListener('click', () => {
+      let wrong = 0;
+      $$('#pairs .pk').forEach((row) => { const i = +row.dataset.i, ok = pick[i] === hot(PAIRS[i]); row.classList.toggle('good', ok); row.classList.toggle('bad', !ok); if (!ok) wrong++; });
+      if (!wrong) { fb('#fb3', true, '모두 맞았어요! 색 띠에서 <b>청색 쪽</b>에 있는 별일수록 표면 온도가 높아요. 드슈바, 리겔, 스피카, 카펠라, 베가가 짝보다 표면 온도가 높아요.'); finish(3); }
+      else fb('#fb3', false, `${wrong}개를 다시 생각해 봐요. 힌트: 파란색 빛을 많이 방출하는 별이 표면 온도가 높아요. 청색 → 청백색 → 백색 → 황백색 → 황색 → 주황색 → 적색 순서예요.`);
+    });
+    window.SW.ok3 = true;
+  } catch (err) { window.SW_err('표면 온도 비교', err); }
+})();
+</script>
+<script>
+/* ===== 블록 4: 글쓰기 (저장하지 않고 복사·인쇄만) ===== */
+(() => {
+  'use strict';
+  try {
+    const { $, $$, finish } = window.SW;
+    const PROMPTS = [
+      { t: '열선의 색이 변하는 까닭', s: '스스로 평가 2', q: '전기난로를 켰을 때 열선의 색이 점차 변하는 까닭을 설명해 보세요.', kw: ['온도', '높아', '빛의 색', '붉은색', '노란색'], st: ['전기난로를 켜면', '온도가 높아지면서', '그래서 열선의 색이'] },
+      { t: '태양의 온도가 내려가면', s: '친구에게 설명하기', q: '"태양의 표면 온도가 내려가면 태양의 색은 어떻게 변할까?" 친구에게 설명해 보세요.', kw: ['표면 온도', '약 6000 ℃', '붉은색', '방출', '노란색'], st: ['태양은 지금', '표면 온도가 내려가면', '왜냐하면'] },
+      { t: '안타레스와 드슈바', s: '읽기 ② · 시뮬레이션 ②', q: '전갈자리의 안타레스와 드슈바 중 표면 온도가 높은 별은 어느 것인지 별의 색을 들어 설명해 보세요.', kw: ['안타레스', '드슈바', '붉은색', '청색', '표면 온도'], st: ['안타레스는', '드슈바는', '따라서'] },
+      { t: '색으로 온도 비교하기', s: '핵심 정리', q: '별의 색을 이용해 표면 온도를 비교할 수 있는 까닭을 예를 들어 설명해 보세요.', kw: ['파란색 빛', '붉은색 빛', '방출', '표면 온도', '비교'], st: ['표면 온도가 높은 별은', '표면 온도가 낮은 별은', '예를 들어'] },
+    ];
+    const SELF = [['지식·이해', '#2f6fd6', '별의 색과 표면 온도의 관계를 설명할 수 있다.'], ['과정·기능', '#23a566', '자료를 조사하여 별의 색과 표면 온도를 비교할 수 있다.'], ['가치·태도', '#7d5ad6', '밤하늘의 별의 색을 관찰하는 데 흥미를 가질 수 있다.']];
+    const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); return true; } catch (e) { return false; } } };
+    let pi = 0; const txt = $('#txt');
+    function renderPrompt() {
+      $('#prompts').innerHTML = PROMPTS.map((p, i) => `<button type="button" class="pr${i === pi ? ' sel' : ''}" data-i="${i}"><b>${p.t}</b><span>${p.s}</span></button>`).join('');
+      $$('#prompts .pr').forEach((b) => b.addEventListener('click', () => { pi = +b.dataset.i; renderPrompt(); }));
+      const p = PROMPTS[pi];
+      $('#wqText').textContent = p.q;
+      $('#starters').innerHTML = p.st.map((s) => `<button type="button">${s}</button>`).join('');
+      $$('#starters button').forEach((b) => b.addEventListener('click', () => { const add = (txt.value && !/[\s\n]$/.test(txt.value) ? ' ' : '') + b.textContent + ' '; txt.value += add; txt.focus(); onInput(); }));
+      txt.value = store.get('starc-write-' + pi) || '';
+      onInput();
+    }
+    function onInput() {
+      const v = txt.value, p = PROMPTS[pi];
+      const ok = store.set('starc-write-' + pi, v);
+      $('#saved').textContent = v ? (ok ? '이 기기에 임시 저장됨' : '') : '';
+      const n = v.replace(/\s/g, '').length, hit = p.kw.filter((k) => v.includes(k)).length;
+      $('#cnt').textContent = `${n}자 · 목표 100자 이상`;
+      $('#kw').innerHTML = p.kw.map((k) => `<span class="${v.includes(k) ? 'on' : ''}">${k}</span>`).join('');
+      if (n >= 100 && hit >= 3) finish(4);
+    }
+    txt.addEventListener('input', onInput);
+    $('#self').innerHTML = SELF.map(([c, col, t]) => `<label><input type="checkbox"><span class="cat" style="background:${col}">${c}</span>${t}</label>`).join('');
+    $('#copyBtn').addEventListener('click', async () => {
+      const out = `[${PROMPTS[pi].t}]\n${PROMPTS[pi].q}\n\n${txt.value}`;
+      try { await navigator.clipboard.writeText(out); $('#copyBtn').textContent = '복사했어요!'; }
+      catch (e) { txt.select(); try { document.execCommand('copy'); $('#copyBtn').textContent = '복사했어요!'; } catch (e2) { $('#copyBtn').textContent = '길게 눌러 직접 복사해 주세요'; } }
+      setTimeout(() => ($('#copyBtn').textContent = '글 복사하기'), 2200);
+    });
+    $('#printBtn').addEventListener('click', () => window.print());
+    renderPrompt();
+    window.SW.ok4 = true;
+  } catch (err) { window.SW_err('글쓰기', err); }
+})();
+</script>
+</body>
+</html>

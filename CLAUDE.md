@@ -26,12 +26,13 @@
 | `motor-force` | 중2 Ⅶ 자기장 속 코일이 받는 힘 (3D) | 직접 작성 | `중2_전기와자기_자기장속코일이받는힘.md` |
 | `parallax` | 중2 Ⅷ 별까지의 거리 (시차·연주 시차) | lesson-kit | `중2_별과우주_별까지의거리.md` |
 | `star-brightness` | 중2 Ⅷ 별의 밝기 (겉보기 등급·절대 등급, 3D) | lesson-kit | `중2_별과우주_별의밝기.md` |
+| `star-color` | 중2 Ⅷ 별의 색과 표면 온도 | lesson-kit | `중2_별과우주_별의색과표면온도.md` |
 | `semiconductor`, `mlcc` | 읽기 자료 | 직접 작성 | `읽기자료_반도체…`, `읽기자료_MLCC…` |
 | `photo-journey`, `chip-earth`, `battery`, `ev` | 읽기 자료 | lesson-kit | `읽기자료_*` |
 | `career-map` | 진로 지도 (읽기 자료 모음) | lesson-kit | 없음 |
 
 - "직접 작성"인 수업은 `tools/lesson-kit/src/`에 원본이 없어 `lessons/<이름>/*.html`을 바로 고친다. lesson-kit 수업은 `src/`를 고치고 다시 빌드한다.
-- 별 그림: Ⅷ 단원은 캔버스로 빛 번짐 별을 그린다(`parallax` sim2의 `window.SKY`, `star-brightness`의 `_glow.js` `window.GLOW`). 실제 하늘 지도는 d3-celestial(BSD-3)을 `lessons/star-brightness/sky/`에 복사해 쓴다(별 목록은 `stars6.json`·`stars8.json`으로 줄임, 라이선스 `sky/LICENSE.txt`). 다음 Ⅷ 수업도 이 폴더를 재사용한다. 별은 흰색으로 그린다(별의 색은 별도 차시).
+- 별 그림: Ⅷ 단원은 캔버스로 빛 번짐 별을 그린다(`parallax` sim2의 `window.SKY`, `star-brightness`의 `_glow.js` `window.GLOW`). 실제 하늘 지도는 d3-celestial(BSD-3)을 `lessons/star-brightness/sky/`에 복사해 쓴다(별 목록은 `stars6.json`·`stars8.json`으로 줄임, 라이선스 `sky/LICENSE.txt`). 다음 Ⅷ 수업도 이 폴더를 재사용한다. 별의 밝기 차시까지는 별을 흰색으로 그리고, `star-color`부터는 `_color.js`의 `window.SC`로 색을 칠한다(별 목록 `sky/data/stars6c.json`에 색 정보 포함, 교과서 색 띠 별은 교과서 색).
 
 ## 최우선 규칙: 교육과정 범위
 - 모든 콘텐츠(읽기 글, 시뮬레이션 수식, 퀴즈, 툴팁, 외부 자료)는 `curriculum/`의 기준 문서 범위를 절대 넘지 않는다.
