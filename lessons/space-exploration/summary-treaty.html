@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>우주 탐사 – 정리하고 우주 조약 제안하기</title>
+<script>
+/* 문제 알림: 코드에 오류가 나면 화면 아래에 빨간 상자로 알려 줘요 (선생님 확인용) */
+(function () {
+  function box() {
+    var b = document.getElementById('swErr');
+    if (!b && document.body) {
+      b = document.createElement('div'); b.id = 'swErr';
+      b.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;background:#fdecea;color:#8a1f17;border:2px solid #d9534f;border-radius:12px;padding:10px 14px;font:600 14px/1.5 sans-serif;white-space:pre-wrap';
+      document.body.appendChild(b);
+    }
+    return b;
+  }
+  window.SW_err = function (where, err) {
+    var msg = '[' + where + '] ' + (err && err.message ? err.message : String(err));
+    var show = function () { var b = box(); if (b) b.textContent += (b.textContent ? '\n' : '') + msg; };
+    if (document.body) show(); else document.addEventListener('DOMContentLoaded', show);
+  };
+  window.addEventListener('error', function (e) { window.SW_err('스크립트', { message: e.message + ' (줄 ' + e.lineno + ')' }); });
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      var S = window.SW || {}, miss = [];
+      (window.SW_CHECKS || []).forEach(function (p) { if (!S[p[0]]) miss.push(p[1]); });
+      if (miss.length) window.SW_err('실행 안 됨', { message: miss.join(', ') + ' 코드가 실행되지 않았어요. 파일이 끝(</html>)까지 들어 있는지 확인해 주세요.' });
+    }, 1500);
+  });
+})();
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+  :root{--bg:#f3f6f9;--card:#fff;--ink:#14263b;--ink2:#34495e;--muted:#5a6b7e;--line:#dde6ee;--accent:#0e63b3;--accent-soft:#e3effb;
+    --ok:#1f9d5c;--no:#d9534f;--violet:#7d5ad6;--ser:#1784cf;--ser-soft:#e3f2fc;--par:#5e9e1c;--par-soft:#eef7e2;
+    --shadow:0 1px 2px rgba(20,38,59,.06),0 8px 24px rgba(20,38,59,.07);--ease:cubic-bezier(.2,.8,.2,1)}
+  *{box-sizing:border-box}html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:"Pretendard",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  button{font:inherit;color:inherit}
+  .app{max-width:1000px;margin:0 auto;padding:16px 16px 28px;display:flex;flex-direction:column;gap:16px}
+  .eyebrow{display:inline-flex;font-size:13px;font-weight:700;color:var(--accent);background:var(--accent-soft);padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(22px,2.8vw,30px);margin:8px 0 2px;letter-spacing:-.02em}
+  .sub{margin:0;color:var(--muted);font-size:15px;word-break:keep-all}
+  .tabs{display:flex;gap:8px;flex-wrap:wrap;position:sticky;top:0;z-index:5;background:rgba(243,246,249,.94);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);padding:8px 0}
+  .tab{display:flex;align-items:center;gap:8px;min-height:46px;padding:0 14px;border:0;border-radius:12px;background:#fff;box-shadow:var(--shadow);font-weight:800;font-size:14.5px;color:var(--muted);cursor:pointer}
+  .tab .n{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:12.5px;background:#e6edf4;color:#607285}
+  .tab.done .n{background:var(--ok);color:#fff}
+  .card{background:var(--card);border-radius:22px;box-shadow:var(--shadow);border:1px solid rgba(20,38,59,.04);padding:20px 22px;scroll-margin-top:70px}
+  h2{font-size:21px;margin:0 0 4px;display:flex;align-items:center;gap:10px}
+  h2 .no{width:30px;height:30px;border-radius:10px;background:var(--accent);color:#fff;display:grid;place-items:center;font-size:15px}
+  .goal{font-size:14.5px;color:var(--muted);margin:0 0 14px;word-break:keep-all}
+  .fb{margin-top:12px;padding:12px 14px;border-radius:14px;font-size:15px;line-height:1.6;word-break:keep-all;display:none}
+  .fb.show{display:block;animation:fade .35s var(--ease)}
+  .fb.ok{background:#e8f7ef;color:#0f5a36}.fb.no{background:#fff5e6;color:#7a4508}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .btn{min-height:50px;border:0;border-radius:14px;padding:0 18px;font-weight:800;font-size:15.5px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;justify-content:center}
+  .btn:active{transform:scale(.97)}
+  .btn.primary{background:var(--accent);color:#fff}.btn.ghost{background:#eef3f8;color:var(--ink2)}.btn.green{background:var(--ok);color:#fff}
+  .btn:disabled{opacity:.4}
+  /* 1. 분류 */
+  .sort{display:grid;gap:10px}
+  .si{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;background:#f7fafc;border:2px solid transparent;border-radius:16px;padding:10px 12px 10px 16px;transition:all .25s}
+  .si p{margin:0;font-weight:700;font-size:16.5px;line-height:1.5;word-break:keep-all}
+  .si .two{display:flex;gap:6px}
+  .si .two button{min-height:48px;min-width:84px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15px;cursor:pointer}
+  .si .two button.s[aria-pressed="true"]{border-color:var(--ser);background:var(--ser-soft);color:var(--ser)}
+  .si .two button.p[aria-pressed="true"]{border-color:var(--par);background:var(--par-soft);color:#3f6e10}
+  .si.good{border-color:#9fdcbb;background:#ecf8f1}.si.bad{border-color:#f3c2bb;background:#fff4f2}
+  /* 2. 잇기 */
+  .chains{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .chn h3{margin:0 0 8px;font-size:16px}
+  .chn.s h3{color:var(--ser)}.chn.p h3{color:var(--par)}
+  .slots{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+  .sl{min-height:50px;border-radius:12px;border:2px dashed #b8c6d4;background:#f7fafc;display:flex;align-items:center;gap:10px;padding:6px 12px;font-weight:800;font-size:15px;color:var(--muted);word-break:keep-all}
+  .sl .k{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:13px;color:#fff;background:#aebdcc}
+  .chn.s .sl.f{border-style:solid;border-color:var(--ser);background:var(--ser-soft);color:#0f4f7d}.chn.s .sl.f .k{background:var(--ser)}
+  .chn.p .sl.f{border-style:solid;border-color:var(--par);background:var(--par-soft);color:#3f6e10}.chn.p .sl.f .k{background:var(--par)}
+  .pool{display:flex;flex-direction:column;gap:6px}
+  .pc{min-height:50px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15px;cursor:pointer;text-align:left;padding:6px 12px;word-break:keep-all}
+  .pc.shake{animation:shake .4s;border-color:var(--no)}
+  @keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+  .pc[hidden]{display:none}
+  /* 3. 생활 */
+  .lq{padding:14px 0;border-bottom:1px dashed var(--line)}
+  .lq:last-child{border-bottom:0;padding-bottom:0}
+  .lq p{margin:0 0 10px;font-weight:700;font-size:16.5px;line-height:1.6;word-break:keep-all}
+  .opts{display:grid;gap:8px}
+  .ob{display:flex;align-items:center;gap:10px;text-align:left;min-height:52px;border-radius:14px;border:2px solid var(--line);background:#f7fafc;padding:8px 14px;font-size:15.5px;font-weight:700;cursor:pointer;word-break:keep-all}
+  .ob .k{flex:none;width:28px;height:28px;border-radius:50%;background:#fff;border:2px solid #cbd6e1;display:grid;place-items:center;font-size:13px;font-weight:800;color:#5a6b7e}
+  .ob.good{border-color:var(--ok);background:#e8f7ef}.ob.bad{border-color:var(--no);background:#fdecea}
+  .ob:disabled{cursor:default}
+  .lexp{display:none;margin-top:10px;padding:12px 14px;border-radius:14px;background:#f2f7fd;font-size:15px;line-height:1.65;word-break:keep-all}
+  .lexp.show{display:block}
+  /* 4. 글쓰기 */
+  .prompts{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+  .pr{border-radius:16px;border:2px solid #d4dee8;background:#fff;padding:12px 14px;text-align:left;cursor:pointer;min-height:96px}
+  .pr b{display:block;font-size:15.5px;margin-bottom:4px}.pr span{font-size:13.5px;color:var(--muted);word-break:keep-all}
+  .pr.sel{border-color:var(--violet);background:#f3effd}
+  .wq{font-size:17px;font-weight:800;background:#f3effd;border-radius:14px;padding:12px 14px;margin-bottom:10px;color:#3d2f73;word-break:keep-all}
+  .starters{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+  .starters button{min-height:44px;border-radius:10px;border:1px dashed #b8a6ec;background:#fff;color:#5a43a8;font-weight:700;font-size:13.5px;padding:0 10px;cursor:pointer}
+  textarea{width:100%;min-height:220px;border-radius:16px;border:2px solid #cbd6e1;padding:14px 16px;font-size:17px;line-height:1.8;resize:vertical;font-family:inherit}
+  textarea:focus{outline:none;border-color:var(--violet);box-shadow:0 0 0 4px rgba(125,90,214,.15)}
+  .wmeta{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-top:8px;font-size:14px;color:var(--muted);font-weight:700}
+  .kw{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+  .kw span{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:6px 12px;font-size:14px;font-weight:800;background:#eef3f8;color:#7a8a9b;transition:all .3s}
+  .kw span.on{background:#e8f7ef;color:#11703f}
+  .kw span::before{content:"○"}.kw span.on::before{content:"●"}
+  .self{display:grid;gap:8px;margin-top:14px}
+  .self label{display:flex;align-items:center;gap:10px;background:#f7fafc;border-radius:12px;padding:10px 12px;font-size:15px;font-weight:700;cursor:pointer;word-break:keep-all;min-height:48px}
+  .self input{width:22px;height:22px;accent-color:var(--ok)}
+  .self .cat{flex:none;font-size:12px;font-weight:800;color:#fff;border-radius:999px;padding:2px 8px}
+  .acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+  .note{font-size:12.5px;color:var(--muted);line-height:1.6;word-break:keep-all}
+  @media (max-width:760px){.chains,.prompts{grid-template-columns:1fr}.si{grid-template-columns:1fr}}
+  @media print{body{background:#fff}.tabs,.card:not(#s4),.acts,.starters,.prompts,.self,.kw,header .sub{display:none!important}#s4{box-shadow:none;border:0}textarea{border:0;min-height:0;height:auto}}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+  /* ===== 이 수업 전용 ===== */
+  :root{--accent:#1d4f9c;--accent-soft:#e6eefb;--org:#d9622b;--org-soft:#fdeee5}
+  .match{display:grid;gap:8px}
+  .mr{display:grid;grid-template-columns:minmax(150px,.7fr) minmax(0,1.3fr);gap:10px;align-items:center}
+  .mr b{font-size:16px;background:#0b1430;color:#ffd27a;border-radius:12px;padding:12px 14px;min-height:52px;display:flex;align-items:center;word-break:keep-all}
+  .slot{min-height:52px;width:100%;border-radius:12px;border:2px dashed #aebdcc;background:#fff;font-weight:800;font-size:15px;color:var(--muted);cursor:pointer;word-break:keep-all;padding:4px 10px;text-align:left}
+  .slot.f{border-style:solid;border-color:var(--accent);background:var(--accent-soft);color:#14264a}
+  .slot.cur{box-shadow:0 0 0 4px rgba(29,79,156,.22)}
+  .slot.good{border-color:var(--ok);background:#e8f7ef;color:#11703f}.slot.bad{border-color:var(--no);background:#fdecea;color:#b33a35}
+  .bank{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+  .chip{min-height:48px;padding:6px 14px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15px;cursor:pointer;word-break:keep-all;text-align:left}
+  .chip.used{opacity:.3;pointer-events:none}
+  .si .three{display:flex;gap:6px;flex-wrap:wrap}
+  .si .three button{min-height:46px;padding:0 10px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:13.5px;cursor:pointer;word-break:keep-all}
+  .si .three button[aria-pressed="true"].inv{border-color:#c98a00;background:#fff6dc;color:#7a5200}
+  .si .three button[aria-pressed="true"].imp{border-color:#1f78c8;background:#e5f0fb;color:#1f5f9e}
+  .si .three button[aria-pressed="true"].myth{border-color:#d9534f;background:#fdecea;color:#b33a35}
+  .si .why{display:none;grid-column:1/-1;font-size:14px;line-height:1.6;color:var(--ink2);word-break:keep-all}
+  .si.good .why,.si.bad .why{display:block}
+  /* 우주 쓰레기 */
+  .deb{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:16px;align-items:start}
+  .deb canvas{width:100%;aspect-ratio:1/0.86;display:block;border-radius:18px;background:#070b18;touch-action:none}
+  .cnt{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
+  .cnt div{border-radius:14px;background:#0b1430;color:#fff;padding:10px 12px}
+  .cnt small{display:block;font-size:12px;color:#9fb0cc;font-weight:700}
+  .cnt b{font-size:24px;font-variant-numeric:tabular-nums}
+  .cnt .s b{color:#7fe3b4}.cnt .d b{color:#ff9a8a}
+  .tg{display:flex;align-items:center;gap:10px;min-height:50px;border-radius:12px;background:#f7fafc;border:2px solid var(--line);padding:6px 12px;font-weight:800;font-size:14.5px;cursor:pointer;word-break:keep-all}
+  .tg input{width:22px;height:22px;accent-color:var(--ok)}
+  .ev{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:14px}
+  .ev div{border-radius:14px;background:#fff6f0;border:1px solid #f4d5c2;padding:10px 12px;font-size:14px;line-height:1.6;word-break:keep-all}
+  .ev b{display:block;color:#a8441a;font-size:15px}
+  .ev .s{display:block;font-size:11.5px;color:var(--muted);margin-top:2px}
+  .whyd summary{min-height:48px;display:flex;align-items:center;cursor:pointer;font-weight:800;font-size:15px;color:#7a3a10;background:#fff4ea;border-radius:12px;padding:0 12px;list-style:none;margin-top:10px}
+  .whyd summary::-webkit-details-marker{display:none}
+  .whyd ol{margin:8px 0 0;padding-left:22px;font-size:15px;line-height:1.75;color:var(--ink2);word-break:keep-all}
+  /* 조약 */
+  .treaty{border-radius:18px;padding:16px 18px;background:linear-gradient(180deg,#fbf6ea,#f3ead2);border:1px solid #e3d3a8;margin-bottom:14px}
+  .treaty h3{margin:0 0 8px;font-size:17px;color:#5a4410;text-align:center}
+  .treaty ol{margin:0;padding-left:22px;font-size:15px;line-height:1.75;color:#3d2f10;word-break:keep-all}
+  .issues{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+  .iss{border-radius:16px;border:2px solid #d4dee8;background:#fff;padding:12px 14px;text-align:left;cursor:pointer;min-height:110px}
+  .iss b{display:block;font-size:16px;margin-bottom:4px}.iss span{font-size:13.5px;color:var(--muted);word-break:keep-all;line-height:1.55}
+  .iss.sel{border-color:var(--org);background:var(--org-soft)}
+  .ibox{display:none;border-radius:16px;background:#f7fafc;border:1px solid var(--line);padding:12px 14px;margin-bottom:12px;font-size:15px;line-height:1.7;word-break:keep-all}
+  .ibox.on{display:block}
+  .ibox .two{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+  .ibox .two div{border-radius:12px;padding:10px 12px;font-size:14px;line-height:1.6}
+  .ibox .two .a{background:#e8f2fd}.ibox .two .b{background:#fff1e6}
+  .ibox .two b{display:block;font-size:13px;margin-bottom:2px}
+  .fld{display:grid;gap:6px;margin-bottom:12px}
+  .fld label{font-weight:800;font-size:15px}
+  .fld input[type=text]{min-height:50px;border-radius:12px;border:2px solid #cbd6e1;padding:0 14px;font-size:17px;font-family:inherit}
+  .fld input[type=text]:focus{outline:none;border-color:var(--accent)}
+  .fld textarea{min-height:110px}
+  .targets{display:flex;flex-wrap:wrap;gap:6px}
+  .targets button{min-height:44px;padding:0 12px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:14px;cursor:pointer}
+  .targets button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:#14264a}
+  .hows{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .hows button{min-height:56px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:14.5px;cursor:pointer;word-break:keep-all;padding:4px 8px}
+  .hows button[aria-pressed="true"]{border-color:var(--violet);background:#f3effd;color:#3d2f73}
+  @media (max-width:760px){.deb,.ev,.issues,.hows,.ibox .two{grid-template-columns:1fr}.mr{grid-template-columns:1fr}}
+  @media print{.card:not(.printme){display:none!important}.printme{box-shadow:none;border:0}.printme .acts,.printme .starters,.printme .issues,.printme .targets,.printme .hows,.printme .self,.printme .kw{display:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <span class="eyebrow">우주 탐사 · 정리하고 우주 조약 제안하기</span>
+    <h1>우주 탐사, 정리하고 규칙 만들기</h1>
+    <p class="sub">탐사선과 성과를 잇고, 진짜 우주 기술을 가려낸 뒤, 우주 쓰레기를 직접 늘려 봐요. 마지막으로 새로운 우주 조약 조항과 나의 우주 탐사 계획을 써요. 쓴 글은 저장되지 않으니 복사하거나 인쇄해요.</p>
+  </header>
+  <nav class="tabs" id="tabs"></nav>
+
+  <section class="card" id="s1">
+    <h2><span class="no">1</span>탐사선과 성과 잇기</h2>
+    <p class="goal">빈칸을 누른 뒤 아래 성과를 눌러 채워요. (교과서 그림 Ⅷ-11)</p>
+    <div class="match" id="match"></div>
+    <div class="bank" id="bank1"></div>
+    <div class="acts"><button class="btn primary" id="chk1" type="button" disabled>확인하기</button><button class="btn ghost" id="rst1" type="button">다시 하기</button></div>
+    <div class="fb" id="fb1"></div>
+  </section>
+
+  <section class="card" id="s2">
+    <h2><span class="no">2</span>진짜 우주 기술일까?</h2>
+    <p class="goal">NASA가 밝힌 내용을 기준으로 골라요. 다 고르면 확인!</p>
+    <div class="sort" id="sort2"></div>
+    <div class="acts"><button class="btn primary" id="chk2" type="button" disabled>확인하기</button></div>
+    <div class="fb" id="fb2"></div>
+  </section>
+
+  <section class="card" id="s3">
+    <h2><span class="no">3</span>우주 쓰레기는 어떻게 늘어날까?</h2>
+    <p class="goal">위성을 올리고, 충돌을 일으켜 보세요. 그다음 규칙을 켜고 다시 해 보세요. (모형 · 숫자는 화면 속 모형의 개수예요)</p>
+    <div class="deb">
+      <canvas id="dCv" role="img" aria-label="위에서 본 지구 둘레를 초록 점(작동하는 위성)과 빨간 점(우주 쓰레기)이 돌고 있다. 충돌하면 빨간 조각이 흩어져 늘어난다."></canvas>
+      <div>
+        <div class="cnt"><div class="s"><small>작동하는 위성</small><b id="nS">0</b></div><div class="d"><small>우주 쓰레기 조각</small><b id="nD">0</b></div></div>
+        <div class="acts" style="margin-top:0"><button class="btn primary" id="dAdd" type="button">위성 10개 올리기</button><button class="btn ghost" id="dHit" type="button">충돌 일으키기</button></div>
+        <div style="display:grid;gap:8px;margin-top:10px">
+          <label class="tg"><input type="checkbox" id="dRule">규칙 ①: 수명이 다한 위성은 대기권으로 내려 태운다</label>
+          <label class="tg"><input type="checkbox" id="dClean">규칙 ②: 쓰레기를 붙잡아 내리는 청소 위성을 보낸다</label>
+        </div>
+        <div class="acts"><button class="btn ghost" id="dReset" type="button">처음부터</button></div>
+        <details class="whyd"><summary>왜 한 번의 충돌이 문제일까? (단계별)</summary><ol>
+          <li>지구 가까이 도는 물체는 <b>초속 7~8 km</b>로 날아요. 작은 페인트 조각도 부딪치면 위성을 망가뜨릴 수 있어요.</li>
+          <li>두 물체가 부딪치면 <b>수백~수천 개의 조각</b>이 생겨요. 2009년 미국과 러시아의 위성이 부딪쳤을 때도 그랬어요.</li>
+          <li>조각이 많아지면 다른 위성과 부딪칠 가능성이 커지고, 또 조각이 생겨요. 1978년 과학자 케슬러는 이런 <b>연쇄 충돌</b>을 경고했어요.</li>
+          <li>높은 곳의 쓰레기는 수백 년 넘게 떨어지지 않아요. 그래서 <b>버리는 규칙</b>과 <b>치우는 기술</b>이 함께 필요해요.</li></ol></details>
+      </div>
+    </div>
+    <div class="ev" id="ev"></div>
+  </section>
+
+  <section class="card printme" id="s4">
+    <h2><span class="no">4</span>새로운 우주 조약 제안하기</h2>
+    <p class="goal">1967년 국제 우주 조약에 새로 넣을 조항을 써요. 쟁점을 하나 골라 근거를 읽고 시작해요. (과학과 나)</p>
+    <div class="treaty"><h3>‘국제 우주 조약’의 주요 내용 (1967년)</h3><ol>
+      <li>우주 탐사는 모든 국가의 이익을 위해 수행되어야 하며, 모든 인류가 우주를 자유롭게 탐사하고 이용할 수 있어야 한다.</li>
+      <li>특정 국가가 우주를 독점할 수 없다.</li>
+      <li>우주에 대량 파괴 무기를 배치할 수 없다.</li>
+      <li>우주를 탐사하는 국가는 우주 탐사 활동에서 발생한 손해 등에 대해 국제적인 책임을 진다.</li>
+      <li>우주 탐사를 할 때 우주 및 천체를 오염해선 안 된다.</li>
+      <li id="newC" style="color:#a8441a;font-weight:800">( 내가 제안하는 조항 )</li></ol></div>
+    <div class="issues" id="issues"></div>
+    <div class="ibox" id="ibox"></div>
+    <div class="fld"><label for="clause">제6조 (내가 제안하는 조항)</label><input type="text" id="clause" placeholder="예) 우주로 위성을 보내는 국가는 …"></div>
+    <div class="starters" id="st4"></div>
+    <div class="fld"><label for="reason">이 조항이 필요한 까닭과 근거</label><textarea id="reason" placeholder="근거가 된 사실(숫자, 사건)과 함께 써 보세요."></textarea></div>
+    <div class="fld"><label for="ask">다른 모둠에 하고 싶은 질문 · 보완할 점</label><textarea id="ask" style="min-height:80px" placeholder="예) 이 조항을 지키지 않으면 어떻게 하나요?"></textarea></div>
+    <div class="kw" id="kw4"></div>
+    <div class="self" id="self4"></div>
+    <div class="acts"><button class="btn primary" id="copy4" type="button">글 복사하기</button><button class="btn ghost" id="print4" type="button">인쇄하기</button></div>
+    <div class="fb" id="fb4"></div>
+  </section>
+
+  <section class="card printme" id="s5">
+    <h2><span class="no">5</span>나의 우주 탐사 계획 세우기</h2>
+    <p class="goal">탐사 대상을 정하고 목적, 과정, 인류에게 미칠 영향을 써요. (탐구 · 우주 탐사 계획 세우기)</p>
+    <div class="fld"><label>탐사 대상</label><div class="targets" id="targets"></div></div>
+    <div class="fld"><label for="pName">탐사선 이름</label><input type="text" id="pName" placeholder="예) 호기심 2호"></div>
+    <div class="fld"><label for="pWhy">탐사 목적 (무엇이 궁금한가요?)</label><textarea id="pWhy" style="min-height:90px"></textarea></div>
+    <div class="fld"><label for="pHow">탐사 과정 (어떻게 가서 무엇을 할까요?)</label><textarea id="pHow" style="min-height:90px" placeholder="예) 연료를 아끼려고 … 길로 간다. 도착하면 …을 관측한다."></textarea></div>
+    <div class="fld"><label for="pImp">탐사가 인류에게 미칠 영향</label><textarea id="pImp" style="min-height:90px"></textarea></div>
+    <div class="fld"><label>발표 방법</label><div class="hows" id="hows"><button type="button" aria-pressed="false">만화나 짧은 영상</button><button type="button" aria-pressed="false">보고서</button><button type="button" aria-pressed="false">인포그래픽</button></div></div>
+    <div class="acts"><button class="btn primary" id="copy5" type="button">계획서 복사하기</button><button class="btn ghost" id="print5" type="button">인쇄하기</button></div>
+    <div class="fb" id="fb5"></div>
+    <p class="note">학생의 글은 이 화면에만 있고 어디에도 저장되지 않아요. 새로고침하면 지워져요.</p>
+  </section>
+</div>
+
+<script>
+window.SW = window.SW || {};
+window.SW_CHECKS = [['ok1', '탭·잇기'], ['ok2', '분류'], ['ok3', '우주 쓰레기'], ['ok4', '글쓰기']];
+</script>
+<script>
+/* ===== 우주 탐사 그림 도구 (별 배경, 태양, 행성, 탐사선, 이름표, 화살표) =====
+   - 행성·탐사선 그림은 사진이 아니라 개념 이해를 위한 모형이에요. 크기와 거리는 실제 비율과 달라요.
+   - 모든 그림은 캔버스(2D)로 그리고, 화면에 보일 때만 움직여요(SX.add). */
+window.SX = (function () {
+  'use strict';
+  function rng(seed) {
+    var s = (seed >>> 0) || 1;
+    return function () { s = (s + 0x6D2B79F5) | 0; var t = Math.imul(s ^ (s >>> 15), 1 | s); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  }
+  var clamp = function (x, a, b) { return x < a ? a : x > b ? b : x; };
+  var sstep = function (a, b, x) { var t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+  var lerp = function (a, b, t) { return a + (b - a) * t; };
+  var REDUCE = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  function fit(cv, maxDpr) {
+    var r = cv.getBoundingClientRect(), dpr = Math.min(maxDpr || 2, window.devicePixelRatio || 1);
+    var w = Math.max(10, r.width), h = Math.max(10, r.height), W = Math.round(w * dpr), H = Math.round(h * dpr);
+    if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
+    var c = cv.getContext('2d'); c.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { c: c, w: w, h: h, dpr: dpr };
+  }
+  function off(w, h) { var c = document.createElement('canvas'); c.width = Math.max(1, Math.round(w)); c.height = Math.max(1, Math.round(h)); return c; }
+  function visible(el) {
+    if (document.hidden) return false;
+    try { var f = window.frameElement; if (f && f.hasAttribute('data-page') && !f.classList.contains('on')) return false; } catch (e) {}
+    if (!el) return true;
+    var r = el.getBoundingClientRect(); return r.width > 0 && r.bottom > -40 && r.top < (window.innerHeight || 800) + 40;
+  }
+  /* 화면에 보이는 그림만 다시 그리는 공용 반복 */
+  var anims = [], running = false;
+  function add(el, draw, onErr) {
+    anims.push({ el: el, draw: draw, onErr: onErr });
+    if (!running) { running = true; requestAnimationFrame(loop); }
+    try { draw(performance.now(), true); } catch (e) { if (onErr) onErr(e); }
+  }
+  function loop(t) {
+    anims.forEach(function (a) {
+      if (!a.draw || !visible(a.el)) return;
+      try { a.draw(t); } catch (e) { a.draw = null; if (a.onErr) a.onErr(e); }
+    });
+    requestAnimationFrame(loop);
+  }
+  window.addEventListener('resize', function () { anims.forEach(function (a) { try { if (a.draw) a.draw(performance.now(), true); } catch (e) {} }); });
+
+  function rgba(c, a) { return 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + (a == null ? 1 : a) + ')'; }
+  var sprites = {};
+  function sprite(col) {
+    var key = col.join(',');
+    if (sprites[key]) return sprites[key];
+    var s = off(64, 64), g = s.getContext('2d'), gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+    gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.12, rgba(col, 0.9)); gr.addColorStop(0.3, rgba(col, 0.35)); gr.addColorStop(1, rgba(col, 0));
+    g.fillStyle = gr; g.fillRect(0, 0, 64, 64); sprites[key] = s; return s;
+  }
+  function glow(ctx, x, y, r, col, a) { ctx.globalAlpha = clamp(a == null ? 1 : a, 0, 1); ctx.drawImage(sprite(col), x - r, y - r, r * 2, r * 2); ctx.globalAlpha = 1; }
+
+  /* 별 배경: 미리 그려 두고 붙여요 */
+  var bgCache = {};
+  function space(ctx, w, h, seed, opt) {
+    opt = opt || {};
+    var key = [Math.round(w), Math.round(h), seed, opt.top, opt.bot].join('|');
+    var b = bgCache[key];
+    if (!b) {
+      b = off(w, h); var g = b.getContext('2d');
+      var gr = g.createLinearGradient(0, 0, w * 0.3, h); gr.addColorStop(0, opt.top || '#04060f'); gr.addColorStop(1, opt.bot || '#0b1226');
+      g.fillStyle = gr; g.fillRect(0, 0, w, h);
+      /* 옅은 성운 */
+      var R = rng(seed || 5);
+      for (var k = 0; k < 3; k++) {
+        var nx = R() * w, ny = R() * h, nr = Math.max(w, h) * (0.25 + R() * 0.3), ng = g.createRadialGradient(nx, ny, 0, nx, ny, nr);
+        var cc = [[90, 70, 170], [40, 90, 170], [150, 60, 110]][k];
+        ng.addColorStop(0, rgba(cc, 0.12)); ng.addColorStop(1, rgba(cc, 0)); g.fillStyle = ng; g.fillRect(0, 0, w, h);
+      }
+      g.globalCompositeOperation = 'lighter';
+      var N = opt.n == null ? Math.round(w * h / 1800) : opt.n;
+      for (var i = 0; i < N; i++) { var m = Math.pow(R(), 4); glow(g, R() * w, R() * h, 0.8 + m * 5, R() < 0.25 ? [170, 195, 255] : R() < 0.15 ? [255, 210, 170] : [235, 238, 255], 0.35 + m * 0.6); }
+      bgCache[key] = b;
+      var keys = Object.keys(bgCache); if (keys.length > 12) delete bgCache[keys[0]];
+    }
+    ctx.drawImage(b, 0, 0, w, h);
+  }
+
+  /* 태양: 이글거리는 가장자리 */
+  function sun(ctx, x, y, r, t) {
+    t = REDUCE ? 0 : t || 0;
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    var co = ctx.createRadialGradient(x, y, r * 0.8, x, y, r * 3.2);
+    co.addColorStop(0, 'rgba(255,170,60,.55)'); co.addColorStop(0.35, 'rgba(255,120,30,.16)'); co.addColorStop(1, 'rgba(255,90,20,0)');
+    ctx.fillStyle = co; ctx.beginPath(); ctx.arc(x, y, r * 3.2, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+    var g = ctx.createRadialGradient(x - r * 0.25, y - r * 0.25, r * 0.1, x, y, r);
+    g.addColorStop(0, '#fffbe6'); g.addColorStop(0.45, '#ffd25a'); g.addColorStop(0.85, '#ff9a2a'); g.addColorStop(1, '#f06a12');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+    /* 쌀알 무늬 */
+    ctx.save(); ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.clip();
+    var R = rng(77); ctx.globalAlpha = 0.18;
+    for (var i = 0; i < 70; i++) {
+      var a = R() * Math.PI * 2, d = Math.sqrt(R()) * r, s = r * (0.05 + R() * 0.09), ph = Math.sin(t / 900 + i) * 0.5 + 0.5;
+      ctx.fillStyle = ph > 0.5 ? '#fff3c4' : '#d9560d'; ctx.beginPath(); ctx.arc(x + Math.cos(a) * d, y + Math.sin(a) * d, s, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.restore();
+    /* 가장자리 불꽃 */
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.strokeStyle = 'rgba(255,150,50,.5)'; ctx.lineWidth = Math.max(1, r * 0.03);
+    for (var k = 0; k < 7; k++) {
+      var aa = k / 7 * Math.PI * 2 + t / 6000, rr = r * (1.04 + 0.08 * Math.sin(t / 700 + k * 2));
+      ctx.beginPath(); ctx.arc(x + Math.cos(aa) * r * 0.98, y + Math.sin(aa) * r * 0.98, r * 0.14 * (rr / r), aa + Math.PI * 0.9, aa + Math.PI * 2.1); ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  /* 행성 (kind: mercury, venus, earth, moon, mars, jupiter, saturn, uranus, neptune, comet, asteroid)
+     lx, ly: 빛이 오는 방향(단위 벡터) */
+  var PAL = {
+    mercury: ['#c9bfb4', '#7d7369', '#4a433d'], venus: ['#f6e3b5', '#d9b46d', '#8a6a35'], earth: ['#8fd0ff', '#2a7fd0', '#0d2f66'],
+    moon: ['#eeeeea', '#a9a8a3', '#55544f'], mars: ['#ffb08a', '#d0582c', '#6e2210'], jupiter: ['#f8e6cf', '#d8a77a', '#7a4f33'],
+    saturn: ['#fbecc4', '#d9bb7c', '#7f6533'], uranus: ['#dafcff', '#8fd8e2', '#3d8693'], neptune: ['#a9c6ff', '#3d66d8', '#162d78'],
+    asteroid: ['#c9b9a4', '#8a7963', '#3f352a'], comet: ['#e7e3dc', '#9d968b', '#4a463f']
+  };
+  function planet(ctx, x, y, r, kind, opt) {
+    opt = opt || {};
+    var lx = opt.lx == null ? -0.7 : opt.lx, ly = opt.ly == null ? -0.35 : opt.ly, p = PAL[kind] || PAL.moon, t = opt.t || 0;
+    if (kind === 'saturn' && opt.ring !== false) ringS(ctx, x, y, r, true);
+    ctx.save(); ctx.beginPath();
+    if (kind === 'asteroid' || kind === 'comet') {
+      var R = rng(opt.seed || 9); for (var i = 0; i <= 14; i++) { var a = i / 14 * Math.PI * 2, rr = r * (0.75 + R() * 0.35) * (i % 2 ? 1 : 0.95); if (i === 0) ctx.moveTo(x + Math.cos(a) * rr * 1.25, y + Math.sin(a) * rr * 0.85); else ctx.lineTo(x + Math.cos(a) * rr * 1.25, y + Math.sin(a) * rr * 0.85); }
+      ctx.closePath();
+    } else ctx.arc(x, y, r, 0, Math.PI * 2);
+    var g = ctx.createRadialGradient(x + lx * r * 0.45, y + ly * r * 0.45, r * 0.05, x, y, r * 1.15);
+    g.addColorStop(0, p[0]); g.addColorStop(0.55, p[1]); g.addColorStop(1, p[2]);
+    ctx.fillStyle = g; ctx.fill(); ctx.clip();
+    if (kind === 'jupiter' || kind === 'saturn') {
+      var bands = kind === 'jupiter' ? [[-0.62, 0.1, '#a8693f'], [-0.3, 0.12, '#c7875a'], [0.05, 0.08, '#efd2b0'], [0.28, 0.13, '#b77548'], [0.6, 0.09, '#9e6a45']] : [[-0.4, 0.12, '#cfae6a'], [0.1, 0.1, '#e8d5a4'], [0.45, 0.12, '#bb9a5b']];
+      ctx.globalAlpha = 0.55;
+      bands.forEach(function (b) { ctx.fillStyle = b[2]; ctx.beginPath(); ctx.ellipse(x, y + b[0] * r, r * 1.2, b[1] * r, Math.sin(t / 3000 + b[0]) * 0.02, 0, Math.PI * 2); ctx.fill(); });
+      if (kind === 'jupiter') { ctx.globalAlpha = 0.8; ctx.fillStyle = '#c4563a'; ctx.beginPath(); ctx.ellipse(x + r * 0.32, y + r * 0.34, r * 0.16, r * 0.09, 0, 0, Math.PI * 2); ctx.fill(); }
+      ctx.globalAlpha = 1;
+    } else if (kind === 'earth') {
+      var E = rng(41); ctx.fillStyle = 'rgba(70,160,80,.85)';
+      for (var j = 0; j < 7; j++) { var ex = x + (E() * 1.6 - 0.8) * r + ((t / 120) % (r * 2)) * 0, ey = y + (E() * 1.4 - 0.7) * r; ctx.beginPath(); ctx.ellipse(ex, ey, r * (0.18 + E() * 0.25), r * (0.12 + E() * 0.2), E() * 3, 0, Math.PI * 2); ctx.fill(); }
+      ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = Math.max(1, Math.min(r * 0.08, 5)); ctx.lineCap = 'round';
+      for (var q = 0; q < 5; q++) { var cy = y + (E() * 1.6 - 0.8) * r, cx = x + (E() * 1.6 - 0.8) * r; ctx.beginPath(); ctx.arc(cx, cy, r * (0.3 + E() * 0.4), E() * 3, E() * 3 + 1.2); ctx.stroke(); }
+    } else if (kind === 'mars' || kind === 'moon' || kind === 'mercury' || kind === 'asteroid' || kind === 'comet') {
+      var M = rng(kind.length * 13); ctx.fillStyle = kind === 'mars' ? 'rgba(120,40,20,.35)' : 'rgba(60,60,60,.25)';
+      for (var u = 0; u < 9; u++) { ctx.beginPath(); ctx.arc(x + (M() * 1.6 - 0.8) * r, y + (M() * 1.6 - 0.8) * r, r * (0.07 + M() * 0.16), 0, Math.PI * 2); ctx.fill(); }
+      if (kind === 'mars') { ctx.fillStyle = 'rgba(255,255,255,.75)'; ctx.beginPath(); ctx.ellipse(x, y - r * 0.92, r * 0.35, r * 0.13, 0, 0, Math.PI * 2); ctx.fill(); }
+    }
+    /* 밤 쪽 그림자 */
+    var sh = ctx.createLinearGradient(x + lx * r, y + ly * r, x - lx * r, y - ly * r);
+    sh.addColorStop(0, 'rgba(0,0,0,0)'); sh.addColorStop(0.55, 'rgba(0,0,0,.05)'); sh.addColorStop(1, 'rgba(0,0,10,.72)');
+    ctx.fillStyle = sh; ctx.fillRect(x - r * 1.5, y - r * 1.5, r * 3, r * 3);
+    ctx.restore();
+    if (kind === 'earth' || kind === 'neptune' || kind === 'uranus' || kind === 'venus') {
+      ctx.save(); ctx.globalCompositeOperation = 'lighter';
+      var at = ctx.createRadialGradient(x, y, r * 0.92, x, y, r * 1.18);
+      at.addColorStop(0, kind === 'venus' ? 'rgba(255,220,150,.25)' : 'rgba(120,190,255,.35)'); at.addColorStop(1, 'rgba(120,190,255,0)');
+      ctx.fillStyle = at; ctx.beginPath(); ctx.arc(x, y, r * 1.18, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+    }
+    if (kind === 'saturn' && opt.ring !== false) ringS(ctx, x, y, r, false);
+    if (kind === 'uranus' && opt.ring !== false) { ctx.save(); ctx.strokeStyle = 'rgba(200,240,250,.35)'; ctx.lineWidth = Math.max(1, r * 0.06); ctx.beginPath(); ctx.ellipse(x, y, r * 0.5, r * 1.6, 0.2, 0, Math.PI * 2); ctx.stroke(); ctx.restore(); }
+  }
+  function ringS(ctx, x, y, r, back) {
+    ctx.save(); ctx.beginPath();
+    if (back) ctx.rect(x - r * 3, y - r * 3, r * 6, r * 3); else ctx.rect(x - r * 3, y, r * 6, r * 3);
+    ctx.clip();
+    [[2.25, 0.16, 'rgba(240,220,170,.75)'], [1.85, 0.2, 'rgba(210,180,120,.6)'], [1.5, 0.1, 'rgba(240,225,190,.45)']].forEach(function (b) {
+      ctx.strokeStyle = b[2]; ctx.lineWidth = r * b[1]; ctx.beginPath(); ctx.ellipse(x, y, r * b[0], r * b[0] * 0.3, -0.12, 0, Math.PI * 2); ctx.stroke();
+    });
+    ctx.restore();
+  }
+  /* 혜성 꼬리 (태양 반대쪽) */
+  function tail(ctx, x, y, r, ang, len) {
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    var ex = x + Math.cos(ang) * len, ey = y + Math.sin(ang) * len, g = ctx.createLinearGradient(x, y, ex, ey);
+    g.addColorStop(0, 'rgba(190,225,255,.55)'); g.addColorStop(1, 'rgba(190,225,255,0)');
+    ctx.fillStyle = g; ctx.beginPath(); var nx = -Math.sin(ang), ny = Math.cos(ang);
+    ctx.moveTo(x + nx * r, y + ny * r); ctx.quadraticCurveTo(ex + nx * len * 0.15, ey + ny * len * 0.15, ex + nx * len * 0.22, ey + ny * len * 0.22);
+    ctx.lineTo(ex - nx * len * 0.12, ey - ny * len * 0.12); ctx.quadraticCurveTo(ex - nx * len * 0.05, ey - ny * len * 0.05, x - nx * r, y - ny * r); ctx.closePath(); ctx.fill();
+    glow(ctx, x, y, r * 3.5, [200, 230, 255], 0.7); ctx.restore();
+  }
+
+  /* 탐사선 그림 (kind: dish 보이저형 / wing 태양 전지판형 / shield 파커형 / lander 착륙선) s: 크기 기준, ang: 기울기 */
+  function probe(ctx, x, y, s, ang, kind) {
+    ctx.save(); ctx.translate(x, y); ctx.rotate(ang || 0); ctx.lineJoin = 'round';
+    var gold = ctx.createLinearGradient(-s, -s, s, s); gold.addColorStop(0, '#ffe7a3'); gold.addColorStop(0.5, '#d7a43c'); gold.addColorStop(1, '#8a6018');
+    var pan = ctx.createLinearGradient(0, -s, 0, s); pan.addColorStop(0, '#3d6fd6'); pan.addColorStop(1, '#16306e');
+    function panel(px, py, pw, ph) {
+      ctx.fillStyle = pan; ctx.fillRect(px, py, pw, ph); ctx.strokeStyle = 'rgba(180,210,255,.55)'; ctx.lineWidth = Math.max(0.6, s * 0.04);
+      for (var i = 1; i < 4; i++) { ctx.beginPath(); ctx.moveTo(px + pw * i / 4, py); ctx.lineTo(px + pw * i / 4, py + ph); ctx.stroke(); }
+      ctx.beginPath(); ctx.moveTo(px, py + ph / 2); ctx.lineTo(px + pw, py + ph / 2); ctx.stroke();
+    }
+    if (kind === 'shield') {
+      ctx.fillStyle = '#e9e3d6'; ctx.beginPath(); ctx.ellipse(-s * 0.55, 0, s * 0.18, s * 0.95, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#7b7468'; ctx.beginPath(); ctx.ellipse(-s * 0.45, 0, s * 0.1, s * 0.85, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = gold; ctx.fillRect(-s * 0.35, -s * 0.32, s * 0.75, s * 0.64);
+      panel(-s * 0.2, s * 0.32, s * 0.4, s * 0.45); panel(-s * 0.2, -s * 0.77, s * 0.4, s * 0.45);
+      ctx.strokeStyle = '#ddd'; ctx.lineWidth = Math.max(1, s * 0.05); ctx.beginPath(); ctx.moveTo(s * 0.4, 0); ctx.lineTo(s * 0.9, 0); ctx.stroke();
+    } else if (kind === 'dish') {
+      ctx.strokeStyle = '#cfd6e0'; ctx.lineWidth = Math.max(1, s * 0.05);
+      ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(s * 1.4, s * 0.35); ctx.moveTo(0, 0); ctx.lineTo(-s * 1.1, -s * 0.5); ctx.stroke();
+      ctx.fillStyle = gold; ctx.beginPath(); ctx.moveTo(-s * 0.3, s * 0.15); ctx.lineTo(0, -s * 0.12); ctx.lineTo(s * 0.32, s * 0.15); ctx.lineTo(0, s * 0.42); ctx.closePath(); ctx.fill();
+      var dg = ctx.createLinearGradient(-s, -s, s, 0); dg.addColorStop(0, '#ffffff'); dg.addColorStop(1, '#9aa6b5');
+      ctx.fillStyle = dg; ctx.beginPath(); ctx.ellipse(0, -s * 0.3, s * 0.85, s * 0.28, 0, Math.PI, 0); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = '#7d8896'; ctx.lineWidth = Math.max(0.6, s * 0.03); ctx.stroke();
+      ctx.fillStyle = '#e8edf3'; ctx.beginPath(); ctx.arc(0, -s * 0.62, s * 0.08, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#555'; ctx.beginPath(); ctx.arc(-s * 1.1, -s * 0.5, s * 0.1, 0, Math.PI * 2); ctx.fill();
+    } else if (kind === 'lander') {
+      ctx.strokeStyle = '#c9ced6'; ctx.lineWidth = Math.max(1, s * 0.07);
+      ctx.beginPath(); ctx.moveTo(-s * 0.4, s * 0.2); ctx.lineTo(-s * 0.75, s * 0.7); ctx.moveTo(s * 0.4, s * 0.2); ctx.lineTo(s * 0.75, s * 0.7); ctx.moveTo(0, s * 0.3); ctx.lineTo(0, s * 0.72); ctx.stroke();
+      ctx.fillStyle = gold; ctx.fillRect(-s * 0.5, -s * 0.35, s, s * 0.65);
+      panel(-s * 0.45, -s * 0.7, s * 0.9, s * 0.3);
+    } else {
+      panel(-s * 1.35, -s * 0.22, s * 0.9, s * 0.44); panel(s * 0.45, -s * 0.22, s * 0.9, s * 0.44);
+      ctx.strokeStyle = '#aeb6c2'; ctx.lineWidth = Math.max(0.8, s * 0.05); ctx.beginPath(); ctx.moveTo(-s * 0.45, 0); ctx.lineTo(s * 0.45, 0); ctx.stroke();
+      ctx.fillStyle = gold; ctx.fillRect(-s * 0.38, -s * 0.38, s * 0.76, s * 0.76);
+      ctx.fillStyle = '#e8edf3'; ctx.beginPath(); ctx.ellipse(0, -s * 0.5, s * 0.3, s * 0.1, 0, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function tag(ctx, text, x, y, opt) {
+    opt = opt || {};
+    ctx.save(); ctx.font = (opt.weight || 800) + ' ' + (opt.size || 14) + 'px Pretendard, sans-serif'; ctx.textBaseline = 'middle';
+    var tw = ctx.measureText(text).width, pw = opt.pad == null ? 8 : opt.pad, ph = (opt.size || 14) * 0.95;
+    var al = opt.align || 'center', x0 = al === 'center' ? x - tw / 2 - pw : al === 'left' ? x : x - tw - pw * 2;
+    if (opt.bg !== 'none') { ctx.fillStyle = opt.bg || 'rgba(8,14,32,.8)'; ctx.beginPath(); ctx.roundRect(x0, y - ph, tw + pw * 2, ph * 2, ph); ctx.fill(); }
+    if (opt.border) { ctx.strokeStyle = opt.border; ctx.lineWidth = 1.5; ctx.stroke(); }
+    ctx.fillStyle = opt.color || '#eef2fc'; ctx.textAlign = 'left'; ctx.fillText(text, x0 + pw, y + 0.5); ctx.restore();
+    return tw + pw * 2;
+  }
+  function arrow(ctx, x1, y1, x2, y2, col, lw, head) {
+    ctx.save(); ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = lw || 2; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+    var a = Math.atan2(y2 - y1, x2 - x1), H = head || 9;
+    ctx.beginPath(); ctx.moveTo(x2 + Math.cos(a) * 2, y2 + Math.sin(a) * 2); ctx.lineTo(x2 - H * Math.cos(a - 0.45), y2 - H * Math.sin(a - 0.45)); ctx.lineTo(x2 - H * Math.cos(a + 0.45), y2 - H * Math.sin(a + 0.45)); ctx.closePath(); ctx.fill(); ctx.restore();
+  }
+  /* 점선 길 + 길을 따라 흐르는 빛 */
+  function path(ctx, pts, col, lw, dash, prog) {
+    ctx.save(); ctx.strokeStyle = col; ctx.lineWidth = lw || 2; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    if (dash) ctx.setLineDash(dash);
+    var n = prog == null ? pts.length : Math.max(1, Math.floor(pts.length * clamp(prog, 0, 1)));
+    ctx.beginPath(); for (var i = 0; i < n; i++) { if (i === 0) ctx.moveTo(pts[i][0], pts[i][1]); else ctx.lineTo(pts[i][0], pts[i][1]); } ctx.stroke(); ctx.restore();
+  }
+  return { rng: rng, clamp: clamp, sstep: sstep, lerp: lerp, REDUCE: REDUCE, fit: fit, visible: visible, add: add, glow: glow, space: space, sun: sun, planet: planet, tail: tail, probe: probe, tag: tag, arrow: arrow, path: path };
+})();
+</script>
+<script>
+/* ===== 블록 1: 탭 · 성과 잇기 ===== */
+(() => {
+  'use strict';
+  try {
+    const $ = (s) => document.querySelector(s);
+    const SECS = [['s1', '성과 잇기'], ['s2', '진짜 우주 기술'], ['s3', '우주 쓰레기'], ['s4', '우주 조약'], ['s5', '탐사 계획']];
+    $('#tabs').innerHTML = SECS.map((s, i) => `<button class="tab" type="button" data-s="${s[0]}"><span class="n">${i + 1}</span>${s[1]}</button>`).join('');
+    document.querySelectorAll('#tabs .tab').forEach((b) => b.addEventListener('click', () => document.getElementById(b.dataset.s).scrollIntoView({ behavior: 'smooth', block: 'start' })));
+    window.SWdone = (id) => { const t = document.querySelector(`#tabs [data-s="${id}"]`); if (t) t.classList.add('done'); };
+    /* 선생님이 고치기 쉬운 데이터 */
+    const PAIRS = [['파커 태양 탐사선', '태양에 접근해 태양 코로나를 관측한다'], ['보이저 2호', '목성, 토성, 천왕성, 해왕성을 지나갔다'], ['로제타 탐사선', '혜성에 탐사 로봇 필레를 착륙시켰다'], ['다트 탐사선', '소행성과 충돌해 궤도를 바꾸었다'], ['다누리', '달-지구 간 인터넷 통신에 성공했다'], ['아폴로 계획', '6번 인간이 달에 착륙했다']];
+    const fill = PAIRS.map(() => null); let cur = 0;
+    function draw() {
+      $('#match').innerHTML = PAIRS.map((p, i) => `<div class="mr"><b>${p[0]}</b><button type="button" class="slot${fill[i] != null ? ' f' : ''}${i === cur ? ' cur' : ''}" data-i="${i}">${fill[i] != null ? PAIRS[fill[i]][1] : '빈칸을 누르고 성과를 고르세요'}</button></div>`).join('');
+      const order = window._ord1 || (window._ord1 = PAIRS.map((_, i) => i).sort(() => Math.random() - 0.5));
+      $('#bank1').innerHTML = order.map((i) => `<button type="button" class="chip${fill.includes(i) ? ' used' : ''}" data-c="${i}">${PAIRS[i][1]}</button>`).join('');
+      document.querySelectorAll('#match .slot').forEach((s) => s.addEventListener('click', () => { const i = +s.dataset.i; if (fill[i] != null) fill[i] = null; cur = i; draw(); }));
+      document.querySelectorAll('#bank1 .chip').forEach((c) => c.addEventListener('click', () => { fill[cur] = +c.dataset.c; const n = fill.findIndex((f) => f == null); cur = n < 0 ? cur : n; draw(); }));
+      $('#chk1').disabled = fill.some((f) => f == null);
+    }
+    draw();
+    $('#chk1').addEventListener('click', () => {
+      let ok = 0; document.querySelectorAll('#match .slot').forEach((s, i) => { const g = fill[i] === i; if (g) ok++; s.classList.add(g ? 'good' : 'bad'); });
+      const fb = $('#fb1'); fb.className = 'fb show ' + (ok === PAIRS.length ? 'ok' : 'no');
+      fb.innerHTML = ok === PAIRS.length ? '<b>모두 맞혔어요.</b> 탐사 지도에서 각 탐사선의 놀라운 이야기를 더 읽어 보세요.' : `<b>${PAIRS.length}개 중 ${ok}개를 맞혔어요.</b> 빨간 칸을 눌러 다시 골라 보세요.`;
+      if (ok === PAIRS.length) window.SWdone('s1');
+    });
+    $('#rst1').addEventListener('click', () => { fill.fill(null); cur = 0; $('#fb1').className = 'fb'; draw(); });
+    window.SW.ok1 = true;
+  } catch (e) { window.SW_err('탭·잇기', e); }
+})();
+</script>
+<script>
+/* ===== 블록 2: 진짜 우주 기술일까? ===== */
+(() => {
+  'use strict';
+  try {
+    const $ = (s) => document.querySelector(s);
+    /* v: inv(우주 탐사에서 처음 만듦) / imp(우주 탐사에서 발전시킴) / myth(우주와 관계없이 만들어짐) */
+    const ITEMS = [
+      ['휴대 전화 카메라 센서', 'inv', '1990년대 초 NASA 제트추진연구소에서 우주선 카메라를 작게 만들려고 개발했어요.'],
+      ['귀에 대는 적외선 체온계', 'inv', '천문 관측용 적외선 센서 기술로 만들었어요(1991년).'],
+      ['화재 경보기', 'imp', 'NASA가 발명하지 않았어요. 우주 정거장 스카이랩에서 쓰려고 더 좋게 만들었어요.'],
+      ['무선 손 청소기', 'imp', '무선 공구는 1961년에 이미 있었어요. 아폴로 달 드릴의 모터 기술이 손 청소기로 이어졌어요.'],
+      ['코팅 안경 렌즈', 'inv', '우주 비행사 헬멧 창이 긁히지 않게 하려던 코팅이에요.'],
+      ['테플론 프라이팬', 'myth', '테플론은 1938년 화학 회사에서 발견했어요. NASA 발명이 아니라고 NASA가 밝혔어요.'],
+      ['탱(가루 주스)', 'myth', '1957년 식품 회사가 만들었어요. 우주 비행사가 마셔서 유명해졌을 뿐이에요.'],
+      ['벨크로(찍찍이)', 'myth', '1940년대 스위스 발명가가 만들었어요.'],
+    ];
+    const L = { inv: '처음 만듦', imp: '발전시킴', myth: '관계없음(오해)' };
+    const pick = ITEMS.map(() => null);
+    $('#sort2').innerHTML = ITEMS.map((it, i) => `<div class="si" data-i="${i}"><p>${it[0]}</p><div class="three">${['inv', 'imp', 'myth'].map((v) => `<button type="button" class="${v}" data-v="${v}" aria-pressed="false">${L[v]}</button>`).join('')}</div><div class="why"></div></div>`).join('');
+    document.querySelectorAll('#sort2 .si').forEach((row) => row.querySelectorAll('button').forEach((b) => b.addEventListener('click', () => {
+      if (row.classList.contains('good')) return;
+      const i = +row.dataset.i; pick[i] = b.dataset.v; row.classList.remove('bad');
+      row.querySelectorAll('button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+      $('#chk2').disabled = pick.some((p) => p == null);
+    })));
+    $('#chk2').addEventListener('click', () => {
+      let ok = 0;
+      document.querySelectorAll('#sort2 .si').forEach((row, i) => { const g = pick[i] === ITEMS[i][1]; if (g) ok++; row.classList.toggle('good', g); row.classList.toggle('bad', !g); row.querySelector('.why').innerHTML = `<b>${L[ITEMS[i][1]]}</b> · ${ITEMS[i][2]}`; });
+      const fb = $('#fb2'); fb.className = 'fb show ' + (ok === ITEMS.length ? 'ok' : 'no');
+      fb.innerHTML = ok === ITEMS.length ? '<b>모두 맞혔어요.</b> ‘우주에서 쓰였다’와 ‘우주를 위해 발명했다’는 다른 말이에요.' : `<b>${ITEMS.length}개 중 ${ok}개를 맞혔어요.</b> 빨간 줄의 설명을 읽고 다시 골라 보세요.`;
+      if (ok === ITEMS.length) window.SWdone('s2');
+    });
+    window.SW.ok2 = true;
+  } catch (e) { window.SW_err('분류', e); }
+})();
+</script>
+<script>
+/* ===== 블록 3: 우주 쓰레기 모형 · 근거 카드 ===== */
+(() => {
+  'use strict';
+  try {
+    const $ = (s) => document.querySelector(s), S = window.SX, cv = $('#dCv');
+    /* 근거 카드: 선생님이 고치기 쉬운 데이터 */
+    const EV = [
+      ['약 4만 개', '지구 둘레에서 추적하는 물체(2024년 말). 그중 작동하는 위성은 약 1만 1천 개예요.', 'ESA 우주 환경 보고서 2025'],
+      ['초속 7~8 km', '지구 가까이 도는 쓰레기의 빠르기. 10 cm보다 큰 조각은 5만 개가 넘을 것으로 추정해요.', 'NASA 궤도 잔해 프로그램, ESA'],
+      ['2009년 위성끼리 충돌', '미국의 통신 위성과 수명이 다한 러시아 위성이 부딪쳐 수많은 조각이 생겼어요.', 'NASA·ESA 자료를 다룬 정리'],
+      ['2024년 집 지붕을 뚫다', '미국 플로리다의 집에 국제 우주 정거장에서 버린 배터리 장비 일부가 떨어졌어요.', 'NASA 확인, 언론 보도'],
+      ['우리별 1호(1992)', '우리나라 첫 인공위성도 지금은 우주 쓰레기예요. 이를 붙잡아 내리는 위성을 연구하고 있어요.', '언론 보도'],
+      ['배상은 절반, 3년 뒤', '1978년 소련 위성이 캐나다에 떨어졌어요. 캐나다는 청구한 돈의 절반가량을 3년 뒤에 받았어요.', '캐나다 정부 조약 기록'],
+    ];
+    $('#ev').innerHTML = EV.map((e) => `<div><b>${e[0]}</b>${e[1]}<span class="s">출처: ${e[2]}</span></div>`).join('');
+    let sats = [], debs = [], cleaners = [], flashes = [], last = 0, seed = 1;
+    const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+    const orbit = () => ({ r: 0.42 + rnd() * 0.5, a: rnd() * Math.PI * 2, sp: 0, age: 0, life: 18 + rnd() * 20 });
+    function addSats(n) { for (let i = 0; i < n; i++) { const o = orbit(); o.sp = 0.6 / Math.pow(o.r, 1.5); sats.push(o); } }
+    function burst(x, y, r, a, n) { for (let i = 0; i < n; i++) { const o = { r: Math.max(0.36, Math.min(0.98, r + (rnd() - 0.5) * 0.14)), a: a + (rnd() - 0.5) * 0.3, age: 0 }; o.sp = (0.6 / Math.pow(o.r, 1.5)) * (rnd() < 0.5 ? 1 : 1.12); debs.push(o); } flashes.push({ r, a, t: 0 }); }
+    function hit() {
+      const pool = sats.length ? sats : debs; if (!pool.length) return;
+      const v = pool.splice(Math.floor(rnd() * pool.length), 1)[0]; burst(0, 0, v.r, v.a, 24);
+    }
+    function reset() { sats = []; debs = []; cleaners = []; flashes = []; seed = 7; addSats(20); }
+    reset();
+    $('#dAdd').addEventListener('click', () => addSats(10));
+    $('#dHit').addEventListener('click', hit);
+    $('#dReset').addEventListener('click', () => { $('#dRule').checked = false; $('#dClean').checked = false; reset(); });
+    S.add(cv, (t, still) => {
+      const { c, w, h } = S.fit(cv), cx = w / 2, cy = h / 2, U = Math.min(w, h) * 0.5;
+      let dt = last ? Math.min(0.05, (t - last) / 1000) : 0; last = t; if (still || S.REDUCE) dt = still ? 0 : dt * 0.3;
+      S.space(c, w, h, 90, { n: 60 });
+      S.planet(c, cx, cy, U * 0.3, 'earth', { lx: -0.6, ly: -0.5, t });
+      c.save(); c.strokeStyle = 'rgba(160,190,240,.12)'; [0.5, 0.7, 0.9].forEach((k) => { c.beginPath(); c.arc(cx, cy, U * k, 0, Math.PI * 2); c.stroke(); }); c.restore();
+      const rule = $('#dRule').checked, clean = $('#dClean').checked;
+      /* 움직이기 */
+      sats.forEach((s) => { s.a += s.sp * dt; s.age += dt; });
+      debs.forEach((d) => { d.a += d.sp * dt; d.age += dt; });
+      /* 수명이 다한 위성: 규칙이 없으면 쓰레기가 되고, 규칙이 있으면 대기권으로 내려 태움 */
+      for (let i = sats.length - 1; i >= 0; i--) { const s = sats[i]; if (s.age > s.life) { sats.splice(i, 1); if (rule) { s.fall = 1; flashes.push({ r: 0.32, a: s.a, t: 0, burn: true }); } else { s.dead = true; s.sp *= 1; debs.push(s); } } }
+      /* 충돌: 가까운 쓰레기-위성, 쓰레기-쓰레기(드물게) */
+      const P = (o) => [cx + Math.cos(o.a) * U * o.r, cy + Math.sin(o.a) * U * o.r];
+      if (dt > 0 && debs.length) {
+        for (let i = sats.length - 1; i >= 0; i--) { const p = P(sats[i]); for (let j = 0; j < debs.length; j++) { const q = P(debs[j]); if (Math.abs(p[0] - q[0]) < 3 && Math.abs(p[1] - q[1]) < 3 && rnd() < 0.5) { const s = sats.splice(i, 1)[0]; debs.splice(j, 1); burst(0, 0, s.r, s.a, 14); break; } } }
+        if (debs.length > 40 && rnd() < dt * 0.25 * Math.min(4, debs.length / 120)) { const d = debs[Math.floor(rnd() * debs.length)]; burst(0, 0, d.r, d.a, 8); }
+        if (debs.length > 900) debs.splice(0, debs.length - 900);
+      }
+      /* 청소 위성 */
+      if (clean) { if (cleaners.length < 2) cleaners.push({ r: 0.6, a: rnd() * 6, sp: 0.5, target: null }); }
+      else cleaners = [];
+      cleaners.forEach((k) => {
+        if (!k.target || !debs.includes(k.target)) k.target = debs.length ? debs[Math.floor(rnd() * debs.length)] : null;
+        if (k.target) { k.r += (k.target.r - k.r) * Math.min(1, dt * 2); const da = ((k.target.a - k.a + Math.PI * 3) % (Math.PI * 2)) - Math.PI; k.a += da * Math.min(1, dt * 2); if (Math.abs(da) < 0.05 && Math.abs(k.target.r - k.r) < 0.02) { debs.splice(debs.indexOf(k.target), 1); k.target = null; } }
+        else k.a += k.sp * dt;
+      });
+      /* 그리기 */
+      c.save(); c.globalCompositeOperation = 'lighter';
+      debs.forEach((d) => { const [x, y] = P(d); S.glow(c, x, y, 3.2, [255, 120, 100], 0.85); });
+      sats.forEach((s) => { const [x, y] = P(s); S.glow(c, x, y, 5, [120, 255, 180], 0.95); });
+      c.restore();
+      cleaners.forEach((k) => { const [x, y] = P(k); S.probe(c, x, y, 7, k.a + Math.PI / 2, 'wing'); S.glow(c, x, y, 14, [140, 200, 255], 0.5); });
+      flashes.forEach((f) => { f.t += dt; const [x, y] = P(f); S.glow(c, x, y, (f.burn ? 10 : 18) + f.t * 30, f.burn ? [255, 170, 80] : [255, 230, 190], Math.max(0, 1 - f.t * 1.6)); });
+      flashes = flashes.filter((f) => f.t < 0.7);
+      $('#nS').textContent = sats.length; $('#nD').textContent = debs.length;
+      const z = Math.max(12, Math.min(15, w / 36));
+      S.tag(c, '작동하는 위성', 12, h - z * 3.1, { size: z - 1, align: 'left', bg: 'rgba(8,14,32,.8)', color: '#7fe3b4' });
+      S.tag(c, '우주 쓰레기', 12, h - z * 1.2, { size: z - 1, align: 'left', bg: 'rgba(8,14,32,.8)', color: '#ff9a8a' });
+      if (debs.length > 250) S.tag(c, '조각이 조각을 만들어요', cx, z * 1.5, { size: z, bg: 'rgba(120,20,10,.85)', color: '#fff' });
+    }, (e) => window.SW_err('우주 쓰레기', e));
+    window.SW.ok3 = true;
+  } catch (e) { window.SW_err('우주 쓰레기', e); }
+})();
+</script>
+<script>
+/* ===== 블록 4: 우주 조약 · 탐사 계획 글쓰기 (저장하지 않음) ===== */
+(() => {
+  'use strict';
+  try {
+    const $ = (s) => document.querySelector(s);
+    const ISSUES = [
+      { n: '우주 쓰레기 처리 문제', d: '수명이 다한 위성과 로켓 조각을 누가, 어떻게 치울까?',
+        info: '여러 나라와 기업은 매년 많은 인공위성을 우주로 보내요. 발사에 실패하거나 수명이 다한 인공위성은 지구로 떨어지며, 자칫 도심에 추락해 큰 피해를 줄 수 있어요. 지금 추적하는 물체만 약 4만 개예요.',
+        a: ['위성을 쏘는 나라와 기업이 끝까지 책임져야 해요', '수명이 다하면 정해진 기간 안에 대기권으로 내리게 해요'],
+        b: ['우주에 처음 나가는 나라에는 큰 부담이에요', '이미 떠도는 오래된 쓰레기는 누가 치우나요?'],
+        st: ['우주로 위성을 보내는 국가는 ', '수명이 다한 인공위성은 ', '우주 쓰레기를 만든 국가는 '], kw: ['쓰레기', '책임', '수명', '치우']},
+      { n: '우주 자원 소유권 문제', d: '달이나 소행성의 자원은 먼저 발견한 나라의 것일까?',
+        info: '달이나 소행성에는 지구에 희귀한 광물 등 다양한 자원이 있어요. 달의 극지방 그늘진 구덩이에는 얼음도 있어요. 미국, 룩셈부르크, UAE, 일본은 캐낸 우주 자원을 가질 수 있다는 법을 만들었어요.',
+        a: ['많은 돈과 노력을 들여 캔 나라가 가져야 공평해요', '자원을 쓸 수 있어야 우주 탐사가 더 활발해져요'],
+        b: ['우주 조약은 특정 국가가 우주를 독점할 수 없다고 해요', '기술이 없는 나라는 영영 기회를 얻지 못해요'],
+        st: ['우주 자원을 캐내는 국가는 ', '달과 소행성의 자원은 ', '우주 자원으로 얻은 이익은 '], kw: ['자원', '독점', '나누', '모든']},
+      { n: '밤하늘 빛 공해 문제', d: '수많은 위성이 별 관측을 가리면?',
+        info: '한 회사가 띄운 인터넷 위성만 1만 개가 넘어요(2026년). 위성이 햇빛을 반사해 천체 사진에 줄이 생겨요. 이번 단원에서 배운 별과 은하 관측이 어려워질 수 있어요.',
+        a: ['위성을 덜 반짝이게 만들도록 정해야 해요', '천문대 근처 하늘은 보호해야 해요'],
+        b: ['위성 인터넷은 산골이나 바다에서도 꼭 필요해요', '규칙을 만들면 위성 가격이 비싸져요'],
+        st: ['인공위성을 만드는 국가와 기업은 ', '밤하늘을 관측하는 ', '많은 위성을 한꺼번에 띄울 때는 '], kw: ['위성', '관측', '밝기', '하늘']},
+    ];
+    let iss = 0;
+    function drawIssue() {
+      $('#issues').innerHTML = ISSUES.map((x, i) => `<button type="button" class="iss${i === iss ? ' sel' : ''}" data-i="${i}"><b>${x.n}</b><span>${x.d}</span></button>`).join('');
+      document.querySelectorAll('.iss').forEach((b) => b.addEventListener('click', () => { iss = +b.dataset.i; drawIssue(); kw(); }));
+      const x = ISSUES[iss];
+      $('#ibox').innerHTML = `${x.info}<div class="two"><div class="a"><b>이런 생각도 있어요</b>${x.a.join('<br>')}</div><div class="b"><b>반대로 이런 생각도</b>${x.b.join('<br>')}</div></div>`; $('#ibox').classList.add('on');
+      $('#st4').innerHTML = x.st.map((s) => `<button type="button">${s}…</button>`).join('');
+      document.querySelectorAll('#st4 button').forEach((b, i) => b.addEventListener('click', () => { const f = $('#clause'); if (!f.value.trim()) f.value = x.st[i]; else f.value += ' ' + x.st[i]; f.focus(); kw(); }));
+    }
+    function kw() {
+      const x = ISSUES[iss], txt = $('#clause').value + ' ' + $('#reason').value;
+      $('#kw4').innerHTML = x.kw.map((k) => `<span class="${txt.includes(k) ? 'on' : ''}">${k}</span>`).join('');
+      $('#newC').textContent = $('#clause').value.trim() || '( 내가 제안하는 조항 )';
+    }
+    ['clause', 'reason'].forEach((id) => $('#' + id).addEventListener('input', kw));
+    drawIssue(); kw();
+    const SELF = ['우주 탐사에서 생길 수 있는 문제를 고려하여 우주 조약에 적절한 조항을 추가하였는가?', '우주 탐사 과정에서 생길 수 있는 문제를 구체적인 근거(숫자, 사건)로 조사하였는가?', '다른 모둠의 발표 내용을 듣고 우주 조약을 보완하였는가?'];
+    $('#self4').innerHTML = SELF.map((s) => `<label><input type="checkbox">${s}</label>`).join('');
+    const copy = (text, fb) => { const done = () => { fb.className = 'fb show ok'; fb.innerHTML = '<b>복사했어요.</b> 클래스룸이나 메모장에 붙여 넣어 제출하세요.'; }; try { navigator.clipboard.writeText(text).then(done, () => fallback(text, done)); } catch (e) { fallback(text, done); } };
+    const fallback = (text, done) => { const t = document.createElement('textarea'); t.value = text; document.body.appendChild(t); t.select(); try { document.execCommand('copy'); done(); } catch (e) {} t.remove(); };
+    $('#copy4').addEventListener('click', () => { if (!$('#clause').value.trim()) { $('#fb4').className = 'fb show no'; $('#fb4').innerHTML = '조항을 먼저 써 주세요.'; return; } copy(`[새로운 우주 조약 제안]\n쟁점: ${ISSUES[iss].n}\n제6조: ${$('#clause').value.trim()}\n까닭과 근거: ${$('#reason').value.trim()}\n질문·보완: ${$('#ask').value.trim()}`, $('#fb4')); window.SWdone('s4'); });
+    $('#print4').addEventListener('click', () => { document.querySelectorAll('.printme').forEach((x) => x.classList.toggle('printme', x.id === 's4')); window.print(); document.querySelectorAll('#s4,#s5').forEach((x) => x.classList.add('printme')); });
+    /* 탐사 계획 */
+    const TARGETS = ['태양', '달', '화성', '금성', '목성의 위성 유로파', '토성의 위성 타이탄', '소행성', '혜성', '천왕성·해왕성', '태양계 바깥'];
+    let tgt = null, how = null;
+    $('#targets').innerHTML = TARGETS.map((x) => `<button type="button" aria-pressed="false">${x}</button>`).join('');
+    document.querySelectorAll('#targets button').forEach((b) => b.addEventListener('click', () => { tgt = b.textContent; document.querySelectorAll('#targets button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); }));
+    document.querySelectorAll('#hows button').forEach((b) => b.addEventListener('click', () => { how = b.textContent; document.querySelectorAll('#hows button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); }));
+    $('#copy5').addEventListener('click', () => { if (!tgt) { $('#fb5').className = 'fb show no'; $('#fb5').innerHTML = '탐사 대상을 먼저 골라 주세요.'; return; } copy(`[나의 우주 탐사 계획]\n탐사 대상: ${tgt}\n탐사선 이름: ${$('#pName').value.trim()}\n탐사 목적: ${$('#pWhy').value.trim()}\n탐사 과정: ${$('#pHow').value.trim()}\n인류에게 미칠 영향: ${$('#pImp').value.trim()}\n발표 방법: ${how || ''}`, $('#fb5')); window.SWdone('s5'); });
+    $('#print5').addEventListener('click', () => { document.querySelectorAll('.printme').forEach((x) => x.classList.toggle('printme', x.id === 's5')); window.print(); document.querySelectorAll('#s4,#s5').forEach((x) => x.classList.add('printme')); });
+    window.SW.ok4 = true;
+  } catch (e) { window.SW_err('글쓰기', e); }
+})();
+</script>
+</body>
+</html>

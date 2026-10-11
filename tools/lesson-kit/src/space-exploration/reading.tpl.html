@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>우주 탐사 – 읽기</title>
+<!--@@PART:errbox_read.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_read.css@@*/
+  /* ===== 이 수업 전용 ===== */
+  :root{--accent:#1d4f9c;--accent-soft:#e6eefb;--org:#d9622b;--org-soft:#fdeee5}
+  .hero{background:radial-gradient(45% 70% at 85% 35%,rgba(255,150,70,.22) 0%,transparent 60%),radial-gradient(40% 55% at 10% 90%,rgba(90,120,255,.2) 0%,transparent 60%),linear-gradient(160deg,#03050d,#0b1430 55%,#1c1430)}
+  .hero-in{grid-template-columns:minmax(0,.85fr) minmax(0,1.2fr)}
+  .start{color:#0b1430}
+  .goal{margin-top:20px;display:inline-block;background:rgba(10,14,40,.55);border:1px solid rgba(255,255,255,.18);border-radius:16px;padding:12px 16px;font-size:14.5px;line-height:1.7}
+  .goal b{color:#ffd27a}
+  .heroSky{position:relative;border-radius:22px;overflow:hidden;box-shadow:0 18px 50px rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.12);aspect-ratio:16/10.5;background:#050a17}
+  .heroSky canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .heroSky .cap{position:absolute;left:12px;top:10px;font-size:12.5px;font-weight:700;color:#c9d4ef;background:rgba(5,10,23,.6);border-radius:10px;padding:5px 10px;word-break:keep-all}
+  .bar i{background:linear-gradient(90deg,#3a6fd8,#ff9a4a,#ffd27a)}
+  .fig.dark{background:#060a16;border-color:#1c2340}
+  .fig.dark .cap{color:#9fb0cc}
+  .fig canvas.cv{display:block;width:100%;height:auto;border-radius:12px}
+  #toolCv{aspect-ratio:16/8}
+  #satCv{aspect-ratio:16/8}
+  .figbar{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .figbar .btn{min-height:46px}
+  .figbar .btn[aria-pressed="true"]{background:#0b1430;color:#ffd27a;border-color:#0b1430}
+  .cur3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0}
+  .cur3 div{border-radius:18px;padding:14px 16px;background:linear-gradient(160deg,#0b1430,#1a2552);color:#e8ecfb;font-size:calc(var(--fs) - 2px);line-height:1.65;word-break:keep-all}
+  .cur3 b{display:block;font-size:calc(var(--fs) - 1px);color:#ffd27a;margin-bottom:4px}
+  .uses{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:12px 0}
+  .uses div{border-radius:16px;padding:12px 14px;background:#f4f7fc;border:1px solid #dfe7f3;font-size:calc(var(--fs) - 2.5px);line-height:1.6;word-break:keep-all}
+  .uses b{display:block;color:var(--accent);font-size:calc(var(--fs) - 1px);margin-bottom:2px}
+  /* 진짜 우주 기술일까? 뒤집기 카드 */
+  .flips{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0}
+  .flip{position:relative;border:0;padding:0;background:none;cursor:pointer;perspective:900px;min-height:188px;text-align:left}
+  .flip .in{position:relative;display:grid;height:100%;transition:transform .6s var(--ease);transform-style:preserve-3d}
+  .flip.on .in{transform:rotateY(180deg)}
+  .flip .f,.flip .b{grid-area:1/1;border-radius:18px;padding:12px 14px;backface-visibility:hidden;-webkit-backface-visibility:hidden;display:flex;flex-direction:column;gap:6px;min-height:188px}
+  .flip .f{background:linear-gradient(160deg,#fff,#f1f5fb);border:1px solid #dce5f1;box-shadow:var(--shadow);align-items:center;justify-content:center;text-align:center}
+  .flip .f svg{width:58px;height:58px}
+  .flip .f b{font-size:16.5px;word-break:keep-all}
+  .flip .f small{font-size:12.5px;color:var(--muted);font-weight:700}
+  .flip .b{transform:rotateY(180deg);background:#0b1430;color:#e8ecfb;font-size:14px;line-height:1.6;word-break:keep-all}
+  .flip .b .v{align-self:flex-start;font-size:12.5px;font-weight:900;border-radius:999px;padding:3px 10px}
+  .v.inv{background:#ffd27a;color:#2a1a00}.v.imp{background:#7fc8ff;color:#06223f}.v.myth{background:#ff9a8a;color:#3b0a04}
+  .legend{display:flex;flex-wrap:wrap;gap:8px;font-size:13.5px;font-weight:700;color:var(--muted)}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .legend i{width:14px;height:14px;border-radius:50%}
+  /* 탐사 성과 카드 */
+  .mgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:14px 0;align-items:start}
+  .mc{border-radius:18px;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);overflow:hidden}
+  .mc summary{list-style:none;display:grid;grid-template-columns:88px 1fr;gap:12px;align-items:center;padding:10px;cursor:pointer;min-height:96px}
+  .mc summary::-webkit-details-marker{display:none}
+  .mc canvas{width:88px;height:76px;border-radius:12px;background:#0b1226;display:block}
+  .mc b{display:block;font-size:calc(var(--fs) - 1px)}
+  .mc .y{font-size:13px;font-weight:800;color:var(--org)}
+  .mc .hk{display:block;font-size:14px;color:var(--muted);font-weight:700;word-break:keep-all}
+  .mc[open]{border-color:#f0c4a8}
+  .mc .body{padding:0 14px 14px;font-size:calc(var(--fs) - 2.5px);line-height:1.7;word-break:keep-all}
+  .mc .body .bk{background:#f6f3ec;border-left:4px solid #c9a35a;border-radius:10px;padding:8px 10px;margin-bottom:8px}
+  .mc .body ul{margin:0;padding-left:20px}
+  .mc .tap{font-size:12px;font-weight:800;color:var(--org);margin-top:2px;display:block}
+  /* 누리호 */
+  .nuri{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:14px 0;position:relative}
+  .nuri div{border-radius:14px;padding:10px 8px;text-align:center;background:#f4f7fc;border:1px solid #dfe7f3;font-size:13.5px;line-height:1.45;word-break:keep-all}
+  .nuri b{display:block;font-size:15px}
+  .nuri i{display:block;font-style:normal;font-weight:900;font-size:12.5px;margin-top:4px;border-radius:999px;padding:2px 6px}
+  .nuri .ok i{background:#e8f7ef;color:#11703f}.nuri .part i{background:#fff4e2;color:#8a5a00}
+  .key-box{border-radius:20px;padding:18px 20px;margin:18px 0;background:linear-gradient(135deg,#eef3fb,#fff);border:2px solid #cbd9f0}
+  .key-box .kt{display:inline-flex;font-size:13px;font-weight:900;color:#fff;background:var(--accent);padding:4px 10px;border-radius:999px;margin-bottom:8px}
+  .key-box p{font-size:var(--fs);line-height:1.8;margin:0 0 6px;color:#14264a;word-break:keep-all}
+  .shadow2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
+  .shadow2 div{border-radius:16px;padding:12px 14px;background:#fff6f0;border:1px solid #f4d5c2;font-size:calc(var(--fs) - 2.5px);line-height:1.65;word-break:keep-all}
+  .shadow2 b{display:block;color:#a8441a;margin-bottom:2px;font-size:calc(var(--fs) - 1px)}
+  .next{grid-template-columns:repeat(4,1fr)!important}
+  .next a{min-height:118px}
+  .sources{font-size:13px;color:var(--muted);line-height:1.7;word-break:keep-all;padding-left:18px;margin:0}
+  @media (max-width:900px){.flips{grid-template-columns:repeat(2,1fr)}.next{grid-template-columns:1fr 1fr!important}}
+  @media (max-width:700px){.cur3,.uses,.shadow2,.mgrid{grid-template-columns:1fr}.nuri{grid-template-columns:repeat(3,1fr)}}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-in">
+    <div>
+      <span class="kick">중2 과학 · 별과 우주</span>
+      <h1>인류가 우주를 탐사하는 까닭은 무엇일까?</h1>
+      <p>2012년 화성에 내린 탐사차의 이름은 ‘큐리오시티’, 우리말로 <b>호기심</b>이에요. 호기심은 인류를 어디까지 데려갔을까요?</p>
+      <div class="route"><span>① 호기심</span><span>② 생활 속 우주 기술</span><span>③ 탐사 성과</span><span>④ 우리나라와 우주의 앞날</span></div>
+      <button class="start" type="button" data-go="r1">읽기 시작하기
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg></button>
+      <div><div class="goal"><b>이번 시간에 나는!</b><br>· 우주 탐사의 의의와 인류에게 미친 영향을 조사해 과학의 유용성을 인식할 수 있다.</div></div>
+    </div>
+    <div class="heroSky"><canvas id="heroCv" role="img" aria-label="어두운 우주. 오른쪽에 고리를 두른 토성이 크게 보이고, 가운데에 목성이 있다. 금빛 탐사선이 점선을 따라 목성을 지나 토성 쪽으로 날아가며, 왼쪽 아래 멀리 작은 파란 점처럼 지구가 보인다."></canvas><span class="cap">탐사선은 인류의 눈 (모형 그림)</span></div>
+  </div>
+</header>
+
+<nav class="nav" aria-label="읽기 진행">
+  <div class="nav-in">
+    <button class="step" data-go="r1" type="button"><span class="n">1</span><span class="t">호기심</span></button>
+    <button class="step" data-go="r2" type="button"><span class="n">2</span><span class="t">생활 속 우주 기술</span></button>
+    <button class="step" data-go="q1" type="button"><span class="n">Q</span><span class="t">퀴즈 ①</span></button>
+    <button class="step" data-go="r3" type="button"><span class="n">3</span><span class="t">탐사 성과</span></button>
+    <button class="step" data-go="r4" type="button"><span class="n">4</span><span class="t">우리나라와 앞날</span></button>
+    <button class="step" data-go="q2" type="button"><span class="n">Q</span><span class="t">퀴즈 ②</span></button>
+    <span class="nav-sp"></span>
+    <div class="fsz" role="group" aria-label="글자 크기"><button type="button" id="fsN" aria-pressed="true">가</button><button type="button" id="fsB" aria-pressed="false" style="font-size:19px">가</button></div>
+  </div>
+  <div class="bar"><i id="progress"></i></div>
+</nav>
+
+<main>
+  <!-- 읽기 1 -->
+  <section class="part" id="r1">
+    <div class="sec-kick">읽기 ① <span class="time">약 3분</span></div>
+    <h2>호기심이 인류를 우주로 이끌었어요</h2>
+    <article class="card read reveal">
+      <span class="tag">우주 탐사를 하는 까닭</span>
+      <p><button class="term" data-term="탐사차">탐사차</button> 큐리오시티(Curiosity)의 이름에는 인류가 우주를 탐사하는 까닭이 담겨 있어요. 인류를 우주 탐사로 이끈 것은 여러 가지 <mark>호기심</mark>이었어요.</p>
+      <div class="cur3">
+        <div><b>우주는 어떻게 시작됐을까?</b>우주의 시작과 크기에 대한 호기심</div>
+        <div><b>지구 밖에도 생명이 있을까?</b>태양계와 외계 생명체에 대한 호기심</div>
+        <div><b>우리는 어디에서 왔을까?</b>우주에 존재하는 우리 자신의 기원에 대한 호기심</div>
+      </div>
+      <p>맨눈으로 우주를 보던 인류는 <b>천체 망원경</b>을 만들어 우주를 더 자세히 관측했어요. 현재에는 <b>우주 망원경</b>과 <button class="term" data-term="인공위성">인공위성</button>, <b>우주 탐사선</b> 등을 이용해 오랜 호기심의 답에 한 걸음 더 다가가고 있어요.</p>
+      <div class="fig dark">
+        <canvas class="cv" id="toolCv" role="img" aria-label="같은 토성을 세 가지 도구로 본 모습. 맨눈으로는 별 사이의 밝은 점, 천체 망원경으로는 고리가 있는 작은 흐린 모습, 우주 탐사선으로는 줄무늬와 고리가 또렷한 큰 토성으로 보인다."></canvas>
+        <div class="cap">그림 ① 같은 토성, 다른 도구 (모형 그림 · 단추를 눌러 바꿔 보세요)</div>
+      </div>
+      <div class="figbar" role="group" aria-label="관측 도구"><button class="btn ghost" type="button" data-tool="0" aria-pressed="true">맨눈</button><button class="btn ghost" type="button" data-tool="1" aria-pressed="false">천체 망원경</button><button class="btn ghost" type="button" data-tool="2" aria-pressed="false">우주 탐사선</button></div>
+      <p>탐사선은 직접 가서 보기 때문에 맨눈이나 망원경으로는 볼 수 없던 것을 알려 줘요. 토성 탐사선 카시니는 13년 동안 토성 곁에 머물며 고리와 위성을 가까이에서 관측했어요.</p>
+    </article>
+    <details class="pause reveal"><summary><span class="pi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5b4300" stroke-width="2.4" stroke-linecap="round"><path d="M9 9a3 3 0 1 1 4 2.8c-.7.3-1 .9-1 1.6V14M12 18h.01"/></svg></span>생각 멈춤: 나는 우주의 어떤 것이 가장 궁금한가요?<span class="tap">눌러서 확인</span></summary>
+      <div class="ans">정답이 있는 질문은 아니에요. 교과서는 <b>우주의 시작과 크기</b>, <b>태양계와 외계 생명체</b>, <b>우리 자신의 기원</b>에 대한 호기심을 꼽아요. 내 궁금증이 이 셋 중 어디에 가까운지 생각해 보세요. 마지막 활동에서 나만의 탐사 계획을 세울 때 쓸 수 있어요.</div></details>
+  </section>
+
+  <!-- 읽기 2 -->
+  <section class="part" id="r2">
+    <div class="sec-kick">읽기 ② <span class="time">약 5분</span></div>
+    <h2>우주 탐사는 우리 생활에도 큰 영향을 줘요</h2>
+    <article class="card read reveal">
+      <span class="tag">일상생활 속 우주 탐사</span>
+      <p>지구 주위를 돌며 지구와 우주를 관측하는 <button class="term" data-term="인공위성">인공위성</button> 덕분에 우리는 매일 우주 기술을 써요.</p>
+      <div class="fig dark">
+        <canvas class="cv" id="satCv" role="img" aria-label="지구 둘레를 여러 인공위성이 돌고 있다. 기상 위성은 구름을 찍고, 위치 위성은 신호를 보내 휴대 전화의 위치를 알려 주며, 통신 위성은 지구 반대편으로 방송과 통신을 이어 준다."></canvas>
+        <div class="cap">그림 ② 지구를 도는 인공위성이 하는 일 (모형 그림 · 크기와 높이는 실제와 달라요)</div>
+      </div>
+      <div class="uses">
+        <div><b>일기 예보</b>구름과 바다를 찍어 날씨를 예측해요. 우리나라의 천리안 위성은 미세먼지도 관측해요.</div>
+        <div><b>위치 정보</b>위성위치확인시스템(GPS)으로 지도 앱이 내 위치를 알아요.</div>
+        <div><b>방송과 통신</b>지구 반대편의 경기를 실시간으로 볼 수 있어요.</div>
+      </div>
+      <p><button class="term" data-term="무중력 상태">무중력 상태</button>인 <button class="term" data-term="우주 정거장">우주 정거장</button>에서는 식물 생장 실험이나 신소재 개발 실험 등을 해요. 그리고 우주 탐사 과정에서 개발된 다양한 첨단 기술이 우리 생활 곳곳에서 쓰이고 있어요(교과서 그림 Ⅷ-10).</p>
+      <p>그런데 <mark>정말 모두 우주 탐사에서 나온 걸까요?</mark> NASA는 자기들이 발명한 것과, 이미 있던 물건을 우주 탐사에서 더 좋게 만든 것, 그리고 흔한 오해를 직접 나누어 밝혀 두었어요. 카드를 눌러 확인해 보세요.</p>
+      <div class="legend"><span><i style="background:#ffd27a"></i>우주 탐사에서 처음 만듦</span><span><i style="background:#7fc8ff"></i>우주 탐사에서 발전시킴</span><span><i style="background:#ff9a8a"></i>오해</span></div>
+      <div class="flips" id="flips"></div>
+      <p>NASA는 1976년부터 우주 기술이 쓰인 제품을 2,000가지 넘게 소개했어요. 우주 탐사 기술은 지금도 우리 생활 속으로 계속 들어오고 있어요.</p>
+    </article>
+    <details class="pause reveal"><summary><span class="pi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5b4300" stroke-width="2.4" stroke-linecap="round"><path d="M9 9a3 3 0 1 1 4 2.8c-.7.3-1 .9-1 1.6V14M12 18h.01"/></svg></span>생각 멈춤: ‘우주에서 쓰였다’와 ‘우주를 위해 발명했다’는 같은 말일까요?<span class="tap">눌러서 확인</span></summary>
+      <div class="ans">달라요. 화재 경보기는 NASA가 발명하지 않았지만 우주 정거장에서 쓰려고 <b>더 좋게 만들었어요</b>. 벨크로는 우주 비행사가 써서 유명해졌을 뿐 <b>1940년대 스위스 발명가</b>가 만들었어요. 자료를 볼 때는 <b>출처</b>를 따라가 확인하는 습관이 중요해요.</div></details>
+  </section>
+
+  <section class="part" id="q1">
+    <div class="sec-kick">퀴즈 ① <span class="time">5문항</span></div>
+    <h2>호기심과 생활 속 우주 기술 확인하기</h2>
+    <div class="quiz" data-quiz="q1"></div>
+  </section>
+
+  <!-- 읽기 3 -->
+  <section class="part" id="r3">
+    <div class="sec-kick">읽기 ③ <span class="time">약 5분</span></div>
+    <h2>인류는 태양부터 태양계 끝까지 탐사했어요</h2>
+    <article class="card read reveal">
+      <span class="tag">인류의 우주 탐사 성과 (그림 Ⅷ-11)</span>
+      <p>태양, 달, 행성, <button class="term" data-term="혜성">혜성</button>, <button class="term" data-term="소행성">소행성</button>까지, 인류는 탐사선을 보내 직접 관측했어요. 카드를 누르면 교과서 내용과 <b>놀라운 이야기</b>가 펼쳐져요.</p>
+      <div class="mgrid" id="mgrid"></div>
+      <a class="simlink" data-link="map" target="_blank" rel="noopener" style="background:linear-gradient(120deg,#0b1430,#3a3aa8)"><span class="si"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><circle cx="8" cy="12" r="3"/><ellipse cx="12" cy="12" rx="10" ry="4.5"/><circle cx="19" cy="9" r="1.2" fill="#fff"/></svg></span><span><b>시뮬레이션 ① 탐사 지도</b><span>태양계 지도에서 탐사선이 간 곳을 누르고, 연도를 움직여 봐요</span></span><span class="go"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></span></a>
+    </article>
+    <details class="pause reveal"><summary><span class="pi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5b4300" stroke-width="2.4" stroke-linecap="round"><path d="M9 9a3 3 0 1 1 4 2.8c-.7.3-1 .9-1 1.6V14M12 18h.01"/></svg></span>생각 멈춤: 탐사선은 왜 일부러 혜성과 소행성에 부딪쳤을까요?<span class="tap">눌러서 확인</span></summary>
+      <div class="ans">목적이 달라요. 딥 임팩트호(2005)는 부딪칠 때 튀어나온 물질로 <b>혜성 속이 무엇으로 되어 있는지</b> 조사했어요. 다트 탐사선(2022)은 <b>소행성의 궤도를 바꿀 수 있는지</b> 시험해, 소행성 충돌 같은 우주 위험에 대응할 가능성을 보여 주었어요.</div></details>
+  </section>
+
+  <!-- 읽기 4 -->
+  <section class="part" id="r4">
+    <div class="sec-kick">읽기 ④ <span class="time">약 4분</span></div>
+    <h2>우리나라도 함께 우주를 탐사해요</h2>
+    <article class="card read reveal">
+      <span class="tag">우리나라의 우주 탐사</span>
+      <p>우리나라를 포함한 세계 여러 나라는 서로 협력하며 우주를 탐사하고 있어요. 우리나라는 2021년 5월, 새로운 유인 달 탐사인 아르테미스 계획의 약정에 <b>10번째로 서명</b>했어요.</p>
+      <p><b>누리호</b>는 우리 기술로 만든 발사체예요. 2021년 첫 발사에서는 위성을 궤도에 올리지 못했지만, 그 뒤 네 번 연속 성공했어요.</p>
+      <div class="nuri">
+        <div class="part"><b>1차</b>2021. 10.<i>궤도 진입 실패</i></div>
+        <div class="ok"><b>2차</b>2022. 6.<i>성공</i></div>
+        <div class="ok"><b>3차</b>2023. 5.<i>성공 · 실제 위성</i></div>
+        <div class="ok"><b>4차</b>2025. 11.<i>성공 · 첫 밤 발사</i></div>
+        <div class="ok"><b>5차</b>2026. 10. 7.<i>성공</i></div>
+      </div>
+      <p><b>다누리</b>는 우리나라의 달 탐사선이에요. 2022년 8월 발사되어 달 주위를 돌고 있으며, 달-지구 간 인터넷 통신에 성공했어요. 다누리는 연료를 아끼려고 태양 쪽으로 멀리 돌아가는 길을 골라 <mark>145일</mark> 만에 달 궤도에 들어갔어요. 아낀 연료 덕분에 임무는 2027년 12월까지 늘어났어요.</p>
+      <a class="simlink" data-link="lab" target="_blank" rel="noopener" style="background:linear-gradient(120deg,#5a2a10,#e0702a)"><span class="si"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M4 18c3-9 13-12 16-8-2 4-9 3-12 8"/><circle cx="20" cy="10" r="1.5" fill="#fff"/></svg></span><span><b>시뮬레이션 ② 탐사선 실험실</b><span>다누리의 길 고르기, 다트 충돌, 파커 열 차폐막</span></span><span class="go"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></span></a>
+      <span class="tag" style="margin-top:18px">우주 탐사가 남긴 숙제</span>
+      <p>1957년 소련이 세계 최초의 인공위성인 <b>스푸트니크 1호</b>를 발사하면서 우주 시대가 열렸어요. 1967년 <b>국제 우주 조약</b>을 시작으로 여러 국제적인 규칙이 생겼어요. 그런데 우주 탐사 영역이 넓어지면서 새로운 문제가 생기고 있어요.</p>
+      <div class="shadow2">
+        <div><b>우주 쓰레기</b>지구 둘레에서 추적하는 물체만 약 4만 개예요(2024년 말 기준). 수명이 다한 위성이나 로켓 조각이 초속 7~8 km로 날아다니고, 일부는 지구로 떨어져요. 우리나라의 첫 인공위성 우리별 1호(1992)도 지금은 우주 쓰레기예요.</div>
+        <div><b>우주 자원</b>달의 극지방 그늘진 구덩이에는 얼음이 있어요. 몇몇 나라는 캐낸 우주 자원을 가질 수 있다는 법을 만들었어요. 우주 조약은 특정 국가가 우주를 독점할 수 없다고 하는데, 자원은 누구의 것일까요?</div>
+      </div>
+      <div class="key-box"><span class="kt">핵심 정리</span>
+        <p>우주의 시작, 외계 생명체, 우리의 기원에 대한 <b>호기심</b>이 인류를 우주 탐사로 이끌었어요.</p>
+        <p>인공위성은 <b>일기 예보, 위치 정보, 방송·통신</b>에 쓰이고, 우주 탐사에서 개발된 <b>첨단 기술</b>이 생활 곳곳에 쓰여요.</p>
+        <p>인류는 태양, 달, 행성, 혜성, 소행성에 탐사선을 보냈고, 우리나라도 <b>누리호, 다누리, 아르테미스 계획</b>으로 함께하고 있어요.</p>
+        <p>우주 탐사가 늘면서 <b>우주 쓰레기, 우주 자원</b> 같은 문제가 생겨 새로운 규칙이 필요해요.</p>
+      </div>
+      <a class="simlink" data-link="summary" target="_blank" rel="noopener" style="background:linear-gradient(120deg,#16675a,#2f9f6a)"><span class="si"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M6 3h9l4 4v14H6zM9 12h7M9 16h5"/></svg></span><span><b>정리 · 새로운 우주 조약 제안하기</b><span>우주 쓰레기를 직접 늘려 보고, 우주 조약에 넣을 조항을 써 봐요</span></span><span class="go"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></span></a>
+    </article>
+    <details class="pause reveal"><summary><span class="pi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5b4300" stroke-width="2.4" stroke-linecap="round"><path d="M9 9a3 3 0 1 1 4 2.8c-.7.3-1 .9-1 1.6V14M12 18h.01"/></svg></span>생각 멈춤: 다누리가 145일이나 걸려 달에 간 것은 실패일까요?<span class="tap">눌러서 확인</span></summary>
+      <div class="ans">아니에요. 일부러 고른 길이에요. 곧장 가면 빠르지만 달에 도착해 속도를 많이 줄여야 해서 <b>연료가 많이 들어요</b>. 멀리 돌아가는 길은 <b>태양과 지구의 중력</b>을 이용해 연료를 아껴요. 그 덕분에 다누리는 더 오래 임무를 하게 됐어요.</div></details>
+  </section>
+
+  <section class="part" id="q2">
+    <div class="sec-kick">퀴즈 ② <span class="time">5문항</span></div>
+    <h2>탐사 성과와 우리나라의 우주 탐사 확인하기</h2>
+    <div class="quiz" data-quiz="q2"></div>
+    <div class="card result reveal">
+      <div class="ring"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="50" fill="none" stroke="#e7edf3" stroke-width="12"/><circle id="ringArc" cx="60" cy="60" r="50" fill="none" stroke="#1d4f9c" stroke-width="12" stroke-linecap="round" stroke-dasharray="314.16" stroke-dashoffset="314.16" style="transition:stroke-dashoffset 1s"/></svg>
+        <div class="rv"><div><span id="scoreV">0</span><small>/ <span id="scoreT">10</span> 문항</small></div></div></div>
+      <div><h3 id="resTitle">퀴즈를 풀면 결과가 나타나요</h3><p id="resMsg">퀴즈 ①, ②를 모두 풀어 보세요.</p><div class="wlist" id="wlist"></div></div>
+    </div>
+    <div class="next">
+      <a data-link="video" target="_blank" rel="noopener" style="background:linear-gradient(140deg,#7a1f1f,#d9622b)"><b>영상 퀴즈</b><span>보이저호, 다누리, 우주 쓰레기 영상 보며 풀기</span></a>
+      <a data-link="map" target="_blank" rel="noopener" style="background:linear-gradient(140deg,#0b1430,#3a3aa8)"><b>① 탐사 지도</b><span>탐사선이 간 곳, 연도별로 보기</span></a>
+      <a data-link="lab" target="_blank" rel="noopener" style="background:linear-gradient(140deg,#5a2a10,#e0702a)"><b>② 탐사선 실험실</b><span>다누리, 다트, 파커</span></a>
+      <a data-link="summary" target="_blank" rel="noopener" style="background:linear-gradient(140deg,#16675a,#2f9f6a)"><b>정리 · 우주 조약</b><span>나의 탐사 계획, 새 조항 쓰기</span></a>
+    </div>
+    <article class="card read reveal" style="margin-top:16px">
+      <h3>자료 출처</h3>
+      <ul class="sources">
+        <li>교과서 내용: 중학교 과학 2 교과서 Ⅷ. 별과 우주 「인류가 우주를 탐사하는 까닭은 무엇일까?」, 그림 Ⅷ-10, Ⅷ-11, 과학과 나 「새로운 우주 조약 제안하기」</li>
+        <li>생활 속 우주 기술: NASA Spinoff 누리집과 자주 묻는 질문(벨크로·탱·테플론은 NASA 발명이 아니라고 밝힘), NASA 제트추진연구소(카메라 센서, 귀 체온계)</li>
+        <li>탐사선 이야기: NASA(파커, 보이저, 아폴로, 아르테미스, 큐리오시티, 주노, 카시니), ESA(태양 궤도선, 로제타·필레, 헤라), 존스홉킨스 응용물리연구소(다트), 한국항공우주연구원·우주항공청 발표를 다룬 기사(다누리, 누리호)</li>
+        <li>우주 쓰레기: ESA 우주 환경 보고서 2025(2024년 말 기준 추적 물체 약 4만 개), NASA 궤도 잔해 프로그램</li>
+        <li>날짜가 있는 소식은 2026년 10월 기준이에요. 행성·탐사선 그림은 사진이 아니라 개념 이해를 위한 모형이에요.</li>
+      </ul>
+    </article>
+  </section>
+</main>
+<footer class="credit">우주 탐사 · 인류가 우주를 탐사하는 까닭은 무엇일까?</footer>
+<div class="pop" id="pop" role="tooltip"></div>
+
+<script>
+window.RD = {
+  $: (s, r = document) => r.querySelector(s),
+  $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
+  reduce: !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches),
+};
+</script>
+<script>
+/*@@LOCAL:_sx.js@@*/
+</script>
+<script>
+/*@@LOCAL:_missions.js@@*/
+</script>
+<script>
+/* ===== 블록 1: 기본 기능 · 퀴즈 ===== */
+(() => {
+  'use strict';
+  try {
+  const LINKS = { video: 'video.html', map: 'sim1-map.html', lab: 'sim2-lab.html', summary: 'summary-treaty.html' };
+  const flag = (n) => { if (new URLSearchParams(location.search).get(n) === '1') return true; try { return !!(window.frameElement && window.frameElement.dataset[n] === '1'); } catch (e) { return false; } };
+  const EMBED = flag('embed');
+  const GLOSSARY = {
+    '탐사차': '천체의 표면을 돌아다니며 탐사하는 차예요. 화성 탐사차 큐리오시티가 대표적이에요.',
+    '인공위성': '사람이 만들어 지구 둘레를 돌게 한 물체예요. 관측, 위치 정보, 방송과 통신에 쓰여요.',
+    '무중력 상태': '몸이 둥둥 떠서 무게를 느끼지 못하는 상태예요. 지구를 도는 우주 정거장 안이 그래요.',
+    '우주 정거장': '사람이 오래 머물며 실험하는 우주의 시설이에요. 국제 우주 정거장은 여러 나라가 함께 운영해요.',
+    '혜성': '얼음과 먼지로 된 천체예요. 태양에 가까워지면 태양 반대쪽으로 긴 꼬리가 생겨요.',
+    '소행성': '태양 둘레를 도는 암석으로 된 작은 천체예요.',
+  };
+  const QUIZ = {
+    q1: [
+      { type: 'mc', q: '2012년 화성에 착륙한 탐사차 ‘큐리오시티(Curiosity)’라는 이름의 뜻은?', options: ['호기심', '용기', '인내', '발견'], answer: 0, exp: 'Curiosity는 <b>호기심</b>이에요. 우주의 시작, 외계 생명체, 우리의 기원에 대한 호기심이 인류를 우주 탐사로 이끌었어요.' },
+      { type: 'blank', parts: ['맨눈으로 우주를 보던 인류는 ', 0, '을 만들어 우주를 더 자세히 관측했고, 현재에는 우주 망원경과 인공위성, ', 1, ' 등을 이용한다.'], answers: ['천체 망원경', '우주 탐사선'], bank: ['천체 망원경', '우주 탐사선', '현미경', '잠수함'], exp: '맨눈 → <b>천체 망원경</b> → 우주 망원경·인공위성·<b>우주 탐사선</b>으로 관측 도구가 발전했어요.' },
+      { type: 'mc', q: '지구 주위를 도는 인공위성으로 하는 일이 <b>아닌</b> 것은?', options: ['일기 예보', '정확한 위치 정보 알아내기', '지구 반대편과 방송·통신하기', '땅속 지진을 멈추게 하기'], answer: 3, exp: '인공위성은 <b>일기 예보</b>, <b>위치 정보(GPS)</b>, <b>방송·통신</b>에 쓰여요. 지진을 멈추게 할 수는 없어요.' },
+      { type: 'ox', q: '휴대 전화 카메라에 쓰이는 카메라 센서(CMOS 이미지 센서)는 우주선의 카메라를 작고 가볍게 만들려는 연구에서 나왔다.', answer: true, exp: '<b>O</b> · 1990년대 초 NASA 제트추진연구소에서 우주선 카메라를 작게 만들려고 개발했어요. NASA가 꼽는 가장 널리 퍼진 우주 기술이에요.' },
+      { type: 'ox', q: '찍찍 붙는 벨크로(찍찍이)는 NASA가 우주 탐사를 위해 발명했다.', answer: false, exp: '<b>X</b> · 벨크로는 1940년대 스위스 발명가가 만들었어요. 우주 비행사가 써서 유명해졌을 뿐이라고 NASA가 직접 밝혔어요.' },
+    ],
+    q2: [
+      { type: 'mc', q: '천왕성과 해왕성을 가까이 지나가며 탐사한 탐사선으로, 지금까지 유일한 것은?', options: ['보이저 2호', '큐리오시티', '다누리', '파커 태양 탐사선'], answer: 0, exp: '<b>보이저 2호</b>는 1977년 발사되어 목성, 토성, 천왕성(1986년), 해왕성(1989년)을 지나갔어요. 현재 태양계를 벗어나 있어요.' },
+      { type: 'mc', q: '2022년 다트 탐사선이 소행성에 충돌한 결과로 옳은 것은?', options: ['소행성의 궤도가 바뀌었다', '소행성이 산산조각 났다', '아무 변화가 없었다', '소행성이 지구 쪽으로 끌려왔다'], answer: 0, exp: '다트는 소행성과 충돌하여 <b>소행성의 궤도를 바꾸었어요</b>. 디모르포스가 한 바퀴 도는 시간이 약 33분 줄었어요.' },
+      { type: 'mc', q: '다누리가 곧장 가지 않고 145일 동안 멀리 돌아서 달에 간 까닭은?', options: ['연료를 아끼려고', '길을 잃어서', '달이 멀어져서', '다른 탐사선을 피하려고'], answer: 0, exp: '태양과 지구의 중력을 이용하는 길이라 달에 도착할 때 속도를 조금만 줄여도 돼서 <b>연료를 아낄 수 있어요</b>.' },
+      { type: 'blank', parts: ['1957년 소련이 세계 최초의 인공위성인 ', 0, '를 발사하면서 우주 시대가 열렸고, 1967년 ', 1, '을 시작으로 여러 국제적인 규칙이 생겼다.'], answers: ['스푸트니크 1호', '국제 우주 조약'], bank: ['스푸트니크 1호', '국제 우주 조약', '보이저 1호', '아폴로 계획'], exp: '<b>스푸트니크 1호</b>(1957) → <b>국제 우주 조약</b>(1967). 보이저 1호는 1977년에 발사된 탐사선이에요.' },
+      { type: 'ox', q: '국제 우주 조약에 따르면, 달에 먼저 도착한 나라는 달을 차지할 수 있다.', answer: false, exp: '<b>X</b> · 국제 우주 조약은 <b>특정 국가가 우주를 독점할 수 없다</b>고 정해요. 우주 탐사는 모든 국가의 이익을 위해 이루어져야 해요.' },
+    ],
+  };
+/*@@PART:quiz_engine.js@@*/
+  window.RD.ok1 = true;
+  } catch (err) { window.RD_err && window.RD_err('기본 기능·퀴즈', err); }
+})();
+</script>
+<script>
+/* ===== 블록 2: 뒤집기 카드 · 탐사 성과 카드 (선생님이 고치기 쉬운 데이터: FLIPS) ===== */
+(() => {
+  'use strict';
+  try {
+    const { $ } = window.RD, S = window.SX;
+    const IC = {
+      cam: '<rect x="8" y="16" width="44" height="30" rx="6" fill="url(#g)"/><circle cx="30" cy="31" r="10" fill="#0b1430"/><circle cx="30" cy="31" r="6" fill="#3a6fd8"/><circle cx="27" cy="28" r="2" fill="#fff"/><rect x="14" y="11" width="10" height="6" rx="2" fill="#7d8aa0"/>',
+      therm: '<path d="M18 40c0-12 8-20 18-24l6 6c-4 10-12 18-24 18z" fill="url(#g)"/><circle cx="20" cy="40" r="6" fill="#ff6a3d"/><path d="M40 18l8-8" stroke="#7d8aa0" stroke-width="4" stroke-linecap="round"/>',
+      lens: '<circle cx="18" cy="32" r="11" fill="#bfe3ff" stroke="#0b1430" stroke-width="3"/><circle cx="42" cy="32" r="11" fill="#bfe3ff" stroke="#0b1430" stroke-width="3"/><path d="M29 31h2M7 30l-3-6M53 30l3-6" stroke="#0b1430" stroke-width="3" stroke-linecap="round"/><path d="M12 28l6-4M36 28l6-4" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>',
+      foam: '<rect x="6" y="28" width="48" height="16" rx="5" fill="url(#g)"/><path d="M16 28c4 6 10 6 14 0" fill="#e2c9a0"/><rect x="6" y="40" width="48" height="6" rx="3" fill="#7d8aa0"/><rect x="8" y="22" width="14" height="8" rx="4" fill="#fff" stroke="#c9d3e0"/>',
+      tread: '<rect x="6" y="38" width="48" height="8" rx="4" fill="#7d8aa0"/><path d="M14 38c0-14 32-14 32 0" fill="url(#g)"/><circle cx="30" cy="16" r="4" fill="#0b1430"/><path d="M30 20v10M30 24l-6 4M30 24l6 2M30 30l-5 8M30 30l5 8" stroke="#0b1430" stroke-width="3" stroke-linecap="round"/>',
+      smoke: '<circle cx="30" cy="30" r="20" fill="url(#g)"/><circle cx="30" cy="30" r="12" fill="#fff" stroke="#c9d3e0" stroke-width="2"/><circle cx="30" cy="30" r="3" fill="#ff6a3d"/><path d="M22 30h-3M41 30h-3M30 22v-3M30 41v-3" stroke="#9aa6b5" stroke-width="2"/>',
+      vac: '<path d="M12 46l26-30" stroke="#7d8aa0" stroke-width="5" stroke-linecap="round"/><rect x="34" y="8" width="16" height="22" rx="6" fill="url(#g)" transform="rotate(40 42 19)"/><rect x="6" y="44" width="14" height="6" rx="3" fill="#0b1430"/>',
+      velcro: '<rect x="8" y="14" width="44" height="14" rx="4" fill="#ff9a8a"/><rect x="8" y="32" width="44" height="14" rx="4" fill="#7fc8ff"/><path d="M14 28v4M20 28v4M26 28v4M32 28v4M38 28v4M44 28v4" stroke="#0b1430" stroke-width="2"/>',
+    };
+    /* v: inv(우주 탐사에서 처음 만듦) / imp(우주 탐사에서 발전시킴) / myth(오해) */
+    const FLIPS = [
+      { n: '카메라 센서', ic: 'cam', v: 'inv', t: '1990년대 초 NASA 제트추진연구소에서 우주선 카메라를 작고 가볍게, 전기를 적게 쓰게 만들려고 개발했어요. 지금은 거의 모든 휴대 전화 카메라에 들어 있어요.' },
+      { n: '적외선 체온계', ic: 'therm', v: 'inv', t: '별의 온도를 재던 적외선 센서 기술로, 귀에 대고 1~2초 만에 체온을 재는 체온계가 나왔어요(1991년).' },
+      { n: '코팅 안경 렌즈', ic: 'lens', v: 'inv', t: '우주 비행사 헬멧 창이 긁히지 않게 하려고 만든 코팅이 1980년대부터 안경 렌즈에 쓰였어요.' },
+      { n: '메모리폼', ic: 'foam', v: 'inv', t: '1966년 NASA의 연구로 만들어졌어요. 다만 우주 비행사 침대가 아니라 비행기 좌석의 충격을 줄이려는 것이었어요.' },
+      { n: '반중력 러닝머신', ic: 'tread', v: 'inv', t: '우주에서 운동하려고 공기 압력으로 몸을 누르던 아이디어를 거꾸로 써서, 몸을 가볍게 받쳐 주는 재활용 러닝머신이 됐어요.' },
+      { n: '화재 경보기', ic: 'smoke', v: 'imp', t: 'NASA가 발명하지는 않았어요. 1970년대 우주 정거장 스카이랩에서 쓰려고 감도를 조절할 수 있게 더 좋게 만들었어요.' },
+      { n: '무선 청소기', ic: 'vac', v: 'imp', t: '무선 공구는 1961년에 이미 있었어요. 아폴로 계획의 달 드릴에 쓴 전기를 아끼는 모터 기술이 1979년 손 청소기로 이어졌어요.' },
+      { n: '벨크로(찍찍이)', ic: 'velcro', v: 'myth', t: '1940년대 스위스 발명가가 만들었어요. 우주 비행사가 써서 유명해졌을 뿐, NASA 발명이 아니라고 NASA가 직접 밝혔어요.' },
+    ];
+    const VL = { inv: '우주 탐사에서 처음 만듦', imp: '우주 탐사에서 발전시킴', myth: '오해' };
+    $('#flips').innerHTML = FLIPS.map((f, i) => `<button type="button" class="flip" aria-pressed="false" aria-label="${f.n}: 눌러서 확인"><span class="in"><span class="f"><svg viewBox="0 0 60 60" aria-hidden="true"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffd27a"/><stop offset="1" stop-color="#ff8a3d"/></linearGradient></defs>${IC[f.ic]}</svg><b>${f.n}</b><small>눌러서 확인</small></span><span class="b"><span class="v ${f.v}">${VL[f.v]}</span><span>${f.t}</span></span></span></button>`).join('');
+    document.querySelectorAll('.flip').forEach((b) => b.addEventListener('click', () => { const on = b.classList.toggle('on'); b.setAttribute('aria-pressed', String(on)); }));
+
+    /* 탐사 성과 카드: _missions.js의 MISSIONS를 씀 */
+    const BODY = { sun: 'sun', sunpole: 'sun', moon: 'moon', voyager: 'neptune', comet: 'comet', asteroid: 'asteroid', mars: 'mars', jupiter: 'jupiter', saturn: 'saturn' };
+    $('#mgrid').innerHTML = window.MISSIONS.map((m) => `<details class="mc"><summary><canvas data-m="${m.id}"></canvas><span><span class="y">${m.launch}</span><b>${m.name}</b><span class="hk">${m.hook}</span><span class="tap">눌러서 펼치기</span></span></summary><div class="body"><div class="bk">${m.book}</div><ul>${m.facts.slice(0, 3).map((f) => `<li>${f}</li>`).join('')}</ul></div></details>`).join('');
+    document.querySelectorAll('.mc').forEach((d) => d.addEventListener('toggle', () => { const t = d.querySelector('.tap'); if (t) t.textContent = d.open ? '접기' : '눌러서 펼치기'; }));
+    const thumbs = () => document.querySelectorAll('#mgrid canvas').forEach((cv) => {
+      const m = window.MISSIONS.find((x) => x.id === cv.dataset.m), { c, w, h } = S.fit(cv), b = BODY[m.at];
+      S.space(c, w, h, m.id.length * 7, { n: 30 });
+      if (b === 'sun') S.sun(c, w * 0.2, h * 0.5, h * 0.5, 0);
+      else if (b === 'comet') S.tail(c, w * 0.3, h * 0.6, h * 0.1, -2.6, w * 0.4), S.planet(c, w * 0.3, h * 0.6, h * 0.12, 'comet', { seed: 21 });
+      else S.planet(c, w * 0.28, h * 0.6, b === 'jupiter' || b === 'saturn' ? h * 0.34 : h * 0.28, b, { seed: 3, lx: 0.6, ly: -0.5 });
+      S.probe(c, w * 0.68, h * 0.38, h * 0.16, -0.25, m.probe);
+    });
+    thumbs(); addEventListener('resize', thumbs);
+    window.RD.need2 = true;
+  } catch (err) { window.RD_err && window.RD_err('카드', err); }
+})();
+</script>
+<script>
+/* ===== 블록 3: 그림 (첫 화면, 관측 도구, 인공위성) ===== */
+(() => {
+  'use strict';
+  try {
+    const { $ } = window.RD, S = window.SX;
+    const fs = (w, k, min) => Math.max(min || 12, Math.min(17, w / k));
+    /* 첫 화면: 목성을 지나 토성으로 가는 탐사선 */
+    const hero = $('#heroCv');
+    S.add(hero, (t) => {
+      const { c, w, h } = S.fit(hero); S.space(c, w, h, 31);
+      const lx = -0.8, ly = 0.3;
+      S.planet(c, w * 0.08, h * 0.86, Math.max(2.5, w * 0.006), 'earth', { lx, ly });
+      S.tag(c, '지구', w * 0.08, h * 0.86 - 14, { size: fs(w, 50) - 2, bg: 'none', color: '#9fc4ff' });
+      S.planet(c, w * 0.42, h * 0.62, h * 0.12, 'jupiter', { lx, ly, t });
+      S.planet(c, w * 0.8, h * 0.36, h * 0.2, 'saturn', { lx, ly, t });
+      const pts = []; for (let i = 0; i <= 80; i++) { const u = i / 80; pts.push([S.lerp(w * 0.1, w * 0.95, u), h * 0.82 - Math.sin(u * Math.PI * 0.9) * h * 0.55 + u * h * 0.05]); }
+      S.path(c, pts, 'rgba(255,210,120,.35)', 2, [5, 6]);
+      const p = S.REDUCE ? 0.55 : ((t / 16000) % 1), i = Math.floor(p * 80), q = pts[i], q2 = pts[Math.min(80, i + 1)];
+      S.path(c, pts.slice(0, i + 1), 'rgba(255,210,120,.9)', 2.5);
+      S.glow(c, q[0], q[1], 22, [255, 210, 120], 0.6); S.probe(c, q[0], q[1], Math.max(8, w * 0.016), Math.atan2(q2[1] - q[1], q2[0] - q[0]), 'dish');
+    }, (e) => window.RD_err('첫 화면 그림', e));
+
+    /* 그림 ①: 같은 토성, 다른 도구 */
+    const tool = $('#toolCv'); let mode = 0, mT = 0; const off = document.createElement('canvas');
+    const NAMES = ['맨눈', '천체 망원경', '우주 탐사선'];
+    S.add(tool, (t) => {
+      const { c, w, h, dpr } = S.fit(tool); S.space(c, w, h, 52); const z = fs(w, 50);
+      const cx = w * 0.5, cy = h * 0.5, k = Math.min(1, (t - mT) / 600);
+      if (mode === 0) {
+        S.glow(c, cx, cy, 10, [255, 236, 190], 1); S.tag(c, '토성', cx, cy + 22, { size: z - 1, bg: 'rgba(8,14,32,.7)', color: '#ffe6b0' });
+      } else {
+        const R = mode === 1 ? h * 0.12 : h * 0.3, res = mode === 1 ? 0.12 : 1;
+        off.width = Math.max(8, Math.round(w * res)); off.height = Math.max(8, Math.round(h * res)); const g = off.getContext('2d'); g.clearRect(0, 0, off.width, off.height);
+        S.planet(g, off.width / 2, off.height / 2, R * res * (0.85 + 0.15 * k), 'saturn', { lx: -0.7, ly: -0.3, t });
+        c.save(); c.imageSmoothingEnabled = true; c.drawImage(off, 0, 0, w, h); c.restore();
+        if (mode === 1) S.tag(c, '고리가 어렴풋이', cx, cy + R + 24, { size: z - 2, bg: 'rgba(8,14,32,.7)', color: '#ffe6b0' });
+        else { const a = t / 3000, px = cx + Math.cos(a) * R * 2.6, py = cy + Math.sin(a) * R * 0.7; S.probe(c, px, py, Math.max(8, w * 0.016), 0, 'dish'); S.tag(c, '줄무늬, 고리 사이 틈까지 또렷하게', cx, h - z * 1.4, { size: z - 2, bg: 'rgba(8,14,32,.7)', color: '#ffe6b0' }); }
+      }
+      S.tag(c, NAMES[mode] + '으로 본 토성', 12, z * 1.4, { size: z, align: 'left', bg: '#ffd27a', color: '#2a1a00' });
+    }, (e) => window.RD_err('관측 도구 그림', e));
+    document.querySelectorAll('[data-tool]').forEach((b) => b.addEventListener('click', () => { mode = +b.dataset.tool; mT = performance.now(); document.querySelectorAll('[data-tool]').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); }));
+
+    /* 그림 ②: 인공위성이 하는 일 */
+    const sat = $('#satCv');
+    S.add(sat, (t) => {
+      const { c, w, h } = S.fit(sat); S.space(c, w, h, 64); const z = fs(w, 52);
+      const cx = w * 0.5, cy = h * 1.18, R = h * 0.78;
+      /* 지구(아래쪽 큰 호) */
+      S.planet(c, cx, cy, R, 'earth', { lx: -0.4, ly: -0.9, t });
+      const SAT = [
+        { a: -2.35, r: 1.25, n: '기상 위성', d: '구름을 찍어 일기 예보', col: [140, 210, 255] },
+        { a: -1.57, r: 1.32, n: '위치 위성', d: '내 위치 알려 주기(GPS)', col: [255, 210, 120] },
+        { a: -0.8, r: 1.25, n: '통신 위성', d: '지구 반대편과 방송·통신', col: [180, 255, 190] }
+      ];
+      SAT.forEach((s, i) => {
+        const a = s.a + Math.sin(t / 4000 + i) * 0.03, x = cx + Math.cos(a) * R * s.r, y = cy + Math.sin(a) * R * s.r;
+        c.save(); c.strokeStyle = 'rgba(255,255,255,.12)'; c.setLineDash([3, 6]); c.beginPath(); c.arc(cx, cy, R * s.r, -Math.PI * 0.95, -Math.PI * 0.05); c.stroke(); c.restore();
+        /* 신호 */
+        const gx = cx + Math.cos(a) * R, gy = cy + Math.sin(a) * R, ph = ((t / 1400) + i * 0.33) % 1;
+        for (let k = 0; k < 3; k++) { const u = (ph + k / 3) % 1; c.save(); c.strokeStyle = `rgba(${s.col.join(',')},${(1 - u) * 0.7})`; c.lineWidth = 2; c.beginPath(); const mx = S.lerp(x, gx, u), my = S.lerp(y, gy, u); c.arc(mx, my, 6 + u * 10, a + Math.PI - 0.6, a + Math.PI + 0.6); c.stroke(); c.restore(); }
+        if (i === 2) { const ox = cx + Math.cos(a + 0.55) * R, oy = cy + Math.sin(a + 0.55) * R; S.path(c, [[x, y], [ox, oy]], 'rgba(180,255,190,.45)', 1.5, [4, 4]); }
+        S.probe(c, x, y, Math.max(9, w * 0.016), a + Math.PI / 2, 'wing');
+        S.tag(c, s.n, x, y - z * 2.1, { size: z - 1, bg: 'rgba(8,14,32,.85)', color: `rgb(${s.col.join(',')})` });
+        S.tag(c, s.d, x, y - z * 0.4 - z * 0.2 + 34, { size: z - 3, bg: 'none', color: '#c9d4ef' });
+      });
+    }, (e) => window.RD_err('인공위성 그림', e));
+    window.RD.ok2 = true;
+  } catch (err) { window.RD_err && window.RD_err('그림', err); }
+})();
+</script>
+</body>
+</html>

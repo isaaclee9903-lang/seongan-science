@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>우주 탐사 – 탐사 지도</title>
+<script>
+/* 문제 알림: 코드에 오류가 나면 화면 아래에 빨간 상자로 알려 줘요 (선생님 확인용) */
+(function () {
+  function box() {
+    var b = document.getElementById('smErr');
+    if (!b && document.body) {
+      b = document.createElement('div'); b.id = 'smErr';
+      b.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;background:#fdecea;color:#8a1f17;border:2px solid #d9534f;border-radius:12px;padding:10px 14px;font:600 14px/1.5 sans-serif;white-space:pre-wrap';
+      document.body.appendChild(b);
+    }
+    return b;
+  }
+  window.SM_err = function (where, err) {
+    var msg = '[' + where + '] ' + (err && err.message ? err.message : String(err));
+    var show = function () { var b = box(); if (b) b.textContent += (b.textContent ? '\n' : '') + msg; };
+    if (document.body) show(); else document.addEventListener('DOMContentLoaded', show);
+  };
+  window.addEventListener('error', function (e) { window.SM_err('스크립트', { message: e.message + ' (줄 ' + e.lineno + ')' }); });
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      var S = window.SM || {};
+      if (!S.okUI) window.SM_err('실행 안 됨', { message: '안내·버튼 코드가 실행되지 않았어요. 파일이 끝(</html>)까지 들어 있는지 확인해 주세요.' });
+      if (document.getElementById('fail3d') && !S.ok3d) { var f = document.getElementById('fail3d'); if (f) f.classList.add('show'); window.SM_err('3D 그림', { message: '3D 그림을 불러오지 못했어요. 인터넷 연결(cdn.jsdelivr.net)을 확인하고 새로고침해 주세요.' }); }
+    }, 9000);
+  });
+})();
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+
+  :root{--bg:#edf3f8;--card:#fff;--ink:#14263b;--ink2:#34495e;--muted:#5a6b7e;--line:#dde6ee;--accent:#0e63b3;--accent-soft:#e3effb;
+    --fab:#4b3fb5;--fab-soft:#ecebfb;--ok:#1f9d5c;--no:#d9534f;
+    --shadow:0 1px 2px rgba(20,38,59,.06),0 8px 24px rgba(20,38,59,.07);--ease:cubic-bezier(.2,.8,.2,1)}
+  *{box-sizing:border-box}html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:"Pretendard",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  button{font:inherit;color:inherit}
+  .app{max-width:1320px;margin:0 auto;padding:14px 16px 28px;display:flex;flex-direction:column;gap:12px}
+  .eyebrow{display:inline-flex;font-size:13px;font-weight:700;color:var(--fab);background:var(--fab-soft);padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(21px,2.4vw,28px);margin:6px 0 2px;letter-spacing:-.02em;word-break:keep-all}
+  .sub{margin:0;color:var(--muted);font-size:15px;word-break:keep-all}
+  .card{background:var(--card);border-radius:20px;box-shadow:var(--shadow);border:1px solid rgba(20,38,59,.04)}
+  .pad{padding:14px 16px}
+  .stage{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(330px,1fr);gap:14px;align-items:start}
+  .viewer{position:sticky;top:10px}
+  .flow{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px}
+  .fs{min-height:54px;border:0;border-radius:12px;background:#eef3f8;font-weight:800;font-size:13px;color:var(--muted);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.2;word-break:keep-all;padding:4px}
+  .fs b{font-size:15px}
+  .fs[aria-selected="true"]{background:var(--fab);color:#fff}
+  .fs.seen:not([aria-selected="true"]){background:#e5f5ec;color:#11703f}
+  .stepname{display:flex;align-items:center;gap:10px;margin:2px 0 6px}
+  .stepname .no{flex:none;width:40px;height:40px;border-radius:12px;background:var(--fab);color:#fff;display:grid;place-items:center;font-weight:900;font-size:19px}
+  .stepname h2{margin:0;font-size:21px;letter-spacing:-.01em;word-break:keep-all}
+  .stepname small{display:block;font-size:13px;color:var(--muted);font-weight:700}
+  .what{font-size:16px;line-height:1.75;color:var(--ink2);margin:0 0 10px;word-break:keep-all}
+  .phase{display:grid;gap:6px;margin:8px 0}
+  .ph{display:grid;grid-template-columns:28px 1fr;gap:8px;align-items:start;padding:7px 10px;border-radius:12px;background:#f7fafc;font-size:15px;line-height:1.55;color:var(--muted);word-break:keep-all;transition:background .3s,color .3s}
+  .ph i{font-style:normal;width:26px;height:26px;border-radius:8px;background:#dfe6ee;display:grid;place-items:center;font-weight:900;font-size:13px;color:#607285}
+  .ph.on{background:var(--fab-soft);color:var(--ink)}.ph.on i{background:var(--fab);color:#fff}
+  .ph.done{color:var(--ink2)}.ph.done i{background:#b9b2ee;color:#fff}
+  .box{border-radius:14px;padding:10px 12px;margin-top:8px;font-size:14.5px;line-height:1.65;word-break:keep-all}
+  .box b.t{display:block;font-size:13px;margin-bottom:2px}
+  .an{background:#fff8e6;border:1px solid #f3dc9a;color:#5b4300}
+  .fact{background:#eef6ff;border:1px solid #cfe2f6;color:#1d3f66}
+  .lnk{background:#ecf8f1;border:1px solid #c6e8d4;color:#0f5a36}
+  .src{display:block;font-size:12px;color:var(--muted);margin-top:3px}
+  .acts{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 0}
+  .btn{min-height:50px;border:0;border-radius:14px;padding:0 16px;font-weight:800;font-size:15.5px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;justify-content:center;word-break:keep-all}
+  .btn:active{transform:scale(.97)}
+  .btn.primary{background:var(--fab);color:#fff}.btn.ghost{background:#eef3f8;color:var(--ink2)}
+  .btn[aria-pressed="true"]{background:#14263b;color:#fff}
+  .btn:disabled{opacity:.4;cursor:default;transform:none}
+  .prog{height:6px;border-radius:3px;background:#e6edf4;margin-top:10px;overflow:hidden}
+  .prog i{display:block;height:100%;width:0;background:linear-gradient(90deg,#8a7ff0,var(--fab))}
+  .credit{text-align:center;font-size:13px;font-weight:700;color:#8495a8;letter-spacing:.02em;margin:6px 0 0}
+  /* ===== 3D 화면 공통 ===== */
+  :root{--Bc:#14a5d0;--Ic:#2fae4a;--Fc:#f0522a;--N:#d8433b;--S:#2f62c9;--P:#7d5ad6}
+  .viewer{position:relative;overflow:hidden;padding:0}
+  .gl-host{position:relative;width:100%;height:min(74vh,700px);min-height:380px;background:linear-gradient(#f6f9fc,#d6e3ef);touch-action:none}
+  .gl-host canvas.gl{display:block;width:100%;height:100%;outline:none}
+  .lbls{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+  .lb{position:absolute;left:0;top:0;white-space:nowrap;font-weight:800;font-size:14px;padding:3px 9px;border-radius:9px;background:rgba(255,255,255,.88);color:#34495e;box-shadow:0 2px 8px rgba(20,38,59,.14);will-change:transform}
+  .lb.small{font-size:12px;font-weight:700;color:#5a6b7e;background:rgba(255,255,255,.72);box-shadow:none}
+  .lb.B{background:var(--Bc);color:#fff}.lb.I{background:var(--Ic);color:#fff}.lb.F{background:var(--Fc);color:#fff;font-size:15px}
+  .lb.P{background:var(--P);color:#fff}
+  .lb.dim{opacity:.35}
+  .vt{position:absolute;display:flex;gap:6px;flex-wrap:wrap;z-index:3}
+  .vt.tl{left:10px;top:10px;max-width:calc(100% - 20px)}
+  .vt.tr{right:10px;top:10px;justify-content:flex-end}
+  .vt.bl{left:10px;bottom:10px;align-items:center}
+  .vb{min-height:44px;padding:0 12px;border-radius:12px;border:1px solid rgba(20,38,59,.12);background:rgba(255,255,255,.9);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);font-weight:800;font-size:14px;color:#34495e;cursor:pointer;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 10px rgba(20,38,59,.08)}
+  .vb:active{transform:scale(.96)}
+  .vb .dot{width:12px;height:12px;border-radius:50%;flex:none}
+  .vb[aria-pressed="false"]{opacity:.62}
+  .vb[aria-pressed="false"] .dot{background:#c2ccd6!important}
+  .vb.sel{background:#14263b;color:#fff;border-color:#14263b}
+  .hint{font-size:12.5px;font-weight:700;color:#5a6b7e;background:rgba(255,255,255,.78);border-radius:10px;padding:6px 10px;word-break:keep-all}
+  .inset{position:absolute;z-index:2;border-radius:18px;border:2px solid rgba(255,255,255,.95);box-shadow:0 10px 30px rgba(20,38,59,.22),inset 0 0 0 1px rgba(20,38,59,.08);pointer-events:none;display:none}
+  .inset.on{display:block}
+  .inset .it{position:absolute;left:8px;top:8px;font-size:12.5px;font-weight:900;color:#14263b;background:rgba(255,255,255,.9);border-radius:8px;padding:3px 8px}
+  .inset .ic{position:absolute;left:6px;right:6px;bottom:6px;display:flex;flex-wrap:wrap;gap:4px;justify-content:center}
+  .inset .ic span{font-size:11.5px;font-weight:800;color:#fff;border-radius:7px;padding:2px 7px;white-space:nowrap}
+  .fail3d{position:absolute;inset:0;display:none;place-items:center;text-align:center;padding:24px;font-size:16px;font-weight:700;color:#7a2a22;line-height:1.7;word-break:keep-all;background:#fff4f2}
+  .fail3d.show{display:grid}
+  .model{font-size:13px;color:var(--muted);text-align:right;margin:0;word-break:keep-all}
+  @media (max-width:900px){.gl-host{height:min(56vh,620px)}}
+  .zoombadge{position:absolute;right:10px;top:62px;z-index:3;font-size:13px;font-weight:800;color:#fff;background:rgba(75,63,181,.9);border-radius:10px;padding:6px 10px;display:none;word-break:keep-all;max-width:60%}
+  .zoombadge.on{display:block}
+  @media (max-width:900px){.stage{grid-template-columns:1fr}.viewer{position:relative;top:0}}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+  /* ===== 이 수업 전용 ===== */
+  :root{--fab:#d9622b;--fab-soft:#fdeee5;--sp:#070b18}
+  .stage{grid-template-columns:minmax(0,1.7fr) minmax(320px,1fr)}
+  .map{position:relative;overflow:hidden;padding:0;background:var(--sp);border:0}
+  .map canvas{display:block;width:100%;height:min(70vh,660px);min-height:360px;touch-action:none;cursor:pointer}
+  .map .vt.tl .hint{background:rgba(8,14,32,.72);color:#c9d4ef}
+  .map .vt.tr .vb{background:rgba(8,14,32,.78);color:#e8ecfb;border-color:rgba(255,255,255,.18)}
+  .tline{padding:10px 14px 12px;background:#0b1226;color:#e8ecfb;display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center}
+  .tline .yr{font-weight:900;font-size:26px;font-variant-numeric:tabular-nums;min-width:74px;color:#ffd27a}
+  .tline .yr small{display:block;font-size:11.5px;font-weight:700;color:#9fb0cc}
+  .tline input{width:100%;height:44px;accent-color:#ff9a4a}
+  .tline .vb{min-height:46px;padding:0 14px;border-radius:12px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;font-weight:800;cursor:pointer}
+  .ticks{position:relative;height:16px;margin:0 6px}
+  .ticks i{position:absolute;top:3px;width:9px;height:9px;margin-left:-4.5px;border-radius:50%;background:#ff9a4a;box-shadow:0 0 0 2px #0b1226}
+  .ticks i.k{background:#56b6ff}
+  .ticks i.s{background:#fff}
+  .groups{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+  .groups button{min-height:44px;padding:0 12px;border-radius:12px;border:2px solid var(--line);background:#fff;font-weight:800;font-size:14px;color:var(--ink2);cursor:pointer}
+  .groups button[aria-pressed="true"]{border-color:var(--fab);background:var(--fab-soft);color:#8a3510}
+  .mlist{display:grid;gap:8px}
+  .mb{display:grid;grid-template-columns:44px 1fr;gap:10px;align-items:center;text-align:left;min-height:62px;border-radius:14px;border:2px solid var(--line);background:#f8fafc;padding:8px 10px;cursor:pointer}
+  .mb canvas{width:44px;height:44px;border-radius:12px;background:#0b1226}
+  .mb b{display:block;font-size:15.5px}.mb span{font-size:13px;color:var(--muted);font-weight:700;word-break:keep-all}
+  .mb.off{opacity:.42}
+  .mb[aria-pressed="true"]{border-color:var(--fab);background:var(--fab-soft)}
+  .card .tt{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+  .card .tt h2{margin:0;font-size:22px;letter-spacing:-.01em}
+  .badge{display:inline-flex;font-size:12.5px;font-weight:800;border-radius:999px;padding:3px 10px;background:#eef3f8;color:var(--ink2)}
+  .badge.k{background:#e3f1ff;color:#0e4f8f}
+  .bookq{margin:10px 0;padding:12px 14px;border-radius:14px;background:#f6f3ec;border-left:5px solid #c9a35a;font-size:15.5px;line-height:1.7;word-break:keep-all}
+  .bookq small{display:block;font-size:12px;font-weight:800;color:#8a6b2a;margin-bottom:2px}
+  .facts{margin:10px 0 0;padding:0;list-style:none;display:grid;gap:8px}
+  .facts li{display:grid;grid-template-columns:26px 1fr;gap:8px;font-size:15.5px;line-height:1.7;word-break:keep-all}
+  .facts li i{font-style:normal;width:24px;height:24px;border-radius:8px;background:var(--fab);color:#fff;display:grid;place-items:center;font-weight:900;font-size:12.5px;margin-top:3px}
+  .nums{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-top:12px}
+  .nums div{border-radius:14px;background:#0b1226;color:#fff;padding:10px 12px}
+  .nums small{display:block;font-size:12px;color:#9fb0cc;font-weight:700}
+  .nums b{font-size:17px;color:#ffd27a;word-break:keep-all}
+  .golab{margin-top:12px;width:100%}
+  .empty{font-size:15.5px;line-height:1.75;color:var(--ink2);word-break:keep-all}
+  .empty b{color:#8a3510}
+  @media (max-width:900px){.stage{grid-template-columns:1fr}.map canvas{height:min(58vh,560px)}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <span class="eyebrow">시뮬레이션 ① · 그림 Ⅷ-11 인류의 우주 탐사 성과</span>
+    <h1>탐사 지도: 인류는 태양계 어디까지 가 봤을까?</h1>
+    <p class="sub">이름표를 누르면 그곳으로 날아가요. 아래 연도 막대를 움직이면 그해까지 탐사선이 어디까지 갔는지 보여요.</p>
+  </header>
+
+  <div class="stage">
+    <div class="card map viewer">
+      <canvas id="cv" role="img" aria-label="태양계 지도. 가운데 왼쪽에 태양이 있고, 수성부터 해왕성까지 궤도가 비스듬히 그려져 있다. 태양, 달, 화성, 소행성, 혜성, 목성, 토성 둘레에 탐사선 이름표가 있고, 보이저 2호가 목성·토성·천왕성·해왕성을 지나 바깥으로 가는 길이 그려져 있다."></canvas>
+      <div class="vt tl"><span class="hint" id="hint">이름표를 눌러 보세요</span></div>
+      <div class="vt tr"><button class="vb" id="home" type="button">전체 보기</button></div>
+      <div class="ticks" id="ticks" style="background:#0b1226"></div>
+      <div class="tline">
+        <div class="yr" id="yr">2026<small>년까지</small></div>
+        <input type="range" id="yrR" min="1957" max="2026" step="1" value="2026" aria-label="연도">
+        <button class="vb" id="play" type="button">1957년부터 재생</button>
+      </div>
+    </div>
+    <div class="card pad" id="panel">
+      <div class="groups" id="groups"></div>
+      <div id="detail"></div>
+    </div>
+  </div>
+  <p class="model">태양·행성·탐사선의 크기와 거리는 실제 비율과 달라요(개념 이해를 위한 모형). 연도는 탐사선이 그 천체에 도착·착륙·충돌한 해예요.</p>
+</div>
+
+<script>
+/* ===== 우주 탐사 그림 도구 (별 배경, 태양, 행성, 탐사선, 이름표, 화살표) =====
+   - 행성·탐사선 그림은 사진이 아니라 개념 이해를 위한 모형이에요. 크기와 거리는 실제 비율과 달라요.
+   - 모든 그림은 캔버스(2D)로 그리고, 화면에 보일 때만 움직여요(SX.add). */
+window.SX = (function () {
+  'use strict';
+  function rng(seed) {
+    var s = (seed >>> 0) || 1;
+    return function () { s = (s + 0x6D2B79F5) | 0; var t = Math.imul(s ^ (s >>> 15), 1 | s); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  }
+  var clamp = function (x, a, b) { return x < a ? a : x > b ? b : x; };
+  var sstep = function (a, b, x) { var t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+  var lerp = function (a, b, t) { return a + (b - a) * t; };
+  var REDUCE = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  function fit(cv, maxDpr) {
+    var r = cv.getBoundingClientRect(), dpr = Math.min(maxDpr || 2, window.devicePixelRatio || 1);
+    var w = Math.max(10, r.width), h = Math.max(10, r.height), W = Math.round(w * dpr), H = Math.round(h * dpr);
+    if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
+    var c = cv.getContext('2d'); c.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { c: c, w: w, h: h, dpr: dpr };
+  }
+  function off(w, h) { var c = document.createElement('canvas'); c.width = Math.max(1, Math.round(w)); c.height = Math.max(1, Math.round(h)); return c; }
+  function visible(el) {
+    if (document.hidden) return false;
+    try { var f = window.frameElement; if (f && f.hasAttribute('data-page') && !f.classList.contains('on')) return false; } catch (e) {}
+    if (!el) return true;
+    var r = el.getBoundingClientRect(); return r.width > 0 && r.bottom > -40 && r.top < (window.innerHeight || 800) + 40;
+  }
+  /* 화면에 보이는 그림만 다시 그리는 공용 반복 */
+  var anims = [], running = false;
+  function add(el, draw, onErr) {
+    anims.push({ el: el, draw: draw, onErr: onErr });
+    if (!running) { running = true; requestAnimationFrame(loop); }
+    try { draw(performance.now(), true); } catch (e) { if (onErr) onErr(e); }
+  }
+  function loop(t) {
+    anims.forEach(function (a) {
+      if (!a.draw || !visible(a.el)) return;
+      try { a.draw(t); } catch (e) { a.draw = null; if (a.onErr) a.onErr(e); }
+    });
+    requestAnimationFrame(loop);
+  }
+  window.addEventListener('resize', function () { anims.forEach(function (a) { try { if (a.draw) a.draw(performance.now(), true); } catch (e) {} }); });
+
+  function rgba(c, a) { return 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + (a == null ? 1 : a) + ')'; }
+  var sprites = {};
+  function sprite(col) {
+    var key = col.join(',');
+    if (sprites[key]) return sprites[key];
+    var s = off(64, 64), g = s.getContext('2d'), gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+    gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.12, rgba(col, 0.9)); gr.addColorStop(0.3, rgba(col, 0.35)); gr.addColorStop(1, rgba(col, 0));
+    g.fillStyle = gr; g.fillRect(0, 0, 64, 64); sprites[key] = s; return s;
+  }
+  function glow(ctx, x, y, r, col, a) { ctx.globalAlpha = clamp(a == null ? 1 : a, 0, 1); ctx.drawImage(sprite(col), x - r, y - r, r * 2, r * 2); ctx.globalAlpha = 1; }
+
+  /* 별 배경: 미리 그려 두고 붙여요 */
+  var bgCache = {};
+  function space(ctx, w, h, seed, opt) {
+    opt = opt || {};
+    var key = [Math.round(w), Math.round(h), seed, opt.top, opt.bot].join('|');
+    var b = bgCache[key];
+    if (!b) {
+      b = off(w, h); var g = b.getContext('2d');
+      var gr = g.createLinearGradient(0, 0, w * 0.3, h); gr.addColorStop(0, opt.top || '#04060f'); gr.addColorStop(1, opt.bot || '#0b1226');
+      g.fillStyle = gr; g.fillRect(0, 0, w, h);
+      /* 옅은 성운 */
+      var R = rng(seed || 5);
+      for (var k = 0; k < 3; k++) {
+        var nx = R() * w, ny = R() * h, nr = Math.max(w, h) * (0.25 + R() * 0.3), ng = g.createRadialGradient(nx, ny, 0, nx, ny, nr);
+        var cc = [[90, 70, 170], [40, 90, 170], [150, 60, 110]][k];
+        ng.addColorStop(0, rgba(cc, 0.12)); ng.addColorStop(1, rgba(cc, 0)); g.fillStyle = ng; g.fillRect(0, 0, w, h);
+      }
+      g.globalCompositeOperation = 'lighter';
+      var N = opt.n == null ? Math.round(w * h / 1800) : opt.n;
+      for (var i = 0; i < N; i++) { var m = Math.pow(R(), 4); glow(g, R() * w, R() * h, 0.8 + m * 5, R() < 0.25 ? [170, 195, 255] : R() < 0.15 ? [255, 210, 170] : [235, 238, 255], 0.35 + m * 0.6); }
+      bgCache[key] = b;
+      var keys = Object.keys(bgCache); if (keys.length > 12) delete bgCache[keys[0]];
+    }
+    ctx.drawImage(b, 0, 0, w, h);
+  }
+
+  /* 태양: 이글거리는 가장자리 */
+  function sun(ctx, x, y, r, t) {
+    t = REDUCE ? 0 : t || 0;
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    var co = ctx.createRadialGradient(x, y, r * 0.8, x, y, r * 3.2);
+    co.addColorStop(0, 'rgba(255,170,60,.55)'); co.addColorStop(0.35, 'rgba(255,120,30,.16)'); co.addColorStop(1, 'rgba(255,90,20,0)');
+    ctx.fillStyle = co; ctx.beginPath(); ctx.arc(x, y, r * 3.2, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+    var g = ctx.createRadialGradient(x - r * 0.25, y - r * 0.25, r * 0.1, x, y, r);
+    g.addColorStop(0, '#fffbe6'); g.addColorStop(0.45, '#ffd25a'); g.addColorStop(0.85, '#ff9a2a'); g.addColorStop(1, '#f06a12');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+    /* 쌀알 무늬 */
+    ctx.save(); ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.clip();
+    var R = rng(77); ctx.globalAlpha = 0.18;
+    for (var i = 0; i < 70; i++) {
+      var a = R() * Math.PI * 2, d = Math.sqrt(R()) * r, s = r * (0.05 + R() * 0.09), ph = Math.sin(t / 900 + i) * 0.5 + 0.5;
+      ctx.fillStyle = ph > 0.5 ? '#fff3c4' : '#d9560d'; ctx.beginPath(); ctx.arc(x + Math.cos(a) * d, y + Math.sin(a) * d, s, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.restore();
+    /* 가장자리 불꽃 */
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.strokeStyle = 'rgba(255,150,50,.5)'; ctx.lineWidth = Math.max(1, r * 0.03);
+    for (var k = 0; k < 7; k++) {
+      var aa = k / 7 * Math.PI * 2 + t / 6000, rr = r * (1.04 + 0.08 * Math.sin(t / 700 + k * 2));
+      ctx.beginPath(); ctx.arc(x + Math.cos(aa) * r * 0.98, y + Math.sin(aa) * r * 0.98, r * 0.14 * (rr / r), aa + Math.PI * 0.9, aa + Math.PI * 2.1); ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  /* 행성 (kind: mercury, venus, earth, moon, mars, jupiter, saturn, uranus, neptune, comet, asteroid)
+     lx, ly: 빛이 오는 방향(단위 벡터) */
+  var PAL = {
+    mercury: ['#c9bfb4', '#7d7369', '#4a433d'], venus: ['#f6e3b5', '#d9b46d', '#8a6a35'], earth: ['#8fd0ff', '#2a7fd0', '#0d2f66'],
+    moon: ['#eeeeea', '#a9a8a3', '#55544f'], mars: ['#ffb08a', '#d0582c', '#6e2210'], jupiter: ['#f8e6cf', '#d8a77a', '#7a4f33'],
+    saturn: ['#fbecc4', '#d9bb7c', '#7f6533'], uranus: ['#dafcff', '#8fd8e2', '#3d8693'], neptune: ['#a9c6ff', '#3d66d8', '#162d78'],
+    asteroid: ['#c9b9a4', '#8a7963', '#3f352a'], comet: ['#e7e3dc', '#9d968b', '#4a463f']
+  };
+  function planet(ctx, x, y, r, kind, opt) {
+    opt = opt || {};
+    var lx = opt.lx == null ? -0.7 : opt.lx, ly = opt.ly == null ? -0.35 : opt.ly, p = PAL[kind] || PAL.moon, t = opt.t || 0;
+    if (kind === 'saturn' && opt.ring !== false) ringS(ctx, x, y, r, true);
+    ctx.save(); ctx.beginPath();
+    if (kind === 'asteroid' || kind === 'comet') {
+      var R = rng(opt.seed || 9); for (var i = 0; i <= 14; i++) { var a = i / 14 * Math.PI * 2, rr = r * (0.75 + R() * 0.35) * (i % 2 ? 1 : 0.95); if (i === 0) ctx.moveTo(x + Math.cos(a) * rr * 1.25, y + Math.sin(a) * rr * 0.85); else ctx.lineTo(x + Math.cos(a) * rr * 1.25, y + Math.sin(a) * rr * 0.85); }
+      ctx.closePath();
+    } else ctx.arc(x, y, r, 0, Math.PI * 2);
+    var g = ctx.createRadialGradient(x + lx * r * 0.45, y + ly * r * 0.45, r * 0.05, x, y, r * 1.15);
+    g.addColorStop(0, p[0]); g.addColorStop(0.55, p[1]); g.addColorStop(1, p[2]);
+    ctx.fillStyle = g; ctx.fill(); ctx.clip();
+    if (kind === 'jupiter' || kind === 'saturn') {
+      var bands = kind === 'jupiter' ? [[-0.62, 0.1, '#a8693f'], [-0.3, 0.12, '#c7875a'], [0.05, 0.08, '#efd2b0'], [0.28, 0.13, '#b77548'], [0.6, 0.09, '#9e6a45']] : [[-0.4, 0.12, '#cfae6a'], [0.1, 0.1, '#e8d5a4'], [0.45, 0.12, '#bb9a5b']];
+      ctx.globalAlpha = 0.55;
+      bands.forEach(function (b) { ctx.fillStyle = b[2]; ctx.beginPath(); ctx.ellipse(x, y + b[0] * r, r * 1.2, b[1] * r, Math.sin(t / 3000 + b[0]) * 0.02, 0, Math.PI * 2); ctx.fill(); });
+      if (kind === 'jupiter') { ctx.globalAlpha = 0.8; ctx.fillStyle = '#c4563a'; ctx.beginPath(); ctx.ellipse(x + r * 0.32, y + r * 0.34, r * 0.16, r * 0.09, 0, 0, Math.PI * 2); ctx.fill(); }
+      ctx.globalAlpha = 1;
+    } else if (kind === 'earth') {
+      var E = rng(41); ctx.fillStyle = 'rgba(70,160,80,.85)';
+      for (var j = 0; j < 7; j++) { var ex = x + (E() * 1.6 - 0.8) * r + ((t / 120) % (r * 2)) * 0, ey = y + (E() * 1.4 - 0.7) * r; ctx.beginPath(); ctx.ellipse(ex, ey, r * (0.18 + E() * 0.25), r * (0.12 + E() * 0.2), E() * 3, 0, Math.PI * 2); ctx.fill(); }
+      ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = Math.max(1, Math.min(r * 0.08, 5)); ctx.lineCap = 'round';
+      for (var q = 0; q < 5; q++) { var cy = y + (E() * 1.6 - 0.8) * r, cx = x + (E() * 1.6 - 0.8) * r; ctx.beginPath(); ctx.arc(cx, cy, r * (0.3 + E() * 0.4), E() * 3, E() * 3 + 1.2); ctx.stroke(); }
+    } else if (kind === 'mars' || kind === 'moon' || kind === 'mercury' || kind === 'asteroid' || kind === 'comet') {
+      var M = rng(kind.length * 13); ctx.fillStyle = kind === 'mars' ? 'rgba(120,40,20,.35)' : 'rgba(60,60,60,.25)';
+      for (var u = 0; u < 9; u++) { ctx.beginPath(); ctx.arc(x + (M() * 1.6 - 0.8) * r, y + (M() * 1.6 - 0.8) * r, r * (0.07 + M() * 0.16), 0, Math.PI * 2); ctx.fill(); }
+      if (kind === 'mars') { ctx.fillStyle = 'rgba(255,255,255,.75)'; ctx.beginPath(); ctx.ellipse(x, y - r * 0.92, r * 0.35, r * 0.13, 0, 0, Math.PI * 2); ctx.fill(); }
+    }
+    /* 밤 쪽 그림자 */
+    var sh = ctx.createLinearGradient(x + lx * r, y + ly * r, x - lx * r, y - ly * r);
+    sh.addColorStop(0, 'rgba(0,0,0,0)'); sh.addColorStop(0.55, 'rgba(0,0,0,.05)'); sh.addColorStop(1, 'rgba(0,0,10,.72)');
+    ctx.fillStyle = sh; ctx.fillRect(x - r * 1.5, y - r * 1.5, r * 3, r * 3);
+    ctx.restore();
+    if (kind === 'earth' || kind === 'neptune' || kind === 'uranus' || kind === 'venus') {
+      ctx.save(); ctx.globalCompositeOperation = 'lighter';
+      var at = ctx.createRadialGradient(x, y, r * 0.92, x, y, r * 1.18);
+      at.addColorStop(0, kind === 'venus' ? 'rgba(255,220,150,.25)' : 'rgba(120,190,255,.35)'); at.addColorStop(1, 'rgba(120,190,255,0)');
+      ctx.fillStyle = at; ctx.beginPath(); ctx.arc(x, y, r * 1.18, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+    }
+    if (kind === 'saturn' && opt.ring !== false) ringS(ctx, x, y, r, false);
+    if (kind === 'uranus' && opt.ring !== false) { ctx.save(); ctx.strokeStyle = 'rgba(200,240,250,.35)'; ctx.lineWidth = Math.max(1, r * 0.06); ctx.beginPath(); ctx.ellipse(x, y, r * 0.5, r * 1.6, 0.2, 0, Math.PI * 2); ctx.stroke(); ctx.restore(); }
+  }
+  function ringS(ctx, x, y, r, back) {
+    ctx.save(); ctx.beginPath();
+    if (back) ctx.rect(x - r * 3, y - r * 3, r * 6, r * 3); else ctx.rect(x - r * 3, y, r * 6, r * 3);
+    ctx.clip();
+    [[2.25, 0.16, 'rgba(240,220,170,.75)'], [1.85, 0.2, 'rgba(210,180,120,.6)'], [1.5, 0.1, 'rgba(240,225,190,.45)']].forEach(function (b) {
+      ctx.strokeStyle = b[2]; ctx.lineWidth = r * b[1]; ctx.beginPath(); ctx.ellipse(x, y, r * b[0], r * b[0] * 0.3, -0.12, 0, Math.PI * 2); ctx.stroke();
+    });
+    ctx.restore();
+  }
+  /* 혜성 꼬리 (태양 반대쪽) */
+  function tail(ctx, x, y, r, ang, len) {
+    ctx.save(); ctx.globalCompositeOperation = 'lighter';
+    var ex = x + Math.cos(ang) * len, ey = y + Math.sin(ang) * len, g = ctx.createLinearGradient(x, y, ex, ey);
+    g.addColorStop(0, 'rgba(190,225,255,.55)'); g.addColorStop(1, 'rgba(190,225,255,0)');
+    ctx.fillStyle = g; ctx.beginPath(); var nx = -Math.sin(ang), ny = Math.cos(ang);
+    ctx.moveTo(x + nx * r, y + ny * r); ctx.quadraticCurveTo(ex + nx * len * 0.15, ey + ny * len * 0.15, ex + nx * len * 0.22, ey + ny * len * 0.22);
+    ctx.lineTo(ex - nx * len * 0.12, ey - ny * len * 0.12); ctx.quadraticCurveTo(ex - nx * len * 0.05, ey - ny * len * 0.05, x - nx * r, y - ny * r); ctx.closePath(); ctx.fill();
+    glow(ctx, x, y, r * 3.5, [200, 230, 255], 0.7); ctx.restore();
+  }
+
+  /* 탐사선 그림 (kind: dish 보이저형 / wing 태양 전지판형 / shield 파커형 / lander 착륙선) s: 크기 기준, ang: 기울기 */
+  function probe(ctx, x, y, s, ang, kind) {
+    ctx.save(); ctx.translate(x, y); ctx.rotate(ang || 0); ctx.lineJoin = 'round';
+    var gold = ctx.createLinearGradient(-s, -s, s, s); gold.addColorStop(0, '#ffe7a3'); gold.addColorStop(0.5, '#d7a43c'); gold.addColorStop(1, '#8a6018');
+    var pan = ctx.createLinearGradient(0, -s, 0, s); pan.addColorStop(0, '#3d6fd6'); pan.addColorStop(1, '#16306e');
+    function panel(px, py, pw, ph) {
+      ctx.fillStyle = pan; ctx.fillRect(px, py, pw, ph); ctx.strokeStyle = 'rgba(180,210,255,.55)'; ctx.lineWidth = Math.max(0.6, s * 0.04);
+      for (var i = 1; i < 4; i++) { ctx.beginPath(); ctx.moveTo(px + pw * i / 4, py); ctx.lineTo(px + pw * i / 4, py + ph); ctx.stroke(); }
+      ctx.beginPath(); ctx.moveTo(px, py + ph / 2); ctx.lineTo(px + pw, py + ph / 2); ctx.stroke();
+    }
+    if (kind === 'shield') {
+      ctx.fillStyle = '#e9e3d6'; ctx.beginPath(); ctx.ellipse(-s * 0.55, 0, s * 0.18, s * 0.95, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#7b7468'; ctx.beginPath(); ctx.ellipse(-s * 0.45, 0, s * 0.1, s * 0.85, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = gold; ctx.fillRect(-s * 0.35, -s * 0.32, s * 0.75, s * 0.64);
+      panel(-s * 0.2, s * 0.32, s * 0.4, s * 0.45); panel(-s * 0.2, -s * 0.77, s * 0.4, s * 0.45);
+      ctx.strokeStyle = '#ddd'; ctx.lineWidth = Math.max(1, s * 0.05); ctx.beginPath(); ctx.moveTo(s * 0.4, 0); ctx.lineTo(s * 0.9, 0); ctx.stroke();
+    } else if (kind === 'dish') {
+      ctx.strokeStyle = '#cfd6e0'; ctx.lineWidth = Math.max(1, s * 0.05);
+      ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(s * 1.4, s * 0.35); ctx.moveTo(0, 0); ctx.lineTo(-s * 1.1, -s * 0.5); ctx.stroke();
+      ctx.fillStyle = gold; ctx.beginPath(); ctx.moveTo(-s * 0.3, s * 0.15); ctx.lineTo(0, -s * 0.12); ctx.lineTo(s * 0.32, s * 0.15); ctx.lineTo(0, s * 0.42); ctx.closePath(); ctx.fill();
+      var dg = ctx.createLinearGradient(-s, -s, s, 0); dg.addColorStop(0, '#ffffff'); dg.addColorStop(1, '#9aa6b5');
+      ctx.fillStyle = dg; ctx.beginPath(); ctx.ellipse(0, -s * 0.3, s * 0.85, s * 0.28, 0, Math.PI, 0); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = '#7d8896'; ctx.lineWidth = Math.max(0.6, s * 0.03); ctx.stroke();
+      ctx.fillStyle = '#e8edf3'; ctx.beginPath(); ctx.arc(0, -s * 0.62, s * 0.08, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#555'; ctx.beginPath(); ctx.arc(-s * 1.1, -s * 0.5, s * 0.1, 0, Math.PI * 2); ctx.fill();
+    } else if (kind === 'lander') {
+      ctx.strokeStyle = '#c9ced6'; ctx.lineWidth = Math.max(1, s * 0.07);
+      ctx.beginPath(); ctx.moveTo(-s * 0.4, s * 0.2); ctx.lineTo(-s * 0.75, s * 0.7); ctx.moveTo(s * 0.4, s * 0.2); ctx.lineTo(s * 0.75, s * 0.7); ctx.moveTo(0, s * 0.3); ctx.lineTo(0, s * 0.72); ctx.stroke();
+      ctx.fillStyle = gold; ctx.fillRect(-s * 0.5, -s * 0.35, s, s * 0.65);
+      panel(-s * 0.45, -s * 0.7, s * 0.9, s * 0.3);
+    } else {
+      panel(-s * 1.35, -s * 0.22, s * 0.9, s * 0.44); panel(s * 0.45, -s * 0.22, s * 0.9, s * 0.44);
+      ctx.strokeStyle = '#aeb6c2'; ctx.lineWidth = Math.max(0.8, s * 0.05); ctx.beginPath(); ctx.moveTo(-s * 0.45, 0); ctx.lineTo(s * 0.45, 0); ctx.stroke();
+      ctx.fillStyle = gold; ctx.fillRect(-s * 0.38, -s * 0.38, s * 0.76, s * 0.76);
+      ctx.fillStyle = '#e8edf3'; ctx.beginPath(); ctx.ellipse(0, -s * 0.5, s * 0.3, s * 0.1, 0, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function tag(ctx, text, x, y, opt) {
+    opt = opt || {};
+    ctx.save(); ctx.font = (opt.weight || 800) + ' ' + (opt.size || 14) + 'px Pretendard, sans-serif'; ctx.textBaseline = 'middle';
+    var tw = ctx.measureText(text).width, pw = opt.pad == null ? 8 : opt.pad, ph = (opt.size || 14) * 0.95;
+    var al = opt.align || 'center', x0 = al === 'center' ? x - tw / 2 - pw : al === 'left' ? x : x - tw - pw * 2;
+    if (opt.bg !== 'none') { ctx.fillStyle = opt.bg || 'rgba(8,14,32,.8)'; ctx.beginPath(); ctx.roundRect(x0, y - ph, tw + pw * 2, ph * 2, ph); ctx.fill(); }
+    if (opt.border) { ctx.strokeStyle = opt.border; ctx.lineWidth = 1.5; ctx.stroke(); }
+    ctx.fillStyle = opt.color || '#eef2fc'; ctx.textAlign = 'left'; ctx.fillText(text, x0 + pw, y + 0.5); ctx.restore();
+    return tw + pw * 2;
+  }
+  function arrow(ctx, x1, y1, x2, y2, col, lw, head) {
+    ctx.save(); ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = lw || 2; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+    var a = Math.atan2(y2 - y1, x2 - x1), H = head || 9;
+    ctx.beginPath(); ctx.moveTo(x2 + Math.cos(a) * 2, y2 + Math.sin(a) * 2); ctx.lineTo(x2 - H * Math.cos(a - 0.45), y2 - H * Math.sin(a - 0.45)); ctx.lineTo(x2 - H * Math.cos(a + 0.45), y2 - H * Math.sin(a + 0.45)); ctx.closePath(); ctx.fill(); ctx.restore();
+  }
+  /* 점선 길 + 길을 따라 흐르는 빛 */
+  function path(ctx, pts, col, lw, dash, prog) {
+    ctx.save(); ctx.strokeStyle = col; ctx.lineWidth = lw || 2; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    if (dash) ctx.setLineDash(dash);
+    var n = prog == null ? pts.length : Math.max(1, Math.floor(pts.length * clamp(prog, 0, 1)));
+    ctx.beginPath(); for (var i = 0; i < n; i++) { if (i === 0) ctx.moveTo(pts[i][0], pts[i][1]); else ctx.lineTo(pts[i][0], pts[i][1]); } ctx.stroke(); ctx.restore();
+  }
+  return { rng: rng, clamp: clamp, sstep: sstep, lerp: lerp, REDUCE: REDUCE, fit: fit, visible: visible, add: add, glow: glow, space: space, sun: sun, planet: planet, tail: tail, probe: probe, tag: tag, arrow: arrow, path: path };
+})();
+</script>
+<script>
+/* ===== 선생님이 고치기 쉬운 데이터: 인류의 우주 탐사 성과 =====
+   book: 교과서(그림 Ⅷ-11, 296쪽) 문장 / facts: 공식 자료로 확인한 이야기(출처는 docs/reports/우주 탐사 수업 리서치.md)
+   year: 지도에 나타나는 해(도착·착륙·충돌한 해), at: 지도에서 붙는 천체, lab: 실험실 탭 이름 */
+window.MISSIONS = [
+  { id: 'parker', name: '파커 태양 탐사선', who: '미국 NASA', year: 2018, launch: '2018년 발사', at: 'sun', cat: '태양', probe: 'shield',
+    book: '태양에 접근하여 태양 코로나를 관측하고 있어요.',
+    hook: '앞은 약 1,000°C, 뒤는 약 29°C',
+    facts: ['2024년 12월 24일, 태양 표면에서 약 610만 km까지 다가갔어요. 사람이 만든 물체 가운데 태양에 가장 가까이 간 기록이에요.',
+      '그때의 빠르기는 약 시속 69만 km였어요. 서울에서 부산까지 약 2초면 가는 빠르기예요.',
+      '태양 쪽을 막는 열 차폐막의 앞쪽은 약 1,000°C까지 달아오르지만, 그 뒤에 숨은 장비는 약 29°C로 지내요.'],
+    nums: [['가장 가까이', '약 610만 km'], ['가장 빠를 때', '시속 약 69만 km'], ['차폐막 뒤 장비', '약 29°C']], lab: 'parker' },
+  { id: 'solo', name: '태양 궤도선', who: '유럽 ESA·미국 NASA', year: 2020, launch: '2020년 발사', at: 'sunpole', cat: '태양', probe: 'wing',
+    book: '태양의 극지방을 관측하고 있어요.',
+    hook: '태양의 꼭대기를 처음 보다',
+    facts: ['2025년, 인류가 처음으로 태양의 극지방을 촬영했어요. 그전의 태양 사진은 모두 태양의 적도 쪽에서 찍은 것이었어요.',
+      '태양 표면에서 아주 작은 폭발 수백만 개를 찾아내 ‘캠프파이어’라는 별명을 붙였어요.'],
+    nums: [['처음 찍은 곳', '태양의 극지방'], ['극 사진', '2025년']] },
+  { id: 'apollo', name: '아폴로 계획', who: '미국 NASA', year: 1969, launch: '1968~1972년', at: 'moon', cat: '달', probe: 'lander',
+    book: '총 11차례 유인 우주선을 달에 발사하였고, 이 중 6번 인간이 달에 착륙했어요.',
+    hook: '12명이 달 위를 걸었다',
+    facts: ['11번의 유인 비행 가운데 2번은 지구 둘레에서 시험했고, 9번이 달까지 갔어요. 그중 6번 달에 착륙했어요.',
+      '1969년부터 1972년까지 모두 12명이 달 위를 걸었어요.',
+      '달의 암석과 흙 382 kg을 지구로 가져와 지금도 연구하고 있어요.'],
+    nums: [['달에 착륙', '6번'], ['달을 걸은 사람', '12명'], ['가져온 암석·흙', '382 kg']] },
+  { id: 'artemis', name: '아르테미스 계획', who: '미국 NASA와 여러 나라', year: 2022, launch: '2022년부터', at: 'moon', cat: '달', probe: 'wing',
+    book: '새로운 유인 달 탐사 계획이에요. 우리나라를 비롯해 세계 각국이 참여하고 있어요.',
+    hook: '사람이 다시 달로',
+    facts: ['2026년 4월, 아르테미스 Ⅱ의 우주 비행사 4명이 달 뒤편을 돌아 지구로 돌아왔어요. 1972년 이후 처음으로 사람이 달까지 간 비행이에요.',
+      '이 비행에서 사람이 지구에서 가장 멀리 간 기록(약 40만 6천 km)을 세웠어요.',
+      '우리나라는 2021년 5월 아르테미스 약정에 10번째로 서명했어요.'],
+    nums: [['유인 비행', '2026년 4월'], ['우리나라 서명', '2021년 · 10번째']] },
+  { id: 'danuri', name: '다누리', who: '우리나라', year: 2022, launch: '2022년 8월 5일 발사', at: 'moon', cat: '달', probe: 'wing', korea: true,
+    book: '우리나라의 달 탐사선으로 달 주위를 돌고 있으며, 달-지구 간 인터넷 통신에 성공했어요.',
+    hook: '연료를 아끼려 멀리 돌아간 길',
+    facts: ['곧장 가면 며칠이면 되는 달까지, 태양 쪽으로 멀리 돌아가는 길(탄도형 달 전이 궤적)을 골라 145일 동안 날아갔어요. 연료를 아끼기 위해서예요.',
+      '달로 가는 길에 BTS의 노래 영상 파일을 지구로 보내는 우주 인터넷 시험을 했어요.',
+      '아낀 연료 덕분에 임무가 2027년 12월까지 늘어났어요.'],
+    nums: [['달 궤도 도착', '2022년 12월 27일'], ['걸린 날', '145일'], ['임무', '2027년 12월까지']], lab: 'danuri' },
+  { id: 'voyager2', name: '보이저 2호', who: '미국 NASA', year: 1977, launch: '1977년 발사', at: 'voyager', cat: '바깥 행성', probe: 'dish',
+    book: '1977년 발사되어 목성과 토성, 천왕성과 해왕성을 지나며 행성과 위성을 탐사했어요. 현재 태양계를 벗어나 있어요.',
+    hook: '천왕성·해왕성을 본 유일한 탐사선',
+    facts: ['보이저 1호보다 16일 먼저 발사되었어요.',
+      '지금까지 천왕성(1986년)과 해왕성(1989년)을 가까이 지나간 탐사선은 보이저 2호뿐이에요.',
+      '외계 생명체를 만날 때를 대비해 55개 언어의 인사말을 담은 금빛 레코드를 싣고 있어요. 한국어 인사도 들어 있어요.',
+      '전기가 해마다 줄어들어, 장비를 하나씩 끄면서 지금도 지구로 신호를 보내고 있어요.'],
+    nums: [['천왕성', '1986년'], ['해왕성', '1989년'], ['태양권 밖으로', '2018년 말']] },
+  { id: 'rosetta', name: '로제타 탐사선 · 필레', who: '유럽 ESA', year: 2014, launch: '2004년 발사 · 2014년 도착', at: 'comet', cat: '혜성·소행성', probe: 'wing',
+    book: '혜성에 탐사 로봇 필레를 착륙시켜 혜성 표면을 직접 탐사했어요.',
+    hook: '튕겨 나가 잃어버렸다가 다시 찾다',
+    facts: ['2014년 11월 12일, 필레는 혜성에 닿았지만 몸을 붙잡아 줄 작살이 작동하지 않아 약 1 km 높이로 튕겨 올랐어요.',
+      '약 2시간을 더 날아 그늘진 틈에 멈췄고, 2016년 9월 로제타가 찍은 사진에서 다시 발견됐어요.',
+      '로제타는 2016년 9월 30일 혜성 표면에 천천히 내려앉으며 임무를 마쳤어요.'],
+    nums: [['필레 착륙', '2014년 11월'], ['다시 찾음', '2016년 9월']] },
+  { id: 'deepimpact', name: '딥 임팩트호', who: '미국 NASA', year: 2005, launch: '2005년', at: 'comet', cat: '혜성·소행성', probe: 'wing',
+    book: '혜성에 충돌체를 떨어뜨려 혜성의 구성 물질을 조사했어요.',
+    hook: '일부러 혜성에 부딪치다',
+    facts: ['2005년 7월 4일, 약 370 kg의 충돌체를 템펠 1 혜성에 일부러 부딪쳤어요.',
+      '부딪칠 때 튀어나온 먼지와 얼음을 관측해 혜성 속이 무엇으로 되어 있는지 알아봤어요.'],
+    nums: [['충돌', '2005년 7월 4일'], ['충돌체', '약 370 kg']] },
+  { id: 'dart', name: '다트 탐사선', who: '미국 NASA', year: 2022, launch: '2021년 발사 · 2022년 충돌', at: 'asteroid', cat: '혜성·소행성', probe: 'wing',
+    book: '2022년 소행성과 충돌하여 소행성의 궤도를 바꾸었어요. 소행성 충돌과 같은 우주 위험에 대응할 수 있는 가능성을 보여 주었어요.',
+    hook: '소행성의 길을 바꾼 첫 실험',
+    facts: ['2022년 9월 26일, 작은 소행성 디모르포스에 부딪쳤어요. 디모르포스는 큰 소행성 디디모스의 둘레를 돌아요.',
+      '한 바퀴 도는 데 11시간 55분 걸리던 디모르포스가 충돌 뒤 약 33분 빨리 돌게 됐어요. 목표(73초)보다 훨씬 큰 변화예요.',
+      '유럽의 헤라 탐사선이 2026년 11월 도착해 충돌 자국을 살펴볼 예정이에요.'],
+    nums: [['충돌', '2022년 9월 26일'], ['한 바퀴 시간', '약 33분 줄어듦']], lab: 'dart' },
+  { id: 'curiosity', name: '큐리오시티', who: '미국 NASA', year: 2012, launch: '2012년 화성 착륙', at: 'mars', cat: '화성·목성·토성', probe: 'lander',
+    book: '화성에 착륙한 탐사차예요. 이름은 ‘호기심’이라는 뜻이에요.',
+    hook: '공중에서 줄로 내려놓은 탐사차',
+    facts: ['너무 무거워 에어백으로 내릴 수 없어서, 로켓을 단 ‘하늘 기중기’가 약 18 m 높이에 떠서 줄 3개로 탐사차를 내려놓았어요.',
+      '화성에는 여러 탐사선이 궤도를 돌거나 착륙했고, 탐사차가 표면을 돌아다니며 탐사하고 있어요.',
+      '센서로 장애물을 알아보고 스스로 길을 찾는 화성 탐사차의 기술은 자율 주행 자동차에도 쓰였어요.'],
+    nums: [['착륙', '2012년 8월'], ['내려놓은 높이', '약 18 m']] },
+  { id: 'juno', name: '주노', who: '미국 NASA', year: 2016, launch: '2011년 발사 · 2016년 도착', at: 'jupiter', cat: '화성·목성·토성', probe: 'wing',
+    book: '목성 탐사선이에요.',
+    hook: '레고 인형 셋을 태운 목성 탐사선',
+    facts: ['2016년부터 목성 둘레를 돌며 두꺼운 구름 아래와 극지방을 탐사했어요.',
+      '갈릴레이와 신화 속 유피테르, 유노 모습의 레고 인형 3개를 싣고 갔어요. 우주 비행을 견디도록 알루미늄으로 만들었어요.'],
+    nums: [['목성 도착', '2016년']] },
+  { id: 'cassini', name: '카시니-하위헌스', who: '미국 NASA·유럽 ESA', year: 2004, launch: '1997년 발사 · 2004년 도착', at: 'saturn', cat: '화성·목성·토성', probe: 'dish',
+    book: '토성 탐사선이에요.',
+    hook: '위성을 지키려 스스로 토성에 뛰어들다',
+    facts: ['함께 간 하위헌스는 토성의 위성 타이탄에 내려앉았어요. 태양계 바깥쪽 천체에 처음으로 착륙한 탐사선이에요.',
+      '카시니는 연료가 떨어지자 2017년 일부러 토성 대기로 뛰어들었어요. 생명이 살 만한 환경이 있을지 모르는 위성들을 지구의 미생물로 오염시키지 않으려는 결정이었어요.'],
+    nums: [['토성 도착', '2004년'], ['임무 끝', '2017년']] }
+];
+</script>
+<script>
+window.SM = window.SM || {};
+(() => {
+  'use strict';
+  try {
+    const S = window.SX, M = window.MISSIONS, $ = (s) => document.querySelector(s);
+    const cv = $('#cv');
+    const TILT = 0.42, deg = Math.PI / 180, R = (au) => 50 + 100 * Math.sqrt(au);
+    /* 행성: au(태양에서 거리, 천문단위), a(지도에서 놓인 각도), s(그림 크기) */
+    const PL = [
+      { id: 'mercury', n: '수성', au: 0.39, a: 150, s: 3.2 }, { id: 'venus', n: '금성', au: 0.72, a: 222, s: 5 },
+      { id: 'earth', n: '지구', au: 1, a: -38, s: 5.6 }, { id: 'mars', n: '화성', au: 1.52, a: 104, s: 4.2 },
+      { id: 'jupiter', n: '목성', au: 5.2, a: -16, s: 13 }, { id: 'saturn', n: '토성', au: 9.5, a: 7, s: 11 },
+      { id: 'uranus', n: '천왕성', au: 19.2, a: 27, s: 8 }, { id: 'neptune', n: '해왕성', au: 30, a: 44, s: 8 }
+    ];
+    PL.forEach((p) => { p.x = Math.cos(p.a * deg) * R(p.au); p.y = Math.sin(p.a * deg) * R(p.au); });
+    const P = {}; PL.forEach((p) => (P[p.id] = p));
+    const AST = { x: Math.cos(62 * deg) * R(1.25), y: Math.sin(62 * deg) * R(1.25) };
+    const COM = { x: Math.cos(212 * deg) * R(2.3), y: Math.sin(212 * deg) * R(2.3) };
+    /* 보이저 2호의 길: 지구(1977) → 목성(1979) → 토성(1981) → 천왕성(1986) → 해왕성(1989) → 바깥 */
+    const VK = [[1977.6, P.earth], [1979.5, P.jupiter], [1981.65, P.saturn], [1986.07, P.uranus], [1989.65, P.neptune], [2026, { x: Math.cos(58 * deg) * 760, y: Math.sin(58 * deg) * 760 }]];
+    const cr = (p0, p1, p2, p3, t) => { const t2 = t * t, t3 = t2 * t; return 0.5 * (2 * p1 + (-p0 + p2) * t + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t2 + (-p0 + 3 * p1 - 3 * p2 + p3) * t3); };
+    const VP = []; /* [x, y, 연도] */
+    for (let i = 0; i < VK.length - 1; i++) {
+      const a = VK[Math.max(0, i - 1)][1], b = VK[i][1], c = VK[i + 1][1], d = VK[Math.min(VK.length - 1, i + 2)][1];
+      for (let k = 0; k < 24; k++) { const t = k / 24; VP.push([cr(a.x, b.x, c.x, d.x, t), cr(a.y, b.y, c.y, d.y, t), VK[i][0] + (VK[i + 1][0] - VK[i][0]) * t]); }
+    }
+    VP.push([VK[VK.length - 1][1].x, VK[VK.length - 1][1].y, 2026]);
+
+    const GROUPS = [
+      { id: 'sun', n: '태양 탐사', ids: ['parker', 'solo'], z: 3.4 },
+      { id: 'moon', n: '달 탐사', ids: ['apollo', 'artemis', 'danuri'], z: 15 },
+      { id: 'mars', n: '화성 탐사', ids: ['curiosity'], z: 9 },
+      { id: 'asteroid', n: '소행성 탐사', ids: ['dart'], z: 10 },
+      { id: 'comet', n: '혜성 탐사', ids: ['rosetta', 'deepimpact'], z: 7 },
+      { id: 'jupiter', n: '목성 탐사', ids: ['juno'], z: 4.5 },
+      { id: 'saturn', n: '토성 탐사', ids: ['cassini'], z: 4.5 },
+      { id: 'voyager', n: '천왕성·해왕성 탐사', ids: ['voyager2'], z: 1 }
+    ];
+    const byId = {}; M.forEach((m) => (byId[m.id] = m));
+    let year = 2026, selG = null, selM = null, playing = false, playT0 = 0;
+    const cam = { x: 0, y: 0, z: 1 }, camT = { x: 0, y: 0, z: 1 };
+    const moonOf = (t) => { const a = t / 9000; return { x: P.earth.x + Math.cos(a) * 15, y: P.earth.y + Math.sin(a) * 15 }; };
+    function anchor(g, t) {
+      if (g === 'sun') return { x: 0, y: 0 };
+      if (g === 'moon') return moonOf(t);
+      if (g === 'asteroid') return AST;
+      if (g === 'comet') return COM;
+      if (g === 'voyager') return { x: 300, y: 120 };
+      return P[g];
+    }
+    function vpos(y) {
+      if (y < VP[0][2]) return null;
+      for (let i = 1; i < VP.length; i++) if (VP[i][2] >= y) { const a = VP[i - 1], b = VP[i], k = (y - a[2]) / Math.max(1e-6, b[2] - a[2]); return { x: a[0] + (b[0] - a[0]) * k, y: a[1] + (b[1] - a[1]) * k, i }; }
+      const L = VP[VP.length - 1]; return { x: L[0], y: L[1], i: VP.length - 1 };
+    }
+    const shown = (m) => m.year <= year;
+    let view = null; /* 화면 변환 */
+    function setView(w, h) {
+      const port = h > w * 0.75, base = port ? Math.min(w / 1250, h / 900) * 1.05 : Math.min(w * 0.68 / 600, h * 0.9 / (2 * 600 * TILT + 60));
+      const ox = port ? w * 0.5 : w * 0.3;
+      view = { w, h, base, ox, oy: h * 0.5 };
+    }
+    /* 전체 보기에서는 태양이 왼쪽(0.3)에 오도록, 확대하면 고른 곳이 가운데로 */
+    function toS(x, y, z) {
+      const s = view.base * cam.z, cx = S.lerp(view.ox, view.w / 2, Math.min(1, (cam.z - 1) / 1.2));
+      return [cx + (x - cam.x) * s, view.oy + ((y - cam.y) * TILT - (z || 0)) * s, s];
+    }
+    /* 천체 그림 크기: 확대할수록 덜 커지게(거리보다 천천히) */
+    const bs = () => view.base * Math.pow(cam.z, 0.6);
+    const pr = (id) => id === 'sun' ? 30 * bs() : id === 'moon' ? pr('earth') * 0.34 : id === 'asteroid' ? 4.2 * bs() * 1.4 : id === 'comet' ? 3.6 * bs() * 1.4 : P[id].s * bs() * 1.5;
+    function focus(gid) {
+      selG = gid; const g = GROUPS.find((x) => x.id === gid);
+      if (!g || g.z === 1) { camT.x = 0; camT.y = 0; camT.z = 1; }
+      else { const a = anchor(gid, performance.now()); camT.x = a.x; camT.y = a.y; camT.z = g.z; }
+    }
+    let hits = [];
+    function draw(t) {
+      const { c, w, h } = S.fit(cv);
+      if (!view || view.w !== w || view.h !== h) setView(w, h);
+      if (playing) { const e = (t - playT0) / 14000; year = Math.min(2026, Math.round(1957 + e * 69)); syncYear(); if (year >= 2026) { playing = false; $('#play').textContent = '1957년부터 재생'; } }
+      const k = S.REDUCE ? 1 : 0.08; cam.x += (camT.x - cam.x) * k; cam.y += (camT.y - cam.y) * k; cam.z += (camT.z - cam.z) * k;
+      if (selG === 'moon') { const a = moonOf(t); camT.x = a.x; camT.y = a.y; }
+      S.space(c, w, h, 11);
+      hits = [];
+      const fs = Math.max(12, Math.min(15, w / 60));
+      /* 궤도 */
+      c.save(); c.lineWidth = 1;
+      PL.forEach((p) => { const [x0, y0, s] = toS(0, 0); c.strokeStyle = p.id === 'earth' ? 'rgba(120,180,255,.45)' : 'rgba(170,190,230,.22)'; c.beginPath(); c.ellipse(x0, y0, R(p.au) * s, R(p.au) * s * TILT, 0, 0, Math.PI * 2); c.stroke(); });
+      { const [x0, y0, s] = toS(0, 0); c.setLineDash([3, 6]); c.strokeStyle = 'rgba(200,190,170,.18)'; c.lineWidth = 6 * view.base; c.beginPath(); c.ellipse(x0, y0, R(2.8) * s, R(2.8) * s * TILT, 0, 0, Math.PI * 2); c.stroke(); c.setLineDash([]); }
+      /* 혜성 궤도 */
+      { const [x0, y0, s] = toS(-130, 10); c.strokeStyle = 'rgba(190,225,255,.22)'; c.setLineDash([5, 5]); c.lineWidth = 1; c.beginPath(); c.ellipse(x0, y0, 205 * s, 205 * s * TILT * 0.6, 0.05, 0, Math.PI * 2); c.stroke(); c.setLineDash([]); }
+      c.restore();
+      /* 태양 */
+      { const [x, y] = toS(0, 0); S.sun(c, x, y, pr('sun'), t); }
+      /* 보이저 2호의 길 */
+      const vp = vpos(year);
+      if (vp) {
+        const pts = VP.slice(0, vp.i).map((p) => toS(p[0], p[1])).concat([toS(vp.x, vp.y)]);
+        c.save(); c.shadowColor = 'rgba(255,200,90,.7)'; c.shadowBlur = 8; S.path(c, pts, 'rgba(255,205,110,.85)', 2.2, [7, 6]); c.restore();
+      }
+      /* 행성 */
+      const order = PL.slice().sort((a, b) => a.y - b.y);
+      order.forEach((p) => {
+        const [x, y] = toS(p.x, p.y), r = Math.max(2.4, pr(p.id)), L = Math.hypot(p.x, p.y) || 1;
+        S.planet(c, x, y, r, p.id, { lx: -p.x / L, ly: -p.y / L * TILT, t });
+        if (p.id === 'earth') { const mo = moonOf(t), [mx, my] = toS(mo.x, mo.y); S.planet(c, mx, my, Math.max(1.6, pr('moon')), 'moon', { lx: -p.x / L, ly: -p.y / L }); }
+        if (cam.z < 2.2 || ['earth', 'mars', 'jupiter', 'saturn'].includes(p.id)) S.tag(c, p.n, x, y + r + fs * 0.95, { size: fs - 2, bg: 'none', color: 'rgba(214,224,245,.85)', weight: 700 });
+      });
+      /* 소행성, 혜성 */
+      { const [x, y] = toS(AST.x, AST.y), r = Math.max(2.4, pr('asteroid')); S.planet(c, x, y, r, 'asteroid', { seed: 3 });
+        const a = t / 1600, [mx, my] = [x + Math.cos(a) * r * 2.6, y + Math.sin(a) * r * 2.6 * 0.6]; S.planet(c, mx, my, Math.max(1.2, r * 0.38), 'asteroid', { seed: 8 });
+        if (cam.z > 3) { S.tag(c, '디디모스', x, y + r + fs, { size: fs - 3, bg: 'none', color: '#d6c8b4' }); S.tag(c, '디모르포스', mx + r * 1.6, my - r * 0.8, { size: fs - 4, bg: 'none', color: '#d6c8b4', align: 'left' }); } }
+      { const [x, y] = toS(COM.x, COM.y), r = Math.max(2.4, pr('comet')); S.tail(c, x, y, r, Math.atan2(COM.y * TILT, COM.x), r * 16); S.planet(c, x, y, r, 'comet', { seed: 21 }); }
+      /* 탐사선(확대했을 때) */
+      if (cam.z > 2) drawProbes(c, t, fs);
+      /* 보이저 2호 */
+      if (vp) { const [x, y] = toS(vp.x, vp.y); S.glow(c, x, y, 18, [255, 210, 120], 0.8); S.probe(c, x, y, 7, -0.4, 'dish'); }
+      /* 그룹 이름표 */
+      GROUPS.forEach((g) => {
+        const ms = g.ids.map((id) => byId[id]), vis = ms.filter(shown).length;
+        let a = anchor(g.id, t); if (g.id === 'voyager') { if (!vp) return; a = vp; }
+        if (g.id === 'sun' && cam.z > 2 && selG === 'sun') return;
+        const [x, y, s] = toS(a.x, a.y); const sel = selG === g.id;
+        if (cam.z > 2) return;
+        const off = { sun: [0, -46], moon: [26, -26], mars: [-10, 30], asteroid: [24, 18], comet: [0, -26], jupiter: [0, -30], saturn: [10, 34], voyager: [0, -24] }[g.id];
+        const zx = cam.z > 2 ? 1.6 : 1, lx = x + off[0] * zx, ly = y + off[1] * zx;
+        c.save(); c.strokeStyle = vis ? 'rgba(255,170,90,.75)' : 'rgba(255,255,255,.18)'; c.lineWidth = 1.2; c.beginPath(); c.moveTo(x, y); c.lineTo(lx, ly); c.stroke(); c.restore();
+        const ph = 0.5 + 0.5 * Math.sin(t / 500 + g.n.length);
+        if (vis) { c.save(); c.strokeStyle = `rgba(255,170,90,${0.35 + ph * 0.4})`; c.lineWidth = 2; c.beginPath(); c.arc(x, y, 9 + ph * 4, 0, Math.PI * 2); c.stroke(); c.restore(); }
+        const label = vis ? `${g.n} ${vis}` : g.n;
+        const tw = S.tag(c, label, lx, ly, { size: fs, bg: vis ? (sel ? '#ff8a3d' : 'rgba(217,98,43,.92)') : 'rgba(40,48,70,.8)', color: vis ? '#fff' : 'rgba(200,210,230,.6)', border: sel ? '#ffd27a' : null });
+        hits.push({ g: g.id, x: lx, y: ly, r: Math.max(26, tw / 2) , h: fs * 1.2 });
+      });
+    }
+    function drawProbes(c, t, fs) {
+      const lab = (m, x, y) => { const sel = selM === m.id; const tw = S.tag(c, m.name, x, y, { size: fs - 1, bg: sel ? '#ffd27a' : 'rgba(8,14,32,.85)', color: sel ? '#2a1a00' : '#fff', border: sel ? null : 'rgba(255,170,90,.6)' }); hits.push({ m: m.id, x, y, r: tw / 2, h: fs * 1.2 }); };
+      const lead = (x1, y1, x2, y2) => { c.save(); c.strokeStyle = 'rgba(255,190,120,.55)'; c.lineWidth = 1.2; c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); c.stroke(); c.restore(); };
+      const each = (ids, fn) => ids.forEach((id, i) => { const m = byId[id]; if (shown(m)) fn(m, i); });
+      const dash = (col, fn) => { c.save(); c.strokeStyle = col; c.setLineDash([4, 5]); c.lineWidth = 1.3; c.beginPath(); fn(); c.stroke(); c.restore(); };
+      if (selG === 'sun') {
+        const [x0, y0] = toS(0, 0), rs = pr('sun');
+        each(['parker', 'solo'], (m) => {
+          if (m.id === 'parker') { const a = t / 2600, A = rs * 1.9, B = A * TILT * 1.3, cx = x0 + rs * 0.55; dash('rgba(255,200,120,.45)', () => c.ellipse(cx, y0, A, B, 0, 0, Math.PI * 2)); const x = cx + Math.cos(a) * A, y = y0 + Math.sin(a) * B; S.probe(c, x, y, 10, Math.atan2(y0 - y, x0 - x) + Math.PI, 'shield'); lab(m, x0 + rs * 1.55, y0 + rs * 1.25); lead(x, y, x0 + rs * 1.55, y0 + rs * 1.25); }
+          else { const a = t / 4000, x = x0 + Math.cos(a) * rs * 0.7, y = y0 - rs * 1.45 + Math.sin(a) * rs * 0.12; dash('rgba(160,200,255,.4)', () => c.ellipse(x0, y0 - rs * 0.4, rs * 0.7, rs * 1.05, 0, 0, Math.PI * 2)); S.probe(c, x, y, 9, 0, 'wing'); S.tag(c, '태양의 극지방', x0, y0 - rs * 1.08, { size: fs - 3, bg: 'rgba(60,30,0,.55)', color: '#ffe0a0' }); lab(m, x0 - rs * 1.4, y0 - rs * 1.5); lead(x, y, x0 - rs * 1.4, y0 - rs * 1.5); }
+        });
+      } else if (selG === 'moon') {
+        const mo = moonOf(t), [mx, my] = toS(mo.x, mo.y), r = pr('moon'), [ex, ey] = toS(P.earth.x, P.earth.y);
+        each(['apollo', 'artemis', 'danuri'], (m) => {
+          if (m.id === 'danuri') { const a = t / 1400; dash('rgba(120,200,255,.6)', () => c.ellipse(mx, my, r * 2, r * 1.1, 0, 0, Math.PI * 2)); const x = mx + Math.cos(a) * r * 2, y = my + Math.sin(a) * r * 1.1; S.probe(c, x, y, 8, 0, 'wing'); lab(m, mx + r * 2.6, my + r * 2.4); lead(x, y, mx + r * 2.6, my + r * 2.4); }
+          else if (m.id === 'apollo') { const x = mx - r * 0.35, y = my - r * 0.95; S.probe(c, x, y, 6, 0, 'lander'); lab(m, mx - r * 1.6, my - r * 2.6); lead(x, y, mx - r * 1.6, my - r * 2.6); }
+          else { const q = (t / 5000) % 1, k = q < 0.5 ? q * 2 : 2 - q * 2, qx = (ex + mx) / 2, qy = Math.min(ey, my) - r * 3.2; dash('rgba(255,255,255,.35)', () => { c.moveTo(ex, ey); c.quadraticCurveTo(qx, qy, mx + r * 1.6, my - r * 0.4); }); const x = (1 - k) * (1 - k) * ex + 2 * (1 - k) * k * qx + k * k * (mx + r * 1.6), y = (1 - k) * (1 - k) * ey + 2 * (1 - k) * k * qy + k * k * (my - r * 0.4); S.probe(c, x, y, 7, 0, 'wing'); lab(m, qx, qy + 4); }
+        });
+        S.tag(c, '달', mx, my + r + fs, { size: fs - 2, bg: 'none', color: '#e6e6e0' });
+      } else if (selG === 'mars') {
+        each(['curiosity'], (m) => { const [x, y] = toS(P.mars.x, P.mars.y), r = pr('mars'); S.probe(c, x + r * 0.2, y - r * 0.95, 6, 0, 'lander'); lab(m, x, y - r * 2.2); lead(x + r * 0.2, y - r, x, y - r * 2.2); });
+      } else if (selG === 'asteroid') {
+        each(['dart'], (m) => { const [x, y] = toS(AST.x, AST.y), r = pr('asteroid'); const a = (t / 3000) % 1, px = x - r * 9 + a * r * 6.4, py = y - r * 3 + a * r * 2.2; if (a < 0.98) S.probe(c, px, py, 8, 0.35, 'wing'); else S.glow(c, x + r * 2.6, y, 30, [255, 230, 180], 0.9); lab(m, x - r * 6, y - r * 3.6); });
+      } else if (selG === 'comet') {
+        const [x, y] = toS(COM.x, COM.y), r = pr('comet');
+        each(['rosetta', 'deepimpact'], (m) => { if (m.id === 'rosetta') { const a = t / 2200, px = x + Math.cos(a) * r * 3, py = y + Math.sin(a) * r * 1.4; S.probe(c, px, py, 8, 0, 'wing'); S.probe(c, x + r * 0.2, y - r * 0.85, 4, 0, 'lander'); lab(m, x - r * 3.5, y - r * 3.2); } else { const px = x + r * 4, py = y + r * 2.4; S.probe(c, px, py, 8, 0, 'wing'); lab(m, px + r * 1.5, py + r * 2); } });
+      } else if (selG === 'jupiter' || selG === 'saturn') {
+        const id = selG === 'jupiter' ? 'juno' : 'cassini', p = P[selG];
+        each([id], (m) => { const [x, y] = toS(p.x, p.y), r = pr(p.id), a = t / 2500, px = x + Math.cos(a) * r * 1.9, py = y + Math.sin(a) * r * 1.9 * 0.45; S.probe(c, px, py, 9, 0, m.probe); lab(m, x, y - r * 2); });
+      }
+    }
+    S.add(cv, draw, (e) => window.SM_err('탐사 지도', e));
+
+    /* 누르기 */
+    cv.addEventListener('pointerdown', (e) => {
+      const r = cv.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+      let best = null, bd = 1e9;
+      hits.forEach((h) => { const dx = Math.max(0, Math.abs(x - h.x) - h.r), dy = Math.max(0, Math.abs(y - h.y) - h.h); const d = Math.hypot(dx, dy); if (d < 18 && d < bd) { bd = d; best = h; } });
+      if (!best) return;
+      if (best.m) pick(best.m); else pickG(best.g);
+    });
+
+    /* 오른쪽 패널 */
+    const groupsEl = $('#groups'), detail = $('#detail');
+    groupsEl.innerHTML = `<button type="button" data-g="" aria-pressed="true">전체</button>` + GROUPS.map((g) => `<button type="button" data-g="${g.id}" aria-pressed="false">${g.n}</button>`).join('');
+    groupsEl.addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; if (b.dataset.g) pickG(b.dataset.g); else home(); });
+    function icon(cvs, m) { const { c, w, h } = S.fit(cvs); S.space(c, w, h, 4, { n: 14 }); S.probe(c, w / 2, h / 2, w * 0.2, -0.2, m.probe); }
+    function list(ids) {
+      detail.innerHTML = `<div class="mlist">${ids.map((id) => { const m = byId[id]; return `<button type="button" class="mb${shown(m) ? '' : ' off'}" data-m="${id}" aria-pressed="${selM === id}"><canvas></canvas><span><b>${m.name}</b><span>${m.year}년 · ${m.hook}</span></span></button>`; }).join('')}</div>`;
+      detail.querySelectorAll('.mb').forEach((b) => { icon(b.querySelector('canvas'), byId[b.dataset.m]); b.addEventListener('click', () => pick(b.dataset.m)); });
+    }
+    function intro() {
+      list(M.map((m) => m.id));
+      detail.insertAdjacentHTML('afterbegin', `<p class="empty" style="margin:0 0 12px">지도 위의 <b>주황 이름표</b>는 탐사선이 간 곳이에요. 이름표를 누르거나 아래 탐사선을 골라 보세요. 연도 막대를 <b>1957년</b>(첫 인공위성 스푸트니크 1호)으로 옮긴 뒤 재생하면 인류의 탐사가 해마다 넓어지는 모습을 볼 수 있어요.</p>`);
+    }
+    function card(m) {
+      const later = !shown(m);
+      detail.innerHTML = `<div class="tt"><h2>${m.name}</h2></div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap"><span class="badge${m.korea ? ' k' : ''}">${m.who}</span><span class="badge">${m.launch}</span><span class="badge">${m.cat}</span></div>
+        ${later ? `<p class="empty" style="margin:10px 0 0">연도 막대를 <b>${m.year}년</b> 이후로 옮기면 지도에 나타나요.</p>` : ''}
+        <div class="bookq"><small>교과서</small>${m.book}</div>
+        <ul class="facts">${m.facts.map((f, i) => `<li><i>${i + 1}</i><span>${f}</span></li>`).join('')}</ul>
+        <div class="nums">${m.nums.map((n) => `<div><small>${n[0]}</small><b>${n[1]}</b></div>`).join('')}</div>
+        ${m.lab ? `<button class="btn primary golab" type="button" id="goLab">탐사선 실험실에서 직접 해 보기</button>` : ''}
+        <button class="btn ghost golab" type="button" id="back">← ${GROUPS.find((g) => g.ids.includes(m.id)).n} 목록</button>`;
+      const gl = $('#goLab'); if (gl) gl.addEventListener('click', () => { const url = 'sim2-lab.html?lab=' + m.lab; try { if (window.parent !== window) { window.parent.postMessage({ type: 'ras-nav', target: 'lab' }, '*'); const f = window.parent.document.querySelector('iframe[data-page="lab"]'); if (f) { if (f.getAttribute('src')) f.contentWindow.postMessage({ type: 'sx-lab', lab: m.lab }, '*'); else f.src = url; } return; } } catch (e) {} location.href = url; });
+      $('#back').addEventListener('click', () => pickG(GROUPS.find((g) => g.ids.includes(m.id)).id));
+    }
+    function syncGroups() { groupsEl.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String((b.dataset.g || null) === selG))); }
+    function pickG(gid) { selM = null; focus(gid); syncGroups(); const g = GROUPS.find((x) => x.id === gid); if (g.ids.length === 1) return pick(g.ids[0]); list(g.ids); $('#hint').textContent = `${g.n}: 탐사선을 골라 보세요`; }
+    function pick(id) { const g = GROUPS.find((x) => x.ids.includes(id)); if (selG !== g.id) focus(g.id); selM = id; syncGroups(); card(byId[id]); $('#hint').textContent = byId[id].name; if (innerWidth < 900) document.getElementById('panel').scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+    function home() { selG = null; selM = null; camT.x = 0; camT.y = 0; camT.z = 1; syncGroups(); intro(); $('#hint').textContent = '이름표를 눌러 보세요'; }
+    $('#home').addEventListener('click', home);
+
+    /* 연도 */
+    const yrR = $('#yrR');
+    function syncYear() { yrR.value = year; $('#yr').innerHTML = `${year}<small>${year === 1957 ? '스푸트니크 1호' : '년까지'}</small>`; }
+    yrR.addEventListener('input', () => { playing = false; $('#play').textContent = '1957년부터 재생'; year = +yrR.value; syncYear(); if (selM) card(byId[selM]); else if (selG) list(GROUPS.find((g) => g.id === selG).ids); else intro(); });
+    $('#play').addEventListener('click', () => { playing = !playing; if (playing) { playT0 = performance.now(); year = 1957; home(); $('#play').textContent = '멈춤'; } else $('#play').textContent = '1957년부터 재생'; });
+    $('#ticks').innerHTML = `<i class="s" style="left:0%" title="1957 스푸트니크 1호"></i>` + M.map((m) => `<i class="${m.korea ? 'k' : ''}" style="left:${(m.year - 1957) / 69 * 100}%" title="${m.year} ${m.name}"></i>`).join('');
+
+    /* 주소로 바로 열기: ?g=moon 또는 ?m=dart, ?year=1990 */
+    const q = new URLSearchParams(location.search);
+    if (q.get('year')) { year = Math.max(1957, Math.min(2026, +q.get('year'))); }
+    syncYear();
+    if (q.get('m') && byId[q.get('m')]) { pick(q.get('m')); cam.x = camT.x; cam.y = camT.y; cam.z = camT.z; }
+    else if (q.get('g')) { pickG(q.get('g')); cam.x = camT.x; cam.y = camT.y; cam.z = camT.z; }
+    else home();
+    window.SM.okUI = true;
+  } catch (err) { window.SM_err('탐사 지도', err); }
+})();
+</script>
+</body>
+</html>
