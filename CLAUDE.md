@@ -54,4 +54,5 @@
 ## 작업 방식
 - 새 수업 요청이 오면 `lesson-web` 스킬의 절차를 따른다.
 - 작업은 `claude/`로 시작하는 브랜치에서 하고, 끝나면 PR을 만든다. PR 설명에 페이지 목록, 사용한 기준 문서, 교육과정 대조 결과(초과·미확인 항목)를 적는다.
+- **게시는 자동으로 한다** (선생님 요청 2026-10-11): 작업과 화면 검사가 끝나면 묻지 말고 `main`에 병합·푸시하고, 실제 주소에서 열리는지 확인한다. 순서: `git checkout main` → `git pull --ff-only origin main` → `git merge --no-ff claude/<이름>` → `git push origin main`. 이 네 명령은 `.claude/settings.local.json`에 허용 규칙이 있다. `gh`가 없어서 PR은 만들지 않아도 되고, 변경 내용(페이지·기준 문서·대조 결과)은 병합 커밋 메시지와 최종 보고에 적는다.
 - `main`에 병합되면 GitHub Pages에 1~2분 뒤 반영된다. 주소: https://isaaclee9903-lang.github.io/seongan-science/
