@@ -145,8 +145,9 @@ window.EI = (function () {
     BANDS.forEach(function (b, i) {
       var y0 = b[0] * h, y1 = (BANDS[i + 1] ? BANDS[i + 1][0] : 1) * h, gr = g.createLinearGradient(0, y0, 0, y1); gr.addColorStop(0, b[1]); gr.addColorStop(1, b[2]);
       g.fillStyle = gr; g.beginPath(); g.moveTo(0, y0);
-      for (var x = 0; x <= w; x += 20) g.lineTo(x, y0 + (i ? Math.sin(x / 70 + i * 2) * h * 0.012 + Math.sin(x / 23 + i) * h * 0.005 : 0));
-      g.lineTo(w, h); g.lineTo(0, h); g.closePath(); g.fill();
+      var wy = function (x) { return y0 + (i ? Math.sin(x / 70 + i * 2) * h * 0.012 + Math.sin(x / 23 + i) * h * 0.005 : 0); };
+      for (var x = 0; x <= w; x += 20) g.lineTo(x, wy(x));
+      g.lineTo(w, wy(w)); g.lineTo(w, h); g.lineTo(0, h); g.closePath(); g.fill();
     });
     for (var i = 0; i < w * h / 90; i++) { var x = r() * w, y = r() * h, s = 0.6 + r() * (y / h) * 2.6; g.fillStyle = 'rgba(' + (r() < 0.5 ? '255,240,220' : '20,10,5') + ',' + (0.05 + r() * 0.12) + ')'; g.beginPath(); g.ellipse(x, y, s * 1.6, s, r() * 3, 0, Math.PI * 2); g.fill(); }
     groundCache[key] = cv; return cv;
@@ -177,27 +178,42 @@ window.EI = (function () {
     c.fillStyle = '#3a3f47'; c.fillRect(x - base * 1.05, gy - s * 0.06, base * 2.1, s * 0.06);
     c.restore();
   }
-  /* 화산 (그림 Ⅱ-2 '화산 분출물 조사하기'): 산, 마그마가 올라오는 길, 흘러내리는 용암 */
+  /* 화산 (그림 Ⅱ-2 '화산 분출물 조사하기'): 단면으로 본 화산 몸체(겹겹이 쌓인 층), 땅속 통로, 경사면의 용암, 연기
+     s: 밑변 반폭, x·gy: 가운데 아래 */
   function volcano(c, x, gy, s, t, glow) {
-    var T = REDUCE ? 0 : t / 1000; c.save();
+    var T = REDUCE ? 0 : t / 1000, H = 0.62, CC = 0.11; glow = glow || 1;
+    var f = function (u) { return u < CC ? 1 - 0.07 * (1 - (u / CC) * (u / CC)) : Math.pow((1 - u) / (1 - CC), 1.35); };
+    var Y = function (xx) { var u = Math.abs(xx); return u < 1 ? gy - H * s * f(u) : gy; };
+    var cone = function (k) { c.beginPath(); c.moveTo(x - s * 1.02, gy + 1); for (var xx = -1; xx <= 1.0001; xx += 0.025) c.lineTo(x + xx * s, gy - (gy - Y(xx)) * k); c.lineTo(x + s * 1.02, gy + 1); c.closePath(); };
+    c.save();
     /* 땅속 통로 */
-    var gp = c.createLinearGradient(0, gy, 0, gy + s * 1.2); gp.addColorStop(0, 'rgba(255,120,40,.95)'); gp.addColorStop(1, 'rgba(255,80,20,.35)');
-    c.fillStyle = gp; c.beginPath(); c.moveTo(x - s * 0.05, gy); c.bezierCurveTo(x - s * 0.08, gy + s * 0.4, x + s * 0.02, gy + s * 0.8, x - s * 0.06, gy + s * 1.2); c.lineTo(x + s * 0.1, gy + s * 1.2); c.bezierCurveTo(x + s * 0.14, gy + s * 0.8, x + s * 0.06, gy + s * 0.4, x + s * 0.05, gy); c.closePath(); c.fill();
-    /* 산 */
-    var gm = c.createLinearGradient(x - s, gy, x + s, gy - s * 0.8); gm.addColorStop(0, '#5e4a3c'); gm.addColorStop(0.55, '#7a6352'); gm.addColorStop(1, '#4a3a30');
-    c.fillStyle = gm; c.beginPath(); c.moveTo(x - s * 1.05, gy); c.quadraticCurveTo(x - s * 0.45, gy - s * 0.35, x - s * 0.14, gy - s * 0.78); c.lineTo(x + s * 0.14, gy - s * 0.78); c.quadraticCurveTo(x + s * 0.45, gy - s * 0.35, x + s * 1.05, gy); c.closePath(); c.fill();
-    /* 용암 줄기 */
-    c.lineCap = 'round';
-    [[-1, 0.0], [1, 0.4], [-0.6, 0.7]].forEach(function (L, k) {
-      var lg = c.createLinearGradient(x, gy - s * 0.78, x + L[0] * s * 0.6, gy - s * 0.1); lg.addColorStop(0, '#fff2a0'); lg.addColorStop(0.35, '#ff9a2a'); lg.addColorStop(1, 'rgba(200,50,20,.7)');
-      c.strokeStyle = lg; c.lineWidth = s * (0.06 - k * 0.012);
-      c.beginPath(); c.moveTo(x + L[0] * s * 0.06, gy - s * 0.77);
-      c.bezierCurveTo(x + L[0] * s * 0.2, gy - s * 0.55, x + L[0] * s * (0.3 + 0.04 * Math.sin(T + k)), gy - s * 0.35, x + L[0] * s * (0.5 + L[1] * 0.2), gy - s * 0.08); c.stroke();
+    var pg = c.createLinearGradient(0, gy - H * s, 0, gy + s * 1.1); pg.addColorStop(0, '#ffe9a0'); pg.addColorStop(0.5, '#ff8a2a'); pg.addColorStop(1, 'rgba(224,80,26,.6)');
+    var conduit = function () { c.beginPath(); c.moveTo(x, gy + s * 1.1); c.bezierCurveTo(x + s * 0.05, gy + s * 0.7, x - s * 0.04, gy + s * 0.3, x, gy); c.lineTo(x, gy - H * s * 0.93); };
+    conduit(); c.strokeStyle = '#3a1a0e'; c.lineWidth = s * 0.09; c.lineCap = 'round'; c.stroke();
+    /* 몸체 */
+    var COLS = ['#5d4a3e', '#7b6556', '#6a5547', '#8a7362', '#5a4639', '#776050'];
+    for (var j = 0; j < 6; j++) { cone(1 - j * 0.15); c.fillStyle = COLS[j]; c.fill(); }
+    c.save(); cone(1); c.clip(); var sh = c.createLinearGradient(x - s, 0, x + s, 0); sh.addColorStop(0, 'rgba(255,240,220,.14)'); sh.addColorStop(0.55, 'rgba(0,0,0,0)'); sh.addColorStop(1, 'rgba(0,0,0,.24)'); c.fillStyle = sh; c.fillRect(x - s, gy - H * s, s * 2, H * s); c.restore();
+    c.strokeStyle = '#3d2f26'; c.lineWidth = 2; cone(1); c.stroke();
+    conduit(); c.strokeStyle = '#3a1a0e'; c.lineWidth = s * 0.09; c.stroke(); conduit(); c.strokeStyle = pg; c.lineWidth = s * 0.055; c.stroke();
+    /* 통로 속 올라가는 빛 */
+    c.globalCompositeOperation = 'lighter';
+    for (var b = 0; b < 6; b++) { var u = (T * 0.25 + b / 6) % 1, yy = gy + s * 1.05 - u * (s * 1.05 + H * s * 0.93), gr = c.createRadialGradient(x, yy, 0, x, yy, s * 0.05); gr.addColorStop(0, 'rgba(255,250,210,.9)'); gr.addColorStop(1, 'rgba(255,170,60,0)'); c.fillStyle = gr; c.beginPath(); c.arc(x, yy, s * 0.05, 0, Math.PI * 2); c.fill(); }
+    c.globalCompositeOperation = 'source-over';
+    /* 경사면의 용암 혀 */
+    [[-1, 0.72], [1, 0.55]].forEach(function (Lf, k) {
+      var d = Lf[0], L = Lf[1], top = [], bot = [];
+      for (var i = 0; i <= 40; i++) { var uu = i / 40, xx = d * (CC * 0.55 + L * uu), fr = uu > 0.86 ? Math.sin((1 - uu) / 0.14 * Math.PI / 2) : 1, th = (0.034 + 0.03 * uu) * fr * (1 + 0.15 * Math.sin(uu * 23 + k * 3 + T)); top.push([x + xx * s, Y(xx) - th * s]); bot.push([x + xx * s, Y(xx) + 1]); }
+      var shape = function () { c.beginPath(); top.forEach(function (p, i) { if (i) c.lineTo(p[0], p[1]); else c.moveTo(p[0], p[1]); }); for (var q = bot.length - 1; q >= 0; q--) c.lineTo(bot[q][0], bot[q][1]); c.closePath(); };
+      var lg = c.createLinearGradient(top[0][0], top[0][1], top[40][0], top[40][1]); lg.addColorStop(0, '#fff2a0'); lg.addColorStop(0.4, '#ff9a2a'); lg.addColorStop(1, '#c43a14');
+      c.save(); c.shadowColor = 'rgba(255,110,30,.9)'; c.shadowBlur = s * 0.08; shape(); c.fillStyle = lg; c.fill(); c.restore();
+      c.save(); shape(); c.clip(); var r = rng(60 + k); for (var m = 0; m < 22; m++) { var i2 = Math.floor(r() * 40), p = top[i2], qq = bot[i2], mm = r(); if (i2 < 14) continue; c.fillStyle = 'rgba(50,38,32,.75)'; c.beginPath(); c.ellipse(p[0] + (qq[0] - p[0]) * mm, p[1] + (qq[1] - p[1]) * mm, s * 0.018, s * 0.012, r() * 3, 0, Math.PI * 2); c.fill(); } c.restore();
     });
     /* 분화구 빛과 연기 */
-    var cg = c.createRadialGradient(x, gy - s * 0.8, 0, x, gy - s * 0.8, s * 0.35 * (glow || 1)); cg.addColorStop(0, 'rgba(255,230,140,.95)'); cg.addColorStop(0.4, 'rgba(255,120,40,.5)'); cg.addColorStop(1, 'rgba(255,80,20,0)');
-    c.fillStyle = cg; c.beginPath(); c.arc(x, gy - s * 0.8, s * 0.35 * (glow || 1), 0, Math.PI * 2); c.fill();
-    for (var i = 0; i < 6; i++) { var u = ((T * 0.18 + i / 6) % 1), sx = x + Math.sin(i * 2.1 + T * 0.5) * s * 0.1 + u * s * 0.35, sy = gy - s * 0.85 - u * s * 0.8, sr = s * (0.1 + u * 0.22); c.fillStyle = 'rgba(120,115,112,' + (0.42 * (1 - u)) + ')'; c.beginPath(); c.arc(sx, sy, sr, 0, Math.PI * 2); c.fill(); }
+    var cy = gy - H * s, R0 = s * 0.24 * glow * (1 + 0.06 * Math.sin(T * 3));
+    var cg = c.createRadialGradient(x, cy, 0, x, cy, R0); cg.addColorStop(0, 'rgba(255,245,190,.95)'); cg.addColorStop(0.35, 'rgba(255,140,40,.55)'); cg.addColorStop(1, 'rgba(255,90,20,0)');
+    c.fillStyle = cg; c.beginPath(); c.arc(x, cy, R0, 0, Math.PI * 2); c.fill();
+    for (var i3 = 0; i3 < 8; i3++) { var u3 = ((T * 0.15 + i3 / 8) % 1), sx = x + Math.sin(i3 * 2.1 + T * 0.5) * s * 0.06 + u3 * s * 0.4, sy = cy - s * 0.04 - u3 * s * 0.9, sr = s * (0.07 + u3 * 0.2), sg = c.createRadialGradient(sx - sr * 0.3, sy - sr * 0.3, sr * 0.1, sx, sy, sr); sg.addColorStop(0, 'rgba(130,122,116,' + 0.6 * (1 - u3) + ')'); sg.addColorStop(1, 'rgba(90,84,80,0)'); c.fillStyle = sg; c.beginPath(); c.arc(sx, sy, sr, 0, Math.PI * 2); c.fill(); }
     c.restore();
   }
   /* 지진계 (상자 + 기록 띠) */
