@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>우주 탐사 – 탐사 지도</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+  /* ===== 이 수업 전용 ===== */
+  :root{--fab:#d9622b;--fab-soft:#fdeee5;--sp:#070b18}
+  .stage{grid-template-columns:minmax(0,1.7fr) minmax(320px,1fr)}
+  .map{position:relative;overflow:hidden;padding:0;background:var(--sp);border:0}
+  .map canvas{display:block;width:100%;height:min(70vh,660px);min-height:360px;touch-action:none;cursor:pointer}
+  .map .vt.tl .hint{background:rgba(8,14,32,.72);color:#c9d4ef}
+  .map .vt.tr .vb{background:rgba(8,14,32,.78);color:#e8ecfb;border-color:rgba(255,255,255,.18)}
+  .tline{padding:10px 14px 12px;background:#0b1226;color:#e8ecfb;display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center}
+  .tline .yr{font-weight:900;font-size:26px;font-variant-numeric:tabular-nums;min-width:74px;color:#ffd27a}
+  .tline .yr small{display:block;font-size:11.5px;font-weight:700;color:#9fb0cc}
+  .tline input{width:100%;height:44px;accent-color:#ff9a4a}
+  .tline .vb{min-height:46px;padding:0 14px;border-radius:12px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;font-weight:800;cursor:pointer}
+  .ticks{position:relative;height:16px;margin:0 6px}
+  .ticks i{position:absolute;top:3px;width:9px;height:9px;margin-left:-4.5px;border-radius:50%;background:#ff9a4a;box-shadow:0 0 0 2px #0b1226}
+  .ticks i.k{background:#56b6ff}
+  .ticks i.s{background:#fff}
+  .groups{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+  .groups button{min-height:44px;padding:0 12px;border-radius:12px;border:2px solid var(--line);background:#fff;font-weight:800;font-size:14px;color:var(--ink2);cursor:pointer}
+  .groups button[aria-pressed="true"]{border-color:var(--fab);background:var(--fab-soft);color:#8a3510}
+  .mlist{display:grid;gap:8px}
+  .mb{display:grid;grid-template-columns:44px 1fr;gap:10px;align-items:center;text-align:left;min-height:62px;border-radius:14px;border:2px solid var(--line);background:#f8fafc;padding:8px 10px;cursor:pointer}
+  .mb canvas{width:44px;height:44px;border-radius:12px;background:#0b1226}
+  .mb b{display:block;font-size:15.5px}.mb span{font-size:13px;color:var(--muted);font-weight:700;word-break:keep-all}
+  .mb.off{opacity:.42}
+  .mb[aria-pressed="true"]{border-color:var(--fab);background:var(--fab-soft)}
+  .card .tt{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+  .card .tt h2{margin:0;font-size:22px;letter-spacing:-.01em}
+  .badge{display:inline-flex;font-size:12.5px;font-weight:800;border-radius:999px;padding:3px 10px;background:#eef3f8;color:var(--ink2)}
+  .badge.k{background:#e3f1ff;color:#0e4f8f}
+  .bookq{margin:10px 0;padding:12px 14px;border-radius:14px;background:#f6f3ec;border-left:5px solid #c9a35a;font-size:15.5px;line-height:1.7;word-break:keep-all}
+  .bookq small{display:block;font-size:12px;font-weight:800;color:#8a6b2a;margin-bottom:2px}
+  .facts{margin:10px 0 0;padding:0;list-style:none;display:grid;gap:8px}
+  .facts li{display:grid;grid-template-columns:26px 1fr;gap:8px;font-size:15.5px;line-height:1.7;word-break:keep-all}
+  .facts li i{font-style:normal;width:24px;height:24px;border-radius:8px;background:var(--fab);color:#fff;display:grid;place-items:center;font-weight:900;font-size:12.5px;margin-top:3px}
+  .nums{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-top:12px}
+  .nums div{border-radius:14px;background:#0b1226;color:#fff;padding:10px 12px}
+  .nums small{display:block;font-size:12px;color:#9fb0cc;font-weight:700}
+  .nums b{font-size:17px;color:#ffd27a;word-break:keep-all}
+  .golab{margin-top:12px;width:100%}
+  .empty{font-size:15.5px;line-height:1.75;color:var(--ink2);word-break:keep-all}
+  .empty b{color:#8a3510}
+  @media (max-width:900px){.stage{grid-template-columns:1fr}.map canvas{height:min(58vh,560px)}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <span class="eyebrow">시뮬레이션 ① · 그림 Ⅷ-11 인류의 우주 탐사 성과</span>
+    <h1>탐사 지도: 인류는 태양계 어디까지 가 봤을까?</h1>
+    <p class="sub">이름표를 누르면 그곳으로 날아가요. 아래 연도 막대를 움직이면 그해까지 탐사선이 어디까지 갔는지 보여요.</p>
+  </header>
+
+  <div class="stage">
+    <div class="card map viewer">
+      <canvas id="cv" role="img" aria-label="태양계 지도. 가운데 왼쪽에 태양이 있고, 수성부터 해왕성까지 궤도가 비스듬히 그려져 있다. 태양, 달, 화성, 소행성, 혜성, 목성, 토성 둘레에 탐사선 이름표가 있고, 보이저 2호가 목성·토성·천왕성·해왕성을 지나 바깥으로 가는 길이 그려져 있다."></canvas>
+      <div class="vt tl"><span class="hint" id="hint">이름표를 눌러 보세요</span></div>
+      <div class="vt tr"><button class="vb" id="home" type="button">전체 보기</button></div>
+      <div class="ticks" id="ticks" style="background:#0b1226"></div>
+      <div class="tline">
+        <div class="yr" id="yr">2026<small>년까지</small></div>
+        <input type="range" id="yrR" min="1957" max="2026" step="1" value="2026" aria-label="연도">
+        <button class="vb" id="play" type="button">1957년부터 재생</button>
+      </div>
+    </div>
+    <div class="card pad" id="panel">
+      <div class="groups" id="groups"></div>
+      <div id="detail"></div>
+    </div>
+  </div>
+  <p class="model">태양·행성·탐사선의 크기와 거리는 실제 비율과 달라요(개념 이해를 위한 모형). 연도는 탐사선이 그 천체에 도착·착륙·충돌한 해예요.</p>
+</div>
+
+<script>
+/*@@LOCAL:_sx.js@@*/
+</script>
+<script>
+/*@@LOCAL:_missions.js@@*/
+</script>
+<script>
+window.SM = window.SM || {};
+(() => {
+  'use strict';
+  try {
+    const S = window.SX, M = window.MISSIONS, $ = (s) => document.querySelector(s);
+    const cv = $('#cv');
+    const TILT = 0.42, deg = Math.PI / 180, R = (au) => 50 + 100 * Math.sqrt(au);
+    /* 행성: au(태양에서 거리, 천문단위), a(지도에서 놓인 각도), s(그림 크기) */
+    const PL = [
+      { id: 'mercury', n: '수성', au: 0.39, a: 150, s: 3.2 }, { id: 'venus', n: '금성', au: 0.72, a: 222, s: 5 },
+      { id: 'earth', n: '지구', au: 1, a: -38, s: 5.6 }, { id: 'mars', n: '화성', au: 1.52, a: 104, s: 4.2 },
+      { id: 'jupiter', n: '목성', au: 5.2, a: -16, s: 13 }, { id: 'saturn', n: '토성', au: 9.5, a: 7, s: 11 },
+      { id: 'uranus', n: '천왕성', au: 19.2, a: 27, s: 8 }, { id: 'neptune', n: '해왕성', au: 30, a: 44, s: 8 }
+    ];
+    PL.forEach((p) => { p.x = Math.cos(p.a * deg) * R(p.au); p.y = Math.sin(p.a * deg) * R(p.au); });
+    const P = {}; PL.forEach((p) => (P[p.id] = p));
+    const AST = { x: Math.cos(62 * deg) * R(1.25), y: Math.sin(62 * deg) * R(1.25) };
+    const COM = { x: Math.cos(212 * deg) * R(2.3), y: Math.sin(212 * deg) * R(2.3) };
+    /* 보이저 2호의 길: 지구(1977) → 목성(1979) → 토성(1981) → 천왕성(1986) → 해왕성(1989) → 바깥 */
+    const VK = [[1977.6, P.earth], [1979.5, P.jupiter], [1981.65, P.saturn], [1986.07, P.uranus], [1989.65, P.neptune], [2026, { x: Math.cos(58 * deg) * 760, y: Math.sin(58 * deg) * 760 }]];
+    const cr = (p0, p1, p2, p3, t) => { const t2 = t * t, t3 = t2 * t; return 0.5 * (2 * p1 + (-p0 + p2) * t + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t2 + (-p0 + 3 * p1 - 3 * p2 + p3) * t3); };
+    const VP = []; /* [x, y, 연도] */
+    for (let i = 0; i < VK.length - 1; i++) {
+      const a = VK[Math.max(0, i - 1)][1], b = VK[i][1], c = VK[i + 1][1], d = VK[Math.min(VK.length - 1, i + 2)][1];
+      for (let k = 0; k < 24; k++) { const t = k / 24; VP.push([cr(a.x, b.x, c.x, d.x, t), cr(a.y, b.y, c.y, d.y, t), VK[i][0] + (VK[i + 1][0] - VK[i][0]) * t]); }
+    }
+    VP.push([VK[VK.length - 1][1].x, VK[VK.length - 1][1].y, 2026]);
+
+    const GROUPS = [
+      { id: 'sun', n: '태양 탐사', ids: ['parker', 'solo'], z: 3.4 },
+      { id: 'moon', n: '달 탐사', ids: ['apollo', 'artemis', 'danuri'], z: 15 },
+      { id: 'mars', n: '화성 탐사', ids: ['curiosity'], z: 9 },
+      { id: 'asteroid', n: '소행성 탐사', ids: ['dart'], z: 10 },
+      { id: 'comet', n: '혜성 탐사', ids: ['rosetta', 'deepimpact'], z: 7 },
+      { id: 'jupiter', n: '목성 탐사', ids: ['juno'], z: 4.5 },
+      { id: 'saturn', n: '토성 탐사', ids: ['cassini'], z: 4.5 },
+      { id: 'voyager', n: '천왕성·해왕성 탐사', ids: ['voyager2'], z: 1 }
+    ];
+    const byId = {}; M.forEach((m) => (byId[m.id] = m));
+    let year = 2026, selG = null, selM = null, playing = false, playT0 = 0;
+    const cam = { x: 0, y: 0, z: 1 }, camT = { x: 0, y: 0, z: 1 };
+    const moonOf = (t) => { const a = t / 9000; return { x: P.earth.x + Math.cos(a) * 15, y: P.earth.y + Math.sin(a) * 15 }; };
+    function anchor(g, t) {
+      if (g === 'sun') return { x: 0, y: 0 };
+      if (g === 'moon') return moonOf(t);
+      if (g === 'asteroid') return AST;
+      if (g === 'comet') return COM;
+      if (g === 'voyager') return { x: 300, y: 120 };
+      return P[g];
+    }
+    function vpos(y) {
+      if (y < VP[0][2]) return null;
+      for (let i = 1; i < VP.length; i++) if (VP[i][2] >= y) { const a = VP[i - 1], b = VP[i], k = (y - a[2]) / Math.max(1e-6, b[2] - a[2]); return { x: a[0] + (b[0] - a[0]) * k, y: a[1] + (b[1] - a[1]) * k, i }; }
+      const L = VP[VP.length - 1]; return { x: L[0], y: L[1], i: VP.length - 1 };
+    }
+    const shown = (m) => m.year <= year;
+    let view = null; /* 화면 변환 */
+    function setView(w, h) {
+      const port = h > w * 0.75, base = port ? Math.min(w / 1250, h / 900) * 1.05 : Math.min(w * 0.68 / 600, h * 0.9 / (2 * 600 * TILT + 60));
+      const ox = port ? w * 0.5 : w * 0.3;
+      view = { w, h, base, ox, oy: h * 0.5 };
+    }
+    /* 전체 보기에서는 태양이 왼쪽(0.3)에 오도록, 확대하면 고른 곳이 가운데로 */
+    function toS(x, y, z) {
+      const s = view.base * cam.z, cx = S.lerp(view.ox, view.w / 2, Math.min(1, (cam.z - 1) / 1.2));
+      return [cx + (x - cam.x) * s, view.oy + ((y - cam.y) * TILT - (z || 0)) * s, s];
+    }
+    /* 천체 그림 크기: 확대할수록 덜 커지게(거리보다 천천히) */
+    const bs = () => view.base * Math.pow(cam.z, 0.6);
+    const pr = (id) => id === 'sun' ? 30 * bs() : id === 'moon' ? pr('earth') * 0.34 : id === 'asteroid' ? 4.2 * bs() * 1.4 : id === 'comet' ? 3.6 * bs() * 1.4 : P[id].s * bs() * 1.5;
+    function focus(gid) {
+      selG = gid; const g = GROUPS.find((x) => x.id === gid);
+      if (!g || g.z === 1) { camT.x = 0; camT.y = 0; camT.z = 1; }
+      else { const a = anchor(gid, performance.now()); camT.x = a.x; camT.y = a.y; camT.z = g.z; }
+    }
+    let hits = [];
+    function draw(t) {
+      const { c, w, h } = S.fit(cv);
+      if (!view || view.w !== w || view.h !== h) setView(w, h);
+      if (playing) { const e = (t - playT0) / 14000; year = Math.min(2026, Math.round(1957 + e * 69)); syncYear(); if (year >= 2026) { playing = false; $('#play').textContent = '1957년부터 재생'; } }
+      const k = S.REDUCE ? 1 : 0.08; cam.x += (camT.x - cam.x) * k; cam.y += (camT.y - cam.y) * k; cam.z += (camT.z - cam.z) * k;
+      if (selG === 'moon') { const a = moonOf(t); camT.x = a.x; camT.y = a.y; }
+      S.space(c, w, h, 11);
+      hits = [];
+      const fs = Math.max(12, Math.min(15, w / 60));
+      /* 궤도 */
+      c.save(); c.lineWidth = 1;
+      PL.forEach((p) => { const [x0, y0, s] = toS(0, 0); c.strokeStyle = p.id === 'earth' ? 'rgba(120,180,255,.45)' : 'rgba(170,190,230,.22)'; c.beginPath(); c.ellipse(x0, y0, R(p.au) * s, R(p.au) * s * TILT, 0, 0, Math.PI * 2); c.stroke(); });
+      { const [x0, y0, s] = toS(0, 0); c.setLineDash([3, 6]); c.strokeStyle = 'rgba(200,190,170,.18)'; c.lineWidth = 6 * view.base; c.beginPath(); c.ellipse(x0, y0, R(2.8) * s, R(2.8) * s * TILT, 0, 0, Math.PI * 2); c.stroke(); c.setLineDash([]); }
+      /* 혜성 궤도 */
+      { const [x0, y0, s] = toS(-130, 10); c.strokeStyle = 'rgba(190,225,255,.22)'; c.setLineDash([5, 5]); c.lineWidth = 1; c.beginPath(); c.ellipse(x0, y0, 205 * s, 205 * s * TILT * 0.6, 0.05, 0, Math.PI * 2); c.stroke(); c.setLineDash([]); }
+      c.restore();
+      /* 태양 */
+      { const [x, y] = toS(0, 0); S.sun(c, x, y, pr('sun'), t); }
+      /* 보이저 2호의 길 */
+      const vp = vpos(year);
+      if (vp) {
+        const pts = VP.slice(0, vp.i).map((p) => toS(p[0], p[1])).concat([toS(vp.x, vp.y)]);
+        c.save(); c.shadowColor = 'rgba(255,200,90,.7)'; c.shadowBlur = 8; S.path(c, pts, 'rgba(255,205,110,.85)', 2.2, [7, 6]); c.restore();
+      }
+      /* 행성 */
+      const order = PL.slice().sort((a, b) => a.y - b.y);
+      order.forEach((p) => {
+        const [x, y] = toS(p.x, p.y), r = Math.max(2.4, pr(p.id)), L = Math.hypot(p.x, p.y) || 1;
+        S.planet(c, x, y, r, p.id, { lx: -p.x / L, ly: -p.y / L * TILT, t });
+        if (p.id === 'earth') { const mo = moonOf(t), [mx, my] = toS(mo.x, mo.y); S.planet(c, mx, my, Math.max(1.6, pr('moon')), 'moon', { lx: -p.x / L, ly: -p.y / L }); }
+        if (cam.z < 2.2 || ['earth', 'mars', 'jupiter', 'saturn'].includes(p.id)) S.tag(c, p.n, x, y + r + fs * 0.95, { size: fs - 2, bg: 'none', color: 'rgba(214,224,245,.85)', weight: 700 });
+      });
+      /* 소행성, 혜성 */
+      { const [x, y] = toS(AST.x, AST.y), r = Math.max(2.4, pr('asteroid')); S.planet(c, x, y, r, 'asteroid', { seed: 3 });
+        const a = t / 1600, [mx, my] = [x + Math.cos(a) * r * 2.6, y + Math.sin(a) * r * 2.6 * 0.6]; S.planet(c, mx, my, Math.max(1.2, r * 0.38), 'asteroid', { seed: 8 });
+        if (cam.z > 3) { S.tag(c, '디디모스', x, y + r + fs, { size: fs - 3, bg: 'none', color: '#d6c8b4' }); S.tag(c, '디모르포스', mx + r * 1.6, my - r * 0.8, { size: fs - 4, bg: 'none', color: '#d6c8b4', align: 'left' }); } }
+      { const [x, y] = toS(COM.x, COM.y), r = Math.max(2.4, pr('comet')); S.tail(c, x, y, r, Math.atan2(COM.y * TILT, COM.x), r * 16); S.planet(c, x, y, r, 'comet', { seed: 21 }); }
+      /* 탐사선(확대했을 때) */
+      if (cam.z > 2) drawProbes(c, t, fs);
+      /* 보이저 2호 */
+      if (vp) { const [x, y] = toS(vp.x, vp.y); S.glow(c, x, y, 18, [255, 210, 120], 0.8); S.probe(c, x, y, 7, -0.4, 'dish'); }
+      /* 그룹 이름표 */
+      GROUPS.forEach((g) => {
+        const ms = g.ids.map((id) => byId[id]), vis = ms.filter(shown).length;
+        let a = anchor(g.id, t); if (g.id === 'voyager') { if (!vp) return; a = vp; }
+        if (g.id === 'sun' && cam.z > 2 && selG === 'sun') return;
+        const [x, y, s] = toS(a.x, a.y); const sel = selG === g.id;
+        if (cam.z > 2) return;
+        const off = { sun: [0, -46], moon: [26, -26], mars: [-10, 30], asteroid: [24, 18], comet: [0, -26], jupiter: [0, -30], saturn: [10, 34], voyager: [0, -24] }[g.id];
+        const zx = cam.z > 2 ? 1.6 : 1, lx = x + off[0] * zx, ly = y + off[1] * zx;
+        c.save(); c.strokeStyle = vis ? 'rgba(255,170,90,.75)' : 'rgba(255,255,255,.18)'; c.lineWidth = 1.2; c.beginPath(); c.moveTo(x, y); c.lineTo(lx, ly); c.stroke(); c.restore();
+        const ph = 0.5 + 0.5 * Math.sin(t / 500 + g.n.length);
+        if (vis) { c.save(); c.strokeStyle = `rgba(255,170,90,${0.35 + ph * 0.4})`; c.lineWidth = 2; c.beginPath(); c.arc(x, y, 9 + ph * 4, 0, Math.PI * 2); c.stroke(); c.restore(); }
+        const label = vis ? `${g.n} ${vis}` : g.n;
+        const tw = S.tag(c, label, lx, ly, { size: fs, bg: vis ? (sel ? '#ff8a3d' : 'rgba(217,98,43,.92)') : 'rgba(40,48,70,.8)', color: vis ? '#fff' : 'rgba(200,210,230,.6)', border: sel ? '#ffd27a' : null });
+        hits.push({ g: g.id, x: lx, y: ly, r: Math.max(26, tw / 2) , h: fs * 1.2 });
+      });
+    }
+    function drawProbes(c, t, fs) {
+      const lab = (m, x, y) => { const sel = selM === m.id; const tw = S.tag(c, m.name, x, y, { size: fs - 1, bg: sel ? '#ffd27a' : 'rgba(8,14,32,.85)', color: sel ? '#2a1a00' : '#fff', border: sel ? null : 'rgba(255,170,90,.6)' }); hits.push({ m: m.id, x, y, r: tw / 2, h: fs * 1.2 }); };
+      const lead = (x1, y1, x2, y2) => { c.save(); c.strokeStyle = 'rgba(255,190,120,.55)'; c.lineWidth = 1.2; c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); c.stroke(); c.restore(); };
+      const each = (ids, fn) => ids.forEach((id, i) => { const m = byId[id]; if (shown(m)) fn(m, i); });
+      const dash = (col, fn) => { c.save(); c.strokeStyle = col; c.setLineDash([4, 5]); c.lineWidth = 1.3; c.beginPath(); fn(); c.stroke(); c.restore(); };
+      if (selG === 'sun') {
+        const [x0, y0] = toS(0, 0), rs = pr('sun');
+        each(['parker', 'solo'], (m) => {
+          if (m.id === 'parker') { const a = t / 2600, A = rs * 1.9, B = A * TILT * 1.3, cx = x0 + rs * 0.55; dash('rgba(255,200,120,.45)', () => c.ellipse(cx, y0, A, B, 0, 0, Math.PI * 2)); const x = cx + Math.cos(a) * A, y = y0 + Math.sin(a) * B; S.probe(c, x, y, 10, Math.atan2(y0 - y, x0 - x) + Math.PI, 'shield'); lab(m, x0 + rs * 1.55, y0 + rs * 1.25); lead(x, y, x0 + rs * 1.55, y0 + rs * 1.25); }
+          else { const a = t / 4000, x = x0 + Math.cos(a) * rs * 0.7, y = y0 - rs * 1.45 + Math.sin(a) * rs * 0.12; dash('rgba(160,200,255,.4)', () => c.ellipse(x0, y0 - rs * 0.4, rs * 0.7, rs * 1.05, 0, 0, Math.PI * 2)); S.probe(c, x, y, 9, 0, 'wing'); S.tag(c, '태양의 극지방', x0, y0 - rs * 1.08, { size: fs - 3, bg: 'rgba(60,30,0,.55)', color: '#ffe0a0' }); lab(m, x0 - rs * 1.4, y0 - rs * 1.5); lead(x, y, x0 - rs * 1.4, y0 - rs * 1.5); }
+        });
+      } else if (selG === 'moon') {
+        const mo = moonOf(t), [mx, my] = toS(mo.x, mo.y), r = pr('moon'), [ex, ey] = toS(P.earth.x, P.earth.y);
+        each(['apollo', 'artemis', 'danuri'], (m) => {
+          if (m.id === 'danuri') { const a = t / 1400; dash('rgba(120,200,255,.6)', () => c.ellipse(mx, my, r * 2, r * 1.1, 0, 0, Math.PI * 2)); const x = mx + Math.cos(a) * r * 2, y = my + Math.sin(a) * r * 1.1; S.probe(c, x, y, 8, 0, 'wing'); lab(m, mx + r * 2.6, my + r * 2.4); lead(x, y, mx + r * 2.6, my + r * 2.4); }
+          else if (m.id === 'apollo') { const x = mx - r * 0.35, y = my - r * 0.95; S.probe(c, x, y, 6, 0, 'lander'); lab(m, mx - r * 1.6, my - r * 2.6); lead(x, y, mx - r * 1.6, my - r * 2.6); }
+          else { const q = (t / 5000) % 1, k = q < 0.5 ? q * 2 : 2 - q * 2, qx = (ex + mx) / 2, qy = Math.min(ey, my) - r * 3.2; dash('rgba(255,255,255,.35)', () => { c.moveTo(ex, ey); c.quadraticCurveTo(qx, qy, mx + r * 1.6, my - r * 0.4); }); const x = (1 - k) * (1 - k) * ex + 2 * (1 - k) * k * qx + k * k * (mx + r * 1.6), y = (1 - k) * (1 - k) * ey + 2 * (1 - k) * k * qy + k * k * (my - r * 0.4); S.probe(c, x, y, 7, 0, 'wing'); lab(m, qx, qy + 4); }
+        });
+        S.tag(c, '달', mx, my + r + fs, { size: fs - 2, bg: 'none', color: '#e6e6e0' });
+      } else if (selG === 'mars') {
+        each(['curiosity'], (m) => { const [x, y] = toS(P.mars.x, P.mars.y), r = pr('mars'); S.probe(c, x + r * 0.2, y - r * 0.95, 6, 0, 'lander'); lab(m, x, y - r * 2.2); lead(x + r * 0.2, y - r, x, y - r * 2.2); });
+      } else if (selG === 'asteroid') {
+        each(['dart'], (m) => { const [x, y] = toS(AST.x, AST.y), r = pr('asteroid'); const a = (t / 3000) % 1, px = x - r * 9 + a * r * 6.4, py = y - r * 3 + a * r * 2.2; if (a < 0.98) S.probe(c, px, py, 8, 0.35, 'wing'); else S.glow(c, x + r * 2.6, y, 30, [255, 230, 180], 0.9); lab(m, x - r * 6, y - r * 3.6); });
+      } else if (selG === 'comet') {
+        const [x, y] = toS(COM.x, COM.y), r = pr('comet');
+        each(['rosetta', 'deepimpact'], (m) => { if (m.id === 'rosetta') { const a = t / 2200, px = x + Math.cos(a) * r * 3, py = y + Math.sin(a) * r * 1.4; S.probe(c, px, py, 8, 0, 'wing'); S.probe(c, x + r * 0.2, y - r * 0.85, 4, 0, 'lander'); lab(m, x - r * 3.5, y - r * 3.2); } else { const px = x + r * 4, py = y + r * 2.4; S.probe(c, px, py, 8, 0, 'wing'); lab(m, px + r * 1.5, py + r * 2); } });
+      } else if (selG === 'jupiter' || selG === 'saturn') {
+        const id = selG === 'jupiter' ? 'juno' : 'cassini', p = P[selG];
+        each([id], (m) => { const [x, y] = toS(p.x, p.y), r = pr(p.id), a = t / 2500, px = x + Math.cos(a) * r * 1.9, py = y + Math.sin(a) * r * 1.9 * 0.45; S.probe(c, px, py, 9, 0, m.probe); lab(m, x, y - r * 2); });
+      }
+    }
+    S.add(cv, draw, (e) => window.SM_err('탐사 지도', e));
+
+    /* 누르기 */
+    cv.addEventListener('pointerdown', (e) => {
+      const r = cv.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+      let best = null, bd = 1e9;
+      hits.forEach((h) => { const dx = Math.max(0, Math.abs(x - h.x) - h.r), dy = Math.max(0, Math.abs(y - h.y) - h.h); const d = Math.hypot(dx, dy); if (d < 18 && d < bd) { bd = d; best = h; } });
+      if (!best) return;
+      if (best.m) pick(best.m); else pickG(best.g);
+    });
+
+    /* 오른쪽 패널 */
+    const groupsEl = $('#groups'), detail = $('#detail');
+    groupsEl.innerHTML = `<button type="button" data-g="" aria-pressed="true">전체</button>` + GROUPS.map((g) => `<button type="button" data-g="${g.id}" aria-pressed="false">${g.n}</button>`).join('');
+    groupsEl.addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; if (b.dataset.g) pickG(b.dataset.g); else home(); });
+    function icon(cvs, m) { const { c, w, h } = S.fit(cvs); S.space(c, w, h, 4, { n: 14 }); S.probe(c, w / 2, h / 2, w * 0.2, -0.2, m.probe); }
+    function list(ids) {
+      detail.innerHTML = `<div class="mlist">${ids.map((id) => { const m = byId[id]; return `<button type="button" class="mb${shown(m) ? '' : ' off'}" data-m="${id}" aria-pressed="${selM === id}"><canvas></canvas><span><b>${m.name}</b><span>${m.year}년 · ${m.hook}</span></span></button>`; }).join('')}</div>`;
+      detail.querySelectorAll('.mb').forEach((b) => { icon(b.querySelector('canvas'), byId[b.dataset.m]); b.addEventListener('click', () => pick(b.dataset.m)); });
+    }
+    function intro() {
+      list(M.map((m) => m.id));
+      detail.insertAdjacentHTML('afterbegin', `<p class="empty" style="margin:0 0 12px">지도 위의 <b>주황 이름표</b>는 탐사선이 간 곳이에요. 이름표를 누르거나 아래 탐사선을 골라 보세요. 연도 막대를 <b>1957년</b>(첫 인공위성 스푸트니크 1호)으로 옮긴 뒤 재생하면 인류의 탐사가 해마다 넓어지는 모습을 볼 수 있어요.</p>`);
+    }
+    function card(m) {
+      const later = !shown(m);
+      detail.innerHTML = `<div class="tt"><h2>${m.name}</h2></div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap"><span class="badge${m.korea ? ' k' : ''}">${m.who}</span><span class="badge">${m.launch}</span><span class="badge">${m.cat}</span></div>
+        ${later ? `<p class="empty" style="margin:10px 0 0">연도 막대를 <b>${m.year}년</b> 이후로 옮기면 지도에 나타나요.</p>` : ''}
+        <div class="bookq"><small>교과서</small>${m.book}</div>
+        <ul class="facts">${m.facts.map((f, i) => `<li><i>${i + 1}</i><span>${f}</span></li>`).join('')}</ul>
+        <div class="nums">${m.nums.map((n) => `<div><small>${n[0]}</small><b>${n[1]}</b></div>`).join('')}</div>
+        ${m.lab ? `<button class="btn primary golab" type="button" id="goLab">탐사선 실험실에서 직접 해 보기</button>` : ''}
+        <button class="btn ghost golab" type="button" id="back">← ${GROUPS.find((g) => g.ids.includes(m.id)).n} 목록</button>`;
+      const gl = $('#goLab'); if (gl) gl.addEventListener('click', () => { const url = 'sim2-lab.html?lab=' + m.lab; try { if (window.parent !== window) { window.parent.postMessage({ type: 'ras-nav', target: 'lab' }, '*'); const f = window.parent.document.querySelector('iframe[data-page="lab"]'); if (f) { if (f.getAttribute('src')) f.contentWindow.postMessage({ type: 'sx-lab', lab: m.lab }, '*'); else f.src = url; } return; } } catch (e) {} location.href = url; });
+      $('#back').addEventListener('click', () => pickG(GROUPS.find((g) => g.ids.includes(m.id)).id));
+    }
+    function syncGroups() { groupsEl.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String((b.dataset.g || null) === selG))); }
+    function pickG(gid) { selM = null; focus(gid); syncGroups(); const g = GROUPS.find((x) => x.id === gid); if (g.ids.length === 1) return pick(g.ids[0]); list(g.ids); $('#hint').textContent = `${g.n}: 탐사선을 골라 보세요`; }
+    function pick(id) { const g = GROUPS.find((x) => x.ids.includes(id)); if (selG !== g.id) focus(g.id); selM = id; syncGroups(); card(byId[id]); $('#hint').textContent = byId[id].name; if (innerWidth < 900) document.getElementById('panel').scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+    function home() { selG = null; selM = null; camT.x = 0; camT.y = 0; camT.z = 1; syncGroups(); intro(); $('#hint').textContent = '이름표를 눌러 보세요'; }
+    $('#home').addEventListener('click', home);
+
+    /* 연도 */
+    const yrR = $('#yrR');
+    function syncYear() { yrR.value = year; $('#yr').innerHTML = `${year}<small>${year === 1957 ? '스푸트니크 1호' : '년까지'}</small>`; }
+    yrR.addEventListener('input', () => { playing = false; $('#play').textContent = '1957년부터 재생'; year = +yrR.value; syncYear(); if (selM) card(byId[selM]); else if (selG) list(GROUPS.find((g) => g.id === selG).ids); else intro(); });
+    $('#play').addEventListener('click', () => { playing = !playing; if (playing) { playT0 = performance.now(); year = 1957; home(); $('#play').textContent = '멈춤'; } else $('#play').textContent = '1957년부터 재생'; });
+    $('#ticks').innerHTML = `<i class="s" style="left:0%" title="1957 스푸트니크 1호"></i>` + M.map((m) => `<i class="${m.korea ? 'k' : ''}" style="left:${(m.year - 1957) / 69 * 100}%" title="${m.year} ${m.name}"></i>`).join('');
+
+    /* 주소로 바로 열기: ?g=moon 또는 ?m=dart, ?year=1990 */
+    const q = new URLSearchParams(location.search);
+    if (q.get('year')) { year = Math.max(1957, Math.min(2026, +q.get('year'))); }
+    syncYear();
+    if (q.get('m') && byId[q.get('m')]) { pick(q.get('m')); cam.x = camT.x; cam.y = camT.y; cam.z = camT.z; }
+    else if (q.get('g')) { pickG(q.get('g')); cam.x = camT.x; cam.y = camT.y; cam.z = camT.z; }
+    else home();
+    window.SM.okUI = true;
+  } catch (err) { window.SM_err('탐사 지도', err); }
+})();
+</script>
+</body>
+</html>

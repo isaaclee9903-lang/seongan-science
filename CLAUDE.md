@@ -30,6 +30,7 @@
 | `star-color` | 중2 Ⅷ 별의 색과 표면 온도 | lesson-kit | `중2_별과우주_별의색과표면온도.md` |
 | `milky-way` | 중2 Ⅷ 우리은하 (구조와 크기, 성단과 성운, 3D) | lesson-kit | `중2_별과우주_우리은하.md` |
 | `expanding-universe` | 중2 Ⅷ 우주 팽창 (외부 은하, 풍선 모형, 대폭발, 3D 풍선) | lesson-kit | `중2_별과우주_우주팽창.md` |
+| `space-exploration` | 중2 Ⅷ 우주 탐사 (생활 속 우주 기술, 탐사 성과 지도, 탐사선 실험실, 유튜브 멈춤 퀴즈, 우주 조약) | lesson-kit | `중2_별과우주_우주탐사.md` (확장 근거: `docs/reports/우주 탐사 수업 리서치.md`) |
 | `semiconductor`, `mlcc` | 읽기 자료 | 직접 작성 | `읽기자료_반도체…`, `읽기자료_MLCC…` |
 | `photo-journey`, `chip-earth`, `battery`, `ev` | 읽기 자료 | lesson-kit | `읽기자료_*` |
 | `career-map` | 진로 지도 (읽기 자료 모음) | lesson-kit | 없음 |

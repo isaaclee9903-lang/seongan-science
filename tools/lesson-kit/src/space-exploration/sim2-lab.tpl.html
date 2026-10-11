@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>우주 탐사 – 탐사선 실험실</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+  /* ===== 이 수업 전용 ===== */
+  :root{--fab:#d9622b;--fab-soft:#fdeee5}
+  .flow{grid-template-columns:repeat(3,1fr)}
+  .lab{position:relative;overflow:hidden;padding:0;background:#070b18;border:0}
+  .lab canvas{display:block;width:100%;height:min(66vh,620px);min-height:360px;touch-action:none}
+  .lab .vt.tl .hint{background:rgba(8,14,32,.72);color:#c9d4ef}
+  .ctrl{display:grid;gap:8px;margin:8px 0}
+  .pick{display:grid;gap:8px}
+  .pk{display:grid;grid-template-columns:40px 1fr;gap:10px;align-items:center;text-align:left;min-height:60px;border-radius:14px;border:2px solid var(--line);background:#f8fafc;padding:8px 12px;cursor:pointer}
+  .pk i{font-style:normal;width:38px;height:38px;border-radius:12px;display:grid;place-items:center;font-weight:900;color:#fff}
+  .pk b{display:block;font-size:15.5px}.pk span{font-size:13px;color:var(--muted);font-weight:700;word-break:keep-all}
+  .pk[aria-pressed="true"]{border-color:var(--fab);background:var(--fab-soft)}
+  .meters{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+  .mt{border-radius:14px;background:#0b1226;color:#fff;padding:10px 12px}
+  .mt small{display:block;font-size:12px;color:#9fb0cc;font-weight:700}
+  .mt b{font-size:22px;color:#ffd27a;font-variant-numeric:tabular-nums}
+  .mt .bar{height:10px;border-radius:5px;background:rgba(255,255,255,.12);margin-top:6px;overflow:hidden}
+  .mt .bar i{display:block;height:100%;width:0;border-radius:5px;background:linear-gradient(90deg,#ffb14a,#ff6a3d);transition:width .4s}
+  .mt.cool .bar i{background:linear-gradient(90deg,#4cc3ff,#2f7be8)}
+  .rng{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:center;font-weight:800;font-size:14.5px;color:var(--ink2)}
+  .rng input{width:100%;height:44px;accent-color:var(--fab)}
+  .why{margin-top:10px}
+  .why summary{min-height:48px;display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:800;font-size:15.5px;color:#7a3a10;background:#fff4ea;border-radius:12px;padding:0 12px;list-style:none}
+  .why summary::-webkit-details-marker{display:none}
+  .why ol{margin:8px 0 0;padding-left:22px;font-size:15px;line-height:1.75;color:var(--ink2);word-break:keep-all}
+  .why ol li{margin-bottom:4px}
+  .cmpbars{display:grid;gap:6px;margin-top:8px}
+  .cb{display:grid;grid-template-columns:96px 1fr auto;gap:8px;align-items:center;font-size:13.5px;font-weight:800;color:var(--ink2)}
+  .cb .tr{height:14px;border-radius:7px;background:#eef3f8;overflow:hidden}
+  .cb .tr i{display:block;height:100%;border-radius:7px}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <span class="eyebrow">시뮬레이션 ② · 탐사선 실험실</span>
+    <h1>탐사선이 되어 직접 해 보기</h1>
+    <p class="sub">다누리가 왜 멀리 돌아갔는지, 다트가 소행성을 어떻게 밀었는지, 파커가 어떻게 타지 않는지 실험해 봐요.</p>
+  </header>
+  <div class="stage">
+    <div class="card lab viewer">
+      <canvas id="cv" role="img" aria-label="탐사선 실험 화면"></canvas>
+      <div class="vt tl"><span class="hint" id="hint"></span></div>
+    </div>
+    <div class="card pad">
+      <div class="flow" role="tablist">
+        <button class="fs" role="tab" data-lab="danuri" aria-selected="true"><b>1</b>다누리의 길</button>
+        <button class="fs" role="tab" data-lab="dart" aria-selected="false"><b>2</b>다트 충돌</button>
+        <button class="fs" role="tab" data-lab="parker" aria-selected="false"><b>3</b>파커 열 차폐막</button>
+      </div>
+      <div id="panel"></div>
+    </div>
+  </div>
+  <p class="model">개념 이해를 위한 모형이에요. 크기·거리·빠르기는 실제 비율과 다르고, 연료 막대와 온도 막대는 비교만 나타내요. 숫자는 공식 발표 값만 썼어요.</p>
+</div>
+
+<script>
+/*@@LOCAL:_sx.js@@*/
+</script>
+<script>
+window.SM = window.SM || {};
+(() => {
+  'use strict';
+  try {
+    const S = window.SX, $ = (s) => document.querySelector(s), cv = $('#cv'), panel = $('#panel'), hint = $('#hint');
+    let lab = 'danuri';
+    const st = {
+      danuri: { path: 'blt', run: false, t0: 0, p: 0, done: false },
+      dart: { hit: false, t0: 0, phase: 0, ej: [] },
+      parker: { d: 0, shield: true }
+    };
+
+    /* ===== 1. 다누리의 길 ===== */
+    const ROUTES = {
+      direct: { n: '곧장 가는 길', k: '직접 전이 궤적', col: '#ff7a59', days: '3~6일', dayMax: 5, fuel: 0.85, sub: '가장 짧고 빠른 길', dur: 3500 },
+      phase: { n: '빙글빙글 도는 길', k: '위상 전이 궤적', col: '#4cc3ff', days: '1~2달', dayMax: 45, fuel: 0.82, sub: '지구 둘레를 몇 바퀴 돌며 점점 멀리', dur: 7000 },
+      blt: { n: '멀리 돌아가는 길', k: '탄도형 달 전이 궤적 · 다누리', col: '#ffd27a', days: '145일', dayMax: 145, fuel: 0.35, sub: '태양 쪽으로 멀리 갔다가 돌아오기', dur: 10000 }
+    };
+    function routePts(id, E, d) {
+      const pts = [], [ex, ey] = E, mA = -0.35, mx = ex + Math.cos(mA) * d, my = ey + Math.sin(mA) * d;
+      if (id === 'direct') { for (let i = 0; i <= 60; i++) { const t = i / 60; pts.push([S.lerp(ex, mx, t) + Math.sin(t * Math.PI) * -d * 0.12, S.lerp(ey, my, t) - Math.sin(t * Math.PI) * d * 0.22]); } }
+      else if (id === 'phase') { const loops = 3.5; for (let i = 0; i <= 260; i++) { const t = i / 260, a = t * loops * Math.PI * 2 + Math.PI * 0.5, rr = d * (0.12 + 0.95 * Math.pow(t, 1.3)); pts.push([ex + Math.cos(a) * rr * 0.62 + rr * 0.38 * Math.cos(mA), ey + Math.sin(a) * rr * 0.5 + rr * 0.38 * Math.sin(mA)]); } pts.push([mx, my]); }
+      else {
+        const far = [ex - d * 3.9, ey - d * 0.15], c1 = [ex - d * 1.2, ey - d * 1.5], c2 = [ex - d * 4.6, ey - d * 1.6], c3 = [ex - d * 4.4, ey + d * 1.5], c4 = [mx + d * 0.6, my + d * 1.7];
+        const bz = (p0, p1, p2, p3, t) => { const u = 1 - t; return [u * u * u * p0[0] + 3 * u * u * t * p1[0] + 3 * u * t * t * p2[0] + t * t * t * p3[0], u * u * u * p0[1] + 3 * u * u * t * p1[1] + 3 * u * t * t * p2[1] + t * t * t * p3[1]]; };
+        for (let i = 0; i <= 120; i++) pts.push(bz([ex, ey], c1, c2, far, i / 120));
+        for (let i = 1; i <= 140; i++) pts.push(bz(far, c3, c4, [mx, my], i / 140));
+      }
+      return { pts, moon: [mx, my] };
+    }
+    function drawDanuri(c, w, h, t) {
+      const s = st.danuri, R = ROUTES[s.path], fs = Math.max(12, Math.min(15, w / 56));
+      const d = Math.min(w * 0.15, h * 0.24), E = [w * 0.74, h * 0.52];
+      /* 태양 쪽 빛 */
+      const sg = c.createRadialGradient(-w * 0.1, h * 0.5, 0, -w * 0.1, h * 0.5, w * 0.6); sg.addColorStop(0, 'rgba(255,190,90,.45)'); sg.addColorStop(1, 'rgba(255,150,60,0)'); c.fillStyle = sg; c.fillRect(0, 0, w, h);
+      S.tag(c, '← 태양 쪽', 14, h * 0.5, { size: fs, align: 'left', bg: 'rgba(60,30,0,.6)', color: '#ffd9a0' });
+      /* 달 궤도 */
+      c.save(); c.strokeStyle = 'rgba(180,200,240,.3)'; c.setLineDash([4, 6]); c.beginPath(); c.arc(E[0], E[1], d, 0, Math.PI * 2); c.stroke(); c.restore();
+      const rt = routePts(s.path, E, d);
+      /* 다른 길은 옅게 */
+      Object.keys(ROUTES).forEach((k) => { if (k === s.path) return; S.path(c, routePts(k, E, d).pts, 'rgba(255,255,255,.1)', 1.5, [3, 5]); });
+      S.path(c, rt.pts, R.col + '66', 2.5, [6, 6]);
+      let p = s.p;
+      if (s.run) { p = Math.min(1, (t - s.t0) / R.dur); s.p = p; if (p >= 1 && !s.done) { s.run = false; s.done = true; finishDanuri(); } }
+      if (p > 0) { c.save(); c.shadowColor = R.col; c.shadowBlur = 10; S.path(c, rt.pts, R.col, 3, null, p); c.restore(); }
+      /* 지구, 달 */
+      S.planet(c, E[0], E[1], d * 0.2, 'earth', { lx: -1, ly: 0, t });
+      S.tag(c, '지구', E[0], E[1] + d * 0.2 + fs, { size: fs - 1, bg: 'none', color: '#cfe0ff' });
+      S.planet(c, rt.moon[0], rt.moon[1], d * 0.075, 'moon', { lx: -1, ly: 0 });
+      S.tag(c, '달', rt.moon[0] + d * 0.16, rt.moon[1] - d * 0.08, { size: fs - 1, bg: 'none', color: '#e6e6e0', align: 'left' });
+      if (s.path === 'blt') { const fx = E[0] - d * 3.9; S.tag(c, '지구에서 가장 멀 때 약 155만 km', fx + d * 0.1, E[1] - d * 0.62, { size: fs - 1, color: '#2a1a00', bg: '#ffd27a' }); S.tag(c, '(달까지 거리의 약 4배)', fx + d * 0.1, E[1] - d * 0.62 + fs * 1.9, { size: fs - 3, bg: 'none', color: '#ffe6b0' }); }
+      /* 탐사선 */
+      const i = Math.min(rt.pts.length - 1, Math.floor(p * (rt.pts.length - 1))), q = rt.pts[i], q2 = rt.pts[Math.min(rt.pts.length - 1, i + 1)];
+      S.probe(c, q[0], q[1], 9, Math.atan2(q2[1] - q[1], q2[0] - q[0]), 'wing');
+      if (p >= 1) { S.glow(c, rt.moon[0], rt.moon[1], d * 0.4, [255, 220, 150], 0.35 + 0.2 * Math.sin(t / 300)); }
+      /* 계기 */
+      $('#dDays') && ($('#dDays').textContent = p >= 1 ? R.days : s.run ? '약 ' + Math.round(p * R.dayMax) + '일째' : '0일');
+      $('#dFuel') && ($('#dFuel').style.width = (p >= 0.96 ? R.fuel * 100 : 0) + '%');
+    }
+    function panelDanuri() {
+      const s = st.danuri;
+      panel.innerHTML = `<div class="stepname"><span class="no">1</span><div><small>다누리의 길 고르기</small><h2>달까지 어느 길로 갈까?</h2></div></div>
+        <p class="what">달까지 가는 길은 여러 가지예요. 길을 고르고 <b>발사</b>를 눌러 걸리는 날과, 달 둘레를 돌기 위해 <b>속도를 줄일 때 드는 연료</b>를 비교해 봐요.</p>
+        <div class="pick">${Object.keys(ROUTES).map((k) => `<button type="button" class="pk" data-r="${k}" aria-pressed="${s.path === k}"><i style="background:${ROUTES[k].col};color:#1a1200">${Object.keys(ROUTES).indexOf(k) + 1}</i><span><b>${ROUTES[k].n}</b><span>${ROUTES[k].days} · ${ROUTES[k].k} · ${ROUTES[k].sub}</span></span></button>`).join('')}</div>
+        <div class="acts"><button class="btn primary" id="dGo" type="button">발사</button></div>
+        <div class="meters"><div class="mt"><small>걸린 날</small><b id="dDays">0일</b></div><div class="mt"><small>달에 들어갈 때 속도를 줄이는 연료</small><div class="bar"><i id="dFuel"></i></div></div></div>
+        <div class="cmpbars" id="dCmp"></div>
+        <details class="why"><summary>왜 멀리 돌아가면 연료를 아낄까? (단계별)</summary><ol>
+          <li>곧장 가면 빠르지만, 빠른 만큼 달에 도착했을 때 <b>속도를 많이 줄여야</b> 달 둘레를 돌 수 있어요. 속도를 줄이는 데도 연료가 들어요.</li>
+          <li>멀리 돌아가는 길은 <b>태양과 지구의 중력</b>을 이용해요. 먼 곳에서 탐사선이 저절로 느려지고 방향이 바뀌어요.</li>
+          <li>그래서 달에 다가갈 때 이미 느려져 있어, <b>속도를 조금만 줄여도</b> 달의 중력에 붙잡혀요.</li>
+          <li>대신 시간이 오래 걸리고(145일), 길을 계산하기가 아주 어려워요. 다누리는 처음에 다른 길을 계획했다가 <b>2020년에 이 길로 바꿨어요</b>.</li>
+          <li>아낀 연료 덕분에 다누리는 처음 계획(1년)보다 훨씬 오래, <b>2027년 12월까지</b> 임무를 하게 됐어요.</li></ol></details>
+        <div class="box fact"><b class="t">다누리 기록</b>2022년 8월 5일 발사 → 2022년 12월 27일 달 궤도 도착(145일). 가는 길에 지구에서 가장 멀어졌을 때는 약 155만 km였어요.<span class="src">출처: 북툰 「다누리의 독특한 여행 궤적」 화면, 한국항공우주연구원 발표를 다룬 기사</span></div>`;
+      panel.querySelectorAll('.pk').forEach((b) => b.addEventListener('click', () => { s.path = b.dataset.r; s.run = false; s.p = 0; s.done = false; panelDanuri(); }));
+      $('#dGo').addEventListener('click', () => { s.run = true; s.done = false; s.p = 0; s.t0 = performance.now(); hint.textContent = ROUTES[s.path].n + '로 가는 중'; });
+      cmpDanuri();
+      hint.textContent = '길을 고르고 발사해 보세요';
+    }
+    const triedD = {};
+    function finishDanuri() { triedD[st.danuri.path] = true; cmpDanuri(); hint.textContent = '달 궤도 도착! 다른 길과 비교해 보세요'; }
+    function cmpDanuri() {
+      const el = $('#dCmp'); if (!el) return;
+      const ks = Object.keys(ROUTES).filter((k) => triedD[k]);
+      el.innerHTML = ks.length ? '<small style="font-weight:800;color:var(--muted)">비교 (속도를 줄이는 연료)</small>' + ks.map((k) => `<div class="cb"><span>${ROUTES[k].n}</span><span class="tr"><i style="width:${ROUTES[k].fuel * 100}%;background:${ROUTES[k].col}"></i></span><span>${ROUTES[k].days}</span></div>`).join('') : '';
+    }
+
+    /* ===== 2. 다트 충돌 ===== */
+    const ej = [];
+    function drawDart(c, w, h, t) {
+      const s = st.dart, fs = Math.max(12, Math.min(15, w / 56)), cx = w * 0.52, cy = h * 0.52, Rb = Math.min(w, h) * 0.11, orb0 = Math.min(w * 0.34, h * 0.36);
+      const T0 = 6000, k = s.hit ? Math.min(1, (t - s.t0 - 600) / 2500) : 0, orb = orb0 * (1 - 0.035 * Math.max(0, k)), T = T0 * (1 - 0.046 * Math.max(0, k));
+      /* 옛 궤도 */
+      c.save(); c.strokeStyle = 'rgba(255,255,255,.18)'; c.setLineDash([4, 6]); c.beginPath(); c.ellipse(cx, cy, orb0, orb0 * 0.42, 0, 0, Math.PI * 2); c.stroke(); c.restore();
+      if (s.hit && k > 0) { c.save(); c.strokeStyle = 'rgba(255,190,110,.75)'; c.lineWidth = 2; c.beginPath(); c.ellipse(cx, cy, orb, orb * 0.42, 0, 0, Math.PI * 2); c.stroke(); c.restore(); }
+      /* 디모르포스 위치 */
+      if (!s.ang0) s.ang0 = 0;
+      const dt = s.last ? t - s.last : 16; s.last = t; s.ang0 += (S.REDUCE ? 0 : dt) / T * Math.PI * 2;
+      if (!s.hit && s.go) { /* 다트가 다가오는 동안 디모르포스가 맞을 자리에 오도록 */ }
+      const a = s.ang0, mx = cx + Math.cos(a) * orb, my = cy + Math.sin(a) * orb * 0.42;
+      const back = Math.sin(a) < 0;
+      if (back) S.planet(c, mx, my, Rb * 0.32, 'asteroid', { seed: 8, lx: -0.6, ly: -0.4 });
+      S.planet(c, cx, cy, Rb, 'asteroid', { seed: 3, lx: -0.6, ly: -0.4 });
+      if (!back) S.planet(c, mx, my, Rb * 0.32, 'asteroid', { seed: 8, lx: -0.6, ly: -0.4 });
+      S.tag(c, '디디모스', cx, cy + Rb + fs * 1.1, { size: fs - 1, bg: 'none', color: '#e6d8c4' });
+      S.tag(c, '디모르포스', mx, my - Rb * 0.32 - fs, { size: fs - 2, bg: 'rgba(8,14,32,.7)', color: '#fff' });
+      /* 다트 다가오기 */
+      if (s.go && !s.hit) {
+        const p = Math.min(1, (t - s.goT) / 2200), tx = mx, ty = my, sx = w * 0.02, sy = h * 0.12, x = S.lerp(sx, tx, p), y = S.lerp(sy, ty, p);
+        S.path(c, [[sx, sy], [x, y]], 'rgba(255,255,255,.25)', 1.5, [3, 5]);
+        S.probe(c, x, y, 10, Math.atan2(ty - sy, tx - sx), 'wing');
+        if (p >= 1) { s.hit = true; s.t0 = t; for (let i = 0; i < 90; i++) { const aa = Math.atan2(sy - ty, sx - tx) + (Math.random() - 0.5) * 2.2, v = 0.4 + Math.random() * 2.4; ej.push({ x: tx, y: ty, vx: Math.cos(aa) * v, vy: Math.sin(aa) * v, l: 1 }); } finishDart(); }
+      }
+      if (s.hit) {
+        const e = t - s.t0; if (e < 700) S.glow(c, mx, my, Rb * (1 + e / 120), [255, 235, 190], 1 - e / 700);
+        c.save(); c.globalCompositeOperation = 'lighter';
+        ej.forEach((q) => { q.x += q.vx; q.y += q.vy; q.l *= 0.985; S.glow(c, q.x, q.y, 3, [230, 210, 180], q.l * 0.8); });
+        c.restore();
+        for (let i = ej.length - 1; i >= 0; i--) if (ej[i].l < 0.05) ej.splice(i, 1);
+      }
+      /* 시계 */
+      $('#tBefore') && ($('#tBefore').textContent = '11시간 55분');
+      $('#tAfter') && ($('#tAfter').textContent = s.hit && k >= 1 ? '약 11시간 22분' : s.hit ? '바뀌는 중…' : '?');
+    }
+    function panelDart() {
+      panel.innerHTML = `<div class="stepname"><span class="no">2</span><div><small>다트 충돌 실험</small><h2>부딪쳐서 소행성의 길을 바꿀 수 있을까?</h2></div></div>
+        <p class="what">작은 소행성 <b>디모르포스</b>는 큰 소행성 <b>디디모스</b>의 둘레를 돌아요. 다트 탐사선을 부딪쳐 한 바퀴 도는 시간이 바뀌는지 확인해 봐요.</p>
+        <div class="acts"><button class="btn primary" id="tGo" type="button">다트 부딪치기</button><button class="btn ghost" id="tRe" type="button">처음으로</button></div>
+        <div class="meters"><div class="mt cool"><small>충돌 전 · 한 바퀴 도는 시간</small><b id="tBefore">11시간 55분</b></div><div class="mt"><small>충돌 후 · 한 바퀴 도는 시간</small><b id="tAfter">?</b></div></div>
+        <div class="cmpbars" id="tCmp"></div>
+        <details class="why"><summary>왜 이런 실험을 했을까? (단계별)</summary><ol>
+          <li>언젠가 지구로 다가오는 소행성을 미리 찾는다면, <b>그 길을 조금만 바꿔도</b> 지구를 비켜 가게 할 수 있어요.</li>
+          <li>그래서 지구와 부딪칠 걱정이 없는 소행성 쌍을 골라, 탐사선을 일부러 부딪쳐 보았어요(2022년 9월 26일).</li>
+          <li>디모르포스가 한 바퀴 도는 시간이 <b>약 33분</b> 줄었어요. 목표로 한 73초보다 훨씬 큰 변화예요.</li>
+          <li>교과서: 다트는 소행성 충돌과 같은 <b>우주 위험에 대응할 수 있는 가능성</b>을 보여 주었어요.</li>
+          <li>2005년 딥 임팩트호는 혜성에 충돌체를 떨어뜨려 <b>혜성 속 물질</b>을 조사했어요. 둘 다 ‘일부러 부딪치는’ 탐사지만 목적이 달라요.</li></ol></details>
+        <div class="box fact"><b class="t">앞으로</b>유럽의 헤라 탐사선이 2026년 11월 디디모스에 도착해 충돌 자국을 살펴볼 예정이에요.<span class="src">출처: NASA·존스홉킨스 응용물리연구소 발표, ESA</span></div>`;
+      $('#tGo').addEventListener('click', () => { const s = st.dart; if (s.go) return; s.go = true; s.goT = performance.now(); hint.textContent = '다트가 다가가는 중'; });
+      $('#tRe').addEventListener('click', () => { st.dart = { hit: false, t0: 0, ang0: 0 }; ej.length = 0; panelDart(); });
+      hint.textContent = '다트를 부딪쳐 보세요';
+      if (st.dart.hit) finishDart();
+    }
+    function finishDart() {
+      hint.textContent = '충돌! 한 바퀴 도는 시간을 비교해 보세요';
+      const el = $('#tCmp'); if (!el) return;
+      el.innerHTML = `<small style="font-weight:800;color:var(--muted)">한 바퀴 도는 시간이 줄어든 양</small>
+        <div class="cb"><span>목표</span><span class="tr"><i style="width:3.7%;background:#9fb0cc"></i></span><span>73초</span></div>
+        <div class="cb"><span>실제 결과</span><span class="tr"><i style="width:100%;background:linear-gradient(90deg,#ffb14a,#ff6a3d)"></i></span><span>약 33분</span></div>`;
+    }
+
+    /* ===== 3. 파커 열 차폐막 ===== */
+    function drawParker(c, w, h, t) {
+      const s = st.parker, fs = Math.max(12, Math.min(15, w / 56)), d = s.d; /* 0: 먼 곳, 1: 가장 가까이 */
+      const rs = S.lerp(h * 0.1, h * 0.62, Math.pow(d, 1.6)), sx = S.lerp(w * 0.08, -rs * 0.28, Math.pow(d, 1.2)), sy = h * 0.5;
+      S.sun(c, sx, sy, rs, t);
+      /* 코로나 줄기 */
+      c.save(); c.globalCompositeOperation = 'lighter'; c.strokeStyle = `rgba(255,220,170,${0.05 + d * 0.12})`; c.lineWidth = 2;
+      for (let i = 0; i < 18; i++) { const a = i / 18 * Math.PI * 2, r1 = rs * 1.05, r2 = rs * (1.6 + 0.4 * Math.sin(i * 3.1 + t / 1500)); c.beginPath(); c.moveTo(sx + Math.cos(a) * r1, sy + Math.sin(a) * r1); c.quadraticCurveTo(sx + Math.cos(a + 0.1) * r2 * 0.8, sy + Math.sin(a + 0.1) * r2 * 0.8, sx + Math.cos(a + 0.05) * r2, sy + Math.sin(a + 0.05) * r2); c.stroke(); }
+      c.restore();
+      /* 탐사선 */
+      const px = w * 0.66, py = h * 0.5, sz = Math.min(w, h) * 0.11;
+      /* 빛줄기 */
+      const heat = Math.pow(d, 1.3);
+      c.save(); c.globalCompositeOperation = 'lighter'; const lg = c.createLinearGradient(sx + rs, 0, px, 0); lg.addColorStop(0, `rgba(255,200,120,${0.06 + heat * 0.14})`); lg.addColorStop(1, 'rgba(255,200,120,0)'); c.fillStyle = lg; c.beginPath(); c.moveTo(sx + rs * 0.9, sy - rs * 0.8); c.lineTo(px - sz * 0.6, py - sz); c.lineTo(px - sz * 0.6, py + sz); c.lineTo(sx + rs * 0.9, sy + rs * 0.8); c.closePath(); c.fill(); c.restore();
+      /* 그늘(차폐막 뒤) */
+      if (s.shield) { c.save(); const sg = c.createLinearGradient(px - sz * 0.5, 0, px + sz * 2.4, 0); sg.addColorStop(0, 'rgba(40,80,160,.35)'); sg.addColorStop(1, 'rgba(40,80,160,0)'); c.fillStyle = sg; c.beginPath(); c.moveTo(px - sz * 0.5, py - sz * 0.95); c.lineTo(px + sz * 2.6, py - sz * 0.75); c.lineTo(px + sz * 2.6, py + sz * 0.75); c.lineTo(px - sz * 0.5, py + sz * 0.95); c.closePath(); c.fill(); c.restore(); }
+      c.save(); c.translate(px, py);
+      /* 몸체 */
+      const gold = c.createLinearGradient(0, -sz, 0, sz); gold.addColorStop(0, '#ffe7a3'); gold.addColorStop(0.5, '#d7a43c'); gold.addColorStop(1, '#8a6018');
+      c.fillStyle = gold; c.fillRect(-sz * 0.2, -sz * 0.42, sz * 1.1, sz * 0.84);
+      const hotB = !s.shield ? heat : 0;
+      if (hotB > 0.3) { c.fillStyle = `rgba(255,60,30,${(hotB - 0.3) * 0.9})`; c.fillRect(-sz * 0.2, -sz * 0.42, sz * 1.1, sz * 0.84); }
+      [[sz * 0.1, sz * 0.46], [sz * 0.1, -sz * 0.96]].forEach(([qx, qy]) => { const pg = c.createLinearGradient(0, qy, 0, qy + sz * 0.5); pg.addColorStop(0, '#3d6fd6'); pg.addColorStop(1, '#16306e'); c.fillStyle = pg; c.fillRect(qx, qy, sz * 0.5, sz * 0.5); c.strokeStyle = 'rgba(180,210,255,.5)'; c.lineWidth = 1; for (let g = 1; g < 4; g++) { c.beginPath(); c.moveTo(qx + sz * 0.5 * g / 4, qy); c.lineTo(qx + sz * 0.5 * g / 4, qy + sz * 0.5); c.stroke(); c.beginPath(); c.moveTo(qx, qy + sz * 0.5 * g / 4); c.lineTo(qx + sz * 0.5, qy + sz * 0.5 * g / 4); c.stroke(); } c.strokeStyle = '#aab3c0'; c.beginPath(); c.moveTo(qx + sz * 0.25, qy < 0 ? qy + sz * 0.5 : qy); c.lineTo(qx + sz * 0.25, qy < 0 ? -sz * 0.42 : sz * 0.42); c.stroke(); });
+      c.strokeStyle = 'rgba(120,80,20,.6)'; c.lineWidth = 1; for (let g = 1; g < 4; g++) { c.beginPath(); c.moveTo(-sz * 0.2 + sz * 1.1 * g / 4, -sz * 0.42); c.lineTo(-sz * 0.2 + sz * 1.1 * g / 4, sz * 0.42); c.stroke(); }
+      c.strokeStyle = '#ddd'; c.lineWidth = 2; c.beginPath(); c.moveTo(sz * 0.9, 0); c.lineTo(sz * 1.5, 0); c.stroke();
+      if (s.shield) {
+        const col = heat < 0.4 ? [200, 195, 185] : heat < 0.8 ? [255, Math.round(170 - (heat - 0.4) * 200), 60] : [255, 230, 190];
+        S.glow(c, -sz * 0.45, 0, sz * (0.6 + heat * 1.6), [255, 140, 60], heat * 0.9);
+        const sh = c.createLinearGradient(-sz * 0.6, 0, -sz * 0.3, 0); sh.addColorStop(0, `rgb(${col.join(',')})`); sh.addColorStop(1, '#6f685d');
+        c.fillStyle = sh; c.beginPath(); c.ellipse(-sz * 0.42, 0, sz * 0.2, sz * 1.05, 0, 0, Math.PI * 2); c.fill();
+      }
+      c.restore();
+      S.tag(c, s.shield ? '열 차폐막' : '차폐막 없음', px - sz * 0.45, py - sz * 1.3, { size: fs - 1, bg: 'rgba(8,14,32,.8)', color: s.shield ? '#ffd27a' : '#ff9a8a' });
+      S.tag(c, '장비', px + sz * 0.35, py + sz * 1.3, { size: fs - 1, bg: 'rgba(8,14,32,.8)', color: '#cfe0ff' });
+      /* 거리 */
+      const km = Math.round(S.lerp(15000, 610, Math.pow(d, 0.7)));
+      S.tag(c, `태양 표면까지 약 ${km >= 10000 ? (km / 10000).toFixed(1) + '억' : km.toLocaleString('ko-KR') + '만'} km`, w * 0.66, h * 0.1, { size: fs, color: '#fff', bg: 'rgba(8,14,32,.8)' });
+      if (d > 0.985) S.tag(c, '가장 가까이 · 시속 약 69만 km', w * 0.66, h * 0.1 + fs * 2.3, { size: fs - 1, color: '#2a1a00', bg: '#ffd27a' });
+      /* 계기 */
+      const fr = $('#pFront'), bk = $('#pBack');
+      if (fr) { fr.style.width = (8 + heat * 92) + '%'; $('#pFrontV').textContent = d > 0.985 ? '약 1,000°C' : heat > 0.5 ? '매우 뜨거움' : heat > 0.15 ? '뜨거워지는 중' : '견딜 만함'; }
+      if (bk) { const hot = !s.shield && heat > 0.3; bk.style.width = (s.shield ? 22 : 22 + heat * 78) + '%'; bk.parentElement.parentElement.classList.toggle('cool', !hot); $('#pBackV').textContent = s.shield ? '약 29°C' : hot ? '장비가 견딜 수 없어요' : '아직 괜찮음'; }
+    }
+    function panelParker() {
+      const s = st.parker;
+      panel.innerHTML = `<div class="stepname"><span class="no">3</span><div><small>파커 태양 탐사선</small><h2>태양에 다가가도 타지 않는 비결</h2></div></div>
+        <p class="what">파커 태양 탐사선은 태양에 접근하여 <b>태양 코로나</b>를 관측해요. 막대를 움직여 태양에 다가가며 차폐막 앞과 뒤를 비교해 봐요.</p>
+        <div class="rng"><span>멀리</span><input type="range" id="pD" min="0" max="1000" value="${Math.round(s.d * 1000)}" aria-label="태양까지 거리"></div>
+        <div class="rng" style="grid-template-columns:1fr"><span style="text-align:right;margin-top:-8px">가장 가까이 →</span></div>
+        <div class="acts"><button class="btn ghost" id="pS" type="button" aria-pressed="${!s.shield}">${s.shield ? '차폐막 치워 보기' : '차폐막 다시 달기'}</button></div>
+        <div class="meters"><div class="mt"><small>차폐막 앞(태양 쪽)</small><b id="pFrontV">견딜 만함</b><div class="bar"><i id="pFront"></i></div></div><div class="mt cool"><small>차폐막 뒤 장비</small><b id="pBackV">약 29°C</b><div class="bar"><i id="pBack"></i></div></div></div>
+        <details class="why"><summary>어떻게 장비가 29°C로 지낼까? (단계별)</summary><ol>
+          <li>탐사선은 늘 <b>차폐막을 태양 쪽으로</b> 향하게 하고, 장비는 그 뒤 그늘에 숨겨요.</li>
+          <li>차폐막은 아주 뜨거워져도 견디도록 만들었어요. 가장 가까이 갔을 때 앞쪽은 <b>약 1,000°C</b>예요(약 1,430°C까지 견디게 설계).</li>
+          <li>열이 차폐막을 지나 뒤로 넘어오지 않게 해서, 그 뒤의 장비는 <b>약 29°C</b>로 지내요.</li>
+          <li>2024년 12월 24일, 태양 표면에서 <b>약 610만 km</b>까지 다가갔어요. 사람이 만든 물체 가운데 태양에 가장 가까이 간 기록이에요.</li>
+          <li>이때 빠르기는 <b>시속 약 69만 km</b>. 서울에서 부산까지 약 2초면 가는 빠르기예요.</li></ol></details>
+        <div class="box fact"><b class="t">재미있는 사실</b>파커가 태양에 가장 가까이 가 있는 동안은 지구와 교신이 끊겨요. 다시 멀어진 뒤에야 "무사하다"는 신호가 도착했어요.<span class="src">출처: NASA 파커 태양 탐사선 발표(2024년 12월)</span></div>`;
+      $('#pD').addEventListener('input', (e) => { s.d = e.target.value / 1000; hint.textContent = s.d > 0.985 ? '가장 가까이 왔어요' : '태양에 다가가는 중'; });
+      $('#pS').addEventListener('click', () => { s.shield = !s.shield; panelParker(); hint.textContent = s.shield ? '차폐막을 다시 달았어요' : '차폐막이 없으면 장비는?'; });
+      hint.textContent = '막대를 움직여 태양에 다가가 보세요';
+    }
+
+    const PANELS = { danuri: panelDanuri, dart: panelDart, parker: panelParker };
+    const DRAW = { danuri: drawDanuri, dart: drawDart, parker: drawParker };
+    function setLab(id) {
+      if (!PANELS[id]) return; lab = id;
+      document.querySelectorAll('.fs').forEach((b) => { b.setAttribute('aria-selected', String(b.dataset.lab === id)); if (b.dataset.lab === id) b.classList.add('seen'); });
+      PANELS[id]();
+    }
+    document.querySelectorAll('.fs').forEach((b) => b.addEventListener('click', () => setLab(b.dataset.lab)));
+    S.add(cv, (t) => { const { c, w, h } = S.fit(cv); S.space(c, w, h, 23); DRAW[lab](c, w, h, t); }, (e) => window.SM_err('실험실 그림', e));
+    window.addEventListener('message', (e) => { if (e.data && e.data.type === 'sx-lab') setLab(e.data.lab); });
+    const q = new URLSearchParams(location.search);
+    setLab(q.get('lab') || 'danuri');
+    /* 화면 검사용: ?auto=1 이면 바로 실행 */
+    if (q.get('auto') === '1') {
+      if (lab === 'danuri') { if (q.get('path')) { st.danuri.path = q.get('path'); panelDanuri(); } st.danuri.p = +(q.get('p') || 1); if (st.danuri.p >= 1) { st.danuri.done = true; finishDanuri(); } }
+      if (lab === 'dart') { $('#tGo').click(); }
+      if (lab === 'parker') { st.parker.d = +(q.get('d') || 1); if (q.get('noshield') === '1') st.parker.shield = false; panelParker(); }
+    }
+    window.SM.okUI = true;
+  } catch (err) { window.SM_err('탐사선 실험실', err); }
+})();
+</script>
+</body>
+</html>
