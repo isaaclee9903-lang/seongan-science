@@ -233,7 +233,7 @@
   </header>
   <div class="stage">
     <section class="card viewer">
-      <div class="gl-host" id="host" role="img" aria-label="실험 책상. 뒤쪽에 숫자 붙임딱지 1부터 6이 붙은 암석 표본 여섯 개가 놓여 있고, 가운데 페트리 접시, 왼쪽에 돋보기, 오른쪽에 묽은 염산 병과 스포이트가 있다."></div>
+      <div class="gl-host" id="host" data-poster="media/p-lab.jpg" role="img" aria-label="실험 책상. 뒤쪽에 숫자 붙임딱지 1부터 6이 붙은 암석 표본 여섯 개가 놓여 있고, 가운데 페트리 접시, 왼쪽에 돋보기, 오른쪽에 묽은 염산 병과 스포이트가 있다."></div>
       <div class="vt tr"><button class="vb" type="button" id="vAll">책상 전체 보기</button></div>
       <div class="lens" id="lens" aria-hidden="true"></div>
       <div class="lenscap">돋보기로 본 모습 (확대)</div>
@@ -319,6 +319,7 @@ const C3 = (() => {
 
   /* 무대: 렌더러·카메라·조명·손가락 조작 */
   function makeStage(host, opt = {}) {
+    let hold = !!opt.hold; // true면 준비(prepare)가 끝날 때까지 그리지 않아요
     const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -389,7 +390,7 @@ const C3 = (() => {
     let last = performance.now(), running = true;
     function tick(now) {
       requestAnimationFrame(tick);
-      if (!running || !visibleNow()) { last = now; return; }
+      if (!running || hold || !visibleNow()) { last = now; return; }
       if (opt.scroll) { const hr = host.getBoundingClientRect(); if (hr.bottom < -50 || hr.top > (window.innerHeight || 800) + 50) { last = now; return; } } // 화면 밖이면 쉬기
       const dt = Math.min(0.05, Math.max(0, (now - last) / 1000)); last = now;
       if (fly) {
@@ -427,7 +428,7 @@ const C3 = (() => {
     }
     try { let fr = 0; new ResizeObserver(() => { cancelAnimationFrame(fr); fr = requestAnimationFrame(() => { if (lastFit && !userMoved) { const f = fitPose(lastFit.objs, lastFit.o); flyTo(f.p, f.t, 0); } }); }).observe(host); } catch (e) {}
 
-    return { renderer, scene, camera, controls, sun, overlay, label, flyTo, fit, fitPose, onFrame: (f) => fns.push(f), size: () => ({ W, H }), resize, stop: () => { running = false; } };
+    return { host, renderer, scene, camera, controls, sun, overlay, label, flyTo, fit, fitPose, onFrame: (f) => fns.push(f), size: () => ({ W, H }), resize, stop: () => { running = false; }, release: () => { hold = false; } };
   }
 
   // 관 모양 전선(곡선)
@@ -473,7 +474,62 @@ const C3 = (() => {
   }
   const mesh = (geo, mat, x = 0, y = 0, z = 0) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true; return m; };
 
-  return { REDUCE, V, ease, clamp01, makeStage, canvasTex, gradientBg, blobTex, tube, makeDots, addTable, visibleNow, mesh };
+  /* ===== 빨리 뜨게 하기 (2026-10-12) =====
+     - lazy(host, fn): 그림 자리가 화면에 가까워지면 fn을 한 번 불러요(iframe 안에서도 되도록 위치를 직접 계산해요).
+     - prepare(st): 재질(셰이더)을 화면을 멈추지 않고 미리 번역한 뒤 그리기 시작해요. 그동안은 미리 찍은 사진(data-poster)을 보여 줘요.
+     - BAKE: 주소에 ?bake=… 이 있으면 영상·사진을 만드는 중이에요(tools/lesson-kit/bake.py). */
+  const BAKE = new URLSearchParams(location.search).get('bake') || '';
+  (function css() {
+    const s = document.createElement('style');
+    s.textContent = '.gl-host>.poster{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1;pointer-events:none}' +
+      '.gl-host.ready>.poster,.gl-host.ready>.prep{display:none}.gl-host.wait>canvas.gl,.gl-host.wait>.lbls{visibility:hidden}' +
+      '.gl-host>.prep{position:absolute;right:10px;bottom:10px;z-index:2;font:800 12.5px Pretendard,sans-serif;color:#33464a;background:rgba(255,255,255,.88);border-radius:9px;padding:5px 10px;pointer-events:none}' +
+      '.gl-host>video.figvid{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}';
+    (document.head || document.documentElement).appendChild(s);
+  })();
+  function posterOn(host) {
+    host.classList.add('wait');
+    const src = host.dataset.poster;
+    if (src && !BAKE && !host.querySelector('.poster')) { const im = document.createElement('img'); im.className = 'poster'; im.alt = ''; im.src = src; host.prepend(im); }
+    if (!BAKE && !host.querySelector('.prep')) { const t = document.createElement('span'); t.className = 'prep'; t.textContent = '3D 준비 중…'; host.appendChild(t); }
+  }
+  function lazy(host, fn, margin = 500) {
+    if (!host) return;
+    posterOn(host);
+    let done = false;
+    const near = () => { const r = host.getBoundingClientRect(), h = window.innerHeight || 800; return r.bottom > -margin && r.top < h + margin && r.width > 0; };
+    const go = () => { if (done || !near()) return; done = true; removeEventListener('scroll', go); removeEventListener('resize', go); clearInterval(iv); try { fn(); } catch (err) { console.error(err); throw err; } };
+    addEventListener('scroll', go, { passive: true }); addEventListener('resize', go);
+    const iv = setInterval(go, 400);
+    if (BAKE) { done = true; clearInterval(iv); if (BAKE === 'all' || BAKE === host.id) fn(); return; }
+    setTimeout(go, 0);
+  }
+  // 재질을 화면을 멈추지 않고 번역해요. 투명한 물체(유리·석영 등)가 있으면 뒤쪽을 따로 그릴 때 쓰는 재질 변형도 미리 준비해요
+  async function compileAll(r, scene, camera) {
+    if (!r.compileAsync) return;
+    await r.compileAsync(scene, camera);
+    let tr = false; scene.traverse((o) => { if (o.material && [].concat(o.material).some((m) => m.transmission > 0)) tr = true; });
+    if (tr) { const rt = new THREE.WebGLRenderTarget(4, 4, { type: THREE.HalfFloatType }), tm = r.toneMapping; r.toneMapping = THREE.NoToneMapping; r.setRenderTarget(rt); try { await r.compileAsync(scene, camera); } finally { r.setRenderTarget(null); r.toneMapping = tm; rt.dispose(); } }
+  }
+  async function prepare(st) {
+    const host = st.host; posterOn(host);
+    try { if (!BAKE) await compileAll(st.renderer, st.scene, st.camera); } catch (e) { console.warn(e); }
+    st.release(); host.classList.remove('wait'); host.classList.add('ready');
+    return st;
+  }
+  /* 보기만 하는 그림: 미리 만든 영상으로 바꿔요 (bake 중에는 3D로 그려요) */
+  function video(host, build) {
+    if (!host) return;
+    if (BAKE === host.id) { build(); return; }
+    const v = document.createElement('video');
+    v.className = 'figvid'; v.muted = true; v.loop = true; v.autoplay = true; v.playsInline = true; v.setAttribute('playsinline', ''); v.setAttribute('muted', '');
+    v.preload = 'metadata'; if (host.dataset.poster) v.poster = host.dataset.poster; v.src = host.dataset.video;
+    host.appendChild(v); host.classList.add('ready');
+    // 화면에 보일 때만 재생해요
+    const chk = () => { const r = host.getBoundingClientRect(), on = r.bottom > 0 && r.top < (window.innerHeight || 800) && !document.hidden; if (on && v.paused) v.play().catch(() => {}); else if (!on && !v.paused) v.pause(); };
+    addEventListener('scroll', chk, { passive: true }); setInterval(chk, 700); chk();
+  }
+  return { BAKE, lazy, prepare, compileAll, video, REDUCE, V, ease, clamp01, makeStage, canvasTex, gradientBg, blobTex, tube, makeDots, addTable, visibleNow, mesh };
 })();
 /* ===== 3D 광물 표본 모형 =====
    실제 표본 사진의 생김새(결정 모양, 빛깔, 투명도, 표면 줄무늬, 변색)를 참고해 three.js로 만든 모형이에요. 사진이 아니에요.
@@ -1222,20 +1278,20 @@ const RLAB = (() => {
   function canvasTex(w, h) { const c = document.createElement('canvas'); c.width = w; c.height = h; const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return { c, g: c.getContext('2d'), t }; }
   function makeDish(r = 0.62) {
     const pts = [[0, 0], [r, 0], [r + 0.01, 0.005], [r + 0.012, 0.11], [r + 0.002, 0.112], [r - 0.002, 0.012], [0, 0.012]].map(([x, y]) => new THREE.Vector2(x, y));
-    const m = new THREE.Mesh(new THREE.LatheGeometry(pts, 64), new THREE.MeshPhysicalMaterial({ color: 0xffffff, transmission: 1, roughness: 0.03, thickness: 0.05, ior: 1.5, specularIntensity: 1 })); m.receiveShadow = true; return m;
+    const m = new THREE.Mesh(new THREE.LatheGeometry(pts, 64), new THREE.MeshPhysicalMaterial({ color: 0xffffff, transparent: true, opacity: 0.2, depthWrite: false, clearcoat: 1, clearcoatRoughness: 0.04, roughness: 0.03, thickness: 0.05, ior: 1.5, specularIntensity: 1 })); m.receiveShadow = true; return m;
   }
   function makeDropper() {
     const grp = new THREE.Group();
     const glass = new THREE.Mesh(new THREE.LatheGeometry([[0.004, 0], [0.012, 0.03], [0.026, 0.12], [0.026, 0.5], [0.03, 0.52]].map(([x, y]) => new THREE.Vector2(x, y)), 32),
-      new THREE.MeshPhysicalMaterial({ color: 0xeef4fb, transmission: 0.92, roughness: 0.04, thickness: 0.12, ior: 1.5, specularIntensity: 1 }));
-    const liquid = new THREE.Mesh(new THREE.CylinderGeometry(0.019, 0.01, 0.16, 20), new THREE.MeshPhysicalMaterial({ color: 0xcfe6ff, transmission: 0.6, roughness: 0.05, thickness: 0.05 })); liquid.position.y = 0.1;
+      new THREE.MeshPhysicalMaterial({ color: 0xeef4fb, transparent: true, opacity: 0.3, depthWrite: false, clearcoat: 1, clearcoatRoughness: 0.04, roughness: 0.04, thickness: 0.12, ior: 1.5, specularIntensity: 1 }));
+    const liquid = new THREE.Mesh(new THREE.CylinderGeometry(0.019, 0.01, 0.16, 20), new THREE.MeshPhysicalMaterial({ color: 0xcfe6ff, transparent: true, opacity: 0.55, depthWrite: false, clearcoat: 1, clearcoatRoughness: 0.04, roughness: 0.05, thickness: 0.05 })); liquid.position.y = 0.1;
     const bulb = new THREE.Mesh(new THREE.LatheGeometry([[0.03, 0.5], [0.042, 0.53], [0.046, 0.6], [0.04, 0.67], [0.02, 0.7], [0.0, 0.705]].map(([x, y]) => new THREE.Vector2(x, y)), 32), new THREE.MeshPhysicalMaterial({ color: 0xc8432c, roughness: 0.45, clearcoat: 0.3 }));
     grp.add(glass, liquid, bulb); grp.traverse((o) => { if (o.isMesh) o.castShadow = true; }); return grp;
   }
   function makeBottle() {
     const grp = new THREE.Group();
     const body = new THREE.Mesh(new THREE.LatheGeometry([[0, 0], [0.16, 0], [0.17, 0.02], [0.17, 0.36], [0.12, 0.44], [0.06, 0.47], [0.06, 0.53]].map(([x, y]) => new THREE.Vector2(x, y)), 40),
-      new THREE.MeshPhysicalMaterial({ color: 0x8a4a1c, transmission: 0.55, roughness: 0.08, thickness: 0.3, ior: 1.5, attenuationColor: new THREE.Color('#5a2a08'), attenuationDistance: 0.3 }));
+      new THREE.MeshPhysicalMaterial({ color: 0x8a4a1c, transparent: true, opacity: 0.78, depthWrite: false, clearcoat: 1, clearcoatRoughness: 0.04, roughness: 0.08, thickness: 0.3, ior: 1.5, attenuationColor: new THREE.Color('#5a2a08'), attenuationDistance: 0.3 }));
     const lt = canvasTex(256, 128); lt.g.fillStyle = '#fbf8ef'; lt.g.fillRect(0, 0, 256, 128); lt.g.strokeStyle = '#c0392b'; lt.g.lineWidth = 6; lt.g.strokeRect(6, 6, 244, 116);
     lt.g.fillStyle = '#1d2b3a'; lt.g.font = '900 44px Pretendard, sans-serif'; lt.g.textAlign = 'center'; lt.g.textBaseline = 'middle'; lt.g.fillText('묽은 염산', 128, 56);
     lt.g.font = '700 22px Pretendard, sans-serif'; lt.g.fillStyle = '#c0392b'; lt.g.fillText('피부에 닿지 않게', 128, 98); lt.t.needsUpdate = true;
@@ -1246,7 +1302,7 @@ const RLAB = (() => {
   function makeLoupe() {
     const grp = new THREE.Group(), R = 0.2;
     const rim = new THREE.Mesh(new THREE.TorusGeometry(R, 0.018, 16, 64), new THREE.MeshPhysicalMaterial({ color: 0xd6d9de, metalness: 1, roughness: 0.25 }));
-    const lens = new THREE.Mesh(new THREE.CylinderGeometry(R, R, 0.012, 48), new THREE.MeshPhysicalMaterial({ color: 0xffffff, transmission: 1, roughness: 0.02, thickness: 0.05, ior: 1.5, specularIntensity: 1 }));
+    const lens = new THREE.Mesh(new THREE.CylinderGeometry(R, R, 0.012, 48), new THREE.MeshPhysicalMaterial({ color: 0xffffff, transparent: true, opacity: 0.14, depthWrite: false, clearcoat: 1, clearcoatRoughness: 0.04, roughness: 0.02, thickness: 0.05, ior: 1.5, specularIntensity: 1 }));
     lens.rotation.x = Math.PI / 2;
     const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.02, 0.09, 16), rim.material); neck.rotation.z = Math.PI / 2; neck.position.x = R + 0.055;
     const wood = canvasTex(64, 256); { const g = wood.g; const gr = g.createLinearGradient(0, 0, 64, 0); gr.addColorStop(0, '#7a4a26'); gr.addColorStop(0.5, '#b07a46'); gr.addColorStop(1, '#6a3e20'); g.fillStyle = gr; g.fillRect(0, 0, 64, 256); for (let i = 0; i < 40; i++) { g.strokeStyle = `rgba(60,30,10,${0.1 + Math.random() * 0.15})`; g.beginPath(); const x = Math.random() * 64; g.moveTo(x, 0); g.bezierCurveTo(x + 6, 80, x - 6, 170, x + 2, 256); g.stroke(); } wood.t.needsUpdate = true; }
@@ -1397,7 +1453,7 @@ const RLAB = (() => {
     }
 
     /* ---------- 묽은 염산 ---------- */
-    const dropMat = new THREE.MeshPhysicalMaterial({ color: 0xffffff, transmission: 1, roughness: 0.02, thickness: 0.05, ior: 1.33 });
+    const dropMat = new THREE.MeshPhysicalMaterial({ color: 0xffffff, transparent: true, opacity: 0.45, depthWrite: false, clearcoat: 1, clearcoatRoughness: 0.04, roughness: 0.02, thickness: 0.05, ior: 1.33 });
     const drop = new THREE.Mesh(new THREE.SphereGeometry(0.032, 20, 14), dropMat); drop.visible = false; scene.add(drop);
     const films = [], _m4 = new THREE.Matrix4(), _q = new THREE.Quaternion();
     const bub = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 14, 10), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.03, metalness: 0.1, transparent: true, opacity: 0.62, envMapIntensity: 2.2, depthWrite: false }), 260);
@@ -1447,12 +1503,16 @@ const RLAB = (() => {
       try {
         const film = new THREE.Mesh(new THREE.SphereGeometry(1, 8, 4), dropMat); film.position.set(0, -3, 0); scene.add(film);
         drop.visible = true; bub.count = 1; _m4.compose(V(0, -3, 0), _q, V(0.01, 0.01, 0.01)); bub.setMatrixAt(0, _m4);
-        st.renderer.compile(scene, st.camera); scene.remove(film); drop.visible = false; bub.count = 0;
+        // 화면 밖에 잠깐 두었다가, 준비(C3.prepare)가 끝나면 치워요 → 첫 염산 실험 때 멈추지 않아요
+        const iv = setInterval(() => { if (!st.host || st.host.classList.contains('ready')) { clearInterval(iv); scene.remove(film); if (!fizz && drop.position.y < -2) drop.visible = false; if (!bubbles.length) bub.count = 0; } }, 300);
+        drop.position.set(0, -3, 0);
       } catch (e) { console.warn(e); }
     }
     warm();
     view('all', 0);
-    return { shelf, select, observe, magnify, acid, view, closeLens, homeLoupe, get cur() { return cur; }, get busy() { return busy; }, get lensOn() { return !!(ins && ins.on); }, tween, wait };
+    // 확대 창(두 번째 렌더러)도 화면을 멈추지 않고 미리 준비해요
+    function warmInset() { if (ins) C3.compileAll(ins.r2, scene, ins.cam).catch(() => {}); }
+    return { warmInset, shelf, select, observe, magnify, acid, view, closeLens, homeLoupe, get cur() { return cur; }, get busy() { return busy; }, get lensOn() { return !!(ins && ins.on); }, tween, wait };
   }
   return { make, makeLoupe, makeDish, makeDropper, makeBottle };
 })();
@@ -1462,12 +1522,12 @@ const INFO = ROCK3D.INFO;
 const SET = [['basalt', 1], ['marble', 2], ['conglomerate', 3], ['gneiss', 4], ['granite', 5], ['sandstone', 6]].map(([id, n]) => ({ key: 'r' + n, id, num: n, label: '표본 ' + '①②③④⑤⑥'[n - 1], seed: 200 + n * 7 }));
 let lab = null, TH = {};
 try {
-  const st = C3.makeStage($('#host'), { top: '#eef0ee', bottom: '#d3d8d4', fov: 32, minD: 1.0, maxD: 14, fitWidth: true });
+  const st = C3.makeStage($('#host'), { top: '#eef0ee', bottom: '#d3d8d4', fov: 32, minD: 1.0, maxD: 14, fitWidth: true, hold: true });
   st.controls.maxPolarAngle = Math.PI * 0.47;
-  lab = RLAB.make(st, { specimens: SET, inset: $('#lens') });
+  lab = RLAB.make(st, { specimens: SET, inset: $('#lens') }); C3.prepare(st).then(() => setTimeout(() => lab.warmInset(), 300));
   window.SM.lab = lab; window.SM.ok3d = true;
 } catch (err) { window.SM_err('3D 그림', err); }
-try { TH = ROCK3D.thumbs(SET.map((s) => s.id), 120); } catch (err) { console.warn(err); }
+SET.forEach((s) => { TH[s.id] = 'media/th-' + s.id + '.png'; });
 
 try {
   const STEPS = {

@@ -8,20 +8,20 @@ const RLAB = (() => {
   function canvasTex(w, h) { const c = document.createElement('canvas'); c.width = w; c.height = h; const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return { c, g: c.getContext('2d'), t }; }
   function makeDish(r = 0.62) {
     const pts = [[0, 0], [r, 0], [r + 0.01, 0.005], [r + 0.012, 0.11], [r + 0.002, 0.112], [r - 0.002, 0.012], [0, 0.012]].map(([x, y]) => new THREE.Vector2(x, y));
-    const m = new THREE.Mesh(new THREE.LatheGeometry(pts, 64), new THREE.MeshPhysicalMaterial({ color: 0xffffff, transmission: 1, roughness: 0.03, thickness: 0.05, ior: 1.5, specularIntensity: 1 })); m.receiveShadow = true; return m;
+    const m = new THREE.Mesh(new THREE.LatheGeometry(pts, 64), new THREE.MeshPhysicalMaterial({ color: 0xffffff, transparent: true, opacity: 0.2, depthWrite: false, clearcoat: 1, clearcoatRoughness: 0.04, roughness: 0.03, thickness: 0.05, ior: 1.5, specularIntensity: 1 })); m.receiveShadow = true; return m;
   }
   function makeDropper() {
     const grp = new THREE.Group();
     const glass = new THREE.Mesh(new THREE.LatheGeometry([[0.004, 0], [0.012, 0.03], [0.026, 0.12], [0.026, 0.5], [0.03, 0.52]].map(([x, y]) => new THREE.Vector2(x, y)), 32),
-      new THREE.MeshPhysicalMaterial({ color: 0xeef4fb, transmission: 0.92, roughness: 0.04, thickness: 0.12, ior: 1.5, specularIntensity: 1 }));
-    const liquid = new THREE.Mesh(new THREE.CylinderGeometry(0.019, 0.01, 0.16, 20), new THREE.MeshPhysicalMaterial({ color: 0xcfe6ff, transmission: 0.6, roughness: 0.05, thickness: 0.05 })); liquid.position.y = 0.1;
+      new THREE.MeshPhysicalMaterial({ color: 0xeef4fb, transparent: true, opacity: 0.3, depthWrite: false, clearcoat: 1, clearcoatRoughness: 0.04, roughness: 0.04, thickness: 0.12, ior: 1.5, specularIntensity: 1 }));
+    const liquid = new THREE.Mesh(new THREE.CylinderGeometry(0.019, 0.01, 0.16, 20), new THREE.MeshPhysicalMaterial({ color: 0xcfe6ff, transparent: true, opacity: 0.55, depthWrite: false, clearcoat: 1, clearcoatRoughness: 0.04, roughness: 0.05, thickness: 0.05 })); liquid.position.y = 0.1;
     const bulb = new THREE.Mesh(new THREE.LatheGeometry([[0.03, 0.5], [0.042, 0.53], [0.046, 0.6], [0.04, 0.67], [0.02, 0.7], [0.0, 0.705]].map(([x, y]) => new THREE.Vector2(x, y)), 32), new THREE.MeshPhysicalMaterial({ color: 0xc8432c, roughness: 0.45, clearcoat: 0.3 }));
     grp.add(glass, liquid, bulb); grp.traverse((o) => { if (o.isMesh) o.castShadow = true; }); return grp;
   }
   function makeBottle() {
     const grp = new THREE.Group();
     const body = new THREE.Mesh(new THREE.LatheGeometry([[0, 0], [0.16, 0], [0.17, 0.02], [0.17, 0.36], [0.12, 0.44], [0.06, 0.47], [0.06, 0.53]].map(([x, y]) => new THREE.Vector2(x, y)), 40),
-      new THREE.MeshPhysicalMaterial({ color: 0x8a4a1c, transmission: 0.55, roughness: 0.08, thickness: 0.3, ior: 1.5, attenuationColor: new THREE.Color('#5a2a08'), attenuationDistance: 0.3 }));
+      new THREE.MeshPhysicalMaterial({ color: 0x8a4a1c, transparent: true, opacity: 0.78, depthWrite: false, clearcoat: 1, clearcoatRoughness: 0.04, roughness: 0.08, thickness: 0.3, ior: 1.5, attenuationColor: new THREE.Color('#5a2a08'), attenuationDistance: 0.3 }));
     const lt = canvasTex(256, 128); lt.g.fillStyle = '#fbf8ef'; lt.g.fillRect(0, 0, 256, 128); lt.g.strokeStyle = '#c0392b'; lt.g.lineWidth = 6; lt.g.strokeRect(6, 6, 244, 116);
     lt.g.fillStyle = '#1d2b3a'; lt.g.font = '900 44px Pretendard, sans-serif'; lt.g.textAlign = 'center'; lt.g.textBaseline = 'middle'; lt.g.fillText('묽은 염산', 128, 56);
     lt.g.font = '700 22px Pretendard, sans-serif'; lt.g.fillStyle = '#c0392b'; lt.g.fillText('피부에 닿지 않게', 128, 98); lt.t.needsUpdate = true;
@@ -32,7 +32,7 @@ const RLAB = (() => {
   function makeLoupe() {
     const grp = new THREE.Group(), R = 0.2;
     const rim = new THREE.Mesh(new THREE.TorusGeometry(R, 0.018, 16, 64), new THREE.MeshPhysicalMaterial({ color: 0xd6d9de, metalness: 1, roughness: 0.25 }));
-    const lens = new THREE.Mesh(new THREE.CylinderGeometry(R, R, 0.012, 48), new THREE.MeshPhysicalMaterial({ color: 0xffffff, transmission: 1, roughness: 0.02, thickness: 0.05, ior: 1.5, specularIntensity: 1 }));
+    const lens = new THREE.Mesh(new THREE.CylinderGeometry(R, R, 0.012, 48), new THREE.MeshPhysicalMaterial({ color: 0xffffff, transparent: true, opacity: 0.14, depthWrite: false, clearcoat: 1, clearcoatRoughness: 0.04, roughness: 0.02, thickness: 0.05, ior: 1.5, specularIntensity: 1 }));
     lens.rotation.x = Math.PI / 2;
     const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.02, 0.09, 16), rim.material); neck.rotation.z = Math.PI / 2; neck.position.x = R + 0.055;
     const wood = canvasTex(64, 256); { const g = wood.g; const gr = g.createLinearGradient(0, 0, 64, 0); gr.addColorStop(0, '#7a4a26'); gr.addColorStop(0.5, '#b07a46'); gr.addColorStop(1, '#6a3e20'); g.fillStyle = gr; g.fillRect(0, 0, 64, 256); for (let i = 0; i < 40; i++) { g.strokeStyle = `rgba(60,30,10,${0.1 + Math.random() * 0.15})`; g.beginPath(); const x = Math.random() * 64; g.moveTo(x, 0); g.bezierCurveTo(x + 6, 80, x - 6, 170, x + 2, 256); g.stroke(); } wood.t.needsUpdate = true; }
@@ -183,7 +183,7 @@ const RLAB = (() => {
     }
 
     /* ---------- 묽은 염산 ---------- */
-    const dropMat = new THREE.MeshPhysicalMaterial({ color: 0xffffff, transmission: 1, roughness: 0.02, thickness: 0.05, ior: 1.33 });
+    const dropMat = new THREE.MeshPhysicalMaterial({ color: 0xffffff, transparent: true, opacity: 0.45, depthWrite: false, clearcoat: 1, clearcoatRoughness: 0.04, roughness: 0.02, thickness: 0.05, ior: 1.33 });
     const drop = new THREE.Mesh(new THREE.SphereGeometry(0.032, 20, 14), dropMat); drop.visible = false; scene.add(drop);
     const films = [], _m4 = new THREE.Matrix4(), _q = new THREE.Quaternion();
     const bub = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 14, 10), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.03, metalness: 0.1, transparent: true, opacity: 0.62, envMapIntensity: 2.2, depthWrite: false }), 260);
@@ -233,12 +233,16 @@ const RLAB = (() => {
       try {
         const film = new THREE.Mesh(new THREE.SphereGeometry(1, 8, 4), dropMat); film.position.set(0, -3, 0); scene.add(film);
         drop.visible = true; bub.count = 1; _m4.compose(V(0, -3, 0), _q, V(0.01, 0.01, 0.01)); bub.setMatrixAt(0, _m4);
-        st.renderer.compile(scene, st.camera); scene.remove(film); drop.visible = false; bub.count = 0;
+        // 화면 밖에 잠깐 두었다가, 준비(C3.prepare)가 끝나면 치워요 → 첫 염산 실험 때 멈추지 않아요
+        const iv = setInterval(() => { if (!st.host || st.host.classList.contains('ready')) { clearInterval(iv); scene.remove(film); if (!fizz && drop.position.y < -2) drop.visible = false; if (!bubbles.length) bub.count = 0; } }, 300);
+        drop.position.set(0, -3, 0);
       } catch (e) { console.warn(e); }
     }
     warm();
     view('all', 0);
-    return { shelf, select, observe, magnify, acid, view, closeLens, homeLoupe, get cur() { return cur; }, get busy() { return busy; }, get lensOn() { return !!(ins && ins.on); }, tween, wait };
+    // 확대 창(두 번째 렌더러)도 화면을 멈추지 않고 미리 준비해요
+    function warmInset() { if (ins) C3.compileAll(ins.r2, scene, ins.cam).catch(() => {}); }
+    return { warmInset, shelf, select, observe, magnify, acid, view, closeLens, homeLoupe, get cur() { return cur; }, get busy() { return busy; }, get lensOn() { return !!(ins && ins.on); }, tween, wait };
   }
   return { make, makeLoupe, makeDish, makeDropper, makeBottle };
 })();

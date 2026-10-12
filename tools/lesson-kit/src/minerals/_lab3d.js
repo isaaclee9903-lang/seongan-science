@@ -470,7 +470,6 @@ const LAB = (() => {
         const film = new THREE.Mesh(new THREE.SphereGeometry(1, 8, 4), dropMat); film.position.set(0, -3, 0); scene.add(film);
         drop.visible = true; bub.count = 1; dust.count = 1; _m4.compose(V(0, -3, 0), _q, V(0.01, 0.01, 0.01)); bub.setMatrixAt(0, _m4); dust.setMatrixAt(0, _m4);
         st.renderer.compile(scene, st.camera);
-        st.renderer.render(scene, st.camera);
         scene.remove(extra, film); drop.visible = false; bub.count = 0; dust.count = 0;
         scr = { piece: extra, marks: new THREE.Group() }; extra.scale.setScalar(0.4); extra.visible = false; scene.add(extra, scr.marks);
       } catch (e) { console.warn(e); }

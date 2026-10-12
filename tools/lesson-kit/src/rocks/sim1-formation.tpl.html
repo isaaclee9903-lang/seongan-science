@@ -28,6 +28,7 @@
   .res h3 .k{font-size:13px;color:#fff;border-radius:8px;padding:2px 9px}
   .r3d{position:relative;height:190px;border-radius:12px;overflow:hidden;background:linear-gradient(#f1f2ef,#d9dcd6)}
   .r3d .gl-host{position:absolute;inset:0;height:auto;min-height:0;background:transparent}
+  .r3d .poster{background:linear-gradient(#f1f2ef,#d9dcd6);object-fit:contain!important}
   .r3d .cap{position:absolute;left:8px;top:8px;z-index:2;font-size:12px;font-weight:800;color:#33464a;background:rgba(255,255,255,.85);border-radius:8px;padding:3px 8px}
   .why{margin:8px 0 0;padding:0;list-style:none;display:grid;gap:6px;counter-reset:w}
   .why li{position:relative;padding:8px 10px 8px 40px;border-radius:12px;background:#fff;border:1px solid var(--line);font-size:14.5px;line-height:1.6;word-break:keep-all}
@@ -250,20 +251,28 @@ import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 /*@@PART:c3.js@@*/
 /*@@LOCAL:_min3d.js@@*/
 /*@@LOCAL:_rock3d.js@@*/
-let st = null, cur = null, want = null;
-function show(id) {
+let st = null, cur = null, want = null, seq = 0;
+/* 만들어진 암석: 먼저 미리 찍은 사진을 보여 주고, 3D 재질을 화면을 멈추지 않고 준비한 뒤 돌아가는 3D로 바꿔요 */
+async function show(id) {
   want = id; if (!id) return;
+  const host = document.getElementById('r3d'), my = ++seq;
+  let im = host.querySelector('.poster'); if (!im) { im = document.createElement('img'); im.className = 'poster'; im.alt = ''; host.prepend(im); }
+  im.src = 'media/th-' + id + '.png'; host.classList.remove('ready');
   try {
     if (!st) {
-      st = C3.makeStage(document.getElementById('r3d'), { top: '#f1f2ef', bottom: '#d9dcd6', fov: 28, minD: 1, maxD: 8, fitWidth: true });
+      st = C3.makeStage(host, { top: '#f1f2ef', bottom: '#d9dcd6', fov: 28, minD: 1, maxD: 8, fitWidth: true });
       st.scene.environment = MIN3D.studioEnv(st.renderer);
       const fl = new THREE.Mesh(new THREE.CircleGeometry(5, 48), new THREE.MeshStandardMaterial({ color: 0xe6e3dc, roughness: 0.9 })); fl.rotation.x = -Math.PI / 2; fl.receiveShadow = true; st.scene.add(fl);
       st.onFrame((dt) => { if (cur) cur.rotation.y += dt * 0.35; });
     }
+    const m = ROCK3D.make(id); m.scale.setScalar(1.3);
+    const tmp = new THREE.Scene(); tmp.add(m);
+    try { if (st.renderer.compileAsync) await st.renderer.compileAsync(tmp, st.camera, st.scene); } catch (e) { console.warn(e); }
+    if (my !== seq) return; // 그사이 다른 암석으로 바뀌었어요
     if (cur) { st.scene.remove(cur); cur.traverse((o) => { if (o.isMesh) o.geometry.dispose(); }); }
-    cur = ROCK3D.make(id); cur.scale.setScalar(1.3); st.scene.add(cur);
+    cur = m; st.scene.add(cur);
     st.fit(cur, { dir: C3.V(0, 0.55, 1), margin: 1.15 });
-    window.SM.ok3d = true;
+    host.classList.add('ready');
   } catch (err) { window.SM_err('3D 모형', err); }
 }
 window.SM.showRock = show;
