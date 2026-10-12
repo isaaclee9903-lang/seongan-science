@@ -168,14 +168,19 @@ window.IGN2D = (function () {
       // 용암 흐름 (오른쪽 경사면을 따라)
       var lavaPt = function (u) { u *= 0.92; var a = 1 - u, P0x = vx + crW, P0y = crY, Cx = vx + vw * 0.35, Cy = gy - vh * 0.55, P2x = vx + vw, P2y = gy; return [a * a * P0x + 2 * a * u * Cx + u * u * P2x, a * a * P0y + 2 * a * u * Cy + u * u * P2y - 3]; };
       if (flowOn || (st.where === 'surface' && st.done)) {
-        var n = 40, len = st.flow;
+        var n = 48, len = st.flow, th = function (u) { return crW * (0.28 + 0.42 * u + 0.1 * Math.sin(u * 19 + 1)); };
         for (var i2 = 0; i2 < n; i2++) {
-          var u0 = i2 / n, u1 = (i2 + 1) / n; if (u0 > len) break;
+          var u0 = i2 / n, u1 = Math.min((i2 + 1) / n, len); if (u0 > len) break;
           var age = Math.max(0, st.t - 2.6 * u0), cool = Math.max(0, 1 - age / (st.dur * 0.75)) * (st.done ? 0 : 1);
-          var a0 = lavaPt(u0), a1 = lavaPt(Math.min(u1, len));
-          c.strokeStyle = rgb(heat(0.15 + 0.85 * cool)); c.lineWidth = crW * (0.9 + 0.5 * Math.sin(u0 * 9 + 1) * 0.4 + u0 * 0.5); c.lineCap = 'round';
-          if (cool > 0.3) { c.save(); c.shadowColor = 'rgba(255,120,30,.8)'; c.shadowBlur = 12 * cool; }
-          c.beginPath(); c.moveTo(a0[0], a0[1]); c.lineTo(a1[0], a1[1]); c.stroke(); if (cool > 0.3) c.restore();
+          var a0 = lavaPt(u0), a1 = lavaPt(u1), t0 = th(u0), t1 = th(u1);
+          // 경사면 위에 얹힌 용암 띠 (아래는 지표에 붙고 위는 볼록)
+          c.beginPath(); c.moveTo(a0[0], a0[1] + 2); c.lineTo(a1[0], a1[1] + 2); c.lineTo(a1[0], a1[1] - t1); c.lineTo(a0[0], a0[1] - t0); c.closePath();
+          var lg = c.createLinearGradient(0, a0[1] - t0, 0, a0[1] + 2); lg.addColorStop(0, rgb(heat(Math.min(1, 0.25 + 0.85 * cool)))); lg.addColorStop(1, rgb(heat(0.1 + 0.6 * cool)));
+          c.fillStyle = lg; if (cool > 0.3) { c.save(); c.shadowColor = 'rgba(255,120,30,.8)'; c.shadowBlur = 14 * cool; } c.fill(); if (cool > 0.3) c.restore();
+          // 식으며 생기는 겉껍질과 그 틈의 붉은빛
+          if (cool < 0.75 && i2 % 2 === 0) { c.strokeStyle = 'rgba(30,24,22,' + (0.6 * (1 - cool)) + ')'; c.lineWidth = 1.5; c.beginPath(); c.moveTo(a0[0], a0[1] - t0 * 0.9); c.lineTo(a1[0], a1[1] - t1 * 0.4); c.stroke(); }
+          if (cool > 0.05 && cool < 0.6 && i2 % 3 === 1) { c.strokeStyle = rgb(heat(0.7), cool * 1.4); c.lineWidth = 1.2; c.beginPath(); c.moveTo((a0[0] + a1[0]) / 2, (a0[1] + a1[1]) / 2 - t0 * 0.7); c.lineTo((a0[0] + a1[0]) / 2 + 3, (a0[1] + a1[1]) / 2 - t0 * 0.2); c.stroke(); }
+          if (u1 >= len - 1e-6) { c.fillStyle = rgb(heat(Math.min(1, 0.2 + 0.85 * cool))); c.beginPath(); c.ellipse(a1[0], a1[1] - t1 * 0.45, t1 * 0.75, t1 * 0.6, 0.5, 0, 6.283); c.fill(); break; }
         }
       }
       // 분출물과 화산재

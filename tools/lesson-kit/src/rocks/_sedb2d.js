@@ -72,7 +72,7 @@ window.SEDB2D = (function () {
         // 알갱이 사이: 물 → 붙이는 물질
         var HH = st.ph === 'falling' && st.Hprev ? st.Hprev : st.H.h, tp = 0; for (var j0 = 0; j0 < HH.length; j0++) tp = Math.max(tp, HH[j0]);
         c.save(); c.beginPath(); c.moveTo(X(0), floor); for (var j = 0; j < HH.length; j++) c.lineTo(X(j * st.H.dx), Y(HH[j])); c.lineTo(X(BW), floor); c.closePath(); c.clip();
-        c.fillStyle = 'rgba(40,100,135,.55)'; c.fillRect(X(0), Y(tp) - 4, bw, floor - Y(tp) + 4);
+        c.fillStyle = 'rgba(28,78,108,.32)'; c.fillRect(X(0), Y(tp) - 4, bw, floor - Y(tp) + 4);
         if (st.cem > 0) { var fy = floor - (floor - Y(top() + 2)) * st.cem; var cg = c.createLinearGradient(0, fy - 16, 0, floor); cg.addColorStop(0, 'rgba(200,160,110,0)'); cg.addColorStop(0.1, 'rgba(196,156,104,1)'); cg.addColorStop(1, 'rgba(160,118,76,1)'); c.fillStyle = cg; c.fillRect(X(0), fy - 16, bw, floor - fy + 16); }
         c.restore();
         // 다 쌓인 알갱이는 한 장에 그려 두고(빠르게), 다질 때는 그 장을 세로로 눌러 그려요
@@ -97,7 +97,7 @@ window.SEDB2D = (function () {
       // 누르는 화살표
       if (st.ph === 'compact') { var a = Math.min(1, st.t * 2) * Math.max(0, Math.min(1, (3.2 - st.t) * 2)); c.fillStyle = 'rgba(30,60,100,' + 0.75 * a + ')'; for (var q = 0; q < 5; q++) { var ax = X(BW * (0.1 + q * 0.2)), ay = Y(top()) - 70 + Math.sin(time * 5 + q) * 3; c.beginPath(); c.moveTo(ax - 12, ay); c.lineTo(ax + 12, ay); c.lineTo(ax + 12, ay + 24); c.lineTo(ax + 24, ay + 24); c.lineTo(ax, ay + 48); c.lineTo(ax - 24, ay + 24); c.lineTo(ax - 12, ay + 24); c.closePath(); c.fill(); } }
       // 굳은 뒤 반짝
-      if (st.flash > 0 && hasSed) { c.save(); c.globalAlpha = Math.min(1, st.flash) * 0.35; c.fillStyle = '#fff6d8'; c.fillRect(X(0), Y(top()), bw, floor - Y(top())); c.restore(); }
+      if (st.flash > 0 && hasSed) { c.save(); c.beginPath(); c.moveTo(X(0), floor); for (var jf = 0; jf < st.H.h.length; jf++) c.lineTo(X(jf * st.H.dx), Y(st.H.h[jf])); c.lineTo(X(BW), floor); c.closePath(); c.clip(); c.globalAlpha = Math.min(1, st.flash) * 0.22; c.fillStyle = '#fff6d8'; c.fillRect(X(0), Y(top()) - 4, bw, floor - Y(top()) + 4); c.restore(); }
       // 층 이름표 (오른쪽)
       var fs = Math.max(13, Math.round(Math.min(W, H) * 0.028));
       c.font = '800 ' + fs + 'px Pretendard, sans-serif'; c.textBaseline = 'middle';

@@ -191,10 +191,10 @@ const RLAB = (() => {
     let bubbles = [], fizz = null;
     ticks.push((dt) => {
       if (fizz && fizz.left > 0) {
-        fizz.left -= dt; fizz.acc += dt * 95 * Math.min(1, fizz.left / 2 + 0.2);
+        fizz.left -= dt; fizz.acc += dt * 110 * Math.min(1, fizz.left / 3 + 0.25);
         while (fizz.acc > 1 && bubbles.length < 260) {
           fizz.acc -= 1; const a = Math.random() * 6.28, r = Math.sqrt(Math.random()) * fizz.r, h = hitDown([fizz.m], fizz.c.x + Math.cos(a) * r, fizz.c.z + Math.sin(a) * r, 3);
-          if (h) bubbles.push({ p: h.point.clone(), n: h.face ? h.face.normal.clone().transformDirection(h.object.matrixWorld) : V(0, 1, 0), r: 0, rm: 0.004 + Math.random() * 0.011, life: 0, max: 0.6 + Math.random() * 1.4, up: Math.random() < 0.25 });
+          if (h) bubbles.push({ p: h.point.clone(), n: h.face ? h.face.normal.clone().transformDirection(h.object.matrixWorld) : V(0, 1, 0), r: 0, rm: 0.007 + Math.random() * 0.016, life: 0, max: 1.0 + Math.random() * 1.8, up: Math.random() < 0.25 });
         }
       }
       bubbles = bubbles.filter((b) => b.life < b.max);
@@ -219,7 +219,7 @@ const RLAB = (() => {
           if (k === 0) { const film = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2), dropMat); film.position.set(tx, ty - 0.002, tz); film.quaternion.setFromUnitVectors(V(0, 1, 0), nrm); scene.add(film); films.push(film); film.scale.set(0.015, 0.012, 0.015); }
           const film = films[films.length - 1]; const r0 = film.scale.x;
           await tween(0.35, (e) => { const r = r0 + e * 0.022; film.scale.set(r, 0.008, r); });
-          if (k === 0 && info.acid) fizz = { c: V(tx, 0, tz), r: 0.1, m, left: 6.5, acc: 0 };
+          if (k === 0 && info.acid) fizz = { c: V(tx, 0, tz), r: 0.13, m, left: 10, acc: 0 };
         }
         const d1 = dropper.position.clone();
         tween(1.1, (e) => { dropper.position.lerpVectors(d1, dropHome, e); dropper.position.y += Math.sin(e * Math.PI) * 0.4; });
