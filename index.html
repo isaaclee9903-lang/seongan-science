@@ -100,11 +100,8 @@
   .step p{margin:0;font-size:17px;line-height:1.8;color:var(--ink2);max-width:420px}
   .step .try{margin-top:16px;font-size:14px;font-weight:700;color:var(--muted);display:flex;align-items:center;gap:8px}
   .step .try::before{content:"";width:18px;height:1px;background:currentColor}
+  .ctrlbar{min-height:24px;font-size:13px;font-weight:700;color:var(--muted)}
   .stage{position:sticky;top:8vh;align-self:start;display:flex;flex-direction:column;gap:12px}
-  .ctrlbar{display:flex;align-items:center;gap:8px;justify-content:flex-end}
-  .ctrlbar .lbl{margin-right:auto;font-size:13px;font-weight:700;color:var(--muted)}
-  .ctrlbar button{display:flex;align-items:center;gap:7px;min-height:44px;padding:0 14px;border-radius:12px;border:1px solid var(--hair);background:#fff;font-weight:800;font-size:14px;color:var(--ink2)}
-  .ctrlbar button.on{background:var(--ink);border-color:var(--ink);color:#fff}
   .device{position:relative;width:100%;aspect-ratio:4/3;border-radius:30px;background:linear-gradient(145deg,#2a3a4d,#121b26 55%,#1d2938);padding:16px;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.08),0 2px 4px rgba(20,38,59,.08),0 34px 70px rgba(20,58,110,.22)}
   .device::before{content:"";position:absolute;top:6px;left:50%;width:6px;height:6px;margin-left:-3px;border-radius:50%;background:#3c4e63}
   .device::after{content:"";position:absolute;inset:16px;border-radius:18px;pointer-events:none;background:linear-gradient(120deg,rgba(255,255,255,.10),transparent 35%)}
@@ -308,8 +305,6 @@
           </div>
         </div></div>
         <div class="ctrlbar"><span class="lbl" id="egLbl">예시 수업: 전기는 왜 흐를까?</span>
-          <button id="pauseBtn" aria-pressed="false"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="4" width="5" height="16" rx="1.5"/><rect x="14" y="4" width="5" height="16" rx="1.5"/></svg><span>멈춤</span></button>
-          <button id="replayBtn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>다시 보기</button>
         </div>
       </div>
     </div>
@@ -397,7 +392,7 @@ const TABS = [
 </script>
 
 <script>
-// ───── 장면 시계: 멈춤·다시 보기를 위해 자동 재생은 모두 이 시계로 예약한다 ─────
+// ───── 장면 시계: 자동 재생은 모두 이 시계로 예약한다 (장면이 바뀌면 남은 예약을 지운다) ─────
 window.SCENE = { cur: -1, t: 0, q: [], on: [], paused: matchMedia('(prefers-reduced-motion: reduce)').matches,
   at(ms, fn) { this.q.push({ t: this.t + ms, fn }); },
   clear() { this.q = []; },
@@ -419,7 +414,6 @@ try {
   const tabs = [...document.querySelectorAll('#sbar span')];
   const rail = document.getElementById('railFill');
   const flow = document.getElementById('flow');
-  const pauseBtn = document.getElementById('pauseBtn');
   function show(i) {
     steps.forEach((s, k) => s.classList.toggle('on', k === i));
     tabs.forEach((t, k) => t.classList.toggle('on', k === Math.max(0, i)));
@@ -442,10 +436,6 @@ try {
   const goStep = i => { const s = steps[i]; const y = s.getBoundingClientRect().top + scrollY + s.offsetHeight / 2 - innerHeight * (innerWidth <= 900 ? .72 : .5); scrollTo({ top: y, behavior: reduce ? 'auto' : 'smooth' }); };
   tabs.forEach((t, i) => t.addEventListener('click', () => goStep(i)));
   document.querySelectorAll('[data-go-flow]').forEach(a => a.addEventListener('click', e => { e.preventDefault(); goStep(0); }));
-  function syncPause() { pauseBtn.querySelector('span').textContent = SCENE.paused ? '계속 보기' : '멈춤'; pauseBtn.classList.toggle('on', SCENE.paused); pauseBtn.setAttribute('aria-pressed', SCENE.paused); }
-  document.getElementById('replayBtn').addEventListener('click', () => { SCENE.paused = false; syncPause(); SCENE.start(Math.max(0, SCENE.cur)); });
-  pauseBtn.addEventListener('click', () => { SCENE.paused = !SCENE.paused; syncPause(); });
-  syncPause();
   setTimeout(update, 0);
 } catch (e) { __err('스크롤', e); }
 </script>
