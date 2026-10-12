@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>암석의 종류 – 암석이 만들어지는 과정</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+/*@@LOCAL:_css_lab.css@@*/
+  .flow.three3{grid-template-columns:repeat(3,1fr)}
+  .fs[data-m="ign"][aria-selected="true"]{background:#c4562a}
+  .fs[data-m="sed"][aria-selected="true"]{background:#a87a22}
+  .fs[data-m="met"][aria-selected="true"]{background:#3f7f5a}
+  .viewer canvas.cv{display:block;width:100%;height:100%}
+  .viewer .gl-host{touch-action:pan-y}
+  .opt{display:flex;flex-wrap:wrap;gap:6px}
+  .opt .chip{min-height:50px;font-size:15px}
+  .opt .chip[aria-pressed="true"]{border-color:var(--fab);background:var(--fab-soft);color:#123f46}
+  .opt .chip small{display:block;font-size:12px;color:var(--muted);font-weight:700}
+  .tog{display:flex;align-items:center;gap:10px;min-height:50px;border-radius:12px;border:2px dashed #cbbbe6;background:#fbf8ff;padding:6px 12px;font-weight:800;font-size:15px;cursor:pointer;width:100%;text-align:left;word-break:keep-all}
+  .tog i{flex:none;width:26px;height:26px;border-radius:8px;border:2px solid #9a7ad0;background:#fff;display:grid;place-items:center}
+  .tog[aria-pressed="true"]{border-style:solid;border-color:#7a4fb8;background:#f1eafb}
+  .tog[aria-pressed="true"] i::after{content:'';width:8px;height:13px;border:solid #7a4fb8;border-width:0 3px 3px 0;transform:translateY(-2px) rotate(45deg)}
+  .res{margin-top:12px;border-radius:16px;border:1px solid #cfe3e5;background:linear-gradient(180deg,#fbfefe,#eef7f7);padding:10px 12px}
+  .res h3{margin:2px 0 6px;font-size:18px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .res h3 .k{font-size:13px;color:#fff;border-radius:8px;padding:2px 9px}
+  .r3d{position:relative;height:190px;border-radius:12px;overflow:hidden;background:linear-gradient(#f1f2ef,#d9dcd6)}
+  .r3d .gl-host{position:absolute;inset:0;height:auto;min-height:0;background:transparent}
+  .r3d .cap{position:absolute;left:8px;top:8px;z-index:2;font-size:12px;font-weight:800;color:#33464a;background:rgba(255,255,255,.85);border-radius:8px;padding:3px 8px}
+  .why{margin:8px 0 0;padding:0;list-style:none;display:grid;gap:6px;counter-reset:w}
+  .why li{position:relative;padding:8px 10px 8px 40px;border-radius:12px;background:#fff;border:1px solid var(--line);font-size:14.5px;line-height:1.6;word-break:keep-all}
+  .why li::before{counter-increment:w;content:counter(w);position:absolute;left:10px;top:8px;width:22px;height:22px;border-radius:7px;background:var(--fab);color:#fff;font-weight:900;font-size:13px;display:grid;place-items:center}
+  .grid4{display:grid;grid-template-columns:auto 1fr 1fr;gap:5px;margin-top:10px;font-size:13.5px;font-weight:800;text-align:center;word-break:keep-all}
+  .grid4 > div{border-radius:10px;padding:8px 4px;background:#f2f5f7;color:#8a98a6;min-height:44px;display:grid;place-items:center}
+  .grid4 > .h{background:none;color:var(--muted);font-size:12.5px;min-height:0;padding:2px}
+  .grid4 > .on{background:#fff1ea;color:#a8461f;box-shadow:inset 0 0 0 2px #f0b79c}
+  .phase .ph{transition:background .3s,color .3s}
+  [hidden]{display:none!important}
+</style>
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }
+</script>
+</head>
+<body>
+<div class="app">
+  <header>
+    <span class="eyebrow">암석의 종류 · 시뮬레이션 ①</span>
+    <h1>암석이 만들어지는 과정: 식히고, 쌓고, 누르기</h1>
+    <p class="sub">마그마를 식혀 화성암을, 퇴적물을 쌓아 퇴적암을, 원래 암석에 열과 압력을 가해 변성암을 만들어 봐요. 생성 과정이 다르면 암석의 생김새가 어떻게 달라지는지 비교해요.</p>
+  </header>
+  <div class="stage">
+    <section class="card viewer">
+      <div class="gl-host" id="host"><canvas class="cv" id="cv" role="img" aria-label="선택한 생성 과정의 움직이는 그림"></canvas></div>
+      <div id="fail3d" class="fail3d">그림을 불러오지 못했어요. 새로고침해 주세요.</div>
+    </section>
+    <section class="card pad">
+      <div class="flow three3" id="flow" role="tablist">
+        <button class="fs" type="button" role="tab" data-m="ign"><b>화성암</b>마그마 식히기</button>
+        <button class="fs" type="button" role="tab" data-m="sed"><b>퇴적암</b>퇴적물 쌓기</button>
+        <button class="fs" type="button" role="tab" data-m="met"><b>변성암</b>열과 압력 가하기</button>
+      </div>
+      <div class="stepname"><span class="no" id="sNo">1</span><div><h2 id="sTitle"></h2><small id="sSub"></small></div></div>
+      <p class="what" id="sWhat"></p>
+
+      <!-- 화성암 -->
+      <div id="pIgn">
+        <p class="lab-l">마그마 고르기</p>
+        <div class="opt" id="igKind"><button class="chip" type="button" data-v="light">밝은색 광물이 많은 마그마<small>석영, 장석 등</small></button><button class="chip" type="button" data-v="dark">어두운색 광물이 많은 마그마<small>감람석, 휘석 등</small></button></div>
+        <p class="lab-l">마그마가 식는 곳</p>
+        <div class="opt" id="igWhere"><button class="chip" type="button" data-v="surface">지표로 분출<small>빠르게 식어요</small></button><button class="chip" type="button" data-v="deep">지하 깊은 곳<small>천천히 식어요</small></button></div>
+        <div class="acts2"><button class="act" type="button" id="igGo">식히기 시작</button></div>
+        <div class="grid4" id="igGrid"></div>
+      </div>
+      <!-- 퇴적암 -->
+      <div id="pSed" hidden>
+        <p class="lab-l">퇴적물 고르기</p>
+        <div class="opt" id="sdKind"><button class="chip" type="button" data-v="gravel">자갈</button><button class="chip" type="button" data-v="sand">모래</button><button class="chip" type="button" data-v="mud">진흙</button><button class="chip" type="button" data-v="lime">석회 물질<small>산호·조개껍데기</small></button></div>
+        <div style="margin-top:8px"><button class="tog" type="button" id="sdFos" aria-pressed="false"><i></i>생물의 유해(조개)도 함께 묻기</button></div>
+        <div class="acts2"><button class="act" type="button" id="sdDep">쌓기</button><button class="act" type="button" id="sdCom">다져지기</button><button class="act" type="button" id="sdCem">굳어지기</button><button class="btn ghost" type="button" id="sdReset">처음부터</button></div>
+      </div>
+      <!-- 변성암 -->
+      <div id="pMet" hidden>
+        <p class="lab-l">원래 암석 고르기</p>
+        <div class="opt" id="mtRock"><button class="chip" type="button" data-v="sandstone">사암</button><button class="chip" type="button" data-v="limestone">석회암</button><button class="chip" type="button" data-v="granite">화강암</button><button class="chip" type="button" data-v="mudstone">이암</button></div>
+        <div class="acts2"><button class="act" type="button" id="mtGo">열과 압력 가하기</button><button class="btn ghost" type="button" id="mtReset">처음 모습으로</button></div>
+      </div>
+
+      <div class="phase" id="phase"></div>
+      <div class="res" id="res" hidden>
+        <h3 id="resT"></h3>
+        <div class="r3d"><div class="gl-host" id="r3d" role="img" aria-label="만들어진 암석의 3D 모형"></div><span class="cap">만들어진 암석 (3D 모형)</span></div>
+        <ol class="why" id="why"></ol>
+      </div>
+      <div class="box an"><b class="t">모형 안내</b>알갱이 크기는 보기 쉽게 크게 그렸어요. 실제로는 아주 오랜 시간이 걸리고, 식는 시간·열·압력의 크기는 숫자로 나타내지 않은 모형이에요.</div>
+    </section>
+  </div>
+  <p class="credit">암석의 종류 · 암석이 만들어지는 과정</p>
+</div>
+
+<script>
+window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) => Array.from(r.querySelectorAll(s)), q: new URLSearchParams(location.search) };
+</script>
+<script>
+/* ===== 블록 1: 2D 움직이는 그림과 버튼 ===== */
+(() => {
+  'use strict';
+  try {
+/*@@LOCAL:_sed2d.js@@*/
+/*@@LOCAL:_ign2d.js@@*/
+/*@@LOCAL:_sedb2d.js@@*/
+/*@@LOCAL:_met2d.js@@*/
+  const { $, $$, q } = window.SM;
+  const cv = $('#cv'), ctx = cv.getContext('2d');
+  const IGN = IGN2D.create(), SED = SEDB2D.create(), MET = MET2D.create();
+  let mode = 'ign', W = 1, H = 1, last = performance.now();
+  function size() { const r = $('#host').getBoundingClientRect(), dpr = Math.min(window.devicePixelRatio || 1, 2); W = Math.max(1, r.width); H = Math.max(1, r.height); cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); }
+  try { new ResizeObserver(size).observe($('#host')); } catch (e) { addEventListener('resize', size); }
+  size();
+  const vis = () => { if (document.hidden) return false; try { const f = window.frameElement; if (f && f.hasAttribute('data-page') && !f.classList.contains('on')) return false; } catch (e) {} return true; };
+  function frame(now) {
+    requestAnimationFrame(frame);
+    const dt = Math.min(0.1, (now - last) / 1000); last = now; if (!vis()) return;
+    const t = now / 1000;
+    if (mode === 'ign') { IGN.step(dt); IGN.draw(ctx, W, H, t); } else if (mode === 'sed') { SED.step(dt); SED.draw(ctx, W, H, t); } else { MET.step(dt); MET.draw(ctx, W, H, t); }
+    sync();
+  }
+  requestAnimationFrame(frame);
+
+  /* ---------- 안내 ---------- */
+  const MODES = {
+    ign: { no: 1, t: '마그마가 식어서 생긴 화성암', sub: '그림 Ⅱ-5 · 입자 크기와 암석의 색', what: '마그마의 종류와 식는 곳을 고른 뒤 「식히기 시작」을 눌러요. 오른쪽 확대 창에서 광물 입자가 생기고 자라는 모습을 비교해요. 네 가지 조합을 모두 해 보세요.',
+      ph: ['마그마가 식기 시작해요', '광물 입자가 생기고 자라요', '다 식어 굳으면 화성암이 돼요'] },
+    sed: { no: 2, t: '퇴적물이 쌓여서 만들어진 퇴적암', sub: '그림 Ⅱ-6, Ⅱ-7 · 퇴적암의 생성 과정과 종류', what: '퇴적물을 골라 「쌓기」를 누르고, 「다져지기」, 「굳어지기」를 차례로 눌러 퇴적암을 만들어요. 다른 퇴적물을 이어 쌓으면 층리가 생겨요.',
+      ph: ['퇴적물이 쌓인다.', '퇴적물이 다져진다.', '물에 녹아 있는 여러 물질이 퇴적물을 붙여 단단한 암석이 된다.'] },
+    met: { no: 3, t: '열과 압력을 받아 변한 변성암', sub: '그림 Ⅱ-8, Ⅱ-9 · 엽리와 변성암의 종류', what: '원래 암석을 고르고 「열과 압력 가하기」를 눌러요. 광물 입자의 크기와 배열이 어떻게 바뀌는지 앞면을 자세히 봐요.',
+      ph: ['깊은 땅속에서 높은 열과 압력을 받아요', '광물 입자가 커지거나 치밀해지고, 압력을 받는 방향과 수직으로 재배열되기도 해요', '기존 암석과 다른 성질의 변성암이 돼요'] },
+  };
+  const ROCKC = { 화성암: '#c4562a', 퇴적암: '#a87a22', 변성암: '#3f7f5a' };
+  let igKind = 'light', igWhere = 'surface', sdKind = 'sand', fos = false, mtRock = 'sandstone';
+  const igDone = {};
+  const press = (box, v) => $$(box + ' .chip').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === v)));
+
+  let lastPh = '', lastRes = '';
+  function phaseIdx() {
+    if (mode === 'ign') { const s = IGN.st; return s.ph === 'idle' ? -1 : s.done ? 2 : s.grains.length ? 1 : 0; }
+    if (mode === 'sed') { const p = SED.st.ph; return { idle: -1, falling: 0, deposited: 0, compact: 1, compacted: 1, cement: 2, rock: 2 }[p]; }
+    const s = MET.st; return s.k <= 0.001 && !s.busy ? -1 : s.busy ? (s.k < 0.3 ? 0 : 1) : 2;
+  }
+  function sync() {
+    // 단계 표시
+    const pi = phaseIdx(), done = mode === 'ign' ? IGN.st.done : mode === 'sed' ? SED.st.ph === 'rock' : (!MET.st.busy && MET.st.k > 0.01);
+    const key = mode + pi + done;
+    if (key !== lastPh) { lastPh = key; $('#phase').innerHTML = MODES[mode].ph.map((t, i) => `<div class="ph${i === pi && !done ? ' on' : ''}${i < pi || done ? ' done' : ''}"><i>${i + 1}</i><span>${t}</span></div>`).join(''); }
+    // 버튼 상태
+    if (mode === 'ign') { $('#igGo').disabled = IGN.st.ph === 'run'; $('#igGo').textContent = IGN.st.ph === 'idle' ? '식히기 시작' : IGN.st.ph === 'run' ? '식는 중…' : '다시 식히기'; $$('#igKind .chip, #igWhere .chip').forEach((b) => (b.disabled = IGN.st.ph === 'run')); }
+    if (mode === 'sed') { const p = SED.st.ph; $('#sdDep').disabled = !(p === 'idle' || p === 'deposited') || SED.st.layers.length >= 4; $('#sdCom').disabled = p !== 'deposited'; $('#sdCem').disabled = p !== 'compacted'; $$('#sdKind .chip').forEach((b) => (b.disabled = !(p === 'idle' || p === 'deposited'))); $('#sdFos').disabled = !(p === 'idle' || p === 'deposited'); }
+    if (mode === 'met') { const s = MET.st, mud = mtRock === 'mudstone'; $('#mtGo').disabled = s.busy || (s.k >= 0.999) || (!mud && s.k > 0.01); $('#mtGo').textContent = mud && s.k > 0.5 && s.k < 0.99 ? '더 높은 열과 압력' : '열과 압력 가하기'; $$('#mtRock .chip').forEach((b) => (b.disabled = s.busy)); $('#mtReset').disabled = s.busy; }
+    // 결과
+    let rk = '';
+    if (done) {
+      if (mode === 'ign') rk = 'ign:' + igKind + igWhere; else if (mode === 'sed') rk = 'sed:' + SED.st.layers.map((L) => L.kind + (L.fossil ? 'F' : '')).join('-'); else rk = 'met:' + mtRock + (MET.st.k > 0.99 ? 1 : 0.6);
+    }
+    if (rk !== lastRes) { lastRes = rk; showResult(rk); }
+  }
+  function showResult(rk) {
+    const box = $('#res'); if (!rk) { box.hidden = true; return; }
+    let t = '', kind = '', id = '', why = [];
+    if (mode === 'ign') {
+      const fast = igWhere === 'surface', light = igKind === 'light';
+      const nm = fast ? (light ? '유문암' : '현무암') : (light ? '화강암' : '반려암'); id = { 유문암: 'rhyolite', 현무암: 'basalt', 화강암: 'granite', 반려암: 'gabbro' }[nm]; kind = '화성암';
+      t = `${nm} <span class="k" style="background:${fast ? '#7a6ab0' : '#3f86b5'}">${fast ? '화산암' : '심성암'}</span>`;
+      why = [fast ? '마그마가 <b>지표로 분출</b>하여 <b>빠르게</b> 식었어요.' : '마그마가 <b>지하 깊은 곳</b>에서 <b>천천히</b> 식었어요.',
+        fast ? '광물 입자가 자랄 시간이 짧아 아주 작은 입자가 많이 생겼어요. → 광물 입자의 크기가 <b>매우 작아요</b>.' : '광물 입자가 오랫동안 자라 → 광물 입자의 크기가 <b>커요</b>.',
+        light ? '석영과 장석 등 <b>밝은색 광물</b>이 많아 암석의 색이 밝아요.' : '감람석, 휘석 등 <b>어두운색 광물</b>이 많아 암석의 색이 어두워요.'];
+      igDone[igKind + igWhere] = nm; paintGrid();
+    } else if (mode === 'sed') {
+      const Ls = SED.st.layers, names = Ls.map((L) => SED.NAME[L.kind]), uniq = [...new Set(names)], hasF = Ls.some((L) => L.fossil); kind = '퇴적암';
+      id = uniq.length > 1 || Ls.length > 1 ? 'strata' : { 역암: 'conglomerate', 사암: 'sandstone', 이암: 'mudstone', 석회암: 'limestone' }[names[0]];
+      t = uniq.length === 1 ? `${uniq[0]}` + (Ls.length > 1 ? ' <span class="k" style="background:#a87a22">층리</span>' : '') : `${uniq.join(' · ')} <span class="k" style="background:#a87a22">층리</span>`;
+      if (hasF) t += ' <span class="k" style="background:#7a4fb8">화석</span>';
+      const SEDW = { gravel: '주로 <b>자갈</b>로 만들어져 <b>역암</b>이 돼요.', sand: '주로 <b>모래</b>로 만들어져 <b>사암</b>이 돼요.', mud: '<b>진흙</b>으로 만들어져 <b>이암</b>이 돼요.', lime: '산호나 조개껍데기 같은 <b>석회 물질</b>이 쌓여 <b>석회암</b>이 돼요.' };
+      why = ['퇴적물이 쌓이고 → 다져지고 → 물에 녹아 있는 여러 물질이 퇴적물을 붙여 단단한 퇴적암이 되었어요.'];
+      [...new Set(Ls.map((L) => L.kind))].forEach((k) => why.push(SEDW[k]));
+      if (Ls.length > 1) why.push('크기나 종류, 색 등이 다른 퇴적물이 차례로 쌓여 나란한 줄무늬, <b>층리</b>가 생겼어요.');
+      if (hasF) why.push('퇴적물이 쌓이는 과정에서 함께 묻힌 생물의 유해가 퇴적암에 <b>화석</b>으로 남았어요.');
+    } else {
+      const R = MET.ROCK[mtRock], full = MET.st.k > 0.99, nm = mtRock === 'mudstone' && !full ? R.mid : R.to; kind = '변성암';
+      id = { 규암: 'quartzite', 대리암: 'marble', 편마암: mtRock === 'granite' ? 'gneiss' : 'gneissD', 편암: 'schist' }[nm];
+      t = `${R.name} → ${nm}`;
+      const W2 = { sandstone: '모래 알갱이 사이가 메워지고 광물 입자가 서로 붙어 <b>치밀</b>해졌어요.', limestone: '아주 작은 입자들이 <b>더 큰 광물 입자</b>로 자랐어요.', granite: '광물 입자가 압력을 받는 방향과 <b>수직</b>으로 재배열되고, 어둡고 밝은 입자가 줄지어 <b>줄무늬(엽리)</b>가 생겼어요.', mudstone: full ? '변성 작용이 더 일어나 입자가 커지고 어둡고 밝은 <b>줄무늬(엽리)</b>가 뚜렷한 편마암이 되었어요.' : '아주 고운 입자가 압력과 <b>수직</b>으로 늘어서 촘촘한 줄무늬(엽리)가 생기고 판 면이 반짝여요.' };
+      why = ['깊은 땅속에서 높은 열과 압력을 받아 광물의 구성이나 배열이 바뀌었어요(<b>변성 작용</b>).', W2[mtRock], `기존 암석(${R.name})과 다른 성질의 암석, <b>${nm}</b>이 되었어요.` + (mtRock === 'mudstone' && !full ? ' 「더 높은 열과 압력」을 누르면 어떻게 될까요?' : '')];
+    }
+    $('#resT').innerHTML = `<span class="k" style="background:${ROCKC[kind]}">${kind}</span>${t}`;
+    $('#why').innerHTML = why.map((w) => `<li>${w}</li>`).join('');
+    box.hidden = false;
+    if (window.SM.showRock) window.SM.showRock(id); else window.SM.pending = id;
+  }
+  function paintGrid() {
+    const cell = (k, w) => { const nm = { lightsurface: '유문암', darksurface: '현무암', lightdeep: '화강암', darkdeep: '반려암' }[k + w], on = igDone[k + w]; return `<div class="${on ? 'on' : ''}">${on ? nm : '?'}</div>`; };
+    $('#igGrid').innerHTML = `<div class="h"></div><div class="h">어둡다</div><div class="h">밝다</div><div class="h">지표<br>(작다)</div>${cell('dark', 'surface')}${cell('light', 'surface')}<div class="h">지하<br>(크다)</div>${cell('dark', 'deep')}${cell('light', 'deep')}`;
+  }
+  paintGrid();
+
+  /* ---------- 버튼 ---------- */
+  $$('#igKind .chip').forEach((b) => b.addEventListener('click', () => { igKind = b.dataset.v; press('#igKind', igKind); IGN.reset(igKind, igWhere); }));
+  $$('#igWhere .chip').forEach((b) => b.addEventListener('click', () => { igWhere = b.dataset.v; press('#igWhere', igWhere); IGN.reset(igKind, igWhere); }));
+  $('#igGo').addEventListener('click', () => { IGN.reset(igKind, igWhere); IGN.start(); });
+  $$('#sdKind .chip').forEach((b) => b.addEventListener('click', () => { sdKind = b.dataset.v; press('#sdKind', sdKind); }));
+  $('#sdFos').addEventListener('click', () => { fos = !fos; $('#sdFos').setAttribute('aria-pressed', String(fos)); });
+  $('#sdDep').addEventListener('click', () => { SED.deposit(sdKind, fos); if (fos) { fos = false; $('#sdFos').setAttribute('aria-pressed', 'false'); } });
+  $('#sdCom').addEventListener('click', () => SED.compact());
+  $('#sdCem').addEventListener('click', () => SED.cement());
+  $('#sdReset').addEventListener('click', () => SED.reset());
+  $$('#mtRock .chip').forEach((b) => b.addEventListener('click', () => { mtRock = b.dataset.v; press('#mtRock', mtRock); MET.setRock(mtRock); }));
+  $('#mtGo').addEventListener('click', () => { const s = MET.st; if (mtRock === 'mudstone') MET.press(s.k < 0.55 ? 0.6 : 1); else MET.press(1); });
+  $('#mtReset').addEventListener('click', () => { MET.setRock(mtRock); });
+  function setMode(m) {
+    mode = m; const M = MODES[m];
+    $$('#flow .fs').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.m === m)));
+    $('#sNo').textContent = M.no; $('#sNo').style.background = { ign: '#c4562a', sed: '#a87a22', met: '#3f7f5a' }[m];
+    $('#sTitle').textContent = M.t; $('#sSub').textContent = M.sub; $('#sWhat').textContent = M.what;
+    $('#pIgn').hidden = m !== 'ign'; $('#pSed').hidden = m !== 'sed'; $('#pMet').hidden = m !== 'met';
+    lastPh = ''; lastRes = '-'; sync();
+  }
+  $$('#flow .fs').forEach((b) => b.addEventListener('click', () => setMode(b.dataset.m)));
+  press('#igKind', igKind); press('#igWhere', igWhere); press('#sdKind', sdKind); press('#mtRock', mtRock);
+
+  /* 검사용 주소: ?mode=ign&kind=dark&where=deep&go=1 · ?mode=sed&dep=gravel+sand&fos=1&com=1&cem=1 · ?mode=met&rock=granite&go=1 */
+  setMode(q.get('mode') || 'ign');
+  if (q.get('kind')) $(`#igKind [data-v="${q.get('kind')}"]`).click();
+  if (q.get('where')) $(`#igWhere [data-v="${q.get('where')}"]`).click();
+  if (q.get('rock')) $(`#mtRock [data-v="${q.get('rock')}"]`).click();
+  if (q.get('go')) setTimeout(() => (mode === 'ign' ? $('#igGo') : $('#mtGo')).click(), 400);
+  if (q.get('dep')) { (async () => { const wait = (ms) => new Promise((r) => setTimeout(r, ms)); for (const [i, k] of q.get('dep').split(' ').join('+').split('+').entries()) { $(`#sdKind [data-v="${k}"]`).click(); if (q.get('fos') && i === 0) $('#sdFos').click(); $('#sdDep').click(); while (SED.st.ph !== 'deposited') await wait(200); } if (q.get('com')) { $('#sdCom').click(); while (SED.st.ph !== 'compacted') await wait(200); } if (q.get('cem')) $('#sdCem').click(); })(); }
+  window.SM.IGN = IGN; window.SM.SED = SED; window.SM.MET = MET;
+  window.SM.okUI = true;
+  } catch (err) { window.SM_err('움직이는 그림·버튼', err); }
+})();
+</script>
+<script type="module">
+/* ===== 블록 2: 만들어진 암석 3D 모형 ===== */
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { ConvexGeometry } from 'three/addons/geometries/ConvexGeometry.js';
+import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
+/*@@PART:c3.js@@*/
+/*@@LOCAL:_min3d.js@@*/
+/*@@LOCAL:_rock3d.js@@*/
+let st = null, cur = null, want = null;
+function show(id) {
+  want = id; if (!id) return;
+  try {
+    if (!st) {
+      st = C3.makeStage(document.getElementById('r3d'), { top: '#f1f2ef', bottom: '#d9dcd6', fov: 28, minD: 1, maxD: 8, fitWidth: true });
+      st.scene.environment = MIN3D.studioEnv(st.renderer);
+      const fl = new THREE.Mesh(new THREE.CircleGeometry(5, 48), new THREE.MeshStandardMaterial({ color: 0xe6e3dc, roughness: 0.9 })); fl.rotation.x = -Math.PI / 2; fl.receiveShadow = true; st.scene.add(fl);
+      st.onFrame((dt) => { if (cur) cur.rotation.y += dt * 0.35; });
+    }
+    if (cur) { st.scene.remove(cur); cur.traverse((o) => { if (o.isMesh) o.geometry.dispose(); }); }
+    cur = ROCK3D.make(id); cur.scale.setScalar(1.3); st.scene.add(cur);
+    st.fit(cur, { dir: C3.V(0, 0.55, 1), margin: 1.15 });
+    window.SM.ok3d = true;
+  } catch (err) { window.SM_err('3D 모형', err); }
+}
+window.SM.showRock = show;
+window.SM.ok3d = true;
+if (window.SM.pending) show(window.SM.pending);
+</script>
+</body>
+</html>

@@ -17,10 +17,12 @@
   - `docs/수업웹자료_표준개발절차.md` 1장과 옛 로컬 프로젝트(조력발전, 옴의 법칙)에 나오는 GAS는 지난 방식이다. 거기서 생긴 습관(오류 상자, 블록별 스크립트, 숨은 문자 검사)만 이어서 쓴다.
 - 원본은 이 저장소다. 바탕 화면의 `옴의 법칙 웹자료/`, `별까지의 거리 웹자료/` 같은 로컬 폴더는 작업 중 사본이라 배포하지 않는다.
 
-## 수업 현황 (2026-10-11 기준)
+## 수업 현황 (2026-10-12 기준)
 | 폴더 | 단원 | 만든 방식 | 기준 문서 (`curriculum/`) |
 |---|---|---|---|
 | `earth-interior` | 중2 Ⅱ 지구 내부의 층상 구조 (지구 속 여행 콘셉트, 3D 단면, 지진파) | lesson-kit | `중2_지권의변화_지구내부의층상구조.md` (Ⅱ 시작 단원은 나중에) |
+| `minerals` | 중2 Ⅱ 광물의 특성 (3D 광물 모형, 3D 광물 실험실, 광물 구별하기) | lesson-kit | `중2_지권의변화_광물의특성.md` |
+| `rocks` | 중2 Ⅱ 암석의 종류 (화성암·퇴적암·변성암, 2D 생성 과정 시뮬레이션, 3D 암석 12종·돋보기 분류 탐구) | lesson-kit | `중2_지권의변화_암석의종류.md` |
 | `ohm` | 중2 Ⅶ 옴의 법칙 | 직접 작성 | `중2_전기와자기_옴의법칙.md` |
 | `series-parallel` | 중2 Ⅶ 저항의 연결 | 직접 작성 | `중2_전기와자기_저항의연결.md` |
 | `electric-energy` | 중2 Ⅶ 소비 전력과 전력량 | 직접 작성 | `중2_전기와자기_전기에너지와소비전력.md` |
@@ -36,6 +38,7 @@
 | `photo-journey`, `chip-earth`, `battery`, `ev` | 읽기 자료 | lesson-kit | `읽기자료_*` |
 | `career-map` | 진로 지도 (읽기 자료 모음) | lesson-kit | 없음 |
 
+- 지권(Ⅱ) 3D 모형: 광물은 `tools/lesson-kit/src/minerals/_min3d.js`(MIN3D), 암석 12종·퇴적물·층리·화석은 `src/rocks/_rock3d.js`(ROCK3D, MIN3D 사본이 `src/rocks/_min3d.js`에 있음). `ROCK3D.thumbs(ids)`로 카드용 사진을 만들 수 있다. 다음 Ⅱ 수업(암석의 순환 등)도 재사용한다.
 - "직접 작성"인 수업은 `tools/lesson-kit/src/`에 원본이 없어 `lessons/<이름>/*.html`을 바로 고친다. lesson-kit 수업은 `src/`를 고치고 다시 빌드한다.
 - 별 그림: Ⅷ 단원은 캔버스로 빛 번짐 별을 그린다(`parallax` sim2의 `window.SKY`, `star-brightness`의 `_glow.js` `window.GLOW`). 실제 하늘 지도는 d3-celestial(BSD-3)을 `lessons/star-brightness/sky/`에 복사해 쓴다(별 목록은 `stars6.json`·`stars8.json`으로 줄임, 라이선스 `sky/LICENSE.txt`). 다음 Ⅷ 수업도 이 폴더를 재사용한다. 별의 밝기 차시까지는 별을 흰색으로 그리고, `star-color`부터는 `_color.js`의 `window.SC`로 색을 칠한다(별 목록 `sky/data/stars6c.json`에 색 정보 포함, 교과서 색 띠 별은 교과서 색).
 
