@@ -41,3 +41,12 @@ python tools/lesson-kit/shot.py URL out.png 1280 800 "#선택자" 3 "#버튼1,wa
 1. `qa.json`에 핵심 장면(버튼 누른 상태 포함)을 적어요.
 2. `qa_sheet.py`로 가로·세로 모음 사진을 만들어 한 번에 보고, 잘림·겹침·멈춤을 고쳐요.
 3. 오류 보고가 "문제 없음"인지 확인해요(404 favicon은 무시).
+
+## 3D 로딩 빠르게 하기 (2026-10-12, 광물·암석 수업에서 정리)
+3D 재질(특히 셰이더로 무늬를 그리는 암석·광물)은 처음 그릴 때 번역(셰이더 컴파일)에 오래 걸려요. 화면이 수십 초 멈췄던 적이 있어요. 새 3D 수업은 처음부터 이렇게 만들어요.
+- **보기만 하는 3D 그림 → 영상**: `C3.video(host, () => { …3D 만들기… })`. host에 `data-video="media/v-이름.mp4" data-poster="media/v-이름.jpg"`. 영상은 `bake.py`가 만들어요.
+- **손으로 돌리거나 버튼이 있는 3D 그림 → 가까워지면 켜기 + 멈추지 않는 준비**: `C3.lazy(host, () => { const st = C3.makeStage(host, {…, hold: true}); …; C3.prepare(st); })`. host에 `data-poster="media/p-이름.jpg"`를 붙이면 준비되는 동안 사진을 보여 줘요.
+- **실험실처럼 바로 쓰는 3D**: `makeStage(…, { hold: true })` 뒤 `C3.prepare(st)`. 실험 중에 새 물체를 넣을 때는 `renderer.compileAsync(임시 장면, camera, st.scene)`로 먼저 준비해요.
+- **카드 사진은 미리 찍은 그림 파일로** (`media/th-*.png`). 페이지에서 즉석으로 찍지 않아요.
+- 실험 도구의 유리는 `transmission` 대신 반투명(`transparent`, `opacity`)으로. transmission은 재질 번역을 한 번 더 해야 해요.
+- `python tools/lesson-kit/bake.py <수업> [이름 일부]`: `src/<수업>/bake.json` 목록대로 사진·영상을 `lessons/<수업>/media/`에 만들어요(로컬 서버 필요, `pip install imageio-ffmpeg`). 영상 하나에 10분쯤 걸려요. 3D 모형을 고치면 다시 구워요.
