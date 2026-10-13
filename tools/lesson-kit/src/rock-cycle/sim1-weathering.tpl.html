@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>풍화와 토양, 암석의 순환 – 풍화와 토양 실험실</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+/*@@LOCAL:_css_lab.css@@*/
+  .viewer .gl-host{aspect-ratio:640/420}
+  .fs[data-k="ice"][aria-selected="true"]{background:#2f7fb8}
+  .fs[data-k="bio"][aria-selected="true"]{background:#4f8a2a}
+  .fs[data-k="press"][aria-selected="true"]{background:#b8692a}
+  .fs[data-k="co2"][aria-selected="true"]{background:#7a55b0}
+  .fs[data-k="soil"][aria-selected="true"]{background:#7a4f24}
+  .timebar{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 14px 14px;border-top:1px solid var(--line);background:#fbfcfb}
+  .timebar .play{min-height:52px;min-width:150px;border-radius:14px;border:0;background:linear-gradient(135deg,#4f9a63,#1f5a3e);color:#fff;font-weight:900;font-size:16px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:0 14px;box-shadow:0 6px 16px rgba(31,90,62,.26)}
+  .timebar .play svg{flex:none}
+  .timebar .reset{min-height:52px;border-radius:14px;border:0;background:#eef3ef;color:var(--ink2);font-weight:800;font-size:15px;cursor:pointer;padding:0 14px}
+  .slider{display:flex;flex-direction:column;gap:2px}
+  .slider input{width:100%;height:44px;margin:0;accent-color:#2f6b4f;cursor:pointer}
+  .slider input::-webkit-slider-thumb{width:34px;height:34px}
+  .slider .ends{display:flex;justify-content:space-between;font-size:12.5px;font-weight:800;color:var(--muted)}
+  .clock{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:800;color:#3b5a48;margin-top:2px}
+  .clock i{display:block;height:8px;border-radius:4px;background:linear-gradient(90deg,#9cc9ad,#2f6b4f);transition:width .2s}
+  .ph{cursor:pointer}
+  .ph.on{box-shadow:inset 0 0 0 2px #9cc9ad}
+  @media (max-width:640px){.timebar{grid-template-columns:1fr 1fr}.timebar .slider{grid-column:1/-1;grid-row:1}.timebar .play,.timebar .reset{min-width:0}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <span class="eyebrow">풍화와 토양, 암석의 순환 · 시뮬레이션 ①</span>
+    <h1>풍화와 토양 실험실: 시간을 앞으로 돌려 보기</h1>
+    <p class="sub">수백 년, 수천 년이 걸리는 풍화를 몇 초로 줄여 봐요. 물, 생물, 압력, 이산화 탄소가 녹은 물이 암석을 어떻게 부수고, 부서진 암석이 어떻게 토양이 되는지 살펴봐요.</p>
+  </header>
+  <div class="stage">
+    <section class="card viewer">
+      <div class="gl-host" id="host"><canvas class="cv" id="cv" role="img" aria-label="고른 풍화 작용의 움직이는 그림"></canvas><span class="tag3">시간을 아주 빠르게 돌린 모형</span><div class="toast" id="toast"></div></div>
+      <div class="timebar">
+        <button class="play" type="button" id="play"><svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M7 4l13 8-13 8z"/></svg><span>시간 흐르게 하기</span></button>
+        <div class="slider"><input type="range" id="time" min="0" max="1000" value="0" aria-label="흐른 시간"><div class="ends"><span>처음</span><span id="midLab">시간이 흐르면</span><span>아주 오랜 시간 뒤</span></div></div>
+        <button class="reset" type="button" id="reset">처음으로</button>
+      </div>
+    </section>
+    <section class="card pad">
+      <div class="flow five" id="flow" role="tablist">
+        <button class="fs" type="button" role="tab" data-k="ice"><b>물</b>얼음</button>
+        <button class="fs" type="button" role="tab" data-k="bio"><b>생물</b>뿌리·이끼</button>
+        <button class="fs" type="button" role="tab" data-k="press"><b>압력</b>벗겨짐</button>
+        <button class="fs" type="button" role="tab" data-k="co2"><b>이산화 탄소</b>+ 물</button>
+        <button class="fs" type="button" role="tab" data-k="soil"><b>토양</b>생성 과정</button>
+      </div>
+      <div class="stepname"><span class="no" id="sNo">1</span><div><h2 id="sTitle"></h2><small id="sSub"></small></div></div>
+      <p class="what" id="sWhat"></p>
+      <div class="clock"><span>흐른 시간</span><span style="flex:1;background:#e6ede8;border-radius:4px"><i id="clockBar" style="width:0"></i></span></div>
+      <div class="phase" id="phase"></div>
+      <div class="ask" id="ask" hidden><p id="askQ"></p><div class="three" id="askO"></div><div class="ans" id="askA"></div></div>
+      <div class="box an"><b class="t">모형 안내</b>실제로는 아주 오랜 시간에 걸쳐 조금씩 일어나는 일이에요. 걸리는 시간과 크기는 숫자로 나타내지 않은 모형이에요.</div>
+    </section>
+  </div>
+  <p class="credit">풍화와 토양, 암석의 순환 · 풍화와 토양 실험실</p>
+</div>
+
+<script>
+window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) => Array.from(r.querySelectorAll(s)), q: new URLSearchParams(location.search) };
+</script>
+<script>
+/* ===== 블록 1: 움직이는 그림과 버튼 ===== */
+(() => {
+  'use strict';
+  try {
+/*@@LOCAL:_art.js@@*/
+/*@@LOCAL:_wx2d.js@@*/
+/*@@LOCAL:_soil2d.js@@*/
+  const { $, $$, q } = window.SM;
+  /* ---------- 선생님이 고치기 쉬운 글: 단계 설명(at: 흐른 시간 0~1에서 시작), 확인 질문 ---------- */
+  const KINDS = {
+    ice: { no: 1, t: '물: 틈에 스며든 물이 얼면', sub: '그림 Ⅱ-11 · 물', len: 18,
+      what: '「시간 흐르게 하기」를 누르거나 막대를 밀어 시간을 돌려 보세요. 밤과 낮이 바뀔 때 틈 속 물이 어떻게 되는지, 틈의 너비가 어떻게 변하는지 봐요.',
+      ph: [[0, '암석 틈에 물이 스며들어요.'], [0.1, '밤이 되면 물이 얼어 얼음이 돼요. 얼음은 <b>부피가 늘어나며</b> 틈을 밀어 넓혀요.'], [0.3, '낮에 얼음이 녹으면 넓어진 틈으로 물이 다시 스며들고, 밤에 또 얼어 틈이 조금 더 넓어져요.'], [0.86, '틈이 점점 커지면 <b>암석이 부서져요</b>.']],
+      ask: { q: '물이 얼어 얼음이 되면 부피는 어떻게 될까요?', o: ['늘어나요', '줄어들어요', '그대로예요'], a: 0, exp: '물이 얼면 <b>부피가 늘어나요</b>. 늘어난 얼음이 틈을 밀어 넓히고, 이것이 되풀이되면 암석이 부서져요.' } },
+    bio: { no: 2, t: '생물: 뿌리와 이끼', sub: '그림 Ⅱ-11 · 생물', len: 14,
+      what: '시간을 돌리며 틈에 자리 잡은 식물의 뿌리와 암석 표면의 이끼를 봐요. 뿌리가 굵어질 때 틈은 어떻게 될까요?',
+      ph: [[0, '암석 틈에 식물의 씨앗이 자리 잡아요.'], [0.1, '뿌리가 틈을 파고들어요. 암석 표면에는 <b>이끼</b>가 자라요.'], [0.35, '뿌리가 점점 크게 자라며 <b>틈을 넓혀요</b>. 이끼가 자란 곳은 암석의 성분이 변해 색이 달라졌어요.'], [0.9, '틈이 커지면 <b>암석이 부서져요</b>.']],
+      ask: { q: '암석 표면에 자라는 이끼는 암석에 어떤 영향을 줄까요?', o: ['암석의 성분을 바꿔요', '암석을 녹여 동굴을 만들어요', '암석을 더 단단하게 해요'], a: 0, exp: '암석 표면에 자라는 이끼 때문에 <b>암석의 성분이 변하기도</b> 해요. 이것도 풍화예요.' } },
+    press: { no: 3, t: '압력: 땅 위로 드러난 암석', sub: '그림 Ⅱ-11 · 압력', len: 14,
+      what: '땅속 깊은 곳에 있던 화강암 위의 땅이 깎여 없어지면 어떻게 될까요? 파란 화살표(누르는 압력)의 크기 변화를 봐요.',
+      ph: [[0, '땅속 깊은 곳의 암석은 위에 있는 땅이 눌러 <b>압력</b>을 받아요.'], [0.2, '위의 땅이 깎여 없어지며 암석이 땅 위로 드러나요.'], [0.48, '암석을 누르고 있던 <b>압력이 약해져요</b>.'], [0.56, '암석의 겉 부분이 <b>얇게 벗겨져 떨어져요</b>. 안쪽 겉 부분도 다시 벗겨져요.']],
+      ask: { q: '땅 위로 드러난 암석의 겉 부분이 얇게 벗겨지는 까닭은?', o: ['누르던 압력이 약해져서', '물이 얼어서', '이산화 탄소가 녹은 물 때문에'], a: 0, exp: '땅 위로 드러나면 암석을 누르고 있던 <b>압력이 약해지면서</b> 암석의 겉 부분이 얇게 벗겨져 떨어져요.' } },
+    co2: { no: 4, t: '이산화 탄소 + 물: 석회 동굴', sub: '그림 Ⅱ-11 · 이산화 탄소 + 물', len: 14,
+      what: '이산화 탄소가 녹은 빗물이 땅속 석회암으로 스며들어요. 시간이 흐르면 석회암 속에 무엇이 생기는지 봐요.',
+      ph: [[0, '<b>이산화 탄소가 녹은</b> 빗물이 땅에 내려요.'], [0.08, '물이 석회암의 틈으로 스며들어요.'], [0.3, '이산화 탄소가 녹은 물이 <b>석회암을 녹여요</b>.'], [0.85, '녹은 자리가 넓어져 <b>석회 동굴</b>이 만들어져요.']],
+      ask: { q: '이산화 탄소가 녹은 물이 녹여 동굴을 만드는 암석은?', o: ['석회암', '화강암', '현무암'], a: 0, exp: '이산화 탄소가 녹은 물은 <b>석회암</b>을 녹여 석회 동굴을 만들어요.' } },
+    soil: { no: 5, t: '토양의 생성 과정', sub: '그림 Ⅱ-12 · 토양의 생성 과정', len: 15,
+      what: '지표로 드러난 단단한 암석에서 시작해요. 시간을 돌리며 단면에서 층이 어떻게 생기고 두꺼워지는지 봐요. 왼쪽 이름표는 층 이름이에요.',
+      ph: [[0, '① 땅속에 있던 단단한 암석이 지표로 드러나 풍화 작용을 받아 <b>암석 조각</b>으로 부서져요.'], [0.25, '② 암석 조각이 계속 풍화되어 더욱 잘게 부서져 <b>자갈이나 모래</b>가 되고, 겉 부분에 <b>흙</b>이 생겨 식물이 자라요.'], [0.62, '③ 다양한 생물이 살며 더욱 분해된 물질이 <b>물에 녹아 아래로 쌓여요</b>. 토양이 점차 두꺼워져요.']],
+      ask: { q: '토양에서 풍화 작용이 거의 일어나지 않은 암석층은 어디에 있나요?', o: ['가장 아래', '가장 위', '가운데'], a: 0, exp: '암석은 지표로 드러난 위쪽부터 풍화되어 부서져요. 그래서 <b>가장 아래</b>에 풍화 작용이 거의 일어나지 않은 암석층이 남아 있어요.' } },
+  };
+  const cv = $('#cv');
+  let kind = 'ice', p = 0, playing = false, lastPh = -2;
+  const seen = {};
+  const loop = ART.loop(cv, (c, W, H, t, dt) => {
+    if (playing) { p = Math.min(1, p + dt / KINDS[kind].len); $('#time').value = Math.round(p * 1000); if (p >= 1) { playing = false; paintPlay(); } }
+    if (kind === 'soil') SOIL.draw(c, W, H, t, p * 2, { bg: '#e6eff2', bg2: '#f4efe4' }); else WX.draw(kind, c, W, H, t, p);
+    sync();
+  }, { always: true });
+  function paintPlay() { $('#play span').textContent = playing ? '잠깐 멈추기' : p >= 1 ? '처음부터 다시' : p > 0 ? '이어서 흐르게 하기' : '시간 흐르게 하기'; $('#play svg').innerHTML = playing ? '<path d="M6 4h4v16H6zM14 4h4v16h-4z"/>' : '<path d="M7 4l13 8-13 8z"/>'; }
+  function phIdx() { const P = KINDS[kind].ph; let k = -1; P.forEach((x, i) => { if (p >= x[0] - 1e-6) k = i; }); return p <= 0.001 && !playing ? -1 : k; }
+  function sync() {
+    $('#clockBar').style.width = (p * 100).toFixed(1) + '%';
+    const k = phIdx(), key = kind + k + (p >= 0.995);
+    if (key !== lastPh) {
+      lastPh = key;
+      $('#phase').innerHTML = KINDS[kind].ph.map((x, i) => `<div class="ph${i === k ? ' on' : ''}${i < k || p >= 0.995 ? ' done' : ''}" data-at="${x[0]}"><i>${i + 1}</i><span>${x[1]}</span></div>`).join('');
+      $$('#phase .ph').forEach((d) => d.addEventListener('click', () => { playing = false; p = Math.min(1, +d.dataset.at + 0.04); $('#time').value = Math.round(p * 1000); paintPlay(); loop.redraw(); }));
+      if (p >= 0.995 && !seen[kind]) { seen[kind] = true; $(`#flow [data-k="${kind}"]`).classList.add('seen'); showAsk(); }
+    }
+  }
+  function showAsk() {
+    const A = KINDS[kind].ask; $('#ask').hidden = false; $('#askQ').textContent = A.q; $('#askA').innerHTML = '';
+    $('#askO').innerHTML = A.o.map((o, i) => `<button type="button" data-i="${i}">${o}</button>`).join('');
+    $$('#askO button').forEach((b) => b.addEventListener('click', () => { const ok = +b.dataset.i === A.a; $$('#askO button').forEach((x) => x.classList.remove('good', 'bad')); b.classList.add(ok ? 'good' : 'bad'); $('#askA').innerHTML = ok ? '맞았어요! ' + A.exp : '다시 생각해 봐요. 그림의 마지막 장면을 떠올려 보세요.'; }));
+  }
+  function setKind(k) {
+    kind = k; const K = KINDS[k]; playing = false; p = 0; $('#time').value = 0; lastPh = '';
+    $$('#flow .fs').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.k === k)));
+    $('#sNo').textContent = K.no; $('#sNo').style.background = { ice: '#2f7fb8', bio: '#4f8a2a', press: '#b8692a', co2: '#7a55b0', soil: '#7a4f24' }[k];
+    $('#sTitle').textContent = K.t; $('#sSub').textContent = K.sub; $('#sWhat').textContent = K.what;
+    $('#midLab').textContent = k === 'ice' ? '밤과 낮이 여러 번' : '시간이 흐르면';
+    $('#ask').hidden = !seen[k]; if (seen[k]) showAsk();
+    paintPlay(); loop.redraw();
+  }
+  $$('#flow .fs').forEach((b) => b.addEventListener('click', () => setKind(b.dataset.k)));
+  $('#play').addEventListener('click', () => { if (playing) playing = false; else { if (p >= 1) p = 0; playing = true; } paintPlay(); });
+  $('#reset').addEventListener('click', () => { playing = false; p = 0; $('#time').value = 0; paintPlay(); loop.redraw(); });
+  $('#time').addEventListener('input', (e) => { playing = false; p = e.target.value / 1000; paintPlay(); loop.redraw(); });
+  /* 검사용 주소: ?k=bio&p=0.6 · ?k=soil&go=1 */
+  setKind(KINDS[q.get('k')] ? q.get('k') : 'ice');
+  if (q.get('p')) { p = +q.get('p'); $('#time').value = Math.round(p * 1000); paintPlay(); }
+  if (q.get('go')) setTimeout(() => $('#play').click(), 300);
+  window.SM.okUI = true;
+  } catch (err) { window.SM_err('움직이는 그림·버튼', err); }
+})();
+</script>
+</body>
+</html>

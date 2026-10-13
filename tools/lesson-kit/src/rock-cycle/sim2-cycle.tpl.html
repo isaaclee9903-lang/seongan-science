@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>풍화와 토양, 암석의 순환 – 암석의 순환 여행</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+/*@@LOCAL:_css_lab.css@@*/
+  .stage{grid-template-columns:minmax(0,1.7fr) minmax(330px,1fr)}
+  .viewer .gl-host{aspect-ratio:1200/720;cursor:pointer}
+  .starts{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+  .starts button{min-height:50px;border-radius:12px;border:2px solid #d5e3da;background:#fff;font-weight:900;font-size:15px;cursor:pointer;word-break:keep-all;padding:2px}
+  .starts button[aria-pressed="true"]{border-color:#1d3a2c;background:#1d3a2c;color:#fff}
+  .now{display:flex;align-items:center;gap:12px;margin:12px 0 4px;padding:10px 12px;border-radius:16px;background:linear-gradient(135deg,#f3faf6,#fff);border:1px solid #cfe5d7}
+  .now canvas{width:72px;height:56px;flex:none}
+  .now small{display:block;font-size:12.5px;font-weight:800;color:var(--muted)}
+  .now b{font-size:24px;letter-spacing:-.01em}
+  .choices{display:grid;gap:8px}
+  .choice{min-height:58px;border-radius:14px;border:0;cursor:pointer;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;padding:6px 14px;text-align:left;font-weight:800;font-size:15.5px;color:#fff;box-shadow:0 6px 14px rgba(20,38,59,.15);word-break:keep-all}
+  .choice .pr{font-size:13px;font-weight:900;background:rgba(255,255,255,.22);border-radius:8px;padding:3px 8px}
+  .choice.g{background:linear-gradient(135deg,#6fb43c,#3d7d1c)}.choice.p{background:linear-gradient(135deg,#ef6fa2,#b8306c)}
+  .choice:disabled{opacity:.45;cursor:default}
+  .choice:active{transform:scale(.98)}
+  .why2{margin-top:10px;border-radius:14px;padding:10px 12px;background:#fff8e6;border:1px solid #f3dc9a;color:#5b4300;font-size:15px;line-height:1.65;word-break:keep-all;min-height:48px}
+  .log{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin-top:6px;font-size:13.5px;font-weight:800}
+  .log .n{border-radius:9px;padding:4px 9px;color:#fff}
+  .log .a{color:var(--muted);font-size:12px}
+  .missions{display:grid;gap:6px;margin-top:6px}
+  .mis{display:grid;grid-template-columns:28px 1fr;gap:8px;align-items:center;padding:8px 10px;border-radius:12px;background:#f6f8f7;font-size:14.5px;line-height:1.5;word-break:keep-all;color:var(--ink2)}
+  .mis i{width:26px;height:26px;border-radius:8px;border:2px solid #b9cfc1;background:#fff;display:grid;place-items:center}
+  .mis.ok{background:#e8f7ef;color:#11502f}.mis.ok i{border-color:var(--ok);background:var(--ok)}
+  .mis.ok i::after{content:'';width:7px;height:12px;border:solid #fff;border-width:0 3px 3px 0;transform:translateY(-2px) rotate(45deg)}
+  .legend{display:flex;flex-wrap:wrap;gap:10px;font-size:13px;font-weight:800;color:var(--muted);margin:8px 0 0}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .legend i{width:22px;height:6px;border-radius:3px;display:inline-block}
+  @media (max-width:520px){.starts{grid-template-columns:repeat(3,1fr)}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <span class="eyebrow">풍화와 토양, 암석의 순환 · 시뮬레이션 ②</span>
+    <h1>암석의 순환 여행: 내 암석은 무엇이 될까?</h1>
+    <p class="sub">암석 하나를 골라 여행을 떠나요. 지금 상태에서 일어날 수 있는 일을 고르면 암석이 화살표를 따라 움직이며 다른 암석으로 변해요. 미션 세 가지를 모두 해결해 보세요.</p>
+  </header>
+  <div class="stage">
+    <section class="card viewer">
+      <div class="gl-host" id="host"><canvas class="cv" id="cv" role="img" aria-label="암석의 순환 그림 위에서 고른 암석이 화살표를 따라 움직이며 변하는 모습"></canvas><span class="tag3">교과서 그림 Ⅱ-13을 바탕으로 한 모형</span><div class="toast" id="toast"></div></div>
+      <div class="pad">
+        <div class="legend"><span><i style="background:#6fbf3a"></i>풍화·침식·운반 · 다져지고 굳어짐 · 식음</span><span><i style="background:#ec5f98"></i>높은 열과 압력 · 녹음</span></div>
+        <p class="lab-l" style="margin-top:10px">여행 기록</p>
+        <div class="log" id="log"></div>
+      </div>
+    </section>
+    <section class="card pad">
+      <p class="lab-l" style="margin-top:0">출발할 암석 고르기</p>
+      <div class="starts" id="starts">
+        <button type="button" data-n="magma">마그마</button><button type="button" data-n="ign">화성암</button><button type="button" data-n="sed">퇴적물</button><button type="button" data-n="sedr">퇴적암</button><button type="button" data-n="meta">변성암</button>
+      </div>
+      <div class="now"><canvas id="nowCv" width="144" height="112" aria-hidden="true"></canvas><div><small>지금 내 암석</small><b id="nowName"></b></div></div>
+      <p class="lab-l">다음에 일어날 일 고르기 <span style="font-weight:700;color:var(--muted)">(그림의 상자를 눌러도 돼요)</span></p>
+      <div class="choices" id="choices"></div>
+      <div class="why2" id="why"></div>
+      <p class="lab-l">미션</p>
+      <div class="missions" id="missions"></div>
+      <div class="box an"><b class="t">모형 안내</b>실제로 한 단계가 일어나는 데에는 아주 오랜 시간이 걸려요. 화살표는 일어날 수 있는 변화를 나타내고, 실제 암석이 꼭 이 순서대로 변하는 것은 아니에요.</div>
+    </section>
+  </div>
+  <p class="credit">풍화와 토양, 암석의 순환 · 암석의 순환 여행</p>
+</div>
+
+<script>
+window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) => Array.from(r.querySelectorAll(s)), q: new URLSearchParams(location.search) };
+</script>
+<script>
+/* ===== 블록 1: 순환 그림, 움직이는 암석, 버튼 ===== */
+(() => {
+  'use strict';
+  try {
+/*@@LOCAL:_art.js@@*/
+/*@@LOCAL:_cycle2d.js@@*/
+  const { $, $$, q } = window.SM;
+  const N = CYC.NODES, ARR = CYC.ARROWS, G = '#6fbf3a';
+  /* ---------- 선생님이 고치기 쉬운 글 ---------- */
+  const SAY = {
+    'magma-ign': '지하의 마그마가 지표나 지하에서 <b>식으면</b> 화성암이 돼요.',
+    'ign-sed': '지표에 드러난 화성암이 <b>풍화</b>되어 잘게 부서지고, 물이나 바람 등에 의해 운반되어 쌓여 퇴적물이 돼요.',
+    'sedr-sed': '지표에 드러난 퇴적암도 <b>풍화</b>되어 잘게 부서지고, 운반되어 쌓여 다시 퇴적물이 돼요.',
+    'meta-sed': '지표에 드러난 변성암도 <b>풍화</b>되어 잘게 부서지고, 운반되어 쌓여 퇴적물이 돼요.',
+    'sed-sedr': '퇴적물이 오랜 시간 <b>다져지고 단단하게 굳어</b> 퇴적암이 돼요.',
+    'sedr-meta': '퇴적암이 지하 깊은 곳에서 <b>높은 열과 압력</b>을 받아 변성암이 돼요.',
+    'ign-meta': '화성암이 지하 깊은 곳에서 <b>높은 열과 압력</b>을 받아 변성암이 돼요.',
+    'meta-magma': '온도가 더 높아지면 변성암이 <b>녹아서</b> 마그마가 돼요.',
+    'ign-magma': '화성암이 <b>녹으면</b> 다시 마그마가 돼요.',
+  };
+  const MISSIONS = [
+    { t: '다섯 가지(마그마, 화성암, 퇴적물, 퇴적암, 변성암)가 모두 되어 보기', ok: (S) => new Set(S.hist.map((h) => h.n)).size === 5 },
+    { t: '출발한 상태로 다시 돌아오기 (두 단계 이상 여행)', ok: (S) => S.hist.length >= 3 && S.at === S.start },
+    { t: '퇴적물이 되는 세 가지 길(화성암, 퇴적암, 변성암에서)을 모두 지나가 보기', ok: (S) => ['ign-sed', 'sedr-sed', 'meta-sed'].every((id) => S.used.has(id)) },
+  ];
+  const REST = { ign: [0, -60], sed: [0, -60], sedr: [-120, 0], meta: [0, 62], magma: [118, 0] };
+  const rest = (n) => [N[n].x + REST[n][0], N[n].y + REST[n][1]];
+  const JOSA = (w, a, b) => { const c = w.charCodeAt(w.length - 1) - 0xac00; return w + (c >= 0 && c % 28 ? a : b); };
+  const TYPE = (a) => a.label.startsWith('풍화') ? 'w' : a.label.startsWith('다져') ? 'c' : a.label.startsWith('높은') ? 'h' : a.label === '녹음' ? 'm' : 'f';
+  const S = { start: 'ign', at: 'ign', hist: [], used: new Set(), mv: null, done: [false, false, false] };
+  const cv = $('#cv'), nowCv = $('#nowCv'), nctx = nowCv.getContext('2d');
+  let toastT = 0;
+  const toast = (m) => { const t = $('#toast'); t.textContent = m; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 2400); };
+
+  /* ---------- 움직이는 암석 그리기 ---------- */
+  function pathPos(a, u) {
+    const r0 = rest(a.from), r1 = rest(a.to);
+    if (u < 0.12) { const k = ART.ease(u / 0.12), b = a.b[0]; return [ART.lerp(r0[0], b[0], k), ART.lerp(r0[1], b[1], k)]; }
+    if (u > 0.88) { const k = ART.ease((u - 0.88) / 0.12), b = a.b[2]; return [ART.lerp(b[0], r1[0], k), ART.lerp(b[1], r1[1], k)]; }
+    return CYC.bez(a.b, ART.ease((u - 0.12) / 0.76));
+  }
+  function drawMoving(c, t) {
+    const m = S.mv, a = m.a, u = m.u, ty = TYPE(a), pos = pathPos(a, u), k = ART.seg(u, 0.35, 0.8);
+    const tok = (kind, x, y, al, s) => { if (al <= 0.01) return; c.save(); c.globalAlpha = al; CYC.token(c, x, y, kind, s || 1, t); c.restore(); };
+    if (ty === 'w') {
+      // 부서지기: 처음에 금이 가며 떨리다가, 작은 알갱이로 나뉘어 길을 따라 옮겨져요
+      const r0 = rest(a.from), shake = u < 0.14 ? Math.sin(u * 300) * 2 : 0;
+      tok(a.from, r0[0] + shake, r0[1], 1 - ART.seg(u, 0.1, 0.18));
+      if (u < 0.16) { c.save(); c.strokeStyle = '#2b231c'; c.lineWidth = 2.5; c.beginPath(); c.moveTo(r0[0] - 4, r0[1] - 24); c.lineTo(r0[0] + 3, r0[1] - 4); c.lineTo(r0[0] - 5, r0[1] + 10); c.lineTo(r0[0] + 2, r0[1] + 22); c.stroke(); c.restore(); }
+      const rr = ART.rng(9);
+      for (let i = 0; i < 16; i++) {
+        const uu = ART.clamp(u - 0.1 - i * 0.014, 0, 1); if (uu <= 0.02) continue;
+        const p2 = pathPos(a, Math.min(1, uu + 0.02)), s = 5 + rr() * 7, ox = Math.sin(uu * 30 + i) * 8, oy = Math.cos(uu * 26 + i * 2) * 6, col = rr();
+        c.save(); c.globalAlpha = 1 - ART.seg(u, 0.86, 0.96); const g = c.createRadialGradient(p2[0] + ox - 1, p2[1] + oy - 1, 0.5, p2[0] + ox, p2[1] + oy, s); g.addColorStop(0, col < 0.5 ? '#efe2c4' : '#cfc6b8'); g.addColorStop(1, col < 0.5 ? '#9a7c4c' : '#6f675c'); c.fillStyle = g; c.beginPath(); c.arc(p2[0] + ox, p2[1] + oy, s, 0, 6.283); c.fill(); c.restore();
+      }
+      const r1 = rest(a.to); tok('sed', r1[0], r1[1], ART.seg(u, 0.82, 0.97));
+      return;
+    }
+    // 그 밖: 길을 따라 움직이며 모습이 바뀌어요
+    if (ty === 'h' || ty === 'm') { const R = 46 + (ty === 'm' ? 20 * k : 8 * Math.sin(t * 6)), g = c.createRadialGradient(pos[0], pos[1], 6, pos[0], pos[1], R); g.addColorStop(0, `rgba(255,${ty === 'm' ? 150 : 90},40,${0.35 + 0.35 * ART.seg(u, 0.1, 0.4)})`); g.addColorStop(1, 'rgba(255,90,40,0)'); c.fillStyle = g; c.beginPath(); c.arc(pos[0], pos[1], R, 0, 6.283); c.fill(); }
+    let sx = 1;
+    if (ty === 'h') sx = 1 - 0.12 * Math.sin(ART.seg(u, 0.2, 0.7) * Math.PI);
+    c.save(); c.translate(pos[0], pos[1]); c.scale(sx, 1 / sx); c.translate(-pos[0], -pos[1]);
+    tok(a.from, pos[0], pos[1], 1 - k); tok(a.to, pos[0], pos[1], k);
+    c.restore();
+    const pa = Math.sin(ART.seg(u, 0.18, 0.82) * Math.PI);
+    if (ty === 'h' && pa > 0.05) { c.save(); c.globalAlpha = pa; ART.arrow(c, pos[0] - 78, pos[1], pos[0] - 46, pos[1], '#d64d86', 6); ART.arrow(c, pos[0] + 78, pos[1], pos[0] + 46, pos[1], '#d64d86', 6); ART.arrow(c, pos[0], pos[1] - 70, pos[0], pos[1] - 40, '#d64d86', 6); c.restore(); }
+    if (ty === 'c' && pa > 0.05) { c.save(); c.globalAlpha = pa; [-22, 22].forEach((dx) => ART.arrow(c, pos[0] + dx, pos[1] - 76, pos[0] + dx, pos[1] - 42, '#3c5a9a', 6)); c.restore(); }
+    if (ty === 'f') { const sp = ART.seg(u, 0.55, 0.95) * (1 - ART.seg(u, 0.95, 1)); if (sp > 0) { c.save(); c.globalAlpha = sp; c.fillStyle = '#fff'; for (let i = 0; i < 6; i++) { const a2 = i * 1.047 + t * 2, d = 40 + Math.sin(t * 5 + i) * 4; c.beginPath(); c.arc(pos[0] + Math.cos(a2) * d, pos[1] + Math.sin(a2) * d * 0.8, 2.6, 0, 6.283); c.fill(); } c.restore(); } }
+  }
+  const loop = ART.loop(cv, (c, W, H, t, dt) => {
+    if (S.mv) { S.mv.u += dt / (ART.REDUCE ? 0.05 : S.mv.dur); if (S.mv.u >= 1) finish(); }
+    const o = S.mv ? { arrow: S.mv.a.id, dimAlpha: 0.18 } : { focus: S.at, reach: ARR.filter((a) => a.from === S.at).map((a) => a.to), dimAlpha: 0.2 };
+    o.after = (cc) => {
+      if (S.mv) drawMoving(cc, t);
+      else { const r = rest(S.at), bob = ART.REDUCE ? 0 : Math.sin(t * 2.4) * 3; cc.save(); cc.fillStyle = 'rgba(255,255,255,.55)'; cc.beginPath(); cc.ellipse(r[0], r[1] + 32, 34, 8, 0, 0, 6.283); cc.fill(); cc.restore(); CYC.token(cc, r[0], r[1] + bob, S.at, 1, t);
+        // 지금 위치 표시 고리
+        cc.save(); cc.strokeStyle = 'rgba(255,214,90,.95)'; cc.lineWidth = 4; cc.setLineDash([8, 7]); cc.lineDashOffset = -t * 20; cc.beginPath(); cc.arc(r[0], r[1], 48, 0, 6.283); cc.stroke(); cc.restore(); }
+    };
+    CYC.draw(c, W, H, t, o);
+    // 지금 내 암석 (작은 그림)
+    nctx.setTransform(1, 0, 0, 1, 0, 0); nctx.clearRect(0, 0, 144, 112); const bg = nctx.createRadialGradient(72, 56, 4, 72, 56, 70); bg.addColorStop(0, '#ffffff'); bg.addColorStop(1, '#e3efe7'); nctx.fillStyle = bg; nctx.fillRect(0, 0, 144, 112);
+    if (S.mv) { const k = ART.seg(S.mv.u, 0.35, 0.8); nctx.globalAlpha = 1 - k; CYC.token(nctx, 72, 58, S.mv.a.from, 1.25, t); nctx.globalAlpha = k; CYC.token(nctx, 72, 58, S.mv.a.to, 1.25, t); nctx.globalAlpha = 1; }
+    else CYC.token(nctx, 72, 58, S.at, 1.25, t);
+  }, { always: true });
+
+  /* ---------- 상태와 버튼 ---------- */
+  function go(a) {
+    if (S.mv) return;
+    S.mv = { a, u: 0, dur: TYPE(a) === 'w' ? 3.2 : 2.6 };
+    $('#why').innerHTML = `<b>${a.label.replace('\n', ' ')}</b> 중이에요…`;
+    paint();
+  }
+  function finish() {
+    const a = S.mv.a; S.mv = null; S.at = a.to; S.used.add(a.id); S.hist.push({ n: a.to, via: a.label.replace('\n', ' ') });
+    $('#why').innerHTML = SAY[a.id];
+    paint();
+    MISSIONS.forEach((m, i) => { if (!S.done[i] && m.ok(S)) { S.done[i] = true; toast(`미션 ${i + 1} 해결! ` + (S.done.every(Boolean) ? '모든 미션을 해결했어요. 암석은 끊임없이 변해요.' : '')); } });
+    paintMissions();
+  }
+  function paint() {
+    $('#nowName').textContent = S.mv ? `${N[S.mv.a.from].name} → ${N[S.mv.a.to].name}` : N[S.at].name;
+    $('#nowName').style.color = N[S.mv ? S.mv.a.to : S.at].col;
+    const out = ARR.filter((a) => a.from === S.at);
+    $('#choices').innerHTML = out.map((a) => `<button type="button" class="choice ${a.col === G ? 'g' : 'p'}" data-id="${a.id}"${S.mv ? ' disabled' : ''}><span class="pr">${a.label.replace('\n', ' ')}</span><span>${JOSA(N[a.to].name, '이', '가')} 돼요</span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></button>`).join('');
+    $$('#choices .choice').forEach((b) => b.addEventListener('click', () => go(ARR.find((a) => a.id === b.dataset.id))));
+    $('#log').innerHTML = S.hist.map((h, i) => (i ? `<span class="a">→ ${h.via} →</span>` : '') + `<span class="n" style="background:${N[h.n].col}">${N[h.n].name}</span>`).join('');
+    $$('#starts button').forEach((b) => { b.setAttribute('aria-pressed', String(b.dataset.n === S.start)); b.disabled = !!S.mv; });
+  }
+  function paintMissions() { $('#missions').innerHTML = MISSIONS.map((m, i) => `<div class="mis${S.done[i] ? ' ok' : ''}"><i></i><span>${m.t}</span></div>`).join(''); }
+  function reset(n) { S.start = S.at = n; S.hist = [{ n, via: '' }]; S.used = new Set(); S.mv = null; S.done = [false, false, false]; $('#why').innerHTML = `<b>${N[n].name}</b>에서 출발해요. 아래에서 다음에 일어날 일을 골라 보세요.`; paint(); paintMissions(); }
+  $$('#starts button').forEach((b) => b.addEventListener('click', () => reset(b.dataset.n)));
+  cv.addEventListener('click', (e) => {
+    if (S.mv) return; const r = cv.getBoundingClientRect(), n = CYC.hit(e.clientX - r.left, e.clientY - r.top, r.width, r.height); if (!n) return;
+    if (n === S.at) { toast(`지금 내 암석은 ${JOSA(N[n].name, '이에요', '예요')}.`); return; }
+    const a = ARR.find((x) => x.from === S.at && x.to === n);
+    if (a) go(a); else toast(`${N[S.at].name}에서 ${JOSA(N[n].name, '으로', '로')} 바로 가는 화살표는 없어요. 다른 상태를 거쳐 가 보세요.`);
+  });
+  /* 검사용 주소: ?start=sed&path=sed-sedr,sedr-meta (차례로 움직임) */
+  reset(N[q.get('start')] ? q.get('start') : 'ign');
+  if (q.get('path')) { (async () => { const wait = (ms) => new Promise((r) => setTimeout(r, ms)); await wait(500); for (const id of q.get('path').split(',')) { const a = ARR.find((x) => x.id === id); if (!a || a.from !== S.at) break; go(a); while (S.mv) await wait(100); await wait(300); } })(); }
+  window.SM.okUI = true;
+  void loop;
+  } catch (err) { window.SM_err('순환 그림·버튼', err); }
+})();
+</script>
+</body>
+</html>
