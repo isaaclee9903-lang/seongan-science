@@ -9,6 +9,7 @@
 <style>
 /*@@PART:css_sim.css@@*/
 /*@@LOCAL:_css_lab.css@@*/
+/*@@LOCAL:_css_ovl.css@@*/
   .stage{grid-template-columns:minmax(0,1.7fr) minmax(330px,1fr)}
   .viewer .gl-host{aspect-ratio:1200/720;cursor:pointer}
   .starts{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
@@ -21,7 +22,7 @@
   .choices{display:grid;gap:8px}
   .choice{min-height:58px;border-radius:14px;border:0;cursor:pointer;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;padding:6px 14px;text-align:left;font-weight:800;font-size:15.5px;color:#fff;box-shadow:0 6px 14px rgba(20,38,59,.15);word-break:keep-all}
   .choice .pr{font-size:13px;font-weight:900;background:rgba(255,255,255,.22);border-radius:8px;padding:3px 8px}
-  .choice.g{background:linear-gradient(135deg,#6fb43c,#3d7d1c)}.choice.p{background:linear-gradient(135deg,#ef6fa2,#b8306c)}
+  .choice.g{background:linear-gradient(135deg,#5f9d68,#386a42)}.choice.p{background:linear-gradient(135deg,#c76a8c,#93385c)}
   .choice:disabled{opacity:.45;cursor:default}
   .choice:active{transform:scale(.98)}
   .why2{margin-top:10px;border-radius:14px;padding:10px 12px;background:#fff8e6;border:1px solid #f3dc9a;color:#5b4300;font-size:15px;line-height:1.65;word-break:keep-all;min-height:48px}
@@ -50,7 +51,7 @@
     <section class="card viewer">
       <div class="gl-host" id="host"><canvas class="cv" id="cv" role="img" aria-label="암석의 순환 그림 위에서 고른 암석이 화살표를 따라 움직이며 변하는 모습"></canvas><span class="tag3">교과서 그림 Ⅱ-13을 바탕으로 한 모형</span><div class="toast" id="toast"></div></div>
       <div class="pad">
-        <div class="legend"><span><i style="background:#6fbf3a"></i>풍화·침식·운반 · 다져지고 굳어짐 · 식음</span><span><i style="background:#ec5f98"></i>높은 열과 압력 · 녹음</span></div>
+        <div class="legend"><span><i style="background:#4f8f5a"></i>풍화·침식·운반 · 다져지고 굳어짐 · 식음</span><span><i style="background:#bf5679"></i>높은 열과 압력 · 녹음</span></div>
         <p class="lab-l" style="margin-top:10px">여행 기록</p>
         <div class="log" id="log"></div>
       </div>
@@ -83,7 +84,7 @@ window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) 
 /*@@LOCAL:_art.js@@*/
 /*@@LOCAL:_cycle2d.js@@*/
   const { $, $$, q } = window.SM;
-  const N = CYC.NODES, ARR = CYC.ARROWS, G = '#6fbf3a';
+  const N = CYC.NODES, ARR = CYC.ARROWS, G = CYC.G, NCOL = (n) => (N[n].col === 'warm' ? '#93552b' : '#2c4a50');
   /* ---------- 선생님이 고치기 쉬운 글 ---------- */
   const SAY = {
     'magma-ign': '지하의 마그마가 지표나 지하에서 <b>식으면</b> 화성암이 돼요.',
@@ -101,7 +102,7 @@ window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) 
     { t: '출발한 상태로 다시 돌아오기 (두 단계 이상 여행)', ok: (S) => S.hist.length >= 3 && S.at === S.start },
     { t: '퇴적물이 되는 세 가지 길(화성암, 퇴적암, 변성암에서)을 모두 지나가 보기', ok: (S) => ['ign-sed', 'sedr-sed', 'meta-sed'].every((id) => S.used.has(id)) },
   ];
-  const REST = { ign: [0, -60], sed: [0, -60], sedr: [-120, 0], meta: [0, 62], magma: [118, 0] };
+  const REST = { ign: [-12, -64], sed: [-6, -62], sedr: [-118, 4], meta: [-4, 60], magma: [-4, 64] };
   const rest = (n) => [N[n].x + REST[n][0], N[n].y + REST[n][1]];
   const JOSA = (w, a, b) => { const c = w.charCodeAt(w.length - 1) - 0xac00; return w + (c >= 0 && c % 28 ? a : b); };
   const TYPE = (a) => a.label.startsWith('풍화') ? 'w' : a.label.startsWith('다져') ? 'c' : a.label.startsWith('높은') ? 'h' : a.label === '녹음' ? 'm' : 'f';
@@ -151,16 +152,18 @@ window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) 
     const o = S.mv ? { arrow: S.mv.a.id, dimAlpha: 0.18 } : { focus: S.at, reach: ARR.filter((a) => a.from === S.at).map((a) => a.to), dimAlpha: 0.2 };
     o.after = (cc) => {
       if (S.mv) drawMoving(cc, t);
-      else { const r = rest(S.at), bob = ART.REDUCE ? 0 : Math.sin(t * 2.4) * 3; cc.save(); cc.fillStyle = 'rgba(255,255,255,.55)'; cc.beginPath(); cc.ellipse(r[0], r[1] + 32, 34, 8, 0, 0, 6.283); cc.fill(); cc.restore(); CYC.token(cc, r[0], r[1] + bob, S.at, 1, t);
+      else { const r = rest(S.at), bob = ART.REDUCE ? 0 : Math.sin(t * 2.4) * 3; CYC.token(cc, r[0], r[1] + bob, S.at, 1, t);
         // 지금 위치 표시 고리
-        cc.save(); cc.strokeStyle = 'rgba(255,214,90,.95)'; cc.lineWidth = 4; cc.setLineDash([8, 7]); cc.lineDashOffset = -t * 20; cc.beginPath(); cc.arc(r[0], r[1], 48, 0, 6.283); cc.stroke(); cc.restore(); }
+        cc.save(); cc.strokeStyle = 'rgba(255,255,255,.9)'; cc.lineWidth = 2.5; cc.setLineDash([6, 6]); cc.lineDashOffset = -t * 20; cc.beginPath(); cc.arc(r[0], r[1], 48, 0, 6.283); cc.stroke(); cc.restore(); }
     };
-    CYC.draw(c, W, H, t, o);
+    const res = CYC.draw(c, W, H, t, o);
     // 지금 내 암석 (작은 그림)
     nctx.setTransform(1, 0, 0, 1, 0, 0); nctx.clearRect(0, 0, 144, 112); const bg = nctx.createRadialGradient(72, 56, 4, 72, 56, 70); bg.addColorStop(0, '#ffffff'); bg.addColorStop(1, '#e3efe7'); nctx.fillStyle = bg; nctx.fillRect(0, 0, 144, 112);
     if (S.mv) { const k = ART.seg(S.mv.u, 0.35, 0.8); nctx.globalAlpha = 1 - k; CYC.token(nctx, 72, 58, S.mv.a.from, 1.25, t); nctx.globalAlpha = k; CYC.token(nctx, 72, 58, S.mv.a.to, 1.25, t); nctx.globalAlpha = 1; }
     else CYC.token(nctx, 72, 58, S.at, 1.25, t);
-  }, { always: true });
+    return res;
+  }, { always: true, after: (r, f) => ov.set(r.labels, f) });
+  const ov = ART.overlay($('#host'));
 
   /* ---------- 상태와 버튼 ---------- */
   function go(a) {
@@ -178,11 +181,11 @@ window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) 
   }
   function paint() {
     $('#nowName').textContent = S.mv ? `${N[S.mv.a.from].name} → ${N[S.mv.a.to].name}` : N[S.at].name;
-    $('#nowName').style.color = N[S.mv ? S.mv.a.to : S.at].col;
+    $('#nowName').style.color = NCOL(S.mv ? S.mv.a.to : S.at);
     const out = ARR.filter((a) => a.from === S.at);
     $('#choices').innerHTML = out.map((a) => `<button type="button" class="choice ${a.col === G ? 'g' : 'p'}" data-id="${a.id}"${S.mv ? ' disabled' : ''}><span class="pr">${a.label.replace('\n', ' ')}</span><span>${JOSA(N[a.to].name, '이', '가')} 돼요</span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></button>`).join('');
     $$('#choices .choice').forEach((b) => b.addEventListener('click', () => go(ARR.find((a) => a.id === b.dataset.id))));
-    $('#log').innerHTML = S.hist.map((h, i) => (i ? `<span class="a">→ ${h.via} →</span>` : '') + `<span class="n" style="background:${N[h.n].col}">${N[h.n].name}</span>`).join('');
+    $('#log').innerHTML = S.hist.map((h, i) => (i ? `<span class="a">→ ${h.via} →</span>` : '') + `<span class="n" style="background:${NCOL(h.n)}">${N[h.n].name}</span>`).join('');
     $$('#starts button').forEach((b) => { b.setAttribute('aria-pressed', String(b.dataset.n === S.start)); b.disabled = !!S.mv; });
   }
   function paintMissions() { $('#missions').innerHTML = MISSIONS.map((m, i) => `<div class="mis${S.done[i] ? ' ok' : ''}"><i></i><span>${m.t}</span></div>`).join(''); }
