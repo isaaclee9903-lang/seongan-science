@@ -92,7 +92,7 @@ def mix_at(buf, x, start):
     buf[i:j] += x[: j - i]
 
 
-def music(total=45.5):
+def music(total=52.5):
     L = int(total * SR)
     left = np.zeros(L)
     right = np.zeros(L)
@@ -100,28 +100,29 @@ def music(total=45.5):
 
     # 화음 (MIDI) : 처음은 차분한 단조, 머릿속부터 밝아지고, 끝은 장조로 풀림
     chords = [
-        (0.0, 6.4, [57, 60, 64, 67]),      # Am7  — 하굣길
-        (6.4, 6.6, [53, 57, 60, 64]),      # Fmaj7 — 방, 눈
-        (13.0, 6.3, [48, 55, 60, 64]),     # C — 읽기
-        (19.3, 6.3, [47, 55, 59, 62]),     # G/B — 탐험
-        (25.6, 6.0, [45, 52, 57, 60]),     # Am — 가상 실험
-        (31.6, 5.6, [41, 48, 57, 60, 64]), # Fmaj7 — 정리
-        (37.2, 2.4, [43, 50, 55, 59, 62]), # G — 밖으로
-        (39.6, 5.9, [48, 55, 60, 62, 64]), # Cadd9 — 표어
+        (0.0, 6.2, [57, 60, 64, 67]),      # Am7  — 하굣길
+        (6.2, 6.7, [53, 57, 60, 64]),      # Fmaj7 — 방, 눈
+        (12.9, 7.5, [48, 55, 60, 64]),     # C — 읽기
+        (20.4, 6.9, [47, 55, 59, 62]),     # G/B — 탐험
+        (27.3, 8.6, [45, 52, 57, 60]),     # Am — 가상 실험
+        (35.9, 6.55, [41, 48, 57, 60, 64]), # Fmaj7 — 정리
+        (42.45, 3.2, [43, 50, 55, 59, 62]), # G — 밖으로
+        (45.65, 6.3, [48, 55, 60, 62, 64]), # Cadd9 — 표어
     ]
+    INTRO, OUTRO = 12.9, 45.65  # 머릿속에 들어가기 전, 표어
     for start, dur, notes in chords:
-        p = pad([midi(n) for n in notes], dur + 1.2, vol=0.16 if start < 13 else 0.12)
+        p = pad([midi(n) for n in notes], dur + 1.2, vol=0.16 if start < INTRO else 0.12)
         mix_at(left, p, start)
         mix_at(right, p, start)
         # 아르페지오: 하굣길은 드문드문, 머릿속부터 8분음표
-        step = beat if start < 13 or start >= 39.6 else beat / 2
+        step = beat if start < INTRO or start >= OUTRO else beat / 2
         k = 0
         tt = start
         order = [0, 2, 1, 3, 2, 4 if len(notes) > 4 else 3, 1, 3]
         while tt < start + dur - 0.05:
             n = notes[order[k % len(order)] % len(notes)] + 12
             vel = 0.55 if k % 2 == 0 else 0.4
-            if start < 13:
+            if start < INTRO:
                 vel *= 0.8
             tone = epiano(midi(n), 2.6, vel)
             pan = 0.5 + 0.25 * np.sin(k * 1.3)
@@ -137,8 +138,8 @@ def music(total=45.5):
     # 마지막 종소리 같은 높은 음
     for i, n in enumerate([76, 79, 84]):
         tone = epiano(midi(n), 4.0, 0.35, decay=2.2)
-        mix_at(left, tone * 0.25, 40.6 + i * 0.18)
-        mix_at(right, tone * 0.25, 40.6 + i * 0.18)
+        mix_at(left, tone * 0.25, OUTRO + 1.1 + i * 0.18)
+        mix_at(right, tone * 0.25, OUTRO + 1.1 + i * 0.18)
 
     # 울림(간단한 지연 반사)
     def echo(x, d, g):
