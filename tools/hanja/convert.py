@@ -1,5 +1,6 @@
 # 한자어 단어 표(구글 시트에서 내려받은 탭 구분 파일)를 한자어 공부 페이지용 자료로 바꾼다.
-# 사용: python tools/hanja/convert.py [표 파일]      기본: tools/hanja/words.tsv
+# 사용: python tools/hanja/convert.py [표 파일(.tsv 또는 .xlsx)]   기본: tools/hanja/words.tsv
+#       --check 를 붙이면 검사만 하고 자료는 쓰지 않는다 (원본 시트 전체 검수용)
 #       → tools/lesson-kit/src/hanja/_words.js 를 쓰고, 이어서 build.py hanja 로 페이지를 만든다.
 #
 # 열 이름(첫 줄)으로 찾으므로 열 순서가 바뀌어도 된다: 교과, 대단원, 중단원, 소단원, 단어, 한자, 정의,
@@ -25,10 +26,16 @@ def safe_html(s):
 
 def main(argv):
     force = "--force" in argv
+    check = "--check" in argv
     args = [a for a in argv if not a.startswith("--")]
     src = pathlib.Path(args[0]) if args else HERE / "words.tsv"
     lessons = json.loads((HERE / "lessons.json").read_text(encoding="utf-8"))
-    rows = list(csv.reader(src.read_text(encoding="utf-8-sig").splitlines(), delimiter="\t", quotechar=None))
+    if src.suffix.lower() == ".xlsx":
+        import openpyxl
+        ws = openpyxl.load_workbook(src, read_only=True).worksheets[0]
+        rows = [["" if c is None else str(c) for c in r] for r in ws.iter_rows(values_only=True)]
+    else:
+        rows = list(csv.reader(src.read_text(encoding="utf-8-sig").splitlines(), delimiter="\t", quotechar=None))
     head = [h.strip() for h in rows[0]]
     col = {h: i for i, h in enumerate(head)}
     need = ["교과", "대단원", "중단원", "단어", "한자", "정의", "한자분해_JSON", "선택지_JSON", "관련단어_JSON"]
@@ -95,7 +102,7 @@ def main(argv):
     for a, b in VARIANTS:
         if a in text and b in text: errs.append(f"전체: {a}와 {b}를 섞어 씀 (하나로 통일해야 관계망이 갈라지지 않음)")
     names = {x["word"] for x in words}
-    for k, L in lessons.items():
+    for k, L in ({} if check else lessons).items():
         for w in L["words"]:
             if w not in names: errs.append(f"lessons.json {k}: '{w}'가 단어 표에 없음")
     dup = {w for w in names if [x["word"] for x in words].count(w) > 1}
@@ -104,6 +111,8 @@ def main(argv):
     for m in warns: print("[알림]", m)
     for m in errs: print("[오류]", m)
     print(f"단어 {len(words)}개, 오류 {len(errs)}개, 알림 {len(warns)}개")
+    if check:
+        return
     if errs and not force:
         sys.exit("오류가 있어 자료를 쓰지 않았어요. 표를 고친 뒤 다시 실행해 주세요.")
     data = {"words": words, "lessons": lessons}
