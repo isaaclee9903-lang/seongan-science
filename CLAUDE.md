@@ -24,6 +24,7 @@
 | `minerals` | 중2 Ⅱ 광물의 특성 (3D 광물 모형, 3D 광물 실험실, 광물 구별하기) | lesson-kit | `중2_지권의변화_광물의특성.md` |
 | `rocks` | 중2 Ⅱ 암석의 종류 (화성암·퇴적암·변성암, 2D 생성 과정 시뮬레이션, 3D 암석 12종·돋보기 분류 탐구) | lesson-kit | `중2_지권의변화_암석의종류.md` |
 | `mineral-use` | 중2 Ⅱ 광물과 암석의 활용 (3D 표본 진열대, 유튜브 멈춤 퀴즈, 교실 속 광물 찾기, 자원의 길, 포스터 만들기) | lesson-kit | `중2_지권의변화_광물과암석의활용.md` |
+| `continental-drift` | 중2 Ⅱ 지권의 운동: 대륙 이동설 (베게너 이야기, 대륙 조각 퍼즐, 대륙 이동 지구본, 2D 캔버스) | lesson-kit | `중2_지권의운동_대륙이동설.md` |
 | `quake-volcano` | 중2 Ⅱ 지권의 운동: 판의 경계와 지진대, 화산대 (실제 자료 빅데이터 지도, 판의 경계 실험실 2D, 지진·화산 기록실, 카드 뉴스) | lesson-kit | `중2_지권의운동_지진대와화산대.md` |
 | `ohm` | 중2 Ⅶ 옴의 법칙 | 직접 작성 | `중2_전기와자기_옴의법칙.md` |
 | `series-parallel` | 중2 Ⅶ 저항의 연결 | 직접 작성 | `중2_전기와자기_저항의연결.md` |
@@ -41,6 +42,7 @@
 | `career-map` | 진로 지도 (읽기 자료 모음) | lesson-kit | 없음 |
 
 - 지권(Ⅱ) 3D 모형: 광물은 `tools/lesson-kit/src/minerals/_min3d.js`(MIN3D), 암석 12종·퇴적물·층리·화석은 `src/rocks/_rock3d.js`(ROCK3D, MIN3D 사본이 `src/rocks/_min3d.js`에 있음). `ROCK3D.thumbs(ids)`로 카드용 사진을 만들 수 있다. 다음 Ⅱ 수업(암석의 순환 등)도 재사용한다.
+- 대륙 지도(Ⅱ 지권의 운동): `tools/lesson-kit/src/continental-drift/_geo.js`(Natural Earth 1:50m 대륙 모양), `_globe.js`(GLOBE: 판게아↔현재 대륙 회전, 캔버스 지구본), `_gond.js`(EVID 화석·빙하 증거, GOND 평면 대륙 조각판). 다음 판 구조 수업도 재사용한다.
 - 지진·화산 지도(Ⅱ 지권의 운동): `tools/lesson-kit/src/quake-volcano/_map.js`(WMAP: 실제 지진·화산·판의 경계 캔버스 지도, 재생·확대·판 강조·띠 칠하기, USGS 실시간 자료), `_bound2d.js`(BND: 교과서 그림 Ⅱ-16 형식 덩어리 그림, 부딪침·갈라짐·어긋남). 자료는 `lessons/quake-volcano/data/`(만드는 법 `_data_prep.py`). 다음 지권의 운동 수업도 재사용한다.
 - 3D 로딩: 보기만 하는 3D 그림은 영상(`C3.video`), 나머지는 `C3.lazy` + `C3.prepare`(멈추지 않는 셰이더 준비)와 미리 찍은 사진을 쓴다. 사진·영상은 `tools/lesson-kit/bake.py`로 만든다 (2026-10-12, 로딩이 길다는 선생님 의견으로 도입. 자세한 것은 `tools/lesson-kit/README.md`).
 - "직접 작성"인 수업은 `tools/lesson-kit/src/`에 원본이 없어 `lessons/<이름>/*.html`을 바로 고친다. lesson-kit 수업은 `src/`를 고치고 다시 빌드한다.
