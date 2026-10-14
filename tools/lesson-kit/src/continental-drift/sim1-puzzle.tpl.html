@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>베게너와 대륙 이동설 – 대륙 조각 퍼즐 맞추기</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+/*@@LOCAL:_css_ovl.css@@*/
+/*@@LOCAL:_css_story.css@@*/
+  :root{--fab:#14668f;--fab-soft:#e2f1f8}
+  .eyebrow{color:#0d4f73;background:#dcf0f8}
+  .stage{grid-template-columns:minmax(0,1.75fr) minmax(320px,1fr)}
+  .viewer .gl-host{height:auto;min-height:0;aspect-ratio:1200/800;background:#cfe8f4;touch-action:none}
+  .viewer canvas.cv{display:block;width:100%;height:100%;touch-action:none}
+  .tag3{position:absolute;right:10px;bottom:10px;z-index:2;font-size:12.5px;font-weight:800;color:#2c4756;background:rgba(255,255,255,.85);border-radius:9px;padding:4px 9px;pointer-events:none}
+  .toast{position:absolute;left:50%;top:14px;transform:translateX(-50%);z-index:4;background:rgba(255,255,255,.97);color:#0b3a55;font-weight:800;font-size:16px;border-radius:14px;padding:10px 16px;box-shadow:0 10px 30px rgba(20,38,59,.25);display:none;max-width:92%;text-align:center;word-break:keep-all;line-height:1.5}
+  .toast.on{display:block;animation:tin .35s ease}
+  @keyframes tin{from{transform:translate(-50%,-8px)}to{transform:translate(-50%,0)}}
+  .rot{position:absolute;left:10px;bottom:10px;z-index:3;display:flex;gap:6px;align-items:center}
+  .rot .vb{min-height:50px;min-width:50px;justify-content:center;font-size:15px}
+  .rot .vb:disabled{opacity:.4}
+  .rot .hint{max-width:200px}
+  .flow{grid-template-columns:repeat(6,1fr)}
+  .flow .fs{font-size:12.5px}
+  .fs.done:not([aria-selected="true"]){background:#e5f5ec;color:#11703f}
+  .lab-l{margin:12px 0 6px;font-size:14px;font-weight:900;color:var(--ink2)}
+  .acts .btn{flex:1 1 140px}
+  .meter{display:grid;gap:6px;margin-top:8px}
+  .meter .pc{display:grid;grid-template-columns:110px 1fr 22px;gap:8px;align-items:center;font-size:14px;font-weight:800;color:var(--ink2)}
+  .meter .pc .b{height:10px;border-radius:5px;background:#e3edf2;overflow:hidden}
+  .meter .pc .b i{display:block;height:100%;width:0;border-radius:5px;background:linear-gradient(90deg,#f0b46a,#14668f);transition:width .3s}
+  .meter .pc.ok{color:#11703f}.meter .pc.ok .b i{background:#1f9d5c}
+  .meter .pc svg{opacity:0}.meter .pc.ok svg{opacity:1}
+  .say{display:grid;grid-template-columns:52px 1fr;gap:10px;align-items:start;margin-top:12px}
+  .say .who{width:52px;height:52px;border-radius:50%;background:linear-gradient(145deg,#3d2a1a,#7a5432);display:grid;place-items:center;color:#fff;font-weight:900;font-size:13px}
+  .say .t{background:#fffaf0;border:2px solid #e3cfae;border-radius:16px;padding:10px 12px;font-size:15px;line-height:1.65;color:#4a3215;word-break:keep-all}
+  .photos{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
+  .photo{border-radius:12px;border:2px dashed #c3d8e3;background:#f6fafc;aspect-ratio:3/2;display:grid;place-items:center;font-size:12.5px;font-weight:800;color:var(--muted);overflow:hidden;position:relative;text-align:center;padding:4px;word-break:keep-all}
+  .photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .photo span{position:absolute;left:4px;bottom:4px;z-index:1;font-size:11.5px;background:rgba(255,255,255,.92);color:#0b3a55;border-radius:7px;padding:2px 6px}
+  .photo.on{border:2px solid #14668f}
+  .cmp{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .cmp figure{margin:0;border-radius:14px;overflow:hidden;border:1px solid #d3e3ec;background:#fff}
+  .cmp img{display:block;width:100%;aspect-ratio:3/2;object-fit:cover;background:#e6f2f8}
+  .cmp figcaption{font-size:14px;font-weight:800;padding:8px 10px;color:#0b3a55;word-break:keep-all}
+  .disc{display:grid;gap:8px;margin-top:10px}
+  details.q{border-radius:14px;border:2px solid #d3e3ec;background:#fff;overflow:hidden}
+  details.q summary{list-style:none;cursor:pointer;padding:12px 14px;font-weight:800;font-size:15.5px;line-height:1.5;word-break:keep-all;min-height:52px;display:flex;align-items:center;gap:10px}
+  details.q summary::-webkit-details-marker{display:none}
+  details.q summary i{flex:none;font-style:normal;width:28px;height:28px;border-radius:8px;background:#14668f;color:#fff;display:grid;place-items:center;font-size:14px}
+  details.q .a{padding:0 14px 14px 52px;font-size:15px;line-height:1.7;color:#0d3a4f;word-break:keep-all}
+  details.q .a b{color:#0b6d93}
+  .wide{grid-column:1/-1}
+  .photo em{font-style:normal;margin-bottom:18px}
+  @media (max-width:900px){.stage{grid-template-columns:1fr}}
+  @media (max-width:520px){.flow{grid-template-columns:repeat(3,1fr)}}
+  @media (max-width:640px){.cmp{grid-template-columns:1fr}.photos{grid-template-columns:repeat(3,1fr)}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <span class="eyebrow">베게너와 대륙 이동설 · 시뮬레이션 ① (교과서 해 보기)</span>
+    <h1>대륙 조각 퍼즐 맞추기</h1>
+    <p class="sub">교과서 '해 보기'처럼 대륙 조각을 끌어 맞춰요. 조각을 누르면 고를 수 있고, 아래 단추로 돌릴 수 있어요. 아프리카는 제자리에 두고 나머지 조각을 옮겨요.</p>
+  </header>
+  <div class="stage">
+    <section class="card viewer">
+      <div class="gl-host" id="host"><canvas class="cv" id="cv" role="img" aria-label="대륙 조각 퍼즐 판. 남아메리카, 아프리카, 마다가스카르, 인도, 남극, 오스트레일리아 조각이 지금의 대륙처럼 흩어져 있고, 조각을 끌어 옮기거나 돌릴 수 있다."></canvas>
+        <div class="rot"><button class="vb" type="button" id="rotL" aria-label="고른 조각을 왼쪽으로 돌리기"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v5h5"/></svg></button><button class="vb" type="button" id="rotR" aria-label="고른 조각을 오른쪽으로 돌리기"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 4v5h-5"/></svg></button><span class="hint" id="selName">조각을 눌러 고르세요</span></div>
+        <span class="tag3">대륙 모양: Natural Earth · 맞춘 위치는 모형</span><div class="toast" id="toast"></div></div>
+    </section>
+    <section class="card pad">
+      <div class="flow" id="flow" role="tablist">
+        <button class="fs" type="button" data-s="1"><b>1</b>지금처럼</button>
+        <button class="fs" type="button" data-s="2"><b>2</b>해안선</button>
+        <button class="fs" type="button" data-s="3"><b>3</b>화석</button>
+        <button class="fs" type="button" data-s="4"><b>4</b>빙하 흔적</button>
+        <button class="fs" type="button" data-s="5"><b>5</b>비교</button>
+        <button class="fs" type="button" data-s="6"><b>6</b>토의</button>
+      </div>
+      <div class="stepname"><span class="no" id="stNo">1</span><div><small id="stSmall">과정 1</small><h2 id="stTitle"></h2></div></div>
+      <p class="what" id="stWhat"></p>
+      <div id="playBox">
+        <p class="lab-l">조각마다 얼마나 맞았나</p>
+        <div class="meter" id="meter"></div>
+        <div class="acts"><button class="btn ghost" type="button" id="hintBtn">도움 보기</button><button class="btn ghost" type="button" id="resetBtn">처음 자리로</button><button class="btn primary" type="button" id="shotBtn" disabled>맞춘 모습 촬영하기</button></div>
+      </div>
+      <div class="say" id="sayBox"><span class="who">베게너</span><div class="t" id="say"></div></div>
+      <div id="cmpBox" hidden>
+        <div class="cmp" id="cmp"></div>
+        <div class="box fact"><b class="t">비교해 보기</b>세 번 맞춘 모습이 어떤가요? 해안선, 화석, 빙하 흔적이라는 서로 다른 증거로 맞췄는데도 대륙이 <b>거의 같은 모습</b>으로 모여요.</div>
+      </div>
+      <div id="discBox" hidden>
+        <div class="disc" id="disc"></div>
+      </div>
+      <p class="lab-l">찍은 사진</p>
+      <div class="photos" id="photos"></div>
+      <div class="box an"><b class="t">모형 안내</b>대륙 조각은 실제 대륙 모양(Natural Earth 지도 자료)으로 만들었어요. 대륙을 맞춘 위치와 화석·빙하 흔적의 범위는 교과서 그림을 바탕으로 단순하게 나타냈어요.</div>
+    </section>
+  </div>
+  <p class="credit">베게너와 대륙 이동설 · 대륙 조각 퍼즐 맞추기</p>
+</div>
+
+<script>
+window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) => Array.from(r.querySelectorAll(s)), q: new URLSearchParams(location.search) };
+</script>
+<script>
+/* ===== 블록 1: 퍼즐 판, 끌기, 단계 ===== */
+(() => {
+  'use strict';
+  try {
+/*@@LOCAL:_art.js@@*/
+/*@@LOCAL:_geo.js@@*/
+/*@@LOCAL:_globe.js@@*/
+/*@@LOCAL:_gond.js@@*/
+  const { $, $$, q } = window.SM;
+  /* ---------- 선생님이 고치기 쉬운 글 ---------- */
+  const STEPS = {
+    1: { t: '대륙 조각을 지금처럼 놓기', w: '대륙 조각이 현재의 대륙 분포와 같은 모습으로 놓여 있어요. 남아메리카와 아프리카, 인도와 오스트레일리아가 바다를 사이에 두고 멀리 떨어져 있지요. 판을 살펴본 뒤 다음 과정으로 가요.', say: '지도를 볼 때마다 남아메리카와 아프리카의 해안선이 마음에 걸렸어. 둘을 붙여 보면 어떨까?' },
+    2: { t: '해안선 모양을 비교해 맞추기', w: '남아메리카 조각을 끌어 아프리카에 붙여 봐요. 빨간 해안선이 서로 맞물리는 자리를 찾아요. 방향이 다르면 아래 돌리기 단추를 눌러요.', say: '해안선이 맞물리는 자리를 찾아봐. 퍼즐 조각의 가장자리를 비교하듯이!', done: '해안선이 맞아떨어졌어! 하지만 모양이 비슷한 것만으로는 부족해. 다른 증거도 이어지는지 봐야 해.' },
+    3: { t: '화석 분포가 이어지도록 맞추기', w: '대륙 조각을 다시 지금처럼 놓았어요. 이번에는 색 띠(화석이 발견되는 곳)가 끊기지 않고 이어지도록 조각을 모아요. 초록은 메소사우루스, 파랑은 글로소프테리스예요.', say: '찢어진 신문 조각을 맞출 때 글줄이 이어지는지 보잖아? 대륙도 화석 띠가 이어지는지 확인해 봐.', done: '화석 띠가 끊기지 않고 이어졌어! 먼 바다를 헤엄칠 수 없는 메소사우루스가 두 대륙에 있는 까닭이 바로 이거야.' },
+    4: { t: '빙하 흔적이 연결되도록 맞추기', w: '이번에는 흰 얼룩(빙하 흔적)과 파란 화살표(빙하가 움직인 방향)가 서로 이어지도록 조각을 모아요.', say: '지금은 더운 아프리카와 인도에 빙하의 흔적이 있다니! 대륙을 모으면 무엇이 보일까?', done: '빙하 흔적이 이어지고, 화살표가 한곳에서 바깥으로 퍼져 나가! 대륙들이 붙어서 추운 곳에 함께 있었던 거야.' },
+    5: { t: '촬영한 대륙 분포 비교하기', w: '과정 2~4에서 촬영한 사진을 나란히 놓고 비교해요. 서로 다른 증거로 맞춘 모습이 어떻게 같고 다른가요?', say: '해안선, 화석, 빙하 흔적이 모두 같은 답을 가리키고 있어. 과거에는 대륙이 하나로 붙어 있었던 거야.' },
+    6: { t: '이 활동으로 알 수 있는 사실 토의하기', w: '친구와 함께 아래 질문에 답해 봐요. 먼저 말해 본 뒤에 눌러서 생각을 확인해요.', say: '나는 이 생각을 대륙 이동설이라고 불렀어. 과거에 하나로 모여 있던 대륙이 서서히 갈라지고 이동했다는 거지.' },
+  };
+  const DISC = [
+    ['서로 다른 증거로 맞췄는데 대륙이 거의 같은 모습으로 모인 것은 무엇을 뜻할까요?', '해안선, 화석, 빙하 흔적이라는 <b>서로 다른 증거가 모두 같은 결론</b>을 가리켜요. 과거에는 대륙들이 <b>하나로 붙어 있었다</b>는 생각을 뒷받침해요.'],
+    ['열대 기후인 아프리카에서 빙하의 흔적이 나타나는 까닭은 무엇일까요?', '과거에 아프리카는 다른 대륙과 붙어 <b>빙하가 생길 만큼 추운 곳</b>에 있었어요. 그 뒤 대륙이 갈라지고 <b>이동</b>하여 지금은 열대 지역에 있어요.'],
+    ['대륙을 마치 퍼즐 조각처럼 서로 맞출 수 있는 까닭은 무엇일까요?', '대륙들이 과거에 <b>하나의 거대한 대륙(판게아)</b>을 이루고 있다가 <b>갈라져 이동</b>했기 때문이에요. 원래 한 덩어리였으니 갈라진 가장자리가 서로 맞물려요.'],
+  ];
+  const STEP_PIECES = { 2: ['sa', 'af'], 3: GOND.PIECES, 4: GOND.PIECES };
+  const STEP_SHOW = { 1: {}, 2: { coast: true }, 3: { fossil: true }, 4: { glacier: true }, 5: {}, 6: { fossil: true } };
+  const PHOTO = { 2: '해안선', 3: '화석', 4: '빙하 흔적' };
+  const NAMES = GOND.NAMES;
+  /* ---------- 상태 ---------- */
+  const S = { step: 1, st: GOND.nowState(), sel: null, drag: null, lift: {}, snapped: {}, done: {}, photos: {}, hint: 0, anim: null };
+  const MOVABLE = (k) => k !== 'af' && (STEP_PIECES[S.step] || []).indexOf(k) >= 0;
+  const active = () => STEP_PIECES[S.step] || (S.step === 1 ? GOND.PIECES : S.step >= 5 ? GOND.PIECES : []);
+  let toastT = 0;
+  const toast = (m) => { const t = $('#toast'); t.textContent = m; t.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('on'), 2600); };
+  /* 얼마나 맞았나 (0~1): 자리와 방향 */
+  const score = (k) => { const s = S.st[k]; const d = Math.hypot(s.dx, s.dy), a = Math.abs(((s.rot % 360) + 540) % 360 - 180); return Math.max(0, 1 - d / 420) * 0.6 + Math.max(0, 1 - a / 120) * 0.4; };
+  const close = (k) => { const s = S.st[k]; const a = Math.abs(((s.rot % 360) + 540) % 360 - 180); return Math.hypot(s.dx, s.dy) < 46 && a < 24; };
+
+  /* ---------- 그리기 ---------- */
+  const cv = $('#cv'), ov = ART.overlay($('#host'));
+  const loop = ART.loop(cv, (c, W, H, t, dt) => {
+    // 맞은 조각이 제자리로 미끄러져 들어가요
+    if (S.anim) { S.anim.u = Math.min(1, S.anim.u + dt / (ART.REDUCE ? 0.01 : 0.45)); const e = ART.ease(S.anim.u), a = S.anim; GOND.PIECES.forEach((k) => { if (!a.from[k]) return; S.st[k] = { dx: a.from[k].dx + (a.to[k].dx - a.from[k].dx) * e, dy: a.from[k].dy + (a.to[k].dy - a.from[k].dy) * e, rot: a.from[k].rot + (a.to[k].rot - a.from[k].rot) * e }; }); if (S.anim.u >= 1) { const cb = S.anim.cb; S.anim = null; if (cb) cb(); } }
+    GOND.PIECES.forEach((k) => { const want = S.drag && S.drag.k === k ? 1 : 0; S.lift[k] = (S.lift[k] || 0) + (want - (S.lift[k] || 0)) * Math.min(1, dt * 12); });
+    const only = S.step === 2 ? ['sa', 'af'] : GOND.PIECES;
+    return GOND.draw(c, W, H, { state: S.st, show: STEP_SHOW[S.step], only, sel: S.sel, lift: S.lift, names: 'all',
+      extra: (cc) => {
+        // 도움: 고른 조각이 들어갈 자리를 점선으로
+        if (S.hint > 0 && S.sel && !S.snapped[S.sel]) { const P = GOND.P[S.sel]; cc.save(); cc.globalAlpha = Math.min(1, S.hint); cc.setLineDash([12, 9]); cc.lineDashOffset = -t * 30; cc.lineWidth = 3.2; cc.strokeStyle = '#0b6aa0'; cc.fillStyle = 'rgba(11,106,160,.12)'; cc.fill(P.path); cc.stroke(P.path); cc.restore(); S.hint -= dt / 5; }
+      } });
+  }, { always: true, after: (r, f) => ov.set(r.labels, f) });
+
+  /* ---------- 끌기 ---------- */
+  const toDesign = (e) => { const r = cv.getBoundingClientRect(), f = ART.fitInfo(); return [(e.clientX - r.left - f.ox) / f.s, (e.clientY - r.top - f.oy) / f.s]; };
+  cv.addEventListener('pointerdown', (e) => {
+    if (S.anim || S.step < 2 || S.step > 4) { if (S.step === 1) toast('과정 2부터 조각을 옮길 수 있어요. 오른쪽의 2번을 눌러요.'); return; }
+    const p = toDesign(e), order = active().filter((k) => k !== S.sel).concat(S.sel ? [S.sel] : []), k = GOND.hit(p[0], p[1], S.st, order);
+    if (!k) { S.sel = null; paintSel(); return; }
+    if (k === 'af') { S.sel = null; paintSel(); toast('아프리카는 기준이라 제자리에 있어요. 다른 조각을 옮겨 붙여요.'); return; }
+    if (S.snapped[k]) { toast(`${NAMES[k]}은(는) 이미 맞췄어요.`); return; }
+    S.sel = k; S.drag = { k, x: p[0], y: p[1], dx: S.st[k].dx, dy: S.st[k].dy }; cv.setPointerCapture(e.pointerId); paintSel();
+  });
+  cv.addEventListener('pointermove', (e) => { if (!S.drag) return; const p = toDesign(e), s = S.st[S.drag.k]; s.dx = S.drag.dx + p[0] - S.drag.x; s.dy = S.drag.dy + p[1] - S.drag.y; paintMeter(); });
+  const drop = () => { if (!S.drag) return; const k = S.drag.k; S.drag = null; check(k); };
+  cv.addEventListener('pointerup', drop); cv.addEventListener('pointercancel', drop);
+  const rot = (d) => { if (!S.sel || S.snapped[S.sel] || S.anim) return; S.st[S.sel].rot += d; paintMeter(); check(S.sel); };
+  $('#rotL').addEventListener('click', () => rot(-15)); $('#rotR').addEventListener('click', () => rot(15));
+  function check(k) {
+    if (!close(k)) { const s = S.st[k], a = Math.abs(((s.rot % 360) + 540) % 360 - 180); if (Math.hypot(s.dx, s.dy) < 46 && a >= 24) toast(`자리는 거의 맞았어요. ${NAMES[k]} 조각의 방향을 돌려 봐요.`); paintMeter(); return; }
+    const from = {}, to = {}; from[k] = Object.assign({}, S.st[k]); to[k] = { dx: 0, dy: 0, rot: 0 };
+    S.snapped[k] = true; S.sel = null; paintSel();
+    S.anim = { u: 0, from, to, cb: () => { paintMeter(); const left = active().filter((p) => p !== 'af' && !S.snapped[p]); if (!left.length) complete(); else toast(`${NAMES[k]} 조각이 딱 맞았어요! 남은 조각 ${left.length}개`); } };
+  }
+  function complete() {
+    S.done[S.step] = true; $('#say').textContent = STEPS[S.step].done; $('#shotBtn').disabled = false;
+    toast('모두 맞췄어요! 맞춘 모습을 촬영해 보세요.'); paintFlow();
+  }
+  /* ---------- 촬영 ---------- */
+  $('#shotBtn').addEventListener('click', () => {
+    const t = document.createElement('canvas'); t.width = 600; t.height = 400; const c = t.getContext('2d');
+    GOND.draw(c, 600, 400, { state: S.st, show: STEP_SHOW[S.step], only: S.step === 2 ? ['sa', 'af'] : GOND.PIECES, names: false });
+    S.photos[S.step] = t.toDataURL('image/jpeg', 0.85); paintPhotos(); $('#shotBtn').disabled = true;
+    toast(`'${PHOTO[S.step]}'으로 맞춘 모습을 찍었어요.` + (S.step < 4 ? ' 다음 과정으로 가요.' : ' 과정 5에서 비교해요.'));
+    host.animate && $('#host').animate([{ filter: 'brightness(1.8)' }, { filter: 'none' }], { duration: 380 });
+  });
+  const host = $('#host');
+  /* ---------- 단계 ---------- */
+  function go(n) {
+    S.step = n; S.sel = null; S.anim = null; S.drag = null; S.hint = 0;
+    // 과정 2~4는 언제나 지금 모습에서 다시 시작 (교과서: "다시 대륙 분포를 현재의 모습과 같게 한 뒤")
+    if (n >= 1 && n <= 4) { S.st = GOND.nowState(); S.snapped = {}; }
+    if (n >= 5) { S.st = GOND.fitState(); }
+    const T = STEPS[n]; $('#stNo').textContent = n; $('#stSmall').textContent = '과정 ' + n; $('#stTitle').textContent = T.t; $('#stWhat').textContent = T.w; $('#say').textContent = S.done[n] && T.done ? T.done : T.say;
+    $('#playBox').hidden = !(n >= 2 && n <= 4); $('#cmpBox').hidden = n !== 5; $('#discBox').hidden = n !== 6;
+    $('#shotBtn').disabled = !S.done[n] || !!S.photos[n]; if (S.done[n] && n >= 2 && n <= 4) { S.st = GOND.fitState(); active().forEach((k) => { S.snapped[k] = true; }); }
+    $$('.rot .vb').forEach((b) => { b.disabled = !(n >= 2 && n <= 4); });
+    if (n === 5) paintCmp();
+    paintFlow(); paintSel(); paintMeter(); loop.redraw();
+  }
+  function paintFlow() { $$('#flow .fs').forEach((b) => { const s = +b.dataset.s; b.setAttribute('aria-selected', String(s === S.step)); b.classList.toggle('done', !!S.done[s] || (s === 5 && Object.keys(S.photos).length === 3)); }); }
+  function paintSel() { $('#selName').textContent = S.sel ? `고른 조각: ${NAMES[S.sel]}` : (S.step >= 2 && S.step <= 4 ? '조각을 눌러 고르세요' : '과정 2~4에서 조각을 옮겨요'); $$('.rot .vb').forEach((b) => { b.disabled = !S.sel; }); }
+  function paintMeter() {
+    if (!(S.step >= 2 && S.step <= 4)) return;
+    $('#meter').innerHTML = active().filter((k) => k !== 'af').map((k) => { const v = S.snapped[k] ? 1 : score(k); return `<div class="pc${S.snapped[k] ? ' ok' : ''}"><span>${NAMES[k]}</span><span class="b"><i style="width:${Math.round(v * 100)}%"></i></span><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1f9d5c" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg></div>`; }).join('');
+  }
+  function paintPhotos() { $('#photos').innerHTML = [2, 3, 4].map((n) => `<div class="photo${S.photos[n] ? ' on' : ''}">${S.photos[n] ? `<img src="${S.photos[n]}" alt="${PHOTO[n]}으로 맞춘 대륙 분포">` : `<em>과정 ${n}에서 찍어요</em>`}<span>${PHOTO[n]}</span></div>`).join(''); }
+  function paintCmp() { $('#cmp').innerHTML = [2, 3, 4].map((n) => `<figure>${S.photos[n] ? `<img src="${S.photos[n]}" alt="${PHOTO[n]}으로 맞춘 대륙 분포">` : '<img alt="">'}<figcaption>${PHOTO[n]}으로 맞춘 모습${S.photos[n] ? '' : ' (아직 안 찍음)'}</figcaption></figure>`).join(''); }
+  $('#disc').innerHTML = DISC.map((d, i) => `<details class="q"><summary><i>${i + 1}</i>${d[0]}</summary><div class="a">${d[1]}</div></details>`).join('');
+  $$('#flow .fs').forEach((b) => b.addEventListener('click', () => go(+b.dataset.s)));
+  $('#resetBtn').addEventListener('click', () => go(S.step));
+  $('#hintBtn').addEventListener('click', () => { const left = active().filter((k) => k !== 'af' && !S.snapped[k]); if (!left.length) return; if (!S.sel || S.snapped[S.sel]) { S.sel = left[0]; paintSel(); } S.hint = 1.6; toast(`${NAMES[S.sel]} 조각이 들어갈 자리를 점선으로 보여 줄게요.`); });
+  paintPhotos();
+  /* 검사용 주소: ?step=3&solve=1 (그 단계를 다 맞춘 모습) */
+  go(Math.max(1, Math.min(6, +(q.get('step') || 1))));
+  if (q.get('solve') === '1' && S.step >= 2 && S.step <= 4) { S.st = GOND.fitState(); active().forEach((k) => { S.snapped[k] = true; }); complete(); paintMeter(); }
+  if (q.get('near') === '1' && S.step >= 2 && S.step <= 4) { S.st = GOND.mixState(GOND.nowState(), GOND.fitState(), 0.55); S.sel = 'sa'; paintSel(); paintMeter(); }
+  window.SM.okUI = true;
+  } catch (err) { window.SM_err('퍼즐 판·단계', err); }
+})();
+</script>
+</body>
+</html>
