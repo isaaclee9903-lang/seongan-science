@@ -37,6 +37,10 @@
   .pick-head h2{margin:0;font-size:17px}
   .pick-head h2 span{color:var(--muted);font-weight:600;margin-left:6px}
   .linkbtn{border:0;background:none;min-height:44px;padding:0 6px;color:var(--blue);font-weight:700;font-size:15px}
+  .sec-h{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:18px 0 8px}
+  .sec-h:first-child{margin-top:0}
+  .sec-h h3{margin:0;font-size:15.5px;color:var(--ink2)}
+  .sec-h h3 span{color:var(--faint);font-weight:600;margin-left:6px}
   .wgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
   .wc{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:60px;padding:8px 14px;border-radius:12px;border:1px solid var(--rule);background:#fff;text-align:left;transition:border-color .15s,background .15s}
   .wc b{font-size:18px;font-weight:700}
@@ -172,9 +176,9 @@
       <div class="lsn-pick" id="lsnPick" hidden></div>
       <div class="pick-head">
         <h2 id="stName">암석의 종류<span id="stCount">10개 골랐어요</span></h2>
-        <div><button type="button" class="linkbtn" data-q="all">모두 고르기</button><button type="button" class="linkbtn" data-q="none">모두 빼기</button></div>
+        <div><button type="button" class="linkbtn" data-q="rec">처음 10개</button><button type="button" class="linkbtn" data-q="all">모두 고르기</button><button type="button" class="linkbtn" data-q="none">모두 빼기</button></div>
       </div>
-      <div class="wgrid" id="wgrid"></div>
+      <div id="wgrid"></div>
       <ol class="howto">
         <li><b>자기점검</b>이 낱말을 아는지 솔직하게 골라요</li>
         <li><b>한자 풀이</b>한 글자씩 나눠 뜻과 소리를 봐요</li>
@@ -211,7 +215,9 @@
 window.SM = window.SM || {};
 const DATA = window.HANJA_DATA || { words: [], lessons: {} };
 const BY = {}; DATA.words.forEach(w => { BY[w.word] = w; });
+// 탭 껍데기 안에서 열리면 껍데기 주소의 ?u=, ?lesson= 도 읽는다 (허브 카드가 단원을 정해 연다)
 const Q = new URLSearchParams(location.search);
+try { if (window.parent !== window) new URLSearchParams(window.parent.location.search).forEach((v, k) => { if (!Q.has(k)) Q.set(k, v); }); } catch (e) {}
 const S = { lesson: null, pool: [], picked: new Set(), words: [], i: 0, rv: 0, sc: [] };
 const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -232,42 +238,50 @@ const first = s => String(s || '').split(',')[0].trim();
 <script>
 /* ───── 시작: 수업과 낱말 고르기 ───── */
 try {
-  const keys = Object.keys(DATA.lessons);
+  const keys = Object.keys(DATA.lessons), units = keys.filter(k => !DATA.lessons[k].sub);
+  const ck = '<span class="ck"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg></span>';
+  const recommend = () => new Set(S.pool.slice(0, 10).map((_, i) => i));
   function setLesson(k) {
     S.lesson = k;
     const L = DATA.lessons[k];
-    $('stName').firstChild.textContent = L.title;
-    S.pool = L.words.map(w => BY[w]).filter(Boolean);
-    S.picked = new Set(S.pool.map((_, i) => i));
-    $('wgrid').innerHTML = S.pool.map((w, i) => `
-      <button type="button" class="wc" data-i="${i}" aria-pressed="true">
-        <span><b>${esc(w.word)}</b><span class="han">${esc(w.hanja)}</span></span>
-        <span class="ck"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg></span>
-      </button>`).join('');
+    $('stName').firstChild.textContent = (L.unit ? L.unit + ' ' : '') + L.title;
+    const secs = L.sections || [{ title: '', words: L.words }];
+    S.pool = []; let html = '';
+    secs.forEach((sec, si) => {
+      const ws = sec.words.map(w => BY[w]).filter(Boolean), from = S.pool.length;
+      S.pool.push(...ws);
+      if (sec.title) html += `<div class="sec-h"><h3>${esc(sec.title)}<span>${ws.length}개</span></h3><button type="button" class="linkbtn" data-sec="${from}-${S.pool.length}">이 부분만 고르기</button></div>`;
+      html += `<div class="wgrid">${ws.map((w, j) => `<button type="button" class="wc" data-i="${from + j}" aria-pressed="false"><span><b>${esc(w.word)}</b><span class="han">${esc(w.hanja)}</span></span>${ck}</button>`).join('')}</div>`;
+    });
+    $('wgrid').innerHTML = html;
+    S.picked = S.pool.length > 12 ? recommend() : new Set(S.pool.map((_, i) => i));
     document.querySelectorAll('#lsnPick button').forEach(b => b.setAttribute('aria-pressed', b.dataset.k === k));
     sync();
   }
   function sync() {
     const n = S.picked.size;
     document.querySelectorAll('.wc').forEach(c => c.setAttribute('aria-pressed', S.picked.has(+c.dataset.i)));
-    $('stCount').textContent = `${n}개 골랐어요`;
+    $('stCount').textContent = `${S.pool.length}개 가운데 ${n}개 골랐어요`;
     $('goStart').disabled = n === 0;
     $('goStart').textContent = n ? `${n}개 낱말 공부 시작하기` : '낱말을 하나 이상 골라 주세요';
   }
   $('wgrid').addEventListener('click', e => {
+    const sec = e.target.closest('[data-sec]');
+    if (sec) { const [a, b] = sec.dataset.sec.split('-').map(Number); S.picked = new Set(Array.from({ length: b - a }, (_, i) => a + i)); sync(); return; }
     const b = e.target.closest('.wc'); if (!b) return;
     const i = +b.dataset.i; S.picked.has(i) ? S.picked.delete(i) : S.picked.add(i); sync();
   });
   document.querySelector('.pick-head').addEventListener('click', e => {
     const b = e.target.closest('[data-q]'); if (!b) return;
-    S.picked = b.dataset.q === 'all' ? new Set(S.pool.map((_, i) => i)) : new Set(); sync();
+    S.picked = b.dataset.q === 'all' ? new Set(S.pool.map((_, i) => i)) : b.dataset.q === 'rec' ? recommend() : new Set(); sync();
   });
-  if (keys.length > 1 && !Q.get('lesson')) {
+  const want = Q.get('lesson') || Q.get('u');
+  if (!DATA.lessons[want] && units.length > 1) {
     $('lsnPick').hidden = false;
-    $('lsnPick').innerHTML = keys.map(k => `<button type="button" data-k="${k}">${esc(DATA.lessons[k].title)}</button>`).join('');
+    $('lsnPick').innerHTML = units.map(k => `<button type="button" data-k="${k}">${esc(DATA.lessons[k].unit + ' ' + DATA.lessons[k].title)}</button>`).join('');
     $('lsnPick').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setLesson(b.dataset.k); });
   }
-  setLesson(DATA.lessons[Q.get('lesson')] ? Q.get('lesson') : keys[0]);
+  setLesson(DATA.lessons[want] ? want : units[0]);
   $('goStart').addEventListener('click', () => begin(S.pool.filter((_, i) => S.picked.has(i))));
   SM.okUI = true;
 } catch (e) { SM_err('시작 화면', e); }
