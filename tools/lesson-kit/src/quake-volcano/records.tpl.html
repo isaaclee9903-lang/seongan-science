@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>판의 경계와 지진대, 화산대 – 지진·화산 기록실</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+/*@@LOCAL:_css_map.css@@*/
+  :root{--fab:#0e63b3;--fab-soft:#e3effb}
+  .stage{grid-template-columns:minmax(0,1.25fr) minmax(360px,1fr)}
+  .viewer{padding:0}
+  .viewer .mapwrap{aspect-ratio:1.55/1;border-radius:20px}
+  .seg{display:flex;flex-wrap:wrap;gap:6px}
+  .seg button{min-height:46px;border-radius:12px;border:2px solid #d3e0ea;background:#fff;font-weight:800;font-size:14.5px;padding:0 14px;cursor:pointer;word-break:keep-all}
+  .seg button[aria-pressed="true"]{border-color:#14263b;background:#14263b;color:#fff}
+  .lead{margin:12px 2px 4px;font-size:15.5px;line-height:1.7;color:var(--ink2);word-break:keep-all}
+  .lead b{color:#0b3f73}
+  .recs{display:grid;gap:8px;margin-top:8px}
+  .rec{display:grid;grid-template-columns:34px 1fr;gap:12px;align-items:start;text-align:left;border:1px solid #dde6ee;border-radius:16px;background:#fff;padding:12px 14px;cursor:pointer;transition:border-color .2s,background .2s}
+  .rec:hover{border-color:#b9cde0}
+  .rec[aria-pressed="true"]{border-color:var(--fab);background:#f4f9fe;box-shadow:inset 3px 0 0 var(--fab)}
+  .rec .no{width:32px;height:32px;border-radius:50%;border:2px solid var(--fab);color:var(--fab);display:grid;place-items:center;font-weight:900;font-size:15px}
+  .rec[aria-pressed="true"] .no{background:var(--fab);color:#fff}
+  .rec .when{display:block;font-size:13px;font-weight:700;color:var(--muted)}
+  .rec h3{margin:2px 0 4px;font-size:17px;letter-spacing:-.01em;word-break:keep-all;line-height:1.4}
+  .rec .big{display:block;font-size:22px;font-weight:900;color:#14263b;letter-spacing:-.02em;margin:2px 0 4px;font-variant-numeric:tabular-nums}
+  .rec .big small{font-size:14px;font-weight:700;color:var(--muted);margin-left:4px}
+  .rec p{margin:0;font-size:15px;line-height:1.65;color:var(--ink2);word-break:keep-all}
+  .rec .src{margin-top:6px}
+  .rec .tagb{display:inline-block;margin-top:6px;font-size:12.5px;font-weight:800;color:#0b3f73;border-bottom:2px solid #9ec3e6}
+  /* 규모 저울 */
+  .scale{border:1px solid #dde6ee;border-radius:16px;background:#fff;padding:14px}
+  .scale h3{margin:0 0 4px;font-size:17px}
+  .scale p{margin:0 0 8px;font-size:15px;line-height:1.65;color:var(--ink2);word-break:keep-all}
+  .scale .row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+  .scale canvas{display:block;width:100%;aspect-ratio:2.4/1;border-radius:12px;background:#f5f8fb}
+  .scale .say{margin-top:8px;font-size:15.5px;font-weight:700;color:#14263b;word-break:keep-all;line-height:1.6}
+  .livec{border:1px dashed #b9cde0;border-radius:16px;padding:12px 14px;background:#fbfdff}
+  .livec p{margin:0;font-size:15px;line-height:1.65;color:var(--ink2);word-break:keep-all}
+  @media (max-width:900px){.stage{grid-template-columns:1fr}.viewer{position:relative;top:0}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <span class="eyebrow">플러스 알파 · 교과서 밖 이야기</span>
+    <h1>지진·화산 기록실</h1>
+    <p class="sub">기록에 남은 가장 큰 지진과 화산 분출, 우리나라의 지진과 화산, 최근에 일어난 일을 모았어요. 카드를 누르면 지도에서 그곳을 보여 줘요. 모두 판의 경계와 어떤 관계가 있는지 살펴보세요.</p>
+  </header>
+  <div class="stage">
+    <section class="card viewer">
+      <div class="mapwrap" id="map"><canvas role="img" aria-label="세계 지도 위에 고른 기록의 위치가 번호 핀으로 표시된다. 배경에는 1980년부터의 지진과 판의 경계가 옅게 그려져 있다."></canvas>
+        <div class="mctl"><button type="button" id="zin" aria-label="확대"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#14263b" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button><button type="button" id="zout" aria-label="축소"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#14263b" stroke-width="2.6" stroke-linecap="round"><path d="M5 12h14"/></svg></button><button type="button" id="zhome" aria-label="모두 보기"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#14263b" stroke-width="2.2"><circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4c2.5 2.5 2.5 13.5 0 16M12 4c-2.5 2.5-2.5 13.5 0 16"/></svg></button></div>
+        <div class="mleg"><span><i class="q"></i>1980년부터의 지진</span><span><i class="p"></i>판의 경계</span></div>
+      </div>
+    </section>
+    <section>
+      <div class="seg" id="seg">
+        <button type="button" data-g="big" aria-pressed="true">가장 큰 지진</button>
+        <button type="button" data-g="volc" aria-pressed="false">기록에 남은 분출</button>
+        <button type="button" data-g="korea" aria-pressed="false">우리나라</button>
+        <button type="button" data-g="recent" aria-pressed="false">최근 3년</button>
+        <button type="button" data-g="data" aria-pressed="false">자료로 찾은 사실</button>
+      </div>
+      <p class="lead" id="lead"></p>
+      <div class="recs" id="recs"></div>
+    </section>
+  </div>
+  <div class="box an" style="margin-top:4px"><b class="t">읽기 전에</b>교과서 밖의 이야기예요. 숫자는 미국 지질 조사국(USGS), 스미스소니언 연구소 세계 화산 계획(GVP), 기상청, NASA 같은 기관 자료를 따랐고, 자료마다 조금씩 다른 값은 '약'으로 적었어요. <b>규모</b>는 지진이 일어날 때 나온 에너지의 크기를 나타내는 값으로, 숫자가 클수록 큰 지진이에요.</div>
+  <p class="credit">판의 경계와 지진대, 화산대 · 지진·화산 기록실</p>
+</div>
+
+<script>window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) => Array.from(r.querySelectorAll(s)), q: new URLSearchParams(location.search) };</script>
+<script src="data/land.js"></script>
+<script src="data/plates.js"></script>
+<script src="data/quakes.js"></script>
+<script src="data/volcano.js"></script>
+<script>
+/* ===== 블록 1: 기록 카드와 지도 ===== */
+(() => {
+  'use strict';
+  try {
+/*@@LOCAL:_map.js@@*/
+  const { $, $$, q } = window.SM;
+  /* ---------- 선생님이 고치기 쉬운 글: 기록 ---------- */
+  const GROUPS = {
+    big: { lead: '1900년 무렵부터 지진계로 잰 지진 가운데 <b>가장 큰 지진들</b>이에요. 지도에서 위치를 보면 모두 <b>태평양 둘레의 판의 경계</b>, 그중에서도 판이 부딪치는 곳에서 일어났어요.', list: [
+      { t: '칠레 발디비아 지진', when: '1960년 5월 22일', big: '규모 9.5', bigS: '기록된 가장 큰 지진', lon: -73.4, lat: -38.1, p: '지진계로 기록된 가장 큰 지진이에요. 이 지진이 일으킨 지진 해일은 태평양을 건너 하와이와 일본까지 닿았어요.', src: 'USGS' },
+      { t: '미국 알래스카 지진', when: '1964년 3월 27일', big: '규모 9.2', bigS: '두 번째', lon: -147.3, lat: 60.9, p: '북아메리카에서 기록된 가장 큰 지진이에요. 땅이 몇 분 동안 흔들렸고, 넓은 지역의 땅이 솟거나 가라앉았어요.', src: 'USGS' },
+      { t: '인도네시아 수마트라 앞바다 지진', when: '2004년 12월 26일', big: '규모 9.1', lon: 96.0, lat: 3.3, p: '바다 밑에서 일어난 지진이 거대한 지진 해일을 일으켜 인도양 여러 나라에서 20만 명이 넘게 희생되었어요.', src: 'USGS' },
+      { t: '일본 동북 지방 앞바다 지진', when: '2011년 3월 11일', big: '규모 9.1', bigS: '일본 기상청 9.0', lon: 142.4, lat: 38.3, p: '지진 해일이 해안을 덮쳤어요. 지진으로 일본 혼슈 섬의 일부가 동쪽으로 약 2.4 m나 움직였어요.', src: 'USGS' },
+      { t: '러시아 캄차카 지진', when: '1952년 11월 4일', big: '규모 9.0', lon: 159.8, lat: 52.6, p: '캄차카반도 앞바다에서 일어나 지진 해일이 하와이까지 건너갔어요.', src: 'USGS' },
+      { t: '러시아 캄차카 앞바다 지진', when: '2025년 7월', big: '규모 8.8', lon: 160.3, lat: 52.5, p: '1952년 지진과 거의 같은 곳에서 다시 큰 지진이 일어났어요. 판의 경계에서는 큰 지진이 되풀이돼요. 태평양 여러 나라에 지진 해일 경보가 내려졌어요.', src: 'USGS 지진 목록' },
+    ], extra: 'scale' },
+    volc: { lead: '사람이 기록으로 남긴 큰 화산 분출이에요. 큰 분출은 화산 근처뿐 아니라 <b>지구 전체의 날씨</b>에도 영향을 주었어요.', list: [
+      { t: '인도네시아 탐보라 화산', when: '1815년 4월', big: '기록에 남은 가장 큰 분출', lon: 118.0, lat: -8.25, p: '하늘로 뿜어져 나온 화산재와 가스가 햇빛을 가려, 이듬해인 1816년 북반구 곳곳은 여름에도 서늘했어요. 그래서 1816년을 "여름이 없는 해"라고 불러요.', src: 'USGS · 스미스소니언 GVP' },
+      { t: '인도네시아 크라카타우 화산', when: '1883년 8월', big: '약 4800 km', bigS: '폭발 소리가 들린 거리', lon: 105.4, lat: -6.1, p: '폭발 소리가 약 4800 km 떨어진 인도양의 섬에서도 들렸어요. 서울에서 싱가포르까지보다 먼 거리예요.', src: '스미스소니언 GVP' },
+      { t: '필리핀 피나투보 화산', when: '1991년 6월', big: '약 0.5 ℃', bigS: '지구 평균 기온이 내려간 정도', lon: 120.35, lat: 15.13, p: '20세기에 일어난 가장 큰 분출 가운데 하나예요. 높이 올라간 화산 가스가 햇빛을 가려 그 뒤 1~2년 동안 지구 평균 기온이 약 0.5 ℃ 내려갔어요.', src: 'USGS · NASA' },
+      { t: '통가 훙가 통가-훙가 하아파이 화산', when: '2022년 1월', big: '약 57 km', bigS: '화산 기둥의 높이', lon: -175.4, lat: -20.55, p: '바다 밑 화산이 폭발해 화산 기둥이 약 57 km 높이까지 솟았어요. 인공위성으로 관측한 화산 기둥 가운데 가장 높아요. 지진 해일이 태평양 건너 일본까지 닿았어요.', src: 'NASA' },
+      { t: '백두산', when: '946년 무렵', big: '천 년 전의 큰 분출', lon: 128.08, lat: 42.0, p: '지난 2000년 동안 지구에서 일어난 가장 큰 분출 가운데 하나예요. 이때 나온 화산재가 동해를 건너 일본 북부에서도 발견돼요.', src: '스미스소니언 GVP · Oppenheimer 외(2017)' },
+      { t: '미국 하와이 킬라우에아 화산', when: '1983~2018년', big: '약 35년', bigS: '쉬지 않고 이어진 분출', lon: -155.29, lat: 19.41, p: '1983년에 시작된 분출이 2018년까지 거의 쉬지 않고 이어졌어요. 하와이는 판의 경계에서 멀리 떨어져 있는데도 화산이 있는, 드문 곳이에요.', src: 'USGS' },
+    ] },
+    korea: { lead: '우리나라는 <b>판의 경계에서 조금 떨어져</b> 있어 일본보다 큰 지진이 적어요. 그래도 지진은 일어나고, 화산 활동으로 만들어진 섬과 산도 있어요. (지도의 \'우리나라 주변\'처럼 확대해 보세요.)', list: [
+      { t: '경주 지진', when: '2016년 9월 12일', big: '규모 5.8', bigS: '관측 이래 가장 큰 지진', lon: 129.19, lat: 35.77, p: '기상청이 지진을 관측하기 시작한 1978년 이후 우리나라에서 일어난 가장 큰 지진이에요. 전국 곳곳에서 흔들림을 느꼈어요.', src: '기상청' },
+      { t: '포항 지진', when: '2017년 11월 15일', big: '규모 5.4', bigS: '두 번째로 큰 지진', lon: 129.37, lat: 36.11, p: '건물이 부서지고 많은 사람이 대피했어요. 다음 날로 예정되었던 대학수학능력시험이 일주일 미뤄졌어요.', src: '기상청 · 교육부' },
+      { t: '제주도와 한라산', when: '고려 시대 기록', big: '화산섬', lon: 126.53, lat: 33.36, p: '제주도는 화산 활동으로 만들어진 섬이에요. 고려 시대 역사책에 제주 앞바다에서 화산이 분출했다는 기록(1002년, 1007년)이 남아 있어요.', src: '스미스소니언 GVP' },
+      { t: '울릉도와 독도', when: '오래전 화산 활동', big: '화산섬', lon: 130.87, lat: 37.5, p: '동해의 울릉도와 독도도 바다 밑에서 일어난 화산 활동으로 만들어진 섬이에요.', src: '스미스소니언 GVP' },
+      { t: '백두산', when: '946년 무렵 · 1903년', big: '살아 있는 화산', lon: 128.08, lat: 42.0, p: '946년 무렵 크게 분출했고, 그 뒤에도 작은 분출 기록이 있어요(가장 최근 1903년). 그래서 앞으로도 분출할 수 있는 화산으로 보고 관찰하고 있어요.', src: '스미스소니언 GVP' },
+    ] },
+    recent: { lead: '교과서 84쪽 사진 속 사건과 그 뒤에 일어난 일이에요. <b>조사 활동(카드 뉴스)</b>의 출발점으로 써 보세요. 각 사건이 판의 경계에서 일어났는지 지도에서 확인해 보세요.', list: [
+      { t: '튀르키예 남부 지진', when: '2023년 2월 6일', big: '규모 7.8', lon: 37.0, lat: 37.2, p: '튀르키예와 시리아에서 5만 명이 넘게 희생되었어요. 판과 판이 서로 어긋나는 경계 근처에서 일어났어요.', src: 'USGS', tb: '교과서 사진' },
+      { t: '일본 노토 반도 지진', when: '2024년 1월 1일', big: '규모 7.5', lon: 137.3, lat: 37.5, p: '새해 첫날 일어난 지진으로 건물이 무너지고 불이 났어요. 해안의 땅이 최대 약 4 m 솟아올라 바다였던 곳이 땅이 되기도 했어요.', src: 'USGS · 일본 국토지리원', tb: '교과서 사진' },
+      { t: '인도네시아 루앙 화산 분출', when: '2024년 4월', big: '화산 분출', lon: 125.37, lat: 2.3, p: '여러 번 크게 분출해 화산재가 하늘 높이 솟았고, 섬과 주변 섬의 주민들이 대피했어요. 판이 부딪치는 곳에 있는 화산이에요.', src: '스미스소니언 GVP', tb: '교과서 사진' },
+      { t: '아이슬란드 레이캬네스반도 분출', when: '2023년 12월부터', big: '여러 번 분출', lon: -22.4, lat: 63.88, p: '땅이 갈라진 틈을 따라 용암이 여러 번 흘러나와 근처 마을 주민들이 대피했어요. 판이 갈라지는 경계가 땅 위로 드러난 곳이에요.', src: '스미스소니언 GVP' },
+      { t: '미얀마 지진', when: '2025년 3월 28일', big: '규모 7.7', lon: 95.9, lat: 22.0, p: '판과 판이 어긋나는 경계에서 일어났어요. 약 1000 km 떨어진 타이 방콕에서도 짓고 있던 높은 건물이 무너졌어요.', src: 'USGS' },
+    ], extra: 'live' },
+    data: { lead: '이 수업의 지도에 쓴 <b>실제 자료(1980년부터 규모 5.5 이상 지진, 화산 분출)</b>를 직접 세어서 찾은 사실이에요. 숫자는 이 페이지가 열릴 때 계산돼요.', list: [] },
+  };
+
+  const G = WMAP.data(), END = G.end;
+  const M = WMAP.create($('#map'), { center: 150, layers: { quake: true, volc: false, plate: true }, palette: { quake: '29,78,170' },
+    labels: [{ t: '동해', lon: 133.5, lat: 39, cls: 'sea', minZ: 3 }], onTap: () => {} });
+  M.S.platesOnTop = true; M.range(0, END);
+
+  /* ---------- 자료로 찾은 사실 (계산) ---------- */
+  (function () {
+    let n = G.n, m7 = 0, deep = 0, di = 0; const byY = {};
+    for (let i = 0; i < n; i++) { if (G.mag[i] >= 7) m7++; if (G.dep[i] > deep) { deep = G.dep[i]; di = i; } const y = WMAP.dateOf(G.day[i]).y; byY[y] = (byY[y] || 0) + 1; }
+    const years = (END / 365.25), endY = WMAP.dateOf(END).y; let topY = 0, topN = 0; Object.keys(byY).forEach((y) => { if (+y < endY && byY[y] > topN) { topN = byY[y]; topY = +y; } });
+    const ec = {}; G.er.forEach((e) => { ec[e.v] = (ec[e.v] || 0) + 1; }); let tv = -1, tn = 0; Object.keys(ec).forEach((v) => { if (ec[v] > tn) { tn = ec[v]; tv = +v; } });
+    let big = 0, bi = 0; for (let i = 0; i < n; i++) if (G.mag[i] > big) { big = G.mag[i]; bi = i; }
+    const V = G.vol[tv] || { lon: 15, lat: 37.7, name: '?' };
+    GROUPS.data.list = [
+      { t: '규모 5.5 이상 지진의 수', when: `1980년 1월 ~ ${WMAP.fmt(END)}`, big: n.toLocaleString('ko-KR') + '번', bigS: `하루에 약 ${(n / (END)).toFixed(1)}번`, lon: 150, lat: 10, zoom: 1, p: '사람이 느끼기 어려운 작은 지진까지 세면 훨씬 더 많아요. 이 수업 지도에는 규모 5.5 이상만 담았어요.', src: 'USGS 지진 목록으로 셈' },
+      { t: '규모 7 이상의 아주 큰 지진', when: '1980년부터', big: `1년에 약 ${Math.round(m7 / years)}번`, bigS: `모두 ${m7}번`, lon: 150, lat: 10, zoom: 1, p: '규모 7 이상의 지진은 거의 한 달에 한 번꼴로 지구 어딘가에서 일어나요.', src: 'USGS 지진 목록으로 셈' },
+      { t: '가장 깊은 곳에서 일어난 지진', when: WMAP.fmt(G.day[di]), big: `약 ${deep} km`, bigS: '땅속 깊이', lon: G.lon[di], lat: G.lat[di], p: '태평양의 통가·피지 근처 땅속 아주 깊은 곳이에요. 판이 부딪치는 곳에서 아래로 들어간 판을 따라 깊은 곳에서도 지진이 일어나요(판의 경계 실험실의 첫 번째 그림).', src: 'USGS 지진 목록으로 셈' },
+      { t: '지진이 가장 많았던 해', when: `${topY}년`, big: `${topN}번`, bigS: '규모 5.5 이상', lon: 150, lat: 10, zoom: 1, p: '큰 지진이 일어나면 그 근처에서 작은 지진(여진)이 이어져 그해의 수가 늘어나요.', src: 'USGS 지진 목록으로 셈' },
+      { t: '1980년부터 가장 큰 지진', when: WMAP.fmt(G.day[bi]), big: `규모 ${big.toFixed(1)}`, lon: G.lon[bi], lat: G.lat[bi], p: '2004년 수마트라 앞바다 지진과 2011년 일본 동북 지방 앞바다 지진이 같은 규모로 가장 커요.', src: 'USGS 지진 목록으로 셈' },
+      { t: '가장 자주 분출한 화산', when: '1980년부터', big: `${WMAP.koName(V.name)}`, bigS: `분출 ${tn}번`, lon: V.lon, lat: V.lat, p: `1980년부터 기록된 분출이 가장 많은 화산이에요. 분출이 시작될 때마다 한 번으로 셌어요.`, src: '스미스소니언 GVP 자료로 셈' },
+    ];
+  })();
+
+  /* ---------- 카드 그리기 ---------- */
+  let group = 'big', cur = -1;
+  function render() {
+    const Gp = GROUPS[group];
+    $('#lead').innerHTML = Gp.lead;
+    let h = Gp.list.map((r, i) => `<button class="rec" type="button" data-i="${i}" aria-pressed="false"><span class="no">${i + 1}</span><span><span class="when">${r.when}${r.tb ? ' · ' + r.tb : ''}</span><h3>${r.t}</h3><span class="big">${r.big}${r.bigS ? `<small>${r.bigS}</small>` : ''}</span><p>${r.p}</p><span class="src">출처: ${r.src}</span></span></button>`).join('');
+    if (Gp.extra === 'scale') h += `<div class="scale"><h3>규모가 1 커지면 얼마나 커질까?</h3><p>규모가 1 커지면 지진의 에너지는 약 32배가 돼요. 규모 7.0 지진의 에너지를 작은 네모 하나로 놓고 비교해 봐요.</p><div class="row" id="scRow"><button class="btn ghost" type="button" data-s="0" aria-pressed="true">규모 7.0</button><button class="btn ghost" type="button" data-s="1" aria-pressed="false">규모 8.0</button><button class="btn ghost" type="button" data-s="2" aria-pressed="false">규모 9.0</button></div><canvas id="scCv" role="img" aria-label="규모 7.0의 에너지를 네모 1개로 놓으면 규모 8.0은 32개, 규모 9.0은 약 1000개의 네모가 된다."></canvas><div class="say" id="scSay"></div></div>`;
+    if (Gp.extra === 'live') h += `<div class="livec"><p><b>이번 주에는?</b> 미국 지질 조사국(USGS)의 실시간 자료에서 최근 7일 동안 일어난 가장 큰 지진을 불러와요.</p><div id="liveOut" style="margin-top:8px"><button class="btn ghost" type="button" id="liveGo">불러오기</button></div></div>`;
+    $('#recs').innerHTML = h;
+    $$('#recs .rec').forEach((b) => b.addEventListener('click', () => select(+b.dataset.i)));
+    M.S.pins = Gp.list.map((r, i) => ({ lon: r.lon, lat: r.lat, label: String(i + 1), on: false }));
+    if (group === 'data') M.S.pins = M.S.pins.filter((p, i) => !Gp.list[i].zoom);
+    cur = -1; M.home(700);
+    if (Gp.extra === 'scale') scale();
+    if (Gp.extra === 'live') $('#liveGo').addEventListener('click', live);
+  }
+  function select(i) {
+    const Gp = GROUPS[group], r = Gp.list[i]; cur = i;
+    $$('#recs .rec').forEach((b) => b.setAttribute('aria-pressed', String(+b.dataset.i === i)));
+    M.S.pins.forEach((p) => { p.on = p.label === String(i + 1); });
+    if (r.zoom) M.home(800); else M.flyTo(r.lon, r.lat, group === 'korea' ? 6 : 3.4, 900);
+  }
+  $$('#seg button').forEach((b) => b.addEventListener('click', () => { group = b.dataset.g; $$('#seg button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); render(); }));
+  $('#zin').addEventListener('click', () => M.zoom(1.5)); $('#zout').addEventListener('click', () => M.zoom(1 / 1.5)); $('#zhome').addEventListener('click', () => M.home(700));
+
+  /* ---------- 규모 저울: 네모 1개 → 32개 → 1024개 ---------- */
+  function scale() {
+    const cv = $('#scCv'); let sel = 0, shown = 1, target = 1;
+    const say = ['규모 7.0: 네모 <b>1개</b>', '규모 8.0: 네모 <b>32개</b> (규모 7.0의 약 32배)', '규모 9.0: 네모 <b>1024개</b> (규모 7.0의 약 1000배)'];
+    const N = [1, 32, 1024];
+    $$('#scRow button').forEach((b) => b.addEventListener('click', () => { sel = +b.dataset.s; target = N[sel]; $$('#scRow button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); $('#scSay').innerHTML = say[sel]; }));
+    $('#scSay').innerHTML = say[0];
+    const ctx = cv.getContext('2d');
+    (function frame() {
+      if (!cv.isConnected) return; requestAnimationFrame(frame);
+      const r = cv.getBoundingClientRect(), dpr = Math.min(2, devicePixelRatio || 1); if (cv.width !== Math.round(r.width * dpr)) { cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.height * dpr); }
+      shown += (target - shown) * (WMAP.REDUCE ? 1 : 0.12); if (Math.abs(target - shown) < 0.5) shown = target;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, r.width, r.height);
+      const cols = 64, gap = 1, sz = Math.min((r.width - 20) / cols, (r.height - 20) / 16) - gap, n = Math.round(shown);
+      for (let i = 0; i < n; i++) { const x = 10 + (i % cols) * (sz + gap), y = 10 + Math.floor(i / cols) * (sz + gap); ctx.fillStyle = i === 0 ? '#14263b' : '#0e63b3'; ctx.fillRect(x, y, sz, sz); }
+    })();
+  }
+  /* ---------- 이번 주의 가장 큰 지진 ---------- */
+  function live() {
+    $('#liveOut').innerHTML = '<p style="color:var(--muted)">불러오는 중이에요…</p>';
+    WMAP.live('4.5_week').then((list) => {
+      if (!list.length) throw new Error('자료 없음');
+      list.sort((a, b) => b.mag - a.mag); const x = list[0], d = new Date(x.time);
+      M.S.live = [x]; M.flyTo(x.lon, x.lat, 3.4);
+      $('#liveOut').innerHTML = `<p><b style="font-size:20px">규모 ${x.mag.toFixed(1)}</b> · ${d.getMonth() + 1}월 ${d.getDate()}일<br>${x.place || ''} (깊이 약 ${x.dep} km)<br>지도에 검은 점으로 나타냈어요. 판의 경계와 가까운가요?</p>`;
+    }).catch(() => { $('#liveOut').innerHTML = '<p>실시간 자료를 불러오지 못했어요. 인터넷 연결을 확인해 주세요.</p>'; });
+  }
+
+  // 검사용: ?g=volc&i=2
+  const g0 = q.get('g'); if (g0 && GROUPS[g0]) { group = g0; $$('#seg button').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.g === g0))); }
+  render(); if (q.get('i')) setTimeout(() => select(+q.get('i')), 50);
+  window.SM.okUI = true;
+  } catch (err) { window.SM_err && window.SM_err('기록실', err); }
+})();
+</script>
+</body>
+</html>

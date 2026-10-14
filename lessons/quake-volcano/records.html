@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>판의 경계와 지진대, 화산대 – 지진·화산 기록실</title>
+<script>
+/* 문제 알림: 코드에 오류가 나면 화면 아래에 빨간 상자로 알려 줘요 (선생님 확인용) */
+(function () {
+  function box() {
+    var b = document.getElementById('smErr');
+    if (!b && document.body) {
+      b = document.createElement('div'); b.id = 'smErr';
+      b.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;background:#fdecea;color:#8a1f17;border:2px solid #d9534f;border-radius:12px;padding:10px 14px;font:600 14px/1.5 sans-serif;white-space:pre-wrap';
+      document.body.appendChild(b);
+    }
+    return b;
+  }
+  window.SM_err = function (where, err) {
+    var msg = '[' + where + '] ' + (err && err.message ? err.message : String(err));
+    var show = function () { var b = box(); if (b) b.textContent += (b.textContent ? '\n' : '') + msg; };
+    if (document.body) show(); else document.addEventListener('DOMContentLoaded', show);
+  };
+  window.addEventListener('error', function (e) { window.SM_err('스크립트', { message: e.message + ' (줄 ' + e.lineno + ')' }); });
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      var S = window.SM || {};
+      if (!S.okUI) window.SM_err('실행 안 됨', { message: '안내·버튼 코드가 실행되지 않았어요. 파일이 끝(</html>)까지 들어 있는지 확인해 주세요.' });
+      if (document.getElementById('fail3d') && !S.ok3d) { var f = document.getElementById('fail3d'); if (f) f.classList.add('show'); window.SM_err('3D 그림', { message: '3D 그림을 불러오지 못했어요. 인터넷 연결(cdn.jsdelivr.net)을 확인하고 새로고침해 주세요.' }); }
+    }, 9000);
+  });
+})();
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+
+  :root{--bg:#edf3f8;--card:#fff;--ink:#14263b;--ink2:#34495e;--muted:#5a6b7e;--line:#dde6ee;--accent:#0e63b3;--accent-soft:#e3effb;
+    --fab:#4b3fb5;--fab-soft:#ecebfb;--ok:#1f9d5c;--no:#d9534f;
+    --shadow:0 1px 2px rgba(20,38,59,.06),0 8px 24px rgba(20,38,59,.07);--ease:cubic-bezier(.2,.8,.2,1)}
+  *{box-sizing:border-box}html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:"Pretendard",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  button{font:inherit;color:inherit}
+  .app{max-width:1320px;margin:0 auto;padding:14px 16px 28px;display:flex;flex-direction:column;gap:12px}
+  .eyebrow{display:inline-flex;font-size:13px;font-weight:700;color:var(--fab);background:var(--fab-soft);padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(21px,2.4vw,28px);margin:6px 0 2px;letter-spacing:-.02em;word-break:keep-all}
+  .sub{margin:0;color:var(--muted);font-size:15px;word-break:keep-all}
+  .card{background:var(--card);border-radius:20px;box-shadow:var(--shadow);border:1px solid rgba(20,38,59,.04)}
+  .pad{padding:14px 16px}
+  .stage{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(330px,1fr);gap:14px;align-items:start}
+  .viewer{position:sticky;top:10px}
+  .flow{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px}
+  .fs{min-height:54px;border:0;border-radius:12px;background:#eef3f8;font-weight:800;font-size:13px;color:var(--muted);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.2;word-break:keep-all;padding:4px}
+  .fs b{font-size:15px}
+  .fs[aria-selected="true"]{background:var(--fab);color:#fff}
+  .fs.seen:not([aria-selected="true"]){background:#e5f5ec;color:#11703f}
+  .stepname{display:flex;align-items:center;gap:10px;margin:2px 0 6px}
+  .stepname .no{flex:none;width:40px;height:40px;border-radius:12px;background:var(--fab);color:#fff;display:grid;place-items:center;font-weight:900;font-size:19px}
+  .stepname h2{margin:0;font-size:21px;letter-spacing:-.01em;word-break:keep-all}
+  .stepname small{display:block;font-size:13px;color:var(--muted);font-weight:700}
+  .what{font-size:16px;line-height:1.75;color:var(--ink2);margin:0 0 10px;word-break:keep-all}
+  .phase{display:grid;gap:6px;margin:8px 0}
+  .ph{display:grid;grid-template-columns:28px 1fr;gap:8px;align-items:start;padding:7px 10px;border-radius:12px;background:#f7fafc;font-size:15px;line-height:1.55;color:var(--muted);word-break:keep-all;transition:background .3s,color .3s}
+  .ph i{font-style:normal;width:26px;height:26px;border-radius:8px;background:#dfe6ee;display:grid;place-items:center;font-weight:900;font-size:13px;color:#607285}
+  .ph.on{background:var(--fab-soft);color:var(--ink)}.ph.on i{background:var(--fab);color:#fff}
+  .ph.done{color:var(--ink2)}.ph.done i{background:#b9b2ee;color:#fff}
+  .box{border-radius:14px;padding:10px 12px;margin-top:8px;font-size:14.5px;line-height:1.65;word-break:keep-all}
+  .box b.t{display:block;font-size:13px;margin-bottom:2px}
+  .an{background:#fff8e6;border:1px solid #f3dc9a;color:#5b4300}
+  .fact{background:#eef6ff;border:1px solid #cfe2f6;color:#1d3f66}
+  .lnk{background:#ecf8f1;border:1px solid #c6e8d4;color:#0f5a36}
+  .src{display:block;font-size:12px;color:var(--muted);margin-top:3px}
+  .acts{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 0}
+  .btn{min-height:50px;border:0;border-radius:14px;padding:0 16px;font-weight:800;font-size:15.5px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;justify-content:center;word-break:keep-all}
+  .btn:active{transform:scale(.97)}
+  .btn.primary{background:var(--fab);color:#fff}.btn.ghost{background:#eef3f8;color:var(--ink2)}
+  .btn[aria-pressed="true"]{background:#14263b;color:#fff}
+  .btn:disabled{opacity:.4;cursor:default;transform:none}
+  .prog{height:6px;border-radius:3px;background:#e6edf4;margin-top:10px;overflow:hidden}
+  .prog i{display:block;height:100%;width:0;background:linear-gradient(90deg,#8a7ff0,var(--fab))}
+  .credit{text-align:center;font-size:13px;font-weight:700;color:#8495a8;letter-spacing:.02em;margin:6px 0 0}
+  /* ===== 3D 화면 공통 ===== */
+  :root{--Bc:#14a5d0;--Ic:#2fae4a;--Fc:#f0522a;--N:#d8433b;--S:#2f62c9;--P:#7d5ad6}
+  .viewer{position:relative;overflow:hidden;padding:0}
+  .gl-host{position:relative;width:100%;height:min(74vh,700px);min-height:380px;background:linear-gradient(#f6f9fc,#d6e3ef);touch-action:none}
+  .gl-host canvas.gl{display:block;width:100%;height:100%;outline:none}
+  .lbls{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+  .lb{position:absolute;left:0;top:0;white-space:nowrap;font-weight:800;font-size:14px;padding:3px 9px;border-radius:9px;background:rgba(255,255,255,.88);color:#34495e;box-shadow:0 2px 8px rgba(20,38,59,.14);will-change:transform}
+  .lb.small{font-size:12px;font-weight:700;color:#5a6b7e;background:rgba(255,255,255,.72);box-shadow:none}
+  .lb.B{background:var(--Bc);color:#fff}.lb.I{background:var(--Ic);color:#fff}.lb.F{background:var(--Fc);color:#fff;font-size:15px}
+  .lb.P{background:var(--P);color:#fff}
+  .lb.dim{opacity:.35}
+  .vt{position:absolute;display:flex;gap:6px;flex-wrap:wrap;z-index:3}
+  .vt.tl{left:10px;top:10px;max-width:calc(100% - 20px)}
+  .vt.tr{right:10px;top:10px;justify-content:flex-end}
+  .vt.bl{left:10px;bottom:10px;align-items:center}
+  .vb{min-height:44px;padding:0 12px;border-radius:12px;border:1px solid rgba(20,38,59,.12);background:rgba(255,255,255,.9);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);font-weight:800;font-size:14px;color:#34495e;cursor:pointer;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 10px rgba(20,38,59,.08)}
+  .vb:active{transform:scale(.96)}
+  .vb .dot{width:12px;height:12px;border-radius:50%;flex:none}
+  .vb[aria-pressed="false"]{opacity:.62}
+  .vb[aria-pressed="false"] .dot{background:#c2ccd6!important}
+  .vb.sel{background:#14263b;color:#fff;border-color:#14263b}
+  .hint{font-size:12.5px;font-weight:700;color:#5a6b7e;background:rgba(255,255,255,.78);border-radius:10px;padding:6px 10px;word-break:keep-all}
+  .inset{position:absolute;z-index:2;border-radius:18px;border:2px solid rgba(255,255,255,.95);box-shadow:0 10px 30px rgba(20,38,59,.22),inset 0 0 0 1px rgba(20,38,59,.08);pointer-events:none;display:none}
+  .inset.on{display:block}
+  .inset .it{position:absolute;left:8px;top:8px;font-size:12.5px;font-weight:900;color:#14263b;background:rgba(255,255,255,.9);border-radius:8px;padding:3px 8px}
+  .inset .ic{position:absolute;left:6px;right:6px;bottom:6px;display:flex;flex-wrap:wrap;gap:4px;justify-content:center}
+  .inset .ic span{font-size:11.5px;font-weight:800;color:#fff;border-radius:7px;padding:2px 7px;white-space:nowrap}
+  .fail3d{position:absolute;inset:0;display:none;place-items:center;text-align:center;padding:24px;font-size:16px;font-weight:700;color:#7a2a22;line-height:1.7;word-break:keep-all;background:#fff4f2}
+  .fail3d.show{display:grid}
+  .model{font-size:13px;color:var(--muted);text-align:right;margin:0;word-break:keep-all}
+  @media (max-width:900px){.gl-host{height:min(56vh,620px)}}
+  .zoombadge{position:absolute;right:10px;top:62px;z-index:3;font-size:13px;font-weight:800;color:#fff;background:rgba(75,63,181,.9);border-radius:10px;padding:6px 10px;display:none;word-break:keep-all;max-width:60%}
+  .zoombadge.on{display:block}
+  @media (max-width:900px){.stage{grid-template-columns:1fr}.viewer{position:relative;top:0}}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+  /* ===== 빅데이터 지도 (WMAP) ===== */
+  .mapwrap{position:relative;width:100%;aspect-ratio:2.2/1;border-radius:16px;overflow:hidden;background:#d6e4ee;touch-action:none}
+  .mapwrap canvas{display:block;width:100%;height:100%;cursor:grab}
+  .mapwrap canvas:active{cursor:grabbing}
+  .mapovl{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+  .mapovl .ml{position:absolute;left:0;top:0;font-family:Pretendard,sans-serif;font-size:12.5px;font-weight:700;color:#3c4c5c;white-space:nowrap;letter-spacing:-.01em;text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 2px #fff;will-change:transform}
+  .mapovl .ml.sea{color:#3b6687;font-weight:800;font-size:12px}
+  .mapovl .ml.pin{font-size:13px;font-weight:800;color:#0b3f73;background:rgba(255,255,255,.95);border-radius:8px;padding:3px 8px;box-shadow:0 2px 8px rgba(20,38,59,.18);text-shadow:none}
+  .mapovl .ml.pin.on{background:#0e63b3;color:#fff}
+  .mapovl .ml.big{font-size:14px;font-weight:800;color:#14263b}
+  .mctl{position:absolute;right:10px;top:10px;z-index:3;display:flex;flex-direction:column;gap:6px}
+  .mctl button{width:44px;height:44px;border-radius:12px;border:1px solid rgba(20,38,59,.12);background:rgba(255,255,255,.94);display:grid;place-items:center;cursor:pointer;box-shadow:0 2px 8px rgba(20,38,59,.1)}
+  .mctl button:active{transform:scale(.95)}
+  .mleg{position:absolute;left:10px;bottom:10px;z-index:3;display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center;font-size:12.5px;font-weight:700;color:#34495e;background:rgba(255,255,255,.92);border-radius:10px;padding:6px 10px;pointer-events:none;max-width:calc(100% - 80px)}
+  .mleg span{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+  .mleg .q{width:10px;height:10px;border-radius:50%;background:rgba(29,78,170,.6)}
+  .mleg .q.b{width:15px;height:15px;border:1.5px solid #fff;box-shadow:0 0 0 1px rgba(29,78,170,.5)}
+  .mleg .v{width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:10px solid #d0412a}
+  .mleg .p{width:20px;height:3px;border-radius:2px;background:#7a3b1e;box-shadow:0 0 0 1px #fff}
+  .mleg .l{width:11px;height:11px;border-radius:50%;background:#14263b;border:2px solid #fff;box-shadow:0 0 0 1.5px #14263b}
+  .mtip{position:absolute;left:10px;top:10px;z-index:4;max-width:min(330px,calc(100% - 76px));background:rgba(255,255,255,.97);border-radius:14px;padding:10px 12px 10px 14px;box-shadow:0 8px 24px rgba(20,38,59,.2);font-size:14.5px;line-height:1.55;color:#14263b;word-break:keep-all;display:none}
+  .mtip.on{display:block}
+  .mtip b{display:block;font-size:15.5px}
+  .mtip small{display:block;color:#5a6b7e;font-size:12.5px}
+  .mtip .x{position:absolute;right:4px;top:4px;width:36px;height:36px;border:0;background:transparent;cursor:pointer;color:#5a6b7e;font-size:20px;line-height:1}
+  :root{--fab:#0e63b3;--fab-soft:#e3effb}
+  .stage{grid-template-columns:minmax(0,1.25fr) minmax(360px,1fr)}
+  .viewer{padding:0}
+  .viewer .mapwrap{aspect-ratio:1.55/1;border-radius:20px}
+  .seg{display:flex;flex-wrap:wrap;gap:6px}
+  .seg button{min-height:46px;border-radius:12px;border:2px solid #d3e0ea;background:#fff;font-weight:800;font-size:14.5px;padding:0 14px;cursor:pointer;word-break:keep-all}
+  .seg button[aria-pressed="true"]{border-color:#14263b;background:#14263b;color:#fff}
+  .lead{margin:12px 2px 4px;font-size:15.5px;line-height:1.7;color:var(--ink2);word-break:keep-all}
+  .lead b{color:#0b3f73}
+  .recs{display:grid;gap:8px;margin-top:8px}
+  .rec{display:grid;grid-template-columns:34px 1fr;gap:12px;align-items:start;text-align:left;border:1px solid #dde6ee;border-radius:16px;background:#fff;padding:12px 14px;cursor:pointer;transition:border-color .2s,background .2s}
+  .rec:hover{border-color:#b9cde0}
+  .rec[aria-pressed="true"]{border-color:var(--fab);background:#f4f9fe;box-shadow:inset 3px 0 0 var(--fab)}
+  .rec .no{width:32px;height:32px;border-radius:50%;border:2px solid var(--fab);color:var(--fab);display:grid;place-items:center;font-weight:900;font-size:15px}
+  .rec[aria-pressed="true"] .no{background:var(--fab);color:#fff}
+  .rec .when{display:block;font-size:13px;font-weight:700;color:var(--muted)}
+  .rec h3{margin:2px 0 4px;font-size:17px;letter-spacing:-.01em;word-break:keep-all;line-height:1.4}
+  .rec .big{display:block;font-size:22px;font-weight:900;color:#14263b;letter-spacing:-.02em;margin:2px 0 4px;font-variant-numeric:tabular-nums}
+  .rec .big small{font-size:14px;font-weight:700;color:var(--muted);margin-left:4px}
+  .rec p{margin:0;font-size:15px;line-height:1.65;color:var(--ink2);word-break:keep-all}
+  .rec .src{margin-top:6px}
+  .rec .tagb{display:inline-block;margin-top:6px;font-size:12.5px;font-weight:800;color:#0b3f73;border-bottom:2px solid #9ec3e6}
+  /* 규모 저울 */
+  .scale{border:1px solid #dde6ee;border-radius:16px;background:#fff;padding:14px}
+  .scale h3{margin:0 0 4px;font-size:17px}
+  .scale p{margin:0 0 8px;font-size:15px;line-height:1.65;color:var(--ink2);word-break:keep-all}
+  .scale .row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+  .scale canvas{display:block;width:100%;aspect-ratio:2.4/1;border-radius:12px;background:#f5f8fb}
+  .scale .say{margin-top:8px;font-size:15.5px;font-weight:700;color:#14263b;word-break:keep-all;line-height:1.6}
+  .livec{border:1px dashed #b9cde0;border-radius:16px;padding:12px 14px;background:#fbfdff}
+  .livec p{margin:0;font-size:15px;line-height:1.65;color:var(--ink2);word-break:keep-all}
+  @media (max-width:900px){.stage{grid-template-columns:1fr}.viewer{position:relative;top:0}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <span class="eyebrow">플러스 알파 · 교과서 밖 이야기</span>
+    <h1>지진·화산 기록실</h1>
+    <p class="sub">기록에 남은 가장 큰 지진과 화산 분출, 우리나라의 지진과 화산, 최근에 일어난 일을 모았어요. 카드를 누르면 지도에서 그곳을 보여 줘요. 모두 판의 경계와 어떤 관계가 있는지 살펴보세요.</p>
+  </header>
+  <div class="stage">
+    <section class="card viewer">
+      <div class="mapwrap" id="map"><canvas role="img" aria-label="세계 지도 위에 고른 기록의 위치가 번호 핀으로 표시된다. 배경에는 1980년부터의 지진과 판의 경계가 옅게 그려져 있다."></canvas>
+        <div class="mctl"><button type="button" id="zin" aria-label="확대"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#14263b" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button><button type="button" id="zout" aria-label="축소"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#14263b" stroke-width="2.6" stroke-linecap="round"><path d="M5 12h14"/></svg></button><button type="button" id="zhome" aria-label="모두 보기"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#14263b" stroke-width="2.2"><circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4c2.5 2.5 2.5 13.5 0 16M12 4c-2.5 2.5-2.5 13.5 0 16"/></svg></button></div>
+        <div class="mleg"><span><i class="q"></i>1980년부터의 지진</span><span><i class="p"></i>판의 경계</span></div>
+      </div>
+    </section>
+    <section>
+      <div class="seg" id="seg">
+        <button type="button" data-g="big" aria-pressed="true">가장 큰 지진</button>
+        <button type="button" data-g="volc" aria-pressed="false">기록에 남은 분출</button>
+        <button type="button" data-g="korea" aria-pressed="false">우리나라</button>
+        <button type="button" data-g="recent" aria-pressed="false">최근 3년</button>
+        <button type="button" data-g="data" aria-pressed="false">자료로 찾은 사실</button>
+      </div>
+      <p class="lead" id="lead"></p>
+      <div class="recs" id="recs"></div>
+    </section>
+  </div>
+  <div class="box an" style="margin-top:4px"><b class="t">읽기 전에</b>교과서 밖의 이야기예요. 숫자는 미국 지질 조사국(USGS), 스미스소니언 연구소 세계 화산 계획(GVP), 기상청, NASA 같은 기관 자료를 따랐고, 자료마다 조금씩 다른 값은 '약'으로 적었어요. <b>규모</b>는 지진이 일어날 때 나온 에너지의 크기를 나타내는 값으로, 숫자가 클수록 큰 지진이에요.</div>
+  <p class="credit">판의 경계와 지진대, 화산대 · 지진·화산 기록실</p>
+</div>
+
+<script>window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) => Array.from(r.querySelectorAll(s)), q: new URLSearchParams(location.search) };</script>
+<script src="data/land.js"></script>
+<script src="data/plates.js"></script>
+<script src="data/quakes.js"></script>
+<script src="data/volcano.js"></script>
+<script>
+/* ===== 블록 1: 기록 카드와 지도 ===== */
+(() => {
+  'use strict';
+  try {
+/* ===== 지진·화산 빅데이터 지도 (WMAP) =====
+   실제 자료를 캔버스 지도에 그려요. 자료는 페이지 옆 data/ 폴더의 스크립트가 넣어 줘요.
+   - window.LAND: 육지(Natural Earth), window.PB: 판의 경계(PB2002), window.EQ: 지진(USGS, 규모 5.5 이상, 1980~), window.VO/ER: 화산·분출(스미스소니언 GVP)
+   - 날짜는 '1980-01-01부터 지난 날 수'로 다뤄요.
+   - 지도는 경위도를 그대로 펼친 지도(정거 원통). 가운데 경도를 바꿀 수 있어요(태평양 가운데 = 150).
+   - 그리는 순서: 바탕(바다·육지·경계, 시점이 바뀔 때만) → 쌓인 점(시간이 바뀔 때만) → 움직이는 것(최근 지진 물결, 분출 중인 화산, 표시 핀)
+   이름표는 캔버스에 쓰지 않고 HTML(Pretendard)로 얹어요. */
+window.WMAP = (function () {
+  'use strict';
+  var REDUCE = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  var D0 = Date.UTC(1980, 0, 1), DAY = 86400000;
+  function dayOf(y, m, d) { return Math.round((Date.UTC(y, (m || 1) - 1, d || 1) - D0) / DAY); }
+  function dateOf(n) { var t = new Date(D0 + n * DAY); return { y: t.getUTCFullYear(), m: t.getUTCMonth() + 1, d: t.getUTCDate() }; }
+  function fmt(n) { var t = dateOf(n); return t.y + '년 ' + t.m + '월 ' + t.d + '일'; }
+  var clamp = function (x, a, b) { return x < a ? a : x > b ? b : x; };
+  function wrap(d) { d = ((d + 180) % 360 + 360) % 360 - 180; return d; }
+
+  /* ---------- 자료 정리 (한 번만) ---------- */
+  var DATA = null;
+  function data() {
+    if (DATA) return DATA;
+    var E = window.EQ || [], n = E.length / 5, lon = new Float32Array(n), lat = new Float32Array(n), dep = new Uint16Array(n), mag = new Float32Array(n), day = new Int32Array(n);
+    for (var i = 0; i < n; i++) { lon[i] = E[i * 5] / 10; lat[i] = E[i * 5 + 1] / 10; dep[i] = E[i * 5 + 2]; mag[i] = E[i * 5 + 3] / 10; day[i] = E[i * 5 + 4]; }
+    var VO = window.VO || [], ER = window.ER || [];
+    var vol = VO.map(function (v) { return { lon: v[0] / 10, lat: v[1] / 10, last: v[2], name: v[3] }; });
+    var er = ER.map(function (e) { return { v: e[0], s: e[1], e: e[2], vei: e[3] }; });
+    // 화산마다 1980년 이후 분출 목록
+    vol.forEach(function (v) { v.er = []; }); er.forEach(function (e) { if (vol[e.v]) vol[e.v].er.push(e); });
+    var land = (window.LAND || []).map(function (r) { var f = new Float32Array(r.length); for (var j = 0; j < r.length; j++) f[j] = r[j] / 10; return f; });
+    var pb = (window.PB || []).map(function (l) { var f = new Float32Array(l.p.length); for (var j = 0; j < l.p.length; j++) f[j] = l.p[j] / 10; return { s: l.s, p: f }; });
+    DATA = { n: n, lon: lon, lat: lat, dep: dep, mag: mag, day: day, vol: vol, er: er, land: land, pb: pb, end: window.EQ_END || (n ? day[n - 1] : 0) };
+    return DATA;
+  }
+
+  /* 판의 경계까지 거리 (도 단위 근사, 지도 분석에 써요) */
+  var grid = null;
+  function boundaryGrid() {
+    if (grid) return grid; var G = data(), cell = 1, W = 360, H = 180, g = new Uint8Array(W * H);
+    G.pb.forEach(function (l) {
+      for (var i = 0; i + 3 < l.p.length; i += 2) {
+        var x0 = l.p[i], y0 = l.p[i + 1], x1 = l.p[i + 2], y1 = l.p[i + 3], dx = wrap(x1 - x0), steps = Math.ceil(Math.max(Math.abs(dx), Math.abs(y1 - y0)) / 0.25) + 1;
+        for (var k = 0; k <= steps; k++) { var x = x0 + dx * k / steps, y = y0 + (y1 - y0) * k / steps, cx = Math.floor((wrap(x) + 180) / cell) % W, cy = clamp(Math.floor((90 - y) / cell), 0, H - 1); g[cy * W + cx] = 1; }
+      }
+    });
+    grid = { g: g, W: W, H: H }; return grid;
+  }
+  // (lon, lat)에서 판의 경계까지 대략 몇 km인가 (최대 maxKm까지만 찾음)
+  function nearBoundaryKm(lon, lat, maxKm) {
+    var B = boundaryGrid(), cx = Math.floor((wrap(lon) + 180)) % 360, cy = clamp(Math.floor(90 - lat), 0, 179), R = Math.ceil(maxKm / 111) + 1, best = 1e9;
+    for (var dy = -R; dy <= R; dy++) { var y = cy + dy; if (y < 0 || y > 179) continue; var la = 90 - y - 0.5, kx = Math.max(0.15, Math.cos(la * Math.PI / 180));
+      for (var dx = -R; dx <= R; dx++) { var x = ((cx + dx) % 360 + 360) % 360; if (!B.g[y * 360 + x]) continue; var d = Math.hypot(dx * kx, dy) * 111; if (d < best) best = d; } }
+    return Math.max(0, best - 55);
+  }
+
+  /* ---------- 지도 만들기 ---------- */
+  function create(wrapEl, o) {
+    o = o || {};
+    var G = data();
+    var cv = wrapEl.querySelector('canvas') || wrapEl.appendChild(document.createElement('canvas'));
+    var ctx = cv.getContext('2d');
+    var ovl = document.createElement('div'); ovl.className = 'mapovl'; wrapEl.appendChild(ovl);
+    var base = document.createElement('canvas'), hist = document.createElement('canvas');
+    var W = 1, H = 1, dpr = 1;
+    var S = {
+      clon: o.center != null ? o.center : 150, clat: o.clat != null ? o.clat : 8, z: 1, zMin: 1, zMax: o.zMax || 9,
+      layers: Object.assign({ quake: true, volc: true, plate: true, land: true }, o.layers || {}),
+      minMag: o.minMag || 5.5, d0: 0, t: G.end, live: [], pins: [], labels: o.labels || [], pulse: o.pulse !== false,
+      dim: 0, focusBox: null, sel: null, volcAll: !!o.volcAll,
+    };
+    var dirtyBase = true, dirtyHist = true, histUpTo = -1;
+    var PAL = Object.assign({ ocean0: '#dfe9f0', ocean1: '#c9dae6', land0: '#f6f2e9', land1: '#e7dfcf', coast: 'rgba(110,96,74,.55)', grid: 'rgba(60,90,120,.10)',
+      plate: '#7a3b1e', plateHalo: 'rgba(255,255,255,.75)', quake: '29,78,170', volc: '#d0412a', volcEdge: '#fff' }, o.palette || {});
+
+    function k() { return W / 360 * S.z; }
+    function X(lon) { return W / 2 + wrap(lon - S.clon) * k(); }
+    function Y(lat) { return H / 2 - (lat - S.clat) * k(); }
+    function clampView() {
+      S.z = clamp(S.z, S.zMin, S.zMax);
+      var half = H / 2 / k(); S.clat = clamp(S.clat, -78 + half, 86 - half); if (-78 + half > 86 - half) S.clat = 4;
+      S.clon = wrap(S.clon);
+    }
+    function size() {
+      var r = cv.getBoundingClientRect(); dpr = Math.min(window.devicePixelRatio || 1, 2);
+      W = Math.max(1, r.width); H = Math.max(1, r.height);
+      [cv, base, hist].forEach(function (c) { c.width = Math.round(W * dpr); c.height = Math.round(H * dpr); });
+      // 처음 크기: 세계 전체가 가로로 꽉 차게 (세로가 남으면 위도 범위를 넓혀 채움)
+      S.zMin = Math.max(1, (H / k() * S.z) > 164 ? (H / (164 * W / 360)) : 1);
+      clampView(); dirtyBase = dirtyHist = true;
+    }
+    try { new ResizeObserver(size).observe(cv); } catch (e) { addEventListener('resize', size); }
+
+    /* --- 바탕: 바다, 위도선, 육지, 판의 경계 --- */
+    function ringPath(g, f, off) {
+      var kk = k(), cx = W / 2, cy = H / 2;
+      g.moveTo(cx + (f[0] - S.clon + off) * kk, cy - (f[1] - S.clat) * kk);
+      for (var j = 2; j < f.length; j += 2) g.lineTo(cx + (f[j] - S.clon + off) * kk, cy - (f[j + 1] - S.clat) * kk);
+      g.closePath();
+    }
+    function offs() { var c = S.clon, a = []; [-720, -360, 0, 360].forEach(function (o2) { var l = -180 + o2 - c, r = 540 + o2 - c; if (r * k() > -W / 2 - 4 && l * k() < W / 2 + 4) a.push(o2); }); return a; }
+    function drawBase() {
+      var g = base.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
+      var sea = g.createLinearGradient(0, 0, 0, H); sea.addColorStop(0, PAL.ocean0); sea.addColorStop(0.5, PAL.ocean1); sea.addColorStop(1, PAL.ocean0);
+      g.fillStyle = sea; g.fillRect(0, 0, W, H);
+      // 위도·경도선 (30도 간격)
+      g.strokeStyle = PAL.grid; g.lineWidth = 1; g.beginPath();
+      for (var la = -60; la <= 60; la += 30) { var y = Y(la); g.moveTo(0, y); g.lineTo(W, y); }
+      for (var lo = -180; lo < 180; lo += 30) { var x = X(lo); g.moveTo(x, 0); g.lineTo(x, H); }
+      g.stroke();
+      g.strokeStyle = 'rgba(60,90,120,.22)'; g.setLineDash([4, 5]); g.beginPath(); g.moveTo(0, Y(0)); g.lineTo(W, Y(0)); g.stroke(); g.setLineDash([]);
+      var OF = offs();
+      if (S.layers.land) {
+        // 육지 그림자 → 육지 → 안쪽 그늘(가장자리를 살짝 어둡게) → 해안선
+        g.save(); g.shadowColor = 'rgba(40,60,80,.28)'; g.shadowBlur = 6; g.shadowOffsetY = 1.5;
+        g.beginPath(); OF.forEach(function (of) { G.land.forEach(function (f) { ringPath(g, f, of); }); });
+        var lg = g.createLinearGradient(0, Y(70), 0, Y(-50)); lg.addColorStop(0, '#f1ece2'); lg.addColorStop(0.45, PAL.land0); lg.addColorStop(1, PAL.land1);
+        g.fillStyle = lg; g.fill('evenodd'); g.restore();
+        g.save(); g.beginPath(); OF.forEach(function (of) { G.land.forEach(function (f) { ringPath(g, f, of); }); }); g.clip('evenodd');
+        g.strokeStyle = 'rgba(150,130,100,.22)'; g.lineWidth = 5; g.stroke();
+        g.restore();
+        g.beginPath(); OF.forEach(function (of) { G.land.forEach(function (f) { ringPath(g, f, of); }); });
+        g.strokeStyle = PAL.coast; g.lineWidth = 0.8; g.stroke();
+      }
+      dirtyBase = false;
+    }
+    function drawPlates(g) {
+      var kk = k(), cx = W / 2, cy = H / 2, lw = clamp(1.3 + (S.z - 1) * 0.35, 1.3, 3.2);
+      function pass(style, w) {
+        g.strokeStyle = style; g.lineWidth = w; g.lineJoin = 'round'; g.lineCap = 'round'; g.beginPath();
+        G.pb.forEach(function (l) {
+          var f = l.p, base0 = f[0];
+          offs().forEach(function (of) {
+            var px = 0;
+            for (var j = 0; j < f.length; j += 2) {
+              var lo = f[j], dx = j ? wrap(lo - f[j - 2]) : 0; px = j ? px + dx : base0;
+              var x = cx + (px - S.clon + of) * kk, y = cy - (f[j + 1] - S.clat) * kk;
+              if (!j) g.moveTo(x, y); else g.lineTo(x, y);
+            }
+          });
+        });
+        g.stroke();
+      }
+      g.save(); g.globalAlpha = S.dimPlates ? 0.35 : 1; pass(PAL.plateHalo, lw + 2.6); pass(PAL.plate, lw); g.restore();
+    }
+
+    /* --- 쌓인 점: 지진(기간 안), 화산(분출) --- */
+    function qR(m) { var s = clamp(0.7 + (S.z - 1) * 0.28, 0.7, 2.2); return Math.max(0.9, (m - 4.9) * 1.35 * s); }
+    function drawHist() {
+      var g = hist.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
+      if (S.layers.quake) {
+        // 작은 지진부터 그려야 큰 지진이 위에 보여요: 규모 구간별로 나눠 그림
+        var bands = [[5.5, 6], [6, 6.5], [6.5, 7], [7, 7.5], [7.5, 10]];
+        bands.forEach(function (bd) {
+          if (bd[1] <= S.minMag) return;
+          g.fillStyle = 'rgba(' + PAL.quake + ',' + (bd[0] >= 7 ? 0.62 : bd[0] >= 6.5 ? 0.5 : 0.36) + ')';
+          g.beginPath();
+          for (var i = 0; i < G.n; i++) {
+            var m = G.mag[i]; if (m < bd[0] || m >= bd[1] || m < S.minMag) continue; var d = G.day[i]; if (d < S.d0 || d > S.t) continue;
+            var x = X(G.lon[i]), y = Y(G.lat[i]); if (x < -10 || x > W + 10 || y < -10 || y > H + 10) continue;
+            var r = qR(m); g.moveTo(x + r, y); g.arc(x, y, r, 0, 6.2832);
+          }
+          g.fill();
+          if (bd[0] >= 7) { g.strokeStyle = 'rgba(255,255,255,.8)'; g.lineWidth = 0.8; g.stroke(); }
+        });
+      }
+      histUpTo = S.t; dirtyHist = false;
+    }
+    // 시간이 앞으로만 갔으면 새로 생긴 지진만 덧그려요 (자료는 날짜 순)
+    function addHist(from, to) {
+      var g = hist.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+      if (S.layers.quake) {
+        var lo = 0, hi = G.n; while (lo < hi) { var mid = (lo + hi) >> 1; if (G.day[mid] <= from) lo = mid + 1; else hi = mid; }
+        for (var i = lo; i < G.n && G.day[i] <= to; i++) {
+          var m = G.mag[i]; if (m < S.minMag || G.day[i] < S.d0) continue; var x = X(G.lon[i]), y = Y(G.lat[i]), r = qR(m);
+          g.fillStyle = 'rgba(' + PAL.quake + ',' + (m >= 7 ? 0.62 : m >= 6.5 ? 0.5 : 0.36) + ')'; g.beginPath(); g.arc(x, y, r, 0, 6.2832); g.fill();
+          if (m >= 7) { g.strokeStyle = 'rgba(255,255,255,.8)'; g.lineWidth = 0.8; g.stroke(); }
+        }
+      }
+      histUpTo = to;
+    }
+    function volcState(v) { // 기간 안에 분출했나, 지금(t) 분출 중인가
+      var any = false, on = false;
+      for (var i = 0; i < v.er.length; i++) { var e = v.er[i], end = e.e < 0 ? 1e9 : Math.max(e.e, e.s + 20); if (e.s <= S.t && end >= S.d0) { any = true; if (e.s <= S.t && end >= S.t - 30) on = true; } }
+      return any ? (on ? 2 : 1) : 0;
+    }
+    function tri(g, x, y, s) { g.moveTo(x, y - s); g.lineTo(x + s * 0.92, y + s * 0.62); g.lineTo(x - s * 0.92, y + s * 0.62); g.closePath(); }
+    function drawVolc(g, tt) {
+      if (!S.layers.volc) return;
+      var s = clamp(4.2 + (S.z - 1) * 0.9, 4.2, 9), live = [];
+      g.beginPath();
+      G.vol.forEach(function (v, i) {
+        var st = S.volcAll ? (v.last >= 1980 || v.er.length ? 1 : 0) : volcState(v); if (!st) return;
+        var x = X(v.lon), y = Y(v.lat); if (x < -10 || x > W + 10 || y < -10 || y > H + 10) return;
+        tri(g, x, y, s); if (st === 2 && !S.volcAll) live.push([x, y]);
+      });
+      g.lineJoin = 'round'; g.strokeStyle = 'rgba(255,255,255,.85)'; g.lineWidth = 1.6; g.stroke(); g.fillStyle = PAL.volc; g.fill();
+      // 지금 분출 중인 화산: 위로 피어오르는 연기
+      if (!REDUCE) live.forEach(function (p, j) {
+        for (var q = 0; q < 3; q++) { var ph = ((tt * 0.6 + j * 0.37 + q / 3) % 1), yy = p[1] - s - ph * s * 3.2, rr = s * (0.45 + ph * 0.9);
+          g.fillStyle = 'rgba(90,80,75,' + (0.32 * (1 - ph)).toFixed(3) + ')'; g.beginPath(); g.arc(p[0] + Math.sin(ph * 5 + j) * s * 0.4, yy, rr, 0, 6.2832); g.fill(); }
+      });
+    }
+    function drawPulses(g, tt) {
+      if (!S.layers.quake || !S.pulse || !(S.playing || S.pulseAlways)) return;
+      var win = S.pulseWin || 200;
+      g.save();
+      for (var i = G.n - 1; i >= 0; i--) {
+        var d = G.day[i]; if (d > S.t) continue; if (d < S.t - win) { if (d < S.t - win - 40) break; continue; } if (G.mag[i] < S.minMag || d < S.d0) continue;
+        var ph = (S.t - d) / win, x = X(G.lon[i]), y = Y(G.lat[i]), r = qR(G.mag[i]);
+        g.strokeStyle = 'rgba(' + PAL.quake + ',' + (0.7 * (1 - ph)).toFixed(3) + ')'; g.lineWidth = 1.4;
+        g.beginPath(); g.arc(x, y, r + 2 + ph * (6 + r * 2.2), 0, 6.2832); g.stroke();
+        g.fillStyle = 'rgba(255,255,255,' + (0.7 * (1 - ph)).toFixed(3) + ')'; g.beginPath(); g.arc(x, y, r * 0.55, 0, 6.2832); g.fill();
+      }
+      g.restore();
+    }
+    function drawLive(g, tt) {
+      if (!S.live.length) return;
+      S.live.forEach(function (q, i) {
+        var x = X(q.lon), y = Y(q.lat), r = Math.max(2.4, (q.mag - 3.6) * 1.8), ph = REDUCE ? 0.4 : ((tt * 0.55 + i * 0.13) % 1);
+        g.strokeStyle = 'rgba(20,38,59,' + (0.75 * (1 - ph)).toFixed(3) + ')'; g.lineWidth = 2; g.beginPath(); g.arc(x, y, r + ph * 16, 0, 6.2832); g.stroke();
+        g.fillStyle = '#14263b'; g.strokeStyle = '#fff'; g.lineWidth = 1.4; g.beginPath(); g.arc(x, y, r, 0, 6.2832); g.fill(); g.stroke();
+      });
+    }
+    function drawPins(g, tt) {
+      S.pins.forEach(function (p) {
+        var x = X(p.lon), y = Y(p.lat), on = p.on, R = on ? 11 : 7;
+        if (on && !REDUCE) { var ph = (tt * 0.8) % 1; g.strokeStyle = 'rgba(14,99,179,' + (0.65 * (1 - ph)).toFixed(3) + ')'; g.lineWidth = 2.5; g.beginPath(); g.arc(x, y, R + ph * 18, 0, 6.2832); g.stroke(); }
+        g.fillStyle = on ? '#0e63b3' : '#fff'; g.strokeStyle = on ? '#fff' : '#0e63b3'; g.lineWidth = 2.5; g.beginPath(); g.arc(x, y, R, 0, 6.2832); g.fill(); g.stroke();
+        if (p.n != null) { /* 번호는 HTML 이름표 */ }
+      });
+    }
+    function drawBox(g) {
+      if (!S.focusBox) return; var b = S.focusBox, x0 = X(b[0]), x1 = x0 + wrap(b[2] - b[0] + (b[2] < b[0] ? 360 : 0)) * k(), y0 = Y(b[3]), y1 = Y(b[1]);
+      if (b[2] - b[0] >= 180) x1 = x0 + (b[2] - b[0]) * k();
+      g.save(); g.fillStyle = 'rgba(20,38,59,.2)'; g.beginPath(); g.rect(0, 0, W, H); g.rect(x0, y0, x1 - x0, y1 - y0); g.fill('evenodd');
+      g.strokeStyle = '#fff'; g.lineWidth = 2; g.setLineDash([6, 4]); g.strokeRect(x0, y0, x1 - x0, y1 - y0); g.restore();
+    }
+
+    /* --- 지진대·화산대를 띠로 칠하기 (1도 칸마다 개수를 세어 부드럽게 번지게) --- */
+    var bandImg = {};
+    function bandBitmap(kind) {
+      if (bandImg[kind]) return bandImg[kind];
+      var Wg = 360, Hg = 180, a = new Float32Array(Wg * Hg);
+      if (kind === 'quake') for (var i = 0; i < G.n; i++) { var x = Math.floor(G.lon[i] + 180) % 360, y = clamp(Math.floor(90 - G.lat[i]), 0, 179); a[y * Wg + x] += 1; }
+      else G.vol.forEach(function (v) { if (!v.er.length && !(v.last >= 1900)) return; var x = Math.floor(v.lon + 180) % 360, y = clamp(Math.floor(90 - v.lat), 0, 179); a[y * Wg + x] += 6; });
+      for (var pass = 0; pass < 2; pass++) { var b = new Float32Array(Wg * Hg); for (var y2 = 0; y2 < Hg; y2++) for (var x2 = 0; x2 < Wg; x2++) { var sum = 0; for (var dy = -2; dy <= 2; dy++) for (var dx = -2; dx <= 2; dx++) { var yy = y2 + dy; if (yy < 0 || yy >= Hg) continue; sum += a[yy * Wg + ((x2 + dx + Wg) % Wg)]; } b[y2 * Wg + x2] = sum / 25; } a = b; }
+      var c = document.createElement('canvas'); c.width = Wg; c.height = Hg; var g = c.getContext('2d'), id = g.createImageData(Wg, Hg), col = kind === 'quake' ? [29, 78, 170] : [208, 65, 42];
+      for (var k2 = 0; k2 < Wg * Hg; k2++) { var v2 = a[k2], al = clamp((v2 - (kind === 'quake' ? 0.25 : 0.12)) * (kind === 'quake' ? 0.5 : 0.9), 0, 0.55); id.data[k2 * 4] = col[0]; id.data[k2 * 4 + 1] = col[1]; id.data[k2 * 4 + 2] = col[2]; id.data[k2 * 4 + 3] = al * 255; }
+      g.putImageData(id, 0, 0); bandImg[kind] = c; return c;
+    }
+    function drawBands(g) {
+      if (!S.bands) return;
+      ['quake', 'volc'].forEach(function (kind) {
+        if (!S.bands[kind]) return; var img = bandBitmap(kind); g.save(); g.imageSmoothingEnabled = true; g.globalAlpha = S.bands.a == null ? 1 : S.bands.a;
+        offs().forEach(function (of) { var x0 = W / 2 + (-180 - S.clon + of) * k(), y0 = Y(90); g.drawImage(img, x0, y0, 360 * k(), 180 * k()); });
+        g.restore();
+      });
+    }
+    /* --- 판 하나 강조 --- */
+    function drawPlateSel(g) {
+      if (!S.plateSel || !window.PLATES) return; var pl = window.PLATES.filter(function (q) { return q.c === S.plateSel; })[0]; if (!pl) return;
+      g.save(); g.beginPath();
+      offs().forEach(function (of) { pl.r.forEach(function (r) { var f = r.map(function (v) { return v / 10; }); ringPath(g, f, of); }); });
+      g.fillStyle = 'rgba(14,99,179,.24)'; g.fill('evenodd'); g.restore();
+    }
+
+    /* --- 이름표 (HTML) --- */
+    var pool = {};
+    function labels() {
+      var seen = {};
+      S.labels.concat(S.pins.filter(function (p) { return p.label; }).map(function (p, i) { return { k: 'pin' + i, t: p.label, lon: p.lon, lat: p.lat, cls: 'pin' + (p.on ? ' on' : ''), dy: -20 }; }))
+        .forEach(function (L, i) {
+          if (L.minZ && S.z < L.minZ) return;
+          var key = L.k || ('L' + i), el = pool[key]; if (!el) { el = document.createElement('span'); pool[key] = el; ovl.appendChild(el); }
+          seen[key] = 1; if (el._t !== L.t) { el.innerHTML = L.t; el._t = L.t; } var cls = 'ml ' + (L.cls || ''); if (el.className !== cls) el.className = cls;
+          var x = X(L.lon), y = Y(L.lat) + (L.dy || 0); el.style.transform = 'translate(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px) translate(-50%,-50%)'; el.style.display = (x < -60 || x > W + 60 || y < -30 || y > H + 30) ? 'none' : '';
+        });
+      Object.keys(pool).forEach(function (kk) { if (!seen[kk]) pool[kk].style.display = 'none'; });
+    }
+
+    /* --- 매 화면 --- */
+    var t0 = performance.now(), lastSig = '';
+    function visible() {
+      if (document.hidden) return false;
+      try { var fr = window.frameElement; if (fr && fr.hasAttribute('data-page') && !fr.classList.contains('on')) return false; } catch (e) {}
+      var r = cv.getBoundingClientRect(); return r.bottom > -50 && r.top < (innerHeight || 800) + 50 && r.width > 0;
+    }
+    function frame(now) {
+      requestAnimationFrame(frame);
+      if (!visible()) return;
+      var tt = (now - t0) / 1000;
+      if (S.tick) S.tick(tt);
+      if (dirtyBase) drawBase();
+      if (dirtyHist || S.t < histUpTo) drawHist(); else if (S.t > histUpTo) addHist(histUpTo, S.t);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
+      ctx.drawImage(base, 0, 0, W, H);
+      drawBands(ctx); drawPlateSel(ctx);
+      if (S.layers.plate && !S.platesOnTop) drawPlates(ctx);
+      ctx.drawImage(hist, 0, 0, W, H);
+      drawPulses(ctx, tt);
+      if (S.layers.plate && S.platesOnTop) drawPlates(ctx);
+      drawVolc(ctx, tt);
+      drawLive(ctx, tt);
+      drawBox(ctx);
+      drawPins(ctx, tt);
+      if (S.sel) { var x = X(S.sel.lon), y = Y(S.sel.lat); ctx.strokeStyle = '#14263b'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(x, y, 10, 0, 6.2832); ctx.stroke(); }
+      if (o.after) o.after(ctx, W, H, tt);
+      labels();
+    }
+    size(); requestAnimationFrame(frame);
+
+    /* --- 끌기·확대 (손가락 둘로 벌리기, 바퀴) --- */
+    if (o.interactive !== false) {
+      var pts = {}, startD = 0, startZ = 1, moved = 0, down = null;
+      cv.style.touchAction = 'none';
+      cv.addEventListener('pointerdown', function (e) { cv.setPointerCapture(e.pointerId); pts[e.pointerId] = [e.clientX, e.clientY]; moved = 0; down = [e.clientX, e.clientY]; var ks = Object.keys(pts); if (ks.length === 2) { var a = pts[ks[0]], b = pts[ks[1]]; startD = Math.hypot(a[0] - b[0], a[1] - b[1]); startZ = S.z; } });
+      cv.addEventListener('pointermove', function (e) {
+        if (!pts[e.pointerId]) return; var p = pts[e.pointerId], dx = e.clientX - p[0], dy = e.clientY - p[1]; pts[e.pointerId] = [e.clientX, e.clientY]; var ks = Object.keys(pts);
+        if (ks.length === 1) { moved += Math.abs(dx) + Math.abs(dy); if (moved > 6) { S.clon -= dx / k(); S.clat += dy / k(); clampView(); dirtyBase = dirtyHist = true; } }
+        else if (ks.length === 2) { var a = pts[ks[0]], b = pts[ks[1]], d = Math.hypot(a[0] - b[0], a[1] - b[1]); moved = 99; if (startD > 0) { S.z = startZ * d / startD; clampView(); dirtyBase = dirtyHist = true; } }
+      });
+      function up(e) {
+        var was = pts[e.pointerId]; delete pts[e.pointerId];
+        if (was && moved < 6 && down && Object.keys(pts).length === 0) { var r = cv.getBoundingClientRect(); tap(e.clientX - r.left, e.clientY - r.top); }
+      }
+      cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', function (e) { delete pts[e.pointerId]; });
+      cv.addEventListener('wheel', function (e) { e.preventDefault(); var r = cv.getBoundingClientRect(); zoomAt(e.clientX - r.left, e.clientY - r.top, e.deltaY < 0 ? 1.25 : 0.8); }, { passive: false });
+    }
+    function zoomAt(px, py, f) {
+      var lon = S.clon + (px - W / 2) / k(), lat = S.clat - (py - H / 2) / k();
+      S.z *= f; clampView(); S.clon = lon - (px - W / 2) / k(); S.clat = lat + (py - H / 2) / k(); clampView(); dirtyBase = dirtyHist = true;
+    }
+    function tap(px, py) {
+      var best = null, bd = 18;
+      if (S.layers.volc) G.vol.forEach(function (v) { var st = S.volcAll ? (v.last >= 1980 || v.er.length) : volcState(v); if (!st) return; var d = Math.hypot(X(v.lon) - px, Y(v.lat) - py); if (d < bd) { bd = d; best = { kind: 'volc', v: v, lon: v.lon, lat: v.lat }; } });
+      S.live.forEach(function (q) { var d = Math.hypot(X(q.lon) - px, Y(q.lat) - py); if (d < bd) { bd = d; best = { kind: 'live', q: q, lon: q.lon, lat: q.lat }; } });
+      if (S.layers.quake) { var bq = bd * 0.8; for (var i = 0; i < G.n; i++) { if (G.mag[i] < S.minMag || G.day[i] < S.d0 || G.day[i] > S.t) continue; var d = Math.hypot(X(G.lon[i]) - px, Y(G.lat[i]) - py) - qR(G.mag[i]) * 0.5; if (d < bq || (best && best.kind === 'quake' && d < bq + 3 && G.mag[i] > best.mag)) { bq = Math.min(bq, d); best = { kind: 'quake', i: i, lon: G.lon[i], lat: G.lat[i], mag: G.mag[i], dep: G.dep[i], day: G.day[i] }; } } }
+      S.sel = best; if (o.onTap) o.onTap(best, { lon: S.clon + (px - W / 2) / k(), lat: S.clat - (py - H / 2) / k() });
+    }
+
+    /* --- 부드럽게 옮기기 --- */
+    var anim = null;
+    function flyTo(lon, lat, z, dur) {
+      var a = { lon: S.clon, lat: S.clat, z: S.z }, b = { lon: lon, lat: lat, z: z }, dl = wrap(b.lon - a.lon), t1 = performance.now(); dur = REDUCE ? 1 : (dur || 900);
+      if (anim) cancelAnimationFrame(anim);
+      (function step(now) { var p = clamp((now - t1) / dur, 0, 1), e = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2, lz = Math.log(a.z) + (Math.log(b.z) - Math.log(a.z)) * e;
+        S.z = Math.exp(lz); S.clon = a.lon + dl * e; S.clat = a.lat + (b.lat - a.lat) * e; clampView(); dirtyBase = dirtyHist = true; if (p < 1) anim = requestAnimationFrame(step); })(t1);
+    }
+
+    var api = {
+      S: S, data: G,
+      set: function (p) { var hb = false; Object.keys(p).forEach(function (kk) { if (kk === 'layers') { Object.assign(S.layers, p.layers); hb = true; } else { if (kk === 'center') { S.clon = p.center; hb = true; } else S[kk] = p[kk]; } }); dirtyHist = true; if (hb) dirtyBase = true; return api; },
+      time: function (t) { S.t = t; return api; },
+      range: function (d0, t) { S.d0 = d0; S.t = t; dirtyHist = true; return api; },
+      flyTo: flyTo, zoom: function (f) { zoomAt(W / 2, H / 2, f); },
+      home: function (dur) { flyTo(o.center != null ? o.center : 150, o.clat != null ? o.clat : 8, S.zMin, dur); },
+      redraw: function () { dirtyBase = dirtyHist = true; },
+      plateAt: function (lon, lat) {
+        var P2 = window.PLATES || [];
+        for (var i = 0; i < P2.length; i++) { var pl = P2[i], inside = false;
+          pl.r.forEach(function (r) { for (var a = 0, b = r.length - 2; a < r.length; b = a, a += 2) { var xa = r[a] / 10, ya = r[a + 1] / 10, xb = r[b] / 10, yb = r[b + 1] / 10; if ((ya > lat) !== (yb > lat) && lon < (xb - xa) * (lat - ya) / (yb - ya) + xa) inside = !inside; } });
+          if (inside) return pl; }
+        return null;
+      },
+      X: X, Y: Y, size: function () { return { W: W, H: H, k: k() }; },
+      volcState: volcState,
+    };
+    return api;
+  }
+
+  /* 실시간 지진 (USGS 자료 묶음, 키 없이 누구나) */
+  function live(kind) {
+    var url = 'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/' + (kind || '4.5_week') + '.geojson';
+    return fetch(url, { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error('응답 ' + r.status); return r.json(); }).then(function (j) {
+      return (j.features || []).map(function (f) { var c = f.geometry.coordinates, p = f.properties; return { lon: c[0], lat: c[1], dep: Math.round(c[2]), mag: p.mag, time: p.time, place: p.place, url: p.url }; }).filter(function (q) { return q.mag != null; });
+    });
+  }
+
+  /* 잘 알려진 화산의 한국어 이름 (나머지는 영어 이름 그대로) */
+  var KO = { 'Fujisan': '후지산', 'Sakurajima': '사쿠라지마', 'Etna': '에트나', 'Kilauea': '킬라우에아', 'Mauna Loa': '마우나로아', 'Ruang': '루앙', 'Pinatubo': '피나투보', 'St. Helens': '세인트헬렌스', 'Merapi': '므라피', "Hunga Tonga-Hunga Ha'apai": '훙가 통가-훙가 하아파이', 'Krakatau': '크라카타우', 'Tambora': '탐보라',
+    'Changbaishan': '백두산', 'Halla': '한라산', 'Ulleungdo': '울릉도', 'Vesuvius': '베수비오', 'Stromboli': '스트롬볼리', 'Eyjafjallajokull': '에이야퍄들라이외퀴들', 'Fagradalsfjall': '파그라달스퍄들', 'Reykjanes': '레이캬네스', 'Grimsvotn': '그림스뵈튼', 'Hekla': '헤클라',
+    'Nyiragongo': '니라공고', 'Nyamulagira': '니아무라기라', 'Erta Ale': '에르타 알레', 'Ol Doinyo Lengai': '올도이뇨 렝가이', 'Popocatepetl': '포포카테페틀', 'Villarrica': '비야리카', 'Cotopaxi': '코토팍시', 'Asamayama': '아사마산', 'Aso': '아소산', 'Ontakesan': '온타케산', 'Mayon': '마욘', 'Taal': '탈', 'Sinabung': '시나붕', 'Semeru': '스메루', 'Agung': '아궁', 'Kelud': '클루드',
+    'Klyuchevskoy': '클류쳅스카야', 'Shiveluch': '시벨루치', 'Bezymianny': '베지먄니', 'La Palma': '라팔마', 'Whakaari/White Island': '화카아리', 'Ruapehu': '루아페후', 'Rabaul': '라바울', 'Manam': '마남', 'Augustine': '오거스틴', 'Redoubt': '리다우트', 'Pavlof': '파블로프' };
+  function koName(n) { return KO[n] || n; }
+
+  return { koName: koName, create: create, data: data, live: live, dayOf: dayOf, dateOf: dateOf, fmt: fmt, nearBoundaryKm: nearBoundaryKm, wrap: wrap, REDUCE: REDUCE };
+})();
+  const { $, $$, q } = window.SM;
+  /* ---------- 선생님이 고치기 쉬운 글: 기록 ---------- */
+  const GROUPS = {
+    big: { lead: '1900년 무렵부터 지진계로 잰 지진 가운데 <b>가장 큰 지진들</b>이에요. 지도에서 위치를 보면 모두 <b>태평양 둘레의 판의 경계</b>, 그중에서도 판이 부딪치는 곳에서 일어났어요.', list: [
+      { t: '칠레 발디비아 지진', when: '1960년 5월 22일', big: '규모 9.5', bigS: '기록된 가장 큰 지진', lon: -73.4, lat: -38.1, p: '지진계로 기록된 가장 큰 지진이에요. 이 지진이 일으킨 지진 해일은 태평양을 건너 하와이와 일본까지 닿았어요.', src: 'USGS' },
+      { t: '미국 알래스카 지진', when: '1964년 3월 27일', big: '규모 9.2', bigS: '두 번째', lon: -147.3, lat: 60.9, p: '북아메리카에서 기록된 가장 큰 지진이에요. 땅이 몇 분 동안 흔들렸고, 넓은 지역의 땅이 솟거나 가라앉았어요.', src: 'USGS' },
+      { t: '인도네시아 수마트라 앞바다 지진', when: '2004년 12월 26일', big: '규모 9.1', lon: 96.0, lat: 3.3, p: '바다 밑에서 일어난 지진이 거대한 지진 해일을 일으켜 인도양 여러 나라에서 20만 명이 넘게 희생되었어요.', src: 'USGS' },
+      { t: '일본 동북 지방 앞바다 지진', when: '2011년 3월 11일', big: '규모 9.1', bigS: '일본 기상청 9.0', lon: 142.4, lat: 38.3, p: '지진 해일이 해안을 덮쳤어요. 지진으로 일본 혼슈 섬의 일부가 동쪽으로 약 2.4 m나 움직였어요.', src: 'USGS' },
+      { t: '러시아 캄차카 지진', when: '1952년 11월 4일', big: '규모 9.0', lon: 159.8, lat: 52.6, p: '캄차카반도 앞바다에서 일어나 지진 해일이 하와이까지 건너갔어요.', src: 'USGS' },
+      { t: '러시아 캄차카 앞바다 지진', when: '2025년 7월', big: '규모 8.8', lon: 160.3, lat: 52.5, p: '1952년 지진과 거의 같은 곳에서 다시 큰 지진이 일어났어요. 판의 경계에서는 큰 지진이 되풀이돼요. 태평양 여러 나라에 지진 해일 경보가 내려졌어요.', src: 'USGS 지진 목록' },
+    ], extra: 'scale' },
+    volc: { lead: '사람이 기록으로 남긴 큰 화산 분출이에요. 큰 분출은 화산 근처뿐 아니라 <b>지구 전체의 날씨</b>에도 영향을 주었어요.', list: [
+      { t: '인도네시아 탐보라 화산', when: '1815년 4월', big: '기록에 남은 가장 큰 분출', lon: 118.0, lat: -8.25, p: '하늘로 뿜어져 나온 화산재와 가스가 햇빛을 가려, 이듬해인 1816년 북반구 곳곳은 여름에도 서늘했어요. 그래서 1816년을 "여름이 없는 해"라고 불러요.', src: 'USGS · 스미스소니언 GVP' },
+      { t: '인도네시아 크라카타우 화산', when: '1883년 8월', big: '약 4800 km', bigS: '폭발 소리가 들린 거리', lon: 105.4, lat: -6.1, p: '폭발 소리가 약 4800 km 떨어진 인도양의 섬에서도 들렸어요. 서울에서 싱가포르까지보다 먼 거리예요.', src: '스미스소니언 GVP' },
+      { t: '필리핀 피나투보 화산', when: '1991년 6월', big: '약 0.5 ℃', bigS: '지구 평균 기온이 내려간 정도', lon: 120.35, lat: 15.13, p: '20세기에 일어난 가장 큰 분출 가운데 하나예요. 높이 올라간 화산 가스가 햇빛을 가려 그 뒤 1~2년 동안 지구 평균 기온이 약 0.5 ℃ 내려갔어요.', src: 'USGS · NASA' },
+      { t: '통가 훙가 통가-훙가 하아파이 화산', when: '2022년 1월', big: '약 57 km', bigS: '화산 기둥의 높이', lon: -175.4, lat: -20.55, p: '바다 밑 화산이 폭발해 화산 기둥이 약 57 km 높이까지 솟았어요. 인공위성으로 관측한 화산 기둥 가운데 가장 높아요. 지진 해일이 태평양 건너 일본까지 닿았어요.', src: 'NASA' },
+      { t: '백두산', when: '946년 무렵', big: '천 년 전의 큰 분출', lon: 128.08, lat: 42.0, p: '지난 2000년 동안 지구에서 일어난 가장 큰 분출 가운데 하나예요. 이때 나온 화산재가 동해를 건너 일본 북부에서도 발견돼요.', src: '스미스소니언 GVP · Oppenheimer 외(2017)' },
+      { t: '미국 하와이 킬라우에아 화산', when: '1983~2018년', big: '약 35년', bigS: '쉬지 않고 이어진 분출', lon: -155.29, lat: 19.41, p: '1983년에 시작된 분출이 2018년까지 거의 쉬지 않고 이어졌어요. 하와이는 판의 경계에서 멀리 떨어져 있는데도 화산이 있는, 드문 곳이에요.', src: 'USGS' },
+    ] },
+    korea: { lead: '우리나라는 <b>판의 경계에서 조금 떨어져</b> 있어 일본보다 큰 지진이 적어요. 그래도 지진은 일어나고, 화산 활동으로 만들어진 섬과 산도 있어요. (지도의 \'우리나라 주변\'처럼 확대해 보세요.)', list: [
+      { t: '경주 지진', when: '2016년 9월 12일', big: '규모 5.8', bigS: '관측 이래 가장 큰 지진', lon: 129.19, lat: 35.77, p: '기상청이 지진을 관측하기 시작한 1978년 이후 우리나라에서 일어난 가장 큰 지진이에요. 전국 곳곳에서 흔들림을 느꼈어요.', src: '기상청' },
+      { t: '포항 지진', when: '2017년 11월 15일', big: '규모 5.4', bigS: '두 번째로 큰 지진', lon: 129.37, lat: 36.11, p: '건물이 부서지고 많은 사람이 대피했어요. 다음 날로 예정되었던 대학수학능력시험이 일주일 미뤄졌어요.', src: '기상청 · 교육부' },
+      { t: '제주도와 한라산', when: '고려 시대 기록', big: '화산섬', lon: 126.53, lat: 33.36, p: '제주도는 화산 활동으로 만들어진 섬이에요. 고려 시대 역사책에 제주 앞바다에서 화산이 분출했다는 기록(1002년, 1007년)이 남아 있어요.', src: '스미스소니언 GVP' },
+      { t: '울릉도와 독도', when: '오래전 화산 활동', big: '화산섬', lon: 130.87, lat: 37.5, p: '동해의 울릉도와 독도도 바다 밑에서 일어난 화산 활동으로 만들어진 섬이에요.', src: '스미스소니언 GVP' },
+      { t: '백두산', when: '946년 무렵 · 1903년', big: '살아 있는 화산', lon: 128.08, lat: 42.0, p: '946년 무렵 크게 분출했고, 그 뒤에도 작은 분출 기록이 있어요(가장 최근 1903년). 그래서 앞으로도 분출할 수 있는 화산으로 보고 관찰하고 있어요.', src: '스미스소니언 GVP' },
+    ] },
+    recent: { lead: '교과서 84쪽 사진 속 사건과 그 뒤에 일어난 일이에요. <b>조사 활동(카드 뉴스)</b>의 출발점으로 써 보세요. 각 사건이 판의 경계에서 일어났는지 지도에서 확인해 보세요.', list: [
+      { t: '튀르키예 남부 지진', when: '2023년 2월 6일', big: '규모 7.8', lon: 37.0, lat: 37.2, p: '튀르키예와 시리아에서 5만 명이 넘게 희생되었어요. 판과 판이 서로 어긋나는 경계 근처에서 일어났어요.', src: 'USGS', tb: '교과서 사진' },
+      { t: '일본 노토 반도 지진', when: '2024년 1월 1일', big: '규모 7.5', lon: 137.3, lat: 37.5, p: '새해 첫날 일어난 지진으로 건물이 무너지고 불이 났어요. 해안의 땅이 최대 약 4 m 솟아올라 바다였던 곳이 땅이 되기도 했어요.', src: 'USGS · 일본 국토지리원', tb: '교과서 사진' },
+      { t: '인도네시아 루앙 화산 분출', when: '2024년 4월', big: '화산 분출', lon: 125.37, lat: 2.3, p: '여러 번 크게 분출해 화산재가 하늘 높이 솟았고, 섬과 주변 섬의 주민들이 대피했어요. 판이 부딪치는 곳에 있는 화산이에요.', src: '스미스소니언 GVP', tb: '교과서 사진' },
+      { t: '아이슬란드 레이캬네스반도 분출', when: '2023년 12월부터', big: '여러 번 분출', lon: -22.4, lat: 63.88, p: '땅이 갈라진 틈을 따라 용암이 여러 번 흘러나와 근처 마을 주민들이 대피했어요. 판이 갈라지는 경계가 땅 위로 드러난 곳이에요.', src: '스미스소니언 GVP' },
+      { t: '미얀마 지진', when: '2025년 3월 28일', big: '규모 7.7', lon: 95.9, lat: 22.0, p: '판과 판이 어긋나는 경계에서 일어났어요. 약 1000 km 떨어진 타이 방콕에서도 짓고 있던 높은 건물이 무너졌어요.', src: 'USGS' },
+    ], extra: 'live' },
+    data: { lead: '이 수업의 지도에 쓴 <b>실제 자료(1980년부터 규모 5.5 이상 지진, 화산 분출)</b>를 직접 세어서 찾은 사실이에요. 숫자는 이 페이지가 열릴 때 계산돼요.', list: [] },
+  };
+
+  const G = WMAP.data(), END = G.end;
+  const M = WMAP.create($('#map'), { center: 150, layers: { quake: true, volc: false, plate: true }, palette: { quake: '29,78,170' },
+    labels: [{ t: '동해', lon: 133.5, lat: 39, cls: 'sea', minZ: 3 }], onTap: () => {} });
+  M.S.platesOnTop = true; M.range(0, END);
+
+  /* ---------- 자료로 찾은 사실 (계산) ---------- */
+  (function () {
+    let n = G.n, m7 = 0, deep = 0, di = 0; const byY = {};
+    for (let i = 0; i < n; i++) { if (G.mag[i] >= 7) m7++; if (G.dep[i] > deep) { deep = G.dep[i]; di = i; } const y = WMAP.dateOf(G.day[i]).y; byY[y] = (byY[y] || 0) + 1; }
+    const years = (END / 365.25), endY = WMAP.dateOf(END).y; let topY = 0, topN = 0; Object.keys(byY).forEach((y) => { if (+y < endY && byY[y] > topN) { topN = byY[y]; topY = +y; } });
+    const ec = {}; G.er.forEach((e) => { ec[e.v] = (ec[e.v] || 0) + 1; }); let tv = -1, tn = 0; Object.keys(ec).forEach((v) => { if (ec[v] > tn) { tn = ec[v]; tv = +v; } });
+    let big = 0, bi = 0; for (let i = 0; i < n; i++) if (G.mag[i] > big) { big = G.mag[i]; bi = i; }
+    const V = G.vol[tv] || { lon: 15, lat: 37.7, name: '?' };
+    GROUPS.data.list = [
+      { t: '규모 5.5 이상 지진의 수', when: `1980년 1월 ~ ${WMAP.fmt(END)}`, big: n.toLocaleString('ko-KR') + '번', bigS: `하루에 약 ${(n / (END)).toFixed(1)}번`, lon: 150, lat: 10, zoom: 1, p: '사람이 느끼기 어려운 작은 지진까지 세면 훨씬 더 많아요. 이 수업 지도에는 규모 5.5 이상만 담았어요.', src: 'USGS 지진 목록으로 셈' },
+      { t: '규모 7 이상의 아주 큰 지진', when: '1980년부터', big: `1년에 약 ${Math.round(m7 / years)}번`, bigS: `모두 ${m7}번`, lon: 150, lat: 10, zoom: 1, p: '규모 7 이상의 지진은 거의 한 달에 한 번꼴로 지구 어딘가에서 일어나요.', src: 'USGS 지진 목록으로 셈' },
+      { t: '가장 깊은 곳에서 일어난 지진', when: WMAP.fmt(G.day[di]), big: `약 ${deep} km`, bigS: '땅속 깊이', lon: G.lon[di], lat: G.lat[di], p: '태평양의 통가·피지 근처 땅속 아주 깊은 곳이에요. 판이 부딪치는 곳에서 아래로 들어간 판을 따라 깊은 곳에서도 지진이 일어나요(판의 경계 실험실의 첫 번째 그림).', src: 'USGS 지진 목록으로 셈' },
+      { t: '지진이 가장 많았던 해', when: `${topY}년`, big: `${topN}번`, bigS: '규모 5.5 이상', lon: 150, lat: 10, zoom: 1, p: '큰 지진이 일어나면 그 근처에서 작은 지진(여진)이 이어져 그해의 수가 늘어나요.', src: 'USGS 지진 목록으로 셈' },
+      { t: '1980년부터 가장 큰 지진', when: WMAP.fmt(G.day[bi]), big: `규모 ${big.toFixed(1)}`, lon: G.lon[bi], lat: G.lat[bi], p: '2004년 수마트라 앞바다 지진과 2011년 일본 동북 지방 앞바다 지진이 같은 규모로 가장 커요.', src: 'USGS 지진 목록으로 셈' },
+      { t: '가장 자주 분출한 화산', when: '1980년부터', big: `${WMAP.koName(V.name)}`, bigS: `분출 ${tn}번`, lon: V.lon, lat: V.lat, p: `1980년부터 기록된 분출이 가장 많은 화산이에요. 분출이 시작될 때마다 한 번으로 셌어요.`, src: '스미스소니언 GVP 자료로 셈' },
+    ];
+  })();
+
+  /* ---------- 카드 그리기 ---------- */
+  let group = 'big', cur = -1;
+  function render() {
+    const Gp = GROUPS[group];
+    $('#lead').innerHTML = Gp.lead;
+    let h = Gp.list.map((r, i) => `<button class="rec" type="button" data-i="${i}" aria-pressed="false"><span class="no">${i + 1}</span><span><span class="when">${r.when}${r.tb ? ' · ' + r.tb : ''}</span><h3>${r.t}</h3><span class="big">${r.big}${r.bigS ? `<small>${r.bigS}</small>` : ''}</span><p>${r.p}</p><span class="src">출처: ${r.src}</span></span></button>`).join('');
+    if (Gp.extra === 'scale') h += `<div class="scale"><h3>규모가 1 커지면 얼마나 커질까?</h3><p>규모가 1 커지면 지진의 에너지는 약 32배가 돼요. 규모 7.0 지진의 에너지를 작은 네모 하나로 놓고 비교해 봐요.</p><div class="row" id="scRow"><button class="btn ghost" type="button" data-s="0" aria-pressed="true">규모 7.0</button><button class="btn ghost" type="button" data-s="1" aria-pressed="false">규모 8.0</button><button class="btn ghost" type="button" data-s="2" aria-pressed="false">규모 9.0</button></div><canvas id="scCv" role="img" aria-label="규모 7.0의 에너지를 네모 1개로 놓으면 규모 8.0은 32개, 규모 9.0은 약 1000개의 네모가 된다."></canvas><div class="say" id="scSay"></div></div>`;
+    if (Gp.extra === 'live') h += `<div class="livec"><p><b>이번 주에는?</b> 미국 지질 조사국(USGS)의 실시간 자료에서 최근 7일 동안 일어난 가장 큰 지진을 불러와요.</p><div id="liveOut" style="margin-top:8px"><button class="btn ghost" type="button" id="liveGo">불러오기</button></div></div>`;
+    $('#recs').innerHTML = h;
+    $$('#recs .rec').forEach((b) => b.addEventListener('click', () => select(+b.dataset.i)));
+    M.S.pins = Gp.list.map((r, i) => ({ lon: r.lon, lat: r.lat, label: String(i + 1), on: false }));
+    if (group === 'data') M.S.pins = M.S.pins.filter((p, i) => !Gp.list[i].zoom);
+    cur = -1; M.home(700);
+    if (Gp.extra === 'scale') scale();
+    if (Gp.extra === 'live') $('#liveGo').addEventListener('click', live);
+  }
+  function select(i) {
+    const Gp = GROUPS[group], r = Gp.list[i]; cur = i;
+    $$('#recs .rec').forEach((b) => b.setAttribute('aria-pressed', String(+b.dataset.i === i)));
+    M.S.pins.forEach((p) => { p.on = p.label === String(i + 1); });
+    if (r.zoom) M.home(800); else M.flyTo(r.lon, r.lat, group === 'korea' ? 6 : 3.4, 900);
+  }
+  $$('#seg button').forEach((b) => b.addEventListener('click', () => { group = b.dataset.g; $$('#seg button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); render(); }));
+  $('#zin').addEventListener('click', () => M.zoom(1.5)); $('#zout').addEventListener('click', () => M.zoom(1 / 1.5)); $('#zhome').addEventListener('click', () => M.home(700));
+
+  /* ---------- 규모 저울: 네모 1개 → 32개 → 1024개 ---------- */
+  function scale() {
+    const cv = $('#scCv'); let sel = 0, shown = 1, target = 1;
+    const say = ['규모 7.0: 네모 <b>1개</b>', '규모 8.0: 네모 <b>32개</b> (규모 7.0의 약 32배)', '규모 9.0: 네모 <b>1024개</b> (규모 7.0의 약 1000배)'];
+    const N = [1, 32, 1024];
+    $$('#scRow button').forEach((b) => b.addEventListener('click', () => { sel = +b.dataset.s; target = N[sel]; $$('#scRow button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); $('#scSay').innerHTML = say[sel]; }));
+    $('#scSay').innerHTML = say[0];
+    const ctx = cv.getContext('2d');
+    (function frame() {
+      if (!cv.isConnected) return; requestAnimationFrame(frame);
+      const r = cv.getBoundingClientRect(), dpr = Math.min(2, devicePixelRatio || 1); if (cv.width !== Math.round(r.width * dpr)) { cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.height * dpr); }
+      shown += (target - shown) * (WMAP.REDUCE ? 1 : 0.12); if (Math.abs(target - shown) < 0.5) shown = target;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, r.width, r.height);
+      const cols = 64, gap = 1, sz = Math.min((r.width - 20) / cols, (r.height - 20) / 16) - gap, n = Math.round(shown);
+      for (let i = 0; i < n; i++) { const x = 10 + (i % cols) * (sz + gap), y = 10 + Math.floor(i / cols) * (sz + gap); ctx.fillStyle = i === 0 ? '#14263b' : '#0e63b3'; ctx.fillRect(x, y, sz, sz); }
+    })();
+  }
+  /* ---------- 이번 주의 가장 큰 지진 ---------- */
+  function live() {
+    $('#liveOut').innerHTML = '<p style="color:var(--muted)">불러오는 중이에요…</p>';
+    WMAP.live('4.5_week').then((list) => {
+      if (!list.length) throw new Error('자료 없음');
+      list.sort((a, b) => b.mag - a.mag); const x = list[0], d = new Date(x.time);
+      M.S.live = [x]; M.flyTo(x.lon, x.lat, 3.4);
+      $('#liveOut').innerHTML = `<p><b style="font-size:20px">규모 ${x.mag.toFixed(1)}</b> · ${d.getMonth() + 1}월 ${d.getDate()}일<br>${x.place || ''} (깊이 약 ${x.dep} km)<br>지도에 검은 점으로 나타냈어요. 판의 경계와 가까운가요?</p>`;
+    }).catch(() => { $('#liveOut').innerHTML = '<p>실시간 자료를 불러오지 못했어요. 인터넷 연결을 확인해 주세요.</p>'; });
+  }
+
+  // 검사용: ?g=volc&i=2
+  const g0 = q.get('g'); if (g0 && GROUPS[g0]) { group = g0; $$('#seg button').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.g === g0))); }
+  render(); if (q.get('i')) setTimeout(() => select(+q.get('i')), 50);
+  window.SM.okUI = true;
+  } catch (err) { window.SM_err && window.SM_err('기록실', err); }
+})();
+</script>
+</body>
+</html>

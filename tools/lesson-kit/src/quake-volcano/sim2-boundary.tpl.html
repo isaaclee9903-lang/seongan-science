@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>판의 경계와 지진대, 화산대 – 판의 경계 실험실</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+/*@@LOCAL:_css_map.css@@*/
+/*@@LOCAL:_css_ovl.css@@*/
+/*@@LOCAL:_css_bnd.css@@*/
+  :root{--fab:#0e63b3;--fab-soft:#e3effb}
+  .stage{grid-template-columns:minmax(0,1.6fr) minmax(330px,1fr)}
+  .viewer{padding:0}
+  .bfig{position:relative;aspect-ratio:1200/720;border-radius:20px 20px 0 0;overflow:hidden;background:#eef3f7}
+  .bfig canvas{display:block;width:100%;height:100%}
+  .state{position:absolute;right:10px;top:10px;z-index:3;display:flex;gap:6px;pointer-events:none}
+  .state span{font-size:13px;font-weight:800;border-radius:10px;padding:5px 10px;background:rgba(255,255,255,.92);color:#5a6b7e;box-shadow:0 2px 8px rgba(20,38,59,.12);transition:background .2s,color .2s}
+  .state span.on{background:#14263b;color:#fff}
+  .tag3{position:absolute;left:10px;top:10px;z-index:3;font-size:12.5px;font-weight:700;color:#34495e;background:rgba(255,255,255,.9);border-radius:9px;padding:4px 9px;pointer-events:none}
+  .ctl{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:12px 14px 6px}
+  .legend{display:flex;flex-wrap:wrap;gap:6px 14px;padding:4px 14px 14px;font-size:13px;font-weight:700;color:var(--muted)}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .legend .lq{width:14px;height:14px;border-radius:50%;background:radial-gradient(circle,#fffbe8 0,#ffd45a 45%,rgba(255,150,40,.2) 80%);box-shadow:0 0 0 1.5px rgba(200,120,20,.4)}
+  .legend .lm{width:14px;height:14px;border-radius:50%;background:radial-gradient(circle,#ffe7a0 0,#ff7d28 60%,#c8300a)}
+  .legend .la{width:22px;height:10px;background:#fff;border:1.5px solid #0b3f73;clip-path:polygon(0 30%,60% 30%,60% 0,100% 50%,60% 100%,60% 70%,0 70%)}
+  .legend .ld{width:22px;border-top:2px dashed #b08a6a}
+  .lab-l{margin:14px 0 6px;font-size:14px;font-weight:900;color:var(--ink2)}
+  .lab-l:first-child{margin-top:0}
+  .modes{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .mode{min-height:66px;border-radius:14px;border:2px solid #d3e0ea;background:#fff;cursor:pointer;text-align:left;padding:8px 12px;display:flex;flex-direction:column;justify-content:center;gap:2px;word-break:keep-all}
+  .mode b{font-size:15.5px;line-height:1.3}
+  .mode small{font-size:12.5px;font-weight:700;color:var(--muted)}
+  .mode[aria-pressed="true"]{border-color:var(--fab);background:#eef5fc}
+  .mode[aria-pressed="true"] b{color:#0b3f73}
+  .mini{aspect-ratio:1.7/1;border-radius:14px;margin-top:4px}
+  .mini canvas{cursor:grab}
+  .stat{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+  .stat div{border-radius:12px;background:#f4f7fa;padding:8px 10px}
+  .stat small{display:block;font-size:12.5px;font-weight:700;color:var(--muted)}
+  .stat b{font-size:20px;font-variant-numeric:tabular-nums}
+  .stat b em{font-style:normal;font-size:13px;font-weight:700;color:var(--muted);margin-left:2px}
+  .why{display:grid;gap:6px;margin-top:4px}
+  .why .ph{grid-template-columns:28px 1fr}
+  .why .ph.on{background:var(--fab-soft);color:var(--ink)}.why .ph.on i{background:var(--fab);color:#fff}
+  .note{font-size:15px;line-height:1.7;color:var(--ink2);word-break:keep-all;margin:8px 0 0}
+  .note b{color:#0b3f73}
+  details.q{border-radius:14px;border:2px solid #d3e0ea;background:#fff;overflow:hidden;margin-top:6px}
+  details.q summary{list-style:none;cursor:pointer;padding:11px 14px;font-weight:800;font-size:15px;line-height:1.5;word-break:keep-all;min-height:50px;display:flex;align-items:center;gap:10px}
+  details.q summary::-webkit-details-marker{display:none}
+  details.q summary i{flex:none;font-style:normal;width:28px;height:28px;border-radius:8px;background:var(--fab);color:#fff;display:grid;place-items:center;font-size:14px}
+  details.q .a{padding:0 14px 14px 52px;font-size:15px;line-height:1.7;color:var(--ink2);word-break:keep-all}
+  details.q .a b{color:#0b3f73}
+  @media (max-width:900px){.stage{grid-template-columns:1fr}.viewer{position:relative;top:0}}
+  @media (max-width:520px){.modes{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <span class="eyebrow">시뮬레이션 ②</span>
+    <h1>판의 경계 실험실: 판이 부딪치고, 갈라지고, 어긋나면</h1>
+    <p class="sub">판은 일 년에 수 cm 정도로 매우 느리게 움직여요. 오랜 시간을 아주 빠르게 돌려 판의 경계에서 무슨 일이 일어나는지 살펴보고, 실제 지도 자료와 비교해 봐요.</p>
+  </header>
+  <div class="stage">
+    <section class="card viewer">
+      <div class="bfig" id="bfig"><canvas id="bcv" role="img" aria-label="판의 경계를 비스듬히 내려다본 덩어리 그림. 앞면에 지각, 맨틀 윗부분을 포함한 판, 맨틀이 보이고, 판이 움직이며 경계에서 지진이 번쩍이고 화산이 분출한다."></canvas>
+        <div class="state"><span id="stQ">지진</span><span id="stV">화산 분출</span></div>
+        <span class="tag3">교과서 그림 Ⅱ-16 형식의 모형 · 높이와 두께는 크게 과장</span></div>
+      <div class="ctl"><button class="btn primary" type="button" id="play" aria-pressed="false">멈추기</button><button class="btn ghost" type="button" id="again">처음부터</button><button class="btn ghost" type="button" id="fast" aria-pressed="false">빠르게</button></div>
+      <div class="legend"><span><i class="lq"></i>지진</span><span><i class="lm"></i>마그마</span><span><svg width="26" height="14" viewBox="0 0 26 14"><path d="M1 4.5h15V1l9 6-9 6V9.5H1z" fill="#fff" stroke="#0b3f73" stroke-width="1.5" stroke-linejoin="round"/></svg>판이 움직이는 방향</span><span><i class="ld"></i>판의 아래 경계</span></div>
+    </section>
+    <section class="card pad">
+      <p class="lab-l">판의 경계 고르기</p>
+      <div class="modes" id="modes">
+        <button class="mode" type="button" data-m="sub" aria-pressed="true"><b>부딪치는 곳 ①</b><small>바다 쪽 판과 대륙 쪽 판 · 일본</small></button>
+        <button class="mode" type="button" data-m="col" aria-pressed="false"><b>부딪치는 곳 ②</b><small>대륙과 대륙 · 히말라야</small></button>
+        <button class="mode" type="button" data-m="div" aria-pressed="false"><b>갈라지는 곳</b><small>대서양 가운데 · 아이슬란드</small></button>
+        <button class="mode" type="button" data-m="tra" aria-pressed="false"><b>어긋나는 곳</b><small>미국 서부 해안</small></button>
+      </div>
+      <p class="lab-l">실제 지도에서 보면</p>
+      <div class="mapwrap mini" id="mini"><canvas role="img" aria-label="고른 판의 경계 주변의 실제 지진과 화산 분출 지도"></canvas></div>
+      <div class="stat"><div><small id="sQl">1980년부터 이 지역의 지진</small><b id="sQ">0<em>번</em></b></div><div><small>1980년부터 분출한 화산</small><b id="sV">0<em>곳</em></b></div></div>
+      <p class="lab-l">무슨 일이 일어날까?</p>
+      <div class="why" id="why"></div>
+      <p class="note" id="note"></p>
+      <p class="lab-l">생각해 보기</p>
+      <details class="q"><summary><i>1</i>네 곳 모두에서 공통으로 일어나는 일은 무엇인가요?</summary><div class="a">네 곳 모두 판의 경계에서 <b>지각의 움직임이 활발</b>하게 일어나 <b>지진이 자주 발생</b>해요. 판이 서로 다른 방향과 속력으로 움직이기 때문이에요.</div></details>
+      <details class="q"><summary><i>2</i>어긋나는 곳의 지도에는 화산이 거의 없어요. 왜 그럴까요?</summary><div class="a">어긋나는 곳에서는 두 판이 옆으로 스치듯 지나가요. 지진은 자주 일어나지만, 판이 아래로 들어가거나 벌어지지 않아 <b>마그마가 생기거나 올라올 길이 적어</b> 화산 활동은 드물어요.</div></details>
+      <details class="q"><summary><i>3</i>히말라야 산맥에서 바다 생물 화석이 발견되는 까닭을 이 그림으로 설명해 볼까요?</summary><div class="a">대륙과 대륙이 부딪치면 그 사이 땅(옛 바다 밑에 쌓였던 지층도 포함)이 <b>밀려 올라가 높은 산맥</b>이 돼요. 그래서 높은 산에서도 옛 바다 생물의 화석이 나와요.</div></details>
+    </section>
+  </div>
+  <p class="credit">판의 경계와 지진대, 화산대 · 판의 경계 실험실</p>
+</div>
+
+<script>window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) => Array.from(r.querySelectorAll(s)), q: new URLSearchParams(location.search) };</script>
+<script src="data/land.js"></script>
+<script src="data/plates.js"></script>
+<script src="data/quakes.js"></script>
+<script src="data/volcano.js"></script>
+<script>
+/* ===== 블록 1: 덩어리 그림과 지도 ===== */
+(() => {
+  'use strict';
+  try {
+/*@@LOCAL:_art.js@@*/
+/*@@LOCAL:_map.js@@*/
+/*@@LOCAL:_bound2d.js@@*/
+  const { $, $$, q } = window.SM;
+  /* ---------- 선생님이 고치기 쉬운 글 ---------- */
+  const PLACES = {
+    sub: { box: [128, 26, 150, 46], view: [139, 36, 4.4], why: [
+      '바다 쪽 판과 대륙 쪽 판이 서로를 향해 움직이며 <b>부딪쳐요</b>.',
+      '무거운 바다 쪽 판이 대륙 쪽 판 <b>아래로 비스듬히 들어가요</b>. 판이 서로 비벼지며 걸렸다가 미끄러질 때 <b>지진</b>이 일어나요.',
+      '깊이 들어간 판 근처에서 <b>마그마</b>가 만들어져 올라오고, 땅 위로 분출하면 <b>화산</b>이 돼요.'],
+      note: '일본, 인도네시아, 칠레처럼 태평양 둘레의 많은 곳이 이런 경계예요. 그래서 지진과 화산이 <b>함께</b> 많아요.' },
+    col: { box: [68, 24, 100, 40], view: [84, 32, 4.2], why: [
+      '대륙이 있는 두 판이 서로를 향해 움직이며 <b>부딪쳐요</b>.',
+      '대륙 지각은 가벼워 깊이 들어가지 못하고, 부딪친 곳의 땅이 겹치고 <b>밀려 올라가 높은 산맥</b>이 돼요.',
+      '땅이 밀리고 부서지면서 <b>지진</b>이 자주 일어나지만, 마그마가 잘 만들어지지 않아 <b>화산은 드물어요</b>.'],
+      note: '인도가 있는 판이 유라시아 대륙과 부딪쳐 히말라야 산맥이 생겼어요. 지금도 조금씩 높아지고 있어요.' },
+    div: { box: [-42, -2, -8, 68], view: [-26, 34, 2.1], why: [
+      '두 판이 서로 반대 방향으로 움직이며 <b>갈라져요</b>.',
+      '벌어진 틈으로 맨틀 쪽에서 <b>마그마</b>가 올라와 식으며 <b>새로운 지각</b>이 만들어져요.',
+      '판이 갈라질 때 땅이 끊어지며 <b>지진</b>이 일어나고, 마그마가 분출해 <b>화산 활동</b>이 일어나요.'],
+      note: '대서양 한가운데를 따라 길게 이어진 경계예요. 아이슬란드는 이 경계가 바다 위로 드러난 곳이라 화산이 많아요.' },
+    tra: { box: [-128, 30, -112, 43], view: [-120, 37, 5.2], why: [
+      '두 판이 서로 반대 방향으로 <b>어긋나며</b> 옆으로 스치듯 움직여요.',
+      '경계는 서로 걸려 버티고, 그동안 땅이 조금씩 휘며 힘이 쌓여요 (도로가 휘는 모습).',
+      '버티던 경계가 한꺼번에 미끄러지면 <b>지진</b>이 일어나고 도로가 끊어져 어긋나요. 마그마가 생기지 않아 <b>화산은 거의 없어요</b>.'],
+      note: '미국 캘리포니아의 경계가 대표적인 예예요. 1906년 샌프란시스코 지진 때 울타리와 도로가 몇 m씩 어긋났어요.' },
+  };
+  const M = WMAP.create($('#mini'), { center: 150, layers: { quake: true, volc: true, plate: true }, onTap: null, labels: [{ t: '동해', lon: 133.5, lat: 39, cls: 'sea', minZ: 3 }] });
+  M.S.platesOnTop = true;
+  const G = WMAP.data();
+  function stats(b) {
+    let n = 0, v = 0; const inb = (lon, lat) => lat >= b[1] && lat <= b[3] && (b[0] <= b[2] ? lon >= b[0] && lon <= b[2] : lon >= b[0] || lon <= b[2]);
+    for (let i = 0; i < G.n; i++) if (inb(G.lon[i], G.lat[i])) n++;
+    G.vol.forEach((vo) => { if (vo.er.length && inb(vo.lon, vo.lat)) v++; });
+    return { n, v };
+  }
+  let mode = 'sub', lastStep = -1;
+  const B = BND.mount($('#bfig'), $('#bcv'), { mode, onFrame: (r, st) => {
+    $('#stQ').classList.toggle('on', !!r.quake); $('#stV').classList.toggle('on', !!r.erupt); $('#stV').style.display = st.mode === 'sub' ? '' : 'none';
+    // 지금 그림에서 일어나는 단계 밝히기
+    let k = 0; if (st.mode === 'sub') k = r.erupt ? 2 : r.quake ? 1 : 0; else if (st.mode === 'col') k = r.quake ? 2 : (st.T > 4 ? 1 : 0); else if (st.mode === 'div') k = r.quake ? 2 : 1; else k = r.bigQuake ? 2 : ((st.T % 4.5) > 1.2 ? 1 : 0);
+    if (k !== lastStep) { lastStep = k; $$('#why .ph').forEach((p, i) => p.classList.toggle('on', i === k)); }
+  } });
+  function setMode(m, first) {
+    mode = m; lastStep = -1; $$('#modes .mode').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.m === m)));
+    const P = PLACES[m]; B.mode(m);
+    $('#why').innerHTML = P.why.map((t, i) => `<div class="ph"><i>${i + 1}</i><span>${t}</span></div>`).join('');
+    $('#note').innerHTML = P.note;
+    M.set({ focusBox: P.box }); M.flyTo(P.view[0], P.view[1], P.view[2], first ? 1 : 900);
+    const s = stats(P.box); $('#sQ').innerHTML = s.n.toLocaleString('ko-KR') + '<em>번</em>'; $('#sV').innerHTML = s.v + '<em>곳</em>';
+  }
+  $$('#modes .mode').forEach((b) => b.addEventListener('click', () => setMode(b.dataset.m)));
+  $('#play').addEventListener('click', () => { const on = B.st.playing; B.play(!on); $('#play').textContent = on ? '이어서 보기' : '멈추기'; $('#play').setAttribute('aria-pressed', String(on)); });
+  $('#again').addEventListener('click', () => { B.reset(); B.play(true); $('#play').textContent = '멈추기'; });
+  $('#fast').addEventListener('click', () => { const f = B.st.speed === 1; B.st.speed = f ? 2.2 : 1; $('#fast').setAttribute('aria-pressed', String(f)); });
+  // 미리보기·검사용: ?m=div&T=6&stop=1
+  setMode(q.get('m') && PLACES[q.get('m')] ? q.get('m') : 'sub', true);
+  if (q.get('T')) B.st.T = +q.get('T');
+  if (q.get('stop') === '1') { B.play(false); $('#play').textContent = '이어서 보기'; }
+  if (WMAP.REDUCE) { B.st.T = { sub: 6, col: 30, div: 8, tra: 9.1 }[mode]; }
+  window.SM.okUI = true;
+  } catch (err) { window.SM_err && window.SM_err('판의 경계 그림', err); }
+})();
+</script>
+</body>
+</html>
