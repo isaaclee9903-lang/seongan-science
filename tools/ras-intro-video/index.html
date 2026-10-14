@@ -1,0 +1,769 @@
+<!doctype html>
+<html lang="ko" data-resolution="landscape">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      @font-face { font-family: "Pretendard"; src: url("assets/fonts/PretendardVariable.woff2") format("woff2"); font-weight: 45 920; }
+      @font-face { font-family: "Nanum Pen Script"; src: url("assets/fonts/NanumPenScript-Regular.ttf") format("truetype"); }
+      :root {
+        --night: #0d1826; --night2: #16273d; --accent: #0e63b3; --accent-soft: #e3effb;
+        --ink: #14263b; --ink2: #34495e; --muted: #5a6b7e; --hair: #d5dfe9; --paper: #f7fafc;
+        --skin: #f2d3b1; --pen: #111821;
+      }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { margin: 0; width: 1920px; height: 1080px; overflow: hidden; background: var(--night); }
+      #root { width: 100%; height: 100%; position: relative; overflow: hidden; font-family: "Pretendard", sans-serif; color: var(--ink); }
+      .scene { position: absolute; inset: 0; overflow: hidden; }
+      .layer { position: absolute; inset: 0; }
+
+      /* 속마음 자막 */
+      .cap { position: absolute; left: 0; right: 0; bottom: 150px; display: flex; justify-content: center; pointer-events: none; }
+      .cap span { display: block; font-family: "Nanum Pen Script", sans-serif; font-size: 76px; line-height: 1; color: #f4f8fc; text-shadow: 0 2px 18px rgba(5, 10, 18, 0.85); }
+
+      /* ① 하굣길 */
+      #s1 { background: linear-gradient(180deg, #1d2c44 0%, #33445e 58%, #45536a 74%, #1a2638 74.2%, #141e2d 100%); }
+      #s1 .far, #s1 .near { position: absolute; left: 0; top: 0; height: 1080px; }
+      #s1 .far { width: 4200px; }
+      #s1 .near { width: 5200px; }
+      #s1 .student { position: absolute; left: 330px; top: 230px; width: 850px; height: 850px; }
+      #s1 .student img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+      #s1 .dusk { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(90deg, rgba(13, 24, 38, 0.38), rgba(13, 24, 38, 0.12) 60%, rgba(13, 24, 38, 0.3)); }
+      .lostword { position: absolute; display: block; white-space: nowrap; font-weight: 700; color: #e3effb; font-size: 54px; letter-spacing: -0.02em; }
+
+      /* ② 방, 태블릿 */
+      #s2 { background: radial-gradient(1300px 900px at 50% 46%, #1e3452 0%, var(--night) 70%); }
+      #s2 .desk { position: absolute; left: -100px; right: -100px; top: 860px; bottom: -40px; background: linear-gradient(180deg, #1b2a3e, #111b29); border-top: 3px solid #26364c; }
+      #s2 .cam2 { position: absolute; inset: 0; transform-origin: 960px 500px; }
+      .tab-dev { position: absolute; left: 330px; top: 100px; width: 1260px; height: 800px; border-radius: 48px; background: #0a0f16; padding: 30px; box-shadow: 0 0 180px 40px rgba(150, 190, 235, 0.22), 0 40px 80px rgba(0, 0, 0, 0.5); }
+      .tab-scr { position: relative; width: 100%; height: 100%; border-radius: 22px; overflow: hidden; background: #edf3f8; }
+      .hub, .lesson { position: absolute; inset: 0; padding: 44px 56px; }
+      .hub .brand { display: flex; align-items: center; gap: 12px; font-size: 20px; font-weight: 700; color: var(--muted); }
+      .hub .brand img { width: 34px; height: 34px; display: block; }
+      .hub h1 { margin-top: 14px; font-size: 44px; font-weight: 800; letter-spacing: -0.03em; color: var(--ink); }
+      .hub .tabs { margin-top: 28px; display: flex; gap: 12px; }
+      .hub .tabs span { display: block; padding: 10px 22px; border-radius: 999px; font-size: 21px; font-weight: 700; color: var(--ink2); background: #fff; border: 2px solid var(--hair); }
+      .hub .tabs span.on { background: var(--accent); color: #fff; border-color: var(--accent); }
+      .hub .cards { margin-top: 30px; display: flex; gap: 22px; }
+      .hub .card { width: 360px; border-radius: 20px; background: #fff; border: 2px solid var(--hair); overflow: hidden; }
+      .hub .card img { width: 100%; height: 200px; display: block; object-fit: cover; }
+      .hub .card b { display: block; padding: 16px 18px 4px; font-size: 22px; font-weight: 800; color: var(--ink); letter-spacing: -0.02em; }
+      .hub .card small { display: block; padding: 0 18px 18px; font-size: 17px; color: var(--muted); }
+      .lesson { background: #f7fafc; }
+      .lesson .ltabs { display: flex; gap: 10px; }
+      .lesson .ltabs span { display: flex; align-items: center; gap: 10px; padding: 10px 20px; border-radius: 14px; font-size: 21px; font-weight: 700; color: var(--ink2); background: #fff; border: 2px solid var(--hair); }
+      .lesson .ltabs span i { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); font-style: normal; font-size: 17px; }
+      .lesson .ltabs span.on { border-color: var(--accent); color: var(--accent); }
+      .lesson h2 { margin-top: 34px; font-size: 40px; font-weight: 800; letter-spacing: -0.03em; }
+      .lesson img { margin-top: 26px; width: 760px; height: 425px; display: block; border-radius: 18px; border: 2px solid var(--hair); }
+
+      /* ③ 얼굴과 눈 */
+      .s-face { background: radial-gradient(1200px 900px at 78% 70%, #1c3350 0%, var(--night) 62%); }
+      .cam { position: absolute; inset: 0; transform-origin: 960px 540px; }
+      .face { position: absolute; left: 392px; top: 30px; width: 980px; height: 980px; }
+      .face img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+      .shade { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(100deg, rgba(13, 24, 38, 0.72) 0%, rgba(13, 24, 38, 0.42) 46%, rgba(13, 24, 38, 0.08) 72%); }
+      .glow { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: screen; background: radial-gradient(620px 520px at 84% 78%, rgba(190, 220, 248, 0.42), rgba(190, 220, 248, 0) 70%); }
+      .tablet { position: absolute; left: 1490px; top: 690px; width: 620px; height: 440px; border-radius: 34px; background: #0a0f16; padding: 22px; transform: rotate(-14deg); box-shadow: 0 0 120px 30px rgba(170, 205, 240, 0.25); }
+      .tablet .scr { width: 100%; height: 100%; border-radius: 16px; background: var(--accent-soft); position: relative; overflow: hidden; }
+      .tablet .bar { position: absolute; left: 28px; right: 28px; height: 14px; border-radius: 7px; background: #c9dcef; }
+      .tablet .b1 { top: 30px; width: 46%; background: var(--accent); }
+      .tablet .b2 { top: 70px; } .tablet .b3 { top: 100px; right: 120px; } .tablet .b4 { top: 130px; right: 60px; }
+      .s-eye { background: var(--skin); }
+      .eyecam { position: absolute; inset: 0; transform-origin: 960px 540px; }
+      .eyecam svg { position: absolute; inset: 0; width: 1920px; height: 1080px; display: block; }
+      .eye-shade { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(100deg, rgba(13, 24, 38, 0.62) 0%, rgba(13, 24, 38, 0.34) 50%, rgba(13, 24, 38, 0.1) 100%); }
+      .eye-glow { position: absolute; inset: 0; pointer-events: none; mix-blend-mode: screen; background: radial-gradient(900px 700px at 100% 90%, rgba(190, 220, 248, 0.32), rgba(190, 220, 248, 0) 70%); }
+      .eye-black { position: absolute; inset: 0; background: #06090d; opacity: 0; }
+
+      /* 머릿속 */
+      #s-mind { background: radial-gradient(1000px 700px at 50% 48%, var(--night2) 0%, #0a131f 72%); }
+      #mind-cam { position: absolute; inset: 0; transform-origin: 960px 540px; }
+      .spark { position: absolute; left: 950px; top: 530px; width: 20px; height: 20px; border-radius: 50%; background: var(--accent-soft); box-shadow: 0 0 40px 14px rgba(14, 99, 179, 0.7); }
+      .rail { position: absolute; left: 0; right: 0; top: 960px; height: 90px; }
+      .rail .line { position: absolute; left: 600px; top: 18px; width: 720px; height: 4px; border-radius: 2px; background: #2a3d57; }
+      .rail .fill { position: absolute; left: 0; top: 0; width: 720px; height: 4px; border-radius: 2px; background: var(--accent); transform-origin: 0 50%; }
+      .rail .node { position: absolute; top: 6px; width: 28px; height: 28px; margin-left: -14px; border-radius: 50%; background: #0d1826; border: 4px solid #2a3d57; }
+      .rail .node .dot { position: absolute; inset: 3px; border-radius: 50%; background: var(--accent); }
+      .rail .lab { position: absolute; top: 46px; width: 220px; margin-left: -110px; text-align: center; font-size: 22px; font-weight: 600; color: #8aa3bf; }
+      .frag { position: absolute; display: block; white-space: nowrap; font-size: 30px; line-height: 1; font-weight: 700; color: #b9cfe6; letter-spacing: -0.02em; padding: 12px 22px; border-radius: 999px; border: 2px solid rgba(127, 178, 227, 0); background: rgba(14, 99, 179, 0); transform-origin: 50% 50%; }
+
+      /* 머릿속 화면 판 */
+      .panel { position: absolute; left: 460px; top: 140px; width: 1000px; height: 690px; border-radius: 30px; background: var(--paper); box-shadow: 0 30px 90px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.06); transform-origin: 50% 50%; }
+      .panel .pbg { position: absolute; inset: 0; border-radius: 30px; background: var(--paper); }
+      .chip { position: absolute; left: 56px; top: 44px; display: block; padding: 8px 18px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-size: 22px; font-weight: 800; }
+      .ptitle { position: absolute; left: 56px; top: 98px; font-size: 42px; font-weight: 800; letter-spacing: -0.03em; color: var(--ink); white-space: nowrap; }
+      .pline { position: absolute; left: 56px; font-size: 31px; font-weight: 500; color: var(--ink2); white-space: nowrap; letter-spacing: -0.01em; }
+      .term { color: var(--accent); font-weight: 800; border-bottom: 3px dashed var(--accent); }
+      .bubble { position: absolute; padding: 14px 22px; border-radius: 16px; background: var(--ink); color: #fff; font-size: 26px; font-weight: 600; white-space: nowrap; transform-origin: 30px 0; }
+      .bubble b { color: #9cc8f2; font-weight: 800; margin-right: 10px; }
+      .quiz { position: absolute; left: 56px; right: 56px; top: 430px; height: 220px; border-radius: 20px; background: #fff; border: 2px solid var(--hair); }
+      .quiz .q { position: absolute; left: 30px; top: 24px; font-size: 27px; font-weight: 700; color: var(--ink); white-space: nowrap; }
+      .opt { position: absolute; left: 30px; right: 30px; height: 56px; border-radius: 14px; border: 2px solid var(--hair); background: var(--paper); display: flex; align-items: center; gap: 14px; padding: 0 18px; font-size: 25px; font-weight: 600; color: var(--ink2); white-space: nowrap; }
+      .opt i { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: #fff; border: 2px solid var(--hair); font-style: normal; font-size: 19px; font-weight: 800; color: var(--muted); }
+      .opt-hl { position: absolute; inset: -2px; border-radius: 14px; border: 3px solid var(--accent); background: rgba(14, 99, 179, 0.08); opacity: 0; }
+      .btn { position: absolute; height: 58px; padding: 0 28px; border-radius: 999px; display: flex; align-items: center; font-size: 25px; font-weight: 800; white-space: nowrap; }
+      .btn.pri { background: var(--accent); color: #fff; }
+      .btn.sec { background: #fff; color: var(--ink2); border: 2px solid var(--hair); }
+      .stage { position: absolute; left: 56px; top: 160px; width: 888px; height: 430px; border-radius: 20px; background: #fff; border: 2px solid var(--hair); }
+      .stage svg, .stage .pop { position: absolute; inset: 0; width: 888px; height: 430px; display: block; overflow: visible; }
+      .pop { transform-origin: 444px 215px; }
+      .sheet { position: absolute; left: 56px; top: 170px; width: 560px; height: 440px; border-radius: 18px; background: #fff; border: 2px solid var(--hair); }
+      .ref { position: absolute; left: 640px; top: 170px; width: 304px; height: 440px; border-radius: 18px; background: #fff; border: 2px solid var(--hair); }
+      .sheet svg, .ref svg { position: absolute; inset: 0; display: block; }
+      .tag { position: absolute; font-size: 20px; font-weight: 700; color: var(--muted); white-space: nowrap; }
+      .verdict { position: absolute; left: 56px; top: 624px; height: 48px; padding: 0 20px; border-radius: 999px; background: var(--accent); color: #fff; display: flex; align-items: center; font-size: 23px; font-weight: 800; white-space: nowrap; }
+      .outline { position: absolute; border-radius: 18px; border: 4px solid var(--accent); opacity: 0; }
+      .sent { position: absolute; left: 56px; font-size: 34px; font-weight: 600; color: var(--ink); white-space: nowrap; display: flex; align-items: center; }
+      .blank { display: inline-block; height: 58px; border-radius: 999px; border: 3px dashed #9fb4ca; margin: 0 8px; vertical-align: middle; }
+      .writebox { position: absolute; left: 56px; right: 56px; top: 420px; height: 210px; border-radius: 20px; background: #fff; border: 2px solid var(--hair); }
+      .writebox .wl { position: absolute; left: 28px; top: 22px; font-size: 22px; font-weight: 700; color: var(--muted); }
+      .writebox .wt { position: absolute; left: 28px; top: 70px; height: 50px; overflow: hidden; }
+      .writebox .wt span { display: block; font-size: 32px; font-weight: 600; color: var(--ink); white-space: nowrap; line-height: 50px; }
+      .caret { position: absolute; top: 76px; width: 3px; height: 38px; background: var(--accent); }
+
+      /* 손가락 */
+      #hand { position: absolute; left: 0; top: 0; width: 230px; height: 300px; transform-origin: 44px 18px; }
+      #hand svg { width: 230px; height: 300px; display: block; overflow: visible; }
+      .ripple { position: absolute; width: 90px; height: 90px; margin: -45px 0 0 -45px; border-radius: 50%; border: 4px solid var(--accent); opacity: 0; }
+
+      /* ⑨ 표어 */
+      #s9 { background: var(--paper); }
+      .lg { position: absolute; width: 76px; height: 76px; border-radius: 17px; }
+      .end-brand { position: absolute; left: 0; right: 0; top: 470px; text-align: center; font-size: 30px; font-weight: 700; color: var(--muted); letter-spacing: 0.02em; }
+      .end-brand b { color: var(--accent); font-weight: 900; }
+      .end-title { position: absolute; left: 0; right: 0; top: 530px; display: flex; justify-content: center; gap: 22px; }
+      .end-title span { display: block; font-size: 70px; font-weight: 800; letter-spacing: -0.035em; color: var(--ink); }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="45" data-width="1920" data-height="1080">
+
+      <!-- ① 하굣길 0 ~ 6.3 -->
+      <div id="s1" class="scene clip" data-start="0" data-duration="6.3" data-track-index="0">
+        <svg class="far" id="s1-far" viewBox="0 0 4200 1080" aria-hidden="true" data-layout-allow-overflow></svg>
+        <svg class="near" id="s1-near" viewBox="0 0 5200 1080" aria-hidden="true" data-layout-allow-overflow></svg>
+        <div class="student" id="s1-student">
+          <img id="s1-serious" src="assets/peeps/student-serious.svg" alt="" />
+          <img id="s1-concerned" src="assets/peeps/student-concerned.svg" alt="" style="opacity:0" />
+        </div>
+        <div class="dusk"></div>
+        <div class="layer" id="s1-words" aria-hidden="true">
+          <span class="lostword" data-layout-allow-overlap id="lw0">자기장</span>
+          <span class="lostword" data-layout-allow-overlap id="lw1">나침반</span>
+          <span class="lostword" data-layout-allow-overlap id="lw2">전류의 방향</span>
+          <span class="lostword" data-layout-allow-overlap id="lw3">N극</span>
+          <span class="lostword" data-layout-allow-overlap id="lw4">자기력</span>
+        </div>
+      </div>
+      <div class="cap clip" data-start="3.3" data-duration="2.8" data-track-index="9" style="justify-content:flex-end;padding-right:230px;bottom:250px"><span id="cap1">오늘 뭐 배웠더라…</span></div>
+
+      <!-- ② 방, 태블릿 6.0 ~ 10.15 -->
+      <div id="s2" class="scene clip" data-start="6" data-duration="4.15" data-track-index="1">
+        <div class="cam2" id="s2-cam" data-layout-allow-overflow>
+          <div class="desk"></div>
+          <div class="tab-dev">
+            <div class="tab-scr">
+              <div class="hub" id="s2-hub">
+                <div class="brand"><img src="assets/ras-mark.svg" alt="" />RAS · Reading After Studying</div>
+                <h1>수업이 끝난 뒤, 다시 읽고 직접 해 보는 과학</h1>
+                <div class="tabs"><span>Ⅱ 지권의 변화</span><span class="on">Ⅶ 전기와 자기</span><span>Ⅷ 별과 우주</span></div>
+                <div class="cards">
+                  <div class="card"><img src="assets/ohm-card.svg" alt="" /><b>전기는 왜 흐를까?</b><small>전류·전압·저항 · 옴의 법칙</small></div>
+                  <div class="card"><img src="assets/energy-card.svg" alt="" /><b>전기 에너지를 어떻게 이용할까?</b><small>소비 전력과 전력량</small></div>
+                  <div class="card" id="s2-coilcard"><img src="assets/coil-card.svg" alt="" /><b>코일 주변에는 무엇이 생길까?</b><small>코일 주위의 자기장</small></div>
+                </div>
+              </div>
+              <div class="lesson" id="s2-lesson">
+                <div class="ltabs"><span class="on"><i>1</i>읽기·퀴즈</span><span><i>2</i>자기장 탐험</span><span><i>3</i>가상 탐구</span><span><i>4</i>정리·글쓰기</span></div>
+                <h2>전류가 흐르는 코일 주변에는 무엇이 생길까?</h2>
+                <img src="assets/coil-card.svg" alt="" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ③ 얼굴 10.0 ~ 11.5, 눈 11.35 ~ 13.1 -->
+      <div id="s3f" class="scene clip s-face" data-start="10" data-duration="1.5" data-track-index="2">
+        <div class="cam" id="s3f-cam" data-layout-allow-overflow>
+          <div class="face">
+            <img id="s3f-open" src="assets/peeps/student-serious.svg" alt="" />
+            <img id="s3f-shut" src="assets/peeps/student-eyesClosed.svg" alt="" style="opacity:0" />
+          </div>
+          <div class="tablet" data-layout-allow-overflow><div class="scr"><i class="bar b1"></i><i class="bar b2"></i><i class="bar b3"></i><i class="bar b4"></i></div></div>
+        </div>
+        <div class="shade"></div><div class="glow"></div>
+      </div>
+      <div id="s3e" class="scene clip s-eye" data-start="11.35" data-duration="1.75" data-track-index="3">
+        <div class="eyecam" id="s3e-cam" data-layout-allow-overflow></div>
+        <div class="eye-shade"></div><div class="eye-glow"></div>
+        <div class="eye-black" id="s3e-black"></div>
+      </div>
+
+      <!-- 머릿속 공간 12.95 ~ 37.4 -->
+      <div id="s-mind" class="scene clip" data-start="12.95" data-duration="24.45" data-track-index="4" aria-hidden="true">
+        <div id="mind-cam" data-layout-allow-overflow>
+          <i class="spark" id="spark"></i>
+          <div class="rail" id="rail">
+            <div class="line"><div class="fill" id="rail-fill"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ④ 읽기·퀴즈 13.6 ~ 19.7 -->
+      <div id="s4" class="scene clip" data-start="13.6" data-duration="6.1" data-track-index="5">
+        <div class="panel" id="p4">
+          <span class="chip">01 · 읽기·퀴즈</span>
+          <div class="ptitle">자석 주위에는 자기장이 있어요</div>
+          <div class="pline" style="top:190px">자석끼리는 서로 밀어내거나 끌어당겨요.</div>
+          <div class="pline" style="top:244px">이때의 힘을 자기력이라고 하고,</div>
+          <div class="pline" style="top:298px" id="p4-l3">자기력이 미치는 공간을 <span class="term" id="p4-term">자기장</span>이라고 해요.</div>
+          <div class="bubble" id="p4-bubble"><b>자기장</b>자기력이 미치는 공간</div>
+          <div class="quiz" id="p4-quiz">
+            <div class="q">자기장의 방향은 무엇으로 알 수 있을까요?</div>
+            <div class="opt" style="top:78px" id="p4-o1"><i>1</i>나침반 바늘의 N극이 가리키는 방향<span class="opt-hl" id="p4-o1hl"></span></div>
+            <div class="opt" style="top:146px"><i>2</i>자석 겉면의 색깔</div>
+          </div>
+        </div>
+      </div>
+      <div class="cap clip" data-start="15.6" data-duration="2.3" data-track-index="9"><span id="cap4">아, 이게 그 뜻이었구나</span></div>
+
+      <!-- ⑤ 모형·시뮬레이션 19.6 ~ 26.1 -->
+      <div id="s5" class="scene clip" data-start="19.6" data-duration="6.5" data-track-index="6">
+        <div class="panel" id="p5">
+          <div class="pbg" id="p5-bg"></div>
+          <span class="chip">02 · 모형·시뮬레이션</span>
+          <div class="ptitle">코일 주위 자기장 탐험</div>
+          <div class="stage" id="p5-stage"><div class="pop" id="p5-pop" data-layout-allow-overflow><svg id="p5-svg" viewBox="0 0 888 430" aria-hidden="true"></svg></div></div>
+          <div class="btn pri" style="left:56px;top:612px" id="p5-btn1">스위치 닫기</div>
+          <div class="btn sec" style="left:262px;top:612px" id="p5-btn2">전류 방향 바꾸기</div>
+        </div>
+      </div>
+      <div class="cap clip" data-start="23.9" data-duration="2.1" data-track-index="9"><span id="cap5">방향을 바꾸니까… 바늘도 반대로 도네</span></div>
+
+      <!-- ⑥ 가상 실험 26.0 ~ 31.5 -->
+      <div id="s6" class="scene clip" data-start="26" data-duration="5.5" data-track-index="7">
+        <div class="panel" id="p6">
+          <span class="chip">03 · 가상 실험</span>
+          <div class="ptitle">기록지 · 바늘의 N극 방향 그리기</div>
+          <div class="sheet" id="p6-sheet"><svg id="p6-svg" width="560" height="440" viewBox="0 0 560 440" aria-hidden="true"></svg><span class="tag" style="left:20px;top:14px">내 실험 결과</span></div>
+          <div class="ref" id="p6-ref"><svg id="p6-ref-svg" width="304" height="440" viewBox="0 0 304 440" aria-hidden="true"></svg><span class="tag" style="left:20px;top:14px">그림 Ⅶ-12 막대자석</span></div>
+          <div class="outline" id="p6-o1" style="left:52px;top:166px;width:568px;height:448px"></div>
+          <div class="outline" id="p6-o2" style="left:636px;top:166px;width:312px;height:448px"></div>
+          <div class="verdict" id="p6-verdict" data-layout-allow-overlap>막대자석 주위와 비슷하다</div>
+        </div>
+      </div>
+      <div class="cap clip" data-start="29.2" data-duration="2.2" data-track-index="9"><span id="cap6">막대자석 주위랑 비슷하네</span></div>
+
+      <!-- ⑦ 정리·글쓰기 31.4 ~ 37.0 -->
+      <div id="s7" class="scene clip" data-start="31.4" data-duration="5.6" data-track-index="8">
+        <div class="panel" id="p7">
+          <span class="chip">04 · 정리·글쓰기</span>
+          <div class="ptitle">내 말로 정리하기</div>
+          <div class="sent" style="top:200px">전류가 흐르는 코일 주위에는<span class="blank" id="p7-b1"></span>이 생겨요.</div>
+          <div class="sent" style="top:290px"><span class="blank" id="p7-b2" style="margin-left:0"></span>을 바꾸면 자기장의 방향도 반대가 돼요.</div>
+          <div class="writebox">
+            <div class="wl">내 말로 설명하기</div>
+            <div class="wt" id="p7-wt"><span id="p7-text">코일에 전류가 흐르면 주위에 자기장이 생겨서 나침반 바늘이 돌아가요.</span></div>
+            <i class="caret" id="p7-caret"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- 낱말 조각 (머릿속 내내, 판 위에 그려짐) 12.95 ~ 37.4 -->
+      <div id="frags" class="scene clip" data-start="12.95" data-duration="24.45" data-track-index="10" aria-hidden="true" style="pointer-events:none">
+        <div class="layer" id="frag-cam" data-layout-allow-overflow></div>
+      </div>
+
+      <!-- ⑧ 밖으로: 눈 36.9 ~ 38.4, 얼굴 38.2 ~ 39.9 -->
+      <div id="s8e" class="scene clip s-eye" data-start="37.1" data-duration="1.3" data-track-index="11">
+        <div class="eyecam" id="s8e-cam" data-layout-allow-overflow></div>
+        <div class="eye-shade"></div><div class="eye-glow"></div>
+        <div class="eye-black" id="s8e-black" style="opacity:1"></div>
+      </div>
+      <div id="s8f" class="scene clip s-face" data-start="38.2" data-duration="1.7" data-track-index="12">
+        <div class="cam" id="s8f-cam" data-layout-allow-overflow>
+          <div class="face"><img src="assets/peeps/student-smile.svg" alt="" /></div>
+          <div class="tablet" data-layout-allow-overflow><div class="scr"><i class="bar b1"></i><i class="bar b2"></i><i class="bar b3"></i><i class="bar b4"></i></div></div>
+        </div>
+        <div class="shade"></div><div class="glow"></div>
+      </div>
+
+      <!-- ⑨ 표어와 로고 39.6 ~ 45 -->
+      <div id="s9" class="scene clip" data-start="39.6" data-duration="5.4" data-track-index="13">
+        <i class="lg" id="lg0" style="background:#0e63b3"></i>
+        <i class="lg" id="lg1" style="background:#5490c9"></i>
+        <i class="lg" id="lg2" style="background:#8eb6db"></i>
+        <i class="lg" id="lg3" style="background:#f0a91e;border-radius:50%"></i>
+        <div class="end-brand" id="end-brand"><b>RAS</b> · Reading After Studying</div>
+        <div class="end-title" id="end-title"><span>수업이</span><span>끝난</span><span>뒤,</span><span>다시</span><span>읽고</span><span>직접</span><span>해</span><span>보는</span><span>과학</span></div>
+      </div>
+
+      <!-- 손가락 (여러 장면에서 씀) -->
+      <div id="hand-layer" class="scene clip" data-start="6" data-duration="31" data-track-index="14" aria-hidden="true" style="pointer-events:none">
+        <i class="ripple" id="ripple"></i>
+        <div id="hand" data-layout-allow-overflow>
+          <svg viewBox="0 0 230 300">
+            <path d="M44 18 C30 18 24 30 26 44 L40 150 C26 146 10 150 8 166 C6 186 30 214 54 240 C78 266 98 296 132 300 L214 300 C226 260 230 214 222 178 C216 152 200 140 184 142 C178 128 164 122 150 126 C144 112 128 108 116 114 L104 112 L66 36 C62 24 54 18 44 18 Z"
+              fill="#f2d3b1" stroke="#111821" stroke-width="10" stroke-linejoin="round" />
+            <path d="M116 114 L128 170 M150 126 L158 176 M184 142 L188 184" fill="none" stroke="#111821" stroke-width="8" stroke-linecap="round" />
+            <path d="M40 150 L52 196" fill="none" stroke="#111821" stroke-width="8" stroke-linecap="round" />
+          </svg>
+        </div>
+      </div>
+
+      <!-- 소리 -->
+      <audio id="bgm" src="assets/music/bed.m4a" data-start="0" data-duration="45" data-volume="0.55"></audio>
+      <audio id="a-street" src="assets/sfx/street.wav" data-start="0" data-duration="6.4" data-volume="0.35"></audio>
+      <audio id="a-fade1" src="assets/sfx/fade.wav" data-start="1.2" data-duration="0.9" data-volume="0.25"></audio>
+      <audio id="a-fade2" src="assets/sfx/fade.wav" data-start="2.3" data-duration="0.9" data-volume="0.22"></audio>
+      <audio id="a-tap1" src="assets/sfx/tap.wav" data-start="8.2" data-duration="0.12" data-volume="0.8"></audio>
+      <audio id="a-pop1" src="assets/sfx/pop.wav" data-start="8.55" data-duration="0.25" data-volume="0.45"></audio>
+      <audio id="a-wface" src="assets/sfx/whoosh-face.wav" data-start="10.95" data-duration="0.5" data-volume="0.5"></audio>
+      <audio id="a-wdive" src="assets/sfx/whoosh-in.wav" data-start="12.25" data-duration="0.75" data-volume="0.8"></audio>
+      <audio id="a-drop" src="assets/sfx/drop-mind.wav" data-start="12.95" data-duration="1.2" data-volume="0.55"></audio>
+      <audio id="a-tap2" src="assets/sfx/tap.wav" data-start="14.75" data-duration="0.12" data-volume="0.8"></audio>
+      <audio id="a-pop2" src="assets/sfx/pop.wav" data-start="14.85" data-duration="0.25" data-volume="0.5"></audio>
+      <audio id="a-snap1" src="assets/sfx/snap.wav" data-start="15.75" data-duration="0.5" data-volume="0.55"></audio>
+      <audio id="a-tap3" src="assets/sfx/tap.wav" data-start="17.55" data-duration="0.12" data-volume="0.8"></audio>
+      <audio id="a-ok1" src="assets/sfx/correct.wav" data-start="17.65" data-duration="0.8" data-volume="0.45"></audio>
+      <audio id="a-snap2" src="assets/sfx/snap.wav" data-start="18.35" data-duration="0.5" data-volume="0.55"></audio>
+      <audio id="a-tap4" src="assets/sfx/tap.wav" data-start="21.0" data-duration="0.12" data-volume="0.8"></audio>
+      <audio id="a-hum" src="assets/sfx/hum.wav" data-start="21.05" data-duration="2.6" data-volume="0.3"></audio>
+      <audio id="a-sw1" src="assets/sfx/swish.wav" data-start="21.25" data-duration="0.45" data-volume="0.4"></audio>
+      <audio id="a-rise" src="assets/sfx/rise.wav" data-start="22.0" data-duration="0.7" data-volume="0.45"></audio>
+      <audio id="a-tap5" src="assets/sfx/tap.wav" data-start="23.45" data-duration="0.12" data-volume="0.8"></audio>
+      <audio id="a-sw2" src="assets/sfx/swish.wav" data-start="23.55" data-duration="0.45" data-volume="0.45"></audio>
+      <audio id="a-snap3" src="assets/sfx/snap.wav" data-start="24.4" data-duration="0.5" data-volume="0.55"></audio>
+      <audio id="a-snap4" src="assets/sfx/snap.wav" data-start="24.75" data-duration="0.5" data-volume="0.5"></audio>
+      <audio id="a-t6a" src="assets/sfx/tap.wav" data-start="27.05" data-duration="0.12" data-volume="0.5"></audio>
+      <audio id="a-t6b" src="assets/sfx/tap.wav" data-start="27.5" data-duration="0.12" data-volume="0.5"></audio>
+      <audio id="a-t6c" src="assets/sfx/tap.wav" data-start="27.95" data-duration="0.12" data-volume="0.5"></audio>
+      <audio id="a-t6d" src="assets/sfx/tap.wav" data-start="28.4" data-duration="0.12" data-volume="0.5"></audio>
+      <audio id="a-ok2" src="assets/sfx/correct.wav" data-start="28.95" data-duration="0.8" data-volume="0.4"></audio>
+      <audio id="a-snap5" src="assets/sfx/snap.wav" data-start="29.6" data-duration="0.5" data-volume="0.55"></audio>
+      <audio id="a-snap6" src="assets/sfx/snap.wav" data-start="29.95" data-duration="0.5" data-volume="0.5"></audio>
+      <audio id="a-pop3" src="assets/sfx/pop.wav" data-start="32.55" data-duration="0.25" data-volume="0.5"></audio>
+      <audio id="a-pop4" src="assets/sfx/pop.wav" data-start="33.15" data-duration="0.25" data-volume="0.5"></audio>
+      <audio id="a-pen" src="assets/sfx/pencil.wav" data-start="33.75" data-duration="2.2" data-volume="0.35"></audio>
+      <audio id="a-ok3" src="assets/sfx/correct.wav" data-start="36.0" data-duration="0.8" data-volume="0.4"></audio>
+      <audio id="a-wout" src="assets/sfx/whoosh-out.wav" data-start="36.6" data-duration="0.8" data-volume="0.6"></audio>
+      <audio id="a-wface2" src="assets/sfx/whoosh-face.wav" data-start="37.9" data-duration="0.5" data-volume="0.35"></audio>
+      <audio id="a-k1" src="assets/sfx/tick.wav" data-start="40.35" data-duration="0.18" data-volume="0.5"></audio>
+      <audio id="a-k2" src="assets/sfx/tick.wav" data-start="40.47" data-duration="0.18" data-volume="0.5"></audio>
+      <audio id="a-k3" src="assets/sfx/tick.wav" data-start="40.59" data-duration="0.18" data-volume="0.5"></audio>
+      <audio id="a-k4" src="assets/sfx/tick.wav" data-start="40.71" data-duration="0.18" data-volume="0.5"></audio>
+    </div>
+
+    <!-- 1. 그림 만들기: 정해진 수열만 쓰므로 매번 같은 그림 -->
+    <script>
+      try {
+        const NS = "http://www.w3.org/2000/svg";
+        let seed = 7;
+        const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+        window.RAS = { NS, rnd };
+
+        // 세밀한 눈 (③, ⑧에서 함께 씀)
+        function eyeSVG(id) {
+          let fib = "";
+          for (let i = 0; i < 120; i++) {
+            const a = (i / 120) * Math.PI * 2 + rnd() * 0.04;
+            const r0 = 92 + rnd() * 18, r1 = 150 + rnd() * 40;
+            fib += `<line x1="${(960 + Math.cos(a) * r0).toFixed(1)}" y1="${(540 + Math.sin(a) * r0).toFixed(1)}" x2="${(960 + Math.cos(a) * r1).toFixed(1)}" y2="${(540 + Math.sin(a) * r1).toFixed(1)}" stroke="${i % 3 === 0 ? "#8a6448" : "#1a100b"}" stroke-width="${(1.5 + rnd() * 2.5).toFixed(2)}" stroke-linecap="round" opacity="${(0.35 + rnd() * 0.4).toFixed(2)}"/>`;
+          }
+          return `<svg viewBox="0 0 1920 1080" aria-hidden="true"><defs>
+            <clipPath id="${id}-alm"><path d="M540 575 C720 340 1200 320 1390 545 C1200 735 740 760 540 575 Z"/></clipPath>
+            <radialGradient id="${id}-ir" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#2a1a12"/><stop offset="0.6" stop-color="#4a2f20"/><stop offset="1" stop-color="#2b1b13"/></radialGradient></defs>
+            <path d="M500 255 C760 205 1120 200 1440 238" fill="none" stroke="#111821" stroke-width="64" stroke-linecap="round"/>
+            <path d="M540 575 C720 340 1200 320 1390 545 C1200 735 740 760 540 575 Z" fill="#f4efe8"/>
+            <g clip-path="url(#${id}-alm)">
+              <rect x="540" y="330" width="860" height="80" fill="#cdbfb1" opacity="0.75"/>
+              <circle cx="960" cy="540" r="200" fill="url(#${id}-ir)"/>${fib}
+              <circle cx="960" cy="540" r="200" fill="none" stroke="#111821" stroke-width="22"/>
+              <circle id="${id}-pupil" cx="960" cy="540" r="92" fill="#070a0e"/>
+              <g transform="translate(992 470) rotate(-14)">
+                <rect width="104" height="74" rx="10" fill="#e3effb" opacity="0.95"/>
+                <rect x="10" y="10" width="38" height="7" rx="3.5" fill="#0e63b3"/>
+                <rect x="10" y="25" width="80" height="5" rx="2.5" fill="#9fbcdc"/><rect x="10" y="37" width="62" height="5" rx="2.5" fill="#9fbcdc"/>
+                <rect x="10" y="49" width="72" height="5" rx="2.5" fill="#9fbcdc"/><rect x="10" y="61" width="50" height="5" rx="2.5" fill="#9fbcdc"/>
+              </g>
+              <ellipse cx="896" cy="468" rx="24" ry="18" fill="#fff" opacity="0.85"/>
+              <path d="M540 575 C720 340 1200 320 1390 545 L1390 330 L540 330 Z" fill="#5a4636" opacity="0.22"/>
+            </g>
+            <path d="M515 595 C720 335 1200 310 1405 540" fill="none" stroke="#111821" stroke-width="34" stroke-linecap="round"/>
+            <path d="M700 690 C860 740 1120 725 1300 630" fill="none" stroke="#111821" stroke-width="14" stroke-linecap="round"/></svg>`;
+        }
+        document.getElementById("s3e-cam").innerHTML = eyeSVG("e3");
+        document.getElementById("s8e-cam").innerHTML = eyeSVG("e8");
+
+        // 하굣길 배경: 먼 건물, 가까운 가로등
+        let far = "";
+        let x = 0;
+        while (x < 4200) {
+          const w = 160 + Math.floor(rnd() * 220), h = 180 + Math.floor(rnd() * 320);
+          far += `<rect x="${x}" y="${800 - h}" width="${w}" height="${h + 20}" fill="#22324a"/>`;
+          for (let wy = 800 - h + 30; wy < 760; wy += 54)
+            for (let wx = x + 22; wx < x + w - 30; wx += 46)
+              if (rnd() > 0.62) far += `<rect x="${wx}" y="${wy}" width="18" height="24" rx="2" fill="#e3effb" opacity="${(0.25 + rnd() * 0.35).toFixed(2)}"/>`;
+          x += w + 8 + Math.floor(rnd() * 30);
+        }
+        document.getElementById("s1-far").innerHTML = far;
+        let near = `<rect x="0" y="796" width="5200" height="10" fill="#26364c"/>`;
+        for (let lx = 260; lx < 5200; lx += 780) {
+          near += `<ellipse cx="${lx + 70}" cy="1000" rx="260" ry="46" fill="#e3effb" opacity="0.07"/>
+            <path d="M${lx + 70} 300 L${lx - 120} 1000 L${lx + 260} 1000 Z" fill="#e3effb" opacity="0.045"/>
+            <rect x="${lx - 8}" y="250" width="16" height="800" fill="#0f1826"/>
+            <path d="M${lx} 262 Q${lx + 10} 238 ${lx + 70} 244" fill="none" stroke="#0f1826" stroke-width="12"/>
+            <rect x="${lx + 40}" y="244" width="62" height="16" rx="6" fill="#0f1826"/>
+            <ellipse cx="${lx + 71}" cy="262" rx="26" ry="7" fill="#f4f8fc" opacity="0.9"/>`;
+        }
+        near += `<rect x="0" y="1010" width="5200" height="6" fill="#26364c"/>`;
+        document.getElementById("s1-near").innerHTML = near;
+      } catch (e) { console.error(e); }
+    </script>
+
+    <!-- 2. 코일 자기장 계산 (막대자석처럼 두 극으로 근사) -->
+    <script>
+      try {
+        // 극의 위치(판 안 좌표)
+        function field(px, py, N, S) {
+          const dxN = px - N[0], dyN = py - N[1], dxS = px - S[0], dyS = py - S[1];
+          const rN = Math.pow(dxN * dxN + dyN * dyN, 1.5) + 1e-6, rS = Math.pow(dxS * dxS + dyS * dyS, 1.5) + 1e-6;
+          return [dxN / rN - dxS / rS, dyN / rN - dyS / rS];
+        }
+        function angle(px, py, N, S) { const b = field(px, py, N, S); return (Math.atan2(b[1], b[0]) * 180) / Math.PI; }
+        function lines(N, S, starts, bounds) {
+          const out = [];
+          for (const a0 of starts) {
+            const a = (a0 * Math.PI) / 180;
+            let p = [N[0] + Math.cos(a) * 14, N[1] + Math.sin(a) * 14];
+            const pts = [p.slice()];
+            for (let k = 0; k < 900; k++) {
+              const b = field(p[0], p[1], N, S), m = Math.hypot(b[0], b[1]) || 1;
+              p = [p[0] + (b[0] / m) * 3, p[1] + (b[1] / m) * 3];
+              pts.push(p.slice());
+              if (Math.hypot(p[0] - S[0], p[1] - S[1]) < 12) break;
+              if (p[0] < bounds[0] || p[0] > bounds[2] || p[1] < bounds[1] || p[1] > bounds[3]) break;
+            }
+            out.push(pts);
+          }
+          return out;
+        }
+        function needle(cx, cy, r, id) {
+          return `<g transform="translate(${cx} ${cy})">
+            <circle r="${r}" fill="#fff" stroke="#14263b" stroke-width="3.5"/>
+            <g id="${id}" transform="rotate(-90)">
+              <path d="M${r - 6} 0 L0 -${r * 0.24} L0 ${r * 0.24} Z" fill="#d6453d" stroke="#111821" stroke-width="2"/>
+              <path d="M-${r - 6} 0 L0 -${r * 0.24} L0 ${r * 0.24} Z" fill="#cfd8e2" stroke="#111821" stroke-width="2"/>
+              <circle r="3.5" fill="#111821"/></g></g>`;
+        }
+
+        // ⑤ 탐험 판: 코일 + 전선 + 자기장 선 + 나침반
+        const S5 = [300, 200], N5 = [588, 200];
+        let s = "";
+        // 자기장 선: N극 쪽 끝에서 나와 코일 바깥을 돌아 S극 쪽 끝으로 들어가는 고리 (교과서 그림 모양)
+        let fl = "";
+        const arrow = (x, y, ang) => `<g class="arw" transform="translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${ang.toFixed(1)})" opacity="0"><path class="arw-h" d="M7 0 L-6 -7 L-6 7 Z" fill="#0e63b3"/></g>`;
+        const addLine = (P) => {
+          const d = `M${P[0][0]} ${P[0][1]} C${P[1][0]} ${P[1][1]} ${P[2][0]} ${P[2][1]} ${P[3][0]} ${P[3][1]}`;
+          let len = 0, prev = P[0];
+          for (let k = 1; k <= 40; k++) {
+            const u = k / 40, v = 1 - u;
+            const q = [0, 1].map((j) => v * v * v * P[0][j] + 3 * v * v * u * P[1][j] + 3 * v * u * u * P[2][j] + u * u * u * P[3][j]);
+            len += Math.hypot(q[0] - prev[0], q[1] - prev[1]); prev = q;
+          }
+          const mx = (P[0][0] + 3 * P[1][0] + 3 * P[2][0] + P[3][0]) / 8, my = (P[0][1] + 3 * P[1][1] + 3 * P[2][1] + P[3][1]) / 8;
+          const tx = P[3][0] + P[2][0] - P[1][0] - P[0][0], ty = P[3][1] + P[2][1] - P[1][1] - P[0][1];
+          fl += `<path class="fl" d="${d}" fill="none" stroke="#7fb2e3" stroke-width="3" stroke-linecap="round" stroke-dasharray="${len.toFixed(0)}" stroke-dashoffset="${len.toFixed(0)}"/>`;
+          fl += arrow(mx, my, (Math.atan2(ty, tx) * 180) / Math.PI);
+        };
+        for (let k = 1; k <= 3; k++) {
+          const d = 18 * k, cy = 100 + 52 * k, sx = 70 + 55 * k;
+          addLine([[592, 200 - d], [592 + sx, 200 - cy], [296 - sx, 200 - cy], [296, 200 - d]]);
+          addLine([[592, 200 + d], [592 + sx, 200 + cy], [296 - sx, 200 + cy], [296, 200 + d]]);
+        }
+        // 축을 따라 가는 선: 바깥 → S극, 코일 안 S → N, N극 → 바깥
+        [[[40, 200], [120, 200], [210, 200], [290, 200]], [[318, 200], [400, 200], [490, 200], [570, 200]], [[600, 200], [680, 200], [770, 200], [850, 200]]].forEach(addLine);
+        // 전선과 전지, 스위치
+        s += `<path d="M300 200 L300 372 L404 372 M440 372 L520 372 M560 372 L588 372 L588 200" fill="none" stroke="#34495e" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>`;
+        s += `<rect x="404" y="350" width="10" height="44" fill="#14263b"/><rect x="428" y="358" width="10" height="28" fill="#14263b"/>`;
+        s += `<circle cx="520" cy="372" r="6" fill="#14263b"/><circle cx="560" cy="372" r="6" fill="#14263b"/>`;
+        s += `<line id="p5-lever" x1="520" y1="372" x2="556" y2="342" stroke="#14263b" stroke-width="6" stroke-linecap="round"/>`;
+        s += `<path id="p5-current" d="M300 200 L300 372 L404 372 M440 372 L520 372 L560 372 L588 372 L588 200" fill="none" stroke="#0e63b3" stroke-width="6" stroke-dasharray="10 18" stroke-linecap="round" opacity="0"/>`;
+        // 코일: 뒤쪽 반원 → 몸통 → 앞쪽 반원
+        let back = "", front = "";
+        for (let k = 0; k < 11; k++) {
+          const cx = 312 + k * 26.4;
+          back += `<path d="M${cx} 130 A14 70 0 0 0 ${cx} 270" fill="none" stroke="#9aa7b4" stroke-width="7"/>`;
+          front += `<path d="M${cx} 130 A14 70 0 0 1 ${cx + 13} 270" fill="none" stroke="#5a6b7e" stroke-width="8" stroke-linecap="round"/>`;
+        }
+        const pop = `${fl}${back}<rect x="300" y="132" width="288" height="136" rx="10" fill="#d5dfe9" opacity="0.35"/>${front}`;
+        const C5 = [[200, 200], [690, 200], [340, 70], [444, 62], [548, 70], [340, 332], [444, 342], [548, 332]];
+        let comp = "";
+        C5.forEach((c, i) => { comp += needle(c[0], c[1], 30, "n5-" + i); });
+        document.getElementById("p5-svg").innerHTML = s + `<g id="p5-popg">${pop}${comp}</g>`;
+        window.C5 = C5.map((c) => angle(c[0], c[1], N5, S5));
+
+        // ⑥ 기록지: 코일 윤곽 + 빈 나침반 8개, 오른쪽 막대자석 그림
+        const S6 = [190, 250], N6 = [370, 250];
+        let sh = `<rect x="190" y="196" width="180" height="108" rx="10" fill="none" stroke="#9aa7b4" stroke-width="4"/>`;
+        for (let k = 0; k < 8; k++) sh += `<path d="M${204 + k * 22} 196 L${214 + k * 22} 304" stroke="#9aa7b4" stroke-width="4"/>`;
+        sh += `<path d="M190 304 L190 380 L370 380 L370 304" fill="none" stroke="#c3ccd6" stroke-width="4"/>`;
+        const C6 = [[110, 250], [450, 250], [200, 130], [280, 112], [360, 130], [200, 372], [280, 390], [360, 372]];
+        C6.forEach((c, i) => {
+          sh += `<g transform="translate(${c[0]} ${c[1]})"><circle r="30" fill="#fff" stroke="#9fb4ca" stroke-width="3" stroke-dasharray="6 6"/></g>`;
+          sh += `<g id="n6w-${i}" opacity="0">${needle(c[0], c[1], 30, "n6-" + i)}</g>`;
+        });
+        document.getElementById("p6-svg").innerHTML = sh;
+        window.C6 = C6.map((c) => angle(c[0], c[1], N6, S6));
+        window.C6pos = C6;
+        // 막대자석 참고 그림 (같은 모형으로 계산한 바늘)
+        const Sr = [92, 250], Nr = [212, 250];
+        let rf = `<rect x="92" y="226" width="60" height="48" fill="#cfd8e2" stroke="#111821" stroke-width="3"/><rect x="152" y="226" width="60" height="48" fill="#d6453d" stroke="#111821" stroke-width="3"/>
+          <text x="122" y="258" text-anchor="middle" font-size="22" font-weight="800" fill="#14263b" font-family="Pretendard">S</text><text x="182" y="258" text-anchor="middle" font-size="22" font-weight="800" fill="#fff" font-family="Pretendard">N</text>`;
+        const Cr = [[44, 250], [260, 250], [92, 150], [152, 132], [212, 150], [92, 350], [152, 368], [212, 350]];
+        Cr.forEach((c, i) => { rf += needle(c[0], c[1], 22, "nr-" + i); });
+        document.getElementById("p6-ref-svg").innerHTML = rf;
+        Cr.forEach((c, i) => document.getElementById("nr-" + i).setAttribute("transform", `rotate(${angle(c[0], c[1], Nr, Sr).toFixed(1)})`));
+      } catch (e) { console.error(e); }
+    </script>
+
+    <!-- 3. 타임라인 -->
+    <script>
+      (async () => {
+        try {
+          await Promise.all([document.fonts.load('700 30px "Pretendard"'), document.fonts.load('76px "Nanum Pen Script"'), document.fonts.load('500 31px "Pretendard"')]);
+          const tl = gsap.timeline({ paused: true });
+          const $ = (id) => document.getElementById(id);
+          const cv = document.createElement("canvas").getContext("2d");
+          const textW = (txt, font) => { cv.font = font; return cv.measureText(txt).width; };
+
+          // 자막 공통: 아래에서 살짝 올라오며 나타나고 사라짐
+          function caption(id, start, dur) {
+            tl.fromTo("#" + id, { y: 26, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "power3.out" }, start);
+            tl.to("#" + id, { opacity: 0, y: -10, duration: 0.4, ease: "power2.in" }, start + dur - 0.4);
+          }
+          // 손가락: 목표 지점(화면 좌표)으로 가서 누르기
+          gsap.set("#hand", { x: 2100, y: 1200, rotation: -16 });
+          function handTo(x, y, at, dur = 0.5) { tl.to("#hand", { x: x - 44, y: y - 18, duration: dur, ease: "power3.inOut" }, at); }
+          function tap(x, y, at) {
+            tl.to("#hand", { scale: 0.9, duration: 0.08, ease: "power2.in" }, at).to("#hand", { scale: 1, duration: 0.16, ease: "power2.out" }, at + 0.08);
+            tl.fromTo("#ripple", { x: x, y: y, scale: 0.3, opacity: 0.9 }, { x: x, y: y, scale: 1.3, opacity: 0, duration: 0.45, ease: "power2.out", immediateRender: false }, at + 0.04);
+          }
+          function handOut(at) { tl.to("#hand", { x: 2100, y: 1250, duration: 0.5, ease: "power3.in" }, at); }
+
+          // ── ① 하굣길 0~6.3 ──
+          tl.fromTo("#s1-far", { x: 0 }, { x: -700, duration: 6.3, ease: "none" }, 0);
+          tl.fromTo("#s1-near", { x: 0 }, { x: -1900, duration: 6.3, ease: "none" }, 0);
+          tl.fromTo("#s1-student", { y: 0 }, { y: -10, duration: 0.42, ease: "sine.inOut", repeat: 13, yoyo: true }, 0);
+          const lw = [[930, 300, 1.0], [1060, 250, 1.45], [880, 210, 1.9], [1150, 330, 2.35], [1000, 160, 2.8]];
+          lw.forEach((w, i) => {
+            gsap.set("#lw" + i, { left: w[0], top: w[1] });
+            tl.fromTo("#lw" + i, { opacity: 0, y: 30, filter: "blur(0px)" }, { opacity: 0.95, y: 0, duration: 0.45, ease: "power2.out" }, w[2]);
+            tl.to("#lw" + i, { y: -150, x: 40 + i * 12, filter: "blur(16px)", opacity: 0, duration: 1.7, ease: "power1.in" }, w[2] + 0.45);
+          });
+          tl.set("#s1-concerned", { opacity: 1 }, 3.0).set("#s1-serious", { opacity: 0 }, 3.0);
+          caption("cap1", 3.3, 2.8);
+          tl.to("#s1", { opacity: 0, duration: 0.3, ease: "none" }, 6.0);
+
+          // ── ② 방 6~10.15 ──
+          tl.fromTo("#s2-cam", { scale: 1.06 }, { scale: 1, duration: 1.6, ease: "power2.out" }, 6.0);
+          gsap.set("#s2-lesson", { xPercent: 100 });
+          // 코일 카드 중심: 태블릿(330,100) + 테두리 30 + 화면 여백 56/44 + 카드 자리
+          const cardX = 330 + 30 + 56 + 2 * (360 + 22) + 180, cardY = 100 + 30 + 44 + 330;
+          handTo(cardX, cardY, 7.4, 0.7);
+          tap(cardX, cardY, 8.15);
+          tl.to("#s2-coilcard", { scale: 0.96, duration: 0.1, ease: "power2.in" }, 8.15).to("#s2-coilcard", { scale: 1, borderColor: "#0e63b3", duration: 0.2 }, 8.25);
+          handOut(8.6);
+          tl.to("#s2-hub", { xPercent: -30, opacity: 0, duration: 0.5, ease: "power3.inOut" }, 8.55);
+          tl.to("#s2-lesson", { xPercent: 0, duration: 0.5, ease: "power3.inOut" }, 8.55);
+          tl.to("#s2-cam", { scale: 1.1, duration: 1.0, ease: "power2.in" }, 9.15);
+          tl.to("#s2", { opacity: 0, duration: 0.2, ease: "none" }, 9.95);
+
+          // ── ③ 얼굴과 눈 10~13.1 ──
+          tl.fromTo("#s3f-cam", { scale: 1 }, { scale: 1.22, duration: 1.0, ease: "sine.inOut" }, 10.0);
+          tl.set("#s3f-shut", { opacity: 1 }, 10.52).set("#s3f-open", { opacity: 0 }, 10.52);
+          tl.set("#s3f-shut", { opacity: 0 }, 10.64).set("#s3f-open", { opacity: 1 }, 10.64);
+          tl.to("#s3f-cam", { scale: 16, duration: 0.5, ease: "power3.in" }, 10.95);
+          tl.fromTo("#s3f-cam", { filter: "blur(0px)" }, { filter: "blur(12px)", duration: 0.5, ease: "power3.in" }, 10.95);
+          tl.fromTo("#s3e", { opacity: 0 }, { opacity: 1, duration: 0.12, ease: "none" }, 11.35);
+          tl.fromTo("#s3e-cam", { scale: 1.25, filter: "blur(14px)" }, { scale: 1, filter: "blur(0px)", duration: 0.45, ease: "power3.out" }, 11.35);
+          tl.to("#s3e-cam", { scale: 1.07, duration: 0.6, ease: "sine.inOut" }, 11.8);
+          tl.fromTo("#e3-pupil", { attr: { r: 92 } }, { attr: { r: 112 }, duration: 0.4, ease: "power2.out" }, 11.9);
+          tl.to("#s3e-cam", { scale: 26, filter: "blur(8px)", duration: 0.6, ease: "power3.in" }, 12.4);
+          tl.to("#s3e-black", { opacity: 1, duration: 0.18, ease: "power2.in" }, 12.88);
+
+          // ── 머릿속 공간 12.95~ ──
+          tl.fromTo("#mind-cam", { opacity: 0, scale: 1.35 }, { opacity: 1, scale: 1, duration: 0.7, ease: "power3.out" }, 12.95);
+          tl.to("#spark", { scale: 0, opacity: 0, duration: 0.5, ease: "power2.in" }, 13.4);
+          // 레일: 네 단계
+          const railX = [600, 840, 1080, 1320], railLab = ["읽기·퀴즈", "모형·시뮬레이션", "가상 실험", "정리·글쓰기"];
+          const rail = $("rail");
+          railX.forEach((x, i) => {
+            rail.insertAdjacentHTML("beforeend", `<div class="node" id="rn${i}" style="left:${x}px"><i class="dot" id="rd${i}" style="opacity:0"></i></div><div class="lab" id="rl${i}" style="left:${x}px">${railLab[i]}</div>`);
+          });
+          gsap.set("#rail-fill", { scaleX: 0 });
+          tl.fromTo("#rail", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, 13.4);
+          const stepAt = [13.6, 19.6, 26.0, 31.4];
+          stepAt.forEach((t, i) => {
+            tl.to("#rd" + i, { opacity: 1, duration: 0.3 }, t + 0.1);
+            tl.to("#rn" + i, { borderColor: "#0e63b3", duration: 0.3 }, t + 0.1);
+            tl.to("#rl" + i, { color: "#e3effb", duration: 0.3 }, t + 0.1);
+            if (i > 0) tl.to("#rail-fill", { scaleX: i / 3, duration: 0.8, ease: "power2.inOut" }, t - 0.4);
+          });
+
+          // 낱말 조각: 처음엔 흐릿하게 떠 있다가, 단계마다 또렷해져 위쪽 줄에 모임
+          const FR = [
+            { t: "자기장", fx: 230, fy: 260, fs: 88, at: 15.55 },
+            { t: "자기력", fx: 1610, fy: 330, fs: 60, at: 15.75 },
+            { t: "나침반", fx: 1640, fy: 640, fs: 90, at: 18.2 },
+            { t: "전류의 방향", fx: 220, fy: 560, fs: 64, at: 24.35 },
+            { t: "N극", fx: 300, fy: 800, fs: 70, at: 29.55 },
+            { t: "막대자석", fx: 1640, fy: 860, fs: 58, at: 29.85 },
+          ];
+          const chipFont = '700 30px "Pretendard"';
+          const ws = FR.map((f) => textW(f.t, chipFont) + 48);
+          const gap = 18, total = ws.reduce((a, b) => a + b, 0) + gap * (FR.length - 1);
+          let cx0 = 960 - total / 2;
+          const fc = $("frag-cam");
+          FR.forEach((f, i) => {
+            f.sx = cx0; f.sy = 46; f.w = ws[i];
+            cx0 += ws[i] + gap;
+            fc.insertAdjacentHTML("beforeend", `<span class="frag" id="fr${i}" style="left:${f.sx}px;top:${f.sy}px">${f.t}</span>`);
+            const sc = f.fs / 30;
+            const dx = f.fx - (f.sx + f.w / 2), dy = f.fy - (f.sy + 27);
+            tl.fromTo("#fr" + i, { x: dx, y: dy + 20, scale: sc, opacity: 0, filter: "blur(18px)" }, { y: dy, opacity: 0.5, filter: "blur(7px)", duration: 0.6, ease: "power2.out" }, 13.05 + i * 0.05);
+            // 떠다님
+            const reps = Math.max(0, Math.floor((f.at - 0.4 - 13.7) / 1.6) - 1);
+            tl.to("#fr" + i, { y: dy - 18, duration: 1.6, ease: "sine.inOut", repeat: reps, yoyo: true }, 13.7);
+            // 또렷해져 제자리로
+            tl.to("#fr" + i, { x: 0, y: 0, scale: 1, opacity: 1, filter: "blur(0px)", duration: 0.55, ease: "power3.inOut" }, f.at - 0.35);
+            tl.to("#fr" + i, { backgroundColor: "rgba(14,99,179,0.22)", borderColor: "rgba(127,178,227,0.9)", color: "#f4f8fc", duration: 0.2 }, f.at + 0.15);
+          });
+
+          // 판 공통 등장/퇴장 (퇴장은 레일 마디로 빨려 들어감)
+          function panelIn(id, at) { tl.fromTo(id, { scale: 0.72, y: 70, opacity: 0, filter: "blur(14px)" }, { scale: 1, y: 0, opacity: 1, filter: "blur(0px)", duration: 0.7, ease: "power3.out" }, at); }
+          function panelOut(id, at, i) { tl.to(id, { x: railX[i] - 960, y: 980 - 485, scale: 0.04, opacity: 0, duration: 0.55, ease: "power3.in" }, at); }
+
+          // ── ④ 읽기·퀴즈 13.6~19.7 ──
+          panelIn("#p4", 13.75);
+          const l3x = 460 + 56, l3y = 140 + 298;
+          const termX = l3x + textW("자기력이 미치는 공간을 ", '500 31px "Pretendard"'), termW = textW("자기장", '800 31px "Pretendard"');
+          gsap.set("#p4-bubble", { left: termX - 460 - 10, top: 298 + 56 });
+          tl.fromTo("#p4-bubble", { scale: 0.6, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.35, ease: "back.out(2)" }, 14.85);
+          handTo(termX + termW / 2, l3y + 22, 14.2, 0.55);
+          tap(termX + termW / 2, l3y + 22, 14.75);
+          tl.to("#hand", { x: 1560, y: 760, duration: 0.5, ease: "power3.inOut" }, 15.0);
+          tl.fromTo("#p4-quiz", { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "power3.out" }, 16.6);
+          const o1x = 460 + 56 + 30 + 220, o1y = 140 + 430 + 78 + 28;
+          handTo(o1x, o1y, 16.95, 0.55);
+          tap(o1x, o1y, 17.55);
+          tl.to("#p4-o1hl", { opacity: 1, duration: 0.2 }, 17.6);
+          handOut(17.85);
+          panelOut("#p4", 19.05, 0);
+
+          // ── ⑤ 모형·시뮬레이션 19.6~26.1 ──
+          panelIn("#p5", 19.65);
+          const b1x = 460 + 56 + 95, b1y = 140 + 612 + 29, b2x = 460 + 262 + 120, b2y = b1y;
+          handTo(b1x, b1y, 20.4, 0.55);
+          tap(b1x, b1y, 21.0);
+          tl.to("#p5-btn1", { backgroundColor: "#0a4a8a", duration: 0.15 }, 21.0);
+          tl.to("#p5-lever", { attr: { x2: 560, y2: 372 }, duration: 0.15, ease: "power2.in" }, 21.05);
+          tl.to("#p5-current", { opacity: 1, duration: 0.2 }, 21.15);
+          tl.fromTo("#p5-current", { strokeDashoffset: 0 }, { strokeDashoffset: -280, duration: 2.4, ease: "none" }, 21.15);
+          document.querySelectorAll("#p5-svg .fl").forEach((p, k) => {
+            tl.to(p, { strokeDashoffset: 0, duration: 0.9, ease: "power2.out" }, 21.25 + k * 0.03);
+          });
+          tl.to("#p5-svg .arw", { opacity: 1, duration: 0.3 }, 21.9);
+          window.C5.forEach((a, i) => {
+            tl.fromTo("#n5-" + i, { rotation: -90, svgOrigin: "0 0" }, { rotation: a, svgOrigin: "0 0", duration: 0.7, ease: "back.out(1.6)", immediateRender: false }, 21.25 + i * 0.03);
+          });
+          handOut(21.4);
+          // 화면 밖으로 튀어나오기
+          tl.to("#p5-pop", { scale: 1.42, y: -40, filter: "drop-shadow(0px 30px 30px rgba(0,0,0,0.45))", duration: 0.7, ease: "power3.out" }, 22.0);
+          tl.to("#p5-bg", { opacity: 0.25, duration: 0.6 }, 22.0);
+          tl.to("#p5 .chip, #p5 .ptitle", { opacity: 0.15, duration: 0.4 }, 22.0);
+          tl.to("#p5-stage", { backgroundColor: "rgba(255,255,255,0)", borderColor: "rgba(213,223,233,0)", duration: 0.4 }, 22.0);
+          handTo(b2x, b2y, 22.85, 0.55);
+          tap(b2x, b2y, 23.45);
+          window.C5.forEach((a, i) => {
+            tl.to("#n5-" + i, { rotation: a + 180, svgOrigin: "0 0", duration: 0.7, ease: "back.out(1.4)" }, 23.55 + i * 0.03);
+          });
+          tl.to("#p5-svg .arw-h", { rotation: 180, svgOrigin: "0 0", duration: 0.4, ease: "power2.inOut" }, 23.55);
+          tl.fromTo("#p5-current", { strokeDashoffset: -280 }, { strokeDashoffset: 0, duration: 2.0, ease: "none", immediateRender: false }, 23.6);
+          handOut(23.95);
+          tl.to("#p5-pop", { scale: 1, y: 0, filter: "drop-shadow(0px 0px 0px rgba(0,0,0,0))", duration: 0.5, ease: "power3.inOut" }, 25.0);
+          tl.to("#p5-bg", { opacity: 1, duration: 0.4 }, 25.0);
+          tl.to("#p5-stage", { backgroundColor: "rgba(255,255,255,1)", borderColor: "rgba(213,223,233,1)", duration: 0.4 }, 25.0);
+          tl.to("#p5 .chip, #p5 .ptitle", { opacity: 1, duration: 0.3 }, 25.1);
+          panelOut("#p5", 25.5, 1);
+
+          // ── ⑥ 가상 실험 26~31.5 ──
+          panelIn("#p6", 26.05);
+          window.C6pos.forEach((c, i) => {
+            const at = 27.05 + i * 0.225;
+            const px = 460 + 56 + c[0], py = 140 + 170 + c[1];
+            if (i === 0) handTo(px, py, 26.55, 0.45); else tl.to("#hand", { x: px - 44, y: py - 18, duration: 0.16, ease: "power2.inOut" }, at - 0.17);
+            tap(px, py, at);
+            tl.to("#n6w-" + i, { opacity: 1, duration: 0.1 }, at + 0.05);
+            tl.fromTo("#n6-" + i, { rotation: -90, svgOrigin: "0 0" }, { rotation: window.C6[i], svgOrigin: "0 0", duration: 0.35, ease: "back.out(2)", immediateRender: false }, at + 0.05);
+          });
+          handOut(28.95);
+          tl.to("#p6-o1, #p6-o2", { opacity: 1, duration: 0.3 }, 28.95);
+          tl.fromTo("#p6-verdict", { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.4, ease: "back.out(2)" }, 29.05);
+          panelOut("#p6", 30.9, 2);
+
+          // ── ⑦ 정리·글쓰기 31.4~37 ──
+          panelIn("#p7", 31.45);
+          const sentFont = '600 34px "Pretendard"';
+          const bw1 = FR[0].w + 16, bw2 = FR[3].w + 16;
+          $("p7-b1").style.width = bw1 + "px";
+          $("p7-b2").style.width = bw2 + "px";
+          const b1Left = 460 + 56 + textW("전류가 흐르는 코일 주위에는", sentFont) + 8, b1Top = 140 + 200;
+          const b2Left = 460 + 56, b2Top = 140 + 290;
+          // 줄에 모은 조각이 빈칸으로 내려옴
+          const fly = (i, bx, by, at) => {
+            const f = FR[i];
+            tl.to("#fr" + i, { x: bx + 8 - f.sx, y: by + 2 - f.sy, duration: 0.6, ease: "power3.inOut" }, at);
+            tl.to("#fr" + i, { backgroundColor: "rgba(227,239,251,1)", borderColor: "rgba(14,99,179,1)", color: "#0e63b3", duration: 0.25 }, at + 0.35);
+          };
+          fly(0, b1Left, b1Top, 32.0);
+          fly(3, b2Left, b2Top, 32.6);
+          // 글쓰기: 한 글자씩
+          const txt = $("p7-text").textContent;
+          const fullW = textW(txt, '600 32px "Pretendard"');
+          gsap.set("#p7-wt", { width: 0 });
+          gsap.set("#p7-caret", { left: 28, x: 0 });
+          tl.to("#p7-wt", { width: fullW + 4, duration: 2.1, ease: `steps(${txt.length})` }, 33.75);
+          tl.to("#p7-caret", { x: fullW + 6, duration: 2.1, ease: `steps(${txt.length})` }, 33.75);
+          // 레일이 끝까지 차고 모든 조각이 함께 밝아짐
+          tl.to("#rail-fill", { scaleX: 1, duration: 0.6, ease: "power2.inOut" }, 35.6);
+          tl.to(".frag", { boxShadow: "0 0 26px rgba(14,99,179,0.8)", duration: 0.3, yoyo: true, repeat: 1 }, 36.0);
+
+          // ── ⑧ 밖으로 36.6~39.9 ──
+          tl.to("#p7, #frag-cam, #mind-cam", { scale: 0.02, opacity: 0, duration: 0.55, ease: "power3.in", transformOrigin: "960px 540px" }, 36.6);
+          tl.to("#s8e-black", { opacity: 0, duration: 0.25, ease: "power2.out" }, 37.15);
+          tl.fromTo("#s8e-cam", { scale: 26, filter: "blur(8px)" }, { scale: 1, filter: "blur(0px)", duration: 0.65, ease: "power3.out" }, 37.1);
+          tl.to("#s8e-cam", { scale: 0.8, opacity: 0, duration: 0.3, ease: "power2.in" }, 38.1);
+          tl.fromTo("#s8f", { opacity: 0 }, { opacity: 1, duration: 0.15 }, 38.2);
+          tl.fromTo("#s8f-cam", { scale: 9, filter: "blur(10px)" }, { scale: 1, filter: "blur(0px)", duration: 0.8, ease: "power3.out" }, 38.2);
+          tl.to("#s8f-cam", { scale: 1.04, duration: 0.9, ease: "sine.inOut" }, 39.0);
+
+          // ── ⑨ 표어와 로고 39.6~45 ──
+          tl.fromTo("#s9", { opacity: 0 }, { opacity: 1, duration: 0.28, ease: "none" }, 39.6);
+          const LG = [[960 - 82, 330 - 82], [960 + 6, 330 - 82], [960 - 82, 330 + 6], [960 + 6, 330 + 6]];
+          LG.forEach((p, i) => {
+            gsap.set("#lg" + i, { left: p[0], top: p[1] });
+            tl.fromTo("#lg" + i, { x: railX[i] - 38 - p[0], y: 940 - p[1], scale: 0.4, opacity: 0 }, { x: 0, y: 0, scale: 1, opacity: 1, duration: 0.7, ease: "power3.inOut" }, 39.8 + i * 0.12);
+          });
+          tl.fromTo("#end-brand", { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "power3.out" }, 40.8);
+          tl.fromTo("#end-title span", { y: 50, opacity: 0 }, { y: 0, opacity: 1, duration: 0.55, ease: "power3.out", stagger: 0.07 }, 41.1);
+
+          window.__timelines["main"] = tl;
+        } catch (e) { console.error(e); }
+      })();
+    </script>
+  </body>
+</html>
