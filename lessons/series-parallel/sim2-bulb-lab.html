@@ -103,23 +103,41 @@
   .note{font-size:12.5px;color:var(--muted);margin:2px 4px 0;line-height:1.6;word-break:keep-all}
   @media (max-width:640px){.cmp td.h{width:26%;font-size:13.5px}.cell{font-size:13.5px}}
   @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+  /* ===== 한 화면 배치 (2026-10-15) ===== */
+  .app{padding:10px 16px 12px;gap:10px}
+  header.top{display:flex;align-items:center;justify-content:space-between;gap:8px 16px;flex-wrap:wrap}
+  header.top h1{display:inline;font-size:clamp(20px,2.1vw,25px);margin:0 0 0 6px;vertical-align:-2px}
+  header.top .sub{margin-top:3px;font-size:14.5px}
+  .prep{align-items:center}
+  .prep b{font-size:13px;color:var(--muted)}
+  .prep em.note{font-style:normal;flex-basis:100%;margin:2px 0 0}
+  [hidden]{display:none!important}
+  .concl{margin-top:10px;padding:12px 16px}
+  .concl.show{display:grid;grid-template-columns:1fr 1fr;gap:4px 18px}
+  .concl .bar{grid-column:1/-1}
+  .cell{min-height:44px;padding:4px 10px}
+  #s4 .goal{margin-bottom:4px}
+  #s4 .fb{margin-top:6px}
+  table.cmp{border-spacing:6px 5px}
+  @media (max-width:900px){.concl.show{grid-template-columns:1fr}}
+  .concl p{font-size:15px;line-height:1.65;margin-bottom:4px}
 </style>
 </head>
 <body>
 <div class="app">
-  <header>
-    <span class="eyebrow">중2 과학 · 전기 · 해 보기 (교과서 p.248)</span>
-    <h1>전구의 직렬연결과 병렬연결 특징 비교하기</h1>
-    <p class="sub">교과서 '해 보기'를 회로 카드로 따라 해 봐요. 전구를 끼우고, 스위치를 닫고, 밝기를 카드에 표시해요.</p>
+  <header class="top">
+    <div>
+      <span class="eyebrow">해 보기 (교과서 p.248)</span><h1>전구의 직렬연결과 병렬연결 특징 비교하기</h1>
+      <p class="sub">교과서 '해 보기'를 회로 카드로 따라 해 봐요. 전구를 끼우고, 스위치를 닫고, 밝기를 카드에 표시해요.</p>
+    </div>
+    <nav class="steps" id="steps"></nav>
   </header>
-
-  <nav class="steps" id="steps"></nav>
 
   <!-- 1 -->
   <section class="card pad sec" id="s1">
     <h2>1. 회로 만들기</h2>
     <p class="goal">회로 카드 ①~③처럼 <b>전구 1개 회로, 전구 2개를 직렬연결한 회로, 전구 2개를 병렬연결한 회로</b>를 만들어요. 빈 <b>전구 끼우개</b>를 눌러 전구를 끼워요.</p>
-    <div class="prep"><span>전지(1.5 V) 2개</span><span>전지 끼우개</span><span>전구(3 V)</span><span>전구 끼우개</span><span>전선</span><span>스위치</span><span>회로 카드</span></div>
+    <div class="prep"><b>준비물</b><span>전지(1.5 V) 2개</span><span>전지 끼우개</span><span>전구(3 V)</span><span>전구 끼우개</span><span>전선</span><span>스위치</span><span>회로 카드</span><em class="note">※ 실제 실험에서는 보호 장갑을 끼고, 켜져 있던 전구는 뜨거울 수 있으니 만지지 않아요. 화면의 밝기는 비교를 위한 모형이에요.</em></div>
     <div class="cards" id="cards1"></div>
     <div class="bar"><button type="button" class="btn primary" id="go2" disabled>다음: 스위치 닫고 밝기 비교하기</button></div>
     <div class="fb" id="fb1"></div>
@@ -159,7 +177,6 @@
     </div>
   </section>
 
-  <p class="note">※ 실제 실험에서는 보호 장갑을 끼고, 켜져 있던 전구는 뜨거울 수 있으니 만지지 않아요. 화면의 밝기는 비교를 위한 모형이에요.</p>
 </div>
 
 <script>
@@ -402,6 +419,7 @@ window.LB = {};
     };
     const TABS = ['회로 만들기', '스위치 닫고 비교', '스위치 하나 열기', '특징 비교'];
     let cur = 1; const done = {};
+    const qStep = +new URLSearchParams(location.search).get('step') || 0; for (let i = 1; i < qStep; i++) done[i] = true;
     function renderTabs() {
       $('#steps').innerHTML = TABS.map((t, i) => `<button type="button" class="stp${cur === i + 1 ? ' on' : ''}${done[i + 1] ? ' done' : ''}" data-s="${i + 1}" ${i + 1 > 1 && !done[i] ? 'disabled' : ''}><span class="n">${i + 1}</span>${t}</button>`).join('');
       $$('#steps .stp').forEach((b) => b.addEventListener('click', () => go(+b.dataset.s)));
@@ -507,7 +525,7 @@ window.LB = {};
       cells.forEach((el, i) => el.addEventListener('click', () => { if (locked) return; if (fill[i]) { fill[i].classList.remove('used'); fill[i] = null; } c = i; cells.forEach((x) => x.classList.remove('good', 'bad')); paint(); }));
       $('#chk4').addEventListener('click', () => {
         let wrong = 0; cells.forEach((el, i) => { const ok = fill[i].textContent === ANS[i]; el.classList.toggle('good', ok); el.classList.toggle('bad', !ok); if (!ok) wrong++; });
-        if (!wrong) { locked = true; paint(); fb('#fb4', true, '표를 모두 맞게 채웠어요. 아래 결론을 읽고 친구에게 설명해 봐요.'); $('#concl').classList.add('show'); done[4] = true; renderTabs(); }
+        if (!wrong) { locked = true; paint(); fb('#fb4', true, '표를 모두 맞게 채웠어요. 아래 결론을 읽고 친구에게 설명해 봐요.'); $('#concl').classList.add('show'); $('#bank4').hidden = true; $('#chk4').hidden = true; done[4] = true; renderTabs(); }
         else fb('#fb4', false, `빨간 칸 ${wrong}개를 다시 확인해요. 칸을 누르면 낱말이 빠져요. 2·3단계의 회로 카드를 떠올려 보세요.`);
       });
       paint();

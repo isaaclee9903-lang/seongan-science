@@ -105,6 +105,33 @@
   @media (max-width:1200px){.picker{grid-template-columns:repeat(4,minmax(0,1fr))}}
   @media (max-width:900px){.stage{grid-template-columns:1fr}}
   @media (max-width:560px){.br{grid-template-columns:90px 1fr 70px}}
+  /* ===== 한 화면 배치 (2026-10-15: 태블릿 한 화면 안에서 조작과 결과가 끝나도록) ===== */
+  .app{padding:10px 16px 12px;gap:10px}
+  .top{align-items:center}
+  .top h1{display:inline;font-size:clamp(20px,2.1vw,25px);margin:0 0 0 6px;vertical-align:-2px}
+  .top .sub{margin-top:3px;font-size:14.5px}
+  .picker{grid-template-columns:repeat(8,minmax(0,1fr));gap:8px}
+  .dev{min-height:0;gap:2px;padding:6px 4px 7px;border-radius:14px}
+  .dev > svg{width:46px;height:38px}
+  .dev b{font-size:13.5px;line-height:1.25}
+  .dev small{font-size:11.5px}
+  .stage{align-items:stretch}
+  .scene{display:flex;align-items:center}
+  .scene > svg{height:100%;overflow:visible}
+  .ptabs{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;background:#eef3f8;border-radius:14px;padding:4px;margin-bottom:10px}
+  .ptabs button{min-height:44px;border:0;border-radius:11px;background:transparent;font-weight:800;font-size:14.5px;color:var(--muted);cursor:pointer}
+  .ptabs button[aria-selected="true"]{background:#fff;color:var(--El);box-shadow:0 1px 3px rgba(20,38,59,.14)}
+  .pane[hidden],[hidden]{display:none!important}
+  .q{margin:2px 0 10px}
+  #flow{margin-top:10px}
+  .flowcap{display:flex;justify-content:space-between;gap:8px;font-size:13px;font-weight:800;color:var(--ink2);margin:12px 0 -4px}
+  .flowcap span{font-weight:500;font-size:12px;color:var(--muted)}
+  .bars{gap:3px;margin-top:8px}
+  .br{padding:3px 6px}
+  .rate{margin-top:0;font-size:14px;max-width:none}
+  .rate span{padding:6px 12px}
+  .note{margin:8px 2px 0}
+  @media (max-width:900px){.picker{grid-template-columns:repeat(8,minmax(0,1fr));gap:5px}.dev{padding:5px 2px 6px}.dev b{font-size:12.5px}.dev > svg{width:40px;height:33px}.scene > svg{max-height:440px}}
   @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -112,46 +139,40 @@
 <div class="app">
   <header class="top">
     <div>
-      <span class="eyebrow">중2 과학 · 전기 · 에너지 전환 관찰</span>
-      <h1>전기 기구를 켜면 전기 에너지는 무엇으로 바뀔까?</h1>
-      <p class="sub">기구를 고르고, 바뀌는 에너지를 먼저 예상한 뒤 확인해요. 두 가지 이상의 에너지로 동시에 바뀌는 기구도 있어요. 여덟 기구를 모두 확인해 보세요.</p>
+      <span class="eyebrow">에너지 전환 관찰</span><h1>전기 기구를 켜면 전기 에너지는 무엇으로 바뀔까?</h1>
+      <p class="sub">기구를 고르고, 바뀌는 에너지를 먼저 예상한 뒤 확인해요. 여덟 기구를 모두 확인해 보세요.</p>
     </div>
     <span class="prog" id="prog">확인한 기구 0 / 8</span>
   </header>
 
-  <section class="card pad">
-    <div class="card-title">전기 기구 고르기 <span class="hint">하나를 눌러요</span></div>
-    <div class="picker" id="picker" style="margin-top:10px"></div>
-  </section>
+  <div class="picker" id="picker" aria-label="전기 기구 고르기"></div>
 
   <div class="stage">
     <section class="card scene" id="sceneCard">
       <svg id="scene" viewBox="0 0 640 400" role="img" aria-label="선택한 전기 기구가 작동하는 모습"></svg>
       <button type="button" class="power" id="power"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 3v9"/><path d="M6.3 7.3a8 8 0 1 0 11.4 0"/></svg><span id="powTxt">켜기</span></button>
     </section>
-    <div class="side">
-      <section class="card pad">
+    <section class="card pad flowbox">
+      <div class="ptabs" role="tablist">
+        <button type="button" role="tab" data-t="q" aria-selected="true">에너지 전환 예상하기</button>
+        <button type="button" role="tab" data-t="w" aria-selected="false">1초 동안 쓰는 전기 에너지</button>
+      </div>
+      <div class="pane" data-p="q">
         <div class="card-title" id="qTitle">예상해 보기</div>
         <p class="q" id="qText"></p>
-        <div class="echips" id="echips"></div>
-        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap"><button type="button" class="btn primary" id="chk" disabled>확인하기</button></div>
+        <div id="ask"><div class="echips" id="echips"></div>
+        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap"><button type="button" class="btn primary" id="chk" disabled>확인하기</button></div></div>
         <div class="fb" id="fb"></div>
-      </section>
-      <section class="card pad flowbox">
-        <div class="card-title">에너지 전환 띠 그림 <span class="hint">띠의 굵기는 실제 비율이 아니에요</span></div>
-        <div id="flow" style="margin-top:8px"></div>
-      </section>
-    </div>
+        <div id="flowWrap" hidden><div class="flowcap">에너지 전환 띠 그림 <span>띠의 굵기는 실제 비율이 아니에요</span></div><div id="flow"></div>
+        <p class="note">※ 개념 이해를 위한 모형이에요. 주로 이용하는 에너지(굵은 띠)와 함께 조금 생기는 에너지(가는 띠)를 나누어 보여 줘요.</p></div>
+      </div>
+      <div class="pane" data-p="w" hidden>
+        <div id="rateBox"></div>
+        <div class="bars" id="bars"></div>
+        <p class="note">※ 소비 전력(W)이 클수록 막대가 길어요. 에어컨(690 W)과 선풍기(10 W)는 교과서 그림 값이고, 나머지는 예시 값이라 제품마다 달라요. 전기 버스는 가정용 기구가 아니어서 뺐어요.</p>
+      </div>
+    </section>
   </div>
-
-  <section class="card pad">
-    <div class="card-title">기구마다 1초 동안 쓰는 전기 에너지 <span class="hint">소비 전력(W)이 클수록 막대가 길어요</span></div>
-    <div id="rateBox"></div>
-    <div class="bars" id="bars"></div>
-    <p class="note" style="margin-top:8px">※ 에어컨(690 W)과 선풍기(10 W)는 교과서 그림 값이에요. 나머지는 이해를 돕기 위한 예시 값이고, 제품마다 달라요. 전기 버스는 가정용 기구가 아니어서 비교에서 뺐어요.</p>
-  </section>
-
-  <p class="note">※ 개념 이해를 위한 모형이에요. 전기 기구에서 바뀌는 에너지 가운데 주로 이용하는 것과, 함께 조금 생기는 것을 나누어 보여 줘요.</p>
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
@@ -196,7 +217,7 @@ window.EC = {
       <linearGradient id="sMetal" x1="0" x2="1"><stop offset="0" stop-color="#8b97a4"/><stop offset=".5" stop-color="#e3e8ee"/><stop offset="1" stop-color="#7b8794"/></linearGradient>
       <filter id="sSh" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#0b2a4a" flood-opacity=".22"/></filter>
     </defs>`;
-    const room = (dark) => `<rect width="640" height="400" fill="url(#sWall)"/>${dark ? '<rect width="640" height="400" fill="#0f1d30" opacity=".55" class="dim"/>' : ''}<rect x="0" y="318" width="640" height="82" fill="url(#sFloor)"/>`;
+    const room = (dark) => `<rect x="-200" y="-300" width="1040" height="300" fill="#f4f8fc"/><rect width="640" height="400" fill="url(#sWall)"/><rect x="-200" y="0" width="200" height="400" fill="#e9eff5"/><rect x="640" y="0" width="200" height="400" fill="#e9eff5"/>${dark ? '<rect x="-200" y="-300" width="1040" height="1000" fill="#0f1d30" opacity=".55" class="dim"/>' : ''}<rect x="-200" y="318" width="1040" height="82" fill="url(#sFloor)"/><rect x="-200" y="400" width="1040" height="300" fill="#b98c5e"/>`;
     const outlet = `<g filter="url(#sSh)"><rect x="34" y="214" width="52" height="64" rx="10" fill="#fff" stroke="#c9d2dc"/><circle cx="60" cy="246" r="17" fill="#d7dee6"/><circle cx="54" cy="246" r="3" fill="#34404c"/><circle cx="66" cy="246" r="3" fill="#34404c"/></g>`;
     // 기구별 그림 (on/off에 따라 달라지는 부분은 class로 표시)
     const DRAW = {
@@ -255,9 +276,9 @@ window.EC = {
             <rect class="batt" x="-11" y="11" width="22" height="0" rx="2" fill="#5ff09a"/>
             <text x="0" y="40" text-anchor="middle" class="pct" style="font-size:13px;font-weight:900;fill:#fff"></text></g></g>
         <path class="cord" d="M86 246 C 160 300, 230 310, 250 296" fill="none" stroke="#34404d" stroke-width="5"/>`,
-      bus: () => `<rect width="640" height="400" fill="#dcecf8"/><g fill="#fff" opacity=".9"><ellipse cx="140" cy="70" rx="44" ry="14"/><ellipse cx="480" cy="90" rx="36" ry="12"/></g>
-        <g class="far"><rect x="0" y="210" width="1280" height="40" fill="#a9c7a0"/>${Array.from({ length: 12 }, (_, k) => `<g transform="translate(${k * 110 + 20} 160)"><rect x="18" y="30" width="8" height="30" fill="#7a5a3a"/><circle cx="22" cy="24" r="26" fill="#5fa86a"/></g>`).join('')}</g>
-        <rect x="0" y="250" width="640" height="150" fill="#9aa5b1"/>
+      bus: () => `<rect x="-200" y="-300" width="1040" height="700" fill="#dcecf8"/><g fill="#fff" opacity=".9"><ellipse cx="140" cy="70" rx="44" ry="14"/><ellipse cx="480" cy="90" rx="36" ry="12"/></g>
+        <g class="far"><rect x="-200" y="210" width="1600" height="40" fill="#a9c7a0"/>${Array.from({ length: 12 }, (_, k) => `<g transform="translate(${k * 110 + 20} 160)"><rect x="18" y="30" width="8" height="30" fill="#7a5a3a"/><circle cx="22" cy="24" r="26" fill="#5fa86a"/></g>`).join('')}</g>
+        <rect x="-200" y="250" width="1040" height="450" fill="#9aa5b1"/>
         <g class="road" stroke="#fff" stroke-width="6" stroke-dasharray="40 30"><path d="M0 330 H1280"/></g>
         <g class="busb" filter="url(#sSh)"><rect x="150" y="150" width="320" height="120" rx="20" fill="url(#sBus)"/>
           ${[0, 1, 2, 3].map((k) => `<rect x="${168 + k * 62}" y="168" width="52" height="44" rx="6" fill="#d9f1ff"/>`).join('')}<rect x="420" y="168" width="40" height="56" rx="6" fill="#d9f1ff"/>
@@ -342,7 +363,7 @@ window.EC = {
     const wTxt = (d) => (d.w ? `${d.w} W` : '—');
     function renderPicker() {
       $('#picker').innerHTML = EC.DEVICES.map((d) => `<button type="button" class="dev${S.done[d.id] ? ' done' : ''}" data-id="${d.id}" aria-pressed="${d.id === S.cur}"><span class="ck"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg></span><svg viewBox="0 0 64 52">${ICON[d.id]}</svg><b>${d.name}</b><small>${d.w ? wTxt(d) : '가정용 아님'}</small></button>`).join('');
-      $$('#picker .dev').forEach((b) => b.addEventListener('click', () => { S.cur = b.dataset.id; S.on = false; renderAll(); }));
+      $$('#picker .dev').forEach((b) => b.addEventListener('click', () => { S.cur = b.dataset.id; S.on = false; renderAll(); if (!S.done[S.cur]) $('.ptabs button[data-t=q]').click(); }));
     }
     function renderQuiz() {
       const d = EC.DEVICES.find((x) => x.id === S.cur), done = S.done[d.id];
@@ -354,6 +375,7 @@ window.EC = {
       $('#chk').disabled = done || !Object.values(pick).some(Boolean);
       const fb = $('#fb');
       if (!done) { fb.className = 'fb'; fb.innerHTML = ''; }
+      else { fb.className = 'fb show ok'; fb.innerHTML = `<b>확인한 기구예요.</b> ${d.name}에서 전기 에너지는 주로 <b>${d.main.map((k) => EN[k].n).join('와 ')}</b>로 바뀌어요.` + (d.also.length ? ` ${d.also.map((k) => EN[k].n).join(', ')}도 조금 생겨요.` : ''); }
     }
     function flowSvg(d) {
       // 전기 에너지 띠가 주로 이용하는 에너지(굵게)와 함께 생기는 에너지(가늘게)로 나뉘어요
@@ -375,9 +397,14 @@ window.EC = {
       return s;
     }
     function renderFlow() {
-      const d = EC.DEVICES.find((x) => x.id === S.cur);
-      $('#flow').innerHTML = S.done[d.id] ? flowSvg(d) : '<div class="lock">예상을 확인하면 띠 그림이 나타나요</div>';
+      const d = EC.DEVICES.find((x) => x.id === S.cur), done = !!S.done[d.id];
+      $('#flow').innerHTML = done ? flowSvg(d) : '';
+      $('#flowWrap').hidden = !done; $('#ask').hidden = done;
     }
+    $$('.ptabs button').forEach((b) => b.addEventListener('click', () => {
+      $$('.ptabs button').forEach((x) => x.setAttribute('aria-selected', String(x === b)));
+      $$('.pane').forEach((p) => (p.hidden = p.dataset.p !== b.dataset.t));
+    }));
     function renderRate() {
       const d = EC.DEVICES.find((x) => x.id === S.cur);
       $('#rateBox').innerHTML = d.w ? `<div class="rate"><span>기구</span><span>${d.name}${d.src === 'book' ? '<span class="tagT">교과서 값</span>' : '<span class="tagS">예시 값</span>'}</span><span>정격 전압</span><span>220 V</span><span>소비 전력</span><span class="big">${d.w} W</span></div>` : '<p class="note" style="margin-top:8px">전기 버스는 가정에서 쓰는 기구가 아니어서 소비 전력 비교에서 뺐어요.</p>';

@@ -119,6 +119,19 @@
   @media (max-width:900px){.gl-host{height:min(56vh,620px)}}
   @media (max-width:900px){.stage{grid-template-columns:1fr}.viewer{position:relative;top:0}}
   @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+  /* ===== 한 화면 배치 (2026-10-15: 태블릿 한 화면 안에서 조작과 결과가 끝나도록) ===== */
+  .app{padding:10px 16px 12px;gap:10px}
+  header.top h1{display:inline;font-size:clamp(20px,2.1vw,25px);margin:0 0 0 6px;vertical-align:-2px}
+  header.top .sub{margin-top:3px;font-size:14.5px}
+  .stage{align-items:stretch}
+  .gl-host{height:calc(100vh - 96px);min-height:420px;max-height:760px}
+  .side{padding:12px 14px}
+  .ptabs{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;background:#eef3f8;border-radius:14px;padding:4px;margin-bottom:10px}
+  .ptabs button{min-height:44px;border:0;border-radius:11px;background:transparent;font-weight:800;font-size:14.5px;color:var(--muted);cursor:pointer}
+  .ptabs button[aria-selected="true"]{background:#fff;color:var(--accent);box-shadow:0 1px 3px rgba(20,38,59,.14)}
+  .pane[hidden]{display:none!important}
+  .side .model{text-align:left;margin-top:10px}
+  @media (max-width:900px){.gl-host{height:520px;min-height:0}}
 </style>
 <script type="importmap">
 { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }
@@ -126,9 +139,8 @@
 </head>
 <body>
 <div class="app">
-  <header>
-    <span class="eyebrow">중2 과학 · 전기와 자기 · 3D 모형</span>
-    <h1>3D 전동기: 코일은 왜 계속 돌까? (그림 Ⅶ-16)</h1>
+  <header class="top">
+    <span class="eyebrow">3D 모형</span><h1>3D 전동기: 코일은 왜 계속 돌까? (그림 Ⅶ-16)</h1>
     <p class="sub">전동기는 코일과 자석으로 이루어져 있어요. 장치를 돌려 보며 코일의 왼쪽과 오른쪽이 받는 힘을 확인해요.</p>
   </header>
 
@@ -154,7 +166,13 @@
       </div>
     </section>
 
-    <section class="card pad">
+    <section class="card pad side">
+      <div class="ptabs" role="tablist">
+        <button type="button" role="tab" data-t="run" aria-selected="true">실험하기</button>
+        <button type="button" role="tab" data-t="why" aria-selected="false">왜 돌까?</button>
+        <button type="button" role="tab" data-t="chk" aria-selected="false">확인해 볼까요?</button>
+      </div>
+      <div class="pane" data-p="run">
       <div class="ctl">
         <button class="btn primary big" id="bRun" type="button">스위치 닫기 (회전 시작)</button>
         <button class="btn ghost" id="bSlow" type="button" aria-pressed="false">천천히 보기</button>
@@ -168,7 +186,9 @@
         <div>회전 방향 (앞에서 볼 때)<b id="sR">멈춤</b></div>
       </div>
 
-      <h2>왜 돌까? 단계별로 보기</h2>
+      <p class="model">회전 빠르기와 화살표 길이는 개념 이해를 위한 모형이에요. 실제 전동기는 코일을 여러 번 감고 모양도 다양해요.</p>
+      </div>
+      <div class="pane" data-p="why" hidden>
       <div class="why" id="why">
         <div class="ws on"><span class="sn">1 · 전류의 방향</span><p>코일에 전류가 흐를 때 코일의 <b>왼쪽 부분과 오른쪽 부분에 흐르는 전류의 방향은 반대</b>예요. 초록 화살표를 보세요. 한쪽은 앞으로, 다른 쪽은 뒤로 흘러요.</p></div>
         <div class="ws"><span class="sn">2 · 오른쪽 부분</span><p>오른쪽 부분에서 <b class="cB">네 손가락은 자기장 방향</b>(N극 → S극, 왼쪽), <b class="cI">엄지는 전류 방향</b>(뒤쪽)으로 맞추면 <b class="cF">손바닥은 위</b>를 향해요. 오른쪽 부분은 <b>위로</b> 힘을 받아요.</p></div>
@@ -177,13 +197,24 @@
         <div class="wnav"><button class="p" type="button" id="wP" disabled>이전</button><span id="wN" style="font-weight:800;color:var(--muted)">1 / 4</span><button class="n" type="button" id="wNx">다음</button></div>
       </div>
 
-      <h2>확인해 볼까요?</h2>
+      </div>
+      <div class="pane" data-p="chk" hidden>
       <div id="checks"></div>
+      </div>
     </section>
   </div>
-  <p class="model">회전 빠르기와 화살표 길이는 개념 이해를 위한 모형이에요. 실제 전동기는 코일을 여러 번 감고 모양도 다양해요.</p>
-  <p class="credit">중2 과학 · 전기와 자기</p>
 </div>
+<script>
+/* ===== 블록: 칸 안의 탭 ===== */
+(() => {
+  try {
+    const bs = Array.from(document.querySelectorAll('.ptabs button'));
+    const go = (t) => { bs.forEach((x) => x.setAttribute('aria-selected', String(x.dataset.t === t))); document.querySelectorAll('.pane').forEach((p) => (p.hidden = p.dataset.p !== t)); };
+    bs.forEach((b) => b.addEventListener('click', () => go(b.dataset.t)));
+    const q = new URLSearchParams(location.search).get('tab'); if (q) go(q);
+  } catch (e) { console.error(e); }
+})();
+</script>
 
 <script>
 /* ===== 블록 1: 조작·안내 ===== */
