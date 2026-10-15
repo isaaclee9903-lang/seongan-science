@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>빛의 반사와 굴절 – 스스로 정리하기</title>
+<script>
+/* 문제 알림: 코드에 오류가 나면 화면 아래에 빨간 상자로 알려 줘요 (선생님 확인용) */
+(function () {
+  function box() {
+    var b = document.getElementById('swErr');
+    if (!b && document.body) {
+      b = document.createElement('div'); b.id = 'swErr';
+      b.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;background:#fdecea;color:#8a1f17;border:2px solid #d9534f;border-radius:12px;padding:10px 14px;font:600 14px/1.5 sans-serif;white-space:pre-wrap';
+      document.body.appendChild(b);
+    }
+    return b;
+  }
+  window.SW_err = function (where, err) {
+    var msg = '[' + where + '] ' + (err && err.message ? err.message : String(err));
+    var show = function () { var b = box(); if (b) b.textContent += (b.textContent ? '\n' : '') + msg; };
+    if (document.body) show(); else document.addEventListener('DOMContentLoaded', show);
+  };
+  window.addEventListener('error', function (e) { window.SW_err('스크립트', { message: e.message + ' (줄 ' + e.lineno + ')' }); });
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      var S = window.SW || {}, miss = [];
+      (window.SW_CHECKS || []).forEach(function (p) { if (!S[p[0]]) miss.push(p[1]); });
+      if (miss.length) window.SW_err('실행 안 됨', { message: miss.join(', ') + ' 코드가 실행되지 않았어요. 파일이 끝(</html>)까지 들어 있는지 확인해 주세요.' });
+    }, 1500);
+  });
+})();
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+  :root{--bg:#f3f6f9;--card:#fff;--ink:#14263b;--ink2:#34495e;--muted:#5a6b7e;--line:#dde6ee;--accent:#0e63b3;--accent-soft:#e3effb;
+    --ok:#1f9d5c;--no:#d9534f;--violet:#7d5ad6;--ser:#1784cf;--ser-soft:#e3f2fc;--par:#5e9e1c;--par-soft:#eef7e2;
+    --shadow:0 1px 2px rgba(20,38,59,.06),0 8px 24px rgba(20,38,59,.07);--ease:cubic-bezier(.2,.8,.2,1)}
+  *{box-sizing:border-box}html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:"Pretendard",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  button{font:inherit;color:inherit}
+  .app{max-width:1000px;margin:0 auto;padding:16px 16px 28px;display:flex;flex-direction:column;gap:16px}
+  .eyebrow{display:inline-flex;font-size:13px;font-weight:700;color:var(--accent);background:var(--accent-soft);padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(22px,2.8vw,30px);margin:8px 0 2px;letter-spacing:-.02em}
+  .sub{margin:0;color:var(--muted);font-size:15px;word-break:keep-all}
+  .tabs{display:flex;gap:8px;flex-wrap:wrap;position:sticky;top:0;z-index:5;background:rgba(243,246,249,.94);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);padding:8px 0}
+  .tab{display:flex;align-items:center;gap:8px;min-height:46px;padding:0 14px;border:0;border-radius:12px;background:#fff;box-shadow:var(--shadow);font-weight:800;font-size:14.5px;color:var(--muted);cursor:pointer}
+  .tab .n{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:12.5px;background:#e6edf4;color:#607285}
+  .tab.done .n{background:var(--ok);color:#fff}
+  .card{background:var(--card);border-radius:22px;box-shadow:var(--shadow);border:1px solid rgba(20,38,59,.04);padding:20px 22px;scroll-margin-top:70px}
+  h2{font-size:21px;margin:0 0 4px;display:flex;align-items:center;gap:10px}
+  h2 .no{width:30px;height:30px;border-radius:10px;background:var(--accent);color:#fff;display:grid;place-items:center;font-size:15px}
+  .goal{font-size:14.5px;color:var(--muted);margin:0 0 14px;word-break:keep-all}
+  .fb{margin-top:12px;padding:12px 14px;border-radius:14px;font-size:15px;line-height:1.6;word-break:keep-all;display:none}
+  .fb.show{display:block;animation:fade .35s var(--ease)}
+  .fb.ok{background:#e8f7ef;color:#0f5a36}.fb.no{background:#fff5e6;color:#7a4508}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .btn{min-height:50px;border:0;border-radius:14px;padding:0 18px;font-weight:800;font-size:15.5px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;justify-content:center}
+  .btn:active{transform:scale(.97)}
+  .btn.primary{background:var(--accent);color:#fff}.btn.ghost{background:#eef3f8;color:var(--ink2)}.btn.green{background:var(--ok);color:#fff}
+  .btn:disabled{opacity:.4}
+  /* 1. 분류 */
+  .sort{display:grid;gap:10px}
+  .si{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;background:#f7fafc;border:2px solid transparent;border-radius:16px;padding:10px 12px 10px 16px;transition:all .25s}
+  .si p{margin:0;font-weight:700;font-size:16.5px;line-height:1.5;word-break:keep-all}
+  .si .two{display:flex;gap:6px}
+  .si .two button{min-height:48px;min-width:84px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15px;cursor:pointer}
+  .si .two button.s[aria-pressed="true"]{border-color:var(--ser);background:var(--ser-soft);color:var(--ser)}
+  .si .two button.p[aria-pressed="true"]{border-color:var(--par);background:var(--par-soft);color:#3f6e10}
+  .si.good{border-color:#9fdcbb;background:#ecf8f1}.si.bad{border-color:#f3c2bb;background:#fff4f2}
+  /* 2. 잇기 */
+  .chains{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .chn h3{margin:0 0 8px;font-size:16px}
+  .chn.s h3{color:var(--ser)}.chn.p h3{color:var(--par)}
+  .slots{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+  .sl{min-height:50px;border-radius:12px;border:2px dashed #b8c6d4;background:#f7fafc;display:flex;align-items:center;gap:10px;padding:6px 12px;font-weight:800;font-size:15px;color:var(--muted);word-break:keep-all}
+  .sl .k{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:13px;color:#fff;background:#aebdcc}
+  .chn.s .sl.f{border-style:solid;border-color:var(--ser);background:var(--ser-soft);color:#0f4f7d}.chn.s .sl.f .k{background:var(--ser)}
+  .chn.p .sl.f{border-style:solid;border-color:var(--par);background:var(--par-soft);color:#3f6e10}.chn.p .sl.f .k{background:var(--par)}
+  .pool{display:flex;flex-direction:column;gap:6px}
+  .pc{min-height:50px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15px;cursor:pointer;text-align:left;padding:6px 12px;word-break:keep-all}
+  .pc.shake{animation:shake .4s;border-color:var(--no)}
+  @keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+  .pc[hidden]{display:none}
+  /* 3. 생활 */
+  .lq{padding:14px 0;border-bottom:1px dashed var(--line)}
+  .lq:last-child{border-bottom:0;padding-bottom:0}
+  .lq p{margin:0 0 10px;font-weight:700;font-size:16.5px;line-height:1.6;word-break:keep-all}
+  .opts{display:grid;gap:8px}
+  .ob{display:flex;align-items:center;gap:10px;text-align:left;min-height:52px;border-radius:14px;border:2px solid var(--line);background:#f7fafc;padding:8px 14px;font-size:15.5px;font-weight:700;cursor:pointer;word-break:keep-all}
+  .ob .k{flex:none;width:28px;height:28px;border-radius:50%;background:#fff;border:2px solid #cbd6e1;display:grid;place-items:center;font-size:13px;font-weight:800;color:#5a6b7e}
+  .ob.good{border-color:var(--ok);background:#e8f7ef}.ob.bad{border-color:var(--no);background:#fdecea}
+  .ob:disabled{cursor:default}
+  .lexp{display:none;margin-top:10px;padding:12px 14px;border-radius:14px;background:#f2f7fd;font-size:15px;line-height:1.65;word-break:keep-all}
+  .lexp.show{display:block}
+  /* 4. 글쓰기 */
+  .prompts{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+  .pr{border-radius:16px;border:2px solid #d4dee8;background:#fff;padding:12px 14px;text-align:left;cursor:pointer;min-height:96px}
+  .pr b{display:block;font-size:15.5px;margin-bottom:4px}.pr span{font-size:13.5px;color:var(--muted);word-break:keep-all}
+  .pr.sel{border-color:var(--violet);background:#f3effd}
+  .wq{font-size:17px;font-weight:800;background:#f3effd;border-radius:14px;padding:12px 14px;margin-bottom:10px;color:#3d2f73;word-break:keep-all}
+  .starters{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+  .starters button{min-height:44px;border-radius:10px;border:1px dashed #b8a6ec;background:#fff;color:#5a43a8;font-weight:700;font-size:13.5px;padding:0 10px;cursor:pointer}
+  textarea{width:100%;min-height:220px;border-radius:16px;border:2px solid #cbd6e1;padding:14px 16px;font-size:17px;line-height:1.8;resize:vertical;font-family:inherit}
+  textarea:focus{outline:none;border-color:var(--violet);box-shadow:0 0 0 4px rgba(125,90,214,.15)}
+  .wmeta{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-top:8px;font-size:14px;color:var(--muted);font-weight:700}
+  .kw{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+  .kw span{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:6px 12px;font-size:14px;font-weight:800;background:#eef3f8;color:#7a8a9b;transition:all .3s}
+  .kw span.on{background:#e8f7ef;color:#11703f}
+  .kw span::before{content:"○"}.kw span.on::before{content:"●"}
+  .self{display:grid;gap:8px;margin-top:14px}
+  .self label{display:flex;align-items:center;gap:10px;background:#f7fafc;border-radius:12px;padding:10px 12px;font-size:15px;font-weight:700;cursor:pointer;word-break:keep-all;min-height:48px}
+  .self input{width:22px;height:22px;accent-color:var(--ok)}
+  .self .cat{flex:none;font-size:12px;font-weight:800;color:#fff;border-radius:999px;padding:2px 8px}
+  .acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+  .note{font-size:12.5px;color:var(--muted);line-height:1.6;word-break:keep-all}
+  @media (max-width:760px){.chains,.prompts{grid-template-columns:1fr}.si{grid-template-columns:1fr}}
+  @media print{body{background:#fff}.tabs,.card:not(#s4),.acts,.starters,.prompts,.self,.kw,header .sub{display:none!important}#s4{box-shadow:none;border:0}textarea{border:0;min-height:0;height:auto}}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+  /* ===== 빛 그림 공통 ===== */
+  .scene{position:relative;width:100%;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+  .scene > svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .olay{position:absolute;inset:0;pointer-events:none}
+  .ol{position:absolute;transform:translate(-50%,-50%);white-space:nowrap;font-weight:800;font-size:clamp(11.5px,1.32vw,15px);line-height:1.25;color:#e9eef5;background:rgba(14,18,25,.74);padding:3px 8px;border-radius:7px;letter-spacing:-.01em}
+  .ol.key{color:#fff;background:#0e63b3}
+  .ol.soft{background:transparent;color:#b7c3d1;font-weight:700;padding:0}
+  .ol.ink{color:#15263a;background:rgba(255,255,255,.9);box-shadow:0 1px 4px rgba(20,38,59,.12)}
+  .ol.inkk{color:#fff;background:#0e63b3}
+  .ol.inks{background:transparent;color:#5a6b7e;font-weight:700;padding:0}
+  .ol.la{transform:translate(-100%,-50%)}.ol.ra{transform:translate(0,-50%)}
+  .ol[hidden]{display:none}
+  .flowdash{animation:flowdash .55s linear infinite}
+  @keyframes flowdash{to{stroke-dashoffset:-37}}
+  @media (prefers-reduced-motion:reduce){.flowdash{animation:none}}
+  /* ===== 이 수업 전용 ===== */
+  :root{--violet:#0e63b3}
+  .pr.sel{border-color:#0e63b3;background:#eef5fc}
+  .wq{background:#eef5fc;color:#123a63}
+  .si .two button{min-width:92px}
+  .si .two button.o[aria-pressed="true"]{border-color:#0e63b3;background:#e4f0fb;color:#0e63b3}
+  .si .two button.x[aria-pressed="true"]{border-color:#5a6b7e;background:#eef2f6;color:#34495e}
+  .figs2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:6px 0 10px}
+  .figs2 .fc{background:#f8fafc;border:1px solid var(--line);border-radius:16px;padding:8px}
+  .figs2 .fc > b{display:block;font-size:15px;margin:2px 4px 6px}
+  .figs2 .scene{aspect-ratio:400/300;border-radius:10px;background:#fff}
+  .slot{position:absolute;z-index:3;transform:translate(-50%,-50%);min-height:44px;min-width:88px;border-radius:10px;border:2px dashed #8fa3b8;background:rgba(255,255,255,.95);font-weight:900;font-size:clamp(12px,1.5vw,14.5px);color:var(--muted);cursor:pointer;word-break:keep-all;padding:2px 8px;white-space:nowrap}
+  .slot.f{border-style:solid;border-color:#0e63b3;background:#e4f0fb;color:#0b3f73}
+  .slot.cur{box-shadow:0 0 0 4px rgba(14,99,179,.25)}
+  .slot.good{border-color:var(--ok);background:#e8f7ef;color:#11703f}.slot.bad{border-color:var(--no);background:#fdecea;color:#b33a35}
+  .bank{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+  .chip{min-height:48px;padding:6px 14px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15.5px;cursor:pointer;word-break:keep-all}
+  .chip.used{opacity:.3;pointer-events:none}
+  .order{display:grid;gap:14px}
+  .ord p{margin:0 0 8px;font-weight:800;font-size:16px;word-break:keep-all}
+  .orow{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+  .orow .os{min-height:52px;min-width:104px;border-radius:12px;border:2px dashed #aebdcc;background:#fff;font-weight:900;font-size:15px;color:var(--muted);cursor:pointer;padding:2px 10px;word-break:keep-all}
+  .orow .os.f{border-style:solid;border-color:#0e63b3;background:#e4f0fb;color:#0b3f73}
+  .orow .os.cur{box-shadow:0 0 0 4px rgba(14,99,179,.22)}
+  .orow .os.good{border-color:var(--ok);background:#e8f7ef;color:#11703f}.orow .os.bad{border-color:var(--no);background:#fdecea;color:#b33a35}
+  .orow .ar{color:#0e63b3;font-weight:900;font-size:20px}
+  .srcs{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 4px}
+  .srcs button{min-height:50px;padding:0 16px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15.5px;cursor:pointer}
+  .srcs button[aria-pressed="true"]{border-color:#0e63b3;background:#e4f0fb;color:#0b3f73}
+  .srcs button.good{border-color:var(--ok)}.srcs button.bad{border-color:var(--no);background:#fdecea}
+  h3.sm{font-size:16px;margin:14px 0 6px}
+  .prompts{grid-template-columns:repeat(3,1fr)}
+  @media (max-width:860px){.figs2{grid-template-columns:1fr}.prompts{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <span class="eyebrow">빛의 반사와 굴절 · 스스로 정리하기</span>
+    <h1>빛의 경로로 정리하기</h1>
+    <p class="sub">맞는 말을 고르고, 그림에 이름을 붙이고, 물체를 보는 빛의 경로를 순서대로 놓은 뒤, 내 생각을 써 봐요.</p>
+  </header>
+  <nav class="tabs" id="tabs"></nav>
+
+  <section class="card" id="s1">
+    <h2><span class="no">1</span>맞을까, 틀릴까?</h2>
+    <p class="goal">문장마다 '맞다' 또는 '틀리다'를 골라요. 다 고르면 확인!</p>
+    <div class="sort" id="sort"></div>
+    <div class="acts"><button type="button" class="btn primary" id="chk1" disabled>확인하기</button></div>
+    <div class="fb" id="fb1"></div>
+  </section>
+
+  <section class="card" id="s2">
+    <h2><span class="no">2</span>그림에 이름 붙이기</h2>
+    <p class="goal">빈칸을 누른 뒤 아래 낱말을 눌러 채워요. 각은 수직인 선에서 잰다는 것을 떠올려 보세요.</p>
+    <div class="figs2">
+      <div class="fc"><b>빛의 반사</b><div class="scene" id="fR"><svg viewBox="0 0 400 300" role="img" aria-label="빛의 반사 그림에 빈칸이 있다."></svg></div></div>
+      <div class="fc"><b>빛의 굴절</b><div class="scene" id="fF"><svg viewBox="0 0 400 300" role="img" aria-label="빛의 굴절 그림에 빈칸이 있다."></svg></div></div>
+    </div>
+    <div class="bank" id="bank2"></div>
+    <button class="btn primary" id="chk2" type="button" disabled>확인하기</button>
+    <div class="fb" id="fb2"></div>
+  </section>
+
+  <section class="card" id="s3">
+    <h2><span class="no">3</span>물체를 보는 빛의 경로</h2>
+    <p class="goal">먼저 광원을 모두 고르고, 빛이 나아가는 순서대로 빈칸을 채워요.</p>
+    <h3 class="sm">스스로 빛을 내는 광원을 모두 골라요</h3>
+    <div class="srcs" id="srcs"></div>
+    <h3 class="sm">빛이 나아가는 순서</h3>
+    <div class="order" id="order"></div>
+    <div class="acts"><button type="button" class="btn primary" id="chk3" disabled>확인하기</button></div>
+    <div class="fb" id="fb3"></div>
+  </section>
+
+  <section class="card" id="s4">
+    <h2><span class="no">4</span>내 말로 설명하기</h2>
+    <p class="goal">주제를 하나 골라 친구에게 설명하듯 써 봐요. 핵심어를 넣으면 초록색으로 바뀌어요.</p>
+    <div class="prompts" id="prompts"></div>
+    <div class="wq" id="wqText"></div>
+    <div class="starters" id="starters"></div>
+    <textarea id="txt" placeholder="여기에 써 보세요."></textarea>
+    <div class="wmeta"><span id="cnt">0자 · 목표 100자 이상</span><span id="saved"></span></div>
+    <div class="kw" id="kw"></div>
+    <div class="self" id="self"></div>
+    <div class="acts">
+      <button class="btn green" id="copyBtn" type="button">글 복사하기</button>
+      <button class="btn ghost" id="printBtn" type="button">인쇄 / PDF로 저장</button>
+    </div>
+    <p class="note" style="margin-top:10px">※ 글은 이 기기의 브라우저에만 임시로 저장되고 어디에도 보내지 않아요. 다 쓰면 '글 복사하기'로 복사해서 선생님이 안내한 곳에 붙여 넣으세요.</p>
+  </section>
+  <p class="credit" style="margin:20px 0 4px;text-align:center;font-size:13px;font-weight:700;color:#8495a8;letter-spacing:.02em">빛의 반사와 굴절 · 물체를 보는 과정</p>
+</div>
+
+<script>
+/* ===== 공통 ===== */
+window.SW_CHECKS = [['ok1', 'O/X 판단'], ['ok2', '이름 붙이기'], ['ok3', '빛의 경로'], ['ok4', '글쓰기']];
+window.SW = {
+  $: (s, r = document) => r.querySelector(s),
+  $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
+  shuffle: (a) => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; },
+  fb: (id, ok, html) => { const f = document.querySelector(id); f.className = 'fb show ' + (ok ? 'ok' : 'no'); f.innerHTML = html; },
+  done: {},
+};
+(() => {
+  const { $, $$ } = window.SW;
+  const TABS = ['맞을까 틀릴까', '이름 붙이기', '빛의 경로', '글쓰기'];
+  window.SW.renderTabs = () => {
+    $('#tabs').innerHTML = TABS.map((t, i) => `<button type="button" class="tab${window.SW.done[i + 1] ? ' done' : ''}" data-s="${i + 1}"><span class="n">${i + 1}</span>${t}</button>`).join('');
+    $$('#tabs .tab').forEach((b) => b.addEventListener('click', () => document.getElementById('s' + b.dataset.s).scrollIntoView({ behavior: 'smooth', block: 'start' })));
+  };
+  window.SW.finish = (n) => { window.SW.done[n] = true; window.SW.renderTabs(); };
+  window.SW.renderTabs();
+})();
+</script>
+<script>
+/* ===== 2D 도식 도구 (SVG) =====
+   FLOW.dots(path, 옵션): SVG 길(path)을 따라 알갱이(전기·물·열)가 흐르게 해요.
+     옵션 n(개수), r(크기), color, speed(초당 길 몇 바퀴), layer(알갱이를 넣을 g, 생략하면 길의 부모), glow(빛 번짐)
+     반환값.set({ rate: 0~1(보이는 양과 빠르기), color }) 로 바꿔요.
+   FLOW.onFrame(fn): 화면에 보일 때만 매 프레임 fn(dt, t)를 불러요(탭 껍데기에서 숨은 탭이면 쉬어요).
+   FLOW.num(el, 값, 자릿수): 숫자를 부드럽게 바꿔 보여 줘요.
+   크기·개수·빠르기는 개념 이해를 위한 모형이에요. */
+const FLOW = (() => {
+  const NS = 'http://www.w3.org/2000/svg';
+  const REDUCE = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const fns = [];
+  function visibleNow() {
+    if (document.hidden) return false;
+    try { const f = window.frameElement; if (f && f.hasAttribute('data-page') && !f.classList.contains('on')) return false; } catch (e) {}
+    return true;
+  }
+  let last = performance.now();
+  function tick(now) {
+    requestAnimationFrame(tick);
+    const dt = Math.min(0.05, Math.max(0, (now - last) / 1000)); last = now;
+    if (!visibleNow()) return;
+    for (const f of fns) { try { f(dt, now / 1000); } catch (e) { console.error(e); } }
+  }
+  requestAnimationFrame(tick);
+  const onFrame = (f) => fns.push(f);
+  function onScreen(el) { const r = el.getBoundingClientRect(); return r.bottom > -40 && r.top < (window.innerHeight || 800) + 40; }
+
+  function dots(path, o = {}) {
+    const n = o.n || 14, layer = o.layer || path.parentNode, L = path.getTotalLength();
+    const svg = path.ownerSVGElement;
+    const g = document.createElementNS(NS, 'g'); g.setAttribute('pointer-events', 'none'); layer.appendChild(g);
+    const cs = [];
+    for (let k = 0; k < n; k++) {
+      const c = document.createElementNS(NS, 'circle'); c.setAttribute('r', o.r || 4);
+      if (o.glow) c.setAttribute('filter', o.glow);
+      g.appendChild(c); cs.push(c);
+    }
+    let rate = o.rate === undefined ? 1 : o.rate, color = o.color || '#2f6fd6', off = Math.random(), speed = o.speed || 0.12;
+    const paint = () => cs.forEach((c) => c.setAttribute('fill', color)); paint();
+    function place() {
+      const show = Math.round(n * Math.min(1, rate));
+      cs.forEach((c, k) => {
+        if (k >= show) { c.setAttribute('opacity', '0'); return; }
+        const s = ((off + k / n) % 1), p = path.getPointAtLength(s * L);
+        c.setAttribute('cx', p.x.toFixed(1)); c.setAttribute('cy', p.y.toFixed(1));
+        c.setAttribute('opacity', String(Math.min(1, s * 8, (1 - s) * 8)));
+      });
+    }
+    onFrame((dt) => { if (REDUCE || !onScreen(svg)) return; off = (off + dt * speed * (0.25 + 0.75 * Math.min(1, rate))) % 1; place(); });
+    place();
+    return { set(v) { if (v.rate !== undefined) rate = v.rate; if (v.color) { color = v.color; paint(); } if (v.speed) speed = v.speed; place(); }, g };
+  }
+
+  const shown = new WeakMap();
+  function num(el, v, digits = 0) {
+    const from = shown.has(el) ? shown.get(el) : 0; shown.set(el, v);
+    const fmt = (x) => x.toLocaleString('ko-KR', { minimumFractionDigits: digits, maximumFractionDigits: digits });
+    if (REDUCE) { el.textContent = fmt(v); return; }
+    let t = 0; const step = (dt) => { t = Math.min(1, t + dt / 0.5); el.textContent = fmt(from + (v - from) * (1 - Math.pow(1 - t, 3))); return t < 1; };
+    const f = (dt) => { if (!step(dt)) { const i = fns.indexOf(f); if (i >= 0) fns.splice(i, 1); } };
+    fns.push(f);
+  }
+  return { dots, onFrame, num, REDUCE, NS };
+})();
+window.FLOW = FLOW;
+</script>
+<script>
+/* ===== 빛 그림 도구 (SVG 2D) =====
+   OP.el(태그, 속성, 부모)            SVG 요소 만들기
+   OP.defs(svg)                       공통 그라디언트·번짐 필터
+   OP.overlay(host, W, H)             그림 위 HTML 이름표 (.ol). put(id, x, y, 글, 종류) / hide(id)
+   OP.toSvg(svg, 이벤트)              누른 곳 → 그림 좌표
+   OP.beam(부모, 옵션)                레이저 광선(번짐 + 밝은 심 + 흐르는 점선). set(점 목록) / show(켜기, 자라기)
+   OP.photons(층)                     빛 알갱이 흐름. add(점 목록, {rate, speed, r, color}) → 길 / clear()
+   OP.protractor(부모, C, R, 'half'|'full')  각도기
+   OP.laser(부모) / OP.place(g, x, y, 각도)  슬릿 레이저 기구
+   OP.eye(부모, x, y, 너비)           눈 그림
+   크기·빠르기는 개념 이해를 위한 모형이에요. 굴절 정도는 실제 물과 비슷하게 그리지만 계산식은 화면에 쓰지 않아요. */
+window.OP = (() => {
+  const NS = 'http://www.w3.org/2000/svg', D = Math.PI / 180;
+  const el = (tag, at = {}, parent) => { const e = document.createElementNS(NS, tag); for (const k in at) e.setAttribute(k, at[k]); if (parent) parent.appendChild(e); return e; };
+  const RED = '#ff3b2f';
+
+  function defs(svg) {
+    const d = el('defs', {}, svg);
+    d.innerHTML = `
+      <filter id="opGlow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="6"/></filter>
+      <filter id="opGlow2" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2.2"/></filter>
+      <filter id="opDot" x="-200%" y="-200%" width="500%" height="500%"><feGaussianBlur stdDeviation="2.4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      <filter id="opShadow" x="-20%" y="-20%" width="140%" height="160%"><feGaussianBlur in="SourceAlpha" stdDeviation="7"/><feOffset dy="6"/><feComponentTransfer><feFuncA type="linear" slope=".45"/></feComponentTransfer><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      <filter id="opNoise" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="4"/><feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .07 0"/><feComposite in2="SourceGraphic" operator="in"/></filter>
+      <linearGradient id="opBody" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4a5260"/><stop offset=".18" stop-color="#2a3039"/><stop offset=".7" stop-color="#15191f"/><stop offset="1" stop-color="#0b0d11"/></linearGradient>
+      <linearGradient id="opMetal" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e9edf2"/><stop offset=".45" stop-color="#9aa3ae"/><stop offset=".55" stop-color="#7d8692"/><stop offset="1" stop-color="#c9d0d8"/></linearGradient>
+      <linearGradient id="opPlastic" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#dfeaf6" stop-opacity=".16"/><stop offset=".5" stop-color="#dfeaf6" stop-opacity=".07"/><stop offset="1" stop-color="#dfeaf6" stop-opacity=".13"/></linearGradient>
+      <radialGradient id="opIris" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#1b1410"/><stop offset=".38" stop-color="#1b1410"/><stop offset=".42" stop-color="#6b4a2c"/><stop offset=".8" stop-color="#3f2a18"/><stop offset="1" stop-color="#22160c"/></radialGradient>
+      <radialGradient id="opSclera" cx=".5" cy=".45" r=".6"><stop offset="0" stop-color="#ffffff"/><stop offset=".75" stop-color="#eef0f2"/><stop offset="1" stop-color="#c9ced6"/></radialGradient>`;
+    return d;
+  }
+
+  function overlay(host, W, H) {
+    const box = document.createElement('div'); box.className = 'olay'; host.appendChild(box);
+    const map = {};
+    return {
+      put(id, x, y, html, cls = '') {
+        let e = map[id]; if (!e) { e = document.createElement('span'); box.appendChild(e); map[id] = e; }
+        e.className = 'ol ' + cls; if (e._h !== html) { e.innerHTML = html; e._h = html; }
+        e.style.left = (x / W * 100).toFixed(2) + '%'; e.style.top = (y / H * 100).toFixed(2) + '%'; e.hidden = false; return e;
+      },
+      hide(id) { if (map[id]) map[id].hidden = true; },
+      hideAll() { Object.values(map).forEach((e) => (e.hidden = true)); },
+      box,
+    };
+  }
+
+  function toSvg(svg, ev) {
+    const p = svg.createSVGPoint(); p.x = ev.clientX; p.y = ev.clientY;
+    const q = p.matrixTransform(svg.getScreenCTM().inverse()); return [q.x, q.y];
+  }
+
+  const dstr = (pts) => pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
+
+  function beam(parent, o = {}) {
+    const g = el('g', { 'pointer-events': 'none', 'stroke-linecap': 'round', 'stroke-linejoin': 'round', fill: 'none' }, parent);
+    const col = o.color || RED;
+    const halo = el('path', { stroke: col, 'stroke-width': o.halo || 22, 'stroke-opacity': 0.16, filter: 'url(#opGlow)' }, g);
+    const mid = el('path', { stroke: col, 'stroke-width': o.mid || 7, 'stroke-opacity': 0.55, filter: 'url(#opGlow2)' }, g);
+    const core = el('path', { stroke: o.core || '#ffd9d2', 'stroke-width': o.w || 2.4 }, g);
+    const dash = el('path', { stroke: '#fff', 'stroke-width': 2.6, 'stroke-opacity': 0.75, 'stroke-dasharray': '3 34', class: 'flowdash' }, g);
+    const parts = [halo, mid, core, dash];
+    let on = false;
+    return {
+      g,
+      set(pts) { const d = dstr(pts); parts.forEach((p) => p.setAttribute('d', d)); },
+      setSegments(list) { const d = list.map(dstr).join(' '); parts.forEach((p) => p.setAttribute('d', d)); },
+      show(v, grow) {
+        on = v; g.style.display = v ? '' : 'none';
+        if (v && grow && !(window.FLOW && FLOW.REDUCE)) {
+          [halo, mid, core].forEach((p) => {
+            const L = p.getTotalLength(); p.style.transition = 'none'; p.style.strokeDasharray = L; p.style.strokeDashoffset = L;
+            p.getBoundingClientRect(); p.style.transition = 'stroke-dashoffset .55s cubic-bezier(.3,.7,.3,1)'; p.style.strokeDashoffset = 0;
+            setTimeout(() => { p.style.strokeDasharray = ''; p.style.strokeDashoffset = ''; p.style.transition = ''; }, 600);
+          });
+          dash.style.opacity = 0; setTimeout(() => (dash.style.opacity = ''), 560);
+        }
+      },
+      get on() { return on; },
+      style(o2) { if (o2.halo) halo.setAttribute('stroke-width', o2.halo); if (o2.haloOp != null) halo.setAttribute('stroke-opacity', o2.haloOp); if (o2.midOp != null) mid.setAttribute('stroke-opacity', o2.midOp); },
+    };
+  }
+
+  function photons(layer) {
+    const routes = [], dots = [], pool = [];
+    const visible = () => { const r = layer.ownerSVGElement.getBoundingClientRect(); return r.bottom > 0 && r.top < (innerHeight || 800); };
+    function prep(r) { r.seg = []; r.total = 0; for (let i = 1; i < r.pts.length; i++) { const a = r.pts[i - 1], b = r.pts[i], L = Math.hypot(b[0] - a[0], b[1] - a[1]); r.seg.push(L); r.total += L; } }
+    function pos(r, d) { for (let i = 0; i < r.seg.length; i++) { if (d <= r.seg[i] || i === r.seg.length - 1) { const a = r.pts[i], b = r.pts[i + 1], t = r.seg[i] ? Math.min(1, d / r.seg[i]) : 0; return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]; } d -= r.seg[i]; } return r.pts[0]; }
+    function add(pts, o = {}) {
+      const r = { pts, rate: o.rate == null ? 2 : o.rate, speed: o.speed || 240, color: o.color || '#ffe6a0', size: o.r || 4.2, acc: o.phase == null ? Math.random() : o.phase, fade: o.fade || 26, dead: false, end: o.end };
+      prep(r); routes.push(r); return r;
+    }
+    function spawn(r, d0) { const c = pool.pop() || el('circle', {}, layer); c.setAttribute('r', r.size); c.setAttribute('fill', r.color); c.style.display = ''; dots.push({ c, r, d: d0 || 0 }); }
+    FLOW.onFrame((dt) => {
+      if (!visible()) return;
+      routes.forEach((r) => { if (r.rate <= 0) return; r.acc += dt * r.rate; while (r.acc >= 1) { r.acc -= 1; spawn(r); } });
+      for (let i = dots.length - 1; i >= 0; i--) {
+        const p = dots[i]; p.d += dt * p.r.speed;
+        if (p.r.dead || p.d >= p.r.total) { if (!p.r.dead && p.r.end) p.r.end(); p.c.style.display = 'none'; pool.push(p.c); dots.splice(i, 1); continue; }
+        const [x, y] = pos(p.r, p.d); p.c.setAttribute('cx', x.toFixed(1)); p.c.setAttribute('cy', y.toFixed(1));
+        p.c.setAttribute('opacity', Math.max(0, Math.min(1, p.d / p.r.fade, (p.r.total - p.d) / p.r.fade)).toFixed(2));
+      }
+    });
+    return {
+      add,
+      fill(r) { for (let d = 0; d < r.total; d += r.speed / Math.max(0.5, r.rate)) spawn(r, d); },
+      remove(r) { r.dead = true; const i = routes.indexOf(r); if (i >= 0) routes.splice(i, 1); },
+      clear() { routes.forEach((r) => (r.dead = true)); routes.length = 0; },
+      routes,
+    };
+  }
+
+  function protractor(parent, C, R, mode) {
+    const g = el('g', { 'pointer-events': 'none' }, parent);
+    const [cx, cy] = C, full = mode === 'full';
+    const dir = (a) => (full ? [Math.sin(a * D), -Math.cos(a * D)] : [Math.sin(a * D), Math.cos(a * D)]);
+    // 판
+    if (full) el('circle', { cx, cy, r: R, fill: 'url(#opPlastic)', stroke: 'rgba(225,236,248,.55)', 'stroke-width': 1.6 }, g);
+    else el('path', { d: `M${cx - R} ${cy} A${R} ${R} 0 0 0 ${cx + R} ${cy} Z`, fill: 'url(#opPlastic)', stroke: 'rgba(225,236,248,.55)', 'stroke-width': 1.6 }, g);
+    const ri = R * 0.24;
+    if (full) el('circle', { cx, cy, r: ri, fill: 'none', stroke: 'rgba(225,236,248,.35)', 'stroke-width': 1.2 }, g);
+    else el('path', { d: `M${cx - ri} ${cy} A${ri} ${ri} 0 0 0 ${cx + ri} ${cy}`, fill: 'none', stroke: 'rgba(225,236,248,.35)', 'stroke-width': 1.2 }, g);
+    const lines = [], ticks = [];
+    const a0 = full ? 0 : -90, a1 = full ? 359 : 90;
+    for (let a = a0; a <= a1; a++) {
+      const [sx, sy] = dir(a), big = a % 10 === 0, mid = a % 5 === 0;
+      const L = big ? 20 : mid ? 13 : 7;
+      ticks.push(`M${(cx + sx * R).toFixed(1)} ${(cy + sy * R).toFixed(1)}L${(cx + sx * (R - L)).toFixed(1)} ${(cy + sy * (R - L)).toFixed(1)}`);
+      if (big) lines.push(`M${(cx + sx * ri).toFixed(1)} ${(cy + sy * ri).toFixed(1)}L${(cx + sx * (R - 46)).toFixed(1)} ${(cy + sy * (R - 46)).toFixed(1)}`);
+    }
+    el('path', { d: lines.join(''), stroke: 'rgba(225,236,248,.16)', 'stroke-width': 1 }, g);
+    el('path', { d: ticks.join(''), stroke: 'rgba(225,236,248,.62)', 'stroke-width': 1.1 }, g);
+    const tg = el('g', { fill: 'rgba(232,240,250,.78)', 'font-size': Math.max(12, R * 0.045), 'font-weight': 700, 'font-family': 'Pretendard,sans-serif', 'text-anchor': 'middle', 'dominant-baseline': 'central' }, g);
+    for (let a = a0; a <= a1; a += 10) {
+      const v = full ? (a <= 90 ? a : a <= 180 ? 180 - a : a <= 270 ? a - 180 : 360 - a) : Math.abs(a);
+      const [sx, sy] = dir(a), rr = R - 33;
+      const t = el('text', { x: (cx + sx * rr).toFixed(1), y: (cy + sy * rr).toFixed(1), transform: `rotate(${full ? a : -a} ${(cx + sx * rr).toFixed(1)} ${(cy + sy * rr).toFixed(1)})` }, tg);
+      t.textContent = v;
+    }
+    el('circle', { cx, cy, r: 3.2, fill: 'rgba(240,246,252,.9)' }, g);
+    return g;
+  }
+
+  function laser(parent) {
+    const g = el('g', { 'pointer-events': 'none', filter: 'url(#opShadow)' }, parent);
+    el('rect', { x: -112, y: -21, width: 98, height: 42, rx: 8, fill: 'url(#opBody)', stroke: '#05070a', 'stroke-width': 1 }, g);
+    el('rect', { x: -108, y: -18, width: 90, height: 6, rx: 3, fill: 'rgba(255,255,255,.12)' }, g);
+    el('rect', { x: -90, y: -6, width: 40, height: 12, rx: 3, fill: '#0d1015', stroke: 'rgba(255,255,255,.08)' }, g);
+    el('circle', { cx: -34, cy: 0, r: 6, fill: '#20252d', stroke: 'rgba(255,255,255,.18)' }, g);
+    el('rect', { x: -16, y: -15, width: 16, height: 30, rx: 3, fill: 'url(#opMetal)', stroke: '#6b737e', 'stroke-width': .8 }, g);
+    const slit = el('rect', { x: -1.6, y: -10, width: 3.2, height: 20, rx: 1.4, fill: '#3a1210' }, g);
+    const led = el('circle', { cx: -34, cy: 0, r: 2.6, fill: '#3a1210' }, g);
+    return { g, power(v) { slit.setAttribute('fill', v ? '#ff6a5a' : '#3a1210'); led.setAttribute('fill', v ? '#ff3b2f' : '#3a1210'); } };
+  }
+  const place = (g, x, y, deg) => g.setAttribute('transform', `translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${deg.toFixed(2)})`);
+
+  function eye(parent, x, y, w, o = {}) {
+    const g = el('g', { transform: `translate(${x} ${y}) scale(${w / 100})`, 'pointer-events': 'none' }, parent);
+    if (o.shade !== false) el('ellipse', { cx: 0, cy: 3, rx: 58, ry: 34, fill: 'rgba(0,0,0,.18)', filter: 'url(#opGlow2)' }, g);
+    el('path', { d: 'M-50 0C-30-30 30-30 50 0C30 30-30 30-50 0Z', fill: 'url(#opSclera)', stroke: '#3b2f2a', 'stroke-width': 3.2, 'stroke-linejoin': 'round' }, g);
+    const clip = 'eyc' + Math.random().toString(36).slice(2, 7);
+    el('clipPath', { id: clip }, g).innerHTML = '<path d="M-50 0C-30-30 30-30 50 0C30 30-30 30-50 0Z"/>';
+    const ir = el('g', { 'clip-path': `url(#${clip})` }, g);
+    el('circle', { cx: o.lx || 0, cy: o.ly || 0, r: 19, fill: 'url(#opIris)' }, ir);
+    el('circle', { cx: (o.lx || 0) - 6, cy: (o.ly || 0) - 7, r: 5, fill: '#fff', opacity: .9 }, ir);
+    el('path', { d: 'M-50 0C-30-30 30-30 50 0', fill: 'none', stroke: '#2a201c', 'stroke-width': 5, 'stroke-linecap': 'round' }, g);
+    return g;
+  }
+
+  const arc = (cx, cy, r, a0, a1) => { const x0 = cx + r * Math.cos(a0), y0 = cy + r * Math.sin(a0), x1 = cx + r * Math.cos(a1), y1 = cy + r * Math.sin(a1); const large = Math.abs(a1 - a0) > Math.PI ? 1 : 0, sw = a1 > a0 ? 1 : 0; return `M${x0.toFixed(1)} ${y0.toFixed(1)}A${r} ${r} 0 ${large} ${sw} ${x1.toFixed(1)} ${y1.toFixed(1)}`; };
+  const refr = (deg) => Math.asin(Math.sin(deg * D) / 1.33) / D; // 공기 → 물 (그림용)
+
+  return { el, D, NS, RED, defs, overlay, toSvg, beam, photons, protractor, laser, place, eye, arc, refr, dstr };
+})();
+</script>
+<script>
+/* ===== 물체 그림 (SVG 2D 일러스트) =====
+   OPA.defs(svg)  그림용 그라디언트
+   OPA.ray(g, p0, p1, 옵션)   빛 화살표 (색, 굵기, 점선, 화살촉 위치)
+   OPA.lamp / pendant / sun / ball / book / cube / tube / reflector / plant / camera
+   빛은 왼쪽 위에서 비친다고 보고 밝은 면·그림자를 칠해요. */
+window.OPA = (() => {
+  const { el } = OP;
+  const LIGHT = '#e89a12';
+  function defs(svg) {
+    const d = svg.querySelector('defs') || el('defs', {}, svg);
+    if (d.querySelector('#paBall')) return;
+    d.insertAdjacentHTML('beforeend', `
+      <radialGradient id="paBall" cx=".36" cy=".32" r=".75"><stop offset="0" stop-color="#ffffff"/><stop offset=".55" stop-color="#eceff2"/><stop offset=".85" stop-color="#b9c0c8"/><stop offset="1" stop-color="#8d959f"/></radialGradient>
+      <radialGradient id="paBallDark" cx=".36" cy=".32" r=".75"><stop offset="0" stop-color="#3a3f46"/><stop offset="1" stop-color="#0f1114"/></radialGradient>
+      <radialGradient id="paSun" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#fffbe8"/><stop offset=".55" stop-color="#ffe9a3"/><stop offset="1" stop-color="#ffc94d"/></radialGradient>
+      <radialGradient id="paSunGlow" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#fff2c2" stop-opacity=".9"/><stop offset=".4" stop-color="#ffe08a" stop-opacity=".35"/><stop offset="1" stop-color="#ffe08a" stop-opacity="0"/></radialGradient>
+      <radialGradient id="paBulb" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#fffdf2"/><stop offset=".35" stop-color="#fff1bf" stop-opacity=".95"/><stop offset=".7" stop-color="#ffd977" stop-opacity=".35"/><stop offset="1" stop-color="#ffd977" stop-opacity="0"/></radialGradient>
+      <linearGradient id="paShade" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#f6f1e6"/><stop offset=".6" stop-color="#ddd3bf"/><stop offset="1" stop-color="#b9ae98"/></linearGradient>
+      <linearGradient id="paMetalV" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8b939d"/><stop offset=".3" stop-color="#e6eaee"/><stop offset=".6" stop-color="#9aa2ac"/><stop offset="1" stop-color="#5d646d"/></linearGradient>
+      <linearGradient id="paTube" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#2a2d33"/><stop offset=".22" stop-color="#4b5059"/><stop offset=".38" stop-color="#2b2e34"/><stop offset=".8" stop-color="#16181c"/><stop offset="1" stop-color="#22252a"/></linearGradient>
+      <linearGradient id="paWoodTop" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e7c79a"/><stop offset="1" stop-color="#cfa66f"/></linearGradient>
+      <linearGradient id="paWoodFront" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b98a52"/><stop offset="1" stop-color="#94673a"/></linearGradient>
+      <linearGradient id="paWoodSide" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8a5f34"/><stop offset="1" stop-color="#6e4925"/></linearGradient>
+      <linearGradient id="paGlowTop" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f1ffe9"/><stop offset="1" stop-color="#c3f3b0"/></linearGradient>
+      <linearGradient id="paGlowFront" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b4ef9c"/><stop offset="1" stop-color="#8fdc76"/></linearGradient>
+      <linearGradient id="paGlowSide" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#86d16c"/><stop offset="1" stop-color="#6dbb55"/></linearGradient>
+      <radialGradient id="paGreenGlow" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#c9ffb4" stop-opacity=".85"/><stop offset=".45" stop-color="#9df07f" stop-opacity=".3"/><stop offset="1" stop-color="#9df07f" stop-opacity="0"/></radialGradient>
+      <linearGradient id="paPage" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fffdf8"/><stop offset="1" stop-color="#ece6da"/></linearGradient>
+      <linearGradient id="paPageR" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f6f2ea"/><stop offset="1" stop-color="#ddd5c6"/></linearGradient>
+      <radialGradient id="paRefl" cx=".38" cy=".35" r=".7"><stop offset="0" stop-color="#ffffff"/><stop offset=".45" stop-color="#e4e8ec"/><stop offset=".8" stop-color="#b7bfc8"/><stop offset="1" stop-color="#8f98a2"/></radialGradient>
+      <linearGradient id="paPot" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#d98a5f"/><stop offset=".35" stop-color="#e9a57c"/><stop offset="1" stop-color="#a8593a"/></linearGradient>
+      <linearGradient id="paLeaf" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8fbf73"/><stop offset="1" stop-color="#4f8a45"/></linearGradient>
+      <linearGradient id="paCam" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4a5059"/><stop offset=".3" stop-color="#2d3138"/><stop offset="1" stop-color="#15171b"/></linearGradient>`);
+  }
+
+  function ray(g, p0, p1, o = {}) {
+    const col = o.color || LIGHT, w = o.w || 3.2;
+    const gg = el('g', { 'pointer-events': 'none', opacity: o.op == null ? 1 : o.op }, g);
+    const dx = p1[0] - p0[0], dy = p1[1] - p0[1], L = Math.hypot(dx, dy), ux = dx / L, uy = dy / L;
+    const hp = o.at == null ? 1 : o.at, hx = p0[0] + dx * hp, hy = p0[1] + dy * hp, hs = o.hs || 7 + w * 1.6;
+    const end = hp === 1 ? [p1[0] - ux * hs * 0.8, p1[1] - uy * hs * 0.8] : p1;
+    if (o.glow) el('line', { x1: p0[0], y1: p0[1], x2: end[0], y2: end[1], stroke: col, 'stroke-width': w * 3.4, 'stroke-opacity': 0.18, 'stroke-linecap': 'round' }, gg);
+    el('line', { x1: p0[0], y1: p0[1], x2: end[0], y2: end[1], stroke: col, 'stroke-width': w, 'stroke-linecap': 'round', 'stroke-dasharray': o.dash || '' }, gg);
+    if (o.head !== false) el('path', { d: `M${hx} ${hy}L${hx - ux * hs - uy * hs * 0.55} ${hy - uy * hs + ux * hs * 0.55}L${hx - ux * hs + uy * hs * 0.55} ${hy - uy * hs - ux * hs * 0.55}Z`, fill: col }, gg);
+    return gg;
+  }
+
+  function sun(g, x, y, r) {
+    const s = el('g', { 'pointer-events': 'none' }, g);
+    el('circle', { cx: x, cy: y, r: r * 3, fill: 'url(#paSunGlow)' }, s);
+    el('circle', { cx: x, cy: y, r, fill: 'url(#paSun)' }, s);
+    return s;
+  }
+  function lamp(g, x, y, s = 1, on = true) {           // 갓 씌운 탁상 전등 (x, y: 갓 가운데)
+    const L = el('g', { transform: `translate(${x} ${y}) scale(${s})`, 'pointer-events': 'none' }, g);
+    const glow = el('circle', { cx: 0, cy: 6, r: 96, fill: 'url(#paBulb)' }, L);
+    el('ellipse', { cx: 4, cy: 118, rx: 46, ry: 9, fill: 'rgba(0,0,0,.16)' }, L);
+    el('path', { d: 'M-34 112C-34 102 34 102 34 112L34 116C34 124 -34 124 -34 116Z', fill: '#565d67' }, L);
+    el('rect', { x: -5, y: 30, width: 10, height: 80, fill: 'url(#paMetalV)' }, L);
+    const lit = el('path', { d: 'M-28 -34L28 -34L46 30L-46 30Z', fill: on ? '#fff3d2' : 'url(#paShade)', stroke: '#c8b994', 'stroke-width': 1.4 }, L);
+    const inner = el('path', { d: 'M-28 -34L28 -34L46 30L-46 30Z', fill: 'url(#paShade)', opacity: on ? 0.35 : 1 }, L);
+    el('ellipse', { cx: 0, cy: -34, rx: 28, ry: 5, fill: '#e4d8bd' }, L);
+    const b = el('ellipse', { cx: 0, cy: 30, rx: 46, ry: 8, fill: on ? '#fffbe6' : '#cfc7b4' }, L);
+    return { g: L, on(v) { glow.style.display = v ? '' : 'none'; lit.setAttribute('fill', v ? '#fff3d2' : 'url(#paShade)'); inner.setAttribute('opacity', v ? 0.35 : 1); b.setAttribute('fill', v ? '#fffbe6' : '#cfc7b4'); } };
+  }
+  function pendant(g, x, y, s = 1, on = true) {        // 천장 전등 (x, y: 전구)
+    const L = el('g', { transform: `translate(${x} ${y}) scale(${s})`, 'pointer-events': 'none' }, g);
+    const glow = el('circle', { cx: 0, cy: 8, r: 90, fill: 'url(#paBulb)' }, L);
+    el('line', { x1: 0, y1: -200, x2: 0, y2: -26, stroke: '#4a4f57', 'stroke-width': 2.4 }, L);
+    el('path', { d: 'M-44 4C-44 -24 -22 -30 0 -30C22 -30 44 -24 44 4Z', fill: 'url(#paShade)', stroke: '#a59a83', 'stroke-width': 1.2 }, L);
+    el('ellipse', { cx: 0, cy: 4, rx: 44, ry: 6, fill: '#c9bea7' }, L);
+    const b = el('ellipse', { cx: 0, cy: 10, rx: 13, ry: 10, fill: on ? '#fffbe6' : '#d9d6cc' }, L);
+    return { g: L, on(v) { glow.style.display = v ? '' : 'none'; b.setAttribute('fill', v ? '#fffbe6' : '#d9d6cc'); } };
+  }
+  function ball(g, x, y, r, dark) {                     // 축구공
+    const B = el('g', { 'pointer-events': 'none' }, g);
+    el('ellipse', { cx: x + r * 0.15, cy: y + r * 0.92, rx: r * 0.95, ry: r * 0.2, fill: 'rgba(0,0,0,.22)' }, B);
+    const id = 'bc' + Math.random().toString(36).slice(2, 7);
+    el('clipPath', { id }, B).innerHTML = `<circle cx="${x}" cy="${y}" r="${r}"/>`;
+    el('circle', { cx: x, cy: y, r, fill: dark ? 'url(#paBallDark)' : 'url(#paBall)' }, B);
+    const P = el('g', { 'clip-path': `url(#${id})`, fill: dark ? '#050607' : '#22262c' }, B);
+    const pent = (cx, cy, rr, rot) => { let d = ''; for (let k = 0; k < 5; k++) { const a = rot + k * 72 * Math.PI / 180; d += (k ? 'L' : 'M') + (cx + rr * Math.sin(a)).toFixed(1) + ' ' + (cy - rr * Math.cos(a)).toFixed(1); } el('path', { d: d + 'Z' }, P); };
+    pent(x + r * 0.05, y + r * 0.02, r * 0.3, 0);
+    for (let k = 0; k < 5; k++) { const a = k * 72 * Math.PI / 180 + Math.PI / 5; pent(x + Math.sin(a) * r * 0.86, y - Math.cos(a) * r * 0.86, r * 0.26, a); }
+    el('path', { d: `M${x - r * 0.5} ${y - r * 0.62}A${r} ${r} 0 0 1 ${x + r * 0.25} ${y - r * 0.9}`, stroke: 'rgba(255,255,255,.65)', 'stroke-width': r * 0.08, fill: 'none', 'stroke-linecap': 'round' }, B);
+    el('circle', { cx: x, cy: y, r, fill: 'none', stroke: 'rgba(0,0,0,.25)', 'stroke-width': 1 }, B);
+    return B;
+  }
+  function book(g, x, y, w) {                           // 펼친 책 (x, y: 책등 아래)
+    const s = w / 200, B = el('g', { transform: `translate(${x} ${y}) scale(${s})`, 'pointer-events': 'none' }, g);
+    el('ellipse', { cx: 6, cy: 8, rx: 108, ry: 14, fill: 'rgba(0,0,0,.18)' }, B);
+    el('path', { d: 'M-104 -4L0 4L104 -4L96 -46L0 -38L-96 -46Z', fill: '#2f5f8f' }, B);
+    el('path', { d: 'M-98 -10C-60 -22 -24 -16 0 -2L0 -44C-24 -58 -60 -62 -92 -52Z', fill: 'url(#paPage)', stroke: '#cfc6b4', 'stroke-width': 1 }, B);
+    el('path', { d: 'M98 -10C60 -22 24 -16 0 -2L0 -44C24 -58 60 -62 92 -52Z', fill: 'url(#paPageR)', stroke: '#cfc6b4', 'stroke-width': 1 }, B);
+    const ln = el('g', { stroke: '#b9b1a1', 'stroke-width': 1.6, 'stroke-linecap': 'round' }, B);
+    for (let k = 0; k < 4; k++) { const yy = -44 + k * 8; el('path', { d: `M${-84 + k * 2} ${yy - 2}C-60 ${yy - 8} -30 ${yy - 4} -12 ${yy + 4}` }, ln); el('path', { d: `M${84 - k * 2} ${yy - 2}C60 ${yy - 8} 30 ${yy - 4} 12 ${yy + 4}` }, ln); }
+    return B;
+  }
+  function cube(g, x, y, s, glow) {                     // 작은 물체 (x, y: 앞면 아래 가운데)
+    const C = el('g', { 'pointer-events': 'none' }, g), h = s, d = s * 0.42;
+    if (glow) el('circle', { cx: x + d * 0.4, cy: y - h * 0.6, r: s * 1.9, fill: 'url(#paGreenGlow)', class: 'glowpulse' }, C);
+    el('ellipse', { cx: x + d * 0.5, cy: y + 1, rx: s * 0.75, ry: s * 0.14, fill: 'rgba(0,0,0,.35)' }, C);
+    el('path', { d: `M${x - h / 2} ${y - h}L${x - h / 2 + d} ${y - h - d * 0.7}L${x + h / 2 + d} ${y - h - d * 0.7}L${x + h / 2} ${y - h}Z`, fill: glow ? 'url(#paGlowTop)' : 'url(#paWoodTop)' }, C);
+    el('rect', { x: x - h / 2, y: y - h, width: h, height: h, fill: glow ? 'url(#paGlowFront)' : 'url(#paWoodFront)' }, C);
+    el('path', { d: `M${x + h / 2} ${y - h}L${x + h / 2 + d} ${y - h - d * 0.7}L${x + h / 2 + d} ${y - d * 0.7}L${x + h / 2} ${y}Z`, fill: glow ? 'url(#paGlowSide)' : 'url(#paWoodSide)' }, C);
+    if (!glow) el('path', { d: `M${x - h / 2 + 3} ${y - h * 0.62}L${x + h / 2 - 3} ${y - h * 0.58}M${x - h / 2 + 3} ${y - h * 0.3}L${x + h / 2 - 4} ${y - h * 0.33}`, stroke: 'rgba(110,70,30,.35)', 'stroke-width': 1 }, C);
+    return C;
+  }
+  function tube(g, x, yb, r, h) {                       // 검은 종이 통 (x: 가운데, yb: 아래 끝)
+    const T = el('g', { 'pointer-events': 'none' }, g), ry = r * 0.24, yt = yb - h;
+    el('path', { d: `M${x - r} ${yt}L${x - r} ${yb}A${r} ${ry} 0 0 0 ${x + r} ${yb}L${x + r} ${yt}Z`, fill: 'url(#paTube)' }, T);
+    el('line', { x1: x + r * 0.55, y1: yt + ry, x2: x + r * 0.55, y2: yb + ry * 0.85, stroke: 'rgba(255,255,255,.07)', 'stroke-width': 1.4 }, T);
+    el('ellipse', { cx: x, cy: yt, rx: r, ry, fill: '#3a3e45' }, T);
+    el('ellipse', { cx: x, cy: yt + 1, rx: r * 0.9, ry: ry * 0.8, fill: '#08090b' }, T);
+    return T;
+  }
+  function reflector(g, x, y, r) {                      // 반사판 (x, y: 판 가운데)
+    const R = el('g', { 'pointer-events': 'none' }, g);
+    el('line', { x1: x, y1: y + r * 0.6, x2: x, y2: y + r * 2.3, stroke: '#4a5059', 'stroke-width': 5 }, R);
+    el('path', { d: `M${x} ${y + r * 2.1}L${x - r * 0.6} ${y + r * 2.75}M${x} ${y + r * 2.1}L${x + r * 0.6} ${y + r * 2.75}M${x} ${y + r * 2.1}L${x + r * 0.1} ${y + r * 2.8}`, stroke: '#4a5059', 'stroke-width': 4, 'stroke-linecap': 'round' }, R);
+    el('ellipse', { cx: x, cy: y, rx: r * 0.55, ry: r, fill: '#2c3036' }, R);
+    el('ellipse', { cx: x - 3, cy: y, rx: r * 0.5, ry: r * 0.94, fill: 'url(#paRefl)' }, R);
+    el('path', { d: `M${x - r * 0.2} ${y - r * 0.7}C${x - r * 0.42} ${y - r * 0.2} ${x - r * 0.38} ${y + r * 0.3} ${x - r * 0.15} ${y + r * 0.7}`, stroke: 'rgba(255,255,255,.7)', 'stroke-width': 3, fill: 'none', 'stroke-linecap': 'round' }, R);
+    return R;
+  }
+  function plant(g, x, y, s) {                          // 화분 (x, y: 화분 아래)
+    const P = el('g', { transform: `translate(${x} ${y}) scale(${s})`, 'pointer-events': 'none' }, g);
+    el('ellipse', { cx: 4, cy: 2, rx: 40, ry: 7, fill: 'rgba(0,0,0,.2)' }, P);
+    const leaf = (x1, y1, x2, y2, w) => { const mx = (x1 + x2) / 2, my = (y1 + y2) / 2, dx = x2 - x1, dy = y2 - y1, L = Math.hypot(dx, dy), nx = -dy / L * w, ny = dx / L * w; el('path', { d: `M${x1} ${y1}Q${mx + nx} ${my + ny} ${x2} ${y2}Q${mx - nx} ${my - ny} ${x1} ${y1}Z`, fill: 'url(#paLeaf)' }, P); el('path', { d: `M${x1} ${y1}L${x2} ${y2}`, stroke: 'rgba(40,80,40,.4)', 'stroke-width': 1 }, P); };
+    const stems = [[0, -150, -6], [-26, -120, -30], [26, -126, 32], [-8, -96, -40], [12, -104, 42]];
+    stems.forEach(([sx, sy]) => el('path', { d: `M0 -48Q${sx * 0.3} ${(sy - 48) / 2} ${sx} ${sy}`, stroke: '#5c8a4a', 'stroke-width': 3, fill: 'none' }, P));
+    stems.forEach(([sx, sy, a]) => { leaf(sx, sy, sx + a * 0.9, sy - 26, 9); leaf(sx * 0.6, (sy - 48) * 0.6, sx * 0.6 - a * 0.7, (sy - 48) * 0.6 - 10, 7); });
+    el('path', { d: 'M-30 -52L30 -52L22 0L-22 0Z', fill: 'url(#paPot)' }, P);
+    el('rect', { x: -34, y: -60, width: 68, height: 11, rx: 3, fill: '#c97650' }, P);
+    return P;
+  }
+  function camera(g, x, y, s) {                         // 촬영기 (x, y: 렌즈 끝, 오른쪽을 봄)
+    const C = el('g', { transform: `translate(${x} ${y}) scale(${s})`, 'pointer-events': 'none' }, g);
+    el('path', { d: 'M-70 60L-70 112M-70 60L-96 116M-70 60L-44 116', stroke: '#4a5059', 'stroke-width': 4, 'stroke-linecap': 'round' }, C);
+    el('rect', { x: -112, y: -26, width: 78, height: 56, rx: 8, fill: 'url(#paCam)' }, C);
+    el('rect', { x: -100, y: -40, width: 34, height: 16, rx: 4, fill: '#2a2e34' }, C);
+    el('rect', { x: -36, y: -18, width: 36, height: 40, rx: 4, fill: 'url(#paMetalV)', transform: 'rotate(90 -18 2)' }, C);
+    el('rect', { x: -34, y: -16, width: 34, height: 36, rx: 5, fill: '#1c1f24' }, C);
+    el('ellipse', { cx: 0, cy: 2, rx: 5, ry: 18, fill: '#3f5b78' }, C);
+    el('rect', { x: -78, y: 30, width: 16, height: 30, fill: '#3a3f46' }, C);
+    return C;
+  }
+  return { defs, ray, sun, lamp, pendant, ball, book, cube, tube, reflector, plant, camera, LIGHT };
+})();
+</script>
+<script>
+/* ===== 블록 1: 맞을까 틀릴까 ===== */
+(() => {
+  'use strict';
+  try {
+    const { $, $$, shuffle, fb, finish } = window.SW;
+    const ITEMS = [
+      ['빛이 반사할 때 입사각과 반사각의 크기는 항상 같다.', true],
+      ['입사각은 거울 면과 입사 광선이 이루는 각이다.', false],
+      ['빛이 공기에서 물로 비스듬히 진행하면 경계면에서 진행 방향이 꺾인다.', true],
+      ['빛의 굴절은 빛이 거울에 부딪쳐 진행 방향을 바꾸는 현상이다.', false],
+      ['태양, 전등, 촛불처럼 스스로 빛을 내는 물체를 광원이라고 한다.', true],
+      ['우리 눈에서 나온 빛이 물체에 닿아야 물체를 볼 수 있다.', false],
+      ['책이 보이는 것은 책이 스스로 빛을 내기 때문이다.', false],
+      ['캄캄한 곳에서 물체가 보이지 않는 것은 눈에 들어오는 빛이 없기 때문이다.', true],
+    ];
+    const list = shuffle(ITEMS.slice()), pick = list.map(() => null);
+    $('#sort').innerHTML = list.map((it, i) => `<div class="si" data-i="${i}"><p>${it[0]}</p><div class="two"><button type="button" class="o" data-v="1" aria-pressed="false">맞다</button><button type="button" class="x" data-v="0" aria-pressed="false">틀리다</button></div></div>`).join('');
+    $$('#sort .si').forEach((row) => {
+      const i = +row.dataset.i;
+      $$('button', row).forEach((b) => b.addEventListener('click', () => { pick[i] = b.dataset.v === '1'; row.classList.remove('good', 'bad'); $$('button', row).forEach((o) => o.setAttribute('aria-pressed', String(o === b))); $('#chk1').disabled = pick.some((p) => p === null); }));
+    });
+    $('#chk1').addEventListener('click', () => {
+      let wrong = 0;
+      $$('#sort .si').forEach((row) => { const i = +row.dataset.i, ok = pick[i] === list[i][1]; row.classList.toggle('good', ok); row.classList.toggle('bad', !ok); if (!ok) wrong++; });
+      if (!wrong) { fb('#fb1', true, '모두 맞았어요! 틀린 문장 고쳐 보기: 입사각은 <b>반사면과 수직인 선</b>과 입사 광선이 이루는 각 · 거울에 부딪쳐 방향을 바꾸는 것은 <b>반사</b> · 눈은 빛을 <b>받아들여요</b> · 책은 <b>광원의 빛을 반사</b>해서 보여요.'); finish(1); }
+      else fb('#fb1', false, `빨간 문장 ${wrong}개를 다시 생각해 보세요.`);
+    });
+    window.SW.ok1 = true;
+  } catch (err) { window.SW_err('O/X 판단', err); }
+})();
+</script>
+<script>
+/* ===== 블록 2: 그림에 이름 붙이기 ===== */
+(() => {
+  'use strict';
+  try {
+    const { $, $$, shuffle, fb, finish } = window.SW, { el, D } = OP, RED = '#e0402f';
+    const dash = (g, x1, y1, x2, y2) => el('line', { x1, y1, x2, y2, stroke: '#7d8a99', 'stroke-width': 1.8, 'stroke-dasharray': '6 6' }, g);
+    const wedge = (g, cx, cy, r, a0, a1) => el('path', { d: OP.arc(cx, cy, r, a0, a1) + `L${cx} ${cy}Z`, fill: 'rgba(14,99,179,.1)', stroke: '#0e63b3', 'stroke-width': 2 }, g);
+    const SLOTS = [];
+    function put(host, x, y, ans) { const b = document.createElement('button'); b.type = 'button'; b.className = 'slot'; b.textContent = '빈칸'; b.style.left = (x / 4) + '%'; b.style.top = (y / 3) + '%'; b.dataset.ans = ans; host.appendChild(b); SLOTS.push(b); }
+    // 반사
+    (function () {
+      const host = $('#fR'), svg = host.querySelector('svg'); OP.defs(svg); OPA.defs(svg);
+      el('rect', { width: 400, height: 300, fill: '#fffbef' }, svg);
+      el('path', { d: 'M30 250L350 250L376 232L56 232Z', fill: '#cfdbe2' }, svg); el('rect', { x: 30, y: 250, width: 320, height: 12, fill: '#8fa3b0' }, svg);
+      const C = [200, 241], t = 42 * D, L = 190;
+      dash(svg, C[0], C[1], C[0], 26);
+      wedge(svg, C[0], C[1], 46, -Math.PI / 2, -Math.PI / 2 + t); wedge(svg, C[0], C[1], 46, -Math.PI / 2 - t, -Math.PI / 2);
+      OPA.ray(svg, [C[0] + Math.sin(t) * L, C[1] - Math.cos(t) * L], C, { color: RED, w: 3, at: 0.55 });
+      OPA.ray(svg, C, [C[0] - Math.sin(t) * L, C[1] - Math.cos(t) * L], { color: RED, w: 3, at: 0.55 });
+      put(host, 290, 130, '입사각'); put(host, 110, 130, '반사각'); put(host, 200, 18, '반사면과 수직인 선'); put(host, 60, 70, '반사 광선');
+    })();
+    // 굴절
+    (function () {
+      const host = $('#fF'), svg = host.querySelector('svg'); OP.defs(svg); OPA.defs(svg);
+      el('rect', { width: 400, height: 300, fill: '#f4f7fa' }, svg);
+      el('rect', { y: 140, width: 400, height: 160, fill: '#bcd8ef' }, svg);
+      el('line', { x1: 0, y1: 140, x2: 400, y2: 140, stroke: '#7fb0da', 'stroke-width': 2 }, svg);
+      const C = [200, 140], a = 50 * D, r = OP.refr(50) * D;
+      dash(svg, C[0], 20, C[0], 290);
+      wedge(svg, C[0], C[1], 44, -Math.PI / 2, -Math.PI / 2 + a); wedge(svg, C[0], C[1], 44, Math.PI / 2, Math.PI / 2 + r);
+      OPA.ray(svg, [C[0] + Math.sin(a) * 160, C[1] - Math.cos(a) * 160], C, { color: RED, w: 3, at: 0.55 });
+      OPA.ray(svg, C, [C[0] - Math.sin(r) * 160, C[1] + Math.cos(r) * 160], { color: RED, w: 3, at: 0.6 });
+      const ov = OP.overlay(host, 400, 300); ov.put('a', 360, 120, '공기', 'inks'); ov.put('w', 360, 162, '물', 'inks');
+      ov.put('i', C[0] + 60, C[1] - 56, '입사각', 'inkk ra');
+      put(host, 104, 214, '굴절각'); put(host, 70, 270, '굴절 광선'); put(host, 300, 140, '경계면');
+    })();
+    const words = SLOTS.map((s) => s.dataset.ans);
+    $('#bank2').innerHTML = shuffle(words.slice()).map((w) => `<button type="button" class="chip">${w}</button>`).join('');
+    const chips = $$('#bank2 .chip'), fill = SLOTS.map(() => null); let cur = 0, locked = false;
+    const paint = () => { SLOTS.forEach((s, i) => { s.textContent = fill[i] ? fill[i].textContent : '빈칸'; s.classList.toggle('f', !!fill[i]); s.classList.toggle('cur', i === cur && !locked); }); $('#chk2').disabled = locked || fill.some((f) => !f); };
+    chips.forEach((c) => c.addEventListener('click', () => { if (locked) return; if (fill[cur]) fill[cur].classList.remove('used'); fill[cur] = c; c.classList.add('used'); const n = fill.findIndex((f) => !f); if (n >= 0) cur = n; SLOTS.forEach((x) => x.classList.remove('good', 'bad')); paint(); }));
+    SLOTS.forEach((s, i) => s.addEventListener('click', () => { if (locked) return; if (fill[i]) { fill[i].classList.remove('used'); fill[i] = null; } cur = i; SLOTS.forEach((x) => x.classList.remove('good', 'bad')); paint(); }));
+    $('#chk2').addEventListener('click', () => {
+      let wrong = 0; SLOTS.forEach((s, i) => { const ok = fill[i].textContent === s.dataset.ans; s.classList.toggle('good', ok); s.classList.toggle('bad', !ok); if (!ok) wrong++; });
+      if (!wrong) { locked = true; paint(); fb('#fb2', true, '맞았어요! 입사각, 반사각, 굴절각은 모두 <b>수직인 선</b>을 기준으로 재요. 반사에서는 입사각과 반사각의 크기가 같아요.'); finish(2); }
+      else fb('#fb2', false, `빨간 칸 ${wrong}개를 다시 생각해 봐요. 힌트: 각은 점선(수직인 선)과 광선 사이에 있어요.`);
+    });
+    paint();
+    window.SW.ok2 = true;
+  } catch (err) { window.SW_err('이름 붙이기', err); }
+})();
+</script>
+<script>
+/* ===== 블록 3: 광원 고르기와 빛의 경로 순서 ===== */
+(() => {
+  'use strict';
+  try {
+    const { $, $$, shuffle, fb, finish } = window.SW;
+    const SRC = [['태양', true], ['전등', true], ['촛불', true], ['축구공', false], ['책', false], ['거울', false], ['반사판', false]];
+    const pickS = {};
+    $('#srcs').innerHTML = shuffle(SRC.slice()).map(([n]) => `<button type="button" aria-pressed="false" data-n="${n}">${n}</button>`).join('');
+    $$('#srcs button').forEach((b) => b.addEventListener('click', () => { const v = b.getAttribute('aria-pressed') !== 'true'; b.setAttribute('aria-pressed', String(v)); pickS[b.dataset.n] = v; b.classList.remove('good', 'bad'); ready(); }));
+    const ORD = [
+      { q: '책을 볼 때', ans: ['전등', '책', '눈'] },
+      { q: '반사판을 포함하여 촬영 대상을 볼 때', ans: ['태양', '반사판', '촬영 대상', '눈'] },
+    ];
+    const st = ORD.map((o) => ({ fill: o.ans.map(() => null), cur: 0 }));
+    $('#order').innerHTML = ORD.map((o, k) => `<div class="ord" data-k="${k}"><p>${o.q}</p><div class="orow">${o.ans.map((_, i) => `${i ? '<span class="ar">→</span>' : ''}<button type="button" class="os" data-i="${i}">빈칸</button>`).join('')}</div><div class="bank">${shuffle(o.ans.slice()).map((w) => `<button type="button" class="chip">${w}</button>`).join('')}</div></div>`).join('');
+    $$('#order .ord').forEach((row) => {
+      const k = +row.dataset.k, S = st[k], slots = $$('.os', row), chips = $$('.chip', row);
+      const paint = () => { slots.forEach((s, i) => { s.textContent = S.fill[i] ? S.fill[i].textContent : '빈칸'; s.classList.toggle('f', !!S.fill[i]); s.classList.toggle('cur', i === S.cur); }); ready(); };
+      chips.forEach((c) => c.addEventListener('click', () => { if (S.fill[S.cur]) S.fill[S.cur].classList.remove('used'); S.fill[S.cur] = c; c.classList.add('used'); const n = S.fill.findIndex((f) => !f); if (n >= 0) S.cur = n; slots.forEach((x) => x.classList.remove('good', 'bad')); paint(); }));
+      slots.forEach((s, i) => s.addEventListener('click', () => { if (S.fill[i]) { S.fill[i].classList.remove('used'); S.fill[i] = null; } S.cur = i; slots.forEach((x) => x.classList.remove('good', 'bad')); paint(); }));
+      S.slots = slots; paint();
+    });
+    function ready() { $('#chk3').disabled = !Object.values(pickS).some(Boolean) || st.some((S) => S.fill.some((f) => !f)); }
+    $('#chk3').addEventListener('click', () => {
+      let wrong = 0;
+      $$('#srcs button').forEach((b) => { const want = SRC.find((x) => x[0] === b.dataset.n)[1], got = b.getAttribute('aria-pressed') === 'true'; if (want !== got) { wrong++; b.classList.add('bad'); } else if (got) b.classList.add('good'); });
+      st.forEach((S, k) => S.slots.forEach((s, i) => { const ok = S.fill[i].textContent === ORD[k].ans[i]; s.classList.toggle('good', ok); s.classList.toggle('bad', !ok); if (!ok) wrong++; }));
+      if (!wrong) { fb('#fb3', true, '모두 맞았어요! 광원은 <b>태양, 전등, 촛불</b>이에요. 빛은 언제나 <b>광원에서 출발</b>해 물체에 반사되고, 마지막에 <b>눈에 들어와요</b>. 눈에서 출발하지 않아요.'); finish(3); }
+      else fb('#fb3', false, `${wrong}곳을 다시 생각해 봐요. 힌트: 반사판, 거울은 빛을 반사할 뿐 스스로 빛을 내지 않아요. 빛의 경로는 광원에서 시작해서 눈에서 끝나요.`);
+    });
+    window.SW.ok3 = true;
+  } catch (err) { window.SW_err('빛의 경로', err); }
+})();
+</script>
+<script>
+/* ===== 블록 4: 글쓰기 (저장하지 않고 복사·인쇄만) ===== */
+(() => {
+  'use strict';
+  try {
+    const { $, $$, finish } = window.SW;
+    const PROMPTS = [
+      { t: '책을 보는 과정', s: '친구에게 설명하기', q: '"우리는 어떤 과정으로 책을 볼 수 있을까?" 빛의 경로를 이용해 친구에게 설명해 보세요.', kw: ['전등', '광원', '반사', '눈', '들어와'], st: ['책은 광원이 아니라서', '전등에서 나온 빛이', '반사된 빛이'] },
+      { t: '반사판과 촬영 대상', s: '스스로 평가 2', q: '우리가 촬영 중인 대상을 보는 과정을 반사판을 포함하여 빛의 경로로 설명해 보세요.', kw: ['반사판', '반사', '촬영 대상', '눈', '빛'], st: ['햇빛이 반사판에 닿으면', '반사판에서 반사된 빛은', '마지막으로'] },
+      { t: '통 실험의 까닭', s: '해 보기 6', q: '통으로 덮었을 때와 들어 올렸을 때, 작은 물체와 야광 물체가 보이거나 보이지 않은 까닭을 빛의 경로로 설명해 보세요.', kw: ['빛', '눈에 들어', '반사', '야광', '스스로'], st: ['통으로 덮으면', '통을 들어 올리면', '야광 물체는'] },
+      { t: '친구 생각 고쳐 주기', s: '오개념', q: '친구가 "눈에서 빛이 나와서 물체를 보는 거야."라고 말했어요. 무엇이 틀렸는지 근거를 들어 설명해 보세요.', kw: ['눈', '광원', '반사', '캄캄', '들어와'], st: ['눈은 빛을', '만약 눈에서 빛이 나온다면', '사실은'] },
+      { t: '입사각과 반사각', s: '활동하기 1', q: '반사 실험에서 입사각을 30°, 45°, 60°로 바꾸었을 때 반사각은 어떻게 되었는지, 어떤 규칙이 있는지 설명해 보세요.', kw: ['입사각', '반사각', '같', '수직인 선', '반사 법칙'], st: ['입사각이 30°일 때', '각은 반사면과 수직인 선에서', '따라서'] },
+    ];
+    const SELF = [['지식·이해', '#0e63b3', '빛의 반사와 굴절을 이해할 수 있다.'], ['과정·기능', '#34495e', '빛의 반사 실험에서 입사각과 반사각 사이의 규칙성을 추리할 수 있다.'], ['가치·태도', '#5a6b7e', '실험을 하며 빛의 성질에 흥미를 느낄 수 있다.']];
+    const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); return true; } catch (e) { return false; } } };
+    let pi = 0; const txt = $('#txt');
+    function renderPrompt() {
+      $('#prompts').innerHTML = PROMPTS.map((p, i) => `<button type="button" class="pr${i === pi ? ' sel' : ''}" data-i="${i}"><b>${p.t}</b><span>${p.s}</span></button>`).join('');
+      $$('#prompts .pr').forEach((b) => b.addEventListener('click', () => { pi = +b.dataset.i; renderPrompt(); }));
+      const p = PROMPTS[pi];
+      $('#wqText').textContent = p.q;
+      $('#starters').innerHTML = p.st.map((s) => `<button type="button">${s}</button>`).join('');
+      $$('#starters button').forEach((b) => b.addEventListener('click', () => { const add = (txt.value && !/[\s\n]$/.test(txt.value) ? ' ' : '') + b.textContent + ' '; txt.value += add; txt.focus(); onInput(); }));
+      txt.value = store.get('light-write-' + pi) || '';
+      onInput();
+    }
+    function onInput() {
+      const v = txt.value, p = PROMPTS[pi];
+      const ok = store.set('light-write-' + pi, v);
+      $('#saved').textContent = v ? (ok ? '이 기기에 임시 저장됨' : '') : '';
+      const n = v.replace(/\s/g, '').length, hit = p.kw.filter((k) => v.includes(k)).length;
+      $('#cnt').textContent = `${n}자 · 목표 100자 이상`;
+      $('#kw').innerHTML = p.kw.map((k) => `<span class="${v.includes(k) ? 'on' : ''}">${k}</span>`).join('');
+      if (n >= 100 && hit >= 3) finish(4);
+    }
+    txt.addEventListener('input', onInput);
+    $('#self').innerHTML = SELF.map(([c, col, t]) => `<label><input type="checkbox"><span class="cat" style="background:${col}">${c}</span>${t}</label>`).join('');
+    $('#copyBtn').addEventListener('click', async () => {
+      const out = `[${PROMPTS[pi].t}]\n${PROMPTS[pi].q}\n\n${txt.value}`;
+      try { await navigator.clipboard.writeText(out); $('#copyBtn').textContent = '복사했어요!'; }
+      catch (e) { txt.select(); try { document.execCommand('copy'); $('#copyBtn').textContent = '복사했어요!'; } catch (e2) { $('#copyBtn').textContent = '길게 눌러 직접 복사해 주세요'; } }
+      setTimeout(() => ($('#copyBtn').textContent = '글 복사하기'), 2200);
+    });
+    $('#printBtn').addEventListener('click', () => window.print());
+    renderPrompt();
+    window.SW.ok4 = true;
+  } catch (err) { window.SW_err('글쓰기', err); }
+})();
+</script>
+</body>
+</html>

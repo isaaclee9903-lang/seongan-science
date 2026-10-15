@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>빛의 반사와 굴절 – 물체를 보는 과정</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+/*@@LOCAL:_css_op.css@@*/
+  /* ===== 이 수업 전용 ===== */
+  :root{--fab:#0e63b3;--fab-soft:#e4f0fb}
+  .eyebrow{color:#0e63b3;background:#e4f0fb}
+  .viewer{background:#e9eef3}
+  #scene{aspect-ratio:1000/720}
+  .dark{position:absolute;inset:0;background:#05070a;opacity:0;pointer-events:none;transition:opacity .6s var(--ease)}
+  .dark.on{opacity:.88}
+  .peek{position:absolute;right:12px;top:12px;z-index:4;width:clamp(110px,17%,170px);text-align:center;background:rgba(255,255,255,.92);border-radius:16px;padding:8px 8px 6px;box-shadow:0 6px 18px rgba(20,38,59,.18)}
+  .peek svg{display:block;width:100%;height:auto;border-radius:50%}
+  .peek small{display:block;font-size:12px;font-weight:800;color:#34495e;margin-top:4px;word-break:keep-all}
+  .peek b{display:block;font-size:14px;font-weight:900;color:#14263b}
+  .modes{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px}
+  .md{min-height:56px;border:0;border-radius:14px;background:#eef3f8;font-weight:800;font-size:15px;color:var(--muted);cursor:pointer;word-break:keep-all;line-height:1.25;padding:4px 8px}
+  .md small{display:block;font-size:12px;font-weight:700;opacity:.85}
+  .md[aria-selected="true"]{background:var(--fab);color:#fff}
+  .seg{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
+  .seg button{min-height:46px;padding:0 14px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15px;cursor:pointer;word-break:keep-all}
+  .seg button[aria-pressed="true"]{border-color:#14263b;background:#14263b;color:#fff}
+  .rng{display:flex;align-items:center;gap:12px;margin:8px 0 2px;font-weight:800;font-size:15px;color:var(--ink2)}
+  .rng label{flex:none;word-break:keep-all}
+  .rng input{flex:1;min-width:120px;height:44px;-webkit-appearance:none;appearance:none;background:transparent}
+  .rng input::-webkit-slider-runnable-track{height:10px;border-radius:99px;background:#dfe7ef}
+  .rng input::-webkit-slider-thumb{-webkit-appearance:none;width:34px;height:34px;border-radius:50%;background:#fff;border:3px solid #0e63b3;margin-top:-12px;box-shadow:0 2px 8px rgba(20,38,59,.3)}
+  .rng input::-moz-range-thumb{width:30px;height:30px;border-radius:50%;background:#fff;border:3px solid #0e63b3}
+  .obs{width:100%;border-collapse:collapse;margin:10px 0 4px;font-size:15px}
+  .obs th,.obs td{border:1px solid #dbe4ed;padding:8px 6px;text-align:center;word-break:keep-all}
+  .obs th{background:#f3f7fb;font-weight:800;color:var(--ink2)}
+  .obs td{font-weight:800}
+  .obs td.empty{color:#a3b1c0;font-weight:700}
+  .obs td.y{color:#0e63b3}.obs td.n{color:#5a6b7e}
+  .obs caption{caption-side:bottom;text-align:left;font-size:12.5px;color:var(--muted);padding-top:4px;word-break:keep-all}
+  .why{margin-top:10px;display:grid;gap:6px}
+  .why h3{margin:6px 0 2px;font-size:16px}
+  .why .w{display:grid;grid-template-columns:28px 1fr;gap:8px;align-items:start;padding:8px 10px;border-radius:12px;background:#f7fafc;font-size:14.5px;line-height:1.6;color:var(--muted);word-break:keep-all;transition:background .3s,color .3s}
+  .why .w i{font-style:normal;width:26px;height:26px;border-radius:8px;background:#c9d4e0;color:#fff;display:grid;place-items:center;font-weight:900;font-size:13px}
+  .why .w.on{background:var(--fab-soft);color:var(--ink)}.why .w.on i{background:var(--fab)}
+  .qbox{border-radius:16px;padding:12px 14px;background:#f6f9fc;border:1px solid #dbe4ed;color:var(--ink2);margin-top:10px;font-size:15px;line-height:1.65;word-break:keep-all}
+  .qbox b.t{display:block;font-size:13px;margin-bottom:4px;color:#0e63b3}
+  .qbox .ans{margin-top:8px;color:var(--ink)}
+  .qbox .ans:empty{display:none}
+  /* 경로 그리기 */
+  .node{position:absolute;z-index:3;transform:translate(-50%,-50%);width:clamp(48px,6.6%,66px);aspect-ratio:1;border-radius:50%;border:3px solid #fff;background:rgba(14,99,179,.16);box-shadow:0 0 0 2px rgba(14,99,179,.55),0 4px 14px rgba(20,38,59,.2);cursor:pointer;padding:0}
+  .node span{position:absolute;left:50%;top:100%;transform:translate(-50%,6px);white-space:nowrap;font-size:clamp(12px,1.35vw,15px);font-weight:900;color:#14263b;background:rgba(255,255,255,.94);border-radius:8px;padding:2px 8px;box-shadow:0 1px 4px rgba(20,38,59,.15)}
+  .node.sel{background:rgba(14,99,179,.55);box-shadow:0 0 0 4px #0e63b3,0 0 0 9px rgba(14,99,179,.25)}
+  .node.dim{opacity:.35}
+  .del{position:absolute;z-index:3;transform:translate(-50%,-50%);width:44px;height:44px;border-radius:50%;border:0;background:rgba(255,255,255,.95);box-shadow:0 2px 8px rgba(20,38,59,.25);font-weight:900;font-size:20px;color:#5a6b7e;cursor:pointer;display:grid;place-items:center;padding:0}
+  .del.bad{color:#fff;background:#d9534f}
+  .fbk{border-radius:14px;padding:12px 14px;margin-top:10px;font-size:15px;line-height:1.65;word-break:keep-all;background:#f6f9fc;border:1px solid #dbe4ed}
+  .fbk.ok{background:#e9f3fd;border-color:#bcd7f2;color:#0b3f73}
+  .fbk.no{background:#fff4f2;border-color:#f3c2bb;color:#5e2a25}
+  .fbk b.t{display:block;font-size:13.5px;margin-bottom:2px}
+  .fbk .acts{margin-top:8px}
+  .steps{margin:4px 0 6px;padding-left:20px;font-size:14.5px;line-height:1.7;color:var(--ink2);word-break:keep-all}
+  [hidden]{display:none!important}
+  .glowpulse{animation:gp 2.4s ease-in-out infinite}
+  @keyframes gp{50%{opacity:.6}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <span class="eyebrow">빛의 반사와 굴절 · 시뮬레이션 ②</span>
+    <h1>물체를 보는 과정</h1>
+    <p class="sub">통으로 물체를 덮었다 들어 올리며 어떤 빛이 눈에 들어오는지 보고, 여러 장면에서 빛의 경로를 화살표로 그려 봐요.</p>
+  </header>
+  <div class="stage">
+    <section class="card viewer">
+      <div class="scene" id="scene">
+        <svg id="sv" viewBox="0 0 1000 720" role="img" aria-label="물체를 보는 과정 장면"></svg>
+        <div class="dark" id="dark"></div>
+        <div class="peek" id="peek"><b>눈에 보이는 모습</b><svg id="peekSv" viewBox="0 0 100 100" aria-hidden="true"></svg><small id="peekT">보이지 않아요</small></div>
+        <div id="nodes"></div>
+      </div>
+    </section>
+    <section class="card pad">
+      <div class="modes" role="tablist">
+        <button class="md" type="button" role="tab" id="mA" aria-selected="true">통으로 보기<small>해 보기 · 작은 물체와 야광 물체</small></button>
+        <button class="md" type="button" role="tab" id="mB" aria-selected="false">빛의 경로 그리기<small>화살표로 그리고 확인하기</small></button>
+      </div>
+
+      <div id="paneA">
+        <div class="stepname"><span class="no">A</span><div><h2>통을 들어 올리며 관찰하기</h2><small>검은색 종이를 말아 만든 통으로 물체를 덮고, 통 입구에 눈을 대요</small></div></div>
+        <div class="seg" id="objSeg" role="group" aria-label="물체 고르기"><button type="button" data-o="block" aria-pressed="true">작은 물체</button><button type="button" data-o="glow" aria-pressed="false">야광 물체</button></div>
+        <div class="rng"><label for="rLift">통 높이</label><input type="range" id="rLift" min="0" max="100" value="0"></div>
+        <div class="acts" style="margin-top:4px"><button class="btn primary" type="button" id="bUp">천천히 들어 올리기</button><button class="btn ghost" type="button" id="bDown">다시 덮기</button><button class="btn ghost" type="button" id="bLight" aria-pressed="false">불 끄기</button></div>
+        <table class="obs" id="obs"><tr><th></th><th>통으로 덮었을 때</th><th>통을 들어 올렸을 때</th></tr>
+          <tr><th>작은 물체</th><td class="empty" data-k="block-0">?</td><td class="empty" data-k="block-1">?</td></tr>
+          <tr><th>야광 물체</th><td class="empty" data-k="glow-0">?</td><td class="empty" data-k="glow-1">?</td></tr>
+          <caption>불이 켜진 상태에서 덮었을 때와 끝까지 들어 올렸을 때 결과가 적혀요.</caption></table>
+        <div class="why" id="whyA">
+          <h3>왜 그럴까?</h3>
+          <div class="w" data-s="0"><i>1</i><span>통으로 덮으면 전등의 빛이 통에 막혀 <b>작은 물체에 닿지 못해요</b>. 물체에서 눈으로 오는 빛이 없으니 보이지 않아요.</span></div>
+          <div class="w" data-s="1"><i>2</i><span>통을 들어 올리면 전등의 빛이 물체에 닿고, 물체에 <b>반사된 빛이 통 안을 지나 눈에 들어와서</b> 보여요.</span></div>
+          <div class="w" data-s="2"><i>3</i><span>야광 물체는 <b>스스로 빛을 내서</b>, 덮어도 그 빛이 눈에 들어와 보여요.</span></div>
+          <div class="w" data-s="3"><i>4</i><span>눈은 통 입구에 계속 있었어요. 눈에서 빛이 나온다면 덮었을 때도 보였겠지요? 물체를 보려면 <b>빛이 눈에 들어와야</b> 해요.</span></div>
+        </div>
+        <div class="qbox"><b class="t">생각해 보기</b>불을 끈 방에서 통을 들어 올리면 작은 물체가 보일까요?
+          <div class="acts" style="margin-top:8px"><button class="btn ghost" type="button" id="bTry">불 끄고 들어 올려 보기</button></div>
+          <div class="ans" id="aTry"></div></div>
+      </div>
+
+      <div id="paneB" hidden>
+        <div class="stepname"><span class="no">B</span><div><h2>빛의 경로를 화살표로 그리기</h2><small>빛이 나아가는 방향으로 그려요</small></div></div>
+        <div class="seg" id="scnSeg" role="group" aria-label="장면 고르기"><button type="button" data-s="lamp" aria-pressed="true">전등을 볼 때</button><button type="button" data-s="ball" aria-pressed="false">공을 볼 때</button><button type="button" data-s="book" aria-pressed="false">책을 볼 때</button><button type="button" data-s="shoot" aria-pressed="false">촬영 대상</button></div>
+        <ol class="steps"><li>빛이 <b>출발하는 곳</b>의 동그라미를 누르고</li><li>빛이 <b>도착하는 곳</b>의 동그라미를 누르면 화살표가 생겨요.</li><li>잘못 그린 화살표는 가운데 × 를 눌러 지워요.</li></ol>
+        <div class="acts"><button class="btn primary" type="button" id="bCheck">확인하기</button><button class="btn ghost" type="button" id="bClear">모두 지우기</button><button class="btn ghost" type="button" id="bOff" aria-pressed="false">불 끄고 보기</button></div>
+        <div class="fbk" id="fbk"><b class="t" id="fbT">장면 설명</b><span id="fbM"></span></div>
+      </div>
+    </section>
+  </div>
+  <p class="credit">빛의 반사와 굴절 · 물체를 보는 과정</p>
+</div>
+<script>
+window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
+  reduce: !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches),
+  mode: 'A', obj: 'block', lift: 0, light: true, scn: 'lamp', arrows: [], off: false };
+</script>
+<script>
+/*@@PART:flow.js@@*/
+window.FLOW = FLOW;
+</script>
+<script>
+/*@@LOCAL:_optics.js@@*/
+</script>
+<script>
+/*@@LOCAL:_art.js@@*/
+</script>
+<script>
+/* ===== 블록 1: 통으로 보기 그림 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { el } = OP, W = 1000, H = 720;
+    const sv = S.$('#sv'); OP.defs(sv); OPA.defs(sv);
+    sv.querySelector('defs').insertAdjacentHTML('beforeend', `
+      <linearGradient id="sWall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e7ecf1"/><stop offset="1" stop-color="#d5dde5"/></linearGradient>
+      <linearGradient id="sDesk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e2cfb3"/><stop offset="1" stop-color="#cdb28c"/></linearGradient>
+      <linearGradient id="sDeskF" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b8996f"/><stop offset="1" stop-color="#9c7d55"/></linearGradient>`);
+    const gA = el('g', {}, sv), gB = el('g', {}, sv);
+    S.gB = gB;
+    el('rect', { width: W, height: H, fill: 'url(#sWall)' }, gA);
+    el('rect', { y: 600, width: W, height: 120, fill: '#c9d1da' }, gA);
+    el('path', { d: 'M110 580L890 580L850 500L150 500Z', fill: 'url(#sDesk)' }, gA);
+    el('path', { d: 'M110 580L890 580L890 606L110 606Z', fill: 'url(#sDeskF)' }, gA);
+    el('path', { d: 'M150 606L170 606L170 720L150 720ZM830 606L850 606L850 720L830 720Z', fill: '#8d7150' }, gA);
+    el('path', { d: 'M330 566L690 566L668 516L352 516Z', fill: '#25282d' }, gA);
+    const L = [180, 168];
+    const lamp = OPA.pendant(gA, L[0], L[1], 1.15, true);
+    const rays = el('g', {}, gA);
+    const objG = el('g', {}, gA);
+    const tubeG = el('g', {}, gA);
+    const upG = el('g', {}, gA);
+    const darkR = el('rect', { width: W, height: H, fill: '#05070a', opacity: 0, style: 'transition:opacity .6s' }, gA);
+    const topG = el('g', {}, gA);
+    const phL = el('g', { filter: 'url(#opDot)' }, gA);
+    const ph = OP.photons(phL);
+    const ov = OP.overlay(S.$('#scene'), W, H);
+    S.ovA = ov;
+    const OX = 510, OY = 552, OS = 50, TR = 80, TH = 300;
+    const peek = S.$('#peekSv');
+    peek.innerHTML = '<defs><radialGradient id="pkV" cx=".5" cy=".5" r=".5"><stop offset=".6" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".7"/></radialGradient></defs><circle cx="50" cy="50" r="50" fill="#15171a"/><g id="pkObj"><rect x="33" y="33" width="34" height="34" rx="2" id="pkTop"/><path d="M33 67L67 67L72 72L38 72Z" id="pkSide" opacity=".7"/></g><circle cx="50" cy="50" r="50" fill="url(#pkV)"/><circle cx="50" cy="50" r="48" fill="none" stroke="#3a3e45" stroke-width="4"/>';
+    let sig = '';
+    function segRect(p, q, x0, x1, y0, y1) {       // 선분 p→q 가 사각형에 처음 닿는 t (없으면 null)
+      let t0 = 0, t1 = 1; const dx = q[0] - p[0], dy = q[1] - p[1];
+      const c = [[-dx, p[0] - x0], [dx, x1 - p[0]], [-dy, p[1] - y0], [dy, y1 - p[1]]];
+      for (const [pp, qq] of c) { if (pp === 0) { if (qq < 0) return null; } else { const r = qq / pp; if (pp < 0) { if (r > t1) return null; if (r > t0) t0 = r; } else { if (r < t0) return null; if (r < t1) t1 = r; } } }
+      return t0;
+    }
+    function draw() {
+      const glow = S.obj === 'glow', lift = S.lift, on = S.light;
+      const yb = OY - 4 - lift * 150, yt = yb - TH, ey = yt - 44;
+      objG.innerHTML = ''; tubeG.innerHTML = ''; rays.innerHTML = ''; upG.innerHTML = ''; topG.innerHTML = '';
+      OPA.cube(objG, OX, OY, OS, glow);
+      OPA.tube(tubeG, OX, yb, TR, TH);
+      OP.eye(tubeG, OX, ey, 92, { ly: 6, shade: false });
+      lamp.on(on);
+      // 전등 빛: 물체의 여러 점을 향해 가다가 통에 막히는지 확인
+      const targets = [];
+      for (let k = 0; k < 7; k++) targets.push([OX - OS / 2 + 2 + k * 4, OY - OS - 2 + k * 2]);
+      for (let k = 0; k < 6; k++) targets.push([OX - OS / 2 - 1, OY - OS + 6 + k * 8]);
+      let hitN = 0; const routes = [];
+      if (on) {
+        targets.forEach((T, i) => {
+          const t = segRect(L, T, OX - TR, OX + TR, yt, yb + TR * 0.24);
+          if (t != null && t < 0.999) { if (i % 2 === 0) { const P = [L[0] + (T[0] - L[0]) * t, L[1] + (T[1] - L[1]) * t]; OPA.ray(rays, [L[0] + 30, L[1] + 18], P, { w: 2, head: false, op: 0.45 }); } }
+          else { hitN++; if (i % 3 === 0) { OPA.ray(rays, [L[0] + 30, L[1] + 18], T, { w: 2.6, at: 0.7, op: 0.85 }); routes.push([[L[0] + 30, L[1] + 18], T, [OX + (i % 5 - 2) * 6, ey + 30]]); } }
+        });
+        [[-160, 300], [-110, 260], [-60, 210], [60, 160], [140, 120]].forEach(([dx, dy]) => OPA.ray(rays, [L[0] + 10, L[1] + 24], [L[0] + 10 + dx * 0.55, L[1] + 24 + dy * 0.55], { w: 2, op: 0.3 }));
+      }
+      const vis = glow ? 1 : (on ? Math.min(1, hitN / 9) : 0);
+      if (vis > 0 && !glow) { OPA.ray(upG, [OX, OY - OS - 6], [OX, ey + 34], { w: 2.6, dash: '6 6', at: 0.35, op: Math.max(0.35, vis) }); }
+      if (glow) { OPA.ray(upG, [OX, OY - OS - 6], [OX, ey + 34], { w: 2.6, dash: '6 6', at: 0.35, color: '#5aaa43' }); el('ellipse', { cx: OX, cy: yt + 2, rx: TR * 0.7, ry: 12, fill: 'url(#paGreenGlow)' }, upG); }
+      // 빛 알갱이
+      const nsig = [glow, lift.toFixed(2), on].join('|');
+      if (nsig !== sig) {
+        sig = nsig; ph.clear();
+        if (!glow) routes.slice(0, 3).forEach((r, i) => ph.add(r, { rate: 1.1, speed: 300, color: '#f2a516', r: 4.2, phase: i / 3 }));
+        if (glow) { ph.add([[OX, OY - OS], [OX, ey + 30]], { rate: 2.2, speed: 160, color: '#7ee05a', r: 4.2 }); [[-1, -0.4], [1, -0.5], [-1, 0.1]].forEach(([dx, dy]) => ph.add([[OX + dx * 20, OY - OS * 0.5], [OX + dx * 120, OY - OS * 0.5 + dy * 120]], { rate: 0.8, speed: 120, color: '#7ee05a', r: 3.6 })); }
+      }
+      // 어둠: 야광 물체의 빛만 남겨요
+      darkR.setAttribute('opacity', on ? 0 : 0.86);
+      if (!on && glow) {
+        if (yb < OY - OS - 4) OPA.cube(topG, OX, OY, OS, true);
+        OPA.ray(topG, [OX, OY - OS - 6], [OX, ey + 34], { w: 2.6, dash: '6 6', at: 0.35, color: '#5aaa43' });
+        el('ellipse', { cx: OX, cy: yt + 2, rx: TR * 0.7, ry: 12, fill: 'url(#paGreenGlow)' }, topG);
+      }
+      // 눈에 보이는 모습
+      const top = peek.querySelector('#pkTop'), side = peek.querySelector('#pkSide');
+      top.setAttribute('fill', glow ? '#b9f39f' : '#d8b585'); side.setAttribute('fill', glow ? '#86d16c' : '#94673a');
+      peek.querySelector('#pkObj').setAttribute('opacity', vis.toFixed(2));
+      peek.querySelector('#pkObj').style.filter = glow ? 'drop-shadow(0 0 6px #9df07f)' : '';
+      S.$('#peekT').textContent = vis > 0.6 ? '보여요' : vis > 0.05 ? '조금 보여요' : '보이지 않아요';
+      ov.put('lp', L[0], L[1] - 70, on ? '전등 (광원)' : '전등 (꺼짐)', 'ink');
+      ov.put('ey', OX + 92, ey, '눈', 'ink');
+      ov.put('ob', OX + 110, OY - 20, glow ? '야광 물체' : '작은 물체', 'ink');
+      S.vis = vis;
+    }
+    S.drawA = draw;
+    S.showA = (v) => { gA.style.display = v ? '' : 'none'; ph.clear(); sig = ''; if (!v) ov.hideAll(); S.$('#peek').hidden = !v; };
+    window.SM.ok3d = true;
+  } catch (err) { window.SM_err('통으로 보기 그림', err); }
+})();
+</script>
+<script>
+/* ===== 블록 2: 빛의 경로 그리기 장면 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { el } = OP, W = 1000, H = 720, g = S.gB, sv = S.$('#sv');
+    sv.querySelector('defs').insertAdjacentHTML('beforeend', `
+      <linearGradient id="bSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c9e0f2"/><stop offset="1" stop-color="#eef4f8"/></linearGradient>
+      <linearGradient id="bGrass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b9d0a6"/><stop offset="1" stop-color="#93b37f"/></linearGradient>
+      <linearGradient id="bRoom" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#edf0f3"/><stop offset="1" stop-color="#dfe4ea"/></linearGradient>
+      <linearGradient id="bFloor" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d9cdb9"/><stop offset="1" stop-color="#c4b59c"/></linearGradient>`);
+    /* 장면: 점(id, 이름, 종류, x, y), 꼭 필요한 화살표, 있어도 되는 화살표 */
+    const SC = {
+      lamp: { title: '전등을 볼 때', nodes: [['lamp', '전등', 'src', 300, 330], ['eye', '눈', 'eye', 770, 300]], req: [['lamp', 'eye']], ok: [],
+        say: '전등은 스스로 빛을 내는 <b>광원</b>이에요. 전등을 볼 때 빛의 경로를 그려 보세요.',
+        good: '맞아요! 광원인 전등에서 나온 빛이 <b>바로 눈에 들어와서</b> 전등을 볼 수 있어요.' },
+      ball: { title: '공을 볼 때', nodes: [['sun', '태양', 'src', 820, 130], ['ball', '공', 'obj', 520, 560], ['eye', '눈', 'eye', 190, 260]], req: [['sun', 'ball'], ['ball', 'eye']], ok: [],
+        say: '햇빛 아래에서 공을 보고 있어요. 공을 볼 때 빛의 경로를 그려 보세요.',
+        good: '맞아요! <b>햇빛이 공에 반사되어</b> 눈에 들어와서 공을 볼 수 있어요.' },
+      book: { title: '책을 볼 때', nodes: [['lamp', '전등', 'src', 470, 150], ['book', '책', 'obj', 470, 560], ['eye', '눈', 'eye', 830, 300]], req: [['lamp', 'book'], ['book', 'eye']], ok: [],
+        say: '"우리는 어떤 과정으로 책을 볼 수 있을까?" 빛의 경로를 그려 친구에게 설명해 봐요.',
+        good: '맞아요! 전등에서 나온 빛이 <b>책에 반사되어</b> 눈에 들어와서 책을 볼 수 있어요.' },
+      shoot: { title: '촬영 대상을 볼 때', nodes: [['sun', '태양', 'src', 150, 120], ['refl', '반사판', 'obj', 830, 330], ['subj', '촬영 대상', 'obj', 520, 520], ['eye', '눈(촬영자)', 'eye', 160, 470]], req: [['sun', 'refl'], ['refl', 'subj'], ['subj', 'eye']], ok: [['sun', 'subj']],
+        say: '촬영장에서는 반사판으로 빛을 대상 쪽으로 보내요. <b>반사판을 포함하여</b> 촬영 대상을 보는 빛의 경로를 그려 보세요.',
+        good: '맞아요! 햇빛이 <b>반사판에 반사되어</b> 촬영 대상에 닿고, 대상에 반사된 빛이 눈에 들어와요. 반사판 덕분에 대상이 더 밝게 보여요.' },
+    };
+    S.SC = SC;
+    const bg = el('g', {}, g), arrG = el('g', {}, g), phL = el('g', { filter: 'url(#opDot)' }, g);
+    const ph = OP.photons(phL);
+    const lights = [];
+    function art(k) {
+      bg.innerHTML = ''; lights.length = 0;
+      if (k === 'ball' || k === 'shoot') {
+        el('rect', { width: W, height: H, fill: 'url(#bSky)' }, bg);
+        el('path', { d: 'M0 420C140 400 260 410 380 404S640 396 760 400S920 396 1000 402L1000 720L0 720Z', fill: 'url(#bGrass)' }, bg);
+        el('path', { d: 'M0 410C40 360 90 350 130 372C160 330 230 336 250 380C290 350 340 360 360 400L0 412Z', fill: '#9fbd8e', opacity: .8 }, bg);
+        el('path', { d: 'M640 402C670 352 730 346 760 380C790 350 850 352 870 396Z', fill: '#a6c295', opacity: .8 }, bg);
+      } else {
+        el('rect', { width: W, height: H, fill: 'url(#bRoom)' }, bg);
+        el('rect', { y: 600, width: W, height: 120, fill: 'url(#bFloor)' }, bg);
+      }
+      if (k === 'lamp') { el('path', { d: 'M150 470L470 470L450 440L170 440Z', fill: '#cdb28c' }, bg); el('rect', { x: 150, y: 470, width: 320, height: 16, fill: '#a98b62' }, bg); el('rect', { x: 170, y: 486, width: 14, height: 120, fill: '#8d7150' }, bg); el('rect', { x: 436, y: 486, width: 14, height: 120, fill: '#8d7150' }, bg); lights.push(OPA.lamp(bg, 300, 330, 1.25, true)); }
+      if (k === 'ball') { lights.push({ g: OPA.sun(bg, 820, 130, 40), on() {} }); OPA.ball(bg, 520, 560, 50); }
+      if (k === 'book') { el('path', { d: 'M180 620L800 620L760 540L220 540Z', fill: '#cdb28c' }, bg); el('rect', { x: 180, y: 620, width: 620, height: 18, fill: '#a98b62' }, bg); lights.push(OPA.pendant(bg, 470, 150, 1.3, true)); OPA.book(bg, 470, 586, 230); }
+      if (k === 'shoot') { lights.push({ g: OPA.sun(bg, 150, 120, 40), on() {} }); OPA.reflector(bg, 830, 330, 90); OPA.plant(bg, 520, 600, 1.15); OPA.camera(bg, 230, 470, 0.9); }
+      const eye = SC[k].nodes.find((n) => n[2] === 'eye');
+      OP.eye(bg, eye[3], eye[4], 96, { lx: eye[3] < 500 ? 8 : -8, ly: 4 });
+    }
+    const nodesBox = S.$('#nodes');
+    const pos = (x, y) => `left:${(x / W * 100).toFixed(2)}%;top:${(y / H * 100).toFixed(2)}%`;
+    let sel = null;
+    function nodeById(id) { return SC[S.scn].nodes.find((n) => n[0] === id); }
+    function drawArrows(bad = []) {
+      arrG.innerHTML = ''; S.$$('.del', nodesBox).forEach((d) => d.remove());
+      S.arrows.forEach(([a, b], i) => {
+        const A = nodeById(a), B = nodeById(b), dx = B[3] - A[3], dy = B[4] - A[4], L = Math.hypot(dx, dy), ux = dx / L, uy = dy / L, gap = 50;
+        const isBad = bad.includes(i), col = isBad ? '#d9534f' : '#0e63b3';
+        OPA.ray(arrG, [A[3] + ux * gap, A[4] + uy * gap], [B[3] - ux * gap, B[4] - uy * gap], { color: col, w: 6, hs: 26, dash: isBad ? '14 10' : '' });
+        const d = document.createElement('button'); d.type = 'button'; d.className = 'del' + (isBad ? ' bad' : ''); d.setAttribute('aria-label', `${A[1]}에서 ${B[1]}(으)로 가는 화살표 지우기`); d.textContent = '×';
+        d.style.cssText = pos(A[3] + dx * 0.45, A[4] + dy * 0.45); d.addEventListener('click', (e) => { e.stopPropagation(); S.arrows.splice(i, 1); reset(); drawArrows(); });
+        nodesBox.appendChild(d);
+      });
+    }
+    function reset() { ph.clear(); S.$('#fbk').className = 'fbk'; S.$('#fbT').textContent = SC[S.scn].title; S.$('#fbM').innerHTML = SC[S.scn].say; }
+    function renderNodes() {
+      nodesBox.innerHTML = '';
+      SC[S.scn].nodes.forEach(([id, name]) => {
+        const n = nodeById(id), b = document.createElement('button'); b.type = 'button'; b.className = 'node'; b.dataset.id = id; b.style.cssText = pos(n[3], n[4]);
+        b.innerHTML = `<span>${name}</span>`; b.setAttribute('aria-label', name);
+        b.addEventListener('click', () => {
+          if (sel === null) { sel = id; }
+          else if (sel === id) { sel = null; }
+          else { if (!S.arrows.some(([a, c]) => a === sel && c === id)) S.arrows.push([sel, id]); sel = null; reset(); drawArrows(); }
+          S.$$('.node', nodesBox).forEach((x) => x.classList.toggle('sel', x.dataset.id === sel));
+        });
+        nodesBox.appendChild(b);
+      });
+    }
+    S.setScene = (k) => { S.scn = k; S.arrows = []; sel = null; S.off = false; art(k); renderNodes(); drawArrows(); reset(); S.lightsB(false); };
+    S.lightsB = (off) => {
+      S.off = off; S.$('#dark').classList.toggle('on', off); lights.forEach((l) => l.on(!off));
+      S.$$('.node', nodesBox).forEach((x) => x.classList.toggle('dim', off));
+      const b = S.$('#bOff'); b.textContent = off ? '불 켜기' : '불 끄고 보기'; b.setAttribute('aria-pressed', String(off));
+      if (off) ph.clear();
+    };
+    S.check = () => {
+      const sc = SC[S.scn], kind = (id) => nodeById(id)[2], has = (a, b) => S.arrows.some((x) => x[0] === a && x[1] === b);
+      const lit = new Set(sc.nodes.filter((n) => n[2] === 'src').map((n) => n[0]));
+      let grow = true; while (grow) { grow = false; S.arrows.forEach(([a, b]) => { if (lit.has(a) && kind(b) === 'obj' && !lit.has(b)) { lit.add(b); grow = true; } }); }
+      const bad = [], fb = S.$('#fbk'), T = S.$('#fbT'), M = S.$('#fbM');
+      const fromEye = S.arrows.map((x, i) => (kind(x[0]) === 'eye' ? i : -1)).filter((i) => i >= 0);
+      const unlit = S.arrows.map((x, i) => (kind(x[0]) === 'obj' && !lit.has(x[0]) ? i : -1)).filter((i) => i >= 0);
+      const toSrc = S.arrows.map((x, i) => (kind(x[1]) === 'src' ? i : -1)).filter((i) => i >= 0);
+      const extra = S.arrows.map((x, i) => (!sc.req.concat(sc.ok).some((r) => r[0] === x[0] && r[1] === x[1]) ? i : -1)).filter((i) => i >= 0);
+      const missing = sc.req.filter((r) => !has(r[0], r[1]));
+      fb.className = 'fbk no';
+      if (!S.arrows.length) { T.textContent = '아직 화살표가 없어요'; M.innerHTML = '빛이 출발하는 곳을 먼저 누르고, 도착하는 곳을 눌러 보세요.'; drawArrows(); return; }
+      if (fromEye.length) {
+        drawArrows(fromEye); T.textContent = '틀린 생각: 눈에서 빛이 나온다?';
+        M.innerHTML = '눈은 빛을 내지 않고 <b>받아들이기만</b> 해요. 눈에서 빛이 나온다면 캄캄한 곳에서도 물체가 보여야 해요. 아래 버튼으로 불을 꺼 보세요. 눈은 그대로인데 아무것도 보이지 않아요.<div class="acts"><button class="btn ghost" type="button" data-off>불 끄고 확인하기</button></div>';
+      } else if (unlit.length) {
+        drawArrows(unlit); const n = nodeById(S.arrows[unlit[0]][0])[1];
+        T.textContent = `틀린 생각: ${n}에서 빛이 직접 나온다?`;
+        M.innerHTML = `${n}은(는) <b>광원이 아니에요</b>. 스스로 빛을 내지 않으니, 광원의 빛이 ${n}에 먼저 닿아야 반사되어 눈으로 갈 수 있어요. 광원에서 ${n}(으)로 가는 화살표가 있나요?<div class="acts"><button class="btn ghost" type="button" data-off>불 끄고 확인하기</button></div>`;
+      } else if (toSrc.length) {
+        drawArrows(toSrc); T.textContent = '화살표 방향을 확인해요'; M.innerHTML = '빛은 <b>광원에서 나와서</b> 나아가요. 광원 쪽으로 들어가는 화살표는 방향이 반대예요.';
+      } else if (extra.length) {
+        drawArrows(extra); T.textContent = '이 화살표는 필요할까요?'; M.innerHTML = '빨간 점선 화살표는 이 물체를 보는 빛의 경로가 아니에요. 지우고 다시 확인해 보세요.';
+      } else if (missing.length) {
+        drawArrows(); T.textContent = '빛이 눈까지 이어지지 않았어요'; M.innerHTML = '광원에서 출발한 빛이 <b>눈에 들어올 때까지</b> 화살표가 이어져야 해요. 빠진 화살표를 찾아보세요.';
+      } else {
+        drawArrows(); fb.className = 'fbk ok'; T.textContent = '빛의 경로가 맞아요'; M.innerHTML = sc.good + ' 움직이는 점이 빛이 나아가는 길이에요.';
+        ph.clear();
+        const chain = []; let cur = sc.req[0][0]; chain.push(cur);
+        sc.req.forEach(() => { const nx = sc.req.find((r) => r[0] === cur); if (nx) { cur = nx[1]; chain.push(cur); } });
+        const pts = chain.map((id) => [nodeById(id)[3], nodeById(id)[4]]);
+        ph.add(pts, { rate: 1.6, speed: 260, color: '#f2a516', r: 6 });
+        if (window.SM_done) window.SM_done(S.scn);
+      }
+      S.$$('[data-off]', fb).forEach((b) => b.addEventListener('click', () => S.lightsB(true)));
+    };
+    S.showB = (v) => { g.style.display = v ? '' : 'none'; nodesBox.hidden = !v; if (!v) { ph.clear(); } };
+    window.SM.okB = true;
+  } catch (err) { window.SM_err('빛의 경로 그리기', err); }
+})();
+</script>
+<script>
+/* ===== 블록 3: 안내·버튼 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S;
+    const seen = {};
+    function syncA() {
+      S.drawA();
+      $$('#objSeg button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.o === S.obj)));
+      $('#rLift').value = Math.round(S.lift * 100);
+      const b = $('#bLight'); b.textContent = S.light ? '불 끄기' : '불 켜기'; b.setAttribute('aria-pressed', String(!S.light));
+      if (S.light && (S.lift < 0.03 || S.lift > 0.97)) {
+        const k = `${S.obj}-${S.lift > 0.5 ? 1 : 0}`, td = $(`#obs td[data-k="${k}"]`), v = S.vis > 0.5;
+        if (td && !seen[k]) { seen[k] = true; td.textContent = v ? '보인다' : '보이지 않는다'; td.className = v ? 'y' : 'n'; }
+      }
+      $$('#whyA .w').forEach((w, i) => w.classList.toggle('on', (i === 0 && seen['block-0']) || (i === 1 && seen['block-1']) || (i === 2 && (seen['glow-0'] || seen['glow-1'])) || (i === 3 && seen['block-0'] && seen['block-1'] && (seen['glow-0'] || seen['glow-1']))));
+    }
+    let anim = null;
+    function liftTo(goal, dur) {
+      cancelAnimationFrame(anim); const from = S.lift, t0 = performance.now();
+      if (S.reduce) { S.lift = goal; syncA(); return; }
+      const step = (now) => { const k = Math.min(1, (now - t0) / dur), e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2; S.lift = from + (goal - from) * e; syncA(); if (k < 1) anim = requestAnimationFrame(step); };
+      anim = requestAnimationFrame(step);
+    }
+    $$('#objSeg button').forEach((b) => b.addEventListener('click', () => { S.obj = b.dataset.o; syncA(); }));
+    $('#rLift').addEventListener('input', (e) => { cancelAnimationFrame(anim); S.lift = +e.target.value / 100; syncA(); });
+    $('#bUp').addEventListener('click', () => liftTo(1, 3200));
+    $('#bDown').addEventListener('click', () => liftTo(0, 1200));
+    $('#bLight').addEventListener('click', () => { S.light = !S.light; syncA(); });
+    $('#bTry').addEventListener('click', () => {
+      S.obj = 'block'; S.light = false; S.lift = 0; syncA(); liftTo(1, 2600);
+      $('#aTry').innerHTML = '<b>보이지 않아요.</b> 통을 들어 올려도 물체에 닿을 빛이 없으니, 물체에서 반사되어 눈으로 들어올 빛도 없어요. 눈은 그대로인데 보이지 않으니, 물체를 보는 데 필요한 빛은 눈이 아니라 <b>광원</b>에서 와요.';
+    });
+    function mode(m) {
+      S.mode = m; $('#mA').setAttribute('aria-selected', String(m === 'A')); $('#mB').setAttribute('aria-selected', String(m === 'B'));
+      $('#paneA').hidden = m !== 'A'; $('#paneB').hidden = m !== 'B';
+      S.showA(m === 'A'); S.showB(m === 'B');
+      if (m === 'A') { S.$('#dark').classList.remove('on'); syncA(); } else { S.setScene(S.scn); }
+    }
+    $('#mA').addEventListener('click', () => mode('A')); $('#mB').addEventListener('click', () => mode('B'));
+    $$('#scnSeg button').forEach((b) => b.addEventListener('click', () => { $$('#scnSeg button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); S.setScene(b.dataset.s); }));
+    $('#bCheck').addEventListener('click', () => S.check());
+    $('#bClear').addEventListener('click', () => S.setScene(S.scn));
+    $('#bOff').addEventListener('click', () => S.lightsB(!S.off));
+    // 주소로 장면 바로 열기 (화면 검사용): ?mode=B&scn=ball&arr=eye-ball&check=1 / ?obj=glow&lift=100&dark=1
+    const q = new URLSearchParams(location.search);
+    if (q.get('obj')) S.obj = q.get('obj');
+    if (q.get('lift')) S.lift = +q.get('lift') / 100;
+    if (q.get('dark') === '1') S.light = false;
+    if (q.get('scn')) { S.scn = q.get('scn'); $$('#scnSeg button').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.s === S.scn))); }
+    mode(q.get('mode') === 'B' ? 'B' : 'A');
+    if (S.mode === 'B' && q.get('arr')) { S.arrows = q.get('arr').split(',').map((x) => x.split('-')); S.check(); }
+    if (q.get('play') === '1') $('#bUp').click();
+    window.SM.okUI = true;
+  } catch (err) { window.SM_err('안내·버튼', err); }
+})();
+</script>
+</body>
+</html>
