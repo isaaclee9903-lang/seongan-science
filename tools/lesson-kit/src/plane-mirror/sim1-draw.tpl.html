@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>평면거울에 의한 상 – 상이 생기는 원리 그리기</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+/*@@LOCAL:_css_op.css@@*/
+/*@@LOCAL:_css_mr.css@@*/
+  /* ===== 이 페이지 전용 ===== */
+  #scene{aspect-ratio:1000/620;background:#fbf4e8}
+  .modes{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px}
+  .flow{grid-template-columns:repeat(7,1fr)}
+  .fs{font-size:12px;min-height:50px}
+  .fs b{font-size:16px}
+  .navs{display:flex;gap:8px;margin-top:12px}
+  .navs .btn{flex:1}
+  .stepbox{min-height:150px}
+  .what b{color:#14263b}
+  .tb{display:inline-block;font-size:12.5px;font-weight:800;color:#5a6b7e;background:#f0f4f8;border-radius:8px;padding:2px 8px;margin-bottom:6px}
+  .dragtip{display:flex;gap:8px;align-items:center;font-size:13.5px;font-weight:700;color:var(--muted);margin-top:10px;word-break:keep-all}
+  .dragtip i{flex:none;width:30px;height:30px;border-radius:50%;border:2px dashed #8fa3b8;display:grid;place-items:center;font-style:normal}
+  .hit{position:absolute;z-index:3;transform:translate(-50%,-50%);border-radius:50%;border:2px dashed rgba(14,99,179,.35);background:transparent;pointer-events:none;transition:opacity .3s}
+  .hit[hidden]{display:none}
+  .phase .ph.bad{background:#fff4f2;color:#5e2a25}
+  .hint2{font-size:13px;color:var(--muted);margin:6px 0 0;word-break:keep-all}
+  .cprob{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 4px}
+  .cprob button{min-height:46px;padding:0 14px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15px;cursor:pointer}
+  .cprob button[aria-pressed="true"]{border-color:#14263b;background:#14263b;color:#fff}
+  .cprob button.done:not([aria-pressed="true"]){border-color:#bcd7f2;background:#e9f3fd;color:#0b3f73}
+  @media (max-width:900px){.flow{grid-template-columns:repeat(7,1fr)}.fs span{display:none}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <span class="eyebrow">평면거울에 의한 상 · 시뮬레이션 ①</span>
+    <h1>상이 생기는 원리를 그려 봐요</h1>
+    <p class="sub">물체의 한 점에서 나온 빛이 거울에 반사되어 눈에 들어오기까지, 빛의 경로를 한 단계씩 그려서 상의 위치를 찾아요.</p>
+  </header>
+  <div class="stage">
+    <section class="card viewer">
+      <div class="scene" id="scene">
+        <svg id="sv" viewBox="0 0 1000 620" role="img" aria-label="평면거울 앞의 화분과 눈. 화분의 한 점에서 나온 빛이 거울에 반사되어 눈에 들어오고, 반사된 빛을 거울 뒤쪽으로 연장하면 한 점에서 만난다."></svg>
+        <div class="hit" id="hitF" hidden></div><div class="hit" id="hitE" hidden></div>
+      </div>
+    </section>
+    <section class="card pad">
+      <div class="modes" role="tablist">
+        <button class="md" type="button" role="tab" id="mA" aria-selected="true">따라 그리기<small>7단계로 보기</small></button>
+        <button class="md" type="button" role="tab" id="mB" aria-selected="false">직접 그리기<small>반사 법칙으로 작도</small></button>
+        <button class="md" type="button" role="tab" id="mC" aria-selected="false">상 위치 찾기<small>모눈 위 연습</small></button>
+      </div>
+
+      <div id="paneA">
+        <div class="flow" id="flow" role="tablist" aria-label="단계"></div>
+        <div class="stepbox">
+          <div class="stepname"><span class="no" id="sNo">1</span><div><h2 id="sTitle"></h2><small id="sSmall"></small></div></div>
+          <p class="what" id="sWhat"></p>
+          <div class="box" id="sBox" hidden><b class="t" id="sBoxT"></b><span id="sBoxM"></span></div>
+        </div>
+        <div class="navs"><button class="btn ghost" type="button" id="bPrev">이전</button><button class="btn ghost" type="button" id="bAgain">다시 보기</button><button class="btn primary" type="button" id="bNext">다음</button></div>
+        <div class="dragtip"><i>↔</i><span>화분과 눈을 손가락으로 끌어 위치를 바꿔 보세요. 어디에 두어도 연장선은 한 점에서 만나요.</span></div>
+      </div>
+
+      <div id="paneB" hidden>
+        <div class="stepname"><span class="no">B</span><div><h2>반사 법칙으로 직접 그리기</h2><small>꽃의 한 점에서 나온 빛 두 개로 상의 위치를 찾아요</small></div></div>
+        <div class="phase" id="phB">
+          <div class="ph" data-p="0"><i>1</i><span>거울 면을 눌러 첫 번째 빛이 닿을 곳을 정해요.</span></div>
+          <div class="ph" data-p="1"><i>2</i><span>파란 손잡이를 끌어 반사 광선의 방향을 정해요. <b>반사각 = 입사각</b>이 되게!</span></div>
+          <div class="ph" data-p="2"><i>3</i><span>거울 면의 다른 곳을 눌러 두 번째 빛도 같은 방법으로 그려요.</span></div>
+          <div class="ph" data-p="3"><i>4</i><span>두 반사 광선을 거울 뒤쪽으로 연장해요. 점선 손잡이를 끌거나 '연장선 그리기'를 눌러요.</span></div>
+          <div class="ph" data-p="4"><i>5</i><span>두 연장선이 만나는 점을 눌러요.</span></div>
+          <div class="ph" data-p="5"><i>6</i><span>상의 위치와 거리를 확인해요.</span></div>
+        </div>
+        <div class="fbk" id="fbB"><b class="t" id="fbBT">시작</b><span id="fbBM"></span></div>
+        <div class="acts"><button class="btn primary" type="button" id="bExt" disabled>연장선 그리기</button><button class="btn ghost" type="button" id="bResetB">처음부터</button><button class="btn ghost" type="button" id="bMoveB">물체 옮기기</button></div>
+      </div>
+
+      <div id="paneC" hidden>
+        <div class="stepname"><span class="no">C</span><div><h2>모눈 위에서 상 위치 찾기</h2><small>거울에서 물체까지의 거리와 거울에서 상까지의 거리는 같아요</small></div></div>
+        <div class="cprob" id="cprob" role="group" aria-label="문제 고르기"></div>
+        <ol class="steps" style="margin:6px 0;padding-left:20px;font-size:14.5px;line-height:1.7;color:var(--ink2);word-break:keep-all"><li>물체의 점 A, B, C가 거울에서 몇 칸 떨어져 있는지 세어요.</li><li>거울 뒤쪽의 모눈 교차점을 눌러 A′, B′, C′을 차례로 찍어요.</li><li>다 찍으면 '확인하기'를 눌러요.</li></ol>
+        <div class="acts"><button class="btn primary" type="button" id="bCheckC" disabled>확인하기</button><button class="btn ghost" type="button" id="bUndoC">하나 지우기</button><button class="btn ghost" type="button" id="bHelpC" aria-pressed="false">도움선 보기</button></div>
+        <div class="fbk" id="fbC"><b class="t" id="fbCT">문제 1</b><span id="fbCM"></span></div>
+      </div>
+    </section>
+  </div>
+  <p class="credit">평면거울에 의한 상 · 상이 생기는 원리 그리기</p>
+</div>
+<script>
+window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
+  reduce: !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches), mode: 'A', step: 1, Q: new URLSearchParams(location.search) };
+</script>
+<script>
+/*@@PART:flow.js@@*/
+window.FLOW = FLOW;
+</script>
+<script>
+/*@@LOCAL:_optics.js@@*/
+</script>
+<script>
+/*@@LOCAL:_art.js@@*/
+</script>
+<script>
+/*@@LOCAL:_mirror.js@@*/
+</script>
+<script>
+/* ===== 블록 1: 따라 그리기 (7단계) ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S;
+    const SC = MR.build($('#scene'), { px: 600 - 7 * 40, E: [372, 136] });
+    S.SC = SC;
+    const STEPS = [
+      { t: '사방으로 반사되는 빛', s: '광원 → 물체의 한 점', w: '광원에서 물체의 한 점으로 들어온 빛은 <b>사방으로 반사</b>되어 나가요. 화분은 스스로 빛을 내지 않지만, 전등 빛이 꽃에 닿아 여러 방향으로 반사돼요.', box: ['기억나요?', '광원이 아닌 물체는 광원의 빛이 반사되어 눈에 들어와야 보여요.'] },
+      { t: '거울로 가는 빛 하나', s: '반사면과 수직인 선 긋기', w: '사방으로 나간 빛 가운데 <b>거울 면에 닿는 빛 하나</b>를 따라가요. 빛이 닿은 곳에 <b>반사면과 수직인 선</b>을 긋고, 이 선과 입사 광선 사이의 각, <b>입사각</b>을 재요.', box: ['각은 어디서 재요?', '거울 면이 아니라 반사면과 수직인 선에서 재요.'] },
+      { t: '반사 법칙대로 반사', s: '반사각 = 입사각', w: '빛은 <b>빛의 반사 법칙</b>에 따라 입사각과 같은 크기의 반사각으로 반사되어 <b>눈에 들어와요</b>. 우리가 거울로 물체를 볼 수 있는 까닭이에요.', box: ['빛의 반사 법칙', '빛이 반사할 때 입사각과 반사각의 크기는 항상 같다.'] },
+      { t: '눈에 들어오는 다른 빛', s: '같은 점에서 나온 빛 여러 개', w: '같은 점에서 나온 <b>다른 빛도</b> 거울 면에 닿은 뒤 반사 법칙대로 반사되어 눈에 들어와요. 거울에 닿는 곳이 조금씩 다르고, 각도도 조금씩 달라요.', box: null },
+      { t: '거울 뒤쪽으로 연장하기', s: '반사 광선의 연장선', w: '눈에 들어온 반사 광선을 <b>거울 뒤쪽으로 곧게 연장</b>해요. 연장선들은 거울 뒤쪽의 <b>한 점에서 만나요</b>.', box: ['점선은 빛이 아니에요', '거울 뒤쪽으로 실제 빛이 지나가지는 않아요. 연장선은 눈에 들어온 빛이 어디서 온 것처럼 보이는지 찾는 선이에요.'] },
+      { t: '상의 위치', s: '연장선이 만나는 곳', w: '우리는 거울에 반사되어 나온 빛을 보고, <b>거울 뒤쪽의 이 점에서 빛이 나오는 것처럼</b> 느껴요. 그래서 거울 속에 물체가 있는 것처럼 보여요. 눈에 들어온 빛의 <b>연장선이 만나는 곳</b>이 바로 <b>상의 위치</b>예요.', box: ['상', '거울이나 유리, 렌즈 등으로 물체를 볼 때 생기는 물체의 모습'] },
+      { t: '거리와 크기 비교', s: '모눈 칸 세기', w: '', box: ['평면거울에 생기는 상', '평면거울 앞에 물체를 놓으면 항상 물체와 같은 크기의 상이 생겨요. 거울에서 상까지의 거리와 거울에서 물체까지의 거리는 같아요.'] },
+    ];
+    const flow = $('#flow');
+    flow.innerHTML = STEPS.map((x, i) => `<button class="fs" type="button" role="tab" data-i="${i + 1}" aria-selected="false"><b>${i + 1}</b><span>${x.t.split(' ')[0]}</span></button>`).join('');
+    const seen = new Set();
+    function show(n, anim = true) {
+      S.step = n = Math.max(1, Math.min(7, n)); seen.add(n);
+      const x = STEPS[n - 1];
+      $('#sNo').textContent = n; $('#sTitle').textContent = x.t; $('#sSmall').textContent = x.s;
+      let w = x.w;
+      if (n === 7) { const k = Math.round((SC.MX - SC.st.px) / 40); w = `모눈을 세어 보면 거울에서 물체까지 <b>${k}칸</b>, 거울에서 상까지도 <b>${k}칸</b>이에요. 화분 전체의 상도 <b>물체와 크기가 같아요</b>. 화분을 끌어 거리를 바꿔 보세요.`; }
+      $('#sWhat').innerHTML = w;
+      const bx = $('#sBox'); bx.hidden = !x.box; if (x.box) { bx.className = 'box ' + (n === 5 ? 'an' : 'fact'); $('#sBoxT').textContent = x.box[0]; $('#sBoxM').textContent = x.box[1]; }
+      $$('.fs', flow).forEach((b) => { const i = +b.dataset.i; b.setAttribute('aria-selected', String(i === n)); b.classList.toggle('seen', seen.has(i)); });
+      $('#bPrev').disabled = n === 1; $('#bNext').disabled = n === 7;
+      if (S.mode === 'A') SC.render(n, { anim });
+    }
+    S.showA = show;
+    $$('.fs', flow).forEach((b) => b.addEventListener('click', () => show(+b.dataset.i)));
+    $('#bPrev').addEventListener('click', () => show(S.step - 1));
+    $('#bNext').addEventListener('click', () => show(S.step + 1));
+    $('#bAgain').addEventListener('click', () => { SC.reset(); SC.render(Math.max(0, S.step - 1)); SC.render(S.step, { anim: true }); });
+
+    /* 화분과 눈 끌기 */
+    const sv = $('#sv'); let drag = null;
+    const hitF = $('#hitF'), hitE = $('#hitE');
+    function tips() {
+      const on = S.mode === 'A';
+      hitF.hidden = hitE.hidden = !on; if (!on) return;
+      const fx = SC.st.px, top = SC.FLOOR - 190;
+      Object.assign(hitF.style, { left: fx / 10 + '%', top: (top + 95) / 6.2 + '%', width: '12%', height: '32%', borderRadius: '40px' });
+      Object.assign(hitE.style, { left: SC.st.E[0] / 10 + '%', top: SC.st.E[1] / 6.2 + '%', width: '12%', aspectRatio: '1' });
+    }
+    S.tipsA = tips;
+    sv.addEventListener('pointerdown', (e) => {
+      if (S.mode !== 'A') return;
+      const [x, y] = OP.toSvg(sv, e), st = SC.st;
+      if (Math.hypot(x - st.E[0], y - st.E[1]) < 70) drag = { k: 'E', dx: st.E[0] - x, dy: st.E[1] - y };
+      else if (Math.abs(x - st.px) < 70 && y > SC.FLOOR - 210 && y < SC.FLOOR + 20) drag = { k: 'F', dx: st.px - x };
+      if (drag) { sv.setPointerCapture(e.pointerId); e.preventDefault(); }
+    });
+    sv.addEventListener('pointermove', (e) => {
+      if (!drag) return;
+      const [x, y] = OP.toSvg(sv, e), st = SC.st;
+      if (drag.k === 'E') { st.E = [Math.max(240, Math.min(SC.MX - 90, x + drag.dx)), Math.max(96, Math.min(300, y + drag.dy))]; }
+      else { st.px = Math.max(SC.MX - 9 * 40, Math.min(SC.MX - 3 * 40, Math.round((x + drag.dx - SC.MX) / 40) * 40 + SC.MX)); }
+      SC.render(S.step); tips(); if (S.step === 7) show(7, false);
+    });
+    const end = () => { drag = null; };
+    sv.addEventListener('pointerup', end); sv.addEventListener('pointercancel', end);
+    addEventListener('resize', tips);
+    S.okA = true;
+  } catch (err) { window.SM_err('따라 그리기', err); }
+})();
+</script>
+<script>
+/* ===== 블록 2: 직접 그리기 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S, { el } = OP, SC = S.SC, sv = $('#sv'), RED = MR.RED, BLUE = MR.BLUE;
+    const g = el('g', {}, sv); g.style.display = 'none';
+    const ov = OP.overlay($('#scene'), 1000, 620);
+    const B = { phase: 0, rays: [], drag: null, done: false };
+    S.B = B;
+    const MX = SC.MX, MT = SC.MT, MB = SC.FLOOR - 40, R = 230;
+    const P = () => SC.geo().P, P2 = () => SC.geo().P2;
+    const fb = (t, m, cls = '') => { $('#fbB').className = 'fbk ' + cls; $('#fbBT').textContent = t; $('#fbBM').innerHTML = m; };
+    const deg = (a) => Math.round(a * 180 / Math.PI);
+    const aRef = (r) => Math.PI * 2 - r.aP;                // 반사 법칙대로 반사된 방향
+    function phase(p) {
+      B.phase = p;
+      $$('#phB .ph').forEach((x) => { const i = +x.dataset.p; x.classList.toggle('on', i === p); x.classList.toggle('done', i < p); x.classList.remove('bad'); });
+      $('#bExt').disabled = p !== 3;
+      const msg = [
+        ['시작', '꽃의 한 점(빨간 점)에서 나온 빛이 거울 면에 닿는 곳을 정해요. <b>거울 면</b>을 눌러 보세요.'],
+        ['반사 광선 방향 정하기', '파란 손잡이를 끌어요. 반사면과 수직인 선(점선)을 기준으로 <b>반사각이 입사각과 같아지면</b> 손을 떼요.'],
+        ['두 번째 빛', '좋아요! 이번에는 거울 면의 <b>다른 곳</b>을 눌러 두 번째 빛을 그려요.'],
+        ['거울 뒤쪽으로 연장하기', '두 반사 광선을 <b>거울 뒤쪽으로 곧게 연장</b>해요. 거울 뒤쪽의 점선 손잡이를 끌어 보세요.'],
+        ['만나는 점 찾기', '두 연장선이 <b>만나는 점</b>을 눌러 표시해요.'],
+        ['상의 위치', ''],
+      ][p];
+      if (p < 5) fb(msg[0], msg[1]);
+    }
+    function draw() {
+      g.innerHTML = ''; ov.hideAll();
+      const p0 = P(), st = SC.st;
+      el('rect', { x: MX - 34, y: MT, width: 34, height: MB - MT, fill: B.phase === 0 || B.phase === 2 ? 'rgba(14,99,179,.10)' : 'transparent', rx: 6, class: B.phase === 0 || B.phase === 2 ? 'pulse2' : '' }, g);
+      B.rays.forEach((r, i) => {
+        const M = r.M;
+        MR.ray(g, [p0, M], { w: 3, glow: true, at: 0.55 });
+        const a = SC.drawAngles(g, M, p0, null, { r: 50, nl: 130 });
+        const sg = Math.sign(p0[1] - M[1]) || 1, lx = M[0] - 132;
+        const cur = i === B.rays.length - 1 && B.phase < 3;
+        if (cur) ov.put('ai' + i, lx, M[1] + sg * 30, `입사각 ${a.i}°`, 'inkk');
+        if (r.a != null) {
+          const end = [M[0] + Math.cos(r.a) * R, M[1] + Math.sin(r.a) * R];
+          const o = deg(Math.abs(Math.PI - MR.norm(r.a)));
+          MR.wedge(g, M[0], M[1], 50, Math.PI, MR.norm(r.a), r.ok ? {} : { stroke: '#8a96a3', fill: 'rgba(138,150,163,.12)' });
+          MR.ray(g, [M, end], { w: 3, glow: r.ok, at: 0.6, color: r.ok ? RED : '#8a96a3', dash: r.ok ? '' : '8 7' });
+          if (cur) ov.put('ao' + i, lx, M[1] + (Math.sin(r.a) > 0 ? 30 : -30), `반사각 ${o}°`, r.ok ? 'inkk' : 'ink');
+          if (!r.ok) { el('circle', { cx: end[0], cy: end[1], r: 22, fill: 'rgba(14,99,179,.18)', stroke: BLUE, 'stroke-width': 3 }, g); el('circle', { cx: end[0], cy: end[1], r: 7, fill: BLUE }, g); }
+          if (r.ok && B.phase >= 3) {
+            const u = [-Math.cos(r.a), -Math.sin(r.a)], q = [M[0] + u[0] * r.ext, M[1] + u[1] * r.ext];
+            if (r.ext > 2) MR.ray(g, [M, q], { w: 2.4, dash: '9 8', head: false, op: 0.9 });
+            if (B.phase === 3) { const h = [M[0] + u[0] * Math.max(r.ext, 34), M[1] + u[1] * Math.max(r.ext, 34)]; el('circle', { cx: h[0], cy: h[1], r: 20, fill: 'rgba(224,64,47,.12)', stroke: RED, 'stroke-width': 2.6, 'stroke-dasharray': '5 4' }, g); el('circle', { cx: h[0], cy: h[1], r: 6, fill: RED }, g); }
+          }
+        }
+        el('circle', { cx: M[0], cy: M[1], r: 5, fill: RED }, g);
+      });
+      el('circle', { cx: p0[0], cy: p0[1], r: 7, fill: '#fff', stroke: RED, 'stroke-width': 3 }, g);
+      ov.put('pt', p0[0] - 60, p0[1] - 30, '물체의 한 점', 'inkk');
+      if (B.phase >= 5) {
+        const q = P2();
+        el('circle', { cx: q[0], cy: q[1], r: 6.5, fill: '#fff', stroke: RED, 'stroke-width': 3 }, g);
+        ov.put('p2', q[0] + 64, q[1] - 28, '상의 위치', 'inkk');
+      }
+      if (B.mark) { el('circle', { cx: B.mark[0], cy: B.mark[1], r: 14, fill: 'none', stroke: '#d9534f', 'stroke-width': 3 }, g); }
+    }
+    S.drawB = draw;
+    function enter() {
+      SC.st.lamp = false; SC.st.labels = true; SC.st.angles = false; SC.st.photons = false;
+      SC.reset(); SC.render(0); hideEye(); g.style.display = '';
+      sv.appendChild(g); draw();
+    }
+    function hideEye() { SC.ov.hide('eye'); const eg = SC.L.obj.lastChild; if (eg) eg.style.display = 'none'; }
+    S.enterB = () => { B.rays = []; B.mark = null; phase(0); enter(); };
+    S.leaveB = () => { g.style.display = 'none'; ov.hideAll(); SC.st.lamp = true; SC.st.angles = true; SC.st.photons = true; };
+    function finish() {
+      phase(5);
+      SC.st.bare = true; SC.render(7); SC.st.bare = false; hideEye();
+      ['obj', 'pt', 'meet', 'ex', 'nl'].forEach((k) => SC.ov.hide(k));
+      SC.ov.put('obj', SC.st.px, SC.FLOOR + 30, '물체(화분)', 'ink');
+      sv.appendChild(g); draw();
+      const k = Math.round((MX - SC.st.px) / 40);
+      fb('상의 위치를 찾았어요!', `두 연장선이 만나는 점이 <b>상의 위치</b>예요. 모눈을 세면 거울에서 물체까지 <b>${k}칸</b>, 거울에서 상까지 <b>${k}칸</b>으로 같아요. '물체 옮기기'로 다른 위치에서도 그려 보세요.`, 'ok');
+      $$('#phB .ph').forEach((x) => x.classList.add('done'));
+    }
+    sv.addEventListener('pointerdown', (e) => {
+      if (S.mode !== 'B') return;
+      const [x, y] = OP.toSvg(sv, e);
+      if ((B.phase === 0 || B.phase === 2) && x > MX - 70 && x < MX + 40 && y > MT + 10 && y < MB) {
+        if (B.rays.some((r) => Math.abs(r.M[1] - y) < 50)) { fb('조금 더 떨어진 곳', '첫 번째 빛과 <b>조금 떨어진 곳</b>을 눌러야 두 빛이 잘 구별돼요.', 'no'); return; }
+        const M = [MX, Math.round(y)], p0 = P();
+        const aP = MR.norm(Math.atan2(p0[1] - M[1], p0[0] - M[0]));
+        B.rays.push({ M, aP, a: Math.PI, ok: false, ext: 0 });
+        phase(B.phase + 1); draw(); return;
+      }
+      if (B.phase === 1 || B.phase === 3) {
+        const r = B.rays[B.rays.length - 1];
+        if (B.phase === 1) {
+          const end = [r.M[0] + Math.cos(r.a) * R, r.M[1] + Math.sin(r.a) * R];
+          if (Math.hypot(x - end[0], y - end[1]) < 70 || x < MX - 40) { B.drag = { k: 'dir', r }; }
+        } else {
+          let best = null;
+          B.rays.forEach((rr) => { const u = [-Math.cos(rr.a), -Math.sin(rr.a)], h = [rr.M[0] + u[0] * Math.max(rr.ext, 34), rr.M[1] + u[1] * Math.max(rr.ext, 34)], d = Math.hypot(x - h[0], y - h[1]); if (d < 60 && (!best || d < best.d)) best = { rr, d }; });
+          if (best) B.drag = { k: 'ext', r: best.rr };
+        }
+        if (B.drag) { sv.setPointerCapture(e.pointerId); e.preventDefault(); onMove(e); }
+        return;
+      }
+      if (B.phase === 4) {
+        const q = P2();
+        if (Math.hypot(x - q[0], y - q[1]) < 30) { B.mark = null; finish(); }
+        else { B.mark = [x, y]; draw(); fb('다시 찾아봐요', '두 점선이 <b>서로 만나는 곳</b>을 정확히 눌러 보세요. 점선이 짧으면 손잡이를 더 끌어 연장해요.', 'no'); }
+      }
+    });
+    function onMove(e) {
+      if (!B.drag) return;
+      const [x, y] = OP.toSvg(sv, e), r = B.drag.r;
+      if (B.drag.k === 'dir') {
+        let a = MR.norm(Math.atan2(y - r.M[1], x - r.M[0]));
+        a = Math.max(Math.PI / 2 + 0.05, Math.min(Math.PI * 1.5 - 0.05, a));
+        r.a = a; r.ok = false;
+      } else {
+        const u = [-Math.cos(r.a), -Math.sin(r.a)];
+        r.ext = Math.max(0, Math.min(560, (x - r.M[0]) * u[0] + (y - r.M[1]) * u[1]));
+      }
+      draw();
+    }
+    sv.addEventListener('pointermove', onMove);
+    function up() {
+      if (!B.drag) return;
+      const r = B.drag.r, k = B.drag.k; B.drag = null;
+      if (k === 'dir') {
+        const want = aRef(r), diff = Math.abs(deg(Math.abs(Math.PI - r.a)) - deg(Math.abs(Math.PI - want))), side = Math.sign(r.a - Math.PI) === Math.sign(want - Math.PI);
+        if (diff <= 2 && side) { r.a = want; r.ok = true; if (B.rays.length === 1) phase(2); else phase(3); }
+        else {
+          $$('#phB .ph')[1].classList.add('bad');
+          fb('반사 법칙을 떠올려요', !side ? '반사 광선은 반사면과 수직인 선의 <b>반대쪽</b>으로 나가요. 입사 광선과 같은 쪽이 아니에요.' : `입사각은 <b>${deg(Math.abs(Math.PI - r.aP))}°</b>인데 반사각은 <b>${deg(Math.abs(Math.PI - r.a))}°</b>예요. 두 각이 같아지게 다시 끌어 보세요.`, 'no');
+        }
+      } else checkExt();
+      draw();
+    }
+    function checkExt() {
+      const q = P2();
+      if (B.rays.length === 2 && B.rays.every((r) => r.ext >= Math.hypot(q[0] - r.M[0], q[1] - r.M[1]) + 10)) { phase(4); fb('만나는 점 찾기', '두 연장선이 거울 뒤쪽에서 만났어요. <b>만나는 점</b>을 눌러 표시해요.'); }
+    }
+    sv.addEventListener('pointerup', up); sv.addEventListener('pointercancel', up);
+    $('#bExt').addEventListener('click', () => {
+      const q = P2(), tg = B.rays.map((r) => Math.hypot(q[0] - r.M[0], q[1] - r.M[1]) + 80), t0 = performance.now(), s0 = B.rays.map((r) => r.ext);
+      (function tick(now) { const t = Math.min(1, (now - t0) / 900); B.rays.forEach((r, i) => (r.ext = s0[i] + (tg[i] - s0[i]) * (1 - Math.pow(1 - t, 3)))); draw(); if (t < 1) requestAnimationFrame(tick); else { checkExt(); draw(); } })(t0);
+    });
+    $('#bResetB').addEventListener('click', () => S.enterB());
+    $('#bMoveB').addEventListener('click', () => { const opts = [4, 5, 6, 7, 8].filter((k) => k !== Math.round((MX - SC.st.px) / 40)); SC.st.px = MX - opts[Math.floor(Math.random() * opts.length)] * 40; S.enterB(); });
+    S.demoB = (n) => {          // 화면 검사용: n단계까지 자동으로
+      S.enterB(); const p0 = P();
+      [236, 326].slice(0, n >= 3 ? 2 : 1).forEach((y, i) => { const M = [MX, y], aP = MR.norm(Math.atan2(p0[1] - y, p0[0] - MX)); B.rays.push({ M, aP, a: n >= 2 || i === 0 && n >= 2 ? Math.PI * 2 - aP : Math.PI, ok: n >= 2, ext: 0 }); });
+      if (n === 1) { B.rays[0].a = Math.PI * 1.18; phase(1); }
+      else if (n === 2) phase(2);
+      else if (n === 3) phase(3);
+      else if (n === 4) { B.rays.forEach((r) => (r.ext = 520)); phase(4); }
+      else if (n >= 5) { B.rays.forEach((r) => (r.ext = 520)); finish(); return; }
+      draw();
+    };
+    S.okB = true;
+  } catch (err) { window.SM_err('직접 그리기', err); }
+})();
+</script>
+<script>
+/* ===== 블록 3: 상 위치 찾기 (모눈) ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S, { el } = OP, sv = $('#sv'), C = 40, MX = 600, BLUE = MR.BLUE;
+    const g = el('g', {}, sv); g.style.display = 'none';
+    const ov = OP.overlay($('#scene'), 1000, 620);
+    /* 문제: 점 [거울에서 떨어진 칸, 위에서부터 칸] */
+    const PROBS = [
+      { name: '깃발', pts: [[3, 3], [3, 11], [7, 6]] },
+      { name: '화살표', pts: [[2, 7], [7, 3], [6, 11]] },
+      { name: '기울어진 막대', pts: [[1, 2], [8, 8], [4, 13]] },
+    ];
+    const NAMES = ['A', 'B', 'C'];
+    const st = { k: 0, put: [], checked: false, help: false, done: new Set(), wrong: 0 };
+    S.C = st;
+    const xy = (d, r, back) => [MX + (back ? d : -d) * C, r * C + 10];
+    function board() {
+      el('rect', { width: 1000, height: 620, fill: '#fcfdfe' }, g);
+      el('rect', { x: MX, width: 400, height: 620, fill: 'rgba(14,99,179,.04)' }, g);
+      const p = [];
+      for (let x = MX % C; x <= 1000; x += C) p.push(`M${x} 10V610`);
+      for (let y = 10; y <= 610; y += C) p.push(`M0 ${y}H1000`);
+      el('path', { d: p.join(''), stroke: 'rgba(14,99,179,.18)', 'stroke-width': 1 }, g);
+      // 거울: 뒤쪽에 빗금
+      const h = [];
+      for (let y = 4; y < 616; y += 14) h.push(`M${MX} ${y + 14}L${MX + 12} ${y}`);
+      el('path', { d: h.join(''), stroke: '#5f8db0', 'stroke-width': 2 }, g);
+      el('line', { x1: MX, y1: 0, x2: MX, y2: 620, stroke: '#2f5d7a', 'stroke-width': 4 }, g);
+    }
+    function draw() {
+      g.innerHTML = ''; ov.hideAll(); board();
+      const pr = PROBS[st.k], obj = pr.pts.map(([d, r]) => xy(d, r, false)), img = pr.pts.map(([d, r]) => xy(d, r, true));
+      ov.put('m', MX + 8, 30, '평면거울', 'ink ra');
+      ov.put('f', 150, 30, '거울 앞 (물체)', 'inks'); ov.put('b', 860, 30, '거울 뒤쪽 (상)', 'inks');
+      el('path', { d: 'M' + obj.map((p) => p.join(' ')).join('L') + 'Z', fill: 'rgba(224,64,47,.16)', stroke: '#e0402f', 'stroke-width': 3, 'stroke-linejoin': 'round' }, g);
+      obj.forEach((p, i) => { el('circle', { cx: p[0], cy: p[1], r: 7, fill: '#e0402f' }, g); ov.put('o' + i, p[0] - 22, p[1] - 20, NAMES[i], 'ink'); });
+      if (st.help) pr.pts.forEach(([d, r], i) => { const a = obj[i], b = img[i]; el('line', { x1: a[0], y1: a[1], x2: b[0], y2: b[1], stroke: '#7d8a99', 'stroke-width': 1.8, 'stroke-dasharray': '6 6' }, g); ov.put('h' + i, (a[0] + MX) / 2, a[1] + 16, `${d}칸`, 'inks'); });
+      st.put.forEach((p, i) => {
+        const ok = st.checked ? p[0] === img[i][0] && p[1] === img[i][1] : null;
+        el('circle', { cx: p[0], cy: p[1], r: 16, fill: ok === false ? 'rgba(217,83,79,.18)' : 'rgba(14,99,179,.16)', stroke: ok === false ? '#d9534f' : BLUE, 'stroke-width': 3 }, g);
+        el('circle', { cx: p[0], cy: p[1], r: 5, fill: ok === false ? '#d9534f' : BLUE }, g);
+        ov.put('p' + i, p[0] + 26, p[1] - 20, NAMES[i] + '′', ok === false ? 'ink' : 'inkk');
+      });
+      if (st.checked && st.put.every((p, i) => p[0] === img[i][0] && p[1] === img[i][1])) {
+        el('path', { d: 'M' + img.map((p) => p.join(' ')).join('L') + 'Z', fill: 'rgba(14,99,179,.14)', stroke: BLUE, 'stroke-width': 3, 'stroke-dasharray': '10 6' }, g);
+        pr.pts.forEach(([d, r], i) => { const a = obj[i], b = img[i]; el('line', { x1: a[0], y1: a[1], x2: b[0], y2: b[1], stroke: '#7d8a99', 'stroke-width': 1.6, 'stroke-dasharray': '4 6' }, g); ov.put('d' + i, (b[0] + MX) / 2, b[1] + 18, `${d}칸`, 'inks'); });
+      }
+      $('#bCheckC').disabled = st.put.length < 3 || st.checked;
+      $$('#cprob button').forEach((b, i) => { b.setAttribute('aria-pressed', String(i === st.k)); b.classList.toggle('done', st.done.has(i)); });
+      if (S.mode !== 'C') ov.hideAll();
+    }
+    function prob(k) { st.k = k; st.put = []; st.checked = false; st.wrong = 0; st.help = false; $('#bHelpC').setAttribute('aria-pressed', 'false'); fbC('문제 ' + (k + 1) + ' · ' + PROBS[k].name, '물체의 꼭짓점 A, B, C의 상 A′, B′, C′을 거울 뒤쪽에 찍어요.'); draw(); }
+    const fbC = (t, m, cls = '') => { $('#fbC').className = 'fbk ' + cls; $('#fbCT').textContent = t; $('#fbCM').innerHTML = m; };
+    $('#cprob').innerHTML = PROBS.map((p, i) => `<button type="button" aria-pressed="false">문제 ${i + 1}</button>`).join('');
+    $$('#cprob button').forEach((b, i) => b.addEventListener('click', () => prob(i)));
+    sv.addEventListener('pointerdown', (e) => {
+      if (S.mode !== 'C' || st.done.has(st.k) && st.checked) return;
+      if (st.checked) { st.checked = false; st.put = []; }
+      const [x, y] = OP.toSvg(sv, e);
+      if (x < MX + C / 2) { fbC('거울 뒤쪽에 찍어요', '상은 <b>거울 뒤쪽</b>(파란 쪽)에 생겨요.', 'no'); return; }
+      const p = [Math.round((x - MX) / C) * C + MX, Math.round((y - 10) / C) * C + 10];
+      if (st.put.length >= 3) st.put = [];
+      st.put.push(p); draw();
+    });
+    $('#bUndoC').addEventListener('click', () => { st.put.pop(); st.checked = false; draw(); });
+    $('#bHelpC').addEventListener('click', () => { st.help = !st.help; $('#bHelpC').setAttribute('aria-pressed', String(st.help)); draw(); });
+    $('#bCheckC').addEventListener('click', () => {
+      const pr = PROBS[st.k], img = pr.pts.map(([d, r]) => xy(d, r, true));
+      st.checked = true;
+      const bad = st.put.map((p, i) => (p[0] === img[i][0] && p[1] === img[i][1] ? null : i)).filter((i) => i != null);
+      if (!bad.length) {
+        st.done.add(st.k);
+        fbC('정확해요!', `점마다 거울까지의 거리와 같은 거리만큼 거울 뒤쪽에 상이 생겨요. 상의 <b>모양과 크기도 물체와 같아요</b>.${st.done.size < 3 ? ' 다른 문제도 풀어 보세요.' : ' 세 문제를 모두 풀었어요!'}`, 'ok');
+      } else {
+        st.wrong++;
+        const i = bad[0], [d] = pr.pts[i];
+        fbC('다시 찍어 봐요', `${NAMES[i]}는 거울에서 <b>${d}칸</b> 떨어져 있어요. ${NAMES[i]}′도 거울에서 ${d}칸, 그리고 ${NAMES[i]}와 <b>같은 높이</b>에 있어야 해요. 아무 곳이나 누르면 새로 찍을 수 있어요.${st.wrong >= 1 && !st.help ? " '도움선 보기'도 써 보세요." : ''}`, 'no');
+      }
+      draw();
+    });
+    S.enterC = () => { S.SC.ov.hideAll(); g.style.display = ''; sv.appendChild(g); draw(); if (!$('#fbCM').innerHTML) prob(st.k); };
+    S.leaveC = () => { g.style.display = 'none'; ov.hideAll(); };
+    S.demoC = (k, ok) => { prob(k); const img = PROBS[k].pts.map(([d, r]) => xy(d, r, true)); st.put = ok ? img : [img[0], [img[1][0] + 40, img[1][1]], img[2]]; $('#bCheckC').disabled = false; $('#bCheckC').click(); };
+    prob(0);
+    S.okC = true;
+  } catch (err) { window.SM_err('상 위치 찾기', err); }
+})();
+</script>
+<script>
+/* ===== 블록 4: 모드 전환 · 시작 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S;
+    function mode(m) {
+      if (S.mode === 'B' && m !== 'B') S.leaveB();
+      if (S.mode === 'C' && m !== 'C') S.leaveC();
+      S.mode = m;
+      ['A', 'B', 'C'].forEach((k) => { $('#m' + k).setAttribute('aria-selected', String(k === m)); $('#pane' + k).hidden = k !== m; });
+      if (m === 'A') { S.SC.reset(); S.SC.render(S.step); S.showA(S.step, false); }
+      if (m === 'B') S.enterB();
+      if (m === 'C') S.enterC();
+      S.tipsA();
+    }
+    ['A', 'B', 'C'].forEach((k) => $('#m' + k).addEventListener('click', () => mode(k)));
+    const Q = S.Q;
+    S.showA(+(Q.get('step') || 1), false);
+    mode(Q.get('mode') || 'A');
+    if (Q.get('mode') === 'B' && Q.get('demo')) S.demoB(+Q.get('demo'));
+    if (Q.get('mode') === 'C' && Q.get('demo')) S.demoC(+(Q.get('k') || 0), Q.get('demo') === 'ok');
+    S.okUI = true;
+  } catch (err) { window.SM_err('안내·버튼', err); }
+})();
+</script>
+</body>
+</html>
