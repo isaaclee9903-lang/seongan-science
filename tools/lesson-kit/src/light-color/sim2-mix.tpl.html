@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>물체의 색과 빛의 합성 – 빛의 합성</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+/*@@LOCAL:_css_op.css@@*/
+/*@@LOCAL:_css_lc.css@@*/
+  /* ===== 이 페이지 전용 ===== */
+  .viewer{background:#0c0d10}
+  #wall{position:relative;aspect-ratio:1000/640;touch-action:none;overflow:hidden}
+  #wall canvas{display:block;width:100%;height:100%;cursor:grab}
+  #wall canvas:active{cursor:grabbing}
+  .vctl{display:flex;flex-wrap:wrap;gap:8px;padding:10px 12px;background:#141820;border-top:1px solid rgba(255,255,255,.06);align-items:center}
+  .vctl .vb{background:rgba(255,255,255,.08);color:#dfe7f0;border-color:rgba(255,255,255,.12)}
+  .vctl .vb[aria-pressed="true"]{background:#e9eef5;color:#14263b;opacity:1}
+  .vctl .vb[aria-pressed="false"]{opacity:1}
+  .vctl .vb .dot{width:12px;height:12px;border-radius:50%}
+  .vctl .sp{flex:1}
+  .figcap{position:absolute;left:12px;top:10px;z-index:3;font-size:13px;font-weight:800;color:#c9d3df;background:rgba(14,18,25,.72);border-radius:9px;padding:4px 10px}
+  .dhint{position:absolute;right:12px;top:10px;z-index:3;font-size:13px;font-weight:800;color:#c9d3df;background:rgba(14,18,25,.72);border-radius:9px;padding:4px 10px}
+  .ol.mx{color:#14263b;background:rgba(255,255,255,.92);box-shadow:0 2px 8px rgba(0,0,0,.25);font-size:clamp(12px,1.4vw,15.5px)}
+  .ol.one{color:#fff;background:rgba(0,0,0,.45);font-size:clamp(11.5px,1.25vw,14px)}
+  .lbl{font-size:13px;font-weight:900;color:var(--fab);margin:14px 0 6px}
+  .lbl:first-child{margin-top:0}
+  .task{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:9px 12px;border-radius:14px;background:#f7fafc;border:1px solid var(--line);margin-bottom:6px;font-size:15px;font-weight:700;word-break:keep-all}
+  .task .pair{display:flex;gap:3px}
+  .task .pair i{width:16px;height:16px;border-radius:50%}
+  .task .res{font-weight:900;color:#a3b1c0;font-size:14.5px;display:flex;align-items:center;gap:6px}
+  .task .res i{width:16px;height:16px;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(0,0,0,.15)}
+  .task.done{background:#e9f3fd;border-color:#bcd7f2}
+  .task.done .res{color:#0b3f73}
+  .px{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(300px,1fr);gap:14px;align-items:start;padding:14px 16px}
+  .px h2{margin:0 0 4px;font-size:20px;letter-spacing:-.01em}
+  .px .what{margin:0 0 10px}
+  #pix{position:relative;aspect-ratio:600/400;border-radius:16px;overflow:hidden;background:#060708}
+  #pix canvas{display:block;width:100%;height:100%}
+  .pv{position:absolute;left:10px;bottom:10px;z-index:2;display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:800;color:#e9eef5;background:rgba(10,12,16,.75);border-radius:10px;padding:6px 10px}
+  .pv i{width:22px;height:22px;border-radius:6px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.3)}
+  .zrow{display:flex;align-items:center;gap:10px;margin-top:8px;font-weight:800;font-size:14px;color:var(--muted)}
+  .zrow input{flex:1;height:44px;-webkit-appearance:none;appearance:none;background:transparent}
+  .zrow input::-webkit-slider-runnable-track{height:8px;border-radius:99px;background:#dbe4ed}
+  .zrow input::-webkit-slider-thumb{-webkit-appearance:none;width:34px;height:34px;border-radius:50%;background:#fff;border:3px solid var(--fab);margin-top:-13px;box-shadow:0 2px 6px rgba(20,38,59,.2)}
+  .zrow input::-moz-range-thumb{width:30px;height:30px;border-radius:50%;background:#fff;border:3px solid var(--fab)}
+  .dots{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+  .dots button{min-height:56px;border-radius:14px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+  .dots button i{width:14px;height:30px;border-radius:5px;background:#d7dde4}
+  .dots button[aria-pressed="true"]{border-color:var(--fab);background:#e9f3fd;color:#0b3f73}
+  .targets{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin-top:8px}
+  .targets span{min-height:52px;border-radius:12px;background:#f3f6f9;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:13px;font-weight:800;color:var(--muted);border:2px solid transparent}
+  .targets span i{width:18px;height:18px;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(0,0,0,.15)}
+  .targets span.now{border-color:var(--fab);color:#0b3f73;background:#fff}
+  .targets span.done{background:#e9f3fd;color:#0b3f73}
+  .q2{margin-top:12px;border-radius:16px;padding:12px;background:#f7fafc;border:1px solid var(--line)}
+  .q2 p{margin:0 0 8px;font-size:15.5px;font-weight:700;word-break:keep-all;line-height:1.6}
+  .q2 .b3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+  .q2 button{min-height:50px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15px;cursor:pointer}
+  .q2 button.bad{border-color:#e7a29b;background:#fff4f2;color:#9b3a32}
+  .q2 button.good{border-color:var(--ok);background:#e8f7ef;color:#11703f}
+  @media (max-width:900px){.px{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <span class="eyebrow">물체의 색과 빛의 합성 · 시뮬레이션 ②</span>
+    <h1>빛의 삼원색을 겹쳐 비춰 보기</h1>
+    <p class="sub">어두운 벽에 빨간색, 초록색, 파란색 빛을 비춰요. 동그란 빛을 손가락으로 끌어 서로 겹쳐 보고, 겹친 곳이 어떤 색 빛으로 보이는지 찾아봐요.</p>
+  </header>
+  <div class="stage">
+    <section class="card viewer">
+      <div id="wall"><span class="figcap">그림 Ⅲ-10 빛의 삼원색과 합성</span><span class="dhint">빛을 끌어서 옮겨요</span></div>
+      <div class="vctl" id="lt">
+        <button class="vb" type="button" data-i="0" aria-pressed="true"><span class="dot" style="background:#ff3b30"></span>빨간색 빛</button>
+        <button class="vb" type="button" data-i="1" aria-pressed="true"><span class="dot" style="background:#34d058"></span>초록색 빛</button>
+        <button class="vb" type="button" data-i="2" aria-pressed="true"><span class="dot" style="background:#3d6dff"></span>파란색 빛</button>
+        <span class="sp"></span>
+        <button class="vb" type="button" id="bBook">교과서 그림처럼</button>
+        <button class="vb" type="button" id="bApart">떨어뜨려 놓기</button>
+      </div>
+    </section>
+    <section class="card pad">
+      <div class="lbl">겹쳐서 찾아볼 색</div>
+      <div id="tasks"></div>
+      <div class="fbk" id="fb"><b class="t" id="fbT">빛을 겹쳐 보세요</b><span id="fbM">세 빛이 떨어져 있어요. 두 빛이 겹치도록 동그란 빛을 끌어 보세요. 빛을 하나씩 끄고 켜 봐도 좋아요.</span></div>
+      <div class="concl lock" id="concl"><span class="kt">빛의 삼원색과 빛의 합성</span><p>네 가지 색을 모두 찾으면 정리가 나타나요.</p></div>
+    </section>
+  </div>
+
+  <section class="card px" id="pxCard">
+    <div>
+      <h2>화소 하나 켜 보기</h2>
+      <p class="what">영상 장치의 화면을 크게 확대하면 빨간색, 초록색, 파란색의 작은 점이 규칙적으로 늘어서 있어요. 세 점을 묶은 것을 <b>화소</b>라고 해요. 점을 켜고 끈 뒤, 화면을 멀리서 보듯 밀어 보세요.</p>
+      <div id="pix"><div class="pv"><i id="pvC"></i><span id="pvT">멀리서 보면: 초록색</span></div></div>
+      <div class="zrow"><span>가까이</span><input type="range" id="zIn" min="0" max="1" step="0.01" value="0" aria-label="화면에서 떨어진 정도"><span>멀리</span></div>
+    </div>
+    <div>
+      <div class="lbl" style="margin-top:4px">화소 안의 작은 점 켜기</div>
+      <div class="dots" id="dots">
+        <button type="button" data-b="1" aria-pressed="false"><i></i>빨간색 점</button>
+        <button type="button" data-b="2" aria-pressed="true"><i></i>초록색 점</button>
+        <button type="button" data-b="4" aria-pressed="false"><i></i>파란색 점</button>
+      </div>
+      <div class="lbl">만들어 볼 색</div>
+      <div class="targets" id="targets"></div>
+      <div class="q2" id="q"><p>친구의 질문: 화면이 <b>초록색에서 노란색</b>으로 바뀔 때 화소 안의 어떤 색 빛이 더 켜질까?</p>
+        <div class="b3"><button type="button" data-v="1">빨간색</button><button type="button" data-v="4">파란색</button><button type="button" data-v="0">흰색</button></div>
+        <div class="fbk" id="qfb" hidden></div></div>
+    </div>
+  </section>
+  <p class="model">빛이 겹친 곳은 빛의 밝기를 더해서 칠한 개념 이해를 위한 모형이에요. 실제 화면의 작은 점 모양과 크기는 영상 장치마다 달라요.</p>
+  <p class="credit">물체의 색과 빛의 합성 · 빛의 합성</p>
+</div>
+<script>
+window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
+  reduce: !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches), Q: new URLSearchParams(location.search) };
+</script>
+<script>
+/*@@PART:flow.js@@*/
+window.FLOW = FLOW;
+</script>
+<script>
+/*@@LOCAL:_optics.js@@*/
+</script>
+<script>
+/*@@LOCAL:_mix.js@@*/
+</script>
+<script>
+/* ===== 블록 1: 빛의 삼원색 무대 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S, Q = S.Q;
+    const SW = { 1: '#ff2a20', 2: '#2ee04a', 4: '#3a5cff', 3: '#ffe81a', 6: '#22e6f0', 5: '#f02ce8', 7: '#ffffff' };
+    const TASKS = [[3, [1, 2]], [6, [2, 4]], [5, [1, 4]], [7, [1, 2, 4]]];
+    const W = MIX.wall($('#wall'));
+    const ov = OP.overlay($('#wall'), W.W, W.H);
+    const found = {};
+    if (Q.get('found') === 'all') TASKS.forEach(([m]) => (found[m] = true));
+    if (Q.get('lay') === 'book') { W.spots.forEach((s, i) => { s.x = [432, 568, 500][i]; s.y = [250, 250, 368][i]; }); W.redraw(); }
+    const pairTxt = (bits) => bits.map((b) => MIX.NAME[b]).join(' + ');
+    function paintTasks() {
+      $('#tasks').innerHTML = TASKS.map(([m, bits]) => `<div class="task${found[m] ? ' done' : ''}"><span class="pair">${bits.map((b) => `<i style="background:${SW[b]}"></i>`).join('')}</span><span>${pairTxt(bits)} 빛</span><span class="res">${found[m] ? `<i style="background:${SW[m]}"></i>${MIX.NAME[m]}` : '?'}</span></div>`).join('');
+      const all = TASKS.every(([m]) => found[m]), c = $('#concl');
+      c.classList.toggle('lock', !all);
+      c.querySelector('p').innerHTML = all ? '빨간색, 초록색, 파란색 빛을 합치면 다양한 색의 빛을 표현할 수 있어요. 이 세 가지 색의 빛을 <b>빛의 삼원색</b>이라고 해요. 이처럼 서로 다른 색의 빛이 합해져 다른 색의 빛으로 보이는 현상을 <b>빛의 합성</b>이라고 해요.' : '네 가지 색을 모두 찾으면 정리가 나타나요.';
+    }
+    let last = '';
+    W.onChange(() => {
+      const regs = W.regions(); ov.hideAll();
+      regs.forEach((r) => {
+        const one = [1, 2, 4].includes(r.m);
+        ov.put('m' + r.m, r.x, r.y, r.name + (one ? ' 빛' : ''), one ? 'one' : 'mx');
+        if (!one && !found[r.m]) {
+          found[r.m] = true; paintTasks();
+          const bits = [1, 2, 4].filter((b) => r.m & b);
+          $('#fb').className = 'fbk ok'; $('#fbT').textContent = '찾았어요';
+          $('#fbM').innerHTML = `${pairTxt(bits)} 빛을 한 곳에 비추면 <b>${MIX.NAME[r.m]}</b> 빛으로 보여요.`;
+        }
+      });
+      const key = regs.map((r) => r.m).sort().join();
+      if (key !== last) last = key;
+    });
+    $$('#lt [data-i]').forEach((b) => b.addEventListener('click', () => { const v = b.getAttribute('aria-pressed') !== 'true'; b.setAttribute('aria-pressed', String(v)); W.on(+b.dataset.i, v); }));
+    $('#bBook').addEventListener('click', () => W.place('book'));
+    $('#bApart').addEventListener('click', () => W.place('apart'));
+    paintTasks();
+    window.SM.okUI = true;
+  } catch (err) { window.SM_err('빛의 삼원색 무대', err); }
+})();
+</script>
+<script>
+/* ===== 블록 2: 화소 하나 켜 보기 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S, Q = S.Q;
+    const SW = { 0: '#060708', 1: '#ff2a20', 2: '#2ee04a', 4: '#3a5cff', 3: '#ffe81a', 6: '#22e6f0', 5: '#f02ce8', 7: '#ffffff' };
+    const TGT = [3, 6, 5, 7, 0];
+    const P = MIX.pixel($('#pix'));
+    let mask = 2; const made = {};
+    function paint() {
+      P.set(mask);
+      $$('#dots button').forEach((b) => { const on = !!(mask & +b.dataset.b); b.setAttribute('aria-pressed', String(on)); b.querySelector('i').style.background = on ? SW[+b.dataset.b] : '#d7dde4'; });
+      $('#pvC').style.background = SW[mask];
+      $('#pvT').textContent = mask ? `멀리서 보면: ${MIX.NAME[mask]}` : '빛을 내지 않아요: 검은색';
+      if (TGT.includes(mask)) made[mask] = true;
+      $('#targets').innerHTML = TGT.map((m) => `<span class="${made[m] ? 'done' : ''}${m === mask ? ' now' : ''}"><i style="background:${SW[m]}"></i>${MIX.NAME[m]}</span>`).join('');
+    }
+    $$('#dots button').forEach((b) => b.addEventListener('click', () => { mask ^= +b.dataset.b; paint(); }));
+    $('#zIn').addEventListener('input', () => P.zoom(+$('#zIn').value));
+    $$('#q button').forEach((b) => b.addEventListener('click', () => {
+      const ok = b.dataset.v === '1', f = $('#qfb');
+      $$('#q button').forEach((x) => x.classList.remove('good', 'bad')); b.classList.add(ok ? 'good' : 'bad');
+      f.hidden = false; f.className = 'fbk ' + (ok ? 'ok' : 'no');
+      f.innerHTML = ok ? '맞아요. 초록색 점만 켜져 있던 화소에 <b>빨간색 점</b>이 더 켜지면, 빨간색과 초록색 빛이 합성되어 노란색으로 보여요. 왼쪽에서 직접 켜 보세요.' : '초록색 점이 켜진 상태에서 그 점을 더 켜면 노란색이 될지, 왼쪽 화소로 직접 켜 보며 확인해 보세요.';
+    }));
+    if (Q.get('px')) mask = +Q.get('px');
+    if (Q.get('z')) { $('#zIn').value = Q.get('z'); P.zoom(+Q.get('z')); }
+    paint();
+    window.SM.ok3d = true;
+  } catch (err) { window.SM_err('화소 켜 보기', err); }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>물체의 색과 빛의 합성 – 조명 실험실</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+/*@@LOCAL:_css_op.css@@*/
+/*@@LOCAL:_css_lc.css@@*/
+  /* ===== 이 페이지 전용 ===== */
+  .viewer{background:#040506}
+  #scene{aspect-ratio:1000/600}
+  .vctl{display:flex;flex-wrap:wrap;gap:8px;padding:10px 12px;background:#0d1117;border-top:1px solid rgba(255,255,255,.06);align-items:center}
+  .vctl .vb{background:rgba(255,255,255,.08);color:#dfe7f0;border-color:rgba(255,255,255,.12)}
+  .vctl .vb[aria-pressed="true"]{background:#e9eef5;color:#14263b;opacity:1}
+  .vctl .vb[aria-pressed="false"]{opacity:1}
+  .vctl .note{font-size:13px;font-weight:700;color:#93a1b1;word-break:keep-all;flex:1;min-width:200px}
+  .lights{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+  .lights button{min-height:58px;border:2px solid transparent;border-radius:14px;background:#eef3f8;font-weight:800;font-size:15px;color:var(--ink2);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+  .lights button i{width:16px;height:16px;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(0,0,0,.18)}
+  .lights button[aria-selected="true"]{border-color:var(--fab);background:#fff;color:var(--fab)}
+  .lights button.seen:not([aria-selected="true"]) small{color:#0b3f73}
+  .lights button small{font-size:11.5px;font-weight:700;color:var(--muted)}
+  .lbl{font-size:13px;font-weight:900;color:var(--fab);margin:14px 0 6px}
+  .lbl:first-child{margin-top:0}
+  .pred{border-radius:16px;padding:10px 12px;background:#f7fafc;border:1px solid var(--line)}
+  .pred p{margin:0 0 8px;font-size:15.5px;line-height:1.6;font-weight:700;word-break:keep-all}
+  .prow{display:grid;grid-template-columns:86px 1fr;gap:8px;align-items:center;padding:4px 0}
+  .prow b{font-size:14.5px;word-break:keep-all}
+  .chips{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+  .chips button{min-height:46px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:13.5px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;padding:0 4px}
+  .chips button i{width:13px;height:13px;border-radius:50%;flex:none}
+  .chips button[aria-pressed="true"]{border-color:var(--fab);background:#e9f3fd;color:#0b3f73}
+  .chips button.good{border-color:var(--ok);background:#e8f7ef;color:#11703f}
+  .chips button.bad{border-color:var(--no);background:#fdecea;color:#9b3a32}
+  .tbl{width:100%;border-collapse:collapse;margin:6px 0 4px;font-size:14px}
+  .tbl th,.tbl td{border:1px solid #dbe4ed;padding:7px 4px;text-align:center;word-break:keep-all;line-height:1.4}
+  .tbl th{background:#f3f7fb;font-weight:800;color:var(--ink2)}
+  .tbl td{font-weight:800;color:#14263b}
+  .tbl td i{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:4px;vertical-align:-1px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.15)}
+  .tbl td.empty{color:#a3b1c0;font-weight:700}
+  .tbl td.now{background:#f2f7fd}
+  .why{margin-top:12px;display:grid;gap:6px}
+  .why h3{margin:6px 0 2px;font-size:16px}
+  .why .w{display:grid;grid-template-columns:28px 1fr;gap:8px;align-items:start;padding:8px 10px;border-radius:12px;background:#f7fafc;font-size:14.5px;line-height:1.6;color:var(--ink2);word-break:keep-all}
+  .why .w i{font-style:normal;width:26px;height:26px;border-radius:8px;background:var(--fab);color:#fff;display:grid;place-items:center;font-weight:900;font-size:13px}
+  .figcap{position:absolute;right:12px;top:10px;z-index:3;font-size:13px;font-weight:800;color:#c9d3df;background:rgba(14,18,25,.72);border-radius:9px;padding:4px 10px}
+  .ol.ink{font-size:clamp(11px,1.2vw,13.5px)}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <span class="eyebrow">물체의 색과 빛의 합성 · 시뮬레이션 ①</span>
+    <h1>조명 실험실: 조명 색을 바꾸면 물체의 색은?</h1>
+    <p class="sub">어두운 방에서 3색 LED 손전등으로 빨간 사과와 파란 셔츠를 비춰요. 불을 켜기 전에 어떤 색으로 보일지 먼저 예측하고, 빛이 어디로 가는지 따라가 봐요.</p>
+  </header>
+  <div class="stage">
+    <section class="card viewer">
+      <div class="scene" id="scene"><span class="figcap" id="cap">주위를 어둡게 했어요</span></div>
+      <div class="vctl">
+        <button class="vb" type="button" id="bRay" aria-pressed="true">빛의 경로 보기</button>
+        <span class="note">실험할 때 전등 빛을 사람의 눈에 직접 쏘지 않아요.</span>
+      </div>
+    </section>
+    <section class="card pad">
+      <div class="lbl">1. 손전등 빛 고르기</div>
+      <div class="lights" id="lights" role="tablist" aria-label="조명 색 고르기"></div>
+      <div class="lbl" id="pL">2. 예측하기</div>
+      <div class="pred" id="pred"><p id="pT"></p><div id="prows"></div></div>
+      <div class="acts"><button type="button" class="btn primary" id="go">손전등 켜기</button><button type="button" class="btn ghost" id="off">끄기</button></div>
+      <div class="fbk" id="fb"><b class="t" id="fbT"></b><span id="fbM"></span></div>
+      <div class="lbl">관찰 기록</div>
+      <table class="tbl" id="tbl"></table>
+      <div class="why" id="why"></div>
+      <div class="concl lock" id="concl"><span class="kt">조명에 따른 물체의 색</span><p>빨간색, 초록색, 파란색 빛을 모두 비춰 보면 정리가 나타나요.</p></div>
+    </section>
+  </div>
+  <p class="model">물체의 색은 물체가 반사하는 빛과 조명 빛을 함께 계산해 칠한 개념 이해를 위한 모형이에요. 빛의 경로는 알아보기 쉽게 화살표 몇 개로만 그렸어요.</p>
+  <p class="credit">물체의 색과 빛의 합성 · 조명 실험실</p>
+</div>
+<script>
+window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
+  reduce: !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches), Q: new URLSearchParams(location.search) };
+</script>
+<script>
+/*@@PART:flow.js@@*/
+window.FLOW = FLOW;
+</script>
+<script>
+/*@@LOCAL:_optics.js@@*/
+</script>
+<script>
+/*@@LOCAL:_oc.js@@*/
+</script>
+<script>
+/* ===== 블록 1: 조명 실험실 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S, Q = S.Q;
+    const ORDER = ['white', 'red', 'green', 'blue'], OBJ = ['apple', 'leaf', 'shirt'];
+    const CHOICES = ['빨간색', '초록색', '파란색', '검은색'];
+    const lab = OC.lab($('#scene'));
+    const done = {}; let light = 'white', on = false; const pred = {};
+    if (Q.get('done') === 'all') ORDER.forEach((k) => (done[k] = true));
+    const dot = (c) => `<i style="background:${OC.SWATCH[c]}"></i>`;
+
+    $('#lights').innerHTML = ORDER.map((k) => `<button type="button" role="tab" data-l="${k}"><i style="background:${OC.LIGHTS[k].col}"></i>${OC.LIGHTS[k].name} 빛<small></small></button>`).join('');
+    $$('#lights button').forEach((b) => b.addEventListener('click', () => pick(b.dataset.l)));
+    $('#prows').innerHTML = OBJ.map((o) => `<div class="prow" data-o="${o}"><b>${OC.OBJS[o].name}${o === 'leaf' ? '<small style="display:block;font-size:12px;color:var(--muted)">사과 꼭지의 잎</small>' : ''}</b><div class="chips">${CHOICES.map((c) => `<button type="button" data-c="${c}" aria-pressed="false">${dot(c)}${c}</button>`).join('')}</div></div>`).join('');
+    $$('#prows .prow').forEach((r) => $$('button', r).forEach((b) => b.addEventListener('click', () => {
+      if (on && !needPred()) return;
+      pred[r.dataset.o] = b.dataset.c; $$('button', r).forEach((x) => { x.setAttribute('aria-pressed', String(x === b)); x.classList.remove('good', 'bad'); });
+      paint();
+    })));
+    const fb = (t, m, cls = '') => { $('#fb').className = 'fbk ' + cls; $('#fbT').textContent = t; $('#fbM').innerHTML = m; };
+    const needPred = () => light !== 'white' && !done[light];
+
+    function pick(k) {
+      light = k; OBJ.forEach((o) => delete pred[o]);
+      $$('#prows button').forEach((x) => { x.setAttribute('aria-pressed', 'false'); x.classList.remove('good', 'bad'); });
+      if (done[k]) { setOn(true); showResult(false); }
+      else { setOn(false); fb(`${OC.LIGHTS[k].name} 빛`, k === 'white' ? '먼저 흰색 빛으로 물체의 평소 색을 확인해요. \'손전등 켜기\'를 누르세요.' : `불을 켜기 전에 ${OC.LIGHTS[k].name} 빛을 비추면 세 물체가 각각 어떤 색으로 보일지 골라요.`); }
+      paint();
+    }
+    function setOn(v) {
+      on = v; lab.light(light, v);
+      $('#cap').textContent = v ? `${OC.LIGHTS[light].name} 빛을 비추었어요` : '주위를 어둡게 했어요';
+    }
+    function showResult(grade) {
+      const L = OC.LIGHTS[light];
+      if (light === 'white') { fb('흰색 빛을 비추면', `사과는 <b>빨간색</b>, 잎은 <b>초록색</b>, 셔츠는 <b>파란색</b>으로 보여요. 각 물체가 반사한 빛이 눈에 들어와요. 이제 다른 색 빛을 골라 보세요.`, 'ok'); return; }
+      let wrong = 0;
+      const lines = OBJ.map((o) => {
+        const s = OC.seen(o, light), p = pred[o];
+        if (grade) { const ok = p === s; if (!ok) wrong++; $$(`#prows .prow[data-o="${o}"] button`).forEach((x) => { x.classList.toggle('good', x.dataset.c === s); x.classList.toggle('bad', x.dataset.c === p && !ok); }); }
+        return `${OC.OBJS[o].name} → <b>${s}</b>${s === '검은색' ? ' (반사하는 빛이 없어요)' : ' (그 빛을 반사해요)'}`;
+      });
+      fb(grade ? (wrong ? `예측과 ${wrong}개가 달라요` : '예측이 모두 맞았어요') : `${L.name} 빛을 비추면`, lines.join('<br>'), grade && wrong ? 'no' : 'ok');
+    }
+    $('#go').addEventListener('click', () => {
+      if (needPred() && OBJ.some((o) => !pred[o])) return;
+      const grade = needPred();
+      setOn(true); done[light] = true;
+      setTimeout(() => { showResult(grade); paint(); }, S.reduce ? 0 : 520);
+      paint();
+    });
+    $('#off').addEventListener('click', () => { setOn(false); paint(); });
+    $('#bRay').addEventListener('click', () => { const v = $('#bRay').getAttribute('aria-pressed') !== 'true'; $('#bRay').setAttribute('aria-pressed', String(v)); lab.rays(v); });
+
+    function paint() {
+      $$('#lights button').forEach((b) => { const k = b.dataset.l; b.setAttribute('aria-selected', String(k === light)); b.classList.toggle('seen', !!done[k]); b.querySelector('small').textContent = done[k] ? '관찰 완료' : '관찰 전'; });
+      const np = needPred();
+      $('#pred').hidden = !np && !(light !== 'white' && on && Object.keys(pred).length);
+      $('#pL').hidden = $('#pred').hidden;
+      $('#pT').innerHTML = `<b>${OC.LIGHTS[light].name} 빛</b>을 비추면 각 물체는 어떤 색으로 보일까요?`;
+      $('#go').disabled = on || (np && OBJ.some((o) => !pred[o]));
+      $('#go').textContent = np ? '예측했으면 손전등 켜기' : '손전등 켜기';
+      $('#off').disabled = !on;
+      $('#tbl').innerHTML = '<tr><th>비춘 빛 →</th>' + ORDER.map((k) => `<th>${OC.LIGHTS[k].name}</th>`).join('') + '</tr>' +
+        OBJ.map((o) => `<tr><th>${OC.OBJS[o].name}</th>` + ORDER.map((k) => done[k] ? `<td class="${k === light && on ? 'now' : ''}">${dot(OC.seen(o, k))}${OC.seen(o, k)}</td>` : '<td class="empty">?</td>').join('') + '</tr>').join('');
+      const all = ['red', 'green', 'blue'].every((k) => done[k]), c = $('#concl');
+      c.classList.toggle('lock', !all);
+      c.querySelector('p').innerHTML = all ? '우리 눈에 보이는 물체의 색은 그 물체가 <b>반사하는 빛의 색</b>이에요. 빨간 사과는 빨간색 빛만 반사하고 나머지 빛은 흡수해서, 초록색이나 파란색 빛을 비추면 반사하는 빛이 없어 <b>검은색</b>으로 보여요. 이처럼 같은 물체라도 <b>비추는 조명의 색에 따라</b> 물체의 색이 다르게 보여요.' : '빨간색, 초록색, 파란색 빛을 모두 비춰 보면 정리가 나타나요.';
+    }
+    $('#why').innerHTML = '<h3>왜 그럴까?</h3>' + [
+      '우리는 물체에서 <b>반사되어 나온 빛</b>이 눈에 들어와야 물체를 볼 수 있어요.',
+      '빨간 사과는 <b>빨간색 빛만 반사</b>하고 나머지 빛은 흡수해요. 초록 잎은 초록색 빛만, 파란 셔츠는 파란색 빛만 반사해요.',
+      '비춘 빛 중에 물체가 반사하는 빛이 없으면 눈에 들어오는 빛이 없어 <b>검은색</b>으로 보여요.',
+    ].map((t, i) => `<div class="w"><i>${i + 1}</i><span>${t}</span></div>`).join('');
+
+    const ql = Q.get('light');
+    if (ORDER.includes(ql)) { light = ql; if (Q.get('on') === '1') { done[ql] = true; } }
+    if (Q.get('rays') === '0') $('#bRay').click();
+    if (done[light]) { setOn(true); showResult(false); } else pick(light);
+    lab.light(light, on, true);
+    paint();
+    window.SM.okUI = true; window.SM.ok3d = true;
+  } catch (err) { window.SM_err('조명 실험실', err); }
+})();
+</script>
+</body>
+</html>
