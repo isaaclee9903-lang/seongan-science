@@ -222,9 +222,10 @@ window.OC = (() => {
     const EYE = [900, 528];
     if (o.eye !== false) OP.eye(svg, EYE[0], EYE[1], 74, { lx: -12, ly: -6 });
     const ov = OP.overlay(host, W, H);
-    const HIT = { apple: [300, 338], leaf: [418, 271], shirt: [660, 196] };
-    const NAMEPOS = { apple: [352, 498, ''], leaf: [470, 188, ''], shirt: [705, 432, ''] };
-    if (o.labels !== false) Object.entries(NAMEPOS).forEach(([k, [x, y]]) => { if (k !== 'shirt' || o.shirt !== false) ov.put('n-' + k, x, y, OBJS[k].name); });
+    const HIT = { apple: [300, 338], leaf: [410, 206], shirt: [660, 196] };
+    const TO = { apple: [EYE[0] - 36, EYE[1] - 12], leaf: [EYE[0] - 28, EYE[1] - 27], shirt: [EYE[0] - 16, EYE[1] - 34] };
+    const NAMEPOS = { apple: [352, 498, ''], leaf: [482, 186, 'ra'], shirt: [705, 432, ''] };
+    if (o.labels !== false) Object.entries(NAMEPOS).forEach(([k, [x, y]]) => { if (k !== 'shirt' || o.shirt !== false) ov.put('n-' + k, x, y, OBJS[k].name, NAMEPOS[k][2]); });
     if (o.eye !== false) ov.put('eye', EYE[0], EYE[1] + 38, '관찰자의 눈', 'soft');
     const ph = window.FLOW ? OP.photons(dotG) : null;
     let light = null, on = false, rays = o.rays !== false;
@@ -246,15 +247,19 @@ window.OC = (() => {
           arrow(rayG, a, b, RAY[c], { w: 2.4, hs: 11, head: !refl });
           if (refl) {
             anyRefl = true;
-            arrow(rayG, b, [EYE[0] - 30, EYE[1] - 22], RAY[c], { w: 2.6, hs: 13 });
-            if (ph) ph.add([a, b, [EYE[0] - 30, EYE[1] - 22]], { rate: 1.5, speed: 260, r: 4.4, color: RAY[c] });
+            const g0 = el('g', { 'pointer-events': 'none' }, rayG);
+            el('circle', { cx: b[0], cy: b[1], r: 20, fill: RAY[c], opacity: 0.55, filter: 'url(#ocBlur3)' }, g0);
+            el('circle', { cx: b[0], cy: b[1], r: 6, fill: '#fff', opacity: 0.9 }, g0);
+            arrow(rayG, b, TO[k], RAY[c], { w: 3.6, hs: 15 });
+            if (ph) ph.add([a, b, TO[k]], { rate: 1.8, speed: 260, r: 5, color: RAY[c] });
           } else {
             absorb(rayG, b, RAY[c]);
             if (ph) ph.add([a, b], { rate: 1.5, speed: 260, r: 4.4, color: RAY[c], fade: 40 });
           }
         });
-        const lp = { apple: [228, 352], leaf: [392, 228], shirt: [598, 160] }[k];
-        if (comps.some((c) => c !== ch)) ov.put('ab-' + k, lp[0], lp[1], anyRefl ? '나머지 빛 흡수' : '모두 흡수', 'ink');
+        const lp = { apple: [222, 352], leaf: [404, 146], shirt: [598, 160] }[k];
+        const cname = { r: '빨간색', g: '초록색', b: '파란색' }[ch];
+        ov.put('ab-' + k, lp[0], lp[1], anyRefl ? `${cname} 빛${comps.length > 1 ? '만' : ''} 반사` : '모두 흡수', anyRefl ? 'ink' : 'ink dim');
       });
     }
     function setLight(k, isOn, instant) {
