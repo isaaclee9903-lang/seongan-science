@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>거울과 렌즈에 의한 상 – 나란한 빛 보내기</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+/*@@LOCAL:_css_op.css@@*/
+/*@@LOCAL:_css_ml.css@@*/
+  /* ===== 이 페이지 전용 ===== */
+  .viewer{background:#0f1319}
+  #scene{aspect-ratio:1000/560}
+  .devs{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .devs button{min-height:54px;border:0;border-radius:14px;background:#eef3f8;font-weight:800;font-size:15.5px;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px}
+  .devs button[aria-selected="true"]{background:var(--fab);color:#fff}
+  .devs button.seen:not([aria-selected="true"]){background:#e9f3fd;color:#0b3f73}
+  .vctl{display:flex;flex-wrap:wrap;gap:8px;padding:10px 12px;background:#141a22;border-top:1px solid rgba(255,255,255,.06);align-items:center}
+  .vctl .vb{background:rgba(255,255,255,.08);color:#dfe7f0;border-color:rgba(255,255,255,.12)}
+  .vctl .vb[aria-pressed="true"]{background:#e9eef5;color:#14263b;opacity:1}
+  .vctl .vb[aria-pressed="false"]{opacity:1}
+  .hrng{flex:1;min-width:200px;display:flex;align-items:center;gap:10px;color:#b7c3d1;font-weight:800;font-size:14px}
+  .hrng input{flex:1;height:44px;-webkit-appearance:none;appearance:none;background:transparent}
+  .hrng input::-webkit-slider-runnable-track{height:8px;border-radius:99px;background:#2a3440}
+  .hrng input::-webkit-slider-thumb{-webkit-appearance:none;width:34px;height:34px;border-radius:50%;background:#fff;border:3px solid #ff6a5a;margin-top:-13px}
+  .hrng input::-moz-range-thumb{width:30px;height:30px;border-radius:50%;background:#fff;border:3px solid #ff6a5a}
+  .hrng[hidden]{display:none}
+  .q2{margin-top:10px;border-radius:16px;padding:12px;background:#f7fafc;border:1px solid var(--line)}
+  .q2 p{margin:0 0 8px;font-size:15.5px;font-weight:700;word-break:keep-all}
+  .q2 .b2{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .q2 button{min-height:52px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15px;cursor:pointer}
+  .q2 button.bad{border-color:#e7a29b;background:#fff4f2;color:#9b3a32}
+  .tbl{width:100%;border-collapse:collapse;margin:10px 0 4px;font-size:14.5px}
+  .tbl th,.tbl td{border:1px solid #dbe4ed;padding:8px 6px;text-align:center;word-break:keep-all;line-height:1.45}
+  .tbl th{background:#f3f7fb;font-weight:800;color:var(--ink2)}
+  .tbl td{font-weight:800;color:#0b3f73}
+  .tbl td.empty{color:#a3b1c0;font-weight:700}
+  .why{margin-top:12px;display:grid;gap:6px}
+  .why h3{margin:6px 0 2px;font-size:16px}
+  .why .w{display:grid;grid-template-columns:28px 1fr;gap:8px;align-items:start;padding:8px 10px;border-radius:12px;background:#f7fafc;font-size:14.5px;line-height:1.6;color:var(--ink2);word-break:keep-all}
+  .why .w i{font-style:normal;width:26px;height:26px;border-radius:8px;background:var(--fab);color:#fff;display:grid;place-items:center;font-weight:900;font-size:13px}
+  .figcap{position:absolute;left:12px;top:10px;z-index:3;font-size:13px;font-weight:800;color:#c9d3df;background:rgba(14,18,25,.72);border-radius:9px;padding:4px 10px}
+  .pulse2{animation:ryP 1.8s ease-in-out infinite}
+  @keyframes ryP{50%{opacity:.45}}
+  @media (prefers-reduced-motion:reduce){.pulse2{animation:none}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <span class="eyebrow">거울과 렌즈에 의한 상 · 시뮬레이션 ③</span>
+    <h1>나란한 빛을 거울과 렌즈에 비춰 보기</h1>
+    <p class="sub">거울 면의 모양이나 렌즈의 종류에 따라 빛이 이동하는 경로가 달라요. 나란한 빛을 비추고, 빛이 퍼지는지 한 점에 모이는지 살펴봐요.</p>
+  </header>
+  <div class="stage">
+    <section class="card viewer">
+      <div class="scene" id="scene"><span class="figcap" id="cap">그림 Ⅲ-7 나란한 빛을 거울에 비출 때</span></div>
+      <div class="vctl">
+        <button class="vb" type="button" id="bAll" aria-pressed="true">나란한 빛 5개</button>
+        <button class="vb" type="button" id="bOne" aria-pressed="false">빛 하나</button>
+        <button class="vb" type="button" id="bMark" aria-pressed="false">빛이 닿은 곳 보기</button>
+        <label class="hrng" id="hr" hidden><span>빛의 높이</span><input type="range" id="hIn" min="-140" max="140" step="1" value="-100" aria-label="빛의 높이"></label>
+      </div>
+    </section>
+    <section class="card pad">
+      <div class="devs" id="devs" role="tablist" aria-label="기구 고르기"></div>
+      <div class="q2" id="q"><p id="qT"></p><div class="b2"><button type="button" data-v="meet">한 점에 모여요</button><button type="button" data-v="spread">넓게 퍼져요</button></div></div>
+      <div class="fbk" id="fb"><b class="t" id="fbT"></b><span id="fbM"></span></div>
+      <table class="tbl" id="tbl"></table>
+      <div class="why" id="why"></div>
+      <div class="concl lock" id="concl"><span class="kt">관찰대 결과와 이어 보기</span><p>네 가지를 모두 확인하면 정리가 나타나요.</p></div>
+    </section>
+  </div>
+  <p class="model">빛의 경로는 거울 면의 반사 법칙과 렌즈 면의 굴절을 계산해 그렸어요. 빛이 모이는 곳은 알아보기 쉽게 밝게 표시했어요.</p>
+  <p class="credit">거울과 렌즈에 의한 상 · 나란한 빛 보내기</p>
+</div>
+<script>
+window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
+  reduce: !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches), Q: new URLSearchParams(location.search) };
+</script>
+<script>
+/*@@PART:flow.js@@*/
+window.FLOW = FLOW;
+</script>
+<script>
+/*@@LOCAL:_optics.js@@*/
+</script>
+<script>
+/*@@LOCAL:_ml.js@@*/
+</script>
+<script>
+/*@@LOCAL:_rays.js@@*/
+</script>
+<script>
+/* ===== 블록 1: 빛 보내기 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S, Q = S.Q;
+    const DEVS = ['convex-mirror', 'concave-mirror', 'convex-lens', 'concave-lens'];
+    const ANS = { 'convex-mirror': 'spread', 'concave-mirror': 'meet', 'convex-lens': 'meet', 'concave-lens': 'spread' };
+    const RES = {
+      'convex-mirror': '거울 면에서 반사된 뒤 <b>넓게 퍼져요</b>', 'concave-mirror': '거울 면에서 반사된 뒤 <b>한 점에 모여요</b>',
+      'convex-lens': '굴절되어 <b>한 점에 모여요</b>', 'concave-lens': '굴절되어 <b>퍼져요</b>',
+    };
+    const WHY = {
+      mirror: ['거울 면의 곳곳은 기울어진 정도가 달라요. \'빛이 닿은 곳 보기\'를 눌러 각 점에서 반사면과 수직인 선을 보세요.', '빛은 닿은 곳마다 <b>반사 법칙</b>(입사각 = 반사각)에 따라 반사돼요.', '그래서 오목 거울에서는 반사된 빛이 가운데 쪽으로 모이고, 볼록 거울에서는 바깥쪽으로 퍼져요.'],
+      lens: ['빛은 렌즈에 들어갈 때와 나올 때, 렌즈 면에서 <b>굴절</b>해요. \'빛이 닿은 곳 보기\'로 꺾이는 곳을 확인해요.', '렌즈의 종류에 따라 빛이 굴절되는 경로가 달라요.', '볼록 렌즈를 지난 빛은 가운데 쪽으로 꺾여 한 점에 모이고, 오목 렌즈를 지난 빛은 바깥쪽으로 꺾여 퍼져요.'],
+    };
+    let dev = DEVS.includes(Q.get('dev')) ? Q.get('dev') : 'convex-mirror';
+    const done = {};
+    if (Q.get('done') === 'all') DEVS.forEach((k) => (done[k] = true));
+    const R = ML.rays($('#scene'), { theme: 'dark', dev });
+    S.R = R;
+    $('#devs').innerHTML = DEVS.map((k) => `<button type="button" role="tab" data-dev="${k}"><svg width="22" height="34" viewBox="-30 -110 60 220"></svg>${ML.NAMES[k]}</button>`).join('');
+    $$('#devs button').forEach((b) => { ML.icon(b.querySelector('svg'), b.dataset.dev, 0, 0, 200, { face: -1 }); b.addEventListener('click', () => pick(b.dataset.dev)); });
+    const fb = (t, m, cls = '') => { $('#fb').className = 'fbk ' + cls; $('#fbT').textContent = t; $('#fbM').innerHTML = m; };
+    function pick(k) {
+      dev = k; R.dev(k); $$('#q button').forEach((b) => b.classList.remove('bad')); paint();
+      fb(ML.NAMES[k], done[k] ? `나란한 빛을 ${ML.NAMES[k]}에 비추면 ${RES[k]}.` : '나란한 빛이 어떻게 나아가는지 보고 아래에서 골라요.', done[k] ? 'ok' : '');
+    }
+    $$('#q button').forEach((b) => b.addEventListener('click', () => {
+      if (b.dataset.v === ANS[dev]) { done[dev] = true; fb('맞아요', `나란한 빛을 ${ML.NAMES[dev]}에 비추면 ${RES[dev]}.`, 'ok'); paint(); }
+      else { b.classList.add('bad'); fb('다시 보세요', '기구를 지난 빛들 사이의 간격이 점점 좁아지나요, 넓어지나요? \'빛 하나\'로 빛을 하나씩 따라가 봐도 좋아요.', 'no'); }
+    }));
+    function paint() {
+      const mir = ML.isMirror(dev);
+      $$('#devs button').forEach((b) => { b.setAttribute('aria-selected', String(b.dataset.dev === dev)); b.classList.toggle('seen', !!done[b.dataset.dev]); });
+      $('#cap').textContent = mir ? '그림 Ⅲ-7 나란한 빛을 거울에 비출 때 빛이 반사하는 모습' : '그림 Ⅲ-8 나란한 빛을 렌즈에 비출 때 빛이 굴절하는 모습';
+      $('#qT').innerHTML = `나란한 빛을 <b>${ML.NAMES[dev]}</b>에 비추면 빛은?`;
+      $('#q').hidden = !!done[dev];
+      $('#tbl').innerHTML = '<tr><th>기구</th><th>나란한 빛을 비추면</th></tr>' + DEVS.map((k) => `<tr><th>${ML.NAMES[k]}</th>${done[k] ? `<td>${ML.isMirror(k) ? '반사 후 ' : '굴절 후 '}${ANS[k] === 'meet' ? '한 점에 모임' : '퍼짐'}</td>` : '<td class="empty">확인 전</td>'}</tr>`).join('');
+      $('#why').innerHTML = `<h3>왜 그럴까?</h3>` + WHY[mir ? 'mirror' : 'lens'].map((t, i) => `<div class="w"><i>${i + 1}</i><span>${t}</span></div>`).join('');
+      $('#bMark').textContent = mir ? '빛이 닿은 곳 보기' : '빛이 꺾이는 곳 보기';
+      const all = DEVS.every((k) => done[k]), c = $('#concl');
+      c.classList.toggle('lock', !all);
+      c.querySelector('p').innerHTML = all ? '나란한 빛을 <b>한 점에 모으는</b> 오목 거울과 볼록 렌즈는, 물체가 가까이 있을 때 크고 바로 선 상이 생기다가 멀어지면 상이 뒤집혀 보여요. 나란한 빛을 <b>퍼지게 하는</b> 볼록 거울과 오목 렌즈는 항상 물체보다 작고 바로 선 상이 생겨요.' : '네 가지를 모두 확인하면 정리가 나타나요.';
+    }
+    $('#bAll').addEventListener('click', () => { $('#bAll').setAttribute('aria-pressed', 'true'); $('#bOne').setAttribute('aria-pressed', 'false'); $('#hr').hidden = true; R.single(null); });
+    $('#bOne').addEventListener('click', () => { $('#bAll').setAttribute('aria-pressed', 'false'); $('#bOne').setAttribute('aria-pressed', 'true'); $('#hr').hidden = false; R.single(+$('#hIn').value); });
+    $('#hIn').addEventListener('input', () => R.single(+$('#hIn').value));
+    $('#bMark').addEventListener('click', () => { const v = $('#bMark').getAttribute('aria-pressed') !== 'true'; $('#bMark').setAttribute('aria-pressed', String(v)); R.marks(v); });
+    if (Q.get('one')) { $('#hIn').value = Q.get('one'); $('#bOne').click(); }
+    if (Q.get('mark') === '1') $('#bMark').click();
+    pick(dev);
+    window.SM.okUI = true; window.SM.ok3d = true;
+  } catch (err) { window.SM_err('빛 보내기', err); }
+})();
+</script>
+</body>
+</html>
