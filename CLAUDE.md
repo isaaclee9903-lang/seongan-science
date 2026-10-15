@@ -28,6 +28,7 @@
 | `quake-volcano` | 중2 Ⅱ 지권의 운동: 판의 경계와 지진대, 화산대 (실제 자료 빅데이터 지도, 판의 경계 실험실 2D, 지진·화산 기록실, 카드 뉴스) | lesson-kit | `중2_지권의운동_지진대와화산대.md` |
 | `light-path` | 중2 Ⅲ 빛의 반사와 굴절, 물체를 보는 과정 (반사·굴절 실험실 2D, 통으로 보기, 빛의 경로 그리기·오개념) | lesson-kit | `중2_빛과파동_빛의반사와굴절_물체를보는과정.md` |
 | `plane-mirror` | 중2 Ⅲ 평면거울에 의한 상 (상이 생기는 원리 7단계 작도·직접 작도·모눈 상 찾기, 반투명 거울 가상 실험) | lesson-kit | `중2_빛과파동_평면거울에의한상.md` |
+| `mirror-lens` | 중2 Ⅲ 다양한 거울과 렌즈에 의한 상 (F 모양 물체 거울·렌즈 관찰대 2D, 나란한 빛 보내기, 관찰 기록지) | lesson-kit | `중2_빛과파동_다양한거울과렌즈에의한상.md` |
 | `ohm` | 중2 Ⅶ 옴의 법칙 | 직접 작성 | `중2_전기와자기_옴의법칙.md` |
 | `series-parallel` | 중2 Ⅶ 저항의 연결 | 직접 작성 | `중2_전기와자기_저항의연결.md` |
 | `electric-energy` | 중2 Ⅶ 소비 전력과 전력량 | 직접 작성 | `중2_전기와자기_전기에너지와소비전력.md` |
@@ -48,7 +49,7 @@
 - 지진·화산 지도(Ⅱ 지권의 운동): `tools/lesson-kit/src/quake-volcano/_map.js`(WMAP: 실제 지진·화산·판의 경계 캔버스 지도, 재생·확대·판 강조·띠 칠하기, USGS 실시간 자료), `_bound2d.js`(BND: 교과서 그림 Ⅱ-16 형식 덩어리 그림, 부딪침·갈라짐·어긋남). 자료는 `lessons/quake-volcano/data/`(만드는 법 `_data_prep.py`). 다음 지권의 운동 수업도 재사용한다.
 - 3D 로딩: 보기만 하는 3D 그림은 영상(`C3.video`), 나머지는 `C3.lazy` + `C3.prepare`(멈추지 않는 셰이더 준비)와 미리 찍은 사진을 쓴다. 사진·영상은 `tools/lesson-kit/bake.py`로 만든다 (2026-10-12, 로딩이 길다는 선생님 의견으로 도입. 자세한 것은 `tools/lesson-kit/README.md`).
 - "직접 작성"인 수업은 `tools/lesson-kit/src/`에 원본이 없어 `lessons/<이름>/*.html`을 바로 고친다. lesson-kit 수업은 `src/`를 고치고 다시 빌드한다.
-- 빛 그림(Ⅲ 빛과 파동): `tools/lesson-kit/src/light-path/_optics.js`(OP: 레이저 광선·각도기·슬릿 레이저·빛 알갱이·눈·HTML 이름표), `_art.js`(OPA: 전등·태양·공·책·통·반사판·화분·촬영기 일러스트). 평면거울 작도 장면은 `src/plane-mirror/_mirror.js`(MR: 방·세운 거울·꽃 화분, 단계별 작도 render(0~7)). 다음 Ⅲ 수업도 재사용한다.
+- 빛 그림(Ⅲ 빛과 파동): `tools/lesson-kit/src/light-path/_optics.js`(OP: 레이저 광선·각도기·슬릿 레이저·빛 알갱이·눈·HTML 이름표), `_art.js`(OPA: 전등·태양·공·책·통·반사판·화분·촬영기 일러스트). 평면거울 작도 장면은 `src/plane-mirror/_mirror.js`(MR: 방·세운 거울·꽃 화분, 단계별 작도 render(0~7)). 볼록·오목 거울과 렌즈는 `src/mirror-lens/_ml.js`(ML: F 모양 물체, 받침대의 둥근 거울·렌즈 속 상, 옆 배치도, 기구 단면 그림)와 `_rays.js`(ML.rays: 나란한 빛의 반사·굴절 실제 계산). 다음 Ⅲ 수업도 재사용한다.
 - 별 그림: Ⅷ 단원은 캔버스로 빛 번짐 별을 그린다(`parallax` sim2의 `window.SKY`, `star-brightness`의 `_glow.js` `window.GLOW`). 실제 하늘 지도는 d3-celestial(BSD-3)을 `lessons/star-brightness/sky/`에 복사해 쓴다(별 목록은 `stars6.json`·`stars8.json`으로 줄임, 라이선스 `sky/LICENSE.txt`). 다음 Ⅷ 수업도 이 폴더를 재사용한다. 별의 밝기 차시까지는 별을 흰색으로 그리고, `star-color`부터는 `_color.js`의 `window.SC`로 색을 칠한다(별 목록 `sky/data/stars6c.json`에 색 정보 포함, 교과서 색 띠 별은 교과서 색).
 
 ## 최우선 규칙: 교육과정 범위
