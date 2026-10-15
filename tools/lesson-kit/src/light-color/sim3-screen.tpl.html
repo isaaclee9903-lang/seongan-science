@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>물체의 색과 빛의 합성 – 화면 확대경</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+/*@@LOCAL:_css_lc.css@@*/
+  /* ===== 이 페이지 전용 ===== */
+  .stage > .viewer{background:linear-gradient(#e9eef3,#d5dee7);padding:14px 14px 0}
+  .mon{position:relative;border-radius:18px;padding:12px;background:linear-gradient(#2b3038,#14171c);box-shadow:0 18px 40px rgba(20,38,59,.28),inset 0 1px 0 rgba(255,255,255,.12)}
+  #scr{position:relative;aspect-ratio:16/10;border-radius:6px;overflow:hidden;background:#000;touch-action:none;cursor:crosshair}
+  #scr canvas{position:absolute;display:block}
+  #scv{inset:0;width:100%;height:100%}
+  #lp{border-radius:50%;pointer-events:none;box-shadow:0 10px 24px rgba(0,0,0,.45);transform:translate(-50%,-50%)}
+  .tl{position:absolute;transform:translate(-50%,0);font-size:clamp(11px,1.3vw,14px);font-weight:800;color:#c9d3df;pointer-events:none;white-space:nowrap}
+  .stand{width:22%;height:26px;margin:0 auto;background:linear-gradient(90deg,#9aa4ae,#c9d1d9 40%,#8b95a0);clip-path:polygon(18% 0,82% 0,100% 100%,0 100%)}
+  .base{width:40%;height:10px;margin:0 auto;border-radius:6px 6px 0 0;background:linear-gradient(#b8c1ca,#8a949e)}
+  .vctl{display:flex;flex-wrap:wrap;gap:8px;padding:10px 2px 12px;align-items:center}
+  .vctl .note{font-size:13px;font-weight:700;color:var(--muted);word-break:keep-all;flex:1;min-width:180px}
+  .vb.sel{background:#14263b;color:#fff;border-color:#14263b}
+  .big{display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:center}
+  #big{width:150px;height:150px;border-radius:50%;display:block}
+  .big p{margin:0;font-size:15px;line-height:1.7;color:var(--ink2);word-break:keep-all}
+  .lbl{font-size:13px;font-weight:900;color:var(--fab);margin:10px 0 4px}
+  .lbl:first-child{margin-top:0}
+  .rec{width:100%;border-collapse:separate;border-spacing:4px;table-layout:fixed;margin:0 -4px;width:calc(100% + 8px)}
+  .rec th{font-size:13px;font-weight:800;padding:2px 0;text-align:center;word-break:keep-all;line-height:1.25;border-radius:8px}
+  .rec th.rh{text-align:left;width:64px;font-size:12.5px;color:var(--muted)}
+  .rec th i{display:block;width:18px;height:18px;border-radius:5px;margin:0 auto 3px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.2)}
+  .rec th.good{background:#e8f7ef;color:#11703f}.rec th.bad{background:#fdecea;color:#b33a35}
+  .rec td{padding:0}
+  .rec button{width:100%;min-height:46px;border-radius:11px;border:2px solid #d4dee8;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .rec button i{width:12px;height:24px;border-radius:4px;background:#e1e6ec}
+  .rec button[aria-pressed="true"]{border-color:#9fb4c9}
+  .rec td.good button[aria-pressed="true"]{border-color:var(--ok);background:#e8f7ef}
+  .rec td.bad button{border-color:#f3c2bb;background:#fff7f6}
+  .bnote{font-size:13px;color:var(--muted);margin:0;word-break:keep-all;line-height:1.5}
+  .chkrow{display:flex;align-items:center;gap:12px;margin-top:8px}
+  .chkrow .btn{flex:none}
+  @media (max-width:900px){#big{width:110px;height:110px}.stand{height:18px}.vctl{padding:8px 2px 10px}.app{gap:8px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="ttl">
+      <span class="eyebrow">시뮬레이션 ③</span><h1>화면 확대경: 화면 속 색은 어떻게 만들어질까?</h1>
+      <p class="sub">화면을 눌러 확대경을 각 색 위에 대고, 작은 점 중 어떤 점이 빛나는지 관찰해 기록해요.</p>
+    </div>
+  </header>
+  <div class="stage">
+    <section class="card viewer">
+      <div class="mon"><div id="scr"><canvas id="scv"></canvas><canvas id="lp"></canvas></div></div>
+      <div class="stand"></div><div class="base"></div>
+      <div class="vctl">
+        <button class="vb sel" type="button" data-m="tiles">색 카드</button>
+        <button class="vb" type="button" data-m="photo">풍경 그림</button>
+        <span class="note">화면을 누르거나 끌면 확대경이 따라와요. 작은 점은 개념 이해를 위해 크게 그린 모형이에요.</span>
+      </div>
+    </section>
+    <section class="card pad">
+      <div class="big"><canvas id="big"></canvas><p id="bigT">확대경을 색 위에 대 보세요.</p></div>
+      <div class="lbl">관찰 기록: 색마다 빛나는 작은 점을 모두 눌러요</div>
+      <table class="rec" id="rec"></table>
+      <div class="chkrow"><button type="button" class="btn primary" id="chk">기록 확인하기</button><p class="bnote">검은색을 띠는 부분은 빛을 내지 않으므로 기록하지 않아요.</p></div>
+      <div class="fbk" id="fb" hidden></div>
+    </section>
+  </div>
+</div>
+<script>
+window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
+  reduce: !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches), Q: new URLSearchParams(location.search) };
+</script>
+<script>
+/*@@LOCAL:_scr.js@@*/
+</script>
+<script>
+/* ===== 블록 1: 화면과 확대경 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S, Q = S.Q;
+    const HW = 960, HH = 600, PW = 160, PH = 100;
+    const hi = document.createElement('canvas'); hi.width = HW; hi.height = HH;
+    const scr = $('#scr'), scv = $('#scv'), lp = $('#lp'), big = $('#big');
+    let mode = Q.get('mode') === 'photo' ? 'photo' : 'tiles', px = null;
+    let u = Q.get('u') ? +Q.get('u') : 0.155, v = Q.get('v') ? +Q.get('v') : 0.27;
+    const DPR = Math.min(2, window.devicePixelRatio || 1);
+    function build() {
+      const c = hi.getContext('2d'); c.clearRect(0, 0, HW, HH); SCR.paint(c, HW, HH, mode); px = SCR.pixels(hi, PW, PH);
+      $$('.tl', scr).forEach((e) => e.remove());
+      if (mode === 'tiles') SCR.TILES.forEach((t, k) => { const r = SCR.tileRect(100, 100, k), e = document.createElement('span'); e.className = 'tl'; e.textContent = t.n; e.style.left = (r.x + r.w / 2) + '%'; e.style.top = (r.y + r.h + 1.2) + '%'; scr.appendChild(e); });
+      $$('[data-m]').forEach((b) => b.classList.toggle('sel', b.dataset.m === mode));
+      draw();
+    }
+    function size() {
+      const r = scr.getBoundingClientRect();
+      scv.width = Math.round(r.width * DPR); scv.height = Math.round(r.height * DPR);
+      const D = Math.round(Math.max(120, r.width * 0.28));
+      lp.width = Math.round(D * DPR); lp.height = Math.round(D * DPR); lp.style.width = D + 'px'; lp.style.height = D + 'px';
+      big.width = Math.round(big.clientWidth * DPR); big.height = Math.round(big.clientHeight * DPR);
+    }
+    function draw() {
+      const c = scv.getContext('2d'); c.imageSmoothingQuality = 'high'; c.drawImage(hi, 0, 0, scv.width, scv.height);
+      lp.style.left = (u * 100) + '%'; lp.style.top = (v * 100) + '%';
+      const fi = u * PW - 0.5, fj = v * PH - 0.5;
+      const lc = lp.getContext('2d'); lc.clearRect(0, 0, lp.width, lp.height);
+      const n1 = 7, i1 = Math.floor(fi) - 3, j1 = Math.floor(fj) - 3;
+      SCR.sub(lc, lp.width / 2, lp.height / 2, lp.width - 2, n1, px.at, i1, j1, { fx: fi - Math.floor(fi), fy: fj - Math.floor(fj), ring: lp.width * 0.05 });
+      if (big.width >= 20) {
+      const bc = big.getContext('2d'); bc.clearRect(0, 0, big.width, big.height);
+      const n2 = 5, i2 = Math.floor(fi) - 2, j2 = Math.floor(fj) - 2;
+      SCR.sub(bc, big.width / 2, big.height / 2, big.width - 2, n2, px.at, i2, j2, { fx: fi - Math.floor(fi), fy: fj - Math.floor(fj), ring: big.width * 0.04 });
+      }
+      const p = px.at(Math.round(fi), Math.round(fj)), lit = ['빨간색', '초록색', '파란색'].filter((n, k) => p[k] > 60);
+      $('#bigT').innerHTML = !lit.length ? '빛나는 점이 없어요. 이곳은 <b>검은색</b>으로 보여요.' : mode === 'tiles' ? '확대경 속에서 어떤 색 점이 빛나는지 보고, 아래 표에 기록해요.' : '풍경의 색은 작은 점의 <b>밝기가 조금씩 달라서</b> 여러 가지 색으로 보여요. 확대경을 옮겨 하늘, 산, 단풍, 호수를 비교해 보세요.';
+    }
+    let raf = 0; const req = () => { if (!raf) raf = requestAnimationFrame(() => { raf = 0; draw(); }); };
+    const move = (e) => { const r = scr.getBoundingClientRect(); u = Math.max(0.02, Math.min(0.98, (e.clientX - r.left) / r.width)); v = Math.max(0.03, Math.min(0.97, (e.clientY - r.top) / r.height)); req(); };
+    let down = false;
+    scr.addEventListener('pointerdown', (e) => { down = true; scr.setPointerCapture(e.pointerId); move(e); e.preventDefault(); });
+    scr.addEventListener('pointermove', (e) => { if (down) move(e); });
+    scr.addEventListener('pointerup', () => (down = false)); scr.addEventListener('pointercancel', () => (down = false));
+    $$('[data-m]').forEach((b) => b.addEventListener('click', () => { mode = b.dataset.m; build(); }));
+    window.addEventListener('resize', () => { size(); draw(); });
+    size(); build();
+    window.SM.okUI = true;
+  } catch (err) { window.SM_err('화면과 확대경', err); }
+})();
+</script>
+<script>
+/* ===== 블록 2: 관찰 기록 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S, Q = S.Q;
+    const ROWS = SCR.TILES.filter((t) => t.m);
+    const DOT = [['빨간색', '#ff2a20', 1], ['초록색', '#2ee04a', 2], ['파란색', '#3a5cff', 4]];
+    const pick = ROWS.map(() => 0);
+    if (Q.get('rec') === 'all') ROWS.forEach((t, i) => (pick[i] = t.m));
+    $('#rec').innerHTML = '<tr><th class="rh">화면 색 →</th>' + ROWS.map((t, i) => `<th data-i="${i}"><i style="background:rgb(${t.c})"></i>${t.n}</th>`).join('') + '</tr>' +
+      DOT.map((d) => `<tr><th class="rh">${d[0]} 점</th>` + ROWS.map((t, i) => `<td data-i="${i}"><button type="button" data-i="${i}" data-b="${d[2]}" aria-pressed="false" aria-label="${t.n}에서 ${d[0]} 점이 빛남"><i></i></button></td>`).join('') + '</tr>').join('');
+    function paint() {
+      $$('#rec button').forEach((b) => { const i = +b.dataset.i, on = !!(pick[i] & +b.dataset.b); b.setAttribute('aria-pressed', String(on)); b.querySelector('i').style.background = on ? DOT.find((d) => d[2] === +b.dataset.b)[1] : '#e1e6ec'; });
+    }
+    const mark = (i, cls) => $$(`#rec [data-i="${i}"]`).forEach((e) => { if (e.tagName !== 'BUTTON') { e.classList.remove('good', 'bad'); if (cls) e.classList.add(cls); } });
+    $$('#rec button').forEach((b) => b.addEventListener('click', () => { const i = +b.dataset.i; pick[i] ^= +b.dataset.b; mark(i, null); paint(); }));
+    $('#chk').addEventListener('click', () => {
+      let wrong = 0;
+      ROWS.forEach((t, i) => { const ok = pick[i] === t.m; mark(i, ok ? 'good' : 'bad'); if (!ok) wrong++; });
+      const f = $('#fb'); f.hidden = false;
+      if (!wrong) {
+        f.className = 'fbk ok'; f.innerHTML = '<b class="t">모두 맞았어요</b>세 점을 묶은 <b>화소</b>에서 나오는 빛이 <b>합성</b>되어 다양한 색을 표현해요. 흰색은 빨간색, 초록색, 파란색 점이 모두 빛나서 합성된 색이에요.';
+      } else { f.className = 'fbk no'; f.innerHTML = `<b class="t">${wrong}가지 색을 다시 보세요</b>빨간색으로 표시된 색 위에 확대경을 다시 대고, 빛나는 점을 확인해요.`; }
+    });
+    paint();
+    if (Q.get('rec') === 'all') $('#chk').click();
+    window.SM.ok3d = true;
+  } catch (err) { window.SM_err('관찰 기록', err); }
+})();
+</script>
+</body>
+</html>
