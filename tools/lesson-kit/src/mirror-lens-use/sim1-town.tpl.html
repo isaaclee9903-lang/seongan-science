@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>우리 주변의 거울과 렌즈 – 거울·렌즈 마을</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+/*@@LOCAL:_css_ml.css@@*/
+  .stage{grid-template-columns:minmax(0,1.5fr) minmax(340px,1fr)}
+  .map{position:relative;aspect-ratio:1200/900;border-radius:20px;overflow:hidden;background:#cfe3f1}
+  .map svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .mk{position:absolute;transform:translate(-50%,-50%);display:flex;align-items:center;gap:6px;min-height:44px;min-width:44px;padding:4px 10px 4px 4px;border:0;border-radius:999px;background:rgba(255,255,255,.94);box-shadow:0 2px 10px rgba(20,38,59,.22);font-weight:800;font-size:14px;color:#14263b;cursor:pointer;white-space:nowrap;transition:transform .2s var(--ease)}
+  .mk .n{flex:none;width:32px;height:32px;border-radius:50%;background:#14263b;color:#fff;display:grid;place-items:center;font-size:14.5px;font-weight:900}
+  .mk small{display:block;font-size:11.5px;font-weight:800;color:#0e63b3;line-height:1.1}
+  .mk .tx{line-height:1.15;text-align:left}
+  .mk.on{background:#0e63b3;color:#fff;transform:translate(-50%,-50%) scale(1.06)}
+  .mk.on .n{background:#fff;color:#0e63b3}.mk.on small{color:#cfe4f8}
+  .mk.done .n{background:#0e63b3}
+  .mk:active{transform:translate(-50%,-50%) scale(.96)}
+  .maplab{position:absolute;left:12px;bottom:10px;font-size:12.5px;font-weight:700;color:#34495e;background:rgba(255,255,255,.85);border-radius:9px;padding:4px 10px}
+  .vbox{position:relative;border-radius:16px;overflow:hidden;background:#e7ecf1;margin:10px 0 4px}
+  .vbox canvas{display:block;width:100%;height:auto}
+  .vbox .vlab{left:10px;top:8px}
+  .vtool{position:absolute;right:8px;bottom:8px;display:flex;gap:6px}
+  .vtool button{min-height:44px;border:0;border-radius:12px;padding:0 14px;font-weight:800;font-size:14px;background:rgba(255,255,255,.92);color:#14263b;box-shadow:0 2px 8px rgba(20,38,59,.2);cursor:pointer}
+  .vtool button[aria-pressed="true"]{background:#14263b;color:#fff}
+  .vcap{font-size:13.5px;color:var(--muted);line-height:1.55;word-break:keep-all;margin:4px 2px 0}
+  .q{font-weight:900;font-size:16px;margin:14px 0 8px;color:var(--ink);word-break:keep-all}
+  .kinds{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+  .kb{min-height:84px;border:2px solid #dde6ee;border-radius:14px;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-weight:800;font-size:13.5px;color:var(--ink2);cursor:pointer;padding:6px 2px;word-break:keep-all;line-height:1.2;text-align:center}
+  .kb svg{width:34px;height:46px}
+  .kb.right{border-color:#0e63b3;background:#e9f3fd;color:#0b3f73}
+  .kb.wrong{border-color:#d9534f;background:#fff4f2}
+  .kb:disabled{cursor:default}
+  .opts{display:grid;gap:6px}
+  .opt{display:flex;align-items:center;gap:10px;text-align:left;min-height:50px;border-radius:14px;border:2px solid #dde6ee;background:#fff;padding:6px 12px;font-size:15.5px;font-weight:700;color:var(--ink2);cursor:pointer;word-break:keep-all}
+  .opt .k{flex:none;width:28px;height:28px;border-radius:50%;background:#eef3f8;display:grid;place-items:center;font-weight:900;font-size:13px}
+  .opt.right{border-color:#0e63b3;background:#e9f3fd;color:#0b3f73}.opt.wrong{border-color:#d9534f;background:#fff4f2}
+  .opt:disabled{cursor:default}
+  .tech{margin-top:10px;border-radius:16px;padding:12px 14px;background:#fff;border:1px solid #dbe4ed;font-size:15px;line-height:1.7;color:var(--ink2);word-break:keep-all}
+  .tech .kt{display:block;font-size:12.5px;font-weight:900;color:#0e63b3;letter-spacing:.02em}
+  .tech b{display:block;font-size:16px;color:var(--ink);margin:2px 0}
+  .tech .src{display:block;font-size:12px;color:var(--muted);margin-top:4px}
+  .tech a{color:#0e63b3;font-weight:800}
+  .intro p{font-size:16px;line-height:1.75;color:var(--ink2);word-break:keep-all;margin:6px 0}
+  .shT{font-size:15px;margin:16px 0 6px}
+  .sheet{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+  .sheet .col{border-radius:12px;background:#f6f9fc;border:1px solid #e2e9f0;padding:8px 6px;min-height:92px}
+  .sheet .col b{display:block;font-size:13px;text-align:center;color:#0b3f73;margin-bottom:4px;word-break:keep-all}
+  .sheet .col span{display:block;font-size:12.5px;font-weight:700;color:var(--ink2);background:#fff;border-radius:8px;padding:3px 6px;margin-top:4px;text-align:center;word-break:keep-all}
+  .done-box{margin-top:12px;border-radius:16px;padding:14px 16px;background:#14263b;color:#e9f1f8;font-size:15.5px;line-height:1.75;word-break:keep-all}
+  .done-box b{color:#fff}
+  .done-box a{display:inline-flex;align-items:center;min-height:44px;margin:8px 8px 0 0;padding:0 14px;border-radius:12px;background:#0e63b3;color:#fff;font-weight:800;text-decoration:none}
+  @media (max-width:900px),(orientation:portrait){
+    .stage{grid-template-columns:1fr}.viewer{position:static}
+    .mk{font-size:12.5px;padding:3px 8px 3px 3px;min-height:40px}.mk .n{width:30px;height:30px}
+    .mk .tx span.pl{display:none}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <span class="eyebrow">우리 주변의 거울과 렌즈 · 시뮬레이션 ①</span>
+    <h1>거울·렌즈 마을 조사하기</h1>
+    <p class="sub">교과서 108~109쪽 마을이에요. 번호를 눌러 각 장소에서 쓰는 거울이나 렌즈의 종류를 알아내고, 어떤 특징을 이용했는지 찾아요.</p>
+  </header>
+  <div class="stage">
+    <section class="card viewer" style="padding:0">
+      <div class="map" id="map"><svg viewBox="0 0 1200 900" role="img" aria-label="미용실, 안경점, 편의점, 학교, 병원, 버스, 도로의 둥근 거울, 하늘의 우주 망원경이 있는 마을 그림"></svg>
+        <span class="maplab">번호를 눌러 조사해요</span></div>
+    </section>
+    <section class="card pad" id="panel">
+      <div id="intro" class="intro">
+        <div class="stepname"><span class="no">?</span><div><h2>해 보기 1 · 우리 주변의 거울과 렌즈</h2><small>준비물: 스마트 기기</small></div></div>
+        <p>각 장소에서 사용되는 거울이나 렌즈의 <b>종류</b>를 조사하고, 어떤 <b>특징</b>을 이용한 것인지 알아봐요.</p>
+        <p>장소마다 그 거울이나 렌즈로 본 모습, 또는 빛이 가는 길이 나와요. 그림을 보고 다섯 가지 중에서 골라요.</p>
+        <div class="acts"><button class="btn primary wide" type="button" id="go1">1번 장소부터 조사하기</button></div>
+      </div>
+      <div id="work" hidden>
+        <div class="stepname"><span class="no" id="pNo">1</span><div><h2 id="pTitle"></h2><small id="pPlace"></small></div></div>
+        <p class="what" id="pAsk" style="margin:0"></p>
+        <div class="vbox"><canvas id="cv" width="720" height="460"></canvas><span class="vlab" id="vLab"></span><div class="vtool" id="vTool"></div></div>
+        <p class="vcap" id="vCap"></p>
+        <p class="q">① 이것은 어떤 거울이나 렌즈일까요?</p>
+        <div class="kinds" id="kinds"></div>
+        <div id="step2" hidden><p class="q">② 어떤 특징을 이용한 것일까요?</p><div class="opts" id="feats"></div></div>
+        <div class="fbk" id="fb" hidden><b class="t" id="fbT"></b><span id="fbM"></span></div>
+        <div class="tech" id="tech" hidden><span class="kt">첨단기술에서는</span><b id="techT"></b><span id="techD"></span><span class="src" id="techS"></span></div>
+        <div class="acts"><button class="btn primary" type="button" id="next" hidden>다음 장소</button></div>
+      </div>
+      <h3 class="shT">조사 기록표 <small style="color:var(--muted);font-weight:700" id="cnt">0 / 10</small></h3>
+      <div class="prog" id="prog"><i></i></div>
+      <div class="sheet" id="sheet" style="margin-top:8px"></div>
+      <div class="done-box" id="doneBox" hidden></div>
+    </section>
+  </div>
+  <p class="model">거울과 렌즈로 본 모습은 개념 이해를 위한 그림이에요. 실제 모습은 거울이 휘어진 정도와 거리에 따라 달라요.</p>
+  <p class="credit">우리 주변의 거울과 렌즈 · 거울·렌즈 마을</p>
+</div>
+<script>
+window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
+  reduce: !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches), Q: new URLSearchParams(location.search) };
+</script>
+<script>
+/*@@LOCAL:_kinds.js@@*/
+</script>
+<script>
+/*@@LOCAL:_town.js@@*/
+</script>
+<script>
+/*@@LOCAL:_loupe.js@@*/
+</script>
+<script>
+/*@@LOCAL:_rayv.js@@*/
+</script>
+<script>
+/* ===== 선생님이 고치기 쉬운 데이터: 장소 10곳 =====
+   kind: 정답 종류(KINDS의 id), feats: 특징 보기(0번이 정답, 화면에서는 섞어 보여 줌), tech: 첨단기술 이야기(리서치 보고서에서 출처 확인) */
+const LINKS = { lab: 'sim2-lab.html', summary: 'summary-poster.html', video: 'video.html' };
+const PLACES = [
+  { id: 'salon', name: '미용실', thing: '벽의 큰 거울', ask: '미용실 손님이 머리 모양을 확인하는 거울이에요.',
+    view: { scene: 'face', mode: 'flat', frame: 'metal' }, vlab: '거울에 비친 손님', cap: '손님의 모습이 실제와 같은 크기로, 바로 선 모습 그대로 비쳐요.',
+    kind: 'plane', hint: '거울 속 모습이 실제와 같은 크기예요. 커지거나 작아지지 않았어요.',
+    feats: ['모습을 그대로 비춘다', '넓은 범위를 작게 비춘다', '빛을 한 점에 모은다'],
+    exp: '<b>평면거울</b>은 물체의 모습을 그대로 비추므로 자신의 모습을 비춰 보는 데 많이 이용해요.',
+    tech: ['휴대 전화 망원 카메라 속 “평면거울”', '고배율 망원 카메라는 프리즘의 안쪽 면이 평면거울처럼 빛을 반사해 방향을 90도 꺾어요. 그래서 긴 렌즈 묶음을 휴대 전화 안에 옆으로 눕혀 넣을 수 있어요. 2020년 휴대 전화에 처음 들어갔어요.', '출처: 삼성 갤럭시 S20 울트라 폴디드 줌 보도(머니투데이 2020)'] },
+  { id: 'glassesPlus', name: '안경점', thing: '돋보기안경', ask: '가까이 있는 글씨가 잘 안 보이는 어른들이 쓰는 안경이에요. 책 위에 대어 봐요.',
+    view: { scene: 'page', frame: 'glasses', lenses: [{ x: .3, y: .5, r: .17, mode: 'convex-lens' }, { x: .7, y: .5, r: .17, mode: 'convex-lens' }] }, vlab: '책 위에 댄 돋보기안경', cap: '안경알 속 글씨가 크고 바로 선 모습으로 보여요.',
+    kind: 'convex-lens', hint: '안경알 속 글씨가 커졌어요. 가까이 있는 물체가 크게 보이는 렌즈는?',
+    feats: ['가까이 있는 글씨를 크게 보여 준다', '글씨를 작게 보여 준다', '글씨를 거꾸로 보여 준다'],
+    exp: '돋보기안경은 가운데가 볼록한 <b>볼록 렌즈</b>예요. 물체가 렌즈와 가까이 있을 때는 물체보다 크고 바로 선 상이 보여요.',
+    tech: ['등대의 프레넬 렌즈', '두꺼운 볼록 렌즈를 동심원 고리 조각으로 잘라 얇게 만든 렌즈예요. 1822년 등대에 처음 쓰인 뒤 등대 불빛이 보이는 거리가 크게 늘었어요.', '출처: 미국 국립공원관리청'] },
+  { id: 'glassesMinus', name: '안경점', thing: '근시안경', ask: '먼 곳이 잘 안 보이는 학생들이 많이 쓰는 안경이에요. 책 위에 대어 봐요.',
+    view: { scene: 'page', frame: 'glasses', lenses: [{ x: .3, y: .5, r: .17, mode: 'concave-lens' }, { x: .7, y: .5, r: .17, mode: 'concave-lens' }] }, vlab: '책 위에 댄 근시안경', cap: '안경알 속 글씨가 작고 바로 선 모습으로 보여요.',
+    kind: 'concave-lens', hint: '안경알 속 글씨가 작아졌어요. 항상 작고 바로 선 상이 보이는 렌즈는?',
+    feats: ['물체를 작게 보이게 하고, 나란한 빛을 퍼지게 한다', '가까이 있는 물체를 크게 확대한다', '빛을 한 점에 모은다'],
+    exp: '근시안경은 가장자리가 두꺼운 <b>오목 렌즈</b>예요. 오목 렌즈로 보면 항상 물체보다 작고 바로 선 상이 보이고, 나란한 빛은 퍼져요.',
+    tech: ['근시가 심해지는 것을 늦추는 안경렌즈', '가운데는 근시안경처럼 오목 렌즈이고, 둘레에는 아주 작은 볼록 렌즈 점이 수백 개(한 제품은 396개) 박혀 있어요. 오목 렌즈와 볼록 렌즈가 한 안경알에 함께 있는 셈이에요. 2024년 학생 건강검사에서 중학교 1학년의 64.8%가 ‘시력 이상’이었어요.', '출처: 호야 마이오스마트 임상 자료, 교육부 2024 학생 건강검사 보도'] },
+  { id: 'bus', name: '버스', thing: '전조등 속 거울', ask: '밤에 버스 앞을 멀리까지 밝히는 전조등이에요. 전조등을 잘라 옆에서 본 모습이에요.',
+    view: { ray: 'headlight' }, vlab: '전조등을 옆에서 자른 모습', cap: '전구에서 뒤쪽으로 나간 빛이 거울에서 반사되어 모두 앞쪽 한 방향으로 나아가요.',
+    tool: { label: '거울 떼어 보기', key: 'noMirror' },
+    kind: 'concave-mirror', hint: '전구를 감싸는 거울 면이 안쪽으로 오목하게 들어가 있어요.',
+    feats: ['전구에서 나온 빛을 모아 한 방향으로 멀리 비춘다', '빛을 사방으로 퍼뜨린다', '운전자의 얼굴을 크게 비춘다'],
+    exp: '전조등에는 <b>오목 거울</b>이 들어 있어요. 오목 거울은 빛을 모을 때 이용해요. 거울이 없으면 뒤쪽으로 나간 빛은 쓰이지 못하고 흩어져요.',
+    tech: ['오목 거울 벽으로 햇빛 모으기: 프랑스 오데이요 태양로', '산비탈의 거울 63장이 햇빛을 보내면, 건물 벽 하나 전체가 오목 거울(높이 40 m, 너비 54 m)이 되어 그 빛을 한곳에 모아요. 모인 곳의 온도는 약 3,400 °C나 돼요.', '출처: 프랑스 국립과학연구센터(CNRS)'] },
+  { id: 'store', name: '편의점', thing: '천장 모서리의 둥근 거울', ask: '가게 주인이 계산대에서 가게 안을 살피는 둥근 거울이에요.',
+    view: { scene: 'store', mode: 'convex-mirror', frame: 'orange' }, vlab: '천장 모서리 거울에 비친 가게', cap: '가게 안 사람과 진열대가 작게 보이지만, 가게 전체가 한눈에 들어와요.',
+    tool: { label: '오목 거울로 바꿔 보기', key: 'concave' },
+    kind: 'convex-mirror', hint: '거울 속 모습이 작아졌지만 아주 넓은 곳이 보여요.',
+    feats: ['가게 안 넓은 범위를 한눈에 본다', '물건을 크게 확대해 본다', '빛을 모아 가게를 밝힌다'],
+    exp: '보안 거울은 <b>볼록 거울</b>이에요. 볼록 거울에는 항상 물체보다 작고 바로 선 상이 생기지만, 넓은 범위를 볼 수 있어요.',
+    tech: ['제임스 웹 우주 망원경의 볼록 거울', '제임스 웹 우주 망원경에는 큰 오목 거울 앞에 지름 0.74 m의 작은 <b>볼록 거울</b>이 매달려 있어요. 큰 거울이 모은 별빛을 다시 반사해 관측 장비 쪽으로 보내요.', '출처: NASA 제임스 웹 거울 소개'] },
+  { id: 'roadMirror', name: '굽은 길 모퉁이', thing: '도로의 둥근 거울', ask: '담장에 가려 옆 길이 안 보이는 모퉁이에 세운 둥근 거울이에요.',
+    view: { scene: 'road', mode: 'convex-mirror', frame: 'orange' }, vlab: '모퉁이 거울에 비친 길', cap: '담장 너머 왼쪽에서 다가오는 빨간 차가 보여요. 평면거울이라면 보이지 않았을 곳이에요.',
+    tool: { label: '평면거울과 비교', key: 'flat' },
+    kind: 'convex-mirror', hint: '평면거울로 바꿔 보면 차가 보이지 않아요. 더 넓은 곳을 보여 주는 거울은?',
+    feats: ['가려진 옆 길까지 넓게 보여 준다', '멀리 있는 차를 크게 보여 준다', '빛을 모아 밤길을 밝힌다'],
+    exp: '도로의 둥근 거울은 <b>볼록 거울</b>이에요. 넓은 범위를 볼 때 이용해요. 다만 물체가 작게 보여 실제보다 멀리 있다고 착각하기 쉬워요.',
+    tech: ['거울 대신 카메라와 화면: 디지털 옆 거울', '자동차 옆 거울도 볼록 거울이라 뒤차가 실제보다 멀리 있는 것처럼 보여요. 어떤 전기차는 옆 거울 대신 카메라와 화면을 달아, 볼 수 있는 각도를 약 18°에서 약 29°로 넓혔어요.', '출처: 현대자동차그룹(아이오닉 5, 2021)'] },
+  { id: 'projector', name: '학교 교실', thing: '프로젝터 앞의 렌즈', ask: '선생님 컴퓨터 화면을 칠판 옆 큰 화면에 비추는 프로젝터예요.',
+    view: { ray: 'projector' }, vlab: '프로젝터를 옆에서 본 모습', cap: '프로젝터 속 작은 화면의 빛이 렌즈를 지나면서 꺾여 넓게 퍼지고, 큰 화면 전체를 비춰요.',
+    kind: 'convex-lens', hint: '빛이 렌즈를 지나가요(굴절). 가운데가 두툼한 렌즈 모양을 봐요.',
+    feats: ['빛을 굴절시켜 작은 그림을 화면에 크게 비춘다', '빛을 반사해 되돌려 보낸다', '빛을 모두 흡수한다'],
+    exp: '프로젝터의 렌즈는 <b>볼록 렌즈</b>예요. 빛은 렌즈를 통과하면서 굴절해요. 렌즈도 안경이나 카메라, 현미경 등 여러 곳에 이용돼요.',
+    tech: ['반도체 장비의 렌즈와 거울', '반도체 회로를 새기는 옛 장비는 렌즈로 빛을 굴절시켜 무늬를 작게 줄여요. 그런데 더 미세한 회로를 새기는 극자외선(EUV) 빛은 렌즈에 흡수되어 버려서, 최신 장비는 렌즈 대신 거울을 써요. <a data-link="lab" href="#">첨단기술 실험실에서 비교하기</a>', '출처: 삼성전자 반도체 뉴스룸, ZEISS'] },
+  { id: 'microscope', name: '학교 과학실', thing: '현미경의 렌즈', ask: '양파 표피를 현미경으로 관찰했어요. 맨눈으로는 보이지 않던 세포가 보여요.',
+    view: { scene: 'cells', mode: 'convex-lens', frame: 'metal' }, vlab: '현미경으로 본 양파 표피', cap: '아주 작은 세포가 크게 보여요.',
+    kind: 'convex-lens', hint: '아주 작은 물체가 크게 보여요. 돋보기와 같은 종류의 렌즈예요.',
+    feats: ['아주 작은 물체를 크게 보여 준다', '넓은 곳을 작게 보여 준다', '모습을 그대로 비춘다'],
+    exp: '현미경에는 <b>볼록 렌즈</b>가 들어 있어 작은 물체를 크게 확대해 볼 수 있어요.',
+    tech: ['1달러가 안 되는 종이 현미경', '미국 스탠퍼드 대학교 연구진은 종이를 접어 만들고 작은 공 모양 렌즈 하나를 끼운 현미경(폴드스코프)을 만들었어요. 2000배 넘게 확대하고, 만드는 값은 1달러가 안 돼요(2014년). 질병을 값싸게 진단하려고 만들었어요.', '출처: 스탠퍼드 대학교 발표, NPR(2014)'] },
+  { id: 'dentist', name: '병원(치과)', thing: '치과 거울', ask: '치과 의사가 입안에 넣어 치아를 살펴보는 작은 거울이에요.',
+    view: { scene: 'teeth', mode: 'concave-near', frame: 'dental', center: [.63, .42] }, vlab: '치과 거울에 비친 치아', cap: '가까이 있는 치아가 크게 보여서 작은 충치도 찾을 수 있어요.',
+    kind: 'concave-mirror', hint: '가까이 있는 치아가 크고 바로 선 모습으로 보여요. 그런 상이 생기는 거울은?',
+    feats: ['가까이 있는 치아를 크게 비춘다', '입안 전체를 작게 비춘다', '빛을 퍼뜨린다'],
+    exp: '치과에서는 <b>오목 거울</b>을 사용해 치아를 크게 봐요. 오목 거울은 가까이 있는 물체의 모습을 확대하여 볼 때 이용해요.',
+    tech: ['자동차 앞유리에 뜨는 화면: 헤드업 디스플레이', '작은 화면의 빛을 평면거울로 꺾은 뒤 <b>오목 거울</b>로 크게 만들어 앞유리에 비춰요. 운전자는 고개를 숙이지 않고 앞유리 너머에 떠 있는 큰 안내 그림을 봐요.', '출처: 헤드업 디스플레이 미국 특허(11556005 등)'] },
+  { id: 'telescope', name: '우주', thing: '우주 망원경의 큰 거울', ask: '아주 멀리 있는 희미한 별과 은하를 관측하는 우주 망원경이에요.',
+    view: { ray: 'telescope' }, vlab: '망원경 거울을 옆에서 본 모습', cap: '먼 별에서 온 나란한 빛이 거울에서 반사되어 한 점에 모여 밝아져요.',
+    kind: 'concave-mirror', hint: '나란한 별빛이 반사된 뒤 한 점에 모였어요. 03 차시 그림 Ⅲ-7을 떠올려 봐요.',
+    feats: ['멀리서 온 희미한 별빛을 한 점에 모은다', '별을 작게 보이게 한다', '별빛을 넓게 퍼뜨린다'],
+    exp: '우주 망원경의 큰 거울은 <b>오목 거울</b>이에요. 나란한 빛을 오목 거울에 비추면 반사된 뒤 한 점에 모여요. 거울이 클수록 빛을 많이 모아 더 희미한 천체를 볼 수 있어요.',
+    tech: ['제임스 웹 우주 망원경', '육각형 거울 18개가 모여 지름 약 6.5 m의 오목 거울처럼 일해요. 금을 아주 얇게 입혔고, 빛을 모으는 넓이는 허블 우주 망원경의 5배가 넘어요. 접어서 쏘아 올린 뒤 2022년 1월 우주에서 펼쳤어요. <a data-link="lab" href="#">첨단기술 실험실에서 거울 맞추기</a>', '출처: NASA 제임스 웹 거울 소개'] },
+];
+</script>
+<script>
+(() => {
+  'use strict';
+  try {
+    const { $, $$, Q } = SM;
+    const flag = (n) => { try { return !!(window.frameElement && window.frameElement.dataset[n] === '1'); } catch (e) { return false; } };
+    const EMBED = Q.get('embed') === '1' || flag('embed');
+    const svg = $('#map svg'), A = TOWN.draw(svg), map = $('#map');
+    const ST = {};   // 장소 id → { kind: true, feat: true }
+    let cur = -1, rv = null, toolOn = false, featOrder = [];
+    const cv = $('#cv');
+
+    // 링크
+    function bindLinks(root) {
+      $$('[data-link]', root).forEach((a) => {
+        const k = a.dataset.link;
+        if (EMBED) { a.removeAttribute('target'); a.onclick = (e) => { e.preventDefault(); parent.postMessage({ type: 'ras-nav', target: k }, '*'); }; }
+        else { a.href = LINKS[k]; a.target = '_blank'; a.rel = 'noopener'; a.onclick = null; }
+      });
+    }
+    // 지도 위 번호
+    PLACES.forEach((p, i) => {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'mk'; b.dataset.i = i;
+      const [x, y] = A[p.id];
+      b.style.left = (x / 1200 * 100) + '%'; b.style.top = (y / 900 * 100) + '%';
+      b.innerHTML = `<span class="n">${i + 1}</span><span class="tx"><span class="pl">${p.name}</span><small></small></span>`;
+      b.setAttribute('aria-label', `${i + 1}번 ${p.name} ${p.thing} 조사하기`);
+      b.onclick = () => open(i);
+      map.appendChild(b);
+    });
+    // 기록표
+    function sheet() {
+      const done = PLACES.filter((p) => ST[p.id] && ST[p.id].feat).length;
+      $('#cnt').textContent = done + ' / ' + PLACES.length;
+      $('#prog i').style.width = (done / PLACES.length * 100) + '%';
+      $('#sheet').innerHTML = KINDS.map((k) => `<div class="col"><b>${k.name}</b>${PLACES.filter((p) => p.kind === k.id && ST[p.id] && ST[p.id].feat).map((p) => `<span>${p.name === '안경점' || p.name === '학교 교실' || p.name === '학교 과학실' ? p.thing : p.name}</span>`).join('')}</div>`).join('');
+      $$('.mk').forEach((m) => { const p = PLACES[+m.dataset.i], s = ST[p.id]; m.classList.toggle('done', !!(s && s.feat)); m.querySelector('small').textContent = s && s.feat ? KINDS.find((k) => k.id === p.kind).name : ''; });
+      if (done === PLACES.length) {
+        const db = $('#doneBox'); db.hidden = false;
+        db.innerHTML = '<b>조사를 모두 마쳤어요.</b> 같은 종류의 거울과 렌즈는 같은 특징을 이용해요. 평면거울은 모습을 그대로 비추고, 볼록 거울은 넓은 범위를 볼 때, 오목 거울은 가까이 있는 물체를 확대하거나 빛을 모을 때 이용해요. 렌즈도 안경, 프로젝터, 현미경 등 여러 곳에 이용돼요.<br><a data-link="lab" href="#">첨단기술 실험실로</a><a data-link="summary" href="#">정리·포스터 만들기</a>';
+        bindLinks(db);
+      }
+    }
+    // 그림
+    function show() {
+      const p = PLACES[cur];
+      if (rv) { rv.stop(); rv = null; }
+      if (p.view.ray) { rv = RAYV.start(cv, p.view.ray, toolOn && p.tool ? { [p.tool.key]: true } : {}); return; }
+      let o = Object.assign({}, p.view);
+      if (toolOn && p.tool && p.tool.key === 'concave') { o.mode = 'concave-far'; o.blur = 2; }
+      if (toolOn && p.tool && p.tool.key === 'flat') { o.mode = 'flat'; }
+      LP.render(cv, o);
+    }
+    function tool() {
+      const p = PLACES[cur], t = $('#vTool'); t.innerHTML = '';
+      if (!p.tool) return;
+      const b = document.createElement('button'); b.type = 'button'; b.textContent = p.tool.label; b.setAttribute('aria-pressed', String(toolOn));
+      b.onclick = () => {
+        toolOn = !toolOn; b.setAttribute('aria-pressed', String(toolOn)); show();
+        if (p.tool.key === 'concave') $('#vCap').innerHTML = toolOn ? '오목 거울로 바꾸면 멀리 있는 가게 안이 <b>거꾸로 선 작은 상</b>으로 흐릿하게 보여요. 가게를 살피기 어려워요.' : p.cap;
+        else if (p.tool.key === 'flat') $('#vCap').innerHTML = toolOn ? '평면거울로 바꾸면 보이는 범위가 좁아져 담장 너머의 차가 <b>보이지 않아요</b>.' : p.cap;
+        else if (p.tool.key === 'noMirror') $('#vCap').innerHTML = toolOn ? '거울을 떼면 뒤쪽과 옆쪽으로 나간 빛이 <b>흩어져서</b> 앞을 멀리 밝히지 못해요.' : p.cap;
+      };
+      t.appendChild(b);
+    }
+    function open(i) {
+      cur = i; toolOn = false;
+      const p = PLACES[i], s = ST[p.id] || (ST[p.id] = {});
+      $('#intro').hidden = true; $('#work').hidden = false;
+      $$('.mk').forEach((m) => m.classList.toggle('on', +m.dataset.i === i));
+      $('#pNo').textContent = i + 1; $('#pTitle').textContent = p.name + ' · ' + p.thing; $('#pPlace').textContent = '해 보기 1 · 장소 ' + (i + 1) + ' / ' + PLACES.length;
+      $('#pAsk').textContent = p.ask; $('#vLab').textContent = p.vlab; $('#vCap').innerHTML = p.cap;
+      tool(); show();
+      // ① 종류
+      const kb = $('#kinds'); kb.innerHTML = '';
+      KINDS.forEach((k) => {
+        const b = document.createElement('button'); b.type = 'button'; b.className = 'kb'; b.innerHTML = KICON[k.id] + `<span>${k.name}</span>`;
+        if (s.kind) { b.disabled = true; if (k.id === p.kind) b.classList.add('right'); }
+        b.onclick = () => {
+          if (k.id === p.kind) { s.kind = true; $$('.kb', kb).forEach((x) => { x.disabled = true; }); b.classList.add('right'); fb(true, '맞아요.', `${k.name}예요. 이제 어떤 특징을 이용했는지 골라요.`); step2(); }
+          else { b.classList.add('wrong'); fb(false, '다시 생각해 봐요.', p.hint); }
+        };
+        kb.appendChild(b);
+      });
+      // ② 특징
+      featOrder = p.feats.map((f, n) => n); for (let n = featOrder.length - 1; n > 0; n--) { const j = (n * 7 + i * 3) % (n + 1); [featOrder[n], featOrder[j]] = [featOrder[j], featOrder[n]]; }
+      $('#step2').hidden = !s.kind; $('#fb').hidden = true; $('#tech').hidden = true; $('#next').hidden = true;
+      if (s.kind) step2();
+      if (s.feat) finish(false);
+      if (window.innerWidth < 900 || matchMedia('(orientation:portrait)').matches) $('#panel').scrollIntoView({ behavior: SM.reduce ? 'auto' : 'smooth', block: 'start' });
+    }
+    function fb(ok, t, m) { const b = $('#fb'); b.hidden = false; b.className = 'fbk ' + (ok ? 'ok' : 'no'); $('#fbT').textContent = t; $('#fbM').innerHTML = m; }
+    function step2() {
+      const p = PLACES[cur], s = ST[p.id], box = $('#feats'); $('#step2').hidden = false; box.innerHTML = '';
+      featOrder.forEach((n, j) => {
+        const b = document.createElement('button'); b.type = 'button'; b.className = 'opt'; b.innerHTML = `<span class="k">${j + 1}</span><span>${p.feats[n]}</span>`;
+        if (s.feat) { b.disabled = true; if (n === 0) b.classList.add('right'); }
+        b.onclick = () => {
+          if (n === 0) { s.feat = true; $$('.opt', box).forEach((x) => { x.disabled = true; }); b.classList.add('right'); finish(true); }
+          else { b.classList.add('wrong'); fb(false, '다시 골라 봐요.', '그림에서 거울이나 렌즈가 하는 일을 다시 살펴봐요.'); }
+        };
+        box.appendChild(b);
+      });
+    }
+    function finish(fresh) {
+      const p = PLACES[cur];
+      fb(true, fresh ? '조사 완료!' : '조사한 장소예요.', p.exp);
+      $('#tech').hidden = false; $('#techT').textContent = p.tech[0]; $('#techD').innerHTML = p.tech[1]; $('#techS').textContent = p.tech[2];
+      bindLinks($('#tech'));
+      const nx = PLACES.findIndex((q, k) => k > cur && !(ST[q.id] && ST[q.id].feat)), nx2 = nx >= 0 ? nx : PLACES.findIndex((q) => !(ST[q.id] && ST[q.id].feat));
+      const nb = $('#next'); nb.hidden = nx2 < 0; if (nx2 >= 0) { nb.textContent = `다음 장소: ${nx2 + 1}. ${PLACES[nx2].name}`; nb.onclick = () => open(nx2); }
+      sheet();
+    }
+    $('#go1').onclick = () => open(0);
+    sheet();
+    // 검사용 주소: ?p=장소id, &solve=1 (그 장소 풀기), ?all=1 (모두 풀기), &tool=1
+    if (Q.get('all') === '1') PLACES.forEach((p) => { ST[p.id] = { kind: true, feat: true }; });
+    if (Q.get('p')) {
+      const i = PLACES.findIndex((p) => p.id === Q.get('p'));
+      if (i >= 0) { if (Q.get('solve') === '1') ST[PLACES[i].id] = { kind: true, feat: true }; open(i); if (Q.get('tool') === '1') { const b = $('#vTool button'); if (b) b.click(); } }
+    }
+    sheet();
+    window.SM.okUI = true;
+  } catch (e) { window.SM_err('거울·렌즈 마을', e); }
+})();
+</script>
+</body>
+</html>
