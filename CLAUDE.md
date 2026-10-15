@@ -31,6 +31,7 @@
 | `mirror-lens` | 중2 Ⅲ 다양한 거울과 렌즈에 의한 상 (F 모양 물체 거울·렌즈 관찰대 2D, 나란한 빛 보내기, 관찰 기록지) | lesson-kit | `중2_빛과파동_다양한거울과렌즈에의한상.md` |
 | `mirror-lens-use` | 중2 Ⅲ 우리 주변의 거울과 렌즈 (거울·렌즈 마을 10곳 조사, 유튜브 멈춤 퀴즈 5편, 첨단기술 실험실: 제임스 웹 거울·반도체 장비 렌즈와 거울·태양로, 포스터 만들기) | lesson-kit | `중2_빛과파동_우리주변의거울과렌즈.md` (확장 근거: `docs/reports/거울과 렌즈 첨단기술 리서치.md`) |
 | `light-color` | 중2 Ⅲ 물체의 색과 빛의 합성 (05·06 묶음: 조명 실험실 2D 예측·빛의 경로, 빛의 삼원색 겹치기·화소 켜기, 화면 확대경 기록) | lesson-kit | `중2_빛과파동_물체의색_빛의합성.md` |
+| `wave` | 중2 Ⅲ 파동의 발생과 전달 (물결파 수조 2D: 탁구공 제자리 진동·마루 따라가기·차례 사진 4장, 파동 실험실: 요소 찾기·진동수↔주기 연결 슬라이더와 2초 높이 기록·똑같은 파동 만들기) | lesson-kit | `중2_빛과파동_파동의발생과전달.md` |
 | `ohm` | 중2 Ⅶ 옴의 법칙 | 직접 작성 | `중2_전기와자기_옴의법칙.md` |
 | `series-parallel` | 중2 Ⅶ 저항의 연결 | 직접 작성 | `중2_전기와자기_저항의연결.md` |
 | `electric-energy` | 중2 Ⅶ 소비 전력과 전력량 | 직접 작성 | `중2_전기와자기_전기에너지와소비전력.md` |
@@ -51,7 +52,7 @@
 - 지진·화산 지도(Ⅱ 지권의 운동): `tools/lesson-kit/src/quake-volcano/_map.js`(WMAP: 실제 지진·화산·판의 경계 캔버스 지도, 재생·확대·판 강조·띠 칠하기, USGS 실시간 자료), `_bound2d.js`(BND: 교과서 그림 Ⅱ-16 형식 덩어리 그림, 부딪침·갈라짐·어긋남). 자료는 `lessons/quake-volcano/data/`(만드는 법 `_data_prep.py`). 다음 지권의 운동 수업도 재사용한다.
 - 3D 로딩: 보기만 하는 3D 그림은 영상(`C3.video`), 나머지는 `C3.lazy` + `C3.prepare`(멈추지 않는 셰이더 준비)와 미리 찍은 사진을 쓴다. 사진·영상은 `tools/lesson-kit/bake.py`로 만든다 (2026-10-12, 로딩이 길다는 선생님 의견으로 도입. 자세한 것은 `tools/lesson-kit/README.md`).
 - "직접 작성"인 수업은 `tools/lesson-kit/src/`에 원본이 없어 `lessons/<이름>/*.html`을 바로 고친다. lesson-kit 수업은 `src/`를 고치고 다시 빌드한다.
-- 빛 그림(Ⅲ 빛과 파동): `tools/lesson-kit/src/light-path/_optics.js`(OP: 레이저 광선·각도기·슬릿 레이저·빛 알갱이·눈·HTML 이름표), `_art.js`(OPA: 전등·태양·공·책·통·반사판·화분·촬영기 일러스트). 평면거울 작도 장면은 `src/plane-mirror/_mirror.js`(MR: 방·세운 거울·꽃 화분, 단계별 작도 render(0~7)). 볼록·오목 거울과 렌즈는 `src/mirror-lens/_ml.js`(ML: F 모양 물체, 받침대의 둥근 거울·렌즈 속 상, 옆 배치도, 기구 단면 그림)와 `_rays.js`(ML.rays: 나란한 빛의 반사·굴절 실제 계산). 다음 Ⅲ 수업도 재사용한다. 거울·렌즈로 본 모습(캔버스 왜곡)은 `src/mirror-lens-use/_loupe.js`(LP), 비스듬히 내려다본 마을 그림은 `_town.js`(TOWN), 다섯 종류 아이콘은 `_kinds.js`(KINDS·KICON).
+- 빛 그림(Ⅲ 빛과 파동): `tools/lesson-kit/src/light-path/_optics.js`(OP: 레이저 광선·각도기·슬릿 레이저·빛 알갱이·눈·HTML 이름표), `_art.js`(OPA: 전등·태양·공·책·통·반사판·화분·촬영기 일러스트). 평면거울 작도 장면은 `src/plane-mirror/_mirror.js`(MR: 방·세운 거울·꽃 화분, 단계별 작도 render(0~7)). 볼록·오목 거울과 렌즈는 `src/mirror-lens/_ml.js`(ML: F 모양 물체, 받침대의 둥근 거울·렌즈 속 상, 옆 배치도, 기구 단면 그림)와 `_rays.js`(ML.rays: 나란한 빛의 반사·굴절 실제 계산). 다음 Ⅲ 수업도 재사용한다. 파동 그림(Ⅲ-2 파동)은 `src/wave/_wave.js`(WV: 옆에서 본 물결파 수조 tank, 모눈 파동 graph(마루·골·파장·진폭 표시, 목표 파동), 매질 한 점 높이 기록 timeline, 차례 사진 strip, 위에서 본 물결 ripple). 다음 파동 수업(소리 등)도 재사용한다. 거울·렌즈로 본 모습(캔버스 왜곡)은 `src/mirror-lens-use/_loupe.js`(LP), 비스듬히 내려다본 마을 그림은 `_town.js`(TOWN), 다섯 종류 아이콘은 `_kinds.js`(KINDS·KICON).
 - 별 그림: Ⅷ 단원은 캔버스로 빛 번짐 별을 그린다(`parallax` sim2의 `window.SKY`, `star-brightness`의 `_glow.js` `window.GLOW`). 실제 하늘 지도는 d3-celestial(BSD-3)을 `lessons/star-brightness/sky/`에 복사해 쓴다(별 목록은 `stars6.json`·`stars8.json`으로 줄임, 라이선스 `sky/LICENSE.txt`). 다음 Ⅷ 수업도 이 폴더를 재사용한다. 별의 밝기 차시까지는 별을 흰색으로 그리고, `star-color`부터는 `_color.js`의 `window.SC`로 색을 칠한다(별 목록 `sky/data/stars6c.json`에 색 정보 포함, 교과서 색 띠 별은 교과서 색).
 
 ## 최우선 규칙: 교육과정 범위

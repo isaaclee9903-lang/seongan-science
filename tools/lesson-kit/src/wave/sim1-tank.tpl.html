@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>파동의 발생과 전달 – 물결파 수조</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+/*@@LOCAL:_css_wv.css@@*/
+/*@@LOCAL:_css_sim.css@@*/
+  /* ===== 이 페이지 전용 ===== */
+  #tank{aspect-ratio:1000/600}
+  .choice{display:grid;gap:6px}
+  .choice button{min-height:50px;border-radius:14px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15px;cursor:pointer;text-align:left;padding:6px 14px;display:flex;align-items:center;gap:10px;word-break:keep-all;line-height:1.4}
+  .choice button svg{flex:none}
+  .choice button[aria-pressed="true"]{border-color:var(--fab);background:#e9f3fd;color:#0b3f73}
+  .choice button.good{border-color:var(--ok);background:#e8f7ef;color:#11703f}
+  .choice button.bad{border-color:#e7a29b;background:#fff4f2;color:#9b3a32}
+  .runrow{display:flex;gap:8px;margin-top:10px}
+  .runrow .btn{flex:1}
+  .meas{display:grid;gap:8px;margin-top:8px}
+  .meas div{display:grid;grid-template-columns:118px 1fr 58px;gap:8px;align-items:center;font-size:13.5px;font-weight:800;color:var(--ink2);word-break:keep-all;line-height:1.3}
+  .meas .tr{height:12px;border-radius:99px;background:#e6edf4;overflow:hidden}
+  .meas .tr i{display:block;height:100%;width:0;border-radius:99px;transition:width .2s linear}
+  .meas .v{text-align:right;font-variant-numeric:tabular-nums}
+  #strip{height:min(400px,46vh);border-radius:14px;overflow:hidden;border:1px solid var(--line)}
+  .slegend{display:flex;flex-wrap:wrap;gap:6px 14px;margin:8px 0 0;font-size:13.5px;font-weight:800;color:var(--ink2)}
+  .slegend span{display:inline-flex;align-items:center;gap:6px}
+  .slegend i{display:inline-block}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="ttl">
+      <span class="eyebrow">시뮬레이션 ①</span><h1>물결파 수조</h1>
+      <p class="sub">막대로 수면을 두드려 물결을 만들고, 물결과 탁구공의 움직임을 비교해요.</p>
+    </div>
+  </header>
+
+  <div class="stage">
+    <section class="card viewer">
+      <div class="scene grow" id="tank" role="img" aria-label="옆에서 본 사각 수조. 왼쪽의 막대가 수면을 두드리면 물결이 오른쪽으로 퍼져 나가고, 수면 위 탁구공은 제자리에서 위아래로 움직인다."></div>
+      <div class="vctl" id="vc">
+        <button class="vb" type="button" id="bOnce">한 번 두드리기</button>
+        <button class="vb" type="button" id="bCont" aria-pressed="false">계속 두드리기</button>
+        <span class="sp"></span>
+        <button class="vb" type="button" id="bDots" aria-pressed="false"><span class="dot" style="background:#fff;box-shadow:inset 0 0 0 2px #1d5d8a"></span>물 알갱이</button>
+        <button class="vb" type="button" id="bCrest" aria-pressed="false"><span class="dot" style="background:#0e63b3"></span>마루 따라가기</button>
+        <button class="vb" type="button" id="bSlow" aria-pressed="false">느리게</button>
+        <button class="vb" type="button" id="bReset">처음부터</button>
+      </div>
+    </section>
+
+    <section class="card pad">
+      <div class="ptabs" role="tablist" id="pt">
+        <button type="button" role="tab" data-p="lab" aria-selected="true">실험하기</button>
+        <button type="button" role="tab" data-p="photo" aria-selected="false">사진 4장</button>
+        <button type="button" role="tab" data-p="why" aria-selected="false">왜 그럴까?</button>
+      </div>
+
+      <div class="pane" data-p="lab">
+        <div class="lbl">① 예측하기 · 막대로 수면을 계속 두드리면 탁구공은?</div>
+        <div class="choice" id="pred">
+          <button type="button" data-v="push" aria-pressed="false"><svg width="34" height="22" viewBox="0 0 34 22"><circle cx="9" cy="11" r="6" fill="#f08a24"/><path d="M18 11h12m-4-4 4 4-4 4" stroke="#34495e" stroke-width="2.4" fill="none" stroke-linecap="round"/></svg>물결을 따라 오른쪽으로 밀려간다</button>
+          <button type="button" data-v="stay" aria-pressed="false"><svg width="34" height="22" viewBox="0 0 34 22"><circle cx="17" cy="11" r="6" fill="#f08a24"/><path d="M27 4v14m-3-11 3-3 3 3m-6 8 3 3 3-3" stroke="#34495e" stroke-width="2.2" fill="none" stroke-linecap="round"/></svg>제자리에서 위아래로 움직인다</button>
+          <button type="button" data-v="back" aria-pressed="false"><svg width="34" height="22" viewBox="0 0 34 22"><circle cx="25" cy="11" r="6" fill="#f08a24"/><path d="M16 11H4m4-4-4 4 4 4" stroke="#34495e" stroke-width="2.4" fill="none" stroke-linecap="round"/></svg>막대 쪽으로 다가온다</button>
+        </div>
+        <div class="runrow"><button class="btn primary" type="button" id="go" disabled>② 막대로 계속 두드리기</button></div>
+        <div class="fbk" id="res"><b class="t" id="resT">③ 결과</b><span id="resM">예측을 고른 뒤 두드려 보세요. 탁구공과 물결(마루)이 옆으로 이동한 거리를 재요.</span>
+          <div class="meas">
+            <div><span>마루가 옆으로 이동한 거리</span><span class="tr"><i id="mC" style="background:#0e63b3"></i></span><span class="v" id="vC">-</span></div>
+            <div><span>탁구공이 옆으로 이동한 거리</span><span class="tr"><i id="mB" style="background:#f08a24"></i></span><span class="v" id="vB">-</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pane" data-p="photo" hidden>
+        <p class="what">물결이 퍼져 나갈 때 <b>같은 시간 간격</b>으로 사진을 찍었다고 생각해 봐요. (교과서 그림 Ⅲ-12)</p>
+        <div class="scene" id="strip" role="img" aria-label="차례로 찍은 물결 사진 4장. 파란 표시(마루)는 아래로 갈수록 오른쪽으로 이동하고, 주황색 점은 같은 자리에서 위아래로만 움직인다."></div>
+        <div class="slegend"><span><i style="width:12px;height:12px;border-radius:50%;background:#f08a24"></i>매질의 한 점</span><span><i style="width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-top:12px solid #0e63b3"></i>마루</span><span><i style="width:22px;border-top:2px dashed #14263b"></i>마루가 이동한 길</span></div>
+        <p class="mnote">①→④로 가는 동안 마루는 오른쪽으로 이동하지만, 주황색 점은 옆으로 가지 않고 위아래로만 진동해요.</p>
+      </div>
+
+      <div class="pane" data-p="why" hidden>
+        <div class="phase">
+          <div class="ph on"><i>1</i><span>막대가 수면을 두드리면 막대 옆의 물이 <b>진동</b>해요.</span></div>
+          <div class="ph on"><i>2</i><span>진동하는 물이 이웃한 물을 움직이고, 이웃한 물이 또 그 옆의 물을 움직여요. 진동이 <b>차례로</b> 옆으로 전해져요.</span></div>
+          <div class="ph on"><i>3</i><span>각각의 물은 <b>제자리에서 위아래로</b> 진동할 뿐 옆으로 이동하지 않아요. 그래서 수면에 뜬 탁구공도 제자리에서 진동만 해요.</span></div>
+          <div class="ph on"><i>4</i><span>한곳에서 만들어진 진동이 주위로 퍼져 나가는 것을 <b>파동</b>, 물과 같이 파동을 전달하는 물질을 <b>매질</b>이라고 해요.</span></div>
+        </div>
+        <p class="mnote">'물 알갱이'를 켜면 물의 여러 부분이 각자 자기 자리에서 위아래로 움직이는 모습을 볼 수 있어요.</p>
+      </div>
+      <p class="mnote">물이 위아래로만 진동하도록 그린 개념 이해를 위한 모형이에요. 수조 벽에서 물결이 되돌아오는 것은 그리지 않았어요.</p>
+    </section>
+  </div>
+</div>
+<script>
+window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
+  reduce: !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches), Q: new URLSearchParams(location.search) };
+</script>
+<script>
+/*@@LOCAL:_wave.js@@*/
+</script>
+<script>
+/* ===== 블록 1: 수조와 조작 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S, Q = S.Q;
+    const T = WV.tank($('#tank'));
+    window.TANK = T;
+    const press = (b, v) => b.setAttribute('aria-pressed', String(v));
+    function syncCont() { const on = T.tapping(); press($('#bCont'), on); $('#bCont').textContent = on ? '그만 두드리기' : '계속 두드리기'; }
+    $('#bOnce').addEventListener('click', () => { T.tapOnce(); syncCont(); });
+    $('#bCont').addEventListener('click', () => { T.tapping() ? T.tapStop() : T.tapStart(); syncCont(); });
+    $('#bDots').addEventListener('click', () => { const v = !T.st.dots; T.set({ dots: v }); press($('#bDots'), v); });
+    $('#bCrest').addEventListener('click', () => { const v = !T.st.crest; T.set({ crest: v }); press($('#bCrest'), v); });
+    $('#bSlow').addEventListener('click', () => { const v = T.st.speed === 1; T.set({ speed: v ? 0.35 : 1 }); press($('#bSlow'), v); });
+    $('#bReset').addEventListener('click', () => { T.reset(); syncCont(); window.dispatchEvent(new Event('tank-reset')); });
+    T.syncCont = syncCont;
+    if (Q.get('dots') === '1') { T.set({ dots: true }); press($('#bDots'), true); }
+    window.SM.okUI = true;
+  } catch (err) { window.SM_err('수조와 조작', err); }
+})();
+</script>
+<script>
+/* ===== 블록 2: 예측 → 실행 → 결과 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S, Q = S.Q, T = window.TANK;
+    let pred = null, running = false, shown = false;
+    const NAME = { push: '오른쪽으로 밀려간다', stay: '제자리에서 위아래로 움직인다', back: '막대 쪽으로 다가온다' };
+    $$('#pred button').forEach((b) => b.addEventListener('click', () => {
+      if (running) return;
+      pred = b.dataset.v; $$('#pred button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); $('#go').disabled = false;
+    }));
+    function go() {
+      T.reset(); T.set({ crest: true }); $('#bCrest').setAttribute('aria-pressed', 'true');
+      T.tapStart(); T.syncCont(); running = true; shown = false; $('#go').disabled = true; $('#go').textContent = '두드리는 중…';
+      $('#res').className = 'fbk'; $('#resT').textContent = '③ 결과'; $('#resM').textContent = '물결이 탁구공에 닿을 때까지 지켜보세요.';
+    }
+    $('#go').addEventListener('click', go);
+    window.addEventListener('tank-reset', () => { running = false; $('#go').disabled = !pred; $('#go').textContent = '② 막대로 계속 두드리기'; });
+    const TW = 798; // 수조 너비(그림 좌표)
+    T.onFrame((o) => {
+      if (!running) return;
+      const cm = Math.max(0, o.crestTravel);
+      $('#mC').style.width = Math.min(100, cm / TW * 100) + '%'; $('#vC').textContent = cm > 1 ? (cm / TW * 30).toFixed(0) + ' cm' : '0 cm';
+      $('#mB').style.width = '0%'; $('#vB').textContent = '0 cm';
+      if (!o.ball.arrived) return;
+      if (!shown) $('#resM').textContent = `탁구공에 물결이 닿았어요. 탁구공이 ${Math.max(0, o.ball.n)}번 진동했어요.`;
+      if (o.ball.n >= 3 && !shown) {
+        shown = true; running = false; $('#go').disabled = false; $('#go').textContent = '다시 해 보기';
+        const ok = pred === 'stay';
+        $$('#pred button').forEach((x) => x.classList.toggle('good', x.dataset.v === 'stay'));
+        $$('#pred button').forEach((x) => x.classList.toggle('bad', x.dataset.v === pred && !ok));
+        $('#res').className = 'fbk ' + (ok ? 'ok' : 'no'); $('#resT').textContent = ok ? '③ 결과 · 예측과 같아요' : '③ 결과 · 예측과 달라요';
+        $('#resM').innerHTML = `물결(마루)은 오른쪽으로 퍼져 나갔지만, 탁구공은 옆으로 이동하지 않고 <b>제자리에서 위아래로 진동</b>만 했어요.` + (ok ? '' : ` (내 예측: ${NAME[pred]})`) + '<br><b>정리</b> 물과 같이 파동을 전달하는 물질을 <b>매질</b>이라고 해요. 매질은 제자리에서 진동만 하고 파동을 따라 이동하지 않아요.';
+      }
+    });
+    if (Q.get('pred')) { const b = $(`#pred [data-v="${Q.get('pred')}"]`); if (b) b.click(); }
+    if (Q.get('ff')) { go(); T.st.t = +Q.get('ff'); }
+  } catch (err) { window.SM_err('예측과 결과', err); }
+})();
+</script>
+<script>
+/* ===== 블록 3: 칸 탭 · 사진 4장 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S;
+    let made = false;
+    function show(p) {
+      $$('#pt button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.p === p)));
+      $$('.pane').forEach((e) => (e.hidden = e.dataset.p !== p));
+      if (p === 'photo' && !made) { made = true; WV.strip($('#strip')); }
+    }
+    $$('#pt button').forEach((b) => b.addEventListener('click', () => show(b.dataset.p)));
+    show(['lab', 'photo', 'why'].includes(S.Q.get('tab')) ? S.Q.get('tab') : 'lab');
+  } catch (err) { window.SM_err('칸 탭', err); }
+})();
+</script>
+</body>
+</html>

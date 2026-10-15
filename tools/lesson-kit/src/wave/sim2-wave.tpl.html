@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>파동의 발생과 전달 – 파동 실험실</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+/*@@LOCAL:_css_wv.css@@*/
+/*@@LOCAL:_css_sim.css@@*/
+  /* ===== 이 페이지 전용 ===== */
+  #g{aspect-ratio:1000/440}
+  #tl{aspect-ratio:1000/190;border-top:1px solid var(--line)}
+  .tlh{display:flex;align-items:center;gap:8px;padding:8px 12px 0;font-size:13.5px;font-weight:800;color:var(--ink2);background:#fbfdff;border-top:1px solid var(--line)}
+  .tlh i{width:12px;height:12px;border-radius:50%;background:#f08a24}
+  .tlh + #tl{border-top:0}
+  .act[hidden]{display:none!important}
+  /* 슬라이더 */
+  .sl{border-radius:16px;background:#f7fafc;border:1px solid var(--line);padding:10px 14px 6px;margin-bottom:8px}
+  .sl.ok{background:#eaf7f0;border-color:#bfe3cf}
+  .slh{display:flex;align-items:baseline;gap:8px;font-size:15px;font-weight:900;color:var(--ink)}
+  .slh small{font-size:12.5px;font-weight:700;color:var(--muted)}
+  .slh output{margin-left:auto;font-size:19px;font-weight:900;color:var(--fab);font-variant-numeric:tabular-nums}
+  .sl.ok .slh output{color:#11703f}
+  .sl input{width:100%;height:44px;margin:0;-webkit-appearance:none;appearance:none;background:transparent}
+  .sl input::-webkit-slider-runnable-track{height:8px;border-radius:99px;background:#dbe4ed}
+  .sl input::-webkit-slider-thumb{-webkit-appearance:none;width:34px;height:34px;border-radius:50%;background:#fff;border:3px solid var(--fab);margin-top:-13px;box-shadow:0 2px 6px rgba(20,38,59,.2)}
+  .sl input::-moz-range-thumb{width:30px;height:30px;border-radius:50%;background:#fff;border:3px solid var(--fab)}
+  .sl.lk input::-webkit-slider-thumb{border-color:#f08a24}
+  .ticks{display:flex;justify-content:space-between;font-size:12.5px;font-weight:800;color:var(--muted);padding:0 6px;margin-top:-4px}
+  .ticks span{width:34px;text-align:center}
+  .link{display:flex;align-items:center;justify-content:center;gap:8px;margin:-2px 0 6px;font-size:13px;font-weight:800;color:#8a4a10}
+  .eq{border-radius:16px;padding:10px 14px;background:#fff7ee;border:1px solid #f6d7b5;color:#5b3200;font-size:15px;line-height:1.6;word-break:keep-all}
+  .eq .big{display:block;font-size:20px;font-weight:900;letter-spacing:-.01em;color:#3d2200}
+  .eq .big span{color:#c15f0c}
+  .runrow{display:flex;gap:8px;margin-top:8px}
+  .runrow .btn{flex:1}
+  .tasks{display:grid;gap:5px;margin-bottom:8px}
+  .task{display:grid;grid-template-columns:26px 1fr auto;gap:8px;align-items:center;padding:7px 10px;border-radius:12px;background:#f7fafc;border:1px solid var(--line);font-size:14.5px;font-weight:700;color:var(--muted);word-break:keep-all}
+  .task i{font-style:normal;width:24px;height:24px;border-radius:8px;background:#dfe6ee;display:grid;place-items:center;font-weight:900;font-size:12.5px;color:#607285}
+  .task.now{background:#e9f3fd;border-color:#bcd7f2;color:var(--ink)}.task.now i{background:var(--fab);color:#fff}
+  .task.done{color:var(--ink2)}.task.done i{background:#1f9d5c;color:#fff}
+  .task b{font-size:13.5px;color:#11703f}
+  .ask{border-radius:16px;padding:12px;background:#fff;border:2px solid #bcd7f2}
+  .ask p{margin:0 0 8px;font-size:16px;font-weight:800;line-height:1.5;word-break:keep-all}
+  .b3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+  .b3 button{min-height:50px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15.5px;cursor:pointer}
+  .b3 button.bad{border-color:#e7a29b;background:#fff4f2;color:#9b3a32}
+  .b3 button.good{border-color:var(--ok);background:#e8f7ef;color:#11703f}
+  .lvl{display:flex;gap:6px;margin-bottom:8px}
+  .lvl span{flex:1;height:8px;border-radius:99px;background:#e2e9f0}
+  .lvl span.done{background:#1f9d5c}.lvl span.now{background:var(--fab)}
+  .tgt{display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:800;color:var(--muted);margin:0 0 8px;word-break:keep-all}
+  .tgt i{width:28px;border-top:4px dashed #5b6f84}
+  .tap-hint{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);z-index:3;font-size:13.5px;font-weight:800;color:#fff;background:rgba(14,99,179,.92);border-radius:10px;padding:6px 12px;pointer-events:none;white-space:nowrap}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="ttl">
+      <span class="eyebrow">시뮬레이션 ②</span><h1>파동 실험실</h1>
+      <p class="sub" id="sub"></p>
+    </div>
+    <div class="ptabs big" role="tablist" id="acts" style="margin:0">
+      <button type="button" role="tab" data-a="el" aria-selected="true">① 파동의 요소</button>
+      <button type="button" role="tab" data-a="ft" aria-selected="false">② 진동수와 주기</button>
+      <button type="button" role="tab" data-a="mk" aria-selected="false">③ 똑같이 만들기</button>
+    </div>
+  </header>
+
+  <div class="stage">
+    <section class="card viewer">
+      <div class="scene grow" id="g" role="img" aria-label="모눈 위에 그린 파동. 마루와 골이 번갈아 나타나며 오른쪽으로 진행한다. 주황색 점은 제자리에서 위아래로 진동한다."><span class="tap-hint" id="tapHint" hidden>그림을 눌러요</span></div>
+      <div class="act" data-a="ft"><div class="tlh"><i></i>주황색 점의 높이 기록 · 0초부터 2초까지</div><div class="scene" id="tl" role="img" aria-label="주황색 점의 높이를 시간에 따라 기록한 선. 마루에서 다음 마루까지가 한 번의 진동이다."></div></div>
+      <div class="vctl">
+        <button class="vb" type="button" id="bRun" aria-pressed="false">움직이기</button>
+        <button class="vb" type="button" id="bSlow" aria-pressed="false">느리게</button>
+        <span class="sp"></span>
+        <button class="vb" type="button" id="bBeads" aria-pressed="true"><span class="dot" style="background:#fff;box-shadow:inset 0 0 0 2px #0e63b3"></span>매질의 점</button>
+      </div>
+    </section>
+
+    <!-- ① 파동의 요소 -->
+    <section class="card pad act" data-a="el">
+      <div class="tasks" id="elTasks"></div>
+      <div class="ask" id="elAsk"></div>
+      <div class="fbk" id="elFb" hidden></div>
+      <p class="mnote">모눈 한 칸의 크기는 모두 같아요. 파장과 진폭은 칸 수로 세어요.</p>
+    </section>
+
+    <!-- ② 진동수와 주기 -->
+    <section class="card pad act" data-a="ft" hidden>
+      <div class="sl lk" id="sF"><div class="slh">진동수 <small>1초 동안 진동하는 횟수</small><output id="oF"></output></div>
+        <input type="range" min="0" max="3" step="1" value="1" id="inF" aria-label="진동수"><div class="ticks"><span>0.5</span><span>1</span><span>2</span><span>4</span></div></div>
+      <div class="link"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c15f0c" stroke-width="2.4" stroke-linecap="round"><path d="M7 7h11l-3-3M17 17H6l3 3"/></svg>하나를 바꾸면 다른 하나도 함께 바뀌어요</div>
+      <div class="sl lk" id="sT"><div class="slh">주기 <small>한 번 진동하는 데 걸린 시간</small><output id="oT"></output></div>
+        <input type="range" min="0" max="3" step="1" value="2" id="inT" aria-label="주기"><div class="ticks"><span>0.25</span><span>0.5</span><span>1</span><span>2</span></div></div>
+      <div class="eq" id="eq"></div>
+      <div class="runrow"><button class="btn primary" type="button" id="bMeasure">2초 동안 재기</button></div>
+      <div class="fbk" id="ftRes"><b class="t">재기 결과</b><span id="ftResM">'2초 동안 재기'를 누르면 주황색 점이 1초 동안 몇 번 진동하는지 세어 줘요.</span></div>
+    </section>
+
+    <!-- ③ 똑같이 만들기 -->
+    <section class="card pad act" data-a="mk" hidden>
+      <div class="lvl" id="lvl"></div>
+      <p class="tgt"><i></i><span id="tgtT">점선 파동과 똑같은 파동을 만들어 보세요.</span></p>
+      <div class="sl" id="mF"><div class="slh">진동수 <small id="mFs"></small><output id="oMF"></output></div>
+        <input type="range" min="0" max="3" step="1" value="1" id="inMF" aria-label="진동수"><div class="ticks"><span>0.5</span><span>1</span><span>2</span><span>4</span></div></div>
+      <div class="sl" id="mL"><div class="slh">파장 <small>마루에서 이웃한 마루까지</small><output id="oML"></output></div>
+        <input type="range" min="0" max="3" step="1" value="1" id="inML" aria-label="파장"><div class="ticks"><span>3칸</span><span>4칸</span><span>6칸</span><span>8칸</span></div></div>
+      <div class="sl" id="mA"><div class="slh">진폭 <small>진동 중심에서 마루까지</small><output id="oMA"></output></div>
+        <input type="range" min="0" max="2" step="1" value="1" id="inMA" aria-label="진폭"><div class="ticks"><span>1칸</span><span>2칸</span><span>3칸</span></div></div>
+      <div class="fbk" id="mkFb"><b class="t" id="mkFbT">목표 1</b><span id="mkFbM"></span></div>
+    </section>
+  </div>
+</div>
+<script>
+window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
+  reduce: !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches), Q: new URLSearchParams(location.search) };
+</script>
+<script>
+/*@@LOCAL:_wave.js@@*/
+</script>
+<script>
+/* ===== 블록 1: 그림과 공통 조작 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S;
+    const G = WV.graph($('#g'), { f: 1, lam: 6, A: 2, run: false, hi: 12, phase0: 0, xr: 110 });
+    window.G = G;
+    const press = (b, v) => b.setAttribute('aria-pressed', String(v));
+    S.syncRun = () => { press($('#bRun'), G.st.run); $('#bRun').textContent = G.st.run ? '멈추기' : '움직이기'; };
+    $('#bRun').addEventListener('click', () => { G.set({ run: !G.st.run }); S.syncRun(); window.dispatchEvent(new Event('g-run')); });
+    $('#bSlow').addEventListener('click', () => { const v = G.st.speed === 1; G.set({ speed: v ? 0.25 : 1 }); press($('#bSlow'), v); });
+    $('#bBeads').addEventListener('click', () => { const v = !G.st.beads; G.set({ beads: v }); press($('#bBeads'), v); });
+    window.SM.okUI = true;
+  } catch (err) { window.SM_err('파동 그림', err); }
+})();
+</script>
+<script>
+/* ===== 블록 2: ① 파동의 요소 찾기 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S, G = window.G;
+    const STEPS = [
+      { k: 'crest', name: '마루 찾기', ask: '매질의 위치가 <b>가장 높은 곳</b>을 그림에서 눌러 보세요.', tap: true, ok: '맞아요. 매질의 위치가 가장 높은 곳을 <b>마루</b>라고 해요.' },
+      { k: 'trough', name: '골 찾기', ask: '매질의 위치가 <b>가장 낮은 곳</b>을 그림에서 눌러 보세요.', tap: true, ok: '맞아요. 매질의 위치가 가장 낮은 곳을 <b>골</b>이라고 해요.' },
+      { k: 'lam', name: '파장 세기', ask: '마루에서 이웃한 마루까지는 모눈 몇 칸일까요?', opts: ['3칸', '6칸', '12칸'], ans: 1, ok: '맞아요. 마루에서 이웃한 마루(또는 골에서 이웃한 골)까지의 거리를 <b>파장</b>이라고 해요. 이 파동의 파장은 6칸이에요.', no: { 0: '3칸은 마루에서 바로 옆 골까지의 거리예요. 이웃한 <b>마루</b>까지 세어 보세요.', 2: '마루를 하나 건너뛰었어요. 바로 이웃한 마루까지만 세어 보세요.' } },
+      { k: 'amp', name: '진폭 세기', ask: '진동 중심(점선)에서 마루까지는 모눈 몇 칸일까요?', opts: ['1칸', '2칸', '4칸'], ans: 1, ok: '맞아요. 진동 중심에서 마루나 골까지의 거리를 <b>진폭</b>이라고 해요. 이 파동의 진폭은 2칸이에요.', no: { 0: '진동 중심(점선)에서 마루 꼭대기까지 칸을 다시 세어 보세요.', 2: '4칸은 마루에서 골까지의 거리예요. 진폭은 <b>진동 중심</b>에서 마루까지예요.' } },
+    ];
+    let i = 0;
+    const found = {};
+    function annos() {
+      const a = { mid: true };
+      if (found.crest) a.crest = true; if (found.trough) a.trough = true; if (found.lam) a.lam = true; if (found.amp) a.amp = true;
+      if (i >= STEPS.length) Object.assign(a, { dir: true, vib: true });
+      return a;
+    }
+    function render() {
+      $('#elTasks').innerHTML = STEPS.map((s, j) => `<div class="task${j === i ? ' now' : ''}${found[s.k] ? ' done' : ''}"><i>${found[s.k] ? '✓' : j + 1}</i><span>${s.name}</span>${found[s.k] ? `<b>${{ crest: '마루', trough: '골', lam: '파장 6칸', amp: '진폭 2칸' }[s.k]}</b>` : '<span></span>'}</div>`).join('');
+      const s = STEPS[i];
+      if (!s) {
+        $('#elAsk').innerHTML = `<p>모두 찾았어요. '움직이기'를 눌러 보세요.</p><p style="font-weight:600;font-size:15px;margin:0">마루와 골은 <b>오른쪽으로 이동</b>하지만, 주황색 점(매질)은 <b>제자리에서 위아래로</b> 진동만 해요. 매질의 한 점은 마루에서 골, 다시 마루가 돼요.</p>`;
+        $('#tapHint').hidden = true;
+      } else {
+        $('#elAsk').innerHTML = `<p>${s.ask}</p>` + (s.opts ? `<div class="b3">${s.opts.map((o, j) => `<button type="button" data-j="${j}">${o}</button>`).join('')}</div>` : '');
+        $('#tapHint').hidden = !s.tap; if (s.tap) { G.set({ run: false }); S.syncRun(); }
+        $$('#elAsk .b3 button').forEach((b) => b.addEventListener('click', () => {
+          const j = +b.dataset.j, ok = j === s.ans; $$('#elAsk .b3 button').forEach((x) => x.classList.remove('good', 'bad')); b.classList.add(ok ? 'good' : 'bad');
+          fb(ok, ok ? s.ok : s.no[j]); if (ok) next();
+        }));
+      }
+      G.set({ anno: annos() });
+    }
+    function fb(ok, html) { const f = $('#elFb'); f.hidden = false; f.className = 'fbk ' + (ok ? 'ok' : 'no'); f.innerHTML = html; }
+    function next() { found[STEPS[i].k] = true; i++; G.st.marks = []; render(); }
+    G.canvas.addEventListener('click', (e) => {
+      if (S.act !== 'el') return; const s = STEPS[i]; if (!s || !s.tap) return;
+      if (G.st.run) { G.set({ run: false }); S.syncRun(); }
+      const h = G.hit(e);
+      if (h.kind === s.k) { G.st.marks = [{ x: h.x, y: h.y, ok: true }]; fb(true, s.ok); next(); G.st.marks = [{ x: h.x, y: h.y, ok: true }]; }
+      else { G.st.marks = [{ x: h.x, y: h.y, ok: false }]; fb(false, h.kind ? `그곳은 ${h.kind === 'crest' ? '마루(가장 높은 곳)' : '골(가장 낮은 곳)'}이에요. 다시 찾아보세요.` : (s.k === 'crest' ? '파동 선이 가장 높이 솟은 꼭대기를 눌러 보세요.' : '파동 선이 가장 낮게 내려간 바닥을 눌러 보세요.')); }
+      G.draw();
+    });
+    window.addEventListener('g-run', () => { if (G.st.run) G.st.marks = []; });
+    S.elEnter = () => { G.set({ f: 1, lam: 6, A: 2, ghost: null, hi: 12, run: i >= STEPS.length && G.st.run }); S.syncRun(); render(); };
+    if (S.Q.get('el') === 'all') { STEPS.forEach((s) => (found[s.k] = true)); i = STEPS.length; }
+    else if (S.Q.get('el')) { const n = +S.Q.get('el'); STEPS.slice(0, n).forEach((s) => (found[s.k] = true)); i = n; }
+  } catch (err) { window.SM_err('파동의 요소', err); }
+})();
+</script>
+<script>
+/* ===== 블록 3: ② 진동수와 주기 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S, G = window.G;
+    const FS = [0.5, 1, 2, 4], TS = [0.25, 0.5, 1, 2];
+    const TL = WV.timeline($('#tl'), G);
+    const nf = (v) => String(v);
+    const times = (f) => (f === 0.5 ? '반 번(0.5번)' : `${f}번`);
+    let fi = 1;
+    function apply(src) {
+      const f = FS[fi], T = 1 / f;
+      $('#inF').value = fi; $('#inT').value = 3 - fi;
+      $('#oF').textContent = `${nf(f)} Hz`; $('#oT').textContent = `${nf(T)} 초`;
+      $('#eq').innerHTML = `<span class="big">주기 = 1 ÷ 진동수</span>1초 동안 <b>${times(f)}</b> 진동하면, 한 번 진동하는 데 <b>1 ÷ ${nf(f)} = ${nf(T)}초</b>가 걸려요.<br><b>주기 ${nf(T)} s</b> · <b>진동수 ${nf(f)} Hz</b> → 둘을 곱하면 항상 1이에요.`;
+      if (src) { G.set({ f }); TL.clear(); $('#ftRes').className = 'fbk'; $('#ftResM').innerHTML = `진동수를 ${nf(f)} Hz로 바꿨어요. '2초 동안 재기'로 확인해 보세요.`; }
+    }
+    $('#inF').addEventListener('input', () => { fi = +$('#inF').value; apply(true); });
+    $('#inT').addEventListener('input', () => { fi = 3 - +$('#inT').value; apply(true); });
+    $('#bMeasure').addEventListener('click', () => {
+      if (!G.st.run) { G.set({ run: true }); S.syncRun(); }
+      TL.start(); $('#ftRes').className = 'fbk'; $('#ftResM').textContent = '주황색 점이 마루에 오면 재기 시작해요. 2초 동안 지켜보세요.';
+    });
+    TL.onDone((k, st) => {
+      const f = st.f, T = 1 / f;
+      $('#ftRes').className = 'fbk ok';
+      $('#ftResM').innerHTML = `1초 동안 <b>${times(f)}</b> 진동했어요 → 진동수 <b>${nf(f)} Hz</b><br>마루에서 다음 마루까지(한 번 진동) <b>${nf(T)}초</b> → 주기 <b>${nf(T)} s</b>`;
+    });
+    S.ftEnter = () => { G.set({ f: FS[fi], lam: 6, A: 2, ghost: null, hi: 12, anno: { vib: true, dir: true, mid: true } }); if (!G.st.run) { G.set({ run: true }); } S.syncRun(); apply(false); };
+    if (S.Q.get('f')) { fi = FS.indexOf(+S.Q.get('f')); if (fi < 0) fi = 1; }
+    if (S.Q.get('measure') === '1') setTimeout(() => $('#bMeasure').click(), 300);
+    apply(false);
+  } catch (err) { window.SM_err('진동수와 주기', err); }
+})();
+</script>
+<script>
+/* ===== 블록 4: ③ 똑같은 파동 만들기 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S, G = window.G;
+    const FS = [0.5, 1, 2, 4], LS = [3, 4, 6, 8], AS = [1, 2, 3];
+    // 처음에는 한 가지만 다르게, 마지막은 모두 다르게
+    const LV = [
+      { f: 1, lam: 8, A: 2, hint: '점선 파동은 마루와 마루 사이가 더 멀어요. 어떤 양을 바꿔야 할까요?' },
+      { f: 1, lam: 8, A: 1, hint: '이번에는 마루의 높이가 달라요.' },
+      { f: 2, lam: 8, A: 1, hint: '모양은 같은데 움직임이 달라요. 점선 파동의 회색 점은 1초에 몇 번 진동하나요?' },
+      { f: 0.5, lam: 4, A: 3, hint: '세 가지가 모두 달라요. 하나씩 맞춰 보세요.' },
+    ];
+    let lv = 0, cur = { f: 1, lam: 4, A: 2 }, cleared = false;
+    function render() {
+      const t = LV[Math.min(lv, LV.length - 1)];
+      $('#lvl').innerHTML = LV.map((_, j) => `<span class="${j < lv ? 'done' : j === lv ? 'now' : ''}"></span>`).join('');
+      $('#inMF').value = FS.indexOf(cur.f); $('#inML').value = LS.indexOf(cur.lam); $('#inMA').value = AS.indexOf(cur.A);
+      $('#oMF').textContent = `${cur.f} Hz`; $('#mFs').textContent = `주기 ${1 / cur.f}초`;
+      $('#oML').textContent = `${cur.lam}칸`; $('#oMA').textContent = `${cur.A}칸`;
+      const okF = cur.f === t.f, okL = cur.lam === t.lam, okA = cur.A === t.A;
+      $('#mF').classList.toggle('ok', okF); $('#mL').classList.toggle('ok', okL); $('#mA').classList.toggle('ok', okA);
+      G.set({ f: cur.f, lam: cur.lam, A: cur.A, ghost: lv < LV.length ? t : null });
+      const all = okF && okL && okA;
+      const fbx = $('#mkFb');
+      if (lv >= LV.length) { fbx.className = 'fbk ok'; $('#mkFbT').textContent = '모든 목표 완료'; $('#mkFbM').innerHTML = '진동수(주기), 파장, 진폭을 모두 맞혔어요. 진동수를 바꾸면 매질이 진동하는 빠르기가, 파장을 바꾸면 마루 사이 거리가, 진폭을 바꾸면 마루의 높이가 달라져요.'; return; }
+      if (all) {
+        fbx.className = 'fbk ok'; $('#mkFbT').textContent = `목표 ${lv + 1} 성공`;
+        $('#mkFbM').innerHTML = `진동수 ${t.f} Hz(주기 ${1 / t.f}초), 파장 ${t.lam}칸, 진폭 ${t.A}칸이에요. <button class="btn primary" type="button" id="bNext" style="min-height:44px;margin-top:6px;width:100%">${lv + 1 < LV.length ? '다음 목표' : '끝내기'}</button>`;
+        $('#bNext').addEventListener('click', () => { lv++; render(); });
+      } else {
+        fbx.className = 'fbk'; $('#mkFbT').textContent = `목표 ${lv + 1}`;
+        const miss = [!okF && '진동수', !okL && '파장', !okA && '진폭'].filter(Boolean);
+        $('#mkFbM').innerHTML = `${t.hint}<br><span style="color:var(--muted)">맞춘 것은 초록색으로 바뀌어요. 아직 다른 것: ${miss.length}가지</span>`;
+      }
+    }
+    $('#inMF').addEventListener('input', () => { cur.f = FS[+$('#inMF').value]; render(); });
+    $('#inML').addEventListener('input', () => { cur.lam = LS[+$('#inML').value]; render(); });
+    $('#inMA').addEventListener('input', () => { cur.A = AS[+$('#inMA').value]; render(); });
+    S.mkEnter = () => { G.set({ hi: 12, anno: { mid: true } }); if (!G.st.run) G.set({ run: true }); S.syncRun(); render(); };
+    if (S.Q.get('lv')) lv = +S.Q.get('lv');
+    if (S.Q.get('match') === '1') cur = Object.assign({}, LV[lv]);
+  } catch (err) { window.SM_err('똑같이 만들기', err); }
+})();
+</script>
+<script>
+/* ===== 블록 0: 활동 고르기 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S;
+    const SUB = { el: '모눈 위의 파동에서 마루·골·파장·진폭을 직접 찾아봐요.', ft: '진동수와 주기를 바꾸고, 주황색 점이 1초 동안 몇 번 진동하는지 재 봐요.', mk: '진동수, 파장, 진폭을 바꿔 점선 파동과 똑같은 파동을 만들어요.' };
+    function show(a) {
+      S.act = a;
+      $$('#acts button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.a === a)));
+      $$('.act').forEach((e) => (e.hidden = e.dataset.a !== a));
+      $('#g').classList.toggle('grow', a !== 'ft');
+      $('#sub').textContent = SUB[a];
+      ({ el: S.elEnter, ft: S.ftEnter, mk: S.mkEnter })[a]();
+      if (a !== 'el') $('#tapHint').hidden = true;
+      window.dispatchEvent(new Event('resize'));
+    }
+    $$('#acts button').forEach((b) => b.addEventListener('click', () => show(b.dataset.a)));
+    show(['el', 'ft', 'mk'].includes(S.Q.get('act')) ? S.Q.get('act') : 'el');
+  } catch (err) { window.SM_err('활동 고르기', err); }
+})();
+</script>
+</body>
+</html>
