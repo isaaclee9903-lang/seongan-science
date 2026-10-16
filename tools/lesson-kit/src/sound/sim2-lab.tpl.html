@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>소리의 특성 – 소리 분석 실험실</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+/*@@LOCAL:_css_wv.css@@*/
+/*@@LOCAL:_css_sim.css@@*/
+/*@@LOCAL:_css_snd.css@@*/
+  /* ===== 이 페이지 전용 ===== */
+  .viewer{justify-content:flex-start!important;padding:12px!important;gap:12px}
+  .recs{flex:1 1 auto;display:grid;grid-template-rows:1fr 1fr;gap:12px;min-height:0}
+  .rec{display:flex;flex-direction:column;min-height:170px}
+  .rec .scope{flex:1 1 auto;min-height:110px}
+  .rec .pic{width:34px;height:42px;flex:none}
+  .rec .empty{position:absolute;left:50%;top:58%;transform:translate(-50%,-50%);font-size:14px;font-weight:700;color:#97a6b5;pointer-events:none;white-space:nowrap}
+  .rec.done .empty,.rec.live .empty{display:none}
+  .rec .cnt{font-size:12.5px;font-weight:800;color:#0e63b3}
+  .vnote{font-size:12.5px;color:var(--muted);margin:0;word-break:keep-all}
+  .chips{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin-bottom:10px}
+  .chip{min-height:58px;border-radius:12px;border:2px solid #dfe6ee;background:#fff;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;padding:2px;font-weight:800;font-size:12.5px;color:#34495e}
+  .chip .pic{width:26px;height:32px}
+  .chip[aria-pressed="true"]{border-color:#0e63b3;background:#eef5fc;color:#0e63b3}
+  .pick2{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;align-items:center;margin-bottom:10px}
+  .pick2 span{font-size:13.5px;font-weight:900;color:var(--ink2)}
+  .pick2 select{min-height:44px;border-radius:12px;border:2px solid #dfe6ee;background:#fff;font:inherit;font-weight:800;font-size:15px;color:#14263b;padding:0 10px}
+  .lbl2{font-size:13px;font-weight:900;color:#0e63b3;margin:0 0 6px}
+  .tasks{display:grid;gap:5px;margin-bottom:8px}
+  .task{display:grid;grid-template-columns:26px 1fr;gap:8px;align-items:center;padding:7px 10px;border-radius:12px;background:#f7fafc;border:1px solid var(--line);font-size:14.5px;font-weight:700;color:var(--muted);word-break:keep-all}
+  .task i{font-style:normal;width:24px;height:24px;border-radius:8px;background:#dfe6ee;display:grid;place-items:center;font-weight:900;font-size:12.5px;color:#607285}
+  .task.now{background:#e9f3fd;border-color:#bcd7f2;color:var(--ink)}.task.now i{background:var(--fab);color:#fff}
+  .task.done{color:var(--ink2)}.task.done i{background:#0e63b3;color:#fff}
+  .ask{border-radius:16px;padding:12px;background:#fff;border:2px solid #bcd7f2}
+  .ask.lock{border-color:#e2e8ee;opacity:.55}
+  .ask p{margin:0 0 8px;font-size:16px;font-weight:800;line-height:1.5;word-break:keep-all}
+  .opts{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+  .opts.two{grid-template-columns:1fr 1fr}
+  .opts button{min-height:50px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15px;cursor:pointer;word-break:keep-all;line-height:1.25;padding:4px}
+  .opts button small{display:block;font-size:11.5px;font-weight:700;color:var(--muted)}
+  .opts button.bad{border-color:#e7a29b;background:#fff4f2;color:#9b3a32}
+  .opts button.good{border-color:#0e63b3;background:#e9f3fd;color:#0b3f73}
+  .lvl{display:flex;gap:6px;margin-bottom:10px}
+  .lvl span{flex:1;height:8px;border-radius:99px;background:#e2e9f0}
+  .lvl span.done{background:#0e63b3}.lvl span.now{background:#8db8e3}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="ttl">
+      <span class="eyebrow">시뮬레이션 ②</span><h1>소리 분석 실험실</h1>
+      <p class="sub" id="sub"></p>
+    </div>
+    <div class="ptabs big" role="tablist" id="acts" style="margin:0">
+      <button type="button" role="tab" data-a="amp" aria-selected="true">① 세기</button>
+      <button type="button" role="tab" data-a="freq" aria-selected="false">② 높낮이</button>
+      <button type="button" role="tab" data-a="form" aria-selected="false">③ 음색</button>
+      <button type="button" role="tab" data-a="quiz" aria-selected="false">④ 파형 읽기</button>
+    </div>
+  </header>
+
+  <div class="stage">
+    <section class="card viewer">
+      <div class="recs" id="recs"></div>
+      <p class="vnote" id="vnote">모눈의 가로는 시간이에요. 두 칸은 같은 시간 동안의 파동을 같은 크기로 보여 줘요.</p>
+    </section>
+
+    <section class="card pad">
+      <div id="pickBox"></div>
+      <div class="tasks" id="tasks"></div>
+      <div class="ask lock" id="ask"></div>
+      <div class="concl lock" id="concl"></div>
+    </section>
+  </div>
+</div>
+<script>
+window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
+  reduce: !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches), Q: new URLSearchParams(location.search) };
+</script>
+<script>
+/*@@LOCAL:_snd.js@@*/
+</script>
+<script>
+/*@@LOCAL:_inst.js@@*/
+</script>
+<script>
+/* ===== 블록 1: 기록 칸 두 개 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S, I = SND.INST;
+    const PLAY = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M7 5l12 7-12 7z"/></svg>';
+    $('#recs').innerHTML = [0, 1].map((i) => `<div class="rec" id="rec${i}"><div class="rh"><span class="pic"></span><div><b class="rl"></b><br><small class="sm"></small></div><span class="sp"></span><span class="st"></span><button type="button" class="pbtn">${PLAY}<span class="pt">기록하기</span></button></div><div class="scope"><span class="empty">버튼을 누르면 소리가 나고 파동이 기록돼요</span></div></div>`).join('');
+    const R = [0, 1].map((i) => {
+      const el = $('#rec' + i);
+      const sc = SND.scope($('.scope', el), { win: 0.008, rows: 4, only: (v) => v.box === i, amp: 1 });
+      return { el, sc, cfg: null, done: false };
+    });
+    // cfg: { id, m, vel, lab, sm }
+    S.recSet = (i, cfg, win, preDone) => {
+      const r = R[i]; r.cfg = cfg; r.done = !!preDone;
+      $('.rl', r.el).textContent = cfg.lab; $('.sm', r.el).textContent = cfg.sm || '';
+      $('.pic', r.el).innerHTML = ART.svg(cfg.id, 'r' + i);
+      $('.pt', r.el).textContent = preDone ? '듣기' : '기록하기';
+      r.sc.set({ win }); r.win = win;
+      if (preDone) { SND.load(cfg.id).then(() => { if (r.cfg === cfg) { r.sc.freeze(SND.shot(cfg.id, cfg.m, SND.VEL[cfg.vel], win, SND.N, cfg.norm)); mark(r); } }).catch(() => {}); }
+      else r.sc.clear();
+      r.el.classList.toggle('done', !!preDone); r.el.classList.remove('live');
+      $('.st', r.el).textContent = preDone ? '' : '기록 전';
+      $('.cnt', r.el) && $('.cnt', r.el).remove();
+    };
+    S.recMark = null;
+    function mark(r) { if (S.recMark) S.recMark(r); }
+    S.R = R;
+    let tmr = [0, 0];
+    async function rec(i) {
+      const r = R[i], c = r.cfg; if (!c) return;
+      if (!SND.ready(c.id)) { $('.st', r.el).textContent = '불러오는 중…'; try { await SND.load(c.id); } catch (e) { $('.st', r.el).textContent = '소리 파일을 불러오지 못했어요'; return; } }
+      if (r.cfg !== c) return;
+      const v = SND.play(c.id, c.m, SND.VEL[c.vel]); if (!v) return; v.box = i;
+      if (c.norm) { const ref = SND.shot(c.id, c.m, 1, r.win, 200); let q = 0; ref.forEach((y) => (q += y * y)); v.gain = c.norm / (Math.sqrt(q / ref.length) || 1); }
+      r.sc.clear(); r.el.classList.add('live'); r.el.classList.remove('done');
+      $('.st', r.el).textContent = '소리 나는 중';
+      clearTimeout(tmr[i]);
+      tmr[i] = setTimeout(() => {
+        if (r.cfg !== c) return;
+        r.sc.freeze(SND.shot(c.id, c.m, SND.VEL[c.vel], r.win, SND.N, c.norm));
+        r.el.classList.remove('live'); r.el.classList.add('done'); $('.st', r.el).textContent = '기록됨';
+        $('.pt', r.el).textContent = '다시 듣기';
+        const first = !r.done; r.done = true; mark(r);
+        window.dispatchEvent(new CustomEvent('recorded', { detail: { i, first } }));
+      }, 650);
+    }
+    R.forEach((r, i) => $('.pbtn', r.el).addEventListener('click', () => rec(i)));
+    S.rec = rec;
+    window.SM.okUI = true;
+  } catch (err) { window.SM_err('기록 칸', err); }
+})();
+</script>
+<script>
+/* ===== 블록 2: 탐구 ①②③ ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S, I = SND.INST;
+    const CHIPS = ['xylophone', 'violin', 'flute', 'trumpet', 'cello'];
+    const G4 = Object.keys(I).filter((k) => I[k].g4);
+    const nm = (id) => I[id].name;
+    const josa = (w) => ((w.charCodeAt(w.length - 1) - 0xac00) % 28 ? '을' : '를');
+    const vb = (id) => `${I[id].fam === 'pc' ? '칠' : id === 'harp' ? '뜯을' : I[id].fam === 'str' ? '켤' : '불'} 때`;
+    const verb = (id) => `${I[id].name}${josa(I[id].name)} ${vb(id)}`;
+    const ACT = {
+      amp: {
+        sub: '같은 건반을 약하게 치고 세게 치며 파동을 비교해요. (교과서 탐구 2)',
+        boxes: (id) => [{ id, m: I[id].base + 7, vel: 'soft', lab: `약하게 ${vb(id)}`, sm: `${nm(id)} · 솔` }, { id, m: I[id].base + 7, vel: 'loud', lab: `세게 ${vb(id)}`, sm: `${nm(id)} · 솔` }],
+        win: (b) => 3 / SND.hz(b[0].m),
+        q: '두 파동에서 무엇이 가장 크게 다른가요?', ans: 0,
+        no: { 1: '두 칸에서 같은 시간 동안 파동이 반복된 횟수를 세어 보세요. 반복 횟수는 거의 같아요.', 2: '파동의 모양은 비슷해요. 위아래로 흔들리는 <b>크기</b>를 비교해 보세요.' },
+        ok: '맞아요. 세게 칠 때 파동이 위아래로 더 크게 흔들려요. 진동 중심에서 마루까지의 거리, 곧 <b>진폭</b>이 커요.',
+        concl: '<span class="kt">결론 · 소리의 세기</span><p>작은 소리가 날 때보다 큰 소리가 날 때 <b>진폭</b>이 더 크다.</p><p>소리의 세기는 파동의 <b>진폭</b>에 따라 달라진다.</p>',
+      },
+      freq: {
+        sub: "'낮은 도'와 '높은 도'를 같은 세기로 치고 파동을 비교해요. (교과서 탐구 3)",
+        boxes: (id) => [{ id, m: I[id].base, vel: 'loud', norm: 0.3, lab: `'낮은 도'를 ${vb(id)}`, sm: `${nm(id)} · 같은 세기` }, { id, m: I[id].base + 12, vel: 'loud', norm: 0.3, lab: `'높은 도'를 ${vb(id)}`, sm: `${nm(id)} · 같은 세기` }],
+        win: (b) => 2.5 / SND.hz(b[0].m),
+        q: '두 파동에서 무엇이 가장 크게 다른가요?', ans: 1,
+        no: { 0: '두 파동의 높이(진폭)는 비슷해요. 같은 시간 동안 파동이 몇 번 반복되는지 세어 보세요.', 2: '모양도 조금 다르지만, 가장 크게 다른 것은 같은 시간 동안 <b>반복된 횟수</b>예요.' },
+        ok: "맞아요. 같은 시간 동안 '높은 도'의 파동이 2배쯤 더 많이 반복돼요. 1초 동안 진동하는 횟수, 곧 <b>진동수</b>가 커요.",
+        concl: '<span class="kt">결론 · 소리의 높낮이</span><p>낮은 소리보다 높은 소리의 <b>진동수</b>가 크다.</p><p>소리의 높낮이는 파동의 <b>진동수</b>에 따라 달라진다.</p>',
+      },
+      form: {
+        sub: "두 악기로 같은 높이의 '솔'을 내고 파동을 비교해요. (교과서 탐구 4)",
+        boxes: (a, b) => [a, b].map((id) => ({ id, m: SND.SOL, vel: 'loud', norm: 0.3, lab: verb(id), sm: "'솔' · 같은 세기" })),
+        win: (b) => 3 / SND.hz(b[0].m),
+        q: '두 파동에서 무엇이 가장 크게 다른가요?', ans: 2,
+        no: { 0: '두 파동이 흔들리는 크기는 비슷하게 맞춰 두었어요. 파동의 <b>모양</b>을 비교해 보세요.', 1: "같은 '솔'이라서 같은 시간 동안 반복된 횟수는 같아요. 한 번 반복되는 <b>모양</b>을 비교해 보세요." },
+        ok: '맞아요. 세기와 높낮이가 같아도 두 악기의 파동 모양, 곧 <b>파형</b>이 달라요. 그래서 다르게 들려요.',
+        concl: '<span class="kt">결론 · 소리의 음색</span><p>같은 음이라도 악기의 종류에 따라 <b>파형</b>이 다르다.</p><p>소리의 파형이 달라 서로 구분되는 특징을 <b>음색</b>이라고 한다. 목소리로 사람을 구별할 수 있는 것도 목소리의 파형이 다르기 때문이다.</p>',
+      },
+    };
+    const OPTS = ['<b>진폭</b><small>흔들리는 크기</small>', '<b>진동수</b><small>반복 횟수</small>', '<b>파형</b><small>파동의 모양</small>'];
+    const st = { amp: { id: 'xylophone', ans: null }, freq: { id: 'xylophone', ans: null }, form: { a: 'xylophone', b: 'recorder', ans: null } };
+    let A = 'amp';
+    const press = (b, v) => b.setAttribute('aria-pressed', String(v));
+    function boxes() { const s = st[A], c = ACT[A]; return A === 'form' ? c.boxes(s.a, s.b) : c.boxes(s.id); }
+    function setup(keepAns) {
+      const s = st[A], c = ACT[A], b = boxes(), win = c.win(b);
+      b.forEach((cfg, i) => S.recSet(i, cfg, win));
+      if (!keepAns) s.ans = null;
+      if (A === 'form') {
+        $('#pickBox').innerHTML = `<p class="lbl2">비교할 두 악기 (같은 높이의 '솔'을 낼 수 있는 악기)</p><div class="pick2"><span>위 칸</span><select id="selA">${G4.map((k) => `<option value="${k}"${k === s.a ? ' selected' : ''}>${nm(k)}</option>`).join('')}</select><span>아래 칸</span><select id="selB">${G4.map((k) => `<option value="${k}"${k === s.b ? ' selected' : ''}>${nm(k)}</option>`).join('')}</select></div>`;
+        $('#selA').addEventListener('change', (e) => { s.a = e.target.value; setup(); });
+        $('#selB').addEventListener('change', (e) => { s.b = e.target.value; setup(); });
+      } else {
+        $('#pickBox').innerHTML = `<p class="lbl2">악기 고르기</p><div class="chips">${CHIPS.map((k) => `<button type="button" class="chip" data-k="${k}" aria-pressed="${k === s.id}"><span class="pic">${ART.svg(k, 'c' + k)}</span>${nm(k)}</button>`).join('')}</div>`;
+        $$('#pickBox .chip').forEach((ch) => ch.addEventListener('click', () => { s.id = ch.dataset.k; setup(); }));
+      }
+      render();
+    }
+    function render() {
+      const s = st[A], c = ACT[A], recd = S.R.every((r) => r.done), solved = s.ans === c.ans;
+      $('#tasks').innerHTML = [['두 소리를 기록하기', recd], ['두 파동 비교하기', solved], ['결론 정리하기', solved]].map(([t, d], j) => `<div class="task${d ? ' done' : ''}${!d && (j === 0 || (j === 1 && recd)) ? ' now' : ''}"><i>${d ? '✓' : j + 1}</i><span>${t}</span></div>`).join('');
+      const ask = $('#ask'); ask.classList.toggle('lock', !recd);
+      ask.innerHTML = `<p>${recd ? c.q : '먼저 왼쪽의 두 칸에서 <b>기록하기</b>를 눌러 소리를 기록해요.'}</p><div class="opts">${OPTS.map((o, j) => `<button type="button" data-j="${j}"${recd ? '' : ' disabled'} class="${s.ans === j ? (j === c.ans ? 'good' : 'bad') : ''}">${o}</button>`).join('')}</div>` +
+        (s.ans != null ? `<div class="fbk ${solved ? 'ok' : 'no'}" style="margin-top:8px">${solved ? c.ok : c.no[s.ans]}</div>` : '');
+      $$('#ask .opts button').forEach((b) => b.addEventListener('click', () => { s.ans = +b.dataset.j; render(); }));
+      const cc = $('#concl'); cc.classList.toggle('lock', !solved);
+      cc.innerHTML = solved ? c.concl : '<span class="kt">결론</span><p>두 파동을 비교하면 결론이 나타나요.</p>';
+      S.R.forEach((r) => r.sc.mark(A === 'amp' && r.done ? 'amp' : null));
+    }
+    // 높낮이: 같은 시간 동안 반복 횟수를 칸 머리에 적어 줘요
+    S.recMark = (r) => {
+      if (S.act === 'quiz') { r.sc.mark(null); return; }
+      r.sc.mark(A === 'amp' ? 'amp' : null);
+      const old = $('.cnt', r.el); if (old) old.remove();
+      if (A === 'freq' && r.cfg) { const n = (r.win * SND.hz(r.cfg.m)); const sp = document.createElement('span'); sp.className = 'cnt'; sp.textContent = `이 시간 동안 약 ${Math.round(n * 2) / 2}번 반복`; $('.st', r.el).before(sp); }
+    };
+    window.addEventListener('recorded', () => { if (A !== 'quiz') render(); });
+    S.labEnter = (a) => { A = a; setup(true); };
+    if (S.Q.get('inst')) st.amp.id = st.freq.id = S.Q.get('inst');
+    S.labDone = (a, solve) => { A = a; setup(); S.R.forEach((r) => S.recSet(S.R.indexOf(r), r.cfg, r.win, true)); if (solve) st[a].ans = ACT[a].ans; setTimeout(render, 30); };
+  } catch (err) { window.SM_err('탐구', err); }
+})();
+</script>
+<script>
+/* ===== 블록 3: ④ 파형 읽기 도전 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S, I = SND.INST;
+    // 소리 A와 B는 미리 기록돼 있어요. '듣기'로 들어 볼 수 있어요.
+    const RD = [
+      { a: ['xylophone', 67, 'soft'], b: ['xylophone', 67, 'loud'], q: '더 큰 소리는 어느 쪽일까요?', o: ['소리 A', '소리 B'], ans: 1, why: '소리 B의 <b>진폭</b>이 더 커요. 진폭이 클수록 큰 소리예요.' },
+      { a: ['trumpet', 72, 'loud'], b: ['trumpet', 60, 'loud'], q: '더 높은 소리는 어느 쪽일까요?', o: ['소리 A', '소리 B'], ans: 0, why: '같은 시간 동안 소리 A의 파동이 더 많이 반복돼요. <b>진동수</b>가 클수록 높은 소리예요.' },
+      { n: 1, a: ['violin', 67, 'loud'], b: ['flute', 67, 'loud'], q: '두 소리는 무엇이 다를까요?', o: ['세기', '높낮이', '음색'], ans: 2, why: '진폭과 반복 횟수는 비슷한데 파동의 모양(<b>파형</b>)이 달라요. 그래서 <b>음색</b>이 달라요. (A 바이올린, B 플루트)' },
+      { a: ['cello', 48, 'loud'], b: ['cello', 60, 'soft'], q: '소리 B는 소리 A보다 어떤 소리일까요?', o: ['더 크고 높다', '더 크고 낮다', '더 작고 높다', '더 작고 낮다'], ans: 2, why: '소리 B는 <b>진폭이 작아서</b> 더 작은 소리이고, 같은 시간 동안 <b>더 많이 반복돼서</b> 더 높은 소리예요.' },
+    ];
+    let k = 0, picked = null;
+    const W = (r) => 2.5 / SND.hz(Math.min(r.a[1], r.b[1]));
+    function render() {
+      const r = RD[Math.min(k, RD.length - 1)];
+      $('#pickBox').innerHTML = `<div class="lvl">${RD.map((_, j) => `<span class="${j < k ? 'done' : j === k ? 'now' : ''}"></span>`).join('')}</div>`;
+      $('#tasks').innerHTML = '';
+      if (k >= RD.length) {
+        $('#ask').className = 'ask'; $('#ask').innerHTML = '<p>네 문제를 모두 풀었어요.</p><div class="fbk ok" style="margin-top:0">파형을 보면 소리를 듣지 않고도 알 수 있어요. 흔들리는 크기(<b>진폭</b>)는 세기, 같은 시간 동안 반복 횟수(<b>진동수</b>)는 높낮이, 파동의 모양(<b>파형</b>)은 음색이에요.</div><button class="btn ghost" type="button" id="again" style="width:100%;margin-top:8px">처음부터 다시</button>';
+        $('#again').addEventListener('click', () => { k = 0; picked = null; enter(); });
+        $('#concl').className = 'concl'; $('#concl').innerHTML = '<span class="kt">정리</span><p>소리의 <b>세기</b> ↔ 진폭 · 소리의 <b>높낮이</b> ↔ 진동수 · 소리의 <b>음색</b> ↔ 파형</p>';
+        return;
+      }
+      const ok = picked === r.ans;
+      $('#ask').className = 'ask';
+      $('#ask').innerHTML = `<p>문제 ${k + 1}. ${r.q}</p><div class="opts${r.o.length === 2 ? ' two' : r.o.length === 4 ? ' two' : ''}">${r.o.map((o, j) => `<button type="button" data-j="${j}" class="${picked === j ? (ok ? 'good' : 'bad') : ''}">${o}</button>`).join('')}</div>` +
+        (picked != null ? `<div class="fbk ${ok ? 'ok' : 'no'}" style="margin-top:8px">${ok ? r.why : '파형을 다시 비교해 보세요. 흔들리는 크기, 같은 시간 동안 반복 횟수, 모양을 차례로 보세요.'}</div>` : '') +
+        (ok ? `<button class="btn primary" type="button" id="nx" style="width:100%;margin-top:8px">${k + 1 < RD.length ? '다음 문제' : '끝내기'}</button>` : '');
+      $$('#ask .opts button').forEach((b) => b.addEventListener('click', () => { picked = +b.dataset.j; render(); }));
+      if (ok) $('#nx').addEventListener('click', () => { k++; picked = null; enter(); });
+      $('#concl').className = 'concl lock'; $('#concl').innerHTML = '<span class="kt">힌트</span><p>모눈의 가로는 시간이에요. 두 칸은 같은 시간 동안의 파동을 같은 크기로 보여 줘요. 소리를 들어 보고 싶으면 <b>듣기</b>를 누르세요.</p>';
+    }
+    function enter() {
+      const r = RD[Math.min(k, RD.length - 1)], w = W(r);
+      [r.a, r.b].forEach(([id, m, vel], i) => S.recSet(i, { id, m, vel, norm: r.n ? 0.3 : 0, lab: i ? '소리 B' : '소리 A', sm: '' }, w, true));
+      render();
+    }
+    S.quizEnter = () => enter();
+    if (S.Q.get('q')) k = +S.Q.get('q');
+  } catch (err) { window.SM_err('파형 읽기', err); }
+})();
+</script>
+<script>
+/* ===== 블록 0: 활동 고르기 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S;
+    const SUBQ = '미리 기록한 두 소리의 파형만 보고 세기·높낮이·음색을 알아맞혀요.';
+    function show(a) {
+      $$('#acts button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.a === a)));
+      SND.stop(true); S.act = a;
+      if (a === 'quiz') { $('#sub').textContent = SUBQ; S.quizEnter(); }
+      else { S.labEnter(a); const subs = { amp: '같은 건반을 약하게 치고 세게 치며 파동을 비교해요. (교과서 탐구 2)', freq: "'낮은 도'와 '높은 도'를 같은 세기로 치고 파동을 비교해요. (교과서 탐구 3)", form: "두 악기로 같은 높이의 '솔'을 내고 파동을 비교해요. (교과서 탐구 4)" }; $('#sub').textContent = subs[a]; }
+    }
+    $$('#acts button').forEach((b) => b.addEventListener('click', () => show(b.dataset.a)));
+    const a0 = ['amp', 'freq', 'form', 'quiz'].includes(S.Q.get('act')) ? S.Q.get('act') : 'amp';
+    show(a0);
+    if (S.Q.get('done') && a0 !== 'quiz') S.labDone(a0, S.Q.get('done') === '2');
+  } catch (err) { window.SM_err('활동 고르기', err); }
+})();
+</script>
+</body>
+</html>

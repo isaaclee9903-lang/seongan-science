@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>소리의 특성 – 소리 분석 실험실</title>
+<script>
+/* 문제 알림: 코드에 오류가 나면 화면 아래에 빨간 상자로 알려 줘요 (선생님 확인용) */
+(function () {
+  function box() {
+    var b = document.getElementById('smErr');
+    if (!b && document.body) {
+      b = document.createElement('div'); b.id = 'smErr';
+      b.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;background:#fdecea;color:#8a1f17;border:2px solid #d9534f;border-radius:12px;padding:10px 14px;font:600 14px/1.5 sans-serif;white-space:pre-wrap';
+      document.body.appendChild(b);
+    }
+    return b;
+  }
+  window.SM_err = function (where, err) {
+    var msg = '[' + where + '] ' + (err && err.message ? err.message : String(err));
+    var show = function () { var b = box(); if (b) b.textContent += (b.textContent ? '\n' : '') + msg; };
+    if (document.body) show(); else document.addEventListener('DOMContentLoaded', show);
+  };
+  window.addEventListener('error', function (e) { window.SM_err('스크립트', { message: e.message + ' (줄 ' + e.lineno + ')' }); });
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      var S = window.SM || {};
+      if (!S.okUI) window.SM_err('실행 안 됨', { message: '안내·버튼 코드가 실행되지 않았어요. 파일이 끝(</html>)까지 들어 있는지 확인해 주세요.' });
+      if (document.getElementById('fail3d') && !S.ok3d) { var f = document.getElementById('fail3d'); if (f) f.classList.add('show'); window.SM_err('3D 그림', { message: '3D 그림을 불러오지 못했어요. 인터넷 연결(cdn.jsdelivr.net)을 확인하고 새로고침해 주세요.' }); }
+    }, 9000);
+  });
+})();
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+
+  :root{--bg:#edf3f8;--card:#fff;--ink:#14263b;--ink2:#34495e;--muted:#5a6b7e;--line:#dde6ee;--accent:#0e63b3;--accent-soft:#e3effb;
+    --fab:#4b3fb5;--fab-soft:#ecebfb;--ok:#1f9d5c;--no:#d9534f;
+    --shadow:0 1px 2px rgba(20,38,59,.06),0 8px 24px rgba(20,38,59,.07);--ease:cubic-bezier(.2,.8,.2,1)}
+  *{box-sizing:border-box}html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:"Pretendard",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  button{font:inherit;color:inherit}
+  .app{max-width:1320px;margin:0 auto;padding:14px 16px 28px;display:flex;flex-direction:column;gap:12px}
+  .eyebrow{display:inline-flex;font-size:13px;font-weight:700;color:var(--fab);background:var(--fab-soft);padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(21px,2.4vw,28px);margin:6px 0 2px;letter-spacing:-.02em;word-break:keep-all}
+  .sub{margin:0;color:var(--muted);font-size:15px;word-break:keep-all}
+  .card{background:var(--card);border-radius:20px;box-shadow:var(--shadow);border:1px solid rgba(20,38,59,.04)}
+  .pad{padding:14px 16px}
+  .stage{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(330px,1fr);gap:14px;align-items:start}
+  .viewer{position:sticky;top:10px}
+  .flow{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px}
+  .fs{min-height:54px;border:0;border-radius:12px;background:#eef3f8;font-weight:800;font-size:13px;color:var(--muted);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.2;word-break:keep-all;padding:4px}
+  .fs b{font-size:15px}
+  .fs[aria-selected="true"]{background:var(--fab);color:#fff}
+  .fs.seen:not([aria-selected="true"]){background:#e5f5ec;color:#11703f}
+  .stepname{display:flex;align-items:center;gap:10px;margin:2px 0 6px}
+  .stepname .no{flex:none;width:40px;height:40px;border-radius:12px;background:var(--fab);color:#fff;display:grid;place-items:center;font-weight:900;font-size:19px}
+  .stepname h2{margin:0;font-size:21px;letter-spacing:-.01em;word-break:keep-all}
+  .stepname small{display:block;font-size:13px;color:var(--muted);font-weight:700}
+  .what{font-size:16px;line-height:1.75;color:var(--ink2);margin:0 0 10px;word-break:keep-all}
+  .phase{display:grid;gap:6px;margin:8px 0}
+  .ph{display:grid;grid-template-columns:28px 1fr;gap:8px;align-items:start;padding:7px 10px;border-radius:12px;background:#f7fafc;font-size:15px;line-height:1.55;color:var(--muted);word-break:keep-all;transition:background .3s,color .3s}
+  .ph i{font-style:normal;width:26px;height:26px;border-radius:8px;background:#dfe6ee;display:grid;place-items:center;font-weight:900;font-size:13px;color:#607285}
+  .ph.on{background:var(--fab-soft);color:var(--ink)}.ph.on i{background:var(--fab);color:#fff}
+  .ph.done{color:var(--ink2)}.ph.done i{background:#b9b2ee;color:#fff}
+  .box{border-radius:14px;padding:10px 12px;margin-top:8px;font-size:14.5px;line-height:1.65;word-break:keep-all}
+  .box b.t{display:block;font-size:13px;margin-bottom:2px}
+  .an{background:#fff8e6;border:1px solid #f3dc9a;color:#5b4300}
+  .fact{background:#eef6ff;border:1px solid #cfe2f6;color:#1d3f66}
+  .lnk{background:#ecf8f1;border:1px solid #c6e8d4;color:#0f5a36}
+  .src{display:block;font-size:12px;color:var(--muted);margin-top:3px}
+  .acts{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 0}
+  .btn{min-height:50px;border:0;border-radius:14px;padding:0 16px;font-weight:800;font-size:15.5px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;justify-content:center;word-break:keep-all}
+  .btn:active{transform:scale(.97)}
+  .btn.primary{background:var(--fab);color:#fff}.btn.ghost{background:#eef3f8;color:var(--ink2)}
+  .btn[aria-pressed="true"]{background:#14263b;color:#fff}
+  .btn:disabled{opacity:.4;cursor:default;transform:none}
+  .prog{height:6px;border-radius:3px;background:#e6edf4;margin-top:10px;overflow:hidden}
+  .prog i{display:block;height:100%;width:0;background:linear-gradient(90deg,#8a7ff0,var(--fab))}
+  .credit{text-align:center;font-size:13px;font-weight:700;color:#8495a8;letter-spacing:.02em;margin:6px 0 0}
+  /* ===== 3D 화면 공통 ===== */
+  :root{--Bc:#14a5d0;--Ic:#2fae4a;--Fc:#f0522a;--N:#d8433b;--S:#2f62c9;--P:#7d5ad6}
+  .viewer{position:relative;overflow:hidden;padding:0}
+  .gl-host{position:relative;width:100%;height:min(74vh,700px);min-height:380px;background:linear-gradient(#f6f9fc,#d6e3ef);touch-action:none}
+  .gl-host canvas.gl{display:block;width:100%;height:100%;outline:none}
+  .lbls{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+  .lb{position:absolute;left:0;top:0;white-space:nowrap;font-weight:800;font-size:14px;padding:3px 9px;border-radius:9px;background:rgba(255,255,255,.88);color:#34495e;box-shadow:0 2px 8px rgba(20,38,59,.14);will-change:transform}
+  .lb.small{font-size:12px;font-weight:700;color:#5a6b7e;background:rgba(255,255,255,.72);box-shadow:none}
+  .lb.B{background:var(--Bc);color:#fff}.lb.I{background:var(--Ic);color:#fff}.lb.F{background:var(--Fc);color:#fff;font-size:15px}
+  .lb.P{background:var(--P);color:#fff}
+  .lb.dim{opacity:.35}
+  .vt{position:absolute;display:flex;gap:6px;flex-wrap:wrap;z-index:3}
+  .vt.tl{left:10px;top:10px;max-width:calc(100% - 20px)}
+  .vt.tr{right:10px;top:10px;justify-content:flex-end}
+  .vt.bl{left:10px;bottom:10px;align-items:center}
+  .vb{min-height:44px;padding:0 12px;border-radius:12px;border:1px solid rgba(20,38,59,.12);background:rgba(255,255,255,.9);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);font-weight:800;font-size:14px;color:#34495e;cursor:pointer;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 10px rgba(20,38,59,.08)}
+  .vb:active{transform:scale(.96)}
+  .vb .dot{width:12px;height:12px;border-radius:50%;flex:none}
+  .vb[aria-pressed="false"]{opacity:.62}
+  .vb[aria-pressed="false"] .dot{background:#c2ccd6!important}
+  .vb.sel{background:#14263b;color:#fff;border-color:#14263b}
+  .hint{font-size:12.5px;font-weight:700;color:#5a6b7e;background:rgba(255,255,255,.78);border-radius:10px;padding:6px 10px;word-break:keep-all}
+  .inset{position:absolute;z-index:2;border-radius:18px;border:2px solid rgba(255,255,255,.95);box-shadow:0 10px 30px rgba(20,38,59,.22),inset 0 0 0 1px rgba(20,38,59,.08);pointer-events:none;display:none}
+  .inset.on{display:block}
+  .inset .it{position:absolute;left:8px;top:8px;font-size:12.5px;font-weight:900;color:#14263b;background:rgba(255,255,255,.9);border-radius:8px;padding:3px 8px}
+  .inset .ic{position:absolute;left:6px;right:6px;bottom:6px;display:flex;flex-wrap:wrap;gap:4px;justify-content:center}
+  .inset .ic span{font-size:11.5px;font-weight:800;color:#fff;border-radius:7px;padding:2px 7px;white-space:nowrap}
+  .fail3d{position:absolute;inset:0;display:none;place-items:center;text-align:center;padding:24px;font-size:16px;font-weight:700;color:#7a2a22;line-height:1.7;word-break:keep-all;background:#fff4f2}
+  .fail3d.show{display:grid}
+  .model{font-size:13px;color:var(--muted);text-align:right;margin:0;word-break:keep-all}
+  @media (max-width:900px){.gl-host{height:min(56vh,620px)}}
+  .zoombadge{position:absolute;right:10px;top:62px;z-index:3;font-size:13px;font-weight:800;color:#fff;background:rgba(75,63,181,.9);border-radius:10px;padding:6px 10px;display:none;word-break:keep-all;max-width:60%}
+  .zoombadge.on{display:block}
+  @media (max-width:900px){.stage{grid-template-columns:1fr}.viewer{position:relative;top:0}}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+  /* ===== 파동 그림 공통 ===== */
+  .scene{position:relative;width:100%;overflow:hidden;touch-action:manipulation;user-select:none;-webkit-user-select:none}
+  .scene canvas.wvc{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .olay{position:absolute;inset:0;pointer-events:none}
+  .ol{position:absolute;transform:translate(-50%,-50%);white-space:nowrap;font-weight:700;font-size:clamp(11.5px,1.3vw,14.5px);line-height:1.3;letter-spacing:-.01em}
+  .ol.tx{color:#34495e;background:rgba(255,255,255,.88);padding:1px 6px;border-radius:6px}
+  .ol.tx.b{color:#0e63b3}
+  .ol.tx.m{color:#6b7c8f;background:transparent;padding:0}
+  .ol.tk{color:#6b7c8f;font-weight:700;padding:0;font-size:clamp(11px,1.15vw,13px);transform:translate(-50%,-100%)}
+  .ol.tk.b{color:#14263b}
+  .ol.tk.la{transform:translate(-100%,-50%)}
+  .ol.la{transform:translate(-100%,-50%)}.ol.ra{transform:translate(0,-50%)}
+  .ol[hidden]{display:none}
+  /* ===== 파동 수업 공통 ===== */
+  :root{--fab:#0e63b3;--fab-soft:#e4f0fb}
+  .eyebrow{color:#0e63b3;background:#e4f0fb}
+  .prog i{background:#0e63b3}
+  .ph.done i{background:#8db8e3}
+  .fbk{border-radius:14px;padding:12px 14px;margin-top:10px;font-size:15px;line-height:1.65;word-break:keep-all;background:#f6f9fc;border:1px solid #dbe4ed;color:var(--ink2)}
+  .fbk.ok{background:#e9f3fd;border-color:#bcd7f2;color:#0b3f73}
+  .fbk.no{background:#fff4f2;border-color:#f3c2bb;color:#5e2a25}
+  .fbk b.t{display:block;font-size:13.5px;margin-bottom:2px}
+  .seg{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:10px 10px 0}
+  .seg button{min-height:48px;border:0;border-radius:14px;background:#eef3f8;font-weight:800;font-size:16px;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px}
+  .seg button svg{flex:none}
+  .seg button[aria-selected="true"]{background:var(--fab);color:#fff}
+  .seg button.seen:not([aria-selected="true"]){background:#e9f3fd;color:#0b3f73}
+  .vlab{position:absolute;left:12px;top:10px;z-index:3;font-size:13px;font-weight:800;color:#34495e;background:rgba(255,255,255,.88);border-radius:9px;padding:4px 10px}
+  .concl{border-radius:16px;padding:14px 16px;margin-top:10px;background:#f2f7fd;border:1px solid #d6e5f5;font-size:15.5px;line-height:1.75;color:#1d2a40;word-break:keep-all}
+  .concl .kt{display:block;font-size:13px;font-weight:900;color:#0e63b3;margin-bottom:4px}
+  .concl.lock{background:#f6f8fa;border-color:#e2e8ee;color:var(--muted)}
+  .concl p{margin:0 0 4px}
+  [hidden]{display:none!important}
+  /* ===== 한 화면 배치 (2026-10-15: 태블릿 한 화면 안에서 실험과 결과가 끝나도록) ===== */
+  .app{padding:10px 16px 12px;gap:10px}
+  header.top{display:flex;align-items:center;justify-content:space-between;gap:10px 16px;flex-wrap:wrap}
+  header.top .ttl{min-width:0}
+  header.top .ttl .eyebrow{margin-right:6px;vertical-align:4px}
+  header.top h1{display:inline;font-size:clamp(20px,2.1vw,25px);margin:0}
+  header.top .sub{margin-top:3px;font-size:14.5px}
+  .stage{align-items:stretch}
+  .stage > .viewer{position:relative;top:0;display:flex;flex-direction:column;justify-content:center}
+  .ptabs{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;background:#eef3f8;border-radius:14px;padding:4px;margin-bottom:12px}
+  .ptabs button{min-height:44px;border:0;border-radius:11px;background:transparent;font-weight:800;font-size:14.5px;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
+  .ptabs button[aria-selected="true"]{background:#fff;color:var(--fab);box-shadow:0 1px 3px rgba(20,38,59,.14)}
+  .ptabs button small{font-size:12px;font-weight:800;color:#0b3f73;background:#dcebfa;border-radius:8px;padding:1px 6px}
+  .ptabs.big{min-width:min(100%,380px)}
+  .ptabs.big button{min-height:48px;font-size:15.5px}
+  .pane[hidden]{display:none!important}
+  .mnote{font-size:12.5px;color:var(--muted);line-height:1.6;margin:10px 0 0;word-break:keep-all}
+  .viewer{background:#fff}
+  .vctl{display:flex;flex-wrap:wrap;gap:8px;padding:10px 12px;background:#f3f6f9;border-top:1px solid var(--line);align-items:center}
+  .vctl .vb{box-shadow:none}
+  .vctl .vb[aria-pressed="true"]{background:#14263b;color:#fff;border-color:#14263b;opacity:1}
+  .vctl .vb[aria-pressed="false"]{opacity:1}
+  .vctl .sp{flex:1}
+  .lbl{font-size:13px;font-weight:900;color:var(--fab);margin:12px 0 6px;word-break:keep-all}
+  .lbl:first-child,.pane > .lbl:first-child{margin-top:0}
+  .what{font-size:15.5px;line-height:1.7;color:var(--ink2);margin:0 0 8px;word-break:keep-all}
+  .ph.on{background:#eef5fc}.ph.on i{background:var(--fab)}
+  .viewer > .scene.grow{flex:1 1 auto;min-height:300px;aspect-ratio:auto!important}
+  /* 화면 높이를 꽉 채우기: 그림 칸이 남는 높이를 차지 */
+  html,body{height:100%}
+  .app{height:100vh;height:100dvh;max-height:1400px}
+  .stage{flex:1 1 auto;min-height:0}
+  .stage > .card.pad{overflow:auto}
+  @media (max-width:900px){.stage{grid-template-rows:minmax(0,1fr) auto}}
+  /* ===== 소리 수업 공통: 소리 분석 화면 · 악기 그림 ===== */
+  .scope{position:relative;width:100%;overflow:hidden;background:#fff}
+  .scope canvas.scv{position:absolute;inset:0;display:block}
+  .scope .scl{position:absolute;right:8px;top:50%;transform:translateY(-130%);font-size:12.5px;font-weight:800;color:#6b7c8f;background:rgba(255,255,255,.9);padding:0 4px;border-radius:5px;pointer-events:none}
+  .scope .amp{position:absolute;font-size:12.5px;font-weight:800;color:#14263b;transform:translate(8px,-50%);pointer-events:none;background:rgba(255,255,255,.88);padding:0 4px;border-radius:5px}
+  .inst-svg{display:block;width:100%;height:100%;overflow:visible}
+  .air{opacity:0}
+  .air path{fill:none;stroke:#0e63b3;stroke-width:1.3;stroke-linecap:round}
+  .on .air{opacity:1}
+  .on .air path{animation:airgo .9s ease-out infinite;transform-box:fill-box;transform-origin:left center}
+  @keyframes airgo{0%{opacity:.9;transform:translateX(-4px)}100%{opacity:0;transform:translateX(6px)}}
+  .on .vbp{animation:jit .07s linear infinite}
+  @keyframes jit{0%{transform:translate(0,0)}25%{transform:translate(.5px,0)}50%{transform:translate(0,.3px)}75%{transform:translate(-.5px,0)}100%{transform:translate(0,0)}}
+  .on.fade .vbp,.on.fade .air path{animation-duration:.14s,2s}
+  @media (prefers-reduced-motion:reduce){.on .vbp,.on .air path{animation:none}.on .air{opacity:.8}}
+  /* 기록 칸 (교과서 탐구의 모눈 칸) */
+  .rec{position:relative;border:1px solid #d4dee8;border-radius:14px;overflow:hidden;background:#fff}
+  .rec .rh{display:flex;align-items:center;gap:8px;padding:6px 8px 6px 12px;border-bottom:1px solid #e6edf3;background:#fbfcfe}
+  .rec .rh b{font-size:14.5px;font-weight:900;color:#14263b;word-break:keep-all}
+  .rec .rh small{font-size:12.5px;font-weight:700;color:var(--muted);word-break:keep-all}
+  .rec .rh .sp{flex:1}
+  .rec .rh .st{font-size:12.5px;font-weight:800;color:#8495a8}
+  .rec.done .rh .st{color:#0e63b3}
+  .pbtn{min-height:44px;min-width:96px;padding:0 14px;border-radius:12px;border:0;background:#0e63b3;color:#fff;font-weight:800;font-size:14.5px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+  .pbtn:active{transform:scale(.97)}
+  .pbtn.ghost{background:#eef3f8;color:#34495e}
+  .pbtn svg{flex:none;width:15px!important;height:15px!important;filter:none!important}
+  .pbtn span{white-space:nowrap}
+  .pbtn:disabled{opacity:.45;cursor:default}
+  .loadnote{font-size:12.5px;font-weight:700;color:var(--muted)}
+  /* ===== 이 페이지 전용 ===== */
+  .viewer{justify-content:flex-start!important;padding:12px!important;gap:12px}
+  .recs{flex:1 1 auto;display:grid;grid-template-rows:1fr 1fr;gap:12px;min-height:0}
+  .rec{display:flex;flex-direction:column;min-height:170px}
+  .rec .scope{flex:1 1 auto;min-height:110px}
+  .rec .pic{width:34px;height:42px;flex:none}
+  .rec .empty{position:absolute;left:50%;top:58%;transform:translate(-50%,-50%);font-size:14px;font-weight:700;color:#97a6b5;pointer-events:none;white-space:nowrap}
+  .rec.done .empty,.rec.live .empty{display:none}
+  .rec .cnt{font-size:12.5px;font-weight:800;color:#0e63b3}
+  .vnote{font-size:12.5px;color:var(--muted);margin:0;word-break:keep-all}
+  .chips{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin-bottom:10px}
+  .chip{min-height:58px;border-radius:12px;border:2px solid #dfe6ee;background:#fff;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;padding:2px;font-weight:800;font-size:12.5px;color:#34495e}
+  .chip .pic{width:26px;height:32px}
+  .chip[aria-pressed="true"]{border-color:#0e63b3;background:#eef5fc;color:#0e63b3}
+  .pick2{display:grid;grid-template-columns:auto 1fr;gap:6px 10px;align-items:center;margin-bottom:10px}
+  .pick2 span{font-size:13.5px;font-weight:900;color:var(--ink2)}
+  .pick2 select{min-height:44px;border-radius:12px;border:2px solid #dfe6ee;background:#fff;font:inherit;font-weight:800;font-size:15px;color:#14263b;padding:0 10px}
+  .lbl2{font-size:13px;font-weight:900;color:#0e63b3;margin:0 0 6px}
+  .tasks{display:grid;gap:5px;margin-bottom:8px}
+  .task{display:grid;grid-template-columns:26px 1fr;gap:8px;align-items:center;padding:7px 10px;border-radius:12px;background:#f7fafc;border:1px solid var(--line);font-size:14.5px;font-weight:700;color:var(--muted);word-break:keep-all}
+  .task i{font-style:normal;width:24px;height:24px;border-radius:8px;background:#dfe6ee;display:grid;place-items:center;font-weight:900;font-size:12.5px;color:#607285}
+  .task.now{background:#e9f3fd;border-color:#bcd7f2;color:var(--ink)}.task.now i{background:var(--fab);color:#fff}
+  .task.done{color:var(--ink2)}.task.done i{background:#0e63b3;color:#fff}
+  .ask{border-radius:16px;padding:12px;background:#fff;border:2px solid #bcd7f2}
+  .ask.lock{border-color:#e2e8ee;opacity:.55}
+  .ask p{margin:0 0 8px;font-size:16px;font-weight:800;line-height:1.5;word-break:keep-all}
+  .opts{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+  .opts.two{grid-template-columns:1fr 1fr}
+  .opts button{min-height:50px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15px;cursor:pointer;word-break:keep-all;line-height:1.25;padding:4px}
+  .opts button small{display:block;font-size:11.5px;font-weight:700;color:var(--muted)}
+  .opts button.bad{border-color:#e7a29b;background:#fff4f2;color:#9b3a32}
+  .opts button.good{border-color:#0e63b3;background:#e9f3fd;color:#0b3f73}
+  .lvl{display:flex;gap:6px;margin-bottom:10px}
+  .lvl span{flex:1;height:8px;border-radius:99px;background:#e2e9f0}
+  .lvl span.done{background:#0e63b3}.lvl span.now{background:#8db8e3}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="ttl">
+      <span class="eyebrow">시뮬레이션 ②</span><h1>소리 분석 실험실</h1>
+      <p class="sub" id="sub"></p>
+    </div>
+    <div class="ptabs big" role="tablist" id="acts" style="margin:0">
+      <button type="button" role="tab" data-a="amp" aria-selected="true">① 세기</button>
+      <button type="button" role="tab" data-a="freq" aria-selected="false">② 높낮이</button>
+      <button type="button" role="tab" data-a="form" aria-selected="false">③ 음색</button>
+      <button type="button" role="tab" data-a="quiz" aria-selected="false">④ 파형 읽기</button>
+    </div>
+  </header>
+
+  <div class="stage">
+    <section class="card viewer">
+      <div class="recs" id="recs"></div>
+      <p class="vnote" id="vnote">모눈의 가로는 시간이에요. 두 칸은 같은 시간 동안의 파동을 같은 크기로 보여 줘요.</p>
+    </section>
+
+    <section class="card pad">
+      <div id="pickBox"></div>
+      <div class="tasks" id="tasks"></div>
+      <div class="ask lock" id="ask"></div>
+      <div class="concl lock" id="concl"></div>
+    </section>
+  </div>
+</div>
+<script>
+window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
+  reduce: !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches), Q: new URLSearchParams(location.search) };
+</script>
+<script>
+/* ===== SND: 악기 소리 내기 + 소리 분석 화면(파형) =====
+   - 실제 악기 녹음(audio/*.mp3, 한 음 2.2초)을 Web Audio로 재생해요. 다른 음은 가까운 녹음을 빠르게·느리게 재생해 만들어요.
+   - 파형은 마이크가 아니라 재생 중인 녹음 자료를 그대로 그려요(소리를 꺼 둔 기기에서도 같은 파형이 보여요).
+   - SND.scope(host, opts): 교과서 그림 Ⅲ-16~18처럼 모눈 위에 파형을 그리는 화면 */
+(() => {
+  'use strict';
+  const NOTE = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+  const midiOf = (n) => { const m = /^([A-G])(s?)(-?\d)$/.exec(n); return 12 * (+m[3] + 1) + NOTE[m[1]] + (m[2] ? 1 : 0); };
+  const hz = (m) => 440 * Math.pow(2, (m - 69) / 12);
+  // 악기 목록: base = 이 악기의 '낮은 도'(MIDI 번호), part = 진동하는 부분, perc = 치는 악기(소리가 빨리 줄어듦), g4 = '솔'(G4)을 자연스럽게 낼 수 있음
+  const INST = {
+    violin:     { name: '바이올린',   fam: 'str', base: 60, part: '줄', how: '활로 줄을 문질러 줄이 진동해요', s: ['C4', 'E4', 'G4', 'A4', 'C5'], g4: 1 },
+    cello:      { name: '첼로',       fam: 'str', base: 48, part: '줄', how: '활로 굵은 줄을 문질러 줄이 진동해요', s: ['C3', 'E3', 'G3', 'A3', 'C4', 'G4'], g4: 1 },
+    contrabass: { name: '콘트라베이스', fam: 'str', base: 36, part: '줄', how: '활로 아주 굵고 긴 줄을 문질러 줄이 진동해요', s: ['C2', 'E2', 'Gs2', 'Cs3'] },
+    harp:       { name: '하프',       fam: 'str', base: 60, part: '줄', how: '손가락으로 줄을 퉁겨 줄이 진동해요', s: ['B3', 'D4', 'F4', 'A4', 'C5'], perc: 1, g4: 1 },
+    flute:      { name: '플루트',     fam: 'ww',  base: 72, part: '관 속 공기', how: '구멍에 입김을 불어 관 속 공기가 진동해요', s: ['A4', 'C5', 'E5', 'A5', 'C6'], g4: 1 },
+    clarinet:   { name: '클라리넷',   fam: 'ww',  base: 60, part: '관 속 공기', how: '입김을 불어 관 속 공기가 진동해요', s: ['D4', 'F4', 'As4', 'D5'], g4: 1 },
+    bassoon:    { name: '바순',       fam: 'ww',  base: 48, part: '관 속 공기', how: '입김을 불어 긴 관 속 공기가 진동해요', s: ['C3', 'G3', 'A3', 'C4', 'G4'], g4: 1 },
+    recorder:   { name: '리코더',     fam: 'ww',  base: 72, part: '관 속 공기', how: '입김을 불어 관 속 공기가 진동해요', s: ['G4', 'C5', 'E5', 'G5', 'C6'], g4: 1 },
+    trumpet:    { name: '트럼펫',     fam: 'br',  base: 60, part: '관 속 공기', how: '입술을 떨며 불어 관 속 공기가 진동해요', s: ['C4', 'Ds4', 'F4', 'G4', 'As4', 'D5'], g4: 1 },
+    horn:       { name: '호른',       fam: 'br',  base: 48, part: '관 속 공기', how: '입술을 떨며 불어 둥글게 감긴 관 속 공기가 진동해요', s: ['D3', 'F3', 'A3', 'C4'] },
+    trombone:   { name: '트롬본',     fam: 'br',  base: 48, part: '관 속 공기', how: '입술을 떨며 불어 관 속 공기가 진동해요', s: ['C3', 'Ds3', 'F3', 'Gs3', 'C4', 'F4'], g4: 1 },
+    tuba:       { name: '튜바',       fam: 'br',  base: 36, part: '관 속 공기', how: '입술을 떨며 불어 크고 긴 관 속 공기가 진동해요', s: ['As1', 'Ds2', 'F2', 'As2'] },
+    xylophone:  { name: '실로폰',     fam: 'pc',  base: 72, part: '나무 막대', how: '채로 나무 막대를 쳐서 막대가 진동해요', s: ['G4', 'C5', 'G5', 'C6'], perc: 1, g4: 1 },
+    timpani:    { name: '팀파니',     fam: 'pc',  base: 36, part: '막', how: '채로 가죽 막을 쳐서 막이 진동해요', s: ['C2', 'E2', 'G2', 'C3'], perc: 1 },
+  };
+  const FAM = { str: '현악기', ww: '목관 악기', br: '금관 악기', pc: '타악기' };
+  const SCALE = [['도', 0], ['레', 2], ['미', 4], ['파', 5], ['솔', 7], ['라', 9], ['시', 11], ['도', 12]];
+  const VEL = { soft: 0.32, mid: 0.62, loud: 1 };
+  const SOL = 67; // '솔'(G4)
+  const BASE = (window.SND_BASE || 'audio/');
+
+  let ctx = null, master = null;
+  const buf = {};       // 'violin-C4' → { b: AudioBuffer, m: midi, P: 녹음 한 주기의 샘플 수 }
+  const loading = {};
+  function audio() {
+    if (!ctx) {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) { /* 아이패드 무음 스위치 대비 */ }
+      ctx = new AC();
+      master = ctx.createGain(); master.gain.value = 0.9;
+      const comp = ctx.createDynamicsCompressor(); comp.threshold.value = -6; comp.ratio.value = 4;
+      master.connect(comp); comp.connect(ctx.destination);
+    }
+    if (ctx.state === 'suspended') ctx.resume();
+    return ctx;
+  }
+  // 녹음에서 실제 한 주기 길이를 찾아 두면 파형 화면이 흔들리지 않아요
+  function period(b, m) {
+    const d = b.getChannelData(0), sr = b.sampleRate, P0 = sr / hz(m);
+    const s0 = Math.floor(0.25 * sr), n = Math.min(Math.floor(4 * P0) + 512, d.length - s0 - Math.ceil(1.3 * P0) - 2);
+    if (n < 64) return P0;
+    let best = P0, bv = -Infinity;
+    for (let L = Math.floor(P0 * 0.92); L <= Math.ceil(P0 * 1.08); L++) {
+      let c = 0; for (let i = 0; i < n; i++) c += d[s0 + i] * d[s0 + i + L];
+      if (c > bv) { bv = c; best = L; }
+    }
+    // 소수점까지 다듬기(포물선)
+    const cc = (L) => { let c = 0; for (let i = 0; i < n; i++) c += d[s0 + i] * d[s0 + i + L]; return c; };
+    const a = cc(best - 1), b2 = bv, c2 = cc(best + 1), den = a - 2 * b2 + c2;
+    return den < 0 ? best + 0.5 * (a - c2) / den : best;
+  }
+  // 화면 크기 맞춤: 세게(1) 연주할 때 소리가 고른 부분의 가장 큰 흔들림이 화면 높이의 80%가 되게 (소리 크기는 그대로)
+  function dgain(b) {
+    const d = b.getChannelData(0), sr = b.sampleRate; let pk = 0;
+    for (let i = Math.floor(0.08 * sr), e = Math.min(d.length, Math.floor(0.6 * sr)); i < e; i++) { const a = Math.abs(d[i]); if (a > pk) pk = a; }
+    return 0.8 / (pk || 1);
+  }
+  function load(id) {
+    if (loading[id]) return loading[id];
+    const A = audio(); const I = INST[id];
+    const dec = (ab) => new Promise((res, rej) => { const p = A.decodeAudioData(ab, res, rej); if (p && p.then) p.then(res, rej); });
+    loading[id] = Promise.all(I.s.map((n) => fetch(BASE + id + '-' + n + '.mp3').then((r) => { if (!r.ok) throw new Error(id + '-' + n + ' 소리 파일 없음'); return r.arrayBuffer(); })
+      .then(dec).then((b) => { const m = midiOf(n); buf[id + '-' + n] = { b, m, P: period(b, m), dg: dgain(b) }; })))
+      .catch((e) => { delete loading[id]; throw e; });
+    return loading[id];
+  }
+  const ready = (id) => INST[id].s.every((n) => buf[id + '-' + n]);
+  function pick(id, m) {
+    let best = null;
+    INST[id].s.forEach((n) => { const x = buf[id + '-' + n]; if (x && (!best || Math.abs(x.m - m) < Math.abs(best.m - m))) best = x; });
+    return best;
+  }
+
+  // 지금 울리는 소리(한 번에 하나)
+  let cur = null;
+  const listeners = new Set();
+  const REL = 0.14;
+  function stop(fast) {
+    if (!cur) return;
+    const v = cur; cur = null;
+    if (v.src) {
+      const t = ctx.currentTime, r = fast ? 0.05 : REL;
+      try { v.g.gain.cancelScheduledValues(t); v.g.gain.setValueAtTime(v.g.gain.value, t); v.g.gain.linearRampToValueAtTime(0, t + r); v.src.stop(t + r + 0.02); } catch (e) { /* 이미 끝남 */ }
+    }
+    listeners.forEach((f) => f(null));
+  }
+  // play: 소리를 내고 voice를 돌려줘요. 소리를 낼 수 없는 기기(자동 재생 막힘)에서도 파형은 시계로 움직여요
+  function play(id, m, vel) {
+    const A = audio(); const x = pick(id, m); if (!x) return null;
+    stop(true);
+    const rate = Math.pow(2, (m - x.m) / 12), V = vel == null ? 1 : vel;
+    const v = { id, m, vel: V, x, rate, t0: performance.now() / 1000, dur: x.b.duration / rate, src: null, g: null };
+    if (A) {
+      const src = A.createBufferSource(); src.buffer = x.b; src.playbackRate.value = rate;
+      const g = A.createGain(); g.gain.value = V;
+      src.connect(g); g.connect(master); src.start();
+      v.src = src; v.g = g; v.at0 = A.currentTime;
+      src.onended = () => { if (cur === v) { cur = null; listeners.forEach((f) => f(null)); } };
+    }
+    cur = v; listeners.forEach((f) => f(v));
+    return v;
+  }
+  const elapsed = (v) => (v.src && ctx && ctx.state === 'running' ? ctx.currentTime - v.at0 : performance.now() / 1000 - v.t0);
+  // 녹음 자료에서 파형 한 조각 꺼내기: t초 시점부터 win초 동안, n개 점. 한 주기에 맞춰 시작해 화면이 흔들리지 않아요
+  function slice(x, rate, vel, t, win, n, out) {
+    const d = x.b.getChannelData(0), sr = x.b.sampleRate;
+    const P = x.P, p = t * rate * sr;
+    const p0 = Math.floor(p / P) * P, span = win * rate * sr;
+    out = out || new Float32Array(n);
+    for (let k = 0; k < n; k++) {
+      const q = p0 + (k / (n - 1)) * span, i = Math.floor(q), f = q - i;
+      out[k] = i + 1 < d.length ? x.dg * vel * (d[i] * (1 - f) + d[i + 1] * f) : 0;
+    }
+    return out;
+  }
+  // 기록용 파형(소리를 내지 않고 계산): 소리가 가장 고른 순간을 찍어요
+  // norm: 세기를 맞춰 보여 줄 때(음색 비교) 고른 크기(RMS)
+  function shot(id, m, vel, win, n, norm) {
+    const x = pick(id, m); if (!x) return null;
+    const rate = Math.pow(2, (m - x.m) / 12);
+    const a = slice(x, rate, vel, INST[id].perc ? 0.12 : 0.42, win, n || 600);
+    if (norm) { let q = 0; for (let k = 0; k < a.length; k++) q += a[k] * a[k]; q = Math.sqrt(q / a.length) || 1; for (let k = 0; k < a.length; k++) a[k] *= (norm * vel) / q; }
+    return a;
+  }
+
+  /* ===== 소리 분석 화면 ===== */
+  function scope(host, o) {
+    o = Object.assign({ win: 0.02, rows: 6, live: true, label: '시간', amp: 1 }, o || {});
+    const cv = document.createElement('canvas'); cv.className = 'scv'; host.appendChild(cv);
+    const lab = document.createElement('span'); lab.className = 'scl'; lab.textContent = o.label; host.appendChild(lab);
+    const g = cv.getContext('2d');
+    const N = 720; let data = new Float32Array(N), ghost = null, frozen = null, mark = null;
+    let W = 0, H = 0, dpr = 1, raf = 0, alive = true;
+    const S = { o, host, cv };
+    function size() {
+      const r = host.getBoundingClientRect(); dpr = Math.min(2, window.devicePixelRatio || 1);
+      W = Math.max(10, r.width); H = Math.max(10, r.height);
+      cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); cv.style.width = W + 'px'; cv.style.height = H + 'px';
+      draw();
+    }
+    function line(arr, col, wd, dash) {
+      const cy = H / 2, A = (H / 2) * o.amp;
+      g.beginPath();
+      for (let k = 0; k < arr.length; k++) { const X = (k / (arr.length - 1)) * W, Y = cy - Math.max(-1.15, Math.min(1.15, arr[k])) * A; k ? g.lineTo(X, Y) : g.moveTo(X, Y); }
+      g.strokeStyle = col; g.lineWidth = wd; g.lineJoin = 'round'; g.lineCap = 'round'; g.setLineDash(dash || []); g.stroke(); g.setLineDash([]);
+    }
+    function draw() {
+      g.setTransform(dpr, 0, 0, dpr, 0, 0);
+      g.fillStyle = '#fff'; g.fillRect(0, 0, W, H);
+      const c = H / o.rows, cy = H / 2;
+      g.lineWidth = 1; g.strokeStyle = '#e3e9ef'; g.beginPath();
+      for (let y = c; y < H - 0.5; y += c) { g.moveTo(0, Math.round(y) + 0.5); g.lineTo(W, Math.round(y) + 0.5); }
+      for (let x = c; x < W - 0.5; x += c) { g.moveTo(Math.round(x) + 0.5, 0); g.lineTo(Math.round(x) + 0.5, H); }
+      g.stroke();
+      g.strokeStyle = '#a9b6c3'; g.beginPath(); g.moveTo(0, Math.round(cy) + 0.5); g.lineTo(W, Math.round(cy) + 0.5); g.stroke();
+      if (ghost) line(ghost, '#b9c4cf', 2, [5, 4]);
+      const arr = frozen || data;
+      line(arr, '#0e63b3', Math.max(2, Math.min(3, W / 320)));
+      if (mark === 'amp') {
+        let mx = 0, ki = 0; for (let k = 0; k < arr.length * 0.6; k++) if (arr[k] > mx) { mx = arr[k]; ki = k; }
+        if (mx > 0.02) {
+          const X = (ki / (arr.length - 1)) * W, Y = cy - Math.min(1.15, mx) * (H / 2) * o.amp;
+          g.strokeStyle = '#14263b'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(X, cy); g.lineTo(X, Y); g.stroke();
+          g.beginPath(); g.moveTo(X - 6, Y); g.lineTo(X + 6, Y); g.moveTo(X - 6, cy); g.lineTo(X + 6, cy); g.stroke();
+          S.ampAt = { x: X, y: (cy + Y) / 2 };
+        } else S.ampAt = null;
+      } else S.ampAt = null;
+      if (S.onDraw) S.onDraw(S);
+    }
+    let lastV = null;
+    function tick() {
+      if (!alive) return;
+      raf = requestAnimationFrame(tick);
+      if (!o.live || frozen) return;
+      const v = cur;
+      if (v && (!o.only || o.only(v))) {
+        const t = elapsed(v);
+        if (t < v.dur) {
+          slice(v.x, v.rate, v.vel * (v.gain || 1), Math.max(0, t), o.win, N, data); lastV = v; draw(); return;
+        }
+      }
+      // 소리가 멈추면 파형이 진동 중심으로 천천히 줄어들어요
+      let any = false; for (let k = 0; k < N; k++) { data[k] *= 0.82; if (Math.abs(data[k]) > 0.002) any = true; else data[k] = 0; }
+      if (any || lastV) { lastV = null; draw(); }
+    }
+    S.set = (p) => { Object.assign(o, p); draw(); };
+    S.freeze = (arr) => { frozen = arr; draw(); };
+    S.clear = () => { frozen = null; data = new Float32Array(N); draw(); };
+    S.ghost = (arr) => { ghost = arr; draw(); };
+    S.mark = (m) => { mark = m; draw(); };
+    S.data = () => frozen || data;
+    S.draw = draw;
+    S.kill = () => { alive = false; cancelAnimationFrame(raf); };
+    if (window.ResizeObserver) new ResizeObserver(size).observe(host); else window.addEventListener('resize', size);
+    size(); tick();
+    return S;
+  }
+
+  window.SND = { INST, FAM, SCALE, VEL, SOL, hz, midiOf, audio, load, ready, play, stop, shot, scope, N: 720,
+    on: (f) => listeners.add(f), off: (f) => listeners.delete(f), cur: () => cur, elapsed };
+})();
+</script>
+<script>
+/* ===== ART: 악기 그림 (SVG) =====
+   ART.svg(id, key): 악기 하나를 그린 SVG 글자. key는 그라디언트 이름이 겹치지 않게 붙이는 꼬리표.
+   - 빛은 왼쪽 위에서. 매트한 재질, 얇은 선, 바닥 그림자 하나.
+   - 진동하는 부분은 class="vbp"(줄·막대·막), 관악기의 소리 나오는 곳은 class="air" 무리(소리 날 때만 보임) */
+(() => {
+  'use strict';
+  const lg = (id, stops, x1 = 0, y1 = 0, x2 = 1, y2 = 0) => `<linearGradient id="${id}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}">${stops.map(([o, c]) => `<stop offset="${o}" stop-color="${c}"/>`).join('')}</linearGradient>`;
+  const rg = (id, stops, cx = 0.35, cy = 0.3, r = 0.8) => `<radialGradient id="${id}" cx="${cx}" cy="${cy}" r="${r}">${stops.map(([o, c]) => `<stop offset="${o}" stop-color="${c}"/>`).join('')}</radialGradient>`;
+  const shadow = (cx, cy, rx, ry = 4.5) => `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="#14263b" opacity=".10"/>`;
+  // 공기 진동 표시: (x,y)에서 각도 a(도) 쪽으로 퍼지는 얇은 호 세 개
+  const air = (x, y, a, r0 = 10) => `<g class="air" transform="translate(${x} ${y}) rotate(${a})">${[0, 1, 2].map((i) => `<path d="M${r0 + i * 7} -${6 + i * 3}A${r0 + i * 7} ${r0 + i * 7} 0 0 1 ${r0 + i * 7} ${6 + i * 3}" style="animation-delay:${i * 0.18}s"/>`).join('')}</g>`;
+
+  // 바이올린 무리 몸통: 가운데 x, 위 T, 높이 H, 위·아래 너비 반, 허리 반, 어깨 기울기(콘트라베이스)
+  function vbody(x, T, H, ub, lb, wa, slope = 0) {
+    const R = (dx, dy) => `${(x + dx).toFixed(1)} ${(T + dy).toFixed(1)}`;
+    const L = (dx, dy) => `${(x - dx).toFixed(1)} ${(T + dy).toFixed(1)}`;
+    const s = slope * H;
+    return `M${R(0, 0)}C${R(ub * 0.55 - s * 0.2, 0)} ${R(ub, H * 0.06 + s)} ${R(ub, H * 0.2 + s * 0.6)}` +
+      `C${R(ub, H * 0.31)} ${R(ub * 0.92, H * 0.34)} ${R(ub * 0.9, H * 0.36)}` +
+      `C${R(wa, H * 0.4)} ${R(wa, H * 0.56)} ${R(lb * 0.9, H * 0.6)}` +
+      `C${R(lb * 1.02, H * 0.64)} ${R(lb, H * 0.7)} ${R(lb, H * 0.78)}` +
+      `C${R(lb, H * 0.93)} ${R(lb * 0.55, H)} ${R(0, H)}` +
+      `C${L(lb * 0.55, H)} ${L(lb, H * 0.93)} ${L(lb, H * 0.78)}` +
+      `C${L(lb, H * 0.7)} ${L(lb * 1.02, H * 0.64)} ${L(lb * 0.9, H * 0.6)}` +
+      `C${L(wa, H * 0.56)} ${L(wa, H * 0.4)} ${L(ub * 0.9, H * 0.36)}` +
+      `C${L(ub * 0.92, H * 0.34)} ${L(ub, H * 0.31)} ${L(ub, H * 0.2 + s * 0.6)}` +
+      `C${L(ub, H * 0.06 + s)} ${L(ub * 0.55 - s * 0.2, 0)} ${L(0, 0)}Z`;
+  }
+  function strings(k, o) {
+    const { x, T, H, ub, lb, wa, top, slope, pin, bow } = o;
+    const fh = (sx) => `<path d="M${x + sx * wa * 0.62} ${T + H * 0.4}c${sx * -2} ${H * 0.05} ${sx * 3} ${H * 0.1} ${sx * 1} ${H * 0.17}" fill="none" stroke="#3b1c0c" stroke-width="${Math.max(1.1, H * 0.016)}" stroke-linecap="round"/>`;
+    const nw = Math.max(3, ub * 0.16);
+    return `<defs>${lg(k + 'w', [[0, '#c98552'], [0.45, '#a75a2c'], [1, '#6e3418']], 0, 0, 1, 1)}${rg(k + 'h', [[0, 'rgba(255,240,220,.38)'], [1, 'rgba(255,240,220,0)']], 0.32, 0.28, 0.55)}${lg(k + 'n', [[0, '#3a3330'], [1, '#191514']])}</defs>` +
+      shadow(x, T + H + (pin ? 9 : 4), lb * 0.95) +
+      (pin ? `<line x1="${x}" y1="${T + H}" x2="${x}" y2="${T + H + 8}" stroke="#7d8793" stroke-width="1.6" stroke-linecap="round"/>` : '') +
+      // 목과 머리(스크롤)
+      `<path d="M${x - nw * 0.8} ${T + 4}L${x - nw * 0.62} ${top + 14}L${x + nw * 0.62} ${top + 14}L${x + nw * 0.8} ${T + 4}Z" fill="#8a4a24"/>` +
+      `<path d="M${x - nw * 0.7} ${top + 16}q-${nw * 0.4} -6 0 -12M${x + nw * 0.7} ${top + 16}q${nw * 0.4} -6 0 -12" stroke="#2b211c" stroke-width="2" fill="none" stroke-linecap="round"/>` +
+      `<circle cx="${x}" cy="${top + 5}" r="${nw * 0.95}" fill="url(#${k}w)"/><path d="M${x + nw * 0.5} ${top + 5}a${nw * 0.5} ${nw * 0.5} 0 1 1 -${nw * 0.4} -${nw * 0.35}" stroke="#5a2a12" stroke-width="1.1" fill="none"/>` +
+      // 몸통
+      `<path d="${vbody(x, T, H, ub, lb, wa, slope || 0)}" fill="url(#${k}w)" stroke="#5a2a12" stroke-width="1"/>` +
+      `<path d="${vbody(x, T, H, ub, lb, wa, slope || 0)}" fill="url(#${k}h)"/>` +
+      `<path d="${vbody(x, T + 1.6, H - 3.2, ub - 1.6, lb - 1.6, wa - 1.2, slope || 0)}" fill="none" stroke="#3b1c0c" stroke-opacity=".45" stroke-width=".8"/>` +
+      fh(-1) + fh(1) +
+      // 지판·줄받침·줄걸이
+      `<path d="M${x - nw * 0.62} ${top + 15}L${x + nw * 0.62} ${top + 15}L${x + nw * 1.1} ${T + H * 0.55}L${x - nw * 1.1} ${T + H * 0.55}Z" fill="url(#${k}n)"/>` +
+      `<path d="M${x - nw * 1.25} ${T + H * 0.64}h${nw * 2.5}" stroke="#e8d6b2" stroke-width="${Math.max(2, H * 0.03)}" stroke-linecap="round"/>` +
+      `<path d="M${x - nw * 0.9} ${T + H * 0.72}L${x + nw * 0.9} ${T + H * 0.72}L${x + nw * 0.5} ${T + H * 0.95}L${x - nw * 0.5} ${T + H * 0.95}Z" fill="#221c19"/>` +
+      `<g class="vbp">${[-0.75, -0.25, 0.25, 0.75].map((f) => `<line x1="${x + f * nw * 0.9}" y1="${top + 15}" x2="${x + f * nw * 1.2}" y2="${T + H * 0.73}" stroke="#efe6d2" stroke-width=".7"/>`).join('')}</g>` +
+      (bow ? `<g transform="rotate(${bow.a} ${x} ${T + H * 0.5})"><line x1="${x - bow.l}" y1="${T + H * 0.5}" x2="${x + bow.l}" y2="${T + H * 0.5}" stroke="#5a3a22" stroke-width="2" stroke-linecap="round"/><line x1="${x - bow.l + 3}" y1="${T + H * 0.5 + 2.4}" x2="${x + bow.l - 6}" y2="${T + H * 0.5 + 2.4}" stroke="#ece5d6" stroke-width="1"/><rect x="${x + bow.l - 9}" y="${T + H * 0.5 - 1}" width="7" height="5" rx="1.2" fill="#1f1a18"/></g>` : '');
+  }
+
+  const BR = (k) => `${lg(k + 'b', [[0, '#f0d38a'], [0.45, '#d4a447'], [1, '#9c6c1d']], 0, 0, 0, 1)}${lg(k + 'bh', [[0, '#f6e2a8'], [0.5, '#d9ab4e'], [1, '#a77526']], 0, 0, 1, 0)}${rg(k + 'bm', [[0, '#8a5f1c'], [0.6, '#b8862f'], [1, '#e7c574']], 0.5, 0.5, 0.6)}`;
+  const tube = (d, k, w, col) => `<path d="${d}" fill="none" stroke="#7d5414" stroke-width="${w + 1.6}" stroke-linecap="round" stroke-linejoin="round"/><path d="${d}" fill="none" stroke="${col || `url(#${k}bh)`}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/><path d="${d}" fill="none" stroke="#fbeec8" stroke-opacity=".55" stroke-width="${Math.max(0.6, w * 0.22)}" stroke-linecap="round" transform="translate(-${w * 0.18} -${w * 0.2})"/>`;
+
+  const DRAW = {
+    violin: (k) => ({ vb: '0 0 120 160', g: strings(k, { x: 60, T: 70, H: 76, ub: 19, lb: 23, wa: 13.5, top: 8, bow: { a: -24, l: 44 } }) }),
+    cello: (k) => ({ vb: '0 0 120 160', g: strings(k, { x: 60, T: 52, H: 90, ub: 24, lb: 29, wa: 17, top: 6, pin: 1 }) }),
+    contrabass: (k) => ({ vb: '0 0 120 160', g: strings(k, { x: 60, T: 44, H: 98, ub: 21, lb: 33, wa: 20, top: 3, pin: 1, slope: 0.1 }) }),
+    harp: (k) => {
+      const str = []; for (let i = 0; i < 12; i++) { const x = 36 + i * 5.2, yb = 142 - (x - 39) * (104 / 59) - 1, yt = 27 + Math.sin(((x - 24) / 76) * Math.PI * 2) * -4 + (x - 24) * 0.12; if (yb - yt > 6) str.push(`<line x1="${x.toFixed(1)}" y1="${yt.toFixed(1)}" x2="${x.toFixed(1)}" y2="${yb.toFixed(1)}" stroke="${i % 7 === 0 ? '#b5482f' : '#efe7d6'}" stroke-width="${i < 4 ? 0.95 : 0.75}"/>`); }
+      return { vb: '0 0 120 160', g: `<defs>${lg(k + 'c', [[0, '#e0b06d'], [0.5, '#c08245'], [1, '#8a5428']])}${lg(k + 's', [[0, '#d39a5c'], [1, '#9a5f2e']], 0, 0, 1, 1)}</defs>` +
+        shadow(64, 150, 34) +
+        `<path d="M30 147h40l-4 -6h-32z" fill="#9a5f2e"/>` +
+        `<path d="M34 142L44 142L100 40L96 36Z" fill="url(#${k}s)" stroke="#6d3e1c" stroke-width=".9"/>` +
+        `<g class="vbp">${str.join('')}</g>` +
+        `<path d="M24 146L24 30" stroke="#7d4a22" stroke-width="9" stroke-linecap="round"/><path d="M24 146L24 30" stroke="url(#${k}c)" stroke-width="7" stroke-linecap="round"/>` +
+        `<path d="M20 26q8 -12 22 -4q14 10 28 2q18 -10 30 10q2 6 -4 6q-12 -12 -26 -4q-14 8 -30 0q-10 -5 -16 4z" fill="url(#${k}c)" stroke="#6d3e1c" stroke-width=".9"/>` +
+        `<path d="M18 26a7 7 0 1 1 12 -6" fill="none" stroke="#c99a52" stroke-width="3"/>` };
+    },
+    flute: (k) => ({ vb: '0 0 120 160', g: `<defs>${lg(k + 'f', [[0, '#f4f6f8'], [0.45, '#cfd6dd'], [1, '#8e99a5']], 0, 0, 0, 1)}</defs>` + shadow(60, 150, 40) +
+      `<g transform="translate(60 80) rotate(-56)"><rect x="-74" y="-4.5" width="148" height="9" rx="4.5" fill="url(#${k}f)" stroke="#7a8592" stroke-width=".8"/>` +
+      `<rect x="-62" y="-6" width="14" height="12" rx="3" fill="url(#${k}f)" stroke="#7a8592" stroke-width=".8"/><ellipse cx="-55" cy="0" rx="3.2" ry="2.2" fill="#3a4450"/>` +
+      [-30, -21, -12, 4, 13, 22, 31, 46].map((x) => `<circle cx="${x}" cy="-1" r="3.3" fill="#e6eaee" stroke="#7a8592" stroke-width=".8"/>`).join('') +
+      `<line x1="-36" y1="3.6" x2="58" y2="3.6" stroke="#8e99a5" stroke-width=".8"/>` + `</g>` + air(98, 22, -56, 8) }),
+    clarinet: (k) => ({ vb: '0 0 120 160', g: `<defs>${lg(k + 'e', [[0, '#4a515b'], [0.4, '#2a2f36'], [1, '#14171b']])}${lg(k + 'm', [[0, '#f2f4f6'], [1, '#9aa5b1']])}</defs>` + shadow(60, 151, 20) +
+      `<path d="M57.6 8L62.4 8L63.4 26L56.6 26Z" fill="#1a1d21"/><rect x="56.4" y="12" width="7.2" height="3" rx="1" fill="url(#${k}m)"/>` +
+      `<rect x="55.5" y="26" width="9" height="12" rx="2" fill="url(#${k}e)"/>` +
+      `<path d="M55.8 38L64.2 38L64.6 124L55.4 124Z" fill="url(#${k}e)"/>` +
+      `<path d="M55.4 124L64.6 124Q67 136 74 146L46 146Q53 136 55.4 124Z" fill="url(#${k}e)"/><ellipse cx="60" cy="146" rx="14" ry="3.2" fill="#0d0f12"/>` +
+      [38, 80, 124].map((y) => `<rect x="54.6" y="${y - 1.6}" width="10.8" height="3.2" rx="1" fill="url(#${k}m)"/>`).join('') +
+      [48, 56, 64, 90, 98, 106].map((y) => `<circle cx="60" cy="${y}" r="2.3" fill="url(#${k}m)" stroke="#5f6b77" stroke-width=".5"/>`).join('') +
+      `<path d="M66 50v18M66 92v22" stroke="#c4ccd4" stroke-width="1.1"/>` + air(60, 150, 90, 6) }),
+    bassoon: (k) => ({ vb: '0 0 120 160', g: `<defs>${lg(k + 'r', [[0, '#c26a3c'], [0.45, '#94461f'], [1, '#5e2a12']])}${lg(k + 'm', [[0, '#f2f4f6'], [1, '#9aa5b1']])}</defs>` + shadow(62, 151, 22) +
+      `<rect x="52" y="22" width="15" height="126" rx="5" fill="url(#${k}r)"/>` + `<rect x="66" y="58" width="10" height="90" rx="4" fill="url(#${k}r)"/>` +
+      `<path d="M52 136h24v8a5 5 0 0 1 -5 5h-14a5 5 0 0 1 -5 -5z" fill="#5e2a12"/>` +
+      `<rect x="51" y="20" width="17" height="5" rx="2" fill="#efe6d4"/><ellipse cx="59.5" cy="20.5" rx="7.5" ry="2" fill="#2a1a12"/>` +
+      [56, 98].map((y) => `<rect x="51" y="${y}" width="17" height="3" rx="1" fill="url(#${k}m)"/>`).join('') + `<rect x="65" y="56" width="12" height="3" rx="1" fill="url(#${k}m)"/>` +
+      `<path d="M66 70q12 -6 12 -22q0 -10 -12 -14q-8 -2 -14 2" fill="none" stroke="url(#${k}m)" stroke-width="2.2" stroke-linecap="round"/><path d="M52 36l-4 -3" stroke="#d9c49a" stroke-width="3" stroke-linecap="round"/>` +
+      [70, 80, 90, 110, 120].map((y) => `<circle cx="59.5" cy="${y}" r="1.9" fill="#2a160c"/>`).join('') + air(59.5, 16, -90, 6) }),
+    recorder: (k) => ({ vb: '0 0 120 160', g: `<defs>${lg(k + 'i', [[0, '#fbf8f0'], [0.5, '#e9e1cd'], [1, '#bfb49a']])}${lg(k + 'j', [[0, '#cfe0ec'], [0.5, '#9fbcd2'], [1, '#6f8ea6']])}</defs>` + shadow(60, 151, 17) +
+      `<path d="M56 8h8l1.5 26h-11z" fill="url(#${k}j)"/><rect x="55" y="26" width="10" height="5" rx="1" fill="#2b3a48"/>` +
+      `<rect x="54" y="31" width="12" height="12" rx="3" fill="url(#${k}j)"/>` +
+      `<path d="M55.2 43L64.8 43L64.2 118L55.8 118Z" fill="url(#${k}i)"/>` +
+      `<rect x="54" y="116" width="12" height="10" rx="3" fill="url(#${k}j)"/>` +
+      `<path d="M55.4 126L64.6 126Q66 138 69 146L51 146Q54 138 55.4 126Z" fill="url(#${k}i)"/><ellipse cx="60" cy="146" rx="9" ry="2.2" fill="#a59a80"/>` +
+      [52, 61, 70, 84, 93, 102, 111].map((y) => `<ellipse cx="60" cy="${y}" rx="1.9" ry="1.6" fill="#4b4436"/>`).join('') + air(60, 150, 90, 6) }),
+    trumpet: (k) => ({ vb: '0 0 120 160', g: `<defs>${BR(k)}</defs>` + shadow(60, 116, 46) +
+      `<g transform="translate(0 6) rotate(-8 60 80)">` +
+      tube('M14 72L42 72', k, 3.4) + tube('M42 72Q42 98 66 98L82 98Q92 98 92 86L92 80', k, 4) + tube('M40 80L88 80', k, 4.6) +
+      `<path d="M86 74L108 58Q114 80 108 102L86 86Z" fill="url(#${k}bh)" stroke="#7d5414" stroke-width=".9"/><ellipse cx="108" cy="80" rx="5.5" ry="22" fill="url(#${k}bm)" stroke="#7d5414" stroke-width=".9"/>` +
+      [52, 61, 70].map((x) => `<rect x="${x - 3.6}" y="66" width="7.2" height="26" rx="2.4" fill="url(#${k}bh)" stroke="#7d5414" stroke-width=".8"/><rect x="${x - 2.4}" y="58" width="4.8" height="8" fill="#c9ccd0"/><ellipse cx="${x}" cy="57" rx="4.6" ry="1.9" fill="#eef0f2" stroke="#8e99a5" stroke-width=".7"/>`).join('') +
+      `<path d="M8 70l7 2l-7 2z" fill="#c9ccd0" stroke="#8e99a5" stroke-width=".6"/>` + air(112, 80, 0, 6) + `</g>` }),
+    horn: (k) => ({ vb: '0 0 120 160', g: `<defs>${BR(k)}</defs>` + shadow(62, 140, 44) +
+      `<circle cx="56" cy="76" r="36" fill="none" stroke="#7d5414" stroke-width="8.6"/><circle cx="56" cy="76" r="36" fill="none" stroke="url(#${k}b)" stroke-width="7"/>` +
+      `<circle cx="56" cy="76" r="26" fill="none" stroke="#7d5414" stroke-width="5.6"/><circle cx="56" cy="76" r="26" fill="none" stroke="url(#${k}b)" stroke-width="4.2"/>` +
+      tube('M56 50Q40 50 34 62', k, 3) + tube('M30 70L8 64', k, 2.4) +
+      [[40, 66], [46, 76], [40, 86]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="5" fill="url(#${k}bh)" stroke="#7d5414" stroke-width=".8"/><circle cx="${x}" cy="${y}" r="2" fill="#c9ccd0"/>`).join('') +
+      `<path d="M79 96C91 105 108 112 116.3 121.7L91.7 142.3C88 128 80 113 71 104Z" fill="url(#${k}bh)" stroke="#7d5414" stroke-width=".9"/><ellipse cx="104" cy="132" rx="16" ry="6" transform="rotate(-40 104 132)" fill="url(#${k}bm)" stroke="#7d5414" stroke-width=".9"/>` +
+      air(108, 137, 50, 7) }),
+    trombone: (k) => ({ vb: '0 0 120 160', g: `<defs>${BR(k)}</defs>` + shadow(60, 150, 44) +
+      `<g transform="translate(60 84) rotate(-40)">` +
+      tube('M-66 6L40 6', k, 2.6) + tube('M-66 14L34 14', k, 2.6) + tube('M-66 6Q-72 10 -66 14', k, 2.6) +
+      tube('M48 -6Q58 -6 58 2Q58 10 46 10L40 10', k, 3) + tube('M-12 -6L48 -6', k, 3.4) +
+      `<path d="M-12 -9L-44 -24Q-48 -6 -44 12L-12 -3Z" fill="url(#${k}bh)" stroke="#7d5414" stroke-width=".9"/><ellipse cx="-44" cy="-6" rx="5" ry="18" fill="url(#${k}bm)" stroke="#7d5414" stroke-width=".9"/>` +
+      `<rect x="20" y="4" width="4" height="12" rx="1" fill="#c9ccd0"/><path d="M40 10l8 0" stroke="#c9ccd0" stroke-width="2.4"/>` + air(-48, -6, 180, 6) + `</g>` }),
+    tuba: (k) => ({ vb: '0 0 120 160', g: `<defs>${BR(k)}</defs>` + shadow(60, 150, 36) +
+      `<path d="M44 140Q30 140 30 120L30 92Q30 78 44 78" fill="none" stroke="#7d5414" stroke-width="13.6" stroke-linecap="round"/><path d="M44 140Q30 140 30 120L30 92Q30 78 44 78" fill="none" stroke="url(#${k}bh)" stroke-width="12" stroke-linecap="round"/>` +
+      `<path d="M44 146Q78 148 80 120L84 40L56 40L60 112Q60 128 44 132Z" fill="url(#${k}bh)" stroke="#7d5414" stroke-width=".9"/>` +
+      `<path d="M54 40Q50 14 40 10L102 10Q90 14 86 40Z" fill="url(#${k}bh)" stroke="#7d5414" stroke-width=".9"/><ellipse cx="71" cy="10" rx="31" ry="6" fill="url(#${k}bm)" stroke="#7d5414" stroke-width=".9"/>` +
+      [[38, 92], [46, 96], [54, 100]].map(([x, y]) => `<rect x="${x - 3.6}" y="${y - 14}" width="7.2" height="26" rx="2.4" fill="url(#${k}bh)" stroke="#7d5414" stroke-width=".8"/><ellipse cx="${x}" cy="${y - 15}" rx="4.4" ry="1.8" fill="#eef0f2" stroke="#8e99a5" stroke-width=".7"/>`).join('') +
+      tube('M34 104L14 96', k, 2.4) + air(71, 6, -90, 7) }),
+    xylophone: (k) => {
+      const bars = []; const n = 10;
+      for (let i = 0; i < n; i++) { const x = 12 + i * 10.2, L = 66 - i * 3.6, y = 70 - L / 2 + i * 1.2; bars.push(`<rect x="${x}" y="${y + 3}" width="8.6" height="${L}" rx="1.6" fill="#5e2e14"/><rect x="${x}" y="${y}" width="8.6" height="${L}" rx="1.6" fill="url(#${k}x)"/><circle cx="${x + 4.3}" cy="${y + L * 0.22}" r=".9" fill="#2a160c"/><circle cx="${x + 4.3}" cy="${y + L * 0.78}" r=".9" fill="#2a160c"/>`); }
+      return { vb: '0 0 120 160', g: `<defs>${lg(k + 'x', [[0, '#b8693a'], [0.5, '#9b5129'], [1, '#7a3b1b']])}${lg(k + 'f', [[0, '#4a3a30'], [1, '#2a1f19']])}</defs>` + shadow(62, 122, 54) +
+        `<path d="M8 44L114 52L114 58L8 50Z" fill="url(#${k}f)"/><path d="M8 92L114 88L114 94L8 98Z" fill="url(#${k}f)"/>` +
+        `<g class="vbp">${bars.join('')}</g>` +
+        `<line x1="44" y1="136" x2="72" y2="92" stroke="#cfb38a" stroke-width="2" stroke-linecap="round"/><circle cx="73.5" cy="89.6" r="4.6" fill="#3b4c63"/>` +
+        `<line x1="86" y1="140" x2="88" y2="96" stroke="#cfb38a" stroke-width="2" stroke-linecap="round"/><circle cx="88.2" cy="92.6" r="4.6" fill="#3b4c63"/>` };
+    },
+    timpani: (k) => ({ vb: '0 0 120 160', g: `<defs>${lg(k + 'k', [[0, '#e0a072'], [0.4, '#b86a3c'], [1, '#6e3519']])}${rg(k + 'm', [[0, '#fbf7ee'], [1, '#ddd3be']], 0.4, 0.35, 0.8)}</defs>` + shadow(60, 146, 46) +
+      `<path d="M14 64Q16 122 60 128Q104 122 106 64Z" fill="url(#${k}k)" stroke="#5e2c12" stroke-width=".9"/>` +
+      `<path d="M30 124L22 144M90 124L98 144M60 128L60 146" stroke="#4a515b" stroke-width="2.4" stroke-linecap="round"/>` +
+      `<ellipse cx="60" cy="64" rx="47" ry="13" fill="#9aa5b1"/><ellipse class="vbp" cx="60" cy="62.5" rx="44" ry="11.5" fill="url(#${k}m)"/>` +
+      [22, 40, 60, 80, 98].map((x) => `<line x1="${x}" y1="${70 + Math.abs(60 - x) * -0.1}" x2="${x}" y2="${84 - Math.abs(60 - x) * 0.25}" stroke="#c9ccd0" stroke-width="1.6"/>`).join('') +
+      `<line x1="70" y1="40" x2="104" y2="22" stroke="#cfb38a" stroke-width="2" stroke-linecap="round"/><circle cx="68" cy="41.5" r="4.4" fill="#e9e3d6" stroke="#b7ad98" stroke-width=".8"/>` }),
+  };
+
+  let seq = 0;
+  function svg(id, key) {
+    const k = 'i' + (key || ++seq) + id;
+    const d = DRAW[id](k);
+    return `<svg class="inst-svg" viewBox="${d.vb}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">${d.g}</svg>`;
+  }
+  window.ART = { svg, ids: Object.keys(DRAW) };
+})();
+</script>
+<script>
+/* ===== 블록 1: 기록 칸 두 개 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S, I = SND.INST;
+    const PLAY = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M7 5l12 7-12 7z"/></svg>';
+    $('#recs').innerHTML = [0, 1].map((i) => `<div class="rec" id="rec${i}"><div class="rh"><span class="pic"></span><div><b class="rl"></b><br><small class="sm"></small></div><span class="sp"></span><span class="st"></span><button type="button" class="pbtn">${PLAY}<span class="pt">기록하기</span></button></div><div class="scope"><span class="empty">버튼을 누르면 소리가 나고 파동이 기록돼요</span></div></div>`).join('');
+    const R = [0, 1].map((i) => {
+      const el = $('#rec' + i);
+      const sc = SND.scope($('.scope', el), { win: 0.008, rows: 4, only: (v) => v.box === i, amp: 1 });
+      return { el, sc, cfg: null, done: false };
+    });
+    // cfg: { id, m, vel, lab, sm }
+    S.recSet = (i, cfg, win, preDone) => {
+      const r = R[i]; r.cfg = cfg; r.done = !!preDone;
+      $('.rl', r.el).textContent = cfg.lab; $('.sm', r.el).textContent = cfg.sm || '';
+      $('.pic', r.el).innerHTML = ART.svg(cfg.id, 'r' + i);
+      $('.pt', r.el).textContent = preDone ? '듣기' : '기록하기';
+      r.sc.set({ win }); r.win = win;
+      if (preDone) { SND.load(cfg.id).then(() => { if (r.cfg === cfg) { r.sc.freeze(SND.shot(cfg.id, cfg.m, SND.VEL[cfg.vel], win, SND.N, cfg.norm)); mark(r); } }).catch(() => {}); }
+      else r.sc.clear();
+      r.el.classList.toggle('done', !!preDone); r.el.classList.remove('live');
+      $('.st', r.el).textContent = preDone ? '' : '기록 전';
+      $('.cnt', r.el) && $('.cnt', r.el).remove();
+    };
+    S.recMark = null;
+    function mark(r) { if (S.recMark) S.recMark(r); }
+    S.R = R;
+    let tmr = [0, 0];
+    async function rec(i) {
+      const r = R[i], c = r.cfg; if (!c) return;
+      if (!SND.ready(c.id)) { $('.st', r.el).textContent = '불러오는 중…'; try { await SND.load(c.id); } catch (e) { $('.st', r.el).textContent = '소리 파일을 불러오지 못했어요'; return; } }
+      if (r.cfg !== c) return;
+      const v = SND.play(c.id, c.m, SND.VEL[c.vel]); if (!v) return; v.box = i;
+      if (c.norm) { const ref = SND.shot(c.id, c.m, 1, r.win, 200); let q = 0; ref.forEach((y) => (q += y * y)); v.gain = c.norm / (Math.sqrt(q / ref.length) || 1); }
+      r.sc.clear(); r.el.classList.add('live'); r.el.classList.remove('done');
+      $('.st', r.el).textContent = '소리 나는 중';
+      clearTimeout(tmr[i]);
+      tmr[i] = setTimeout(() => {
+        if (r.cfg !== c) return;
+        r.sc.freeze(SND.shot(c.id, c.m, SND.VEL[c.vel], r.win, SND.N, c.norm));
+        r.el.classList.remove('live'); r.el.classList.add('done'); $('.st', r.el).textContent = '기록됨';
+        $('.pt', r.el).textContent = '다시 듣기';
+        const first = !r.done; r.done = true; mark(r);
+        window.dispatchEvent(new CustomEvent('recorded', { detail: { i, first } }));
+      }, 650);
+    }
+    R.forEach((r, i) => $('.pbtn', r.el).addEventListener('click', () => rec(i)));
+    S.rec = rec;
+    window.SM.okUI = true;
+  } catch (err) { window.SM_err('기록 칸', err); }
+})();
+</script>
+<script>
+/* ===== 블록 2: 탐구 ①②③ ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S, I = SND.INST;
+    const CHIPS = ['xylophone', 'violin', 'flute', 'trumpet', 'cello'];
+    const G4 = Object.keys(I).filter((k) => I[k].g4);
+    const nm = (id) => I[id].name;
+    const josa = (w) => ((w.charCodeAt(w.length - 1) - 0xac00) % 28 ? '을' : '를');
+    const vb = (id) => `${I[id].fam === 'pc' ? '칠' : id === 'harp' ? '뜯을' : I[id].fam === 'str' ? '켤' : '불'} 때`;
+    const verb = (id) => `${I[id].name}${josa(I[id].name)} ${vb(id)}`;
+    const ACT = {
+      amp: {
+        sub: '같은 건반을 약하게 치고 세게 치며 파동을 비교해요. (교과서 탐구 2)',
+        boxes: (id) => [{ id, m: I[id].base + 7, vel: 'soft', lab: `약하게 ${vb(id)}`, sm: `${nm(id)} · 솔` }, { id, m: I[id].base + 7, vel: 'loud', lab: `세게 ${vb(id)}`, sm: `${nm(id)} · 솔` }],
+        win: (b) => 3 / SND.hz(b[0].m),
+        q: '두 파동에서 무엇이 가장 크게 다른가요?', ans: 0,
+        no: { 1: '두 칸에서 같은 시간 동안 파동이 반복된 횟수를 세어 보세요. 반복 횟수는 거의 같아요.', 2: '파동의 모양은 비슷해요. 위아래로 흔들리는 <b>크기</b>를 비교해 보세요.' },
+        ok: '맞아요. 세게 칠 때 파동이 위아래로 더 크게 흔들려요. 진동 중심에서 마루까지의 거리, 곧 <b>진폭</b>이 커요.',
+        concl: '<span class="kt">결론 · 소리의 세기</span><p>작은 소리가 날 때보다 큰 소리가 날 때 <b>진폭</b>이 더 크다.</p><p>소리의 세기는 파동의 <b>진폭</b>에 따라 달라진다.</p>',
+      },
+      freq: {
+        sub: "'낮은 도'와 '높은 도'를 같은 세기로 치고 파동을 비교해요. (교과서 탐구 3)",
+        boxes: (id) => [{ id, m: I[id].base, vel: 'loud', norm: 0.3, lab: `'낮은 도'를 ${vb(id)}`, sm: `${nm(id)} · 같은 세기` }, { id, m: I[id].base + 12, vel: 'loud', norm: 0.3, lab: `'높은 도'를 ${vb(id)}`, sm: `${nm(id)} · 같은 세기` }],
+        win: (b) => 2.5 / SND.hz(b[0].m),
+        q: '두 파동에서 무엇이 가장 크게 다른가요?', ans: 1,
+        no: { 0: '두 파동의 높이(진폭)는 비슷해요. 같은 시간 동안 파동이 몇 번 반복되는지 세어 보세요.', 2: '모양도 조금 다르지만, 가장 크게 다른 것은 같은 시간 동안 <b>반복된 횟수</b>예요.' },
+        ok: "맞아요. 같은 시간 동안 '높은 도'의 파동이 2배쯤 더 많이 반복돼요. 1초 동안 진동하는 횟수, 곧 <b>진동수</b>가 커요.",
+        concl: '<span class="kt">결론 · 소리의 높낮이</span><p>낮은 소리보다 높은 소리의 <b>진동수</b>가 크다.</p><p>소리의 높낮이는 파동의 <b>진동수</b>에 따라 달라진다.</p>',
+      },
+      form: {
+        sub: "두 악기로 같은 높이의 '솔'을 내고 파동을 비교해요. (교과서 탐구 4)",
+        boxes: (a, b) => [a, b].map((id) => ({ id, m: SND.SOL, vel: 'loud', norm: 0.3, lab: verb(id), sm: "'솔' · 같은 세기" })),
+        win: (b) => 3 / SND.hz(b[0].m),
+        q: '두 파동에서 무엇이 가장 크게 다른가요?', ans: 2,
+        no: { 0: '두 파동이 흔들리는 크기는 비슷하게 맞춰 두었어요. 파동의 <b>모양</b>을 비교해 보세요.', 1: "같은 '솔'이라서 같은 시간 동안 반복된 횟수는 같아요. 한 번 반복되는 <b>모양</b>을 비교해 보세요." },
+        ok: '맞아요. 세기와 높낮이가 같아도 두 악기의 파동 모양, 곧 <b>파형</b>이 달라요. 그래서 다르게 들려요.',
+        concl: '<span class="kt">결론 · 소리의 음색</span><p>같은 음이라도 악기의 종류에 따라 <b>파형</b>이 다르다.</p><p>소리의 파형이 달라 서로 구분되는 특징을 <b>음색</b>이라고 한다. 목소리로 사람을 구별할 수 있는 것도 목소리의 파형이 다르기 때문이다.</p>',
+      },
+    };
+    const OPTS = ['<b>진폭</b><small>흔들리는 크기</small>', '<b>진동수</b><small>반복 횟수</small>', '<b>파형</b><small>파동의 모양</small>'];
+    const st = { amp: { id: 'xylophone', ans: null }, freq: { id: 'xylophone', ans: null }, form: { a: 'xylophone', b: 'recorder', ans: null } };
+    let A = 'amp';
+    const press = (b, v) => b.setAttribute('aria-pressed', String(v));
+    function boxes() { const s = st[A], c = ACT[A]; return A === 'form' ? c.boxes(s.a, s.b) : c.boxes(s.id); }
+    function setup(keepAns) {
+      const s = st[A], c = ACT[A], b = boxes(), win = c.win(b);
+      b.forEach((cfg, i) => S.recSet(i, cfg, win));
+      if (!keepAns) s.ans = null;
+      if (A === 'form') {
+        $('#pickBox').innerHTML = `<p class="lbl2">비교할 두 악기 (같은 높이의 '솔'을 낼 수 있는 악기)</p><div class="pick2"><span>위 칸</span><select id="selA">${G4.map((k) => `<option value="${k}"${k === s.a ? ' selected' : ''}>${nm(k)}</option>`).join('')}</select><span>아래 칸</span><select id="selB">${G4.map((k) => `<option value="${k}"${k === s.b ? ' selected' : ''}>${nm(k)}</option>`).join('')}</select></div>`;
+        $('#selA').addEventListener('change', (e) => { s.a = e.target.value; setup(); });
+        $('#selB').addEventListener('change', (e) => { s.b = e.target.value; setup(); });
+      } else {
+        $('#pickBox').innerHTML = `<p class="lbl2">악기 고르기</p><div class="chips">${CHIPS.map((k) => `<button type="button" class="chip" data-k="${k}" aria-pressed="${k === s.id}"><span class="pic">${ART.svg(k, 'c' + k)}</span>${nm(k)}</button>`).join('')}</div>`;
+        $$('#pickBox .chip').forEach((ch) => ch.addEventListener('click', () => { s.id = ch.dataset.k; setup(); }));
+      }
+      render();
+    }
+    function render() {
+      const s = st[A], c = ACT[A], recd = S.R.every((r) => r.done), solved = s.ans === c.ans;
+      $('#tasks').innerHTML = [['두 소리를 기록하기', recd], ['두 파동 비교하기', solved], ['결론 정리하기', solved]].map(([t, d], j) => `<div class="task${d ? ' done' : ''}${!d && (j === 0 || (j === 1 && recd)) ? ' now' : ''}"><i>${d ? '✓' : j + 1}</i><span>${t}</span></div>`).join('');
+      const ask = $('#ask'); ask.classList.toggle('lock', !recd);
+      ask.innerHTML = `<p>${recd ? c.q : '먼저 왼쪽의 두 칸에서 <b>기록하기</b>를 눌러 소리를 기록해요.'}</p><div class="opts">${OPTS.map((o, j) => `<button type="button" data-j="${j}"${recd ? '' : ' disabled'} class="${s.ans === j ? (j === c.ans ? 'good' : 'bad') : ''}">${o}</button>`).join('')}</div>` +
+        (s.ans != null ? `<div class="fbk ${solved ? 'ok' : 'no'}" style="margin-top:8px">${solved ? c.ok : c.no[s.ans]}</div>` : '');
+      $$('#ask .opts button').forEach((b) => b.addEventListener('click', () => { s.ans = +b.dataset.j; render(); }));
+      const cc = $('#concl'); cc.classList.toggle('lock', !solved);
+      cc.innerHTML = solved ? c.concl : '<span class="kt">결론</span><p>두 파동을 비교하면 결론이 나타나요.</p>';
+      S.R.forEach((r) => r.sc.mark(A === 'amp' && r.done ? 'amp' : null));
+    }
+    // 높낮이: 같은 시간 동안 반복 횟수를 칸 머리에 적어 줘요
+    S.recMark = (r) => {
+      if (S.act === 'quiz') { r.sc.mark(null); return; }
+      r.sc.mark(A === 'amp' ? 'amp' : null);
+      const old = $('.cnt', r.el); if (old) old.remove();
+      if (A === 'freq' && r.cfg) { const n = (r.win * SND.hz(r.cfg.m)); const sp = document.createElement('span'); sp.className = 'cnt'; sp.textContent = `이 시간 동안 약 ${Math.round(n * 2) / 2}번 반복`; $('.st', r.el).before(sp); }
+    };
+    window.addEventListener('recorded', () => { if (A !== 'quiz') render(); });
+    S.labEnter = (a) => { A = a; setup(true); };
+    if (S.Q.get('inst')) st.amp.id = st.freq.id = S.Q.get('inst');
+    S.labDone = (a, solve) => { A = a; setup(); S.R.forEach((r) => S.recSet(S.R.indexOf(r), r.cfg, r.win, true)); if (solve) st[a].ans = ACT[a].ans; setTimeout(render, 30); };
+  } catch (err) { window.SM_err('탐구', err); }
+})();
+</script>
+<script>
+/* ===== 블록 3: ④ 파형 읽기 도전 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S, I = SND.INST;
+    // 소리 A와 B는 미리 기록돼 있어요. '듣기'로 들어 볼 수 있어요.
+    const RD = [
+      { a: ['xylophone', 67, 'soft'], b: ['xylophone', 67, 'loud'], q: '더 큰 소리는 어느 쪽일까요?', o: ['소리 A', '소리 B'], ans: 1, why: '소리 B의 <b>진폭</b>이 더 커요. 진폭이 클수록 큰 소리예요.' },
+      { a: ['trumpet', 72, 'loud'], b: ['trumpet', 60, 'loud'], q: '더 높은 소리는 어느 쪽일까요?', o: ['소리 A', '소리 B'], ans: 0, why: '같은 시간 동안 소리 A의 파동이 더 많이 반복돼요. <b>진동수</b>가 클수록 높은 소리예요.' },
+      { n: 1, a: ['violin', 67, 'loud'], b: ['flute', 67, 'loud'], q: '두 소리는 무엇이 다를까요?', o: ['세기', '높낮이', '음색'], ans: 2, why: '진폭과 반복 횟수는 비슷한데 파동의 모양(<b>파형</b>)이 달라요. 그래서 <b>음색</b>이 달라요. (A 바이올린, B 플루트)' },
+      { a: ['cello', 48, 'loud'], b: ['cello', 60, 'soft'], q: '소리 B는 소리 A보다 어떤 소리일까요?', o: ['더 크고 높다', '더 크고 낮다', '더 작고 높다', '더 작고 낮다'], ans: 2, why: '소리 B는 <b>진폭이 작아서</b> 더 작은 소리이고, 같은 시간 동안 <b>더 많이 반복돼서</b> 더 높은 소리예요.' },
+    ];
+    let k = 0, picked = null;
+    const W = (r) => 2.5 / SND.hz(Math.min(r.a[1], r.b[1]));
+    function render() {
+      const r = RD[Math.min(k, RD.length - 1)];
+      $('#pickBox').innerHTML = `<div class="lvl">${RD.map((_, j) => `<span class="${j < k ? 'done' : j === k ? 'now' : ''}"></span>`).join('')}</div>`;
+      $('#tasks').innerHTML = '';
+      if (k >= RD.length) {
+        $('#ask').className = 'ask'; $('#ask').innerHTML = '<p>네 문제를 모두 풀었어요.</p><div class="fbk ok" style="margin-top:0">파형을 보면 소리를 듣지 않고도 알 수 있어요. 흔들리는 크기(<b>진폭</b>)는 세기, 같은 시간 동안 반복 횟수(<b>진동수</b>)는 높낮이, 파동의 모양(<b>파형</b>)은 음색이에요.</div><button class="btn ghost" type="button" id="again" style="width:100%;margin-top:8px">처음부터 다시</button>';
+        $('#again').addEventListener('click', () => { k = 0; picked = null; enter(); });
+        $('#concl').className = 'concl'; $('#concl').innerHTML = '<span class="kt">정리</span><p>소리의 <b>세기</b> ↔ 진폭 · 소리의 <b>높낮이</b> ↔ 진동수 · 소리의 <b>음색</b> ↔ 파형</p>';
+        return;
+      }
+      const ok = picked === r.ans;
+      $('#ask').className = 'ask';
+      $('#ask').innerHTML = `<p>문제 ${k + 1}. ${r.q}</p><div class="opts${r.o.length === 2 ? ' two' : r.o.length === 4 ? ' two' : ''}">${r.o.map((o, j) => `<button type="button" data-j="${j}" class="${picked === j ? (ok ? 'good' : 'bad') : ''}">${o}</button>`).join('')}</div>` +
+        (picked != null ? `<div class="fbk ${ok ? 'ok' : 'no'}" style="margin-top:8px">${ok ? r.why : '파형을 다시 비교해 보세요. 흔들리는 크기, 같은 시간 동안 반복 횟수, 모양을 차례로 보세요.'}</div>` : '') +
+        (ok ? `<button class="btn primary" type="button" id="nx" style="width:100%;margin-top:8px">${k + 1 < RD.length ? '다음 문제' : '끝내기'}</button>` : '');
+      $$('#ask .opts button').forEach((b) => b.addEventListener('click', () => { picked = +b.dataset.j; render(); }));
+      if (ok) $('#nx').addEventListener('click', () => { k++; picked = null; enter(); });
+      $('#concl').className = 'concl lock'; $('#concl').innerHTML = '<span class="kt">힌트</span><p>모눈의 가로는 시간이에요. 두 칸은 같은 시간 동안의 파동을 같은 크기로 보여 줘요. 소리를 들어 보고 싶으면 <b>듣기</b>를 누르세요.</p>';
+    }
+    function enter() {
+      const r = RD[Math.min(k, RD.length - 1)], w = W(r);
+      [r.a, r.b].forEach(([id, m, vel], i) => S.recSet(i, { id, m, vel, norm: r.n ? 0.3 : 0, lab: i ? '소리 B' : '소리 A', sm: '' }, w, true));
+      render();
+    }
+    S.quizEnter = () => enter();
+    if (S.Q.get('q')) k = +S.Q.get('q');
+  } catch (err) { window.SM_err('파형 읽기', err); }
+})();
+</script>
+<script>
+/* ===== 블록 0: 활동 고르기 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S;
+    const SUBQ = '미리 기록한 두 소리의 파형만 보고 세기·높낮이·음색을 알아맞혀요.';
+    function show(a) {
+      $$('#acts button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.a === a)));
+      SND.stop(true); S.act = a;
+      if (a === 'quiz') { $('#sub').textContent = SUBQ; S.quizEnter(); }
+      else { S.labEnter(a); const subs = { amp: '같은 건반을 약하게 치고 세게 치며 파동을 비교해요. (교과서 탐구 2)', freq: "'낮은 도'와 '높은 도'를 같은 세기로 치고 파동을 비교해요. (교과서 탐구 3)", form: "두 악기로 같은 높이의 '솔'을 내고 파동을 비교해요. (교과서 탐구 4)" }; $('#sub').textContent = subs[a]; }
+    }
+    $$('#acts button').forEach((b) => b.addEventListener('click', () => show(b.dataset.a)));
+    const a0 = ['amp', 'freq', 'form', 'quiz'].includes(S.Q.get('act')) ? S.Q.get('act') : 'amp';
+    show(a0);
+    if (S.Q.get('done') && a0 !== 'quiz') S.labDone(a0, S.Q.get('done') === '2');
+  } catch (err) { window.SM_err('활동 고르기', err); }
+})();
+</script>
+</body>
+</html>

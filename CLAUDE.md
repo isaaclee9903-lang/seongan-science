@@ -17,7 +17,7 @@
   - `docs/수업웹자료_표준개발절차.md` 1장과 옛 로컬 프로젝트(조력발전, 옴의 법칙)에 나오는 GAS는 지난 방식이다. 거기서 생긴 습관(오류 상자, 블록별 스크립트, 숨은 문자 검사)만 이어서 쓴다.
 - 원본은 이 저장소다. 바탕 화면의 `옴의 법칙 웹자료/`, `별까지의 거리 웹자료/` 같은 로컬 폴더는 작업 중 사본이라 배포하지 않는다.
 
-## 수업 현황 (2026-10-15 기준)
+## 수업 현황 (2026-10-16 기준)
 | 폴더 | 단원 | 만든 방식 | 기준 문서 (`curriculum/`) |
 |---|---|---|---|
 | `earth-interior` | 중2 Ⅱ 지구 내부의 층상 구조 (지구 속 여행 콘셉트, 3D 단면, 지진파) | lesson-kit | `중2_지권의변화_지구내부의층상구조.md` (Ⅱ 시작 단원은 나중에) |
@@ -32,6 +32,7 @@
 | `mirror-lens-use` | 중2 Ⅲ 우리 주변의 거울과 렌즈 (거울·렌즈 마을 10곳 조사, 유튜브 멈춤 퀴즈 5편, 첨단기술 실험실: 제임스 웹 거울·반도체 장비 렌즈와 거울·태양로, 포스터 만들기) | lesson-kit | `중2_빛과파동_우리주변의거울과렌즈.md` (확장 근거: `docs/reports/거울과 렌즈 첨단기술 리서치.md`) |
 | `light-color` | 중2 Ⅲ 물체의 색과 빛의 합성 (05·06 묶음: 조명 실험실 2D 예측·빛의 경로, 빛의 삼원색 겹치기·화소 켜기, 화면 확대경 기록) | lesson-kit | `중2_빛과파동_물체의색_빛의합성.md` |
 | `wave` | 중2 Ⅲ 파동의 발생과 전달 (물결파 수조 2D: 탁구공 제자리 진동·마루 따라가기·차례 사진 4장, 파동 실험실: 요소 찾기·진동수↔주기 연결 슬라이더와 2초 높이 기록·똑같은 파동 만들기) | lesson-kit | `중2_빛과파동_파동의발생과전달.md` |
+| `sound` | 중2 Ⅲ 소리의 특성 (오케스트라 연주실: 실제 녹음 악기 14가지 연주·파형, 소리 분석 실험실: 교과서 탐구 2~4 기록 칸·파형 읽기 도전, 소리를 듣는 과정 그림) | lesson-kit | `중2_빛과파동_소리의특성.md` |
 | `ohm` | 중2 Ⅶ 옴의 법칙 | 직접 작성 | `중2_전기와자기_옴의법칙.md` |
 | `series-parallel` | 중2 Ⅶ 저항의 연결 | 직접 작성 | `중2_전기와자기_저항의연결.md` |
 | `electric-energy` | 중2 Ⅶ 소비 전력과 전력량 | 직접 작성 | `중2_전기와자기_전기에너지와소비전력.md` |
@@ -53,6 +54,7 @@
 - 3D 로딩: 보기만 하는 3D 그림은 영상(`C3.video`), 나머지는 `C3.lazy` + `C3.prepare`(멈추지 않는 셰이더 준비)와 미리 찍은 사진을 쓴다. 사진·영상은 `tools/lesson-kit/bake.py`로 만든다 (2026-10-12, 로딩이 길다는 선생님 의견으로 도입. 자세한 것은 `tools/lesson-kit/README.md`).
 - "직접 작성"인 수업은 `tools/lesson-kit/src/`에 원본이 없어 `lessons/<이름>/*.html`을 바로 고친다. lesson-kit 수업은 `src/`를 고치고 다시 빌드한다.
 - 빛 그림(Ⅲ 빛과 파동): `tools/lesson-kit/src/light-path/_optics.js`(OP: 레이저 광선·각도기·슬릿 레이저·빛 알갱이·눈·HTML 이름표), `_art.js`(OPA: 전등·태양·공·책·통·반사판·화분·촬영기 일러스트). 평면거울 작도 장면은 `src/plane-mirror/_mirror.js`(MR: 방·세운 거울·꽃 화분, 단계별 작도 render(0~7)). 볼록·오목 거울과 렌즈는 `src/mirror-lens/_ml.js`(ML: F 모양 물체, 받침대의 둥근 거울·렌즈 속 상, 옆 배치도, 기구 단면 그림)와 `_rays.js`(ML.rays: 나란한 빛의 반사·굴절 실제 계산). 다음 Ⅲ 수업도 재사용한다. 파동 그림(Ⅲ-2 파동)은 `src/wave/_wave.js`(WV: 옆에서 본 물결파 수조 tank, 모눈 파동 graph(마루·골·파장·진폭 표시, 목표 파동), 매질 한 점 높이 기록 timeline, 차례 사진 strip, 위에서 본 물결 ripple). 다음 파동 수업(소리 등)도 재사용한다. 거울·렌즈로 본 모습(캔버스 왜곡)은 `src/mirror-lens-use/_loupe.js`(LP), 비스듬히 내려다본 마을 그림은 `_town.js`(TOWN), 다섯 종류 아이콘은 `_kinds.js`(KINDS·KICON).
+- 소리(Ⅲ-2 파동): `tools/lesson-kit/src/sound/_snd.js`(SND: 실제 악기 녹음 재생·소리 분석 화면 scope·기록용 shot, 녹음은 `lessons/sound/audio/`, 만드는 법 `_audio_prep.py`, 출처 `audio/LICENSE.txt` CC BY 3.0), `_inst.js`(ART: 악기 14가지 SVG 그림), `_pair.js`(PAIR: 두 소리 기록 칸), `_fig.js`(FIG.travel: 북→공기 입자→귀). 다음 소리 수업도 재사용한다.
 - 별 그림: Ⅷ 단원은 캔버스로 빛 번짐 별을 그린다(`parallax` sim2의 `window.SKY`, `star-brightness`의 `_glow.js` `window.GLOW`). 실제 하늘 지도는 d3-celestial(BSD-3)을 `lessons/star-brightness/sky/`에 복사해 쓴다(별 목록은 `stars6.json`·`stars8.json`으로 줄임, 라이선스 `sky/LICENSE.txt`). 다음 Ⅷ 수업도 이 폴더를 재사용한다. 별의 밝기 차시까지는 별을 흰색으로 그리고, `star-color`부터는 `_color.js`의 `window.SC`로 색을 칠한다(별 목록 `sky/data/stars6c.json`에 색 정보 포함, 교과서 색 띠 별은 교과서 색).
 
 ## 최우선 규칙: 교육과정 범위

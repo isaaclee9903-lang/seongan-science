@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>소리의 특성 – 오케스트라 연주실</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+/*@@LOCAL:_css_wv.css@@*/
+/*@@LOCAL:_css_sim.css@@*/
+/*@@LOCAL:_css_snd.css@@*/
+  /* ===== 이 페이지 전용 ===== */
+  .viewer{justify-content:flex-start!important}
+  .orch{position:relative;flex:1 1 auto;min-height:220px;overflow:hidden;background:linear-gradient(#fbfcfd,#f4f6f8)}
+  .orch-in{position:absolute;left:50%;top:50%}
+  .orch-in > svg.floor{position:absolute;inset:0;width:100%;height:100%}
+  .ib{position:absolute;transform:translate(-50%,-50%);width:8.4%;min-width:54px;border:0;background:none;padding:0;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:1px;-webkit-tap-highlight-color:transparent}
+  .ib .pic{width:100%;aspect-ratio:120/150;transition:transform .2s var(--ease)}
+  .ib .nm{font-size:clamp(11.5px,1.15vw,13.5px);font-weight:800;color:#34495e;white-space:nowrap;padding:1px 7px;border-radius:7px;line-height:1.35}
+  .ib:active .pic{transform:scale(.94)}
+  .ib.sel .nm{background:#0e63b3;color:#fff}
+  .ib.sel .pic{transform:translateY(-2px)}
+  .famt{position:absolute;transform:translate(-50%,-50%);font-size:clamp(10.5px,1vw,12px);font-weight:800;color:#97a6b5;letter-spacing:.02em;pointer-events:none;white-space:nowrap}
+  .sh{display:flex;align-items:center;gap:10px;padding:8px 12px;border-top:1px solid var(--line);background:#fbfcfe;min-height:40px}
+  .sh b{font-size:13.5px;font-weight:900;color:#14263b;flex:none}
+  .sh .ro{margin-left:auto;font-size:13.5px;font-weight:700;color:var(--ink2);text-align:right;word-break:keep-all}
+  .sh .ro em{font-style:normal;font-weight:900;color:#0e63b3}
+  #sc{aspect-ratio:1000/250;border-top:1px solid #eef2f6}
+  /* 고른 악기 */
+  .who{display:grid;grid-template-columns:76px 1fr;gap:12px;align-items:center;margin-bottom:10px}
+  .who .pic{height:96px}
+  .who h2{margin:0;font-size:22px;letter-spacing:-.01em}
+  .who .fam{display:inline-block;font-size:12.5px;font-weight:800;color:#5a6b7e;background:#eef3f8;border-radius:7px;padding:1px 8px;margin-left:6px;vertical-align:3px}
+  .who p{margin:3px 0 0;font-size:14.5px;line-height:1.55;color:var(--ink2);word-break:keep-all}
+  .who p b{color:#0e63b3}
+  /* 건반 */
+  .keys{display:grid;grid-template-columns:repeat(8,1fr);gap:5px;margin-bottom:4px}
+  .key{position:relative;min-height:100px;border-radius:0 0 12px 12px;border:1px solid #cfd9e3;border-top:4px solid #dfe6ee;background:linear-gradient(#fff 70%,#f3f6f9);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding:0 0 8px;font-weight:900;font-size:16px;color:#14263b;box-shadow:0 2px 0 #dfe6ee}
+  .key small{font-size:11px;font-weight:700;color:#8495a8;font-variant-numeric:tabular-nums}
+  .key.sel{border-top-color:#0e63b3;background:linear-gradient(#f3f8fd 70%,#e4f0fb)}
+  .key.hit{transform:translateY(2px);box-shadow:none}
+  .key .lh{position:absolute;top:6px;font-size:10.5px;font-weight:800;color:#97a6b5}
+  .row2{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:center;margin-top:10px}
+  .row2 .lb2{font-size:14px;font-weight:900;color:var(--ink)}
+  .segv{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:#eef3f8;border-radius:14px;padding:4px}
+  .segv button{min-height:44px;border:0;border-radius:11px;background:transparent;font-weight:800;font-size:15px;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px}
+  .segv button i{display:inline-block;width:14px;border-radius:2px;background:currentColor}
+  .segv button[aria-selected="true"]{background:#fff;color:#0e63b3;box-shadow:0 1px 3px rgba(20,38,59,.14)}
+  /* 찾아보기 */
+  .mis{display:grid;gap:5px;margin-top:12px}
+  .mi{display:grid;grid-template-columns:26px 1fr auto;gap:8px;align-items:center;padding:6px 8px 6px 10px;border-radius:12px;background:#f7fafc;border:1px solid var(--line);font-size:14.5px;font-weight:700;color:var(--ink2);word-break:keep-all;min-height:44px}
+  .mi i{font-style:normal;width:24px;height:24px;border-radius:8px;background:#dfe6ee;display:grid;place-items:center;font-weight:900;font-size:12.5px;color:#607285}
+  .mi.done i{background:#0e63b3;color:#fff}
+  .mi .sb{min-height:36px;padding:0 10px;border-radius:10px;border:1px solid #c9d6e3;background:#fff;font-weight:800;font-size:13px;color:#0e63b3;cursor:pointer;white-space:nowrap}
+  .mi small{display:block;font-size:12.5px;font-weight:600;color:var(--muted)}
+  #fb{margin-top:8px}
+  @media (max-width:900px){
+    .orch{min-height:300px}
+    #sc{aspect-ratio:1000/230}
+    .who{grid-template-columns:60px 1fr}.who .pic{height:76px}
+    .key{min-height:74px}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="ttl">
+      <span class="eyebrow">시뮬레이션 ①</span><h1>오케스트라 연주실</h1>
+      <p class="sub">무대의 악기를 골라 연주하고, 소리 분석 화면에 나타난 파동을 비교해 봐요.</p>
+    </div>
+  </header>
+
+  <div class="stage">
+    <section class="card viewer">
+      <div class="orch" id="orch" role="group" aria-label="오케스트라 무대. 악기를 누르면 고르고 연주해요."><div class="orch-in" id="orchIn"></div></div>
+      <div class="sh"><b>소리 분석 화면</b><span class="ro" id="ro">악기를 누르거나 건반을 눌러 연주해 보세요.</span></div>
+      <div class="scope" id="sc" role="img" aria-label="소리의 파동. 가로는 시간, 가운데 선은 진동 중심이다."></div>
+      <div class="vctl">
+        <button class="vb" type="button" id="bGhost" aria-pressed="true"><span class="dot" style="background:#fff;box-shadow:inset 0 0 0 2px #b9c4cf"></span>앞 소리 겹쳐 보기</button>
+        <button class="vb" type="button" id="bAmp" aria-pressed="false">진폭 표시</button>
+        <span class="sp"></span>
+        <span class="loadnote" id="note">실제 악기를 녹음한 소리예요</span>
+      </div>
+    </section>
+
+    <section class="card pad">
+      <div class="who" id="who"></div>
+      <div class="keys" id="keys" role="group" aria-label="건반"></div>
+      <div class="row2"><span class="lb2">세기</span>
+        <div class="segv" id="vel" role="tablist" aria-label="세기">
+          <button type="button" role="tab" data-v="soft" aria-selected="false">약하게</button>
+          <button type="button" role="tab" data-v="mid" aria-selected="true">보통</button>
+          <button type="button" role="tab" data-v="loud" aria-selected="false">세게</button>
+        </div></div>
+      <div class="mis" id="mis"></div>
+      <div class="fbk" id="fb"><b class="t">찾아보기</b>세 가지를 직접 연주해 비교해 보세요. 회색 점선은 바로 앞에 연주한 소리의 파동이에요.</div>
+    </section>
+  </div>
+</div>
+<script>
+window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
+  reduce: !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches), Q: new URLSearchParams(location.search) };
+</script>
+<script>
+/*@@LOCAL:_snd.js@@*/
+</script>
+<script>
+/*@@LOCAL:_inst.js@@*/
+</script>
+<script>
+/* ===== 블록 1: 무대 · 건반 · 연주 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S, I = SND.INST;
+    // 무대 자리 (가로 1000 × 세로 420 기준)
+    const SEAT = [
+      ['horn', 300, 92], ['trumpet', 433, 92], ['trombone', 567, 92], ['tuba', 700, 92],
+      ['xylophone', 105, 212], ['recorder', 233, 212], ['flute', 367, 212], ['clarinet', 500, 212], ['bassoon', 633, 212], ['timpani', 880, 212],
+      ['violin', 300, 338], ['harp', 433, 338], ['cello', 567, 338], ['contrabass', 700, 338],
+    ];
+    const box = $('#orchIn');
+    box.innerHTML = `<svg class="floor" viewBox="0 0 1000 420" aria-hidden="true"><defs><linearGradient id="fl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f1ede7"/><stop offset="1" stop-color="#e7e0d6"/></linearGradient></defs>
+      <path d="M20 420A480 400 0 0 1 980 420Z" fill="url(#fl)"/>
+      ${[275, 152].map((r) => `<path d="M${500 - r * 1.42} 420A${r * 1.42} ${r} 0 0 1 ${500 + r * 1.42} 420" fill="none" stroke="#ddd3c5" stroke-width="1.4"/>`).join('')}
+      <rect x="470" y="396" width="60" height="16" rx="5" fill="#d6ccbe"/><text x="500" y="408" text-anchor="middle" font-size="10" font-weight="700" fill="#8a7d6c" font-family="Pretendard,sans-serif">지휘대</text></svg>` +
+      SEAT.map(([id, x, y]) => `<button type="button" class="ib" data-id="${id}" style="left:${x / 10}%;top:${(y / 420) * 100}%" aria-label="${I[id].name}"><span class="pic">${ART.svg(id, 's')}</span><span class="nm">${I[id].name}</span></button>`).join('');
+    function fit() { const o = $('#orch').getBoundingClientRect(); let w = o.width - 8, h = (w * 420) / 1000; if (h > o.height - 6) { h = o.height - 6; w = (h * 1000) / 420; } box.style.width = w + 'px'; box.style.height = h + 'px'; box.style.marginLeft = -w / 2 + 'px'; box.style.marginTop = -h / 2 + 'px'; }
+    if (window.ResizeObserver) new ResizeObserver(fit).observe($('#orch')); fit();
+
+    const WIN = 0.016;
+    const sc = SND.scope($('#sc'), { win: WIN, rows: 5 });
+    const ampTag = document.createElement('span'); ampTag.className = 'amp'; ampTag.textContent = '진폭'; ampTag.hidden = true; $('#sc').appendChild(ampTag);
+    sc.onDraw = (s) => { ampTag.hidden = !s.ampAt; if (s.ampAt) { ampTag.style.left = s.ampAt.x + 'px'; ampTag.style.top = s.ampAt.y + 'px'; } };
+    const st = { id: S.Q.get('inst') && I[S.Q.get('inst')] ? S.Q.get('inst') : 'violin', key: +(S.Q.get('key') || 0), vel: S.Q.get('vel') || 'mid', ghost: true, prev: null };
+    const VN = { soft: '약하게', mid: '보통', loud: '세게' };
+    S.st = st; S.sc = sc;
+    function who() {
+      const d = I[st.id];
+      $('#who').innerHTML = `<span class="pic">${ART.svg(st.id, 'w')}</span><div><h2>${d.name}<span class="fam">${SND.FAM[d.fam]}</span></h2><p>${d.how.replace(d.part, `<b>${d.part}</b>`)}.</p></div>`;
+      $$('#orch .ib').forEach((b) => b.classList.toggle('sel', b.dataset.id === st.id));
+      $('#keys').innerHTML = SND.SCALE.map(([n, d2], j) => { const m = d.base + d2; return `<button type="button" class="key${j === st.key ? ' sel' : ''}" data-j="${j}">${j === 0 ? '<span class="lh">낮은</span>' : j === 7 ? '<span class="lh">높은</span>' : ''}${n}<small>${Math.round(SND.hz(m))} Hz</small></button>`; }).join('');
+      $$('#keys .key').forEach((k) => k.addEventListener('pointerdown', (e) => { e.preventDefault(); st.key = +k.dataset.j; play(); }));
+    }
+    function setOn(on) { $$('#orch .ib, #who').forEach((b) => b.classList.remove('on')); if (on) { const b = $(`#orch .ib[data-id="${on.id}"]`); if (b) b.classList.add('on'); if (on.id === st.id) $('#who').classList.add('on'); } }
+    // 소리가 끝나면 그 소리의 파형을 화면에 남겨 두고, 새 소리가 나면 다시 움직여요
+    SND.on((v) => { setOn(v); if (v) sc.clear(); else if (st.last) sc.freeze(SND.shot(st.last.id, st.last.m, SND.VEL[st.last.vel], WIN, SND.N)); });
+    let loadMsg = 0;
+    async function play(midi) {
+      const d = I[st.id], m = midi || d.base + SND.SCALE[st.key][1];
+      $$('#keys .key').forEach((k) => k.classList.toggle('sel', +k.dataset.j === st.key && !midi));
+      if (!SND.ready(st.id)) {
+        $('#note').textContent = `${d.name} 소리를 불러오는 중…`; const my = ++loadMsg;
+        try { await SND.load(st.id); } catch (e) { $('#note').textContent = '소리 파일을 불러오지 못했어요. 인터넷 연결을 확인해 주세요.'; return; }
+        if (my !== loadMsg) return; $('#note').textContent = '실제 악기를 녹음한 소리예요';
+      }
+      const v = SND.play(st.id, m, SND.VEL[st.vel]); if (!v) return;
+      const k = $$('#keys .key')[st.key]; if (k && !midi) { k.classList.add('hit'); setTimeout(() => k.classList.remove('hit'), 160); }
+      sc.ghost(st.ghost && st.prev ? SND.shot(st.prev.id, st.prev.m, SND.VEL[st.prev.vel], WIN, SND.N) : null);
+      const f = Math.round(SND.hz(m)), nn = midi === 67 ? '솔' : (SND.SCALE[st.key][1] === 12 ? '높은 도' : SND.SCALE[st.key][1] === 0 ? '낮은 도' : SND.SCALE[st.key][0]);
+      $('#ro').innerHTML = `${d.name} · ${nn} · <em>1초에 약 ${f}번 진동 (${f} Hz)</em> · ${VN[st.vel]}`;
+      st.prev = { id: st.id, m, vel: st.vel }; st.last = st.prev;
+      window.dispatchEvent(new CustomEvent('played', { detail: { id: st.id, m, vel: st.vel } }));
+    }
+    S.play = play;
+    $$('#orch .ib').forEach((b) => b.addEventListener('click', () => { st.id = b.dataset.id; who(); play(); }));
+    $$('#vel button').forEach((b) => b.addEventListener('click', () => { st.vel = b.dataset.v; $$('#vel button').forEach((x) => x.setAttribute('aria-selected', String(x === b))); }));
+    $$('#vel button').forEach((x) => x.setAttribute('aria-selected', String(x.dataset.v === st.vel)));
+    const press = (b, v) => b.setAttribute('aria-pressed', String(v));
+    $('#bGhost').addEventListener('click', () => { st.ghost = !st.ghost; press($('#bGhost'), st.ghost); if (!st.ghost) sc.ghost(null); });
+    $('#bAmp').addEventListener('click', () => { const v = $('#bAmp').getAttribute('aria-pressed') !== 'true'; press($('#bAmp'), v); sc.mark(v ? 'amp' : null); });
+    who();
+    SND.load(st.id).catch(() => {});
+    // 검사용: ?play=1 이면 바로 연주, ?freeze=1 이면 파형을 멈춰 찍기
+    if (S.Q.get('play') === '1') SND.load(st.id).then(() => { play(); if (S.Q.get('freeze') === '1') setTimeout(() => sc.freeze(SND.shot(st.id, I[st.id].base + SND.SCALE[st.key][1], SND.VEL[st.vel], WIN, SND.N)), 500); });
+    if (S.Q.get('amp') === '1') $('#bAmp').click();
+    window.SM.okUI = true;
+  } catch (err) { window.SM_err('무대와 건반', err); }
+})();
+</script>
+<script>
+/* ===== 블록 2: 찾아보기 세 가지 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S, I = SND.INST;
+    const MIS = [
+      { k: 'amp', t: '같은 건반을 <b>약하게</b>, 한 번 <b>세게</b>', s: '어떤 악기든 좋아요',
+        ok: '세게 연주하니 파동이 위아래로 더 크게 흔들렸어요. <b>진폭</b>이 클수록 큰 소리가 나요. 소리의 세기는 진폭에 따라 달라져요.' },
+      { k: 'freq', t: '같은 세기로 <b>낮은 도</b>, 한 번 <b>높은 도</b>', s: '건반 맨 왼쪽과 맨 오른쪽',
+        ok: '높은 도는 같은 시간 동안 파동이 더 촘촘하게(더 많이) 반복됐어요. 1초 동안 진동하는 횟수, 곧 <b>진동수</b>가 클수록 높은 소리가 나요.' },
+      { k: 'form', t: '두 악기로 <b>같은 높이의 솔</b>을 같은 세기로', s: '392 Hz', btn: true,
+        ok: '세기와 높낮이가 같아도 악기마다 파동의 모양이 달랐어요. 이 모양을 <b>파형</b>이라 하고, 파형이 달라 서로 구분되는 특징을 <b>음색</b>이라고 해요.' },
+    ];
+    const hist = [], done = {};
+    function render() {
+      $('#mis').innerHTML = MIS.map((m, j) => `<div class="mi${done[m.k] ? ' done' : ''}"><i>${done[m.k] ? '✓' : j + 1}</i><span>${m.t}<small>${m.s}</small></span>${m.btn ? '<button type="button" class="sb" id="bSol">이 악기로 솔(392 Hz)</button>' : '<span></span>'}</div>`).join('');
+      $('#bSol').addEventListener('click', () => {
+        const d = I[S.st.id];
+        if (!d.g4) { fb(false, `${d.name}는 이 높이(392 Hz)의 솔을 내기 어려워요. 바이올린, 플루트, 트럼펫, 실로폰처럼 다른 악기를 골라 보세요.`); return; }
+        S.play(67);
+      });
+    }
+    function fb(ok, html, title) { const f = $('#fb'); f.className = 'fbk' + (ok ? ' ok' : ok === false ? ' no' : ''); f.innerHTML = `<b class="t">${title || (ok ? '찾았어요' : '다시 해 볼까요?')}</b>${html}`; }
+    function check(p) {
+      hist.push(p); const h = hist.slice(-12);
+      const hit = (k) => { if (done[k]) return false; done[k] = true; return true; };
+      let got = null;
+      if (h.some((a) => a.id === p.id && a.m === p.m && a.vel !== p.vel && ((a.vel === 'soft' && p.vel === 'loud') || (a.vel === 'loud' && p.vel === 'soft'))) && hit('amp')) got = 'amp';
+      const b = I[p.id].base;
+      if (!got && (p.m === b || p.m === b + 12) && h.some((a) => a.id === p.id && a.vel === p.vel && a.m === (p.m === b ? b + 12 : b)) && hit('freq')) got = 'freq';
+      if (!got && p.m === 67 && h.some((a) => a.id !== p.id && a.m === 67 && a.vel === p.vel) && hit('form')) got = 'form';
+      if (got) { render(); const m = MIS.find((x) => x.k === got); fb(true, m.ok, `찾았어요 · ${Object.keys(done).length}/3`); if (got === 'amp' && $('#bAmp').getAttribute('aria-pressed') !== 'true') $('#bAmp').click(); }
+      else if (Object.keys(done).length === 3) fb(true, '세 가지를 모두 찾았어요. 소리의 <b>세기는 진폭</b>, <b>높낮이는 진동수</b>, <b>음색은 파형</b>에 따라 달라져요. 다른 악기로도 자유롭게 연주해 보세요.', '모두 찾았어요');
+    }
+    window.addEventListener('played', (e) => check(e.detail));
+    (S.Q.get('m') || '').split(',').filter(Boolean).forEach((n) => (done[MIS[+n - 1].k] = true));
+    render();
+    if (S.Q.get('m')) { const last = MIS[+S.Q.get('m').split(',').pop() - 1]; fb(true, last.ok, `찾았어요 · ${Object.keys(done).length}/3`); }
+  } catch (err) { window.SM_err('찾아보기', err); }
+})();
+</script>
+</body>
+</html>
