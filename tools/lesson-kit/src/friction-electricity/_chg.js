@@ -317,7 +317,7 @@ window.CHG = (() => {
       ov.put('furN', FX0 + 6, FY + 86, '털', 'tx m ra');
       ov.put('balN', st.bx - R - 14, st.by - R * 0.55, '풍선', 'tx m la');
       const ph = phase();
-      ov.put('ph', 18, 22, ph === 'rub' ? '마찰하는 중' : ph === 'after' ? '마찰 후' : '마찰 전', 'chip');
+      ov.put('ph', 18, 22, ph === 'rub' ? '마찰하는 중' : ph === 'after' ? '마찰 후' : '마찰 전', 'phs');
     });
     if (st.demo) S.cv.style.cursor = 'grab';
     fire();
