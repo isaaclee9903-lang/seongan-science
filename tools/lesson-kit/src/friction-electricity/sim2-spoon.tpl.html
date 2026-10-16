@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>마찰 전기와 전기력 – 숟가락 실험실</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+/*@@LOCAL:_css_fe.css@@*/
+/*@@LOCAL:_css_sim.css@@*/
+  /* ===== 이 페이지 전용 ===== */
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .three3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+  .two button,.three3 button{min-height:48px;border-radius:14px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15px;cursor:pointer;padding:4px 8px;word-break:keep-all;line-height:1.3}
+  .two button[aria-pressed="true"],.three3 button[aria-pressed="true"]{border-color:var(--fab);background:#e9f3fd;color:#0b3f73}
+  .three3 button.good{border-color:var(--ok);background:#e8f7ef;color:#11703f}
+  .three3 button.bad{border-color:#e7a29b;background:#fff4f2;color:#9b3a32}
+  .two button:disabled,.three3 button:disabled{opacity:.4;cursor:default}
+  .runrow{display:flex;gap:8px;margin-top:10px}
+  .runrow .btn{flex:1}
+  .rec{width:100%;border-collapse:collapse;margin-top:8px;font-size:14.5px}
+  .rec th,.rec td{padding:6px 6px;border-bottom:1px solid #e3eaf1;text-align:center;word-break:keep-all}
+  .rec th{font-size:12.5px;color:var(--muted);font-weight:800}
+  .rec td:first-child{text-align:left;font-weight:800;color:var(--ink)}
+  .rec td.v{font-weight:900;color:var(--ink)}
+  .rec td.v.f{color:#0e63b3}
+  .stepdone{color:#11703f;font-size:12.5px;font-weight:800;margin-left:6px}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="ttl">
+      <span class="eyebrow">시뮬레이션 ②</span><h1>숟가락 실험실</h1>
+      <p class="sub">장갑으로 문지른 숟가락 <i class="ck">가</i>의 손잡이 끝에 숟가락 <i class="ck">나</i>와 장갑을 가까이 가져가 봐요. (교과서 해 보기)</p>
+    </div>
+  </header>
+
+  <div class="stage">
+    <section class="card viewer">
+      <div class="scene grow" id="lab" role="img" aria-label="위에서 내려다본 책상. 지우개 위에 숟가락 가가 올려져 있다. 문지른 숟가락 나를 가까이 하면 가가 밀려나고, 장갑을 가까이 하면 가가 끌려온다."></div>
+      <div class="vctl">
+        <button class="vb" type="button" id="bAway">멀리 하기</button>
+        <span class="hint" id="hint">들고 있는 물체를 손가락으로 끌어 가까이 가져가도 돼요</span>
+        <span class="sp"></span>
+        <button class="vb" type="button" id="bCh" aria-pressed="true"><span class="tk m" style="width:16px;height:16px;font-size:12px">−</span>전하 보기</button>
+        <button class="vb" type="button" id="bReset">처음부터</button>
+      </div>
+    </section>
+
+    <section class="card pad">
+      <div class="ptabs" role="tablist" id="pt">
+        <button type="button" role="tab" data-p="lab" aria-selected="true">실험하기</button>
+        <button type="button" role="tab" data-p="why" aria-selected="false">왜 그럴까?</button>
+      </div>
+
+      <div class="pane" data-p="lab">
+        <div class="lbl">① 장갑으로 숟가락 <i class="ck">가</i>와 <i class="ck">나</i>의 손잡이를 문질러요<span class="stepdone" id="d1" hidden>완료</span></div>
+        <button class="btn primary" type="button" id="rub" style="width:100%">장갑으로 문지르기</button>
+        <div class="lbl">② <i class="ck">가</i>의 손잡이 끝에 가까이 가져갈 물체</div>
+        <div class="two" id="who">
+          <button type="button" data-v="na" aria-pressed="false" disabled>숟가락 <i class="ck">나</i></button>
+          <button type="button" data-v="gl" aria-pressed="false" disabled>장갑</button>
+        </div>
+        <div class="lbl">③ 예측하기 · 숟가락 <i class="ck">가</i>는?</div>
+        <div class="three3" id="pred">
+          <button type="button" data-v="away" aria-pressed="false" disabled>밀려난다</button>
+          <button type="button" data-v="toward" aria-pressed="false" disabled>끌려온다</button>
+          <button type="button" data-v="none" aria-pressed="false" disabled>움직이지 않는다</button>
+        </div>
+        <div class="runrow"><button class="btn primary" type="button" id="go" disabled>④ 가까이 가져가기</button></div>
+        <div class="fbk" id="res"><b class="t" id="resT">결과</b><span id="resM">먼저 장갑으로 두 숟가락을 문질러요.</span>
+          <table class="rec" aria-label="관찰 기록">
+            <thead><tr><th>가까이 가져간 것</th><th>숟가락 가</th><th>작용한 힘</th></tr></thead>
+            <tbody>
+              <tr><td>숟가락 <i class="ck">나</i></td><td class="v" id="rNa">-</td><td class="v" id="fNa">-</td></tr>
+              <tr><td>장갑</td><td class="v" id="rGl">-</td><td class="v" id="fGl">-</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="pane" data-p="why" hidden>
+        <div class="phase">
+          <div class="ph on"><i>1</i><span>장갑으로 숟가락을 문지르면 장갑과 숟가락 사이에서 <b>전자</b>가 이동해 둘 다 전기를 띠어요(<b>마찰 전기</b>).</span></div>
+          <div class="ph on"><i>2</i><span>숟가락 <i class="ck">가</i>와 <i class="ck">나</i>는 같은 장갑으로 문질렀으므로 <b>같은 종류의 전하</b>를 띠어요. 그래서 서로 밀어내는 힘(<b>척력</b>)이 작용해 <i class="ck">가</i>가 밀려나요.</span></div>
+          <div class="ph on"><i>3</i><span>숟가락과 장갑은 전자를 주고받았으므로 <b>다른 종류의 전하</b>를 띠어요. 그래서 서로 끌어당기는 힘(<b>인력</b>)이 작용해 <i class="ck">가</i>가 끌려와요.</span></div>
+          <div class="ph on"><i>4</i><span>전기를 띤 두 물체 사이에 작용하는 힘을 <b>전기력</b>이라고 해요.</span></div>
+        </div>
+      </div>
+      <p class="mnote">'전하 보기'에서는 숟가락이 전자를 얻어 (−)전하, 장갑이 (+)전하를 띤다고 정한 모형이에요. 어느 쪽이 전자를 얻는지는 물질에 따라 달라요.</p>
+    </section>
+  </div>
+</div>
+<script>
+window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
+  reduce: !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches), Q: new URLSearchParams(location.search) };
+</script>
+<script>
+/*@@LOCAL:_chg.js@@*/
+</script>
+<script>
+/* ===== 블록 1: 실험실 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S, Q = S.Q;
+    let rubbed = false, who = null, pred = null, waiting = false;
+    const RES = { away: '밀려남', toward: '끌려옴', none: '움직이지 않음' }, FORCE = { away: '척력', toward: '인력', none: '-' };
+    const WHO = { na: '숟가락 <i class="ck">나</i>', gl: '장갑' };
+    const enable = (sel, on) => $$(sel + ' button').forEach((b) => (b.disabled = !on));
+    function msg(t, m, cls = '') { $('#res').className = 'fbk ' + cls; $('#resT').textContent = t; $('#resM').innerHTML = m; }
+    function onEvent(type, v) {
+      if (type === 'rubbed') { rubbed = true; $('#d1').hidden = false; $('#rub').disabled = true; $('#rub').textContent = '문지르기 완료'; enable('#who', true); msg('결과', '두 숟가락의 손잡이를 문질렀어요. 가까이 가져갈 물체를 고르세요.'); }
+      if (type === 'chosen') { enable('#pred', true); $('#go').disabled = !pred; }
+      if (type === 'result' && waiting) {
+        waiting = false; $('#go').disabled = false; $('#go').textContent = '④ 다시 가까이 가져가기';
+        if (who === 'na') { $('#rNa').textContent = RES[v]; $('#fNa').textContent = FORCE[v]; $('#rNa').className = 'v'; }
+        else { $('#rGl').textContent = RES[v]; $('#fGl').textContent = FORCE[v]; $('#rGl').className = 'v f'; }
+        const ok = pred === v;
+        $$('#pred button').forEach((x) => { x.classList.toggle('good', x.dataset.v === v); x.classList.toggle('bad', x.dataset.v === pred && !ok); });
+        const why = v === 'away' ? '같은 장갑으로 문지른 두 숟가락은 <b>같은 종류의 전하</b>를 띠어 서로 밀어내는 힘(<b>척력</b>)이 작용해요.'
+          : v === 'toward' ? '숟가락과 장갑은 <b>다른 종류의 전하</b>를 띠어 서로 끌어당기는 힘(<b>인력</b>)이 작용해요.' : '문지르지 않아 전기를 띠지 않았어요.';
+        const other = who === 'na' ? (($('#rGl').textContent === '-') ? ' 이제 <b>장갑</b>도 가까이 가져가 보세요.' : '') : (($('#rNa').textContent === '-') ? ' 이제 <b>숟가락 나</b>도 가까이 가져가 보세요.' : '');
+        msg(ok ? '결과 · 예측과 같아요' : '결과 · 예측과 달라요', `${WHO[who]}를 가까이 가져가니 숟가락 <i class="ck">가</i>가 <b>${v === 'away' ? '밀려났어요' : v === 'toward' ? '끌려왔어요' : '움직이지 않았어요'}</b>. ${why}${other}`, ok ? 'ok' : 'no');
+      }
+      if (type === 'drag' && who) waiting = true;
+    }
+    const LAB = CHG.spoon($('#lab'), { onEvent });
+    window.LAB = LAB;
+    $('#rub').addEventListener('click', () => { $('#rub').disabled = true; $('#rub').textContent = '문지르는 중…'; msg('결과', '장갑으로 숟가락 <i class="ck">가</i>, <i class="ck">나</i>의 손잡이를 차례로 문지르는 중이에요.'); LAB.rub(); });
+    $$('#who button').forEach((b) => b.addEventListener('click', () => {
+      who = b.dataset.v; pred = null; waiting = false;
+      $$('#who button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+      $$('#pred button').forEach((x) => { x.setAttribute('aria-pressed', 'false'); x.classList.remove('good', 'bad'); });
+      enable('#pred', false); $('#go').disabled = true; $('#go').textContent = '④ 가까이 가져가기';
+      msg('결과', `${WHO[who]}를 들었어요. 숟가락 <i class="ck">가</i>가 어떻게 될지 예측해 보세요.`);
+      LAB.choose(who);
+    }));
+    $$('#pred button').forEach((b) => b.addEventListener('click', () => {
+      pred = b.dataset.v; $$('#pred button').forEach((x) => { x.setAttribute('aria-pressed', String(x === b)); x.classList.remove('good', 'bad'); }); $('#go').disabled = false;
+    }));
+    $('#go').addEventListener('click', () => {
+      if (!who) return; waiting = true; $('#go').disabled = true; $('#go').textContent = '가까이 가져가는 중…';
+      LAB.realign(() => LAB.approach());
+    });
+    $('#bAway').addEventListener('click', () => LAB.away());
+    $('#bCh').addEventListener('click', () => { const v = !LAB.st.charges; LAB.set({ charges: v }); $('#bCh').setAttribute('aria-pressed', String(v)); });
+    $('#bReset').addEventListener('click', () => {
+      LAB.reset(); rubbed = false; who = null; pred = null; waiting = false;
+      $('#d1').hidden = true; $('#rub').disabled = false; $('#rub').textContent = '장갑으로 문지르기';
+      $$('#who button,#pred button').forEach((x) => { x.setAttribute('aria-pressed', 'false'); x.classList.remove('good', 'bad'); x.disabled = true; });
+      $('#go').disabled = true; $('#go').textContent = '④ 가까이 가져가기';
+      ['#rNa', '#fNa', '#rGl', '#fGl'].forEach((s) => ($(s).textContent = '-'));
+      msg('결과', '먼저 장갑으로 두 숟가락을 문질러요.');
+    });
+    // 검사용 주소: ?ff=1(문지른 상태) &who=na|gl &pred=away &go=1
+    if (Q.get('ff') === '1') { LAB.fastRub(); onEvent('rubbed'); }
+    if (Q.get('who')) { const b = $(`#who [data-v="${Q.get('who')}"]`); if (b) b.click(); }
+    if (Q.get('pred')) setTimeout(() => { const b = $(`#pred [data-v="${Q.get('pred')}"]`); if (b) { b.disabled = false; b.click(); } if (Q.get('go') === '1') setTimeout(() => $('#go').click(), 200); }, 1100);
+    window.SM.okUI = true;
+  } catch (err) { window.SM_err('숟가락 실험실', err); }
+})();
+</script>
+<script>
+/* ===== 블록 2: 칸 탭 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S;
+    function show(p) { $$('#pt button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.p === p))); $$('.pane').forEach((e) => (e.hidden = e.dataset.p !== p)); }
+    $$('#pt button').forEach((b) => b.addEventListener('click', () => show(b.dataset.p)));
+    show(['lab', 'why'].includes(S.Q.get('tab')) ? S.Q.get('tab') : 'lab');
+  } catch (err) { window.SM_err('칸 탭', err); }
+})();
+</script>
+</body>
+</html>
