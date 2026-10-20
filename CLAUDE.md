@@ -7,6 +7,7 @@
 - `lessons/<수업이름>/` — 수업 하나. `index.html`은 탭 껍데기(iframe으로 각 페이지를 불러옴), 나머지는 CSS·JS가 모두 들어 있는 단독 HTML 페이지.
   - 기준 예시: `lessons/ohm/` (읽기·퀴즈, 시뮬레이션 2개, 정리·글쓰기)
 - 로고(2026-10-11 선생님 결정, "네 화면" 2×2 칸): 파랑 바탕 `favicon.svg`(= `assets/ras-mark.svg`, 브라우저 탭·홈 화면, PNG는 `favicon-32.png`·`apple-touch-icon.png`), 흰 바탕 `assets/ras-mark-light.svg`(허브 머리에 인라인 SVG로 넣음). 모든 수업 껍데기 `index.html`과 `tools/lesson-kit/parts/shell.html`의 `<head>`에 아이콘 링크 세 줄이 있으니 새 수업에도 넣는다.
+- 소개 영상(2026-10-21 게시): 허브 머리 오른쪽 "소개 영상" 버튼 → 영상 창. 영상은 `assets/ras-promo.mp4`(3 MB, 누르기 전에는 받지 않음), 버튼 사진 `assets/ras-promo-poster.jpg`, 첫 화면 `assets/ras-promo-start.jpg`. 원본은 하이퍼프레임 프로젝트 `tools/ras-promo/`(30초, 실제 coil-field 녹화 네 화면, 칸 영상은 `make_clips.sh`). 고친 뒤에는 `renders/`에 다시 뽑고 줄여서 `assets/ras-promo.mp4`를 바꾼다. 첫 화면에 바로 띄우지 않는다(목차·네 화면 설명과 부딪힘).
 - `curriculum/` — 단원별 교육과정 기준 문서. **수업 콘텐츠를 만들기 전에 반드시 해당 문서를 읽는다.**
 - `docs/작업방식_이삭T와_일하는_법.md` — **먼저 읽을 것.** 지난 프로젝트에서 반려·재작업된 일과 선생님 선호.
 - `docs/수업웹자료_표준개발절차.md` — 전체 제작 절차와 디자인 기준값(부록 B).
