@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>밀도 – 뜨고 가라앉는 컵</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+/*@@LOCAL:_css_dn.css@@*/
+/*@@LOCAL:_css_sim.css@@*/
+  /* ===== 이 페이지 전용 ===== */
+  #cup{aspect-ratio:1000/700}
+  .act[hidden]{display:none!important}
+  .three3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+  .two2{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .three3 button,.two2 button{min-height:48px;border-radius:14px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15px;cursor:pointer;padding:4px 8px;word-break:keep-all;line-height:1.25;display:flex;align-items:center;justify-content:center;gap:8px}
+  .three3 button[aria-pressed="true"],.two2 button[aria-pressed="true"]{border-color:var(--fab);background:#e9f3fd;color:#0b3f73}
+  .three3 button.good,.two2 button.good{border-color:var(--ok);background:#e8f7ef;color:#11703f}
+  .three3 button.bad,.two2 button.bad{border-color:#e7a29b;background:#fff4f2;color:#9b3a32}
+  .three3 button:disabled,.two2 button:disabled{opacity:.4;cursor:default}
+  .three3 button.used{opacity:1;background:#f3f6f9;color:var(--muted);border-color:#e3eaf1}
+  .sw{width:16px;height:16px;border-radius:5px;flex:none;box-shadow:inset 0 0 0 1px rgba(20,38,59,.18)}
+  .runrow{display:flex;gap:8px;margin-top:10px}
+  .runrow .btn{flex:1}
+  /* 밀도 기록 */
+  #drows{display:grid;grid-template-columns:1fr 1fr;gap:6px 10px}
+  .drow{display:grid;grid-template-columns:auto 1fr;gap:8px;align-items:center}
+  .act[data-a="ex"] .lbl{margin:8px 0 6px}
+  .act[data-a="ex"] .fbk{margin-top:8px}
+  .rng .q{margin:2px 0 4px}
+  .drow b{font-size:15px}
+  .slot{min-height:44px;border-radius:12px;border:2px dashed #b8c6d4;background:#fff;font-weight:900;font-size:16px;color:var(--ink);cursor:pointer;font-variant-numeric:tabular-nums;text-align:left;padding:0 12px}
+  .slot.sel{border-color:var(--fab);border-style:solid;background:#eef5fc}
+  .slot.full{border-style:solid;border-color:#9fbbd8}
+  .slot.good{border-color:var(--ok);background:#e8f7ef;color:#11703f}
+  .slot.bad{border-color:#e7a29b;background:#fff4f2;color:#9b3a32}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 2px}
+  .chips button{min-height:44px;min-width:64px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:900;font-size:15.5px;cursor:pointer;font-variant-numeric:tabular-nums}
+  .chips button:disabled{opacity:.35}
+  .rng{display:grid;gap:6px}
+  .rng .q{font-size:15px;font-weight:800;margin:6px 0 2px;word-break:keep-all}
+  .rng .opts{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+  .rng .opts button{min-height:46px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:14px;cursor:pointer;line-height:1.25;word-break:keep-all;padding:4px 6px}
+  .rng .opts button[aria-pressed="true"]{border-color:var(--fab);background:#e9f3fd;color:#0b3f73}
+  .rng .opts button.good{border-color:var(--ok);background:#e8f7ef;color:#11703f}
+  .rng .opts button.bad{border-color:#e7a29b;background:#fff4f2;color:#9b3a32}
+  .rng .opts button:disabled{cursor:default}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="ttl">
+      <span class="eyebrow">시뮬레이션 ②</span><h1>뜨고 가라앉는 컵</h1>
+      <p class="sub" id="sub">액체를 붓고 고체를 넣어, 밀도가 다른 물질이 컵 안에서 어떻게 층을 이루는지 봐요. (교과서 해 보기)</p>
+    </div>
+    <div class="ptabs big" role="tablist" id="acts" style="margin:0">
+      <button type="button" role="tab" data-a="put" aria-selected="true">① 컵에 넣어 보기</button>
+      <button type="button" role="tab" data-a="ex" aria-selected="false">② 밀도로 설명하기</button>
+    </div>
+  </header>
+
+  <div class="stage">
+    <section class="card viewer">
+      <div class="scene grow" id="cup" role="img" aria-label="유리컵. 콩기름, 물, 글리세린을 붓고 나무, 플라스틱, 철을 넣으면 밀도에 따라 층을 이룬다."></div>
+      <div class="vctl">
+        <span class="hint" id="hint">액체를 붓는 순서는 마음대로 정해도 돼요</span>
+        <span class="sp"></span>
+        <button class="vb" type="button" id="bReset">처음부터</button>
+      </div>
+    </section>
+
+    <section class="card pad">
+      <!-- 활동 ①: 컵에 넣어 보기 -->
+      <div class="act" data-a="put">
+        <div class="ptabs" role="tablist" id="pt">
+          <button type="button" role="tab" data-p="lab" aria-selected="true">실험하기</button>
+          <button type="button" role="tab" data-p="why" aria-selected="false">왜 그럴까?</button>
+        </div>
+        <div class="pane" data-p="lab">
+          <div class="lbl">① 액체 붓기 · 세 가지를 모두 부어요</div>
+          <div class="three3" id="liq">
+            <button type="button" data-v="oil"><span class="sw" style="background:rgb(236,208,128)"></span>콩기름</button>
+            <button type="button" data-v="water"><span class="sw" style="background:rgb(190,220,244)"></span>물</button>
+            <button type="button" data-v="gly"><span class="sw" style="background:rgb(214,214,232)"></span>글리세린</button>
+          </div>
+          <div class="lbl">② 넣을 고체</div>
+          <div class="three3" id="sol">
+            <button type="button" data-v="wood" disabled>나무</button>
+            <button type="button" data-v="plastic" disabled>플라스틱</button>
+            <button type="button" data-v="iron" disabled>철</button>
+          </div>
+          <div class="lbl">③ 예측하기 · 어디에서 멈출까요?</div>
+          <div class="two2" id="pred">
+            <button type="button" data-v="top" disabled>콩기름 위</button>
+            <button type="button" data-v="oil|water" disabled>콩기름과 물 사이</button>
+            <button type="button" data-v="water|gly" disabled>물과 글리세린 사이</button>
+            <button type="button" data-v="bottom" disabled>바닥</button>
+          </div>
+          <div class="runrow"><button class="btn primary" type="button" id="go" disabled>④ 컵에 넣기</button></div>
+          <div class="fbk" id="res"><b class="t" id="resT">결과</b><span id="resM">먼저 액체 세 가지를 컵에 부어요. 붓는 순서는 마음대로예요.</span></div>
+        </div>
+        <div class="pane" data-p="why" hidden>
+          <div class="phase">
+            <div class="ph on"><i>1</i><span>밀도가 다른 물질을 함께 넣으면 <b>밀도가 작은 물질은 위에 뜨고, 밀도가 큰 물질은 아래로 가라앉아요.</b></span></div>
+            <div class="ph on"><i>2</i><span>그래서 어떤 순서로 부어도 액체는 아래부터 <b>글리세린(1.26) → 물(1.00) → 콩기름(0.92)</b> 순서로 층을 이뤄요.</span></div>
+            <div class="ph on"><i>3</i><span>철(7.87)은 글리세린보다 밀도가 커서 <b>바닥</b>까지 가라앉아요.</span></div>
+            <div class="ph on"><i>4</i><span>고체가 멈춘 자리를 보면 위아래 액체와 밀도를 비교할 수 있어요. 이것으로 <b>밀도를 모르는 물질의 밀도를 대략</b> 알 수 있어요.</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 활동 ②: 밀도로 설명하기 -->
+      <div class="act" data-a="ex" hidden>
+        <div class="lbl">① 각 물질의 밀도를 그림 Ⅰ-2에서 찾아 기록해요 (g/mL)</div>
+        <div id="drows"></div>
+        <div class="chips" id="chips"></div>
+        <div class="rng" id="rng" hidden>
+          <div class="lbl" style="margin-top:6px">② 밀도를 모르는 물질의 밀돗값 범위 추론하기</div>
+          <div><p class="q">나무의 밀도는?</p><div class="opts" data-k="wood"></div></div>
+          <div><p class="q">플라스틱의 밀도는?</p><div class="opts" data-k="plastic"></div></div>
+        </div>
+        <div class="fbk" id="res2"><b class="t" id="res2T">결과</b><span id="res2M">칸을 누른 뒤 아래 숫자를 눌러 채워요.</span></div>
+      </div>
+      <p class="mnote">나무와 플라스틱의 밀도는 교과서에 없어 범위만 다뤄요. 뜨고 가라앉는 빠르기는 보기 좋게 정한 모형이에요.</p>
+    </section>
+  </div>
+</div>
+<script>
+window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
+  reduce: !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches), Q: new URLSearchParams(location.search) };
+</script>
+<script>
+/*@@LOCAL:_den.js@@*/
+</script>
+<script>
+/* ===== 블록 1: 컵에 넣어 보기 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S, Q = S.Q;
+    const J = DEN.jar($('#cup'), { densLabels: ['oil', 'water', 'gly', 'iron'] });
+    window.CUP = J;
+    const ZN = { top: '콩기름 위', 'oil|water': '콩기름과 물 사이', 'water|gly': '물과 글리세린 사이', bottom: '바닥' };
+    const NM = { oil: '콩기름', water: '물', gly: '글리세린', wood: '나무', plastic: '플라스틱', iron: '철' };
+    const RH = { oil: 0.92, water: 1.00, gly: 1.26 };
+    const jo = (w, a, b) => { const c = w.charCodeAt(w.length - 1) - 0xAC00; return w + (c >= 0 && c <= 11171 && c % 28 ? a : b); };
+    let poured = [], sol = null, pred = null, busy = false;
+    const dropped = new Set();
+    function msg(t, m, cls = '') { $('#res').className = 'fbk ' + cls; $('#resT').textContent = t; $('#resM').innerHTML = m; }
+    function paint() {
+      $$('#liq button').forEach((b) => { const u = poured.includes(b.dataset.v); b.disabled = busy || u; b.classList.toggle('used', u); });
+      const ready = poured.length === 3;
+      $$('#sol button').forEach((b) => { const u = dropped.has(b.dataset.v); b.disabled = busy || !ready || u; b.classList.toggle('used', u); b.setAttribute('aria-pressed', String(b.dataset.v === sol)); });
+      $$('#pred button').forEach((b) => { b.disabled = busy || !sol; b.setAttribute('aria-pressed', String(b.dataset.v === pred)); });
+      $('#go').disabled = busy || !sol || !pred;
+    }
+    function where() { // 지금 쌓인 층을 위에서부터 말로
+      const ord = poured.slice().sort((a, b) => RH[a] - RH[b]);
+      return ord.map((k) => NM[k]).join(' → ');
+    }
+    $$('#liq button').forEach((b) => b.addEventListener('click', () => {
+      const id = b.dataset.v; if (busy) return; busy = true; paint();
+      const before = poured.slice();
+      msg('결과', `${jo(NM[id], '을', '를')} 붓는 중이에요…`);
+      J.pour(id, () => {
+        busy = false; poured.push(id);
+        const heavier = before.filter((k) => RH[k] < RH[id]), lighter = before.filter((k) => RH[k] > RH[id]);
+        let m;
+        if (!before.length) m = `${jo(NM[id], '을', '를')} 부었어요.`;
+        else if (heavier.length && !lighter.length) m = `${jo(NM[id], '은', '는')} ${heavier.map((k) => NM[k]).join('·')}보다 밀도가 커서 <b>아래로 가라앉았어요</b>.`;
+        else if (!heavier.length) m = `${jo(NM[id], '은', '는')} ${lighter.map((k) => NM[k]).join('·')}보다 밀도가 작아서 <b>위에 떴어요</b>.`;
+        else m = `${jo(NM[id], '은', '는')} ${heavier.map((k) => NM[k]).join('·')}보다 밀도가 커서 그 아래로 가라앉고, ${lighter.map((k) => NM[k]).join('·')} 위에 머물렀어요.`;
+        m += ` 위에서부터 <b>${where()}</b>.`;
+        if (poured.length === 3) m += ' 이제 고체를 골라 넣어 봐요.';
+        msg('결과', m, before.length ? 'ok' : '');
+        paint();
+      });
+    }));
+    $$('#sol button').forEach((b) => b.addEventListener('click', () => { sol = b.dataset.v; pred = null; $$('#pred button').forEach((x) => x.classList.remove('good', 'bad')); msg('결과', `<b>${jo(NM[sol], '을', '를')}</b> 넣으면 어디에서 멈출지 예측해 봐요.`); paint(); }));
+    $$('#pred button').forEach((b) => b.addEventListener('click', () => { pred = b.dataset.v; $$('#pred button').forEach((x) => x.classList.remove('good', 'bad')); paint(); }));
+    $('#go').addEventListener('click', () => {
+      const id = sol; busy = true; paint(); msg('결과', `${jo(NM[id], '을', '를')} 컵에 넣었어요…`);
+      J.drop(id, (z) => {
+        busy = false; dropped.add(id); const ok = z === pred;
+        $$('#pred button').forEach((x) => { x.classList.toggle('good', x.dataset.v === z); x.classList.toggle('bad', x.dataset.v === pred && !ok); });
+        const why = z === 'bottom' ? `${jo(NM[id], '은', '는')} 글리세린보다 밀도가 커서 <b>바닥</b>까지 가라앉았어요.`
+          : z === 'top' ? `${jo(NM[id], '은', '는')} 콩기름보다 밀도가 작아서 <b>콩기름 위</b>에 떴어요.`
+          : `${jo(NM[id], '은', '는')} ${NM[z.split('|')[0]]}보다 밀도가 크고 ${NM[z.split('|')[1]]}보다 밀도가 작아서 <b>${ZN[z]}</b>에 멈췄어요.`;
+        sol = null; pred = null;
+        const left = ['wood', 'plastic', 'iron'].filter((k) => !dropped.has(k));
+        msg(ok ? '결과 · 예측과 같아요' : '결과 · 예측과 달라요', why + (left.length ? ` 다음 고체도 넣어 봐요.` : ' 모두 넣었어요! <b>② 밀도로 설명하기</b>에서 밀도를 기록해 봐요.'), ok ? 'ok' : 'no');
+        paint();
+        setTimeout(() => $$('#pred button').forEach((x) => x.classList.remove('good', 'bad')), left.length ? 2600 : 999999);
+      });
+    });
+    $('#bReset').addEventListener('click', () => { J.reset(); poured = []; dropped.clear(); sol = null; pred = null; busy = false; msg('결과', '먼저 액체 세 가지를 컵에 부어요. 붓는 순서는 마음대로예요.'); paint(); window.CUPX && window.CUPX.reset(); });
+    window.CUP_fill = () => { J.fill(); poured = ['oil', 'water', 'gly']; ['wood', 'plastic', 'iron'].forEach((k) => dropped.add(k)); busy = false; sol = null; pred = null; paint(); msg('결과', '컵이 모두 채워졌어요. 위에서부터 나무, 콩기름, 플라스틱, 물, 글리세린, 철이에요.', 'ok'); };
+    // 검사용 주소: ?liq=3(액체 모두) &sol=plastic&pred=top&go=1 / ?fill=1
+    if (Q.get('liq') === '3') { ['gly', 'water', 'oil'].forEach((k) => (J.st.cur[k] = 1)); poured = ['gly', 'water', 'oil']; }
+    if (Q.get('fill') === '1') window.CUP_fill();
+    paint();
+    if (Q.get('sol')) { const b = $(`#sol [data-v="${Q.get('sol')}"]`); b && b.click(); }
+    if (Q.get('pred')) { const b = $(`#pred [data-v="${Q.get('pred')}"]`); b && b.click(); if (Q.get('go') === '1') setTimeout(() => $('#go').click(), 200); }
+    if (Q.get('pour')) setTimeout(() => { const b = $(`#liq [data-v="${Q.get('pour')}"]`); b && b.click(); }, 300);
+    window.SM.okUI = true;
+  } catch (err) { window.SM_err('컵에 넣어 보기', err); }
+})();
+</script>
+<script>
+/* ===== 블록 2: 밀도로 설명하기 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S, Q = S.Q, J = window.CUP;
+    const ROWS = [['oil', '콩기름', '0.92'], ['water', '물', '1.00'], ['gly', '글리세린', '1.26'], ['iron', '철', '7.87']];
+    const CHIPS = ['0.79', '0.92', '1.00', '1.26', '2.70', '7.87'];
+    const RANGE = {
+      wood: { ans: 'a', exp: '나무는 콩기름 위에 떴으므로 콩기름보다 밀도가 작아요.' },
+      plastic: { ans: 'b', exp: '플라스틱은 콩기름 아래로 가라앉고 물 위에 떴으므로 콩기름보다 크고 물보다 작아요.' },
+    };
+    const OPTS = [['a', '0.92보다 작다'], ['b', '0.92보다 크고 1.00보다 작다'], ['c', '1.00보다 크고 1.26보다 작다']];
+    const put = {}; let sel = 'oil', checked = false;
+    function msg(t, m, cls = '') { $('#res2').className = 'fbk ' + cls; $('#res2T').textContent = t; $('#res2M').innerHTML = m; }
+    function paint() {
+      $('#drows').innerHTML = ROWS.map(([k, n]) => `<div class="drow"><b>${n}</b><button type="button" class="slot${sel === k ? ' sel' : ''}${put[k] ? ' full' : ''}${checked ? (put[k] === ROWS.find((r) => r[0] === k)[2] ? ' good' : ' bad') : ''}" data-k="${k}">${put[k] ? put[k] + ' g/mL' : ''}</button></div>`).join('');
+      $$('#drows .slot').forEach((b) => b.addEventListener('click', () => { sel = b.dataset.k; if (put[sel] && !checked) delete put[sel]; checked = false; paint(); }));
+      $('#chips').innerHTML = CHIPS.map((c) => `<button type="button">${c}</button>`).join('') + '<button type="button" id="chk" style="min-width:96px;background:#0e63b3;color:#fff;border-color:#0e63b3"' + (Object.keys(put).length < 4 ? ' disabled' : '') + '>확인하기</button>';
+      $$('#chips button:not(#chk)').forEach((b) => b.addEventListener('click', () => {
+        if (!sel) return; put[sel] = b.textContent; checked = false;
+        const nx = ROWS.find((r) => !put[r[0]]); sel = nx ? nx[0] : null; paint();
+      }));
+      $('#chk').addEventListener('click', check);
+      ROWS.forEach(([k]) => J.setDens(k, checked && put[k] === ROWS.find((r) => r[0] === k)[2] ? put[k] : null));
+    }
+    function check() {
+      checked = true; sel = null; paint();
+      const wrong = ROWS.filter(([k, , v]) => put[k] !== v).length;
+      if (wrong) { msg('다시 찾아봐요', `빨간 칸 ${wrong}개를 눌러 다시 채워요. 읽기 ③의 그림(교과서 그림 Ⅰ-2)에서 찾을 수 있어요.`, 'no'); return; }
+      msg('결과 · 모두 맞았어요', '컵의 아래로 갈수록 밀도가 커요: 콩기름 0.92 → 물 1.00 → 글리세린 1.26 → 철 7.87. <b>밀도가 작은 물질은 위에 뜨고, 큰 물질은 아래로 가라앉아요.</b> 이제 나무와 플라스틱의 밀도 범위를 추론해 봐요.', 'ok');
+      $('#rng').hidden = false;
+    }
+    const got = {};
+    $$('#rng .opts').forEach((box) => {
+      const k = box.dataset.k;
+      box.innerHTML = OPTS.map(([v, t]) => `<button type="button" data-v="${v}" aria-pressed="false">${t}</button>`).join('');
+      $$('button', box).forEach((b) => b.addEventListener('click', () => {
+        const ok = b.dataset.v === RANGE[k].ans;
+        $$('button', box).forEach((x) => { x.classList.remove('good', 'bad'); x.setAttribute('aria-pressed', 'false'); });
+        b.classList.add(ok ? 'good' : 'bad');
+        if (ok) { got[k] = true; $$('button', box).forEach((x) => (x.disabled = true)); }
+        if (got.wood && got.plastic) msg('결과 · 추론 완료', '나무: 0.92 g/mL보다 작아요. 플라스틱: 0.92 g/mL보다 크고 1.00 g/mL보다 작아요. 이처럼 <b>뜨고 가라앉는 정도를 비교하면 밀도를 모르는 물질의 밀도를 대략 알 수 있어요.</b>', 'ok');
+        else msg(ok ? '맞았어요' : '다시 생각해 봐요', ok ? RANGE[k].exp : `컵에서 ${k === 'wood' ? '나무' : '플라스틱'}의 바로 위와 아래에 있는 물질의 밀도를 비교해 봐요.`, ok ? 'ok' : 'no');
+      }));
+    });
+    window.CUPX = { reset() { Object.keys(put).forEach((k) => delete put[k]); Object.keys(got).forEach((k) => delete got[k]); sel = 'oil'; checked = false; $('#rng').hidden = true; $$('#rng .opts button').forEach((x) => { x.disabled = false; x.classList.remove('good', 'bad'); }); paint(); msg('결과', '칸을 누른 뒤 아래 숫자를 눌러 채워요.'); } };
+    // 활동 탭
+    function act(a) {
+      $$('#acts button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.a === a)));
+      $$('.act').forEach((e) => (e.hidden = e.dataset.a !== a));
+      if (a === 'ex' && !(J.st.solids.iron.in && J.st.cur.oil > 0.99 && J.st.cur.water > 0.99 && J.st.cur.gly > 0.99 && J.st.solids.wood.in && J.st.solids.plastic.in)) window.CUP_fill();
+      $('#hint').textContent = a === 'ex' ? '교과서 해 보기 그림처럼 모든 물질을 넣은 컵이에요' : '액체를 붓는 순서는 마음대로 정해도 돼요';
+    }
+    $$('#acts button').forEach((b) => b.addEventListener('click', () => act(b.dataset.a)));
+    paint();
+    // 칸 탭
+    function show(p) { $$('#pt button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.p === p))); $$('.pane').forEach((e) => (e.hidden = e.dataset.p !== p)); }
+    $$('#pt button').forEach((b) => b.addEventListener('click', () => show(b.dataset.p)));
+    show(Q.get('tab') === 'why' ? 'why' : 'lab');
+    if (Q.get('act') === 'ex') act('ex');
+    if (Q.get('dens') === '1') { ROWS.forEach(([k, , v]) => (put[k] = v)); check(); }
+  } catch (err) { window.SM_err('밀도로 설명하기', err); }
+})();
+</script>
+</body>
+</html>
