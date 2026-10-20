@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>밀도 – 밀도 실험실</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+/*@@LOCAL:_css_dn.css@@*/
+/*@@LOCAL:_css_sim.css@@*/
+  /* ===== 이 페이지 전용 ===== */
+  #lab{aspect-ratio:1000/620}
+  .pane .lbl{margin:8px 0 5px}
+  .pane .lbl:first-child{margin-top:0}
+  .ptabs{margin-bottom:8px}
+  .row2 .btn{min-height:46px}
+  .fbk{margin-top:8px;padding:10px 12px}
+  .four{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+  .four button{min-height:50px;border-radius:14px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:14.5px;cursor:pointer;padding:4px 4px;word-break:keep-all;line-height:1.2;position:relative}
+  .four button small{display:block;font-size:12.5px;font-weight:700;color:var(--muted)}
+  .four button[aria-pressed="true"]{border-color:var(--fab);background:#e9f3fd;color:#0b3f73}
+  .four button.done::after{content:"";position:absolute;right:6px;top:6px;width:8px;height:8px;border-radius:50%;background:#1f9d5c}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .row2 .btn{width:100%}
+  .three3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+  .three3 button{min-height:46px;border-radius:14px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15.5px;cursor:pointer;font-variant-numeric:tabular-nums}
+  .three3 button.good{border-color:var(--ok);background:#e8f7ef;color:#11703f}
+  .three3 button.bad{border-color:#e7a29b;background:#fff4f2;color:#9b3a32}
+  .three3 button:disabled{opacity:.4;cursor:default}
+  .calcq{font-size:15px;font-weight:800;color:var(--ink);margin:0 0 6px;font-variant-numeric:tabular-nums}
+  .calcq span{color:var(--muted);font-weight:700}
+  .rec{width:100%;border-collapse:collapse;margin-top:8px;font-size:14px;font-variant-numeric:tabular-nums}
+  .rec th,.rec td{padding:4px 4px;border-bottom:1px solid #e3eaf1;text-align:center;word-break:keep-all}
+  .rec thead th{font-size:12px;color:var(--muted);font-weight:800;line-height:1.25}
+  .rec thead tr:first-child th{font-size:12.5px;color:var(--ink2)}
+  .rec td:first-child,.rec th:first-child{text-align:left;font-weight:800;color:var(--ink);font-size:13px}
+  .rec td.v{font-weight:800;color:var(--ink)}
+  .rec td.d{font-weight:900;color:#0e63b3}
+  .rec td.now{background:#eef5fc}
+  .stepdone{color:#11703f;font-size:12.5px;font-weight:800;margin-left:6px}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="ttl">
+      <span class="eyebrow">시뮬레이션 ①</span><h1>밀도 실험실</h1>
+      <p class="sub">크기가 다른 철 조각과 알루미늄 조각의 질량과 부피를 재고 밀도를 구해요. (교과서 탐구)</p>
+    </div>
+  </header>
+
+  <div class="stage">
+    <section class="card viewer">
+      <div class="scene grow" id="lab" role="img" aria-label="실험 책상. 왼쪽에 전자저울, 가운데 쟁반에 철 조각 2개와 알루미늄 조각 2개, 오른쪽에 물 60 mL가 든 눈금실린더와 눈금을 확대한 원이 있다."></div>
+      <div class="vctl">
+        <span class="hint" id="hint">금속 조각을 물에 넣을 때 물이 튀지 않도록 조심해서 넣어요</span>
+        <span class="sp"></span>
+        <button class="vb" type="button" id="bReset">처음부터</button>
+      </div>
+    </section>
+
+    <section class="card pad">
+      <div class="ptabs" role="tablist" id="pt">
+        <button type="button" role="tab" data-p="lab" aria-selected="true">실험하기</button>
+        <button type="button" role="tab" data-p="why" aria-selected="false">왜 그럴까?</button>
+      </div>
+
+      <div class="pane" data-p="lab">
+        <div class="lbl">① 잴 조각 고르기</div>
+        <div class="four" id="pick"></div>
+        <div class="lbl">② 재기</div>
+        <div class="row2">
+          <button class="btn primary" type="button" id="bM" disabled>저울로 질량 재기</button>
+          <button class="btn primary" type="button" id="bV" disabled>실린더로 부피 재기</button>
+        </div>
+        <div class="lbl">③ 밀도 구하기 · 질량 ÷ 부피</div>
+        <p class="calcq" id="calcq"><span>질량과 부피를 재면 계산할 수 있어요</span></p>
+        <div class="three3" id="ans"><button type="button" disabled>-</button><button type="button" disabled>-</button><button type="button" disabled>-</button></div>
+        <div class="fbk" id="res"><b class="t" id="resT">결과</b><span id="resM">먼저 잴 조각을 골라요.</span>
+          <table class="rec" aria-label="실험 결과 기록">
+            <thead>
+              <tr><th rowspan="2">물질</th><th colspan="2">철</th><th colspan="2">알루미늄</th></tr>
+              <tr><th>작은 조각</th><th>큰 조각</th><th>작은 조각</th><th>큰 조각</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>질량(g)</td><td class="v" id="m-fe1">-</td><td class="v" id="m-fe2">-</td><td class="v" id="m-al1">-</td><td class="v" id="m-al2">-</td></tr>
+              <tr><td>부피(mL)</td><td class="v" id="v-fe1">-</td><td class="v" id="v-fe2">-</td><td class="v" id="v-al1">-</td><td class="v" id="v-al2">-</td></tr>
+              <tr><td>밀도(g/mL)</td><td class="d" id="d-fe1">-</td><td class="d" id="d-fe2">-</td><td class="d" id="d-al1">-</td><td class="d" id="d-al2">-</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="pane" data-p="why" hidden>
+        <div class="phase">
+          <div class="ph on"><i>1</i><span><b>질량</b>은 전자저울에 조각을 올려놓고 재요.</span></div>
+          <div class="ph on"><i>2</i><span><b>부피</b>는 물이 든 눈금실린더에 조각을 잠기게 넣고, <b>늘어난 물의 부피</b>로 구해요. 조각이 물을 밀어낸 만큼 눈금이 올라가요.</span></div>
+          <div class="ph on"><i>3</i><span><b>밀도 = 질량 ÷ 부피</b>예요. 단위 부피당 질량이라서 단위는 g/mL(또는 g/cm³)예요.</span></div>
+          <div class="ph on"><i>4</i><span>크기가 다른 두 철 조각은 질량과 부피가 모두 다르지만 <b>밀도는 거의 같아요</b>(약 7.9 g/mL). 알루미늄 두 조각도 밀도가 거의 같아요(약 2.7 g/mL).</span></div>
+          <div class="ph on"><i>5</i><span>밀도는 물질의 양에 관계없이 일정하고 물질마다 달라요. 그래서 밀도로 <b>철과 알루미늄을 구별</b>할 수 있어요. 밀도는 <b>물질의 특성</b>이에요.</span></div>
+        </div>
+      </div>
+      <p class="mnote">측정값은 실제 실험과 비슷하게 정한 값이에요. (교과서 값: 철 7.87, 알루미늄 2.70)</p>
+    </section>
+  </div>
+</div>
+<script>
+window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
+  reduce: !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches), Q: new URLSearchParams(location.search) };
+</script>
+<script>
+/*@@LOCAL:_den.js@@*/
+</script>
+<script>
+/* ===== 블록 1: 실험실 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S, Q = S.Q;
+    const LAB = DEN.lab($('#lab'));
+    window.LAB = LAB;
+    const P = DEN.PIECES, rec = {}; // rec[id] = {m, v, d}
+    let cur = null, busy = false;
+    const f1 = (x) => (Math.round(x * 10) / 10).toFixed(1);
+    $('#pick').innerHTML = P.map((p) => `<button type="button" data-id="${p.id}" aria-pressed="false">${p.name}<small>${p.size}</small></button>`).join('');
+    function msg(t, m, cls = '') { $('#res').className = 'fbk ' + cls; $('#resT').textContent = t; $('#resM').innerHTML = m; }
+    function lock(on) { busy = on; $$('#pick button').forEach((b) => (b.disabled = on)); }
+    function paintBtns() {
+      const r = cur && rec[cur];
+      $('#bM').disabled = busy || !cur || (r && r.m != null);
+      $('#bV').disabled = busy || !cur || !r || r.m == null || r.v != null;
+      $$('#pick button').forEach((b) => { b.setAttribute('aria-pressed', String(b.dataset.id === cur)); b.classList.toggle('done', !!(rec[b.dataset.id] && rec[b.dataset.id].d != null)); });
+      $$('.rec td').forEach((td) => td.classList.toggle('now', !!cur && td.id.endsWith('-' + cur)));
+    }
+    function askDensity() {
+      const p = P.find((x) => x.id === cur), r = rec[cur], d = r.m / r.v;
+      $('#calcq').innerHTML = `${p.name} ${p.size}: ${f1(r.m)} g ÷ ${r.v} mL = ?`;
+      const opts = [f1(d), (r.v / r.m).toFixed(2), f1(r.m * r.v)];
+      const order = cur.endsWith('1') ? [1, 0, 2] : [2, 1, 0];
+      $('#ans').innerHTML = order.map((i) => `<button type="button" data-v="${opts[i]}" data-ok="${i === 0}">${opts[i]}</button>`).join('');
+      $$('#ans button').forEach((b) => b.addEventListener('click', () => {
+        $$('#ans button').forEach((x) => x.classList.remove('good', 'bad'));
+        if (b.dataset.ok === 'true') {
+          b.classList.add('good'); r.d = d; $('#d-' + cur).textContent = f1(d);
+          $$('#ans button').forEach((x) => (x.disabled = true));
+          paintBtns(); conclude(p, d);
+        } else {
+          b.classList.add('bad');
+          msg('다시 계산해요', b.dataset.v === opts[1] ? '부피를 질량으로 나누었어요. 밀도는 <b>질량 ÷ 부피</b>예요.' : '질량과 부피를 곱했어요. 밀도는 <b>질량 ÷ 부피</b>예요.', 'no');
+        }
+      }));
+    }
+    function conclude(p, d) {
+      const done = P.filter((x) => rec[x.id] && rec[x.id].d != null);
+      const same = P.filter((x) => x.kind === p.kind && x.id !== p.id && rec[x.id] && rec[x.id].d != null);
+      let m = `${p.name} ${p.size}의 밀도는 <b>${f1(d)} g/mL</b>예요.`;
+      if (same.length) m += ` 크기가 다른 ${p.name} 조각과 질량·부피는 다르지만 <b>밀도는 같아요</b>.`;
+      if (done.length === P.length) { msg('결과 · 모두 구했어요', '철은 크기와 관계없이 약 <b>7.9 g/mL</b>, 알루미늄은 약 <b>2.7 g/mL</b>예요. 크기가 달라도 일정한 값은 <b>밀도</b>이고, 밀도로 철과 알루미늄을 <b>구별</b>할 수 있어요.', 'ok'); return; }
+      const next = P.find((x) => !(rec[x.id] && rec[x.id].d != null));
+      m += ` 이제 <b>${next.name} ${next.size}</b>도 재 봐요.`;
+      msg('결과', m, 'ok');
+    }
+    function resetAsk() { $('#calcq').innerHTML = '<span>질량과 부피를 재면 계산할 수 있어요</span>'; $('#ans').innerHTML = '<button type="button" disabled>-</button>'.repeat(3); }
+    $$('#pick button').forEach((b) => b.addEventListener('click', () => {
+      if (busy) return;
+      cur = b.dataset.id; const p = P.find((x) => x.id === cur);
+      rec[cur] = rec[cur] && rec[cur].d != null ? rec[cur] : { m: null, v: null, d: null };
+      if (rec[cur].d == null) { ['m', 'v', 'd'].forEach((k) => ($(`#${k}-${cur}`).textContent = '-')); rec[cur] = { m: null, v: null, d: null }; }
+      resetAsk();
+      lock(true); paintBtns();
+      msg('결과', `<b>${p.name} ${p.size}</b>을 골랐어요. 먼저 전자저울로 질량을 재요.`);
+      LAB.select(cur, () => { lock(false); paintBtns(); });
+      if (rec[cur].d != null) msg('결과', `${p.name} ${p.size}은 이미 구했어요(밀도 ${f1(rec[cur].d)} g/mL). 다른 조각을 골라요.`);
+    }));
+    $('#bM').addEventListener('click', () => {
+      lock(true); paintBtns(); msg('결과', '조각을 전자저울에 올려놓는 중이에요…');
+      LAB.weigh((g) => { rec[cur].m = g; $('#m-' + cur).textContent = f1(g); lock(false); paintBtns(); msg('결과', `질량은 <b>${f1(g)} g</b>이에요. 이제 물 60 mL가 든 눈금실린더로 부피를 재요.`); });
+    });
+    $('#bV').addEventListener('click', () => {
+      lock(true); paintBtns(); msg('결과', '조각을 눈금실린더의 물에 천천히 넣는 중이에요…');
+      LAB.volume((r) => {
+        rec[cur].v = r.v; $('#v-' + cur).textContent = r.v; lock(false); paintBtns();
+        msg('결과', `물의 부피가 ${r.before} mL에서 <b>${r.after} mL</b>가 되었어요. 조각의 부피는 ${r.after} − ${r.before} = <b>${r.v} mL</b>예요. 이제 밀도를 골라요.`);
+        askDensity();
+      });
+    });
+    $('#bReset').addEventListener('click', () => {
+      LAB.reset(); cur = null; busy = false; Object.keys(rec).forEach((k) => delete rec[k]);
+      $$('.rec td.v,.rec td.d').forEach((td) => (td.textContent = '-'));
+      resetAsk(); lock(false); paintBtns(); msg('결과', '먼저 잴 조각을 골라요.');
+    });
+    // 검사용 주소: ?p=fe2&s=bal|cyl|done  &all=1(표 모두 채움)
+    if (Q.get('all') === '1') { P.forEach((p) => { rec[p.id] = { m: p.g, v: p.v, d: p.g / p.v }; $('#m-' + p.id).textContent = f1(p.g); $('#v-' + p.id).textContent = p.v; $('#d-' + p.id).textContent = f1(p.g / p.v); }); conclude(P[3], P[3].g / P[3].v); }
+    if (Q.get('p')) {
+      cur = Q.get('p'); const p = P.find((x) => x.id === cur), s = Q.get('s');
+      rec[cur] = { m: null, v: null, d: null };
+      if (s === 'bal' || s === 'cyl' || s === 'done') { rec[cur].m = p.g; $('#m-' + cur).textContent = f1(p.g); }
+      if (s === 'cyl' || s === 'done') { rec[cur].v = p.v; $('#v-' + cur).textContent = p.v; }
+      LAB.jump(cur, s === 'bal' ? 'bal' : (s === 'cyl' || s === 'done') ? 'cyl' : 'tray');
+      if (s === 'cyl' || s === 'done') { askDensity(); msg('결과', `조각의 부피는 ${p.v} mL예요. 이제 밀도를 골라요.`); }
+      if (s === 'done') { const ok = $('#ans [data-ok="true"]'); ok && ok.click(); }
+    }
+    paintBtns();
+    window.SM.okUI = true;
+  } catch (err) { window.SM_err('밀도 실험실', err); }
+})();
+</script>
+<script>
+/* ===== 블록 2: 칸 탭 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S;
+    function show(p) { $$('#pt button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.p === p))); $$('.pane').forEach((e) => (e.hidden = e.dataset.p !== p)); }
+    $$('#pt button').forEach((b) => b.addEventListener('click', () => show(b.dataset.p)));
+    show(['lab', 'why'].includes(S.Q.get('tab')) ? S.Q.get('tab') : 'lab');
+  } catch (err) { window.SM_err('칸 탭', err); }
+})();
+</script>
+</body>
+</html>

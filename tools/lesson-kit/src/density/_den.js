@@ -1,0 +1,797 @@
+/* ===== 밀도 그림 도구 (캔버스 2D) =====
+   DEN.beakers(host)        물에 넣은 나무 구슬과 쇠구슬(그림 Ⅰ-1 형식): 부피가 같은 경우 · 질량이 같은 경우
+   DEN.cubes(host, 옵션)     단위 부피당 질량: 1 cm³ 조각을 쌓아 부피·질량이 함께 늘어나도 밀도는 같음
+   DEN.chart(host)          여러 가지 물질의 밀도 막대(그림 Ⅰ-2 값), 기체 확대해 보기
+   DEN.particles(host)      같은 부피의 액체와 기체의 입자 모형(그림 Ⅰ-3 형식)
+   DEN.jar(host, 옵션)       뜨고 가라앉는 컵(해 보기): 액체 붓기(방울이 제 층을 찾아감), 고체 넣기(뜨고 가라앉기)
+   DEN.lab(host, 옵션)       탐구 실험실: 전자저울로 질량, 눈금실린더로 부피(확대 원)
+   그림 원칙: 흰 바탕, 라스 파랑 한 색조 + 무채색(물질의 실제 색은 옅게), 매트한 질감, 얇은 선. 그림 속 글씨는 HTML 이름표.
+   뜨고 가라앉는 움직임의 빠르기와 나무·플라스틱의 밀도는 보기 좋게 정한 모형(수치로 보여 주지 않음). */
+window.DEN = (() => {
+  const TAU = Math.PI * 2;
+  const BLUE = '#0e63b3', INK = '#14263b', INK2 = '#3d4f63';
+  const reduce = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, k) => a + (b - a) * k;
+  const ease = (k) => (k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2);
+  const eOut = (k) => 1 - Math.pow(1 - k, 3);
+  const rgba = (c, a) => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
+  const shade = (c, f) => c.map((v) => Math.round(clamp(v * f, 0, 255)));
+
+  /* ---- 캔버스 · 이름표 · 반복 ---- */
+  function surface(host, W, H) {
+    const cv = document.createElement('canvas'); cv.className = 'wvc'; host.appendChild(cv);
+    const box = document.createElement('div'); box.className = 'olay'; host.appendChild(box);
+    const ctx = cv.getContext('2d'); const m = { k: 1, ox: 0, oy: 0, dpr: 1 };
+    function fit() {
+      const r = host.getBoundingClientRect(); if (r.width < 2 || r.height < 2) return;
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.height * dpr);
+      m.k = Math.min(r.width / W, r.height / H); m.ox = (r.width - W * m.k) / 2; m.oy = (r.height - H * m.k) / 2; m.dpr = dpr;
+      Object.assign(box.style, { left: m.ox + 'px', top: m.oy + 'px', width: W * m.k + 'px', height: H * m.k + 'px', right: 'auto', bottom: 'auto' });
+    }
+    fit();
+    if (window.ResizeObserver) new ResizeObserver(fit).observe(host); else window.addEventListener('resize', fit);
+    return { cv, ctx, box, m, W, H,
+      begin() { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, cv.width, cv.height); ctx.setTransform(m.dpr * m.k, 0, 0, m.dpr * m.k, m.dpr * m.ox, m.dpr * m.oy); },
+      full() { return [-m.ox / m.k, -m.oy / m.k, cv.width / m.dpr / m.k, cv.height / m.dpr / m.k]; } };
+  }
+  function overlay(S) {
+    const box = S.box, map = {};
+    return {
+      put(id, x, y, html, cls = '') {
+        let e = map[id]; if (!e) { e = document.createElement('span'); box.appendChild(e); map[id] = e; }
+        const c = 'ol ' + cls; if (e.className !== c) e.className = c;
+        if (e._h !== html) { e.innerHTML = html; e._h = html; }
+        e.style.left = (x / S.W * 100).toFixed(2) + '%'; e.style.top = (y / S.H * 100).toFixed(2) + '%'; e.hidden = false; return e;
+      },
+      hide(id) { if (map[id]) map[id].hidden = true; },
+    };
+  }
+  const loops = new Set();
+  let last = 0;
+  function tick(now) {
+    const dt = Math.min(0.05, last ? (now - last) / 1000 : 0); last = now;
+    loops.forEach((L) => { try { if (L.host.offsetParent !== null) { const r = L.host.getBoundingClientRect(); if (r.bottom > -50 && r.top < innerHeight + 50) L.fn(dt); } } catch (e) { loops.delete(L); (window.SM_err || window.RD_err || console.error)('밀도 그림', e); } });
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+  const addLoop = (host, fn) => { const L = { host, fn }; loops.add(L); return L; };
+  function tweens() {
+    let list = [];
+    return {
+      add(dur, fn, done) { const t = { dur: Math.max(0.001, dur), t: 0, fn, done }; list.push(t); return t; },
+      step(dt) { const cur = list; list = []; cur.forEach((t) => { t.t += dt; const k = Math.min(1, t.t / t.dur); t.fn(k); if (k < 1) list.push(t); else if (t.done) t.done(); }); },
+      clear() { list = []; },
+      get busy() { return list.length > 0; },
+    };
+  }
+  function rng(seed) { let s = seed >>> 0; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); }
+  function rr(ctx, x, y, w, h, r) {
+    r = Math.min(r, w / 2, h / 2);
+    ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+  }
+  function white(S) { const [fx, fy, fw, fh] = S.full(); S.ctx.fillStyle = '#fff'; S.ctx.fillRect(fx, fy, fw, fh); }
+  // 책상 면
+  function desk(S, y) {
+    const ctx = S.ctx, [fx, , fw, fh] = S.full();
+    const g = ctx.createLinearGradient(0, y, 0, y + 80);
+    g.addColorStop(0, '#eef2f6'); g.addColorStop(1, '#f8fafc');
+    ctx.fillStyle = g; ctx.fillRect(fx, y, fw, fh);
+    ctx.fillStyle = '#d9e1e9'; ctx.fillRect(fx, y, fw, 1.2);
+  }
+  function contact(ctx, x, y, w, a = 0.18) {
+    const g = ctx.createRadialGradient(x, y, 1, x, y, w / 2);
+    g.addColorStop(0, `rgba(20,38,59,${a})`); g.addColorStop(1, 'rgba(20,38,59,0)');
+    ctx.save(); ctx.translate(x, y); ctx.scale(1, 0.16); ctx.translate(-x, -y);
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, w / 2, 0, TAU); ctx.fill(); ctx.restore();
+  }
+
+  /* ---- 뜨고 가라앉는 움직임 (공통) ----
+     물체를 같은 단면의 기둥으로 보고, 잠긴 부분의 평균 밀도와 물체의 밀도를 비교해 위아래로 움직인다.
+     차이가 작아도 화면에서 볼 수 있도록 힘을 부드럽게 키운 모형. */
+  function avgRho(rhoAt, y0, h) { let s = 0; const n = 20; for (let i = 0; i < n; i++) s += rhoAt(y0 + (i + 0.5) * h / n); return s / n; }
+  function subFrac(rhoAt, y0, h) { let s = 0; const n = 20; for (let i = 0; i < n; i++) if (rhoAt(y0 + (i + 0.5) * h / n) > 0) s++; return s / n; }
+  function physStep(b, dt, rhoAt, bottom) {
+    const n = 4, d = dt / n;
+    for (let i = 0; i < n; i++) {
+      const r = (b.rho - avgRho(rhoAt, b.y, b.h)) / b.rho;
+      const s = subFrac(rhoAt, b.y, b.h);
+      const a = 1500 * r / Math.sqrt(Math.abs(r) + 0.03) - (7.5 * s + 0.4) * b.v;
+      b.v += a * d; b.y += b.v * d;
+      if (b.y + b.h > bottom) { b.y = bottom - b.h; if (b.v > 0) b.v = -b.v * 0.12; if (Math.abs(b.v) < 8) b.v = 0; }
+    }
+  }
+  function equil(rhoAt, rho, h, top, bottom) {
+    if (avgRho(rhoAt, bottom - h, h) <= rho) return bottom - h;
+    let a = top - h, b = bottom - h;
+    for (let i = 0; i < 40; i++) { const m = (a + b) / 2; if (avgRho(rhoAt, m, h) < rho) a = m; else b = m; }
+    return (a + b) / 2;
+  }
+
+  /* ---- 그리기 조각 ---- */
+  const METAL = {
+    iron: { f0: '#68717b', f1: '#454d56', top: '#8a949e', side: '#363d45', tex: 'speck' },
+    al: { f0: '#e2e6ea', f1: '#bcc4cc', top: '#f1f4f6', side: '#a5afb9', tex: 'brush' },
+  };
+  // 금속 조각(직육면체). x: 가운데, yb: 바닥, s: 한 변
+  function block(ctx, x, yb, s, kind, seed, a = 1) {
+    const m = METAL[kind], w = s, h = s * 0.8, dx = s * 0.29, dy = -s * 0.19;
+    const x0 = x - (w + dx) / 2, y0 = yb - h;
+    ctx.save(); ctx.globalAlpha = a; ctx.lineJoin = 'round';
+    ctx.fillStyle = m.side; ctx.beginPath(); ctx.moveTo(x0 + w, y0); ctx.lineTo(x0 + w + dx, y0 + dy); ctx.lineTo(x0 + w + dx, yb + dy); ctx.lineTo(x0 + w, yb); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = m.top; ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x0 + dx, y0 + dy); ctx.lineTo(x0 + w + dx, y0 + dy); ctx.lineTo(x0 + w, y0); ctx.closePath(); ctx.fill();
+    const g = ctx.createLinearGradient(x0, y0, x0 + w, yb); g.addColorStop(0, m.f0); g.addColorStop(1, m.f1);
+    ctx.fillStyle = g; ctx.fillRect(x0, y0, w, h);
+    ctx.save(); ctx.beginPath(); ctx.rect(x0, y0, w, h); ctx.clip();
+    const r = rng(seed);
+    if (m.tex === 'speck') { const n = Math.round(w * h / 36); for (let i = 0; i < n; i++) { ctx.fillStyle = r() < 0.5 ? 'rgba(255,255,255,.08)' : 'rgba(0,0,0,.12)'; ctx.fillRect(x0 + r() * w, y0 + r() * h, 1.5, 1.5); } }
+    else { ctx.strokeStyle = 'rgba(255,255,255,.55)'; ctx.lineWidth = 0.8; const n = Math.round(h / 2.6); for (let i = 0; i < n; i++) { const yy = y0 + r() * h; ctx.beginPath(); ctx.moveTo(x0, yy); ctx.lineTo(x0 + w, yy + (r() - 0.5) * 1.2); ctx.stroke(); } ctx.strokeStyle = 'rgba(80,95,110,.10)'; for (let i = 0; i < n / 2; i++) { const yy = y0 + r() * h; ctx.beginPath(); ctx.moveTo(x0, yy); ctx.lineTo(x0 + w, yy); ctx.stroke(); } }
+    ctx.restore();
+    ctx.strokeStyle = 'rgba(255,255,255,.5)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x0 + 1, y0 + 0.6); ctx.lineTo(x0 + w - 1, y0 + 0.6); ctx.stroke();
+    ctx.strokeStyle = 'rgba(20,38,59,.28)'; ctx.lineWidth = 0.9;
+    ctx.beginPath(); ctx.moveTo(x0, yb); ctx.lineTo(x0, y0); ctx.lineTo(x0 + dx, y0 + dy); ctx.lineTo(x0 + w + dx, y0 + dy); ctx.lineTo(x0 + w + dx, yb + dy); ctx.lineTo(x0 + w, yb); ctx.closePath(); ctx.stroke();
+    ctx.restore();
+  }
+  function woodBall(ctx, x, y, r) {
+    ctx.save();
+    const g = ctx.createRadialGradient(x - r * 0.35, y - r * 0.4, r * 0.1, x, y, r);
+    g.addColorStop(0, '#ead2ac'); g.addColorStop(0.7, '#cfa874'); g.addColorStop(1, '#b38a58');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fill();
+    ctx.clip(); ctx.strokeStyle = 'rgba(120,80,40,.22)'; ctx.lineWidth = Math.max(0.8, r * 0.04);
+    for (let i = -3; i <= 3; i++) { ctx.beginPath(); ctx.ellipse(x + r * 1.1, y + i * r * 0.28, r * 1.6, r * 0.5, 0.15, Math.PI * 0.75, Math.PI * 1.25); ctx.stroke(); }
+    ctx.restore();
+    ctx.strokeStyle = 'rgba(110,75,40,.35)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.stroke();
+  }
+  function ironBall(ctx, x, y, r) {
+    const g = ctx.createRadialGradient(x - r * 0.35, y - r * 0.4, r * 0.08, x, y, r);
+    g.addColorStop(0, '#c4cbd2'); g.addColorStop(0.45, '#7a848e'); g.addColorStop(1, '#3a424a');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fill();
+    ctx.strokeStyle = 'rgba(20,38,59,.35)'; ctx.lineWidth = 1; ctx.stroke();
+  }
+  // 유리 그릇(앞에서 본 모습): 뒤쪽
+  function glassBack(ctx, x0, y0, x1, y1, r) {
+    ctx.save(); rr(ctx, x0, y0, x1 - x0, y1 - y0, r); ctx.fillStyle = 'rgba(236,242,247,.55)'; ctx.fill(); ctx.restore();
+  }
+  // 유리 그릇: 앞쪽 반사·테두리
+  function glassFront(ctx, x0, y0, x1, y1, r, base = 16) {
+    ctx.save();
+    rr(ctx, x0, y0, x1 - x0, y1 - y0, r); ctx.strokeStyle = 'rgba(120,140,160,.55)'; ctx.lineWidth = 2; ctx.stroke();
+    rr(ctx, x0 + 6, y0 + 2, x1 - x0 - 12, y1 - y0 - 4, Math.max(2, r - 4)); ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = 1.2; ctx.stroke();
+    let g = ctx.createLinearGradient(x0, 0, x0 + 40, 0); g.addColorStop(0, 'rgba(255,255,255,.0)'); g.addColorStop(0.35, 'rgba(255,255,255,.55)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = g; ctx.fillRect(x0 + 8, y0 + 14, 34, y1 - y0 - base - 20);
+    g = ctx.createLinearGradient(x1 - 26, 0, x1 - 4, 0); g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(1, 'rgba(255,255,255,.45)');
+    ctx.fillStyle = g; ctx.fillRect(x1 - 26, y0 + 14, 20, y1 - y0 - base - 20);
+    // 두꺼운 바닥
+    g = ctx.createLinearGradient(0, y1 - base, 0, y1); g.addColorStop(0, 'rgba(210,222,233,.55)'); g.addColorStop(1, 'rgba(180,196,210,.75)');
+    ctx.fillStyle = g; rr(ctx, x0 + 1, y1 - base, x1 - x0 - 2, base - 1, Math.min(r, 10)); ctx.fill();
+    ctx.restore();
+  }
+
+  /* =================================================================
+     1. 물에 넣은 나무 구슬과 쇠구슬 (그림 Ⅰ-1)
+     ================================================================= */
+  function beakers(host, o = {}) {
+    const W = 1000, H = 560, S = surface(host, W, H), ov = overlay(S), ctx = S.ctx;
+    const TY = 492, WY = 250;
+    const BK = [{ cx: 270, wood: 26, iron: 26, cap: '두 구슬의 <b>부피가 같은</b> 경우' }, { cx: 730, wood: 58, iron: 26, cap: '두 구슬의 <b>질량이 같은</b> 경우' }];
+    const x0 = (b) => b.cx - 150, x1 = (b) => b.cx + 150, top = 120, bottom = TY - 16;
+    const rhoAt = (y) => (y > WY ? 1.0 : 0);
+    const balls = [];
+    BK.forEach((b, i) => {
+      balls.push({ bk: i, kind: 'wood', r: b.wood, rho: 0.55, x: b.cx - 52 - (b.wood - 26) * 0.3, h: b.wood * 2, y: 0, v: 0, on: false });
+      balls.push({ bk: i, kind: 'iron', r: b.iron, rho: 7.87, x: b.cx + 64, h: b.iron * 2, y: 0, v: 0, on: false });
+    });
+    const st = { t: 0, ripples: [] };
+    function place(final) {
+      balls.forEach((bl) => { bl.v = 0; bl.on = final; bl.y = final ? equil(rhoAt, bl.rho, bl.h, WY, bottom) : -bl.h - 20 - (bl.kind === 'iron' ? 60 : 0); bl.wasIn = final; });
+    }
+    place(true);
+    let timers = [];
+    function drop() {
+      timers.forEach(clearTimeout); timers = [];
+      place(false);
+      balls.forEach((bl, i) => timers.push(setTimeout(() => { bl.on = true; bl.y = 20 - bl.h; bl.v = 120; }, 250 + (i % 2) * 450 + Math.floor(i / 2) * 120)));
+    }
+    BK.forEach((b, i) => ov.put('cap' + i, b.cx, TY + 34, b.cap, 'tx cap'));
+    addLoop(host, (dt) => {
+      st.t += dt;
+      balls.forEach((bl) => {
+        if (!bl.on) return;
+        const was = bl.y + bl.h > WY;
+        physStep(bl, dt, rhoAt, bottom);
+        if (!was && bl.y + bl.h > WY && !reduce) st.ripples.push({ x: bl.x, t: 0, w: bl.r * 1.4 });
+      });
+      st.ripples = st.ripples.filter((r) => (r.t += dt) < 1.1);
+      S.begin(); white(S); desk(S, TY);
+      BK.forEach((b) => {
+        contact(ctx, b.cx, TY + 2, 330, 0.16);
+        glassBack(ctx, x0(b), top, x1(b), TY, 14);
+        // 물
+        const g = ctx.createLinearGradient(0, WY, 0, bottom); g.addColorStop(0, 'rgba(196,222,244,.62)'); g.addColorStop(1, 'rgba(166,202,234,.72)');
+        ctx.fillStyle = g; ctx.fillRect(x0(b) + 3, WY, 294, bottom - WY);
+      });
+      // 구슬
+      balls.forEach((bl) => {
+        if (!bl.on) return;
+        const cy = bl.y + bl.r;
+        if (bl.kind === 'wood') woodBall(ctx, bl.x, cy, bl.r); else ironBall(ctx, bl.x, cy, bl.r);
+      });
+      // 잠긴 부분에 물빛 덧칠
+      BK.forEach((b) => {
+        ctx.fillStyle = 'rgba(160,200,236,.30)'; ctx.fillRect(x0(b) + 3, WY, 294, bottom - WY);
+        ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(x0(b) + 3, WY); ctx.lineTo(x1(b) - 3, WY); ctx.stroke();
+        ctx.strokeStyle = 'rgba(110,160,205,.45)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x0(b) + 3, WY + 2); ctx.lineTo(x1(b) - 3, WY + 2); ctx.stroke();
+        glassFront(ctx, x0(b), top, x1(b), TY, 14);
+      });
+      st.ripples.forEach((r) => { const k = r.t / 1.1; ctx.strokeStyle = `rgba(14,99,179,${0.35 * (1 - k)})`; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.ellipse(r.x, WY + 1, r.w * (0.6 + k * 1.2), 4 + k * 3, 0, 0, TAU); ctx.stroke(); });
+      balls.forEach((bl, i) => {
+        if (!bl.on || bl.y < 0) { ov.hide('b' + i); return; }
+        const cy = bl.y + bl.r, left = bl.kind === 'wood';
+        ov.put('b' + i, left ? bl.x - bl.r - 10 : bl.x + bl.r + 10, bl.kind === 'wood' ? Math.min(cy, WY - 20) : cy, bl.kind === 'wood' ? '나무 구슬' : '쇠구슬', 'tx ' + (left ? 'la' : 'ra'));
+      });
+    });
+    return { drop, reset() { timers.forEach(clearTimeout); place(true); } };
+  }
+
+  /* =================================================================
+     2. 단위 부피당 질량: 1 cm³ 조각 쌓기
+     ================================================================= */
+  function cubes(host, o = {}) {
+    const W = 640, H = 420, S = surface(host, W, H), ov = overlay(S), ctx = S.ctx, TW = tweens();
+    const s = 92, dx = 34, dy = -24, TY = 360, X0 = 112;
+    const st = { kind: o.kind || 'iron', list: [] };
+    const posOf = (i) => { const c = i % 4, l = Math.floor(i / 4); return [X0 + c * s, TY - l * s]; };
+    function add(n) {
+      while (st.list.length < n) { const i = st.list.length; const c = { i, k: 0, a: 1 }; st.list.push(c); if (reduce) c.k = 1; else TW.add(0.45, (k) => (c.k = eOut(k))); }
+      while (st.list.length > n) st.list.pop();
+    }
+    add(o.n || 1);
+    function cube(x, yb, kind, a, seed) {
+      const m = METAL[kind], x0 = x, y0 = yb - s;
+      ctx.save(); ctx.globalAlpha = a;
+      ctx.fillStyle = m.side; ctx.beginPath(); ctx.moveTo(x0 + s, y0); ctx.lineTo(x0 + s + dx, y0 + dy); ctx.lineTo(x0 + s + dx, yb + dy); ctx.lineTo(x0 + s, yb); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = m.top; ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x0 + dx, y0 + dy); ctx.lineTo(x0 + s + dx, y0 + dy); ctx.lineTo(x0 + s, y0); ctx.closePath(); ctx.fill();
+      const g = ctx.createLinearGradient(x0, y0, x0 + s, yb); g.addColorStop(0, m.f0); g.addColorStop(1, m.f1);
+      ctx.fillStyle = g; ctx.fillRect(x0, y0, s, s);
+      ctx.save(); ctx.beginPath(); ctx.rect(x0, y0, s, s); ctx.clip(); const r = rng(seed);
+      if (m.tex === 'speck') for (let i = 0; i < 200; i++) { ctx.fillStyle = r() < 0.5 ? 'rgba(255,255,255,.08)' : 'rgba(0,0,0,.12)'; ctx.fillRect(x0 + r() * s, y0 + r() * s, 1.6, 1.6); }
+      else { ctx.strokeStyle = 'rgba(255,255,255,.55)'; ctx.lineWidth = 0.8; for (let i = 0; i < 34; i++) { const yy = y0 + r() * s; ctx.beginPath(); ctx.moveTo(x0, yy); ctx.lineTo(x0 + s, yy); ctx.stroke(); } }
+      ctx.restore();
+      ctx.strokeStyle = 'rgba(20,38,59,.32)'; ctx.lineWidth = 1; ctx.lineJoin = 'round';
+      ctx.beginPath(); ctx.rect(x0 + 0.5, y0 + 0.5, s - 1, s - 1); ctx.moveTo(x0, y0); ctx.lineTo(x0 + dx, y0 + dy); ctx.lineTo(x0 + s + dx, y0 + dy); ctx.lineTo(x0 + s + dx, yb + dy); ctx.lineTo(x0 + s, yb); ctx.moveTo(x0 + s, y0); ctx.lineTo(x0 + s + dx, y0 + dy); ctx.stroke();
+      ctx.restore();
+    }
+    addLoop(host, (dt) => {
+      TW.step(dt);
+      S.begin(); white(S); desk(S, TY);
+      const n = st.list.length;
+      contact(ctx, X0 + Math.min(n, 4) * s / 2 + 14, TY + 3, Math.min(n, 4) * s + 80, 0.14);
+      st.list.forEach((c) => { const [x, y] = posOf(c.i); cube(x, y - (1 - c.k) * 120, st.kind, Math.min(1, c.k * 2), 31 + c.i * 13); });
+      const [fx, fy] = posOf(0);
+      const g = st.kind === 'iron' ? '7.87 g' : '2.70 g';
+      const cc = 'tx cube' + (st.kind === 'al' ? ' dark' : '');
+      ov.put('u', fx + s / 2, fy - s / 2 - 10, '1 cm³', cc);
+      ov.put('g', fx + s / 2, fy - s / 2 + 14, g, cc);
+    });
+    return { st, set(v) { if (v.kind) st.kind = v.kind; if (v.n) add(v.n); } };
+  }
+
+  /* =================================================================
+     3. 여러 가지 물질의 밀도 (그림 Ⅰ-2 값, 25 ℃, 1 기압, g/mL)
+     ================================================================= */
+  const RHO = [
+    { g: '고체', items: [['얼음', 0.92, '0.92 (0 ℃)'], ['알루미늄', 2.70, '2.70'], ['철', 7.87, '7.87'], ['구리', 8.96, '8.96'], ['은', 10.50, '10.50'], ['금', 19.30, '19.30']] },
+    { g: '액체', items: [['에탄올', 0.79, '0.79'], ['콩기름', 0.92, '0.92'], ['물', 1.00, '1.00 (4 ℃)'], ['글리세린', 1.26, '1.26'], ['수은', 13.53, '13.53']] },
+    { g: '기체', items: [['수소', 0.00008, '0.00008'], ['헬륨', 0.00016, '0.00016'], ['질소', 0.00115, '0.00115'], ['산소', 0.00131, '0.00131'], ['이산화 탄소', 0.00180, '0.00180']] },
+  ];
+  function chart(host, o = {}) {
+    const W = 1000, H = 704, S = surface(host, W, H), ov = overlay(S), ctx = S.ctx, TW = tweens();
+    const L = 190, R = 900, TOP = 52, RH = 31, GH = 40;
+    const COL = { 고체: '#3d4f63', 액체: BLUE, 기체: '#8ea2b6' };
+    const rows = []; let y = TOP + 8;
+    RHO.forEach((grp) => { rows.push({ head: grp.g, y: y + 14 }); y += GH; grp.items.forEach((it) => { rows.push({ g: grp.g, name: it[0], v: it[1], txt: it[2], y: y + RH / 2 }); y += RH; }); });
+    const st = { max: 20, grow: reduce ? 1 : 0, mode: 'all' };
+    if (!reduce) TW.add(1.2, (k) => (st.grow = ease(k)));
+    const TICKS = { all: [0, 5, 10, 15, 20], gas: [0, 0.0005, 0.001, 0.0015, 0.002] };
+    function setMode(m) {
+      if (m === st.mode) return; const a = st.max, b = m === 'gas' ? 0.002 : 20; st.mode = m;
+      if (reduce) { st.max = b; return; }
+      TW.clear(); TW.add(1.3, (k) => (st.max = Math.exp(lerp(Math.log(a), Math.log(b), ease(k)))), () => (st.max = b));
+    }
+    addLoop(host, (dt) => {
+      TW.step(dt);
+      S.begin(); white(S);
+      const xOf = (v) => L + (R - L) * v / st.max;
+      // 눈금
+      const ticks = TICKS[st.mode];
+      ctx.strokeStyle = '#e6ecf2'; ctx.lineWidth = 1;
+      ticks.forEach((t, i) => { const x = L + (R - L) * i / 4; ctx.beginPath(); ctx.moveTo(x, TOP); ctx.lineTo(x, H - 16); ctx.stroke(); ov.put('t' + i, x, TOP - 14, String(t), 'tk2'); });
+      ctx.strokeStyle = '#c8d3de'; ctx.beginPath(); ctx.moveTo(L, TOP); ctx.lineTo(L, H - 16); ctx.stroke();
+      ov.put('unit', R + 18, TOP - 14, 'g/mL', 'tk2 ra');
+      rows.forEach((r, i) => {
+        if (r.head) { ov.put('h' + i, 18, r.y, r.head, 'tx grp ra'); return; }
+        const w = Math.max(0, (xOf(r.v) - L) * st.grow), over = L + w > R + 40;
+        const ww = Math.min(w, R + 40 - L), hh = 18;
+        const dim = st.mode === 'gas' && r.g !== '기체';
+        ctx.save(); ctx.globalAlpha = dim ? 0.28 : 1;
+        ctx.fillStyle = COL[r.g]; rr(ctx, L, r.y - hh / 2, Math.max(ww, 2), hh, 5); ctx.fill();
+        if (over) { // 그래프 밖으로 넘친 막대는 물결 표시로 자름
+          ctx.fillStyle = '#fff'; ctx.beginPath(); const x = R + 18;
+          ctx.moveTo(x, r.y - 12); ctx.lineTo(x + 6, r.y - 6); ctx.lineTo(x, r.y); ctx.lineTo(x + 6, r.y + 6); ctx.lineTo(x, r.y + 12); ctx.lineTo(x + 12, r.y + 12); ctx.lineTo(x + 12, r.y - 12); ctx.closePath(); ctx.fill();
+        }
+        ctx.restore();
+        ov.put('n' + i, L - 12, r.y, r.name, 'tx nm la' + (dim ? ' dim' : ''));
+        const vx = over ? R - 8 : L + Math.max(ww, 2) + 8;
+        ov.put('v' + i, vx, r.y, r.txt, 'tx val ' + (over ? 'la in' : 'ra') + (dim ? ' dim' : ''));
+      });
+    });
+    return { setMode, get mode() { return st.mode; } };
+  }
+
+  /* =================================================================
+     4. 같은 부피의 액체와 기체의 입자 모형 (그림 Ⅰ-3)
+     ================================================================= */
+  function particles(host, o = {}) {
+    const W = 1000, H = 560, S = surface(host, W, H), ov = overlay(S), ctx = S.ctx;
+    const PX = 500, PY = 330, ARM = 250, TY = 520;
+    const JW = 170, JH = 210, R = 9;
+    const rnd = rng(5);
+    const liq = [], gas = [];
+    for (let r = 0; r < 10; r++) for (let c = 0; c < 8; c++) liq.push({ bx: -JW / 2 + 16 + c * 19.5 + (r % 2) * 6, by: -JH + 20 + r * 19.2, ph: rnd() * TAU, f: 1.5 + rnd() * 2 });
+    for (let i = 0; i < 7; i++) gas.push({ x: -JW / 2 + 20 + rnd() * (JW - 40), y: -JH + 20 + rnd() * (JH - 40), vx: (rnd() - 0.5) * 220, vy: (rnd() - 0.5) * 220 });
+    const st = { ang: 0, t: 0, target: -0.075, v: 0 };
+    function replay() { st.ang = 0; st.v = 0; st.t = 0; }
+    if (reduce) st.ang = st.target;
+    function jar(cx, by, a, fill) {
+      ctx.save(); ctx.translate(cx, by);
+      // 뚜껑
+      const lg = ctx.createLinearGradient(0, -JH - 26, 0, -JH - 6); lg.addColorStop(0, '#b9c3cd'); lg.addColorStop(1, '#8e9aa6');
+      ctx.fillStyle = lg; rr(ctx, -JW / 2 + 12, -JH - 26, JW - 24, 22, 6); ctx.fill();
+      glassBack(ctx, -JW / 2, -JH - 6, JW / 2, 0, 18);
+      fill();
+      glassFront(ctx, -JW / 2, -JH - 6, JW / 2, 0, 18, 10);
+      ctx.restore();
+    }
+    addLoop(host, (dt) => {
+      st.t += dt;
+      if (!reduce && st.t > 0.8) { const a = (st.target - st.ang) * 30 - st.v * 5.5; st.v += a * dt; st.ang += st.v * dt; }
+      S.begin(); white(S); desk(S, TY);
+      contact(ctx, PX, TY + 2, 360, 0.16);
+      // 받침과 기둥
+      let g = ctx.createLinearGradient(0, TY - 26, 0, TY); g.addColorStop(0, '#c9d2db'); g.addColorStop(1, '#a3afbb');
+      ctx.fillStyle = g; rr(ctx, PX - 150, TY - 24, 300, 24, 8); ctx.fill();
+      g = ctx.createLinearGradient(PX - 14, 0, PX + 14, 0); g.addColorStop(0, '#aab5c0'); g.addColorStop(0.5, '#dfe5ea'); g.addColorStop(1, '#9aa6b2');
+      ctx.fillStyle = g; ctx.fillRect(PX - 12, PY, 24, TY - 24 - PY);
+      // 저울대
+      const c = Math.cos(st.ang), s = Math.sin(st.ang);
+      const end = (k) => [PX - ARM * c * k, PY - ARM * s * k];
+      ctx.save(); ctx.translate(PX, PY); ctx.rotate(st.ang);
+      g = ctx.createLinearGradient(0, -8, 0, 8); g.addColorStop(0, '#dfe5ea'); g.addColorStop(1, '#9aa6b2');
+      ctx.fillStyle = g; rr(ctx, -ARM - 10, -7, ARM * 2 + 20, 14, 7); ctx.fill();
+      ctx.restore();
+      ctx.fillStyle = '#7d8995'; ctx.beginPath(); ctx.arc(PX, PY, 9, 0, TAU); ctx.fill();
+      // 바늘
+      ctx.strokeStyle = INK2; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(PX, PY); ctx.lineTo(PX - Math.sin(st.ang) * 60, PY + 60 * Math.cos(st.ang)); ctx.stroke();
+      [[1, 'liq'], [-1, 'gas']].forEach(([k, kind]) => {
+        const [ex, ey] = end(k);
+        ctx.fillStyle = '#a8b4c0'; ctx.fillRect(ex - 5, ey - 30, 10, 30);
+        g = ctx.createLinearGradient(0, ey - 40, 0, ey - 28); g.addColorStop(0, '#e3e8ed'); g.addColorStop(1, '#a9b5c1');
+        ctx.fillStyle = g; rr(ctx, ex - 100, ey - 40, 200, 12, 6); ctx.fill();
+        jar(ex, ey - 40, 0, () => {
+          if (kind === 'liq') {
+            ctx.fillStyle = 'rgba(196,222,244,.35)'; ctx.fillRect(-JW / 2 + 4, -JH, JW - 8, JH - 10);
+            liq.forEach((p) => { const x = p.bx + Math.sin(st.t * p.f + p.ph) * 1.6, y = p.by + Math.cos(st.t * p.f * 1.3 + p.ph) * 1.6; dot(x, y); });
+          } else {
+            gas.forEach((p) => {
+              if (!reduce) { p.x += p.vx * dt; p.y += p.vy * dt; const lx = JW / 2 - 14, ty = -JH + 12, by = -22; if (p.x < -lx) { p.x = -lx; p.vx *= -1; } if (p.x > lx) { p.x = lx; p.vx *= -1; } if (p.y < ty) { p.y = ty; p.vy *= -1; } if (p.y > by) { p.y = by; p.vy *= -1; } }
+              dot(p.x, p.y);
+            });
+          }
+        });
+        ov.put('j' + kind, ex, ey - 40 - JH - 50, kind === 'liq' ? '액체' : '기체', 'tx big');
+      });
+      function dot(x, y) { const gg = ctx.createRadialGradient(x - 3, y - 3, 1, x, y, R); gg.addColorStop(0, '#5b9ad8'); gg.addColorStop(1, BLUE); ctx.fillStyle = gg; ctx.beginPath(); ctx.arc(x, y, R, 0, TAU); ctx.fill(); }
+    });
+    return { replay };
+  }
+
+  /* =================================================================
+     5. 뜨고 가라앉는 컵 (해 보기)
+     ================================================================= */
+  const LIQ = {
+    oil: { name: '콩기름', rho: 0.92, c: [236, 208, 128], a: 0.62 },
+    water: { name: '물', rho: 1.00, c: [190, 220, 244], a: 0.66 },
+    gly: { name: '글리세린', rho: 1.26, c: [214, 214, 232], a: 0.85 },
+  };
+  const SOL = {
+    wood: { name: '나무', rho: 0.55, w: 92, h: 50, x: 628 },
+    plastic: { name: '플라스틱', rho: 0.96, w: 116, h: 40, x: 512 },
+    iron: { name: '철', rho: 7.87, w: 124, h: 30, x: 412 },
+  };
+  function jar(host, o = {}) {
+    const W = 1000, H = 700, S = surface(host, W, H), ov = overlay(S), ctx = S.ctx;
+    const X0 = 300, X1 = 700, TOP = 70, TY = 670, BOT = 652, LH = 136, IX0 = X0 + 8, IX1 = X1 - 8;
+    const ids = o.liquids || ['oil', 'water', 'gly'], sids = o.solids || ['wood', 'plastic', 'iron'];
+    const order = ids.slice().sort((a, b) => LIQ[b].rho - LIQ[a].rho); // 아래(밀도 큼)부터
+    const st = { cur: {}, drops: [], solids: {}, pour: null, ripples: [], t: 0, dens: {}, names: o.names !== false, bob: !!o.demo };
+    ids.forEach((id) => (st.cur[id] = 0));
+    sids.forEach((id) => (st.solids[id] = { id, rho: SOL[id].rho, h: SOL[id].h, w: SOL[id].w, x: SOL[id].x, y: 0, v: 0, in: false, settle: 0, cb: null, a: 0 }));
+    const range = (id) => { let b = BOT; for (const k of order) { const h = st.cur[k] * LH; if (k === id) return [b - h, b]; b -= h; } return [b, b]; };
+    const surfaceY = () => BOT - ids.reduce((s, k) => s + st.cur[k] * LH, 0);
+    const rhoAt = (y) => { if (y > BOT) return 99; let b = BOT; for (const k of order) { const h = st.cur[k] * LH; if (y <= b && y > b - h) return LIQ[k].rho; b -= h; } return 0; };
+    function solidY(id) { const s = st.solids[id]; return equil(rhoAt, s.rho, s.h, surfaceY(), BOT); }
+    function zone(id) {
+      const s = st.solids[id], poured = order.filter((k) => st.cur[k] > 0.5).reverse(); // 위부터
+      const i = poured.findIndex((k) => LIQ[k].rho > s.rho);
+      if (i < 0) return 'bottom';
+      return i === 0 ? 'top' : poured[i - 1] + '|' + poured[i];
+    }
+    function pour(id, cb) {
+      if (st.pour || st.cur[id] > 0) return;
+      const N = 48;
+      st.pour = { id, t: 0, n: 0, N, cb, x: 455 };
+      if (reduce) { st.cur[id] = 1; st.pour = null; sids.forEach((k) => { const s = st.solids[k]; if (s.in) s.y = solidY(k); }); cb && cb(); }
+    }
+    function drop(id, cb) {
+      const s = st.solids[id]; if (s.in) return;
+      s.in = true; s.v = 60; s.y = 6 - s.h; s.cb = cb; s.settle = 0; s.a = 0;
+      if (reduce) { s.y = solidY(id); s.v = 0; s.a = 1; s.cb = null; cb && cb(zone(id)); }
+    }
+    function fill() { st.pour = null; st.drops = []; ids.forEach((k) => (st.cur[k] = 1)); sids.forEach((k) => { const s = st.solids[k]; s.in = true; s.a = 1; s.v = 0; s.cb = null; s.y = solidY(k); }); }
+    function reset() { st.pour = null; st.drops = []; st.ripples = []; ids.forEach((k) => (st.cur[k] = 0)); sids.forEach((k) => { const s = st.solids[k]; s.in = false; s.cb = null; }); }
+    if (o.filled) fill();
+
+    function cork(x, y, w, h) {
+      ctx.save(); ctx.translate(x, y + h / 2); ctx.rotate(-0.16);
+      const ry = 12, hh = h - ry;
+      let g = ctx.createLinearGradient(-w / 2, 0, w / 2, 0); g.addColorStop(0, '#b58e5f'); g.addColorStop(0.45, '#d2b083'); g.addColorStop(1, '#a8804f');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(-w / 2, -hh / 2); ctx.lineTo(-w / 2, hh / 2); ctx.ellipse(0, hh / 2, w / 2, ry, 0, Math.PI, 0, true); ctx.lineTo(w / 2, -hh / 2); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#d9bc92'; ctx.beginPath(); ctx.ellipse(0, -hh / 2, w / 2, ry, 0, 0, TAU); ctx.fill();
+      const r = rng(17); ctx.fillStyle = 'rgba(110,75,40,.45)';
+      for (let i = 0; i < 60; i++) { const a = r() * TAU, d = Math.sqrt(r()); ctx.beginPath(); ctx.arc(Math.cos(a) * d * w / 2 * 0.95, -hh / 2 + Math.sin(a) * d * ry * 0.9, 0.6 + r() * 1.1, 0, TAU); ctx.fill(); }
+      for (let i = 0; i < 50; i++) { ctx.beginPath(); ctx.arc((r() - 0.5) * w * 0.95, -hh / 2 + 4 + r() * (hh + ry - 6), 0.6 + r() * 1.2, 0, TAU); ctx.fill(); }
+      ctx.strokeStyle = 'rgba(110,75,40,.4)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.ellipse(0, -hh / 2, w / 2, ry, 0, 0, TAU); ctx.stroke();
+      ctx.restore();
+    }
+    function brick(x, y, w, h) {
+      const sh = 8, sw = 17, bh = h - sh, y0 = y + sh;
+      let g = ctx.createLinearGradient(0, y0, 0, y0 + bh); g.addColorStop(0, '#3b86d2'); g.addColorStop(1, '#0d58a0');
+      for (let i = 0; i < 4; i++) { const sx = x - w / 2 + 10 + i * ((w - 20 - sw) / 3); const sg = ctx.createLinearGradient(sx, 0, sx + sw, 0); sg.addColorStop(0, '#2d78c4'); sg.addColorStop(0.5, '#5a9fe0'); sg.addColorStop(1, '#1d66b0'); ctx.fillStyle = sg; rr(ctx, sx, y, sw, sh + 3, 3); ctx.fill(); }
+      ctx.fillStyle = g; rr(ctx, x - w / 2, y0, w, bh, 4); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,.22)'; ctx.fillRect(x - w / 2 + 3, y0 + 2, w - 6, 3);
+      ctx.strokeStyle = 'rgba(8,50,95,.45)'; ctx.lineWidth = 1; rr(ctx, x - w / 2 + 0.5, y0 + 0.5, w - 1, bh - 1, 4); ctx.stroke();
+    }
+    function screws(x, y, w, h) {
+      const S5 = [[-38, 20, 0.08, 88], [10, 22, -0.12, 92], [-8, 12, 0.22, 78], [30, 10, -0.3, 70], [-30, 6, -0.18, 66]];
+      S5.forEach(([dx, dy, a, L], i) => {
+        ctx.save(); ctx.translate(x + dx, y + h - 30 + dy); ctx.rotate(a);
+        const g = ctx.createLinearGradient(0, -5, 0, 5); g.addColorStop(0, '#c7ced5'); g.addColorStop(0.5, '#8d98a3'); g.addColorStop(1, '#5c6772');
+        ctx.fillStyle = g; ctx.fillRect(-L / 2, -3.5, L - 10, 7);
+        ctx.beginPath(); ctx.moveTo(L / 2 - 10, -3.5); ctx.lineTo(L / 2, 0); ctx.lineTo(L / 2 - 10, 3.5); ctx.fill();
+        ctx.strokeStyle = 'rgba(40,50,60,.45)'; ctx.lineWidth = 1;
+        for (let t = -L / 2 + 14; t < L / 2 - 6; t += 4.5) { ctx.beginPath(); ctx.moveTo(t, -3.5); ctx.lineTo(t + 2.5, 3.5); ctx.stroke(); }
+        const hg = ctx.createLinearGradient(0, -8, 0, 8); hg.addColorStop(0, '#d5dbe0'); hg.addColorStop(1, '#6d7883');
+        ctx.fillStyle = hg; rr(ctx, -L / 2 - 6, -8, 9, 16, 3); ctx.fill();
+        ctx.restore();
+      });
+    }
+    function drawSolid(s, bobY) {
+      const y = s.y + bobY;
+      ctx.save(); ctx.globalAlpha = s.a;
+      if (s.id === 'wood') cork(s.x, y, s.w, s.h); else if (s.id === 'plastic') brick(s.x, y, s.w, s.h); else screws(s.x, y, s.w, s.h);
+      ctx.restore();
+    }
+    const LIPY = TOP + 34;
+    function beaker(id, k, fillK) {
+      // 붓는 비커: 따르는 입이 (px, LIPY). 기울인 비커 속 액체는 수평을 유지
+      const px = st.pour.x, c = LIQ[id].c, w = 66, h = 86, A = -1.95;
+      ctx.save(); ctx.globalAlpha = k; ctx.translate(px, LIPY); ctx.rotate(A);
+      ctx.save(); rr(ctx, 0, 0, w, h, 7); ctx.clip();
+      ctx.rotate(-A); const lev = lerp(-46, -3, fillK);
+      const g = ctx.createLinearGradient(0, lev, 0, lev + 40); g.addColorStop(0, rgba(c, 0.95)); g.addColorStop(1, rgba(shade(c, 0.9), 0.95));
+      ctx.fillStyle = g; ctx.fillRect(-200, lev, 400, 300); ctx.restore();
+      ctx.fillStyle = 'rgba(236,242,247,.35)'; rr(ctx, 0, 0, w, h, 7); ctx.fill();
+      ctx.strokeStyle = 'rgba(110,130,150,.75)'; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, h - 7); ctx.quadraticCurveTo(0, h, 7, h); ctx.lineTo(w - 7, h); ctx.quadraticCurveTo(w, h, w, h - 7); ctx.lineTo(w, 0); ctx.stroke();
+      ctx.strokeStyle = 'rgba(110,130,150,.55)'; ctx.lineWidth = 1; for (let i = 1; i <= 3; i++) { ctx.beginPath(); ctx.moveTo(w - 16, h - i * 20); ctx.lineTo(w - 4, h - i * 20); ctx.stroke(); }
+      ctx.fillStyle = 'rgba(255,255,255,.5)'; ctx.fillRect(6, 8, 6, h - 18);
+      ctx.restore();
+    }
+    addLoop(host, (dt) => {
+      st.t += dt;
+      // 붓기
+      if (st.pour) {
+        const P = st.pour; P.t += dt;
+        const emitT = 0.25 + 1.5 * (P.n / P.N);
+        while (P.n < P.N && P.t > emitT && P.t > 0.25 + 1.5 * (P.n / P.N)) {
+          const sy = surfaceY(); P.n++;
+          st.drops.push({ id: P.id, x: P.x + (Math.random() - 0.5) * 26, y: sy + 4 + Math.random() * 6, r: 5 + Math.random() * 5, vy: 140 + Math.random() * 60, vx: (Math.random() - 0.5) * 40, ph: Math.random() * TAU });
+          if (P.n % 6 === 0) st.ripples.push({ x: P.x, t: 0, w: 40 });
+        }
+        if (P.n >= P.N && !st.drops.some((d) => d.id === P.id) && P.t > 2.1) { const cb = P.cb; st.pour = null; cb && cb(); }
+      }
+      st.drops = st.drops.filter((d) => {
+        const [top] = range(d.id);
+        if (d.y >= top - 3 || d.y > BOT - 6) { st.cur[d.id] = Math.min(1, st.cur[d.id] + 1 / 48); return false; }
+        const local = rhoAt(d.y), sink = LIQ[d.id].rho > local;
+        d.vy += ((sink ? 230 : -120) - d.vy) * 3 * dt; d.vx *= 1 - 2 * dt;
+        d.y += d.vy * dt; d.x = clamp(d.x + d.vx * dt + Math.sin(st.t * 5 + d.ph) * 0.3, IX0 + 12, IX1 - 12);
+        return true;
+      });
+      // 고체
+      sids.forEach((k) => {
+        const s = st.solids[k]; if (!s.in) return;
+        s.a = Math.min(1, s.a + dt * 4);
+        const wasIn = s.y + s.h > surfaceY();
+        physStep(s, dt, rhoAt, BOT);
+        if (!wasIn && s.y + s.h > surfaceY() && !reduce) st.ripples.push({ x: s.x, t: 0, w: s.w * 0.7 });
+        if (s.cb) { const eq = solidY(k); if (Math.abs(s.v) < 6 && Math.abs(s.y - eq) < 2) s.settle += dt; else s.settle = 0; if (s.settle > 0.5) { const cb = s.cb; s.cb = null; cb(zone(k)); } }
+      });
+      st.ripples = st.ripples.filter((r) => (r.t += dt) < 1);
+
+      S.begin(); white(S); desk(S, TY);
+      contact(ctx, (X0 + X1) / 2, TY + 2, 470, 0.16);
+      glassBack(ctx, X0, TOP, X1, TY, 22);
+      const sy = surfaceY();
+      // 액체 층
+      let b = BOT;
+      order.forEach((k) => {
+        const h = st.cur[k] * LH; if (h < 0.3) return;
+        const L = LIQ[k], g = ctx.createLinearGradient(0, b - h, 0, b);
+        g.addColorStop(0, rgba(L.c, L.a * 0.8)); g.addColorStop(1, rgba(L.c, L.a));
+        ctx.fillStyle = g; ctx.fillRect(IX0, b - h, IX1 - IX0, h);
+        b -= h;
+      });
+      // 고체 (액체 앞에 그리고 잠긴 부분은 다시 물빛을 덧칠)
+      const bob = (k) => (st.bob && !reduce && k !== 'iron' ? Math.sin(st.t * 1.4 + (k === 'wood' ? 0 : 1.7)) * 1.4 : 0);
+      sids.forEach((k) => { if (st.solids[k].in) drawSolid(st.solids[k], bob(k)); });
+      b = BOT;
+      order.forEach((k) => {
+        const h = st.cur[k] * LH; if (h < 0.3) return;
+        ctx.fillStyle = rgba(LIQ[k].c, 0.32); ctx.fillRect(IX0, b - h, IX1 - IX0, h);
+        // 경계선
+        ctx.strokeStyle = rgba(shade(LIQ[k].c, 0.78), 0.8); ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(IX0, b - h); ctx.lineTo(IX1, b - h); ctx.stroke();
+        b -= h;
+      });
+      // 방울
+      st.drops.forEach((d) => {
+        const c = LIQ[d.id].c, g = ctx.createRadialGradient(d.x - d.r * 0.3, d.y - d.r * 0.35, 1, d.x, d.y, d.r);
+        g.addColorStop(0, rgba(shade(c, 1.06), 0.95)); g.addColorStop(1, rgba(shade(c, 0.86), 0.95));
+        ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(d.x, d.y, d.r, d.r * (1 + Math.min(0.25, Math.abs(d.vy) / 900)), 0, 0, TAU); ctx.fill();
+        ctx.strokeStyle = rgba(shade(c, 0.7), 0.5); ctx.lineWidth = 0.8; ctx.stroke();
+      });
+      // 겉면
+      if (sy < BOT - 1) {
+        ctx.strokeStyle = 'rgba(255,255,255,.9)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(IX0, sy); ctx.lineTo(IX1, sy); ctx.stroke();
+      }
+      st.ripples.forEach((r) => { const k = r.t; ctx.strokeStyle = `rgba(20,38,59,${0.22 * (1 - k)})`; ctx.lineWidth = 1; ctx.beginPath(); ctx.ellipse(r.x, sy + 1, r.w * (0.5 + k), 3 + k * 3, 0, 0, TAU); ctx.stroke(); });
+      // 붓는 줄기
+      if (st.pour) {
+        const P = st.pour, k = clamp(Math.min(P.t / 0.25, (2.0 - P.t) / 0.3), 0, 1), flowing = P.n < P.N && P.t > 0.2;
+        if (flowing) {
+          const c = LIQ[P.id].c, y0 = LIPY;
+          const g = ctx.createLinearGradient(0, y0, 0, sy); g.addColorStop(0, rgba(shade(c, 0.95), 0.95)); g.addColorStop(1, rgba(shade(c, 0.88), 0.75));
+          ctx.fillStyle = g; ctx.beginPath();
+          const wv = (y) => Math.sin(y * 0.05 + st.t * 14) * 1.4;
+          ctx.moveTo(P.x - 4, y0); for (let y = y0; y <= sy; y += 8) ctx.lineTo(P.x - 3.4 + wv(y), y); ctx.lineTo(P.x + 3.4, sy); for (let y = sy; y >= y0; y -= 8) ctx.lineTo(P.x + 3.4 + wv(y), y); ctx.closePath(); ctx.fill();
+        }
+        beaker(P.id, k, P.n / P.N);
+      }
+      glassFront(ctx, X0, TOP, X1, TY, 22, 18);
+      // 이름표
+      b = BOT;
+      order.forEach((k) => {
+        const h = st.cur[k] * LH;
+        if (h > 40 && st.names) {
+          ov.put('n' + k, X0 - 18, b - h / 2, LIQ[k].name, 'tx nm la');
+          if (o.densLabels && o.densLabels.includes(k)) ov.put('d' + k, X1 + 18, b - h / 2, '밀도: ' + (st.dens[k] ? `<b>${st.dens[k]}</b>` : '<span class="blank"></span>'), 'tx dn ra');
+        } else { ov.hide('n' + k); ov.hide('d' + k); }
+        b -= h;
+      });
+      sids.forEach((k) => {
+        const s = st.solids[k];
+        if (s.in && s.y > TOP - 10 && st.names) {
+          const cy = s.y + s.h / 2 + bob(k);
+          ov.put('s' + k, X0 - 18, k === 'iron' ? cy + 4 : cy, SOL[k].name, 'tx nm sol la');
+          if (o.densLabels && o.densLabels.includes(k)) ov.put('ds' + k, X1 + 18, cy, '밀도: ' + (st.dens[k] ? `<b>${st.dens[k]}</b>` : '<span class="blank"></span>'), 'tx dn ra');
+        } else { ov.hide('s' + k); ov.hide('ds' + k); }
+      });
+    });
+    return { st, pour, drop, fill, reset, zone, setDens(id, v) { st.dens[id] = v; }, get busy() { return !!st.pour || sids.some((k) => st.solids[k].cb); } };
+  }
+
+  /* =================================================================
+     6. 탐구 실험실: 철과 알루미늄의 밀도 구하기
+     ================================================================= */
+  const PIECES = [
+    { id: 'fe1', kind: 'iron', name: '철', size: '작은 조각', g: 31.5, v: 4 },
+    { id: 'fe2', kind: 'iron', name: '철', size: '큰 조각', g: 78.7, v: 10 },
+    { id: 'al1', kind: 'al', name: '알루미늄', size: '작은 조각', g: 8.1, v: 3 },
+    { id: 'al2', kind: 'al', name: '알루미늄', size: '큰 조각', g: 21.6, v: 8 },
+  ];
+  function lab(host, o = {}) {
+    const W = 1000, H = 620, S = surface(host, W, H), ov = overlay(S), ctx = S.ctx, TW = tweens();
+    const TY = 548, PLAT = 456, BX = 150;
+    const C = { cx: 860, hw: 50, top: 92, y0: 516, k: 3.8, W0: 60 };
+    const LENS = { x: 540, y: 222, r: 124, mid: 65, k: 11.5 };
+    const lvY = (ml) => C.y0 - ml * C.k;
+    const P = PIECES.map((p, i) => Object.assign({}, p, { s: 31 * Math.cbrt(p.v), home: [345 + i * 92, TY - 7], x: 345 + i * 92, y: TY - 7, where: 'tray', seed: 11 + i * 7, lift: 0 }));
+    const byId = (id) => P.find((p) => p.id === id);
+    const st = { sel: null, lcd: 0, level: C.W0, band: null, bubbles: [], ripples: [], t: 0, moving: false };
+    function move(p, x, y, dur, lift, done) {
+      const x0 = p.x, y0 = p.y; st.moving = true;
+      if (reduce) { p.x = x; p.y = y; st.moving = false; done && done(); return; }
+      TW.add(dur, (k) => { const e = ease(k); p.x = lerp(x0, x, e); p.y = lerp(y0, y, e) - Math.sin(Math.PI * e) * lift; }, () => { st.moving = false; done && done(); });
+    }
+    function lcdTo(v, dur, done) {
+      const a = st.lcd;
+      if (reduce) { st.lcd = v; done && done(); return; }
+      TW.add(dur, (k) => { const e = eOut(k); st.lcd = lerp(a, v, e) + (k < 0.85 ? Math.sin(k * 40) * (1 - k) * 0.6 : 0); }, () => { st.lcd = v; done && done(); });
+    }
+    // 실린더 속 조각이 잠긴 만큼 물 높이가 올라감
+    function updLevel() {
+      const p = P.find((q) => q.where === 'cyl' || q.where === 'in');
+      let lv = C.W0;
+      if (p) { const h = p.s * 0.8; for (let i = 0; i < 4; i++) { const sy = lvY(lv); lv = C.W0 + p.v * clamp((p.y - sy) / h, 0, 1); } }
+      st.level = lv;
+    }
+    function home(p, done) {
+      if (p.where === 'tray') { done && done(); return; }
+      const back = () => { p.where = 'air'; move(p, p.home[0], p.home[1], 0.8, 70, () => { p.where = 'tray'; done && done(); }); };
+      if (p.where === 'cyl') { p.where = 'in'; st.band = null; move(p, C.cx, C.top - 12, 1.1, 0, back); }
+      else { if (p.where === 'bal') lcdTo(0, 0.6); back(); }
+    }
+    function select(id, done) {
+      const p = byId(id);
+      const others = P.filter((q) => q !== p && q.where !== 'tray');
+      st.sel = id;
+      const next = () => { done && done(); };
+      if (!others.length) return next();
+      let n = others.length; others.forEach((q) => home(q, () => { if (--n === 0) next(); }));
+    }
+    function weigh(done) {
+      const p = byId(st.sel); if (!p) return;
+      p.where = 'air';
+      move(p, BX, PLAT + 6, 0.9, 90, () => { p.where = 'bal'; lcdTo(p.g, 1.2, () => done && done(p.g)); });
+    }
+    function volume(done) {
+      const p = byId(st.sel); if (!p) return;
+      if (p.where === 'bal') lcdTo(0, 0.7);
+      p.where = 'air';
+      move(p, C.cx, C.top - 14, 1.0, 80, () => {
+        p.where = 'in'; p.vy = 0; p.done = () => { p.where = 'cyl'; st.band = { a: C.W0, b: C.W0 + p.v }; done && done({ before: C.W0, after: C.W0 + p.v, v: p.v }); };
+        if (reduce) { p.y = C.y0; updLevel(); p.done(); p.done = null; }
+      });
+    }
+    function reset() { TW.clear(); P.forEach((p) => { p.x = p.home[0]; p.y = p.home[1]; p.where = 'tray'; p.done = null; }); st.sel = null; st.lcd = 0; st.level = C.W0; st.band = null; st.bubbles = []; st.moving = false; }
+    function jump(id, stage) { // 검사용: 곧바로 그 상태로
+      reset(); const p = byId(id); st.sel = id;
+      if (stage === 'bal') { p.x = BX; p.y = PLAT + 6; p.where = 'bal'; st.lcd = p.g; }
+      if (stage === 'cyl') { p.x = C.cx; p.y = C.y0; p.where = 'cyl'; updLevel(); st.band = { a: C.W0, b: C.W0 + p.v }; }
+    }
+
+    function balance() {
+      contact(ctx, BX, TY + 1, 300, 0.18);
+      let g = ctx.createLinearGradient(0, 474, 0, TY); g.addColorStop(0, '#f4f6f8'); g.addColorStop(1, '#d3dae1');
+      ctx.fillStyle = g; rr(ctx, BX - 132, 474, 264, TY - 474, 14); ctx.fill();
+      ctx.strokeStyle = 'rgba(20,38,59,.14)'; ctx.lineWidth = 1; ctx.stroke();
+      ctx.fillStyle = 'rgba(255,255,255,.7)'; ctx.fillRect(BX - 124, 477, 248, 2);
+      // 화면
+      ctx.fillStyle = '#26323d'; rr(ctx, BX + 6, 490, 112, 40, 7); ctx.fill();
+      g = ctx.createLinearGradient(0, 494, 0, 526); g.addColorStop(0, '#3a4855'); g.addColorStop(1, '#2b3640'); ctx.fillStyle = g; rr(ctx, BX + 10, 494, 104, 32, 5); ctx.fill();
+      // 단추
+      [[-96, '#bfc8d1'], [-70, '#bfc8d1']].forEach(([dx, c]) => { ctx.fillStyle = c; ctx.beginPath(); ctx.arc(BX + dx, 512, 8, 0, TAU); ctx.fill(); ctx.strokeStyle = 'rgba(20,38,59,.18)'; ctx.stroke(); });
+      // 접시
+      const loaded = P.some((p) => p.where === 'bal') ? 1.5 : 0;
+      ctx.fillStyle = '#b4bec8'; ctx.fillRect(BX - 16, 464 + loaded, 32, 12);
+      g = ctx.createLinearGradient(0, PLAT + loaded, 0, PLAT + 10 + loaded); g.addColorStop(0, '#eef1f4'); g.addColorStop(1, '#a9b4bf');
+      ctx.fillStyle = g; rr(ctx, BX - 104, PLAT + loaded, 208, 10, 4); ctx.fill();
+      ctx.strokeStyle = 'rgba(20,38,59,.18)'; ctx.stroke();
+      ov.put('lcd', BX + 62, 510, `${st.lcd.toFixed(1)}<small>g</small>`, 'lcd');
+      ov.put('balN', BX - 40, TY + 24, '전자저울', 'tx m');
+    }
+    function cylinder(front, inner) {
+      const x0 = C.cx - C.hw, x1 = C.cx + C.hw;
+      if (!front) {
+        contact(ctx, C.cx, TY + 1, 170, 0.18);
+        // 받침
+        let g = ctx.createLinearGradient(0, TY - 14, 0, TY); g.addColorStop(0, 'rgba(210,222,233,.85)'); g.addColorStop(1, 'rgba(170,188,204,.95)');
+        ctx.fillStyle = g; rr(ctx, C.cx - 66, TY - 13, 132, 13, 6); ctx.fill();
+        ctx.fillStyle = 'rgba(214,226,236,.75)'; rr(ctx, C.cx - 50, C.y0, 100, TY - 13 - C.y0, 4); ctx.fill();
+        ctx.fillStyle = 'rgba(236,242,247,.6)'; ctx.fillRect(x0 - 5, C.top, x1 - x0 + 10, C.y0 - C.top);
+        return;
+      }
+      // 물
+      const ly = lvY(st.level);
+      let g = ctx.createLinearGradient(0, ly, 0, C.y0); g.addColorStop(0, 'rgba(178,212,240,.55)'); g.addColorStop(1, 'rgba(150,194,232,.68)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(x0, ly - 4); ctx.quadraticCurveTo(C.cx, ly + 3, x1, ly - 4); ctx.lineTo(x1, C.y0); ctx.lineTo(x0, C.y0); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = 'rgba(70,130,185,.65)'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(x0, ly - 4); ctx.quadraticCurveTo(C.cx, ly + 3, x1, ly - 4); ctx.stroke();
+      // 관 벽
+      ctx.strokeStyle = 'rgba(120,140,160,.6)'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(x0 - 4, C.top); ctx.lineTo(x0 - 4, C.y0); ctx.moveTo(x1 + 4, C.top); ctx.lineTo(x1 + 4, C.y0); ctx.stroke();
+      // 주둥이
+      ctx.beginPath(); ctx.moveTo(x0 - 10, C.top - 6); ctx.quadraticCurveTo(x0 - 4, C.top - 2, x0 - 4, C.top + 8); ctx.moveTo(x1 + 4, C.top + 8); ctx.quadraticCurveTo(x1 + 4, C.top - 2, x1 + 10, C.top - 2); ctx.stroke();
+      g = ctx.createLinearGradient(x0, 0, x0 + 18, 0); g.addColorStop(0, 'rgba(255,255,255,.0)'); g.addColorStop(0.5, 'rgba(255,255,255,.6)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = g; ctx.fillRect(x0 + 2, C.top + 10, 16, C.y0 - C.top - 16);
+      // 눈금
+      ctx.strokeStyle = 'rgba(40,55,70,.65)'; ctx.lineWidth = 1;
+      for (let ml = 2; ml <= 100; ml += 2) { const y = lvY(ml), L = ml % 10 === 0 ? 18 : 8; ctx.beginPath(); ctx.moveTo(x1 - L, y); ctx.lineTo(x1, y); ctx.stroke(); }
+      for (let ml = 20; ml <= 100; ml += 20) ov.put('sc' + ml, x1 - 22, lvY(ml), String(ml), 'sc la');
+      ov.put('mL', C.cx, C.top - 26, 'mL', 'sc');
+      ov.put('cylN', C.cx, TY + 24, '눈금실린더', 'tx m');
+    }
+    function lens() {
+      const { x, y, r, mid, k } = LENS, x0 = C.cx - C.hw, x1 = C.cx + C.hw;
+      const ylo = lvY(mid - r / k), yhi = lvY(mid + r / k);
+      // 실린더 위 확대 범위와 잇는 선
+      ctx.strokeStyle = 'rgba(20,38,59,.22)'; ctx.lineWidth = 1;
+      rr(ctx, x0 - 8, yhi, x1 - x0 + 16, ylo - yhi, 6); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x0 - 8, yhi); ctx.lineTo(x + r * 0.42, y - r * 0.9); ctx.moveTo(x0 - 8, ylo); ctx.lineTo(x + r * 0.42, y + r * 0.9); ctx.stroke();
+      ctx.save(); ctx.shadowColor = 'rgba(20,38,59,.2)'; ctx.shadowBlur = 16; ctx.shadowOffsetY = 4;
+      ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fill(); ctx.restore();
+      ctx.save(); ctx.beginPath(); ctx.arc(x, y, r - 2, 0, TAU); ctx.clip();
+      const yOf = (ml) => y + (mid - ml) * k;
+      ctx.fillStyle = '#f2f6fa'; ctx.fillRect(x - r, y - r, 2 * r, 2 * r);
+      // 띠: 조각의 부피
+      const ly = yOf(st.level);
+      let g = ctx.createLinearGradient(0, ly, 0, y + r); g.addColorStop(0, 'rgba(178,212,240,.75)'); g.addColorStop(1, 'rgba(150,194,232,.85)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(x - r, ly - 9); ctx.quadraticCurveTo(x - 20, ly + 2, x + r, ly - 9); ctx.lineTo(x + r, y + r); ctx.lineTo(x - r, y + r); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = 'rgba(70,130,185,.8)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(x - r, ly - 9); ctx.quadraticCurveTo(x - 20, ly + 2, x + r, ly - 9); ctx.stroke();
+      if (st.band) {
+        const a = yOf(st.band.a), b = yOf(st.band.b);
+        ctx.fillStyle = 'rgba(14,99,179,.16)'; ctx.fillRect(x - r, b, 2 * r, a - b);
+        ctx.strokeStyle = 'rgba(14,99,179,.55)'; ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.moveTo(x - r, a); ctx.lineTo(x + r, a); ctx.stroke(); ctx.setLineDash([]);
+      }
+      // 눈금 (1 mL마다)
+      ctx.strokeStyle = 'rgba(30,45,60,.75)';
+      for (let ml = Math.ceil(mid - r / k); ml <= mid + r / k; ml++) { const yy = yOf(ml), L = ml % 10 === 0 ? 46 : ml % 5 === 0 ? 30 : 16; ctx.lineWidth = ml % 5 === 0 ? 1.6 : 1; ctx.beginPath(); ctx.moveTo(x + r - L - 6, yy); ctx.lineTo(x + r, yy); ctx.stroke(); }
+      ctx.restore();
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.stroke();
+      ctx.strokeStyle = 'rgba(20,38,59,.25)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(x, y, r + 2, 0, TAU); ctx.stroke();
+      [60, 70].forEach((ml) => { const yy = yOf(ml); if (Math.abs(yy - y) < r - 10) ov.put('ln' + ml, x + r - 60, yy, String(ml), 'tx lensn la'); });
+      if (st.band) ov.put('band', x - 34, (yOf(st.band.a) + yOf(st.band.b)) / 2, `조각의 부피`, 'tx band'); else ov.hide('band');
+      ov.put('read', x - 34, ly - 18, `${(Math.round(st.level * 10) / 10).toString()} mL`, 'tx read');
+      ov.put('lensT', x, y - r - 18, '눈금 확대', 'tx m');
+    }
+    addLoop(host, (dt) => {
+      st.t += dt; TW.step(dt);
+      // 실린더 속으로 천천히 내려 넣기
+      P.forEach((p) => {
+        if (p.where !== 'in' || !p.done) return;
+        const sy = lvY(st.level), inW = p.y > sy;
+        const target = inW ? 70 : 150;
+        p.vy = (p.vy || 0) + (target - (p.vy || 0)) * (inW ? 4 : 3) * dt;
+        const wasIn = p.y - p.s * 0.8 * 0.1 > sy;
+        p.y = Math.min(C.y0, p.y + p.vy * dt);
+        if (!wasIn && p.y - p.s * 0.08 > sy && !reduce) { st.ripples.push({ t: 0 }); for (let i = 0; i < 6; i++) st.bubbles.push({ x: C.cx + (Math.random() - 0.5) * p.s, y: p.y - p.s * 0.4, r: 1.5 + Math.random() * 2.2, v: 40 + Math.random() * 40 }); }
+        if (p.y >= C.y0) { const d = p.done; p.done = null; d(); }
+      });
+      updLevel();
+      st.bubbles = st.bubbles.filter((b) => { b.y -= b.v * dt; b.x += Math.sin(st.t * 6 + b.r * 9) * 0.3; return b.y > lvY(st.level) + 2; });
+      st.ripples = st.ripples.filter((r) => (r.t += dt) < 0.8);
+
+      S.begin(); white(S); desk(S, TY);
+      // 쟁반
+      let g = ctx.createLinearGradient(0, TY - 8, 0, TY); g.addColorStop(0, '#e9eef3'); g.addColorStop(1, '#cfd8e0');
+      contact(ctx, 480, TY + 1, 400, 0.12);
+      ctx.fillStyle = g; rr(ctx, 294, TY - 8, 372, 9, 4); ctx.fill(); ctx.strokeStyle = 'rgba(20,38,59,.12)'; ctx.stroke();
+      balance();
+      cylinder(false);
+      const inside = (p) => p.where === 'cyl' || p.where === 'in';
+      P.forEach((p) => { if (inside(p)) block(ctx, p.x, p.y, p.s, p.kind, p.seed); });
+      cylinder(true);
+      st.bubbles.forEach((b) => { ctx.strokeStyle = 'rgba(255,255,255,.95)'; ctx.lineWidth = 1; ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, TAU); ctx.fill(); ctx.stroke(); });
+      st.ripples.forEach((r) => { const ly = lvY(st.level); ctx.strokeStyle = `rgba(20,38,59,${0.25 * (1 - r.t / 0.8)})`; ctx.lineWidth = 1; ctx.beginPath(); ctx.ellipse(C.cx, ly, 20 + r.t * 30, 3, 0, 0, TAU); ctx.stroke(); });
+      P.forEach((p) => {
+        if (inside(p)) return;
+        if (p.where === 'tray' && st.sel === p.id) { ctx.fillStyle = 'rgba(14,99,179,.12)'; rr(ctx, p.home[0] - 44, TY - 9, 88, 4, 2); ctx.fill(); }
+        block(ctx, p.x, p.y, p.s, p.kind, p.seed);
+      });
+      lens();
+      P.forEach((p, i) => ov.put('p' + i, p.home[0] + 4, TY + 26, `${p.name}<br><small>${p.size}</small>`, 'tx pn' + (st.sel === p.id ? ' on' : '')));
+    });
+    return { st, select, weigh, volume, reset, jump, pieces: P, get busy() { return st.moving || TW.busy || P.some((p) => p.done); } };
+  }
+
+  return { beakers, cubes, chart, particles, jar, lab, LIQ, SOL, PIECES, RHO };
+})();
