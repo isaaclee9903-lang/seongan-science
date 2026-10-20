@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      /* 라스 허브(index.html)와 같은 색·서체 */
+      @font-face {
+        font-family: "Pretendard";
+        src: url("assets/fonts/PretendardVariable.woff2") format("woff2");
+        font-weight: 100 900;
+      }
+      :root {
+        --bg: #edf3f8;
+        --ink: #14263b;
+        --ink2: #34495e;
+        --muted: #5a6b7e;
+        --hair: #d5dfe9;
+        --line: #dde6ee;
+        --accent: #0e63b3;
+        --a70: #5692ca;
+        --a45: #92b9dd;
+        --sun: #f0a91e;
+      }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { margin: 0; width: 1920px; height: 1080px; overflow: hidden; background: var(--bg); }
+      #root {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        font-family: "Pretendard", sans-serif;
+        color: var(--ink);
+        word-break: keep-all;
+        -webkit-font-smoothing: antialiased;
+        background-color: var(--bg);
+        background-image: linear-gradient(rgba(20, 60, 110, 0.055) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(20, 60, 110, 0.055) 1px, transparent 1px);
+        background-size: 48px 48px;
+      }
+
+      /* 로고 바탕 (흰 둥근 칸) */
+      .frame {
+        position: absolute;
+        background: #fff;
+        border: 2px solid var(--hair);
+      }
+      #frameA { left: 800px; top: 300px; width: 320px; height: 320px; border-radius: 75px; border-width: 4px; }
+      #frameE { left: 160px; top: 180px; width: 136px; height: 136px; border-radius: 32px; }
+
+      #labelA {
+        position: absolute;
+        left: 0;
+        top: 668px;
+        width: 100%;
+        text-align: center;
+        font-size: 34px;
+        font-weight: 700;
+        color: var(--muted);
+        letter-spacing: 0.01em;
+      }
+      #labelA b { color: var(--accent); font-weight: 800; letter-spacing: 0.04em; margin-right: 14px; }
+
+      /* 네 칸 = 네 화면 */
+      .tile {
+        position: absolute;
+        overflow: hidden;
+        background: #f3f6f9;
+        box-shadow: 0 1px 2px rgba(20, 38, 59, 0.08), 0 14px 40px rgba(20, 38, 59, 0.1);
+      }
+      .tile video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: top center; }
+      .tile .fill { position: absolute; inset: 0; }
+      #tile1 { left: 860px; top: 360px; width: 90px; height: 90px; border-radius: 20px; }
+      #tile2 { left: 970px; top: 360px; width: 90px; height: 90px; border-radius: 20px; }
+      #tile3 { left: 860px; top: 470px; width: 90px; height: 90px; border-radius: 20px; }
+      #tile4 { left: 970px; top: 470px; width: 90px; height: 90px; border-radius: 45px; }
+      #tile1 .fill { background: var(--accent); }
+      #tile2 .fill { background: var(--a70); }
+      #tile3 .fill { background: var(--a45); }
+      #tile4 .fill { background: var(--sun); }
+
+      /* 예시 수업 이름표 (허브 .eglbl) */
+      #eg {
+        position: absolute;
+        left: 96px;
+        top: 110px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--ink2);
+      }
+      #eg b {
+        font-size: 19px;
+        font-weight: 800;
+        color: var(--accent);
+        border: 1.5px solid currentColor;
+        border-radius: 8px;
+        padding: 3px 10px;
+        background: #fff;
+        letter-spacing: 0.04em;
+      }
+
+      /* 오른쪽 설명 (허브 .step) */
+      #side { position: absolute; left: 1448px; top: 170px; width: 400px; height: 800px; }
+      .bar { position: absolute; left: 0; top: 236px; width: 400px; display: flex; gap: 10px; }
+      .bar i { flex: 1; height: 4px; border-radius: 2px; background: var(--hair); position: relative; overflow: hidden; }
+      .bar i span { position: absolute; inset: 0; background: var(--accent); transform-origin: left center; }
+      .step { position: absolute; left: 0; top: 286px; width: 400px; }
+      .step .k { font-size: 22px; font-weight: 800; color: var(--accent); letter-spacing: 0.06em; }
+      .step h3 { margin-top: 14px; font-size: 46px; font-weight: 800; letter-spacing: -0.035em; line-height: 1.25; }
+      .step p { margin-top: 16px; font-size: 27px; font-weight: 700; color: var(--muted); letter-spacing: -0.025em; line-height: 1.45; }
+
+      /* 처음에 숨겨 두는 것 (타임라인이 나중에 보이게 함) */
+      #eg, #side, .step, #head, #strip, #fadeL, #fadeR, #foot, #frameE { opacity: 0; visibility: hidden; }
+
+      /* 끝 화면 */
+      #head { position: absolute; left: 328px; top: 182px; width: 1460px; }
+      #head .brand { font-size: 26px; font-weight: 700; color: var(--muted); letter-spacing: 0.01em; }
+      #head .brand b { color: var(--accent); font-weight: 800; letter-spacing: 0.04em; margin-right: 10px; }
+      #head h1 { margin-top: 10px; font-size: 64px; font-weight: 800; letter-spacing: -0.035em; line-height: 1.25; white-space: nowrap; }
+      #head h1 span { display: inline-block; }
+
+      #strip { position: absolute; left: 160px; top: 418px; height: 280px; display: flex; gap: 28px; }
+      .card { flex: none; width: 352px; }
+      .card .th {
+        position: relative;
+        width: 352px;
+        height: 197px;
+        border-radius: 14px;
+        overflow: hidden;
+        background: #d8e3ee;
+        box-shadow: 0 1px 2px rgba(20, 38, 59, 0.08);
+      }
+      .card .th img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+      .card .t {
+        margin-top: 14px;
+        font-size: 21px;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        line-height: 1.4;
+        color: var(--ink);
+      }
+      #fadeL, #fadeR { position: absolute; top: 410px; width: 160px; height: 300px; }
+      #fadeL { left: 0; background: linear-gradient(90deg, var(--bg), rgba(237, 243, 248, 0)); }
+      #fadeR { right: 0; background: linear-gradient(270deg, var(--bg), rgba(237, 243, 248, 0)); }
+
+      #foot { position: absolute; left: 160px; top: 790px; width: 1600px; }
+      #foot .cnt { font-size: 28px; font-weight: 700; color: var(--ink2); }
+      #foot .cnt b { color: var(--accent); font-weight: 800; }
+      #url {
+        margin-top: 22px;
+        display: inline-flex;
+        align-items: center;
+        gap: 16px;
+        height: 84px;
+        padding: 0 34px 0 28px;
+        border-radius: 42px;
+        background: #fff;
+        border: 1.5px solid var(--hair);
+        font-size: 36px;
+        font-weight: 700;
+        color: var(--ink);
+        letter-spacing: -0.01em;
+      }
+      #url svg { flex: none; }
+    </style>
+  </head>
+  <body>
+    <div data-hf-id="hf-at0g"
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-duration="30"
+      data-width="1920"
+      data-height="1080"
+    >
+      <!-- 소리: 직접 합성한 배경 음악과 효과음 (claude/ras-intro-video 의 make_audio.py) -->
+      <audio id="bed" class="clip" src="assets/audio/bed30.m4a" data-start="0" data-duration="30" data-track-index="10" data-volume="0.55"></audio>
+      <audio id="sfx-t1" class="clip" src="assets/audio/tap.wav" data-start="0.4" data-duration="0.12" data-track-index="11" data-volume="0.5"></audio>
+      <audio id="sfx-t2" class="clip" src="assets/audio/tap.wav" data-start="0.65" data-duration="0.12" data-track-index="12" data-volume="0.5"></audio>
+      <audio id="sfx-t3" class="clip" src="assets/audio/tap.wav" data-start="0.9" data-duration="0.12" data-track-index="11" data-volume="0.5"></audio>
+      <audio id="sfx-t4" class="clip" src="assets/audio/pop.wav" data-start="1.15" data-duration="0.25" data-track-index="12" data-volume="0.55"></audio>
+      <audio id="sfx-open" class="clip" src="assets/audio/swish.wav" data-start="3.0" data-duration="0.45" data-track-index="13" data-volume="0.5"></audio>
+      <audio id="sfx-s1" class="clip" src="assets/audio/swish.wav" data-start="6.2" data-duration="0.45" data-track-index="13" data-volume="0.4"></audio>
+      <audio id="sfx-s2" class="clip" src="assets/audio/swish.wav" data-start="9.3" data-duration="0.45" data-track-index="14" data-volume="0.4"></audio>
+      <audio id="sfx-s3" class="clip" src="assets/audio/swish.wav" data-start="12.9" data-duration="0.45" data-track-index="13" data-volume="0.4"></audio>
+      <audio id="sfx-s4" class="clip" src="assets/audio/swish.wav" data-start="16.5" data-duration="0.45" data-track-index="14" data-volume="0.4"></audio>
+      <audio id="sfx-back" class="clip" src="assets/audio/swish.wav" data-start="20.6" data-duration="0.45" data-track-index="13" data-volume="0.45"></audio>
+      <audio id="sfx-snap" class="clip" src="assets/audio/snap.wav" data-start="23.0" data-duration="0.5" data-track-index="14" data-volume="0.5"></audio>
+
+      <div data-hf-id="hf-g3uh" class="frame" id="frameA"></div>
+      <div data-hf-id="hf-t8nj" id="labelA"><b data-hf-id="hf-cvct">RAS</b>Reading After Studying</div>
+
+      <div data-hf-id="hf-3fah" id="eg"><b data-hf-id="hf-kpbg">예시 수업</b><span data-hf-id="hf-6ybg">전류가 흐르는 코일 주변에는 무엇이 생길까?</span></div>
+
+      <div data-hf-id="hf-743w" id="side">
+        <div data-hf-id="hf-ufsv" class="bar"><i data-hf-id="hf-wt6k"><span data-hf-id="hf-gkmx" id="b1"></span></i><i data-hf-id="hf-zeb8"><span data-hf-id="hf-kiqy" id="b2"></span></i><i data-hf-id="hf-y7e5"><span data-hf-id="hf-oguz" id="b3"></span></i><i data-hf-id="hf-ylp6"><span data-hf-id="hf-0zdg" id="b4"></span></i></div>
+        <div data-hf-id="hf-hqky" class="step" id="st1"><div data-hf-id="hf-zjaz" class="k">01 · 읽기·퀴즈</div><h3 data-hf-id="hf-taxm">읽으며 확인한다.</h3><p data-hf-id="hf-7kv8">모르는 낱말은 눌러서 바로 본다.</p></div>
+        <div data-hf-id="hf-dsgx" class="step" id="st2"><div data-hf-id="hf-a9rk" class="k">02 · 모형·시뮬레이션</div><h3 data-hf-id="hf-amcj">보이지 않는 것을 본다.</h3><p data-hf-id="hf-dyit">조건을 바꾸면 결과가 바로 달라진다.</p></div>
+        <div data-hf-id="hf-d0t4" class="step" id="st3"><div data-hf-id="hf-bxi2" class="k">03 · 가상 실험</div><h3 data-hf-id="hf-fwql">직접 해 보고 기록한다.</h3><p data-hf-id="hf-6bg2">교과서 탐구를 가상 실험실에서.</p></div>
+        <div data-hf-id="hf-92p3" class="step" id="st4"><div data-hf-id="hf-kjs4" class="k">04 · 정리·글쓰기</div><h3 data-hf-id="hf-i6zd">내 말로 정리한다.</h3><p data-hf-id="hf-vzv2">빈칸을 채우고 짧은 글을 쓴다.</p></div>
+      </div>
+
+      <div data-hf-id="hf-z8f3" id="head">
+        <div data-hf-id="hf-vhhw" class="brand" id="brandE"><b data-hf-id="hf-nr2p">RAS</b>Reading After Studying</div>
+        <h1 data-hf-id="hf-fnbe" id="h1"><span data-hf-id="hf-h2sq">수업이</span> <span data-hf-id="hf-wcc8">끝난</span> <span data-hf-id="hf-sc21">뒤,</span> <span data-hf-id="hf-dji1">다시</span> <span data-hf-id="hf-ggrg">읽고</span> <span data-hf-id="hf-dsir">직접</span> <span data-hf-id="hf-z3yn">해</span> <span data-hf-id="hf-7t8h">보는</span> <span data-hf-id="hf-p15m">과학</span></h1>
+      </div>
+      <div data-hf-id="hf-upa0" id="strip" data-layout-allow-overflow="true" data-layout-allow-occlusion="true"></div>
+      <div data-hf-id="hf-l8e5" id="fadeL"></div>
+      <div data-hf-id="hf-i90j" id="fadeR"></div>
+      <div data-hf-id="hf-l4at" id="foot">
+        <div data-hf-id="hf-stxi" class="cnt" id="cnt">중2 과학 <b data-hf-id="hf-t1bf">수업 27개</b> · 태블릿에서 바로 열어요</div>
+        <div data-hf-id="hf-t87b" id="url">
+          <svg data-hf-id="hf-bzif" width="34" height="34" viewBox="0 0 64 64" aria-hidden="true"><rect data-hf-id="hf-alyg" x="1" y="1" width="62" height="62" rx="15" fill="#fff" stroke="#d5dfe9" stroke-width="3"/><rect data-hf-id="hf-iftd" x="12" y="12" width="18" height="18" rx="4" fill="#0e63b3"/><rect data-hf-id="hf-z1re" x="34" y="12" width="18" height="18" rx="4" fill="#0e63b3" opacity=".7"/><rect data-hf-id="hf-q20y" x="12" y="34" width="18" height="18" rx="4" fill="#0e63b3" opacity=".45"/><rect data-hf-id="hf-opd1" x="34" y="34" width="18" height="18" rx="9" fill="#f0a91e"/></svg>
+          isaaclee9903-lang.github.io/seongan-science
+        </div>
+      </div>
+
+      <div data-hf-id="hf-1a8t" class="frame" id="frameE"></div>
+
+      <!-- 네 화면: 실제 coil-field 수업을 녹화한 영상 -->
+      <div data-hf-id="hf-zhe3" class="tile" id="tile1"><video data-hf-id="hf-o5x7" id="v1" class="clip" src="assets/tiles/t1.mp4" muted playsinline data-start="3" data-duration="20.4" data-track-index="1"></video><div data-hf-id="hf-4qej" class="fill"></div></div>
+      <div data-hf-id="hf-olwg" class="tile" id="tile2"><video data-hf-id="hf-30dc" id="v2" class="clip" src="assets/tiles/t2.mp4" muted playsinline data-start="3" data-duration="20.4" data-track-index="2"></video><div data-hf-id="hf-lwnf" class="fill"></div></div>
+      <div data-hf-id="hf-pdk9" class="tile" id="tile3"><video data-hf-id="hf-bwph" id="v3" class="clip" src="assets/tiles/t3.mp4" muted playsinline data-start="3" data-duration="20.4" data-track-index="3"></video><div data-hf-id="hf-lice" class="fill"></div></div>
+      <div data-hf-id="hf-gpoe" class="tile" id="tile4"><video data-hf-id="hf-r5p6" id="v4" class="clip" src="assets/tiles/t4.mp4" muted playsinline data-start="3" data-duration="20.4" data-track-index="4"></video><div data-hf-id="hf-l41d" class="fill"></div></div>
+    </div>
+
+    <script>
+      // 썸네일 줄: 허브 중2 과학 탭 순서
+      const LESSONS = [
+        ["density", "jpg", "뜨고 가라앉는 정도로 물질을 구별할 수 있을까?"],
+        ["earth-interior", "jpg", "지구 내부는 어떻게 생겼을까?"],
+        ["minerals", "jpg", "광물은 어떻게 구별할 수 있을까?"],
+        ["rocks", "jpg", "암석의 종류는 어떻게 구분할까?"],
+        ["mineral-use", "jpg", "광물과 암석을 어떻게 활용할까?"],
+        ["rock-cycle", "jpg", "커다란 암석은 어떻게 흙이 되었을까?"],
+        ["continental-drift", "jpg", "과거 대륙의 분포는 현재와 같은 모습이었을까?"],
+        ["quake-volcano", "jpg", "지진과 화산은 어디에서 자주 발생할까?"],
+        ["light-path", "svg", "물체에 닿은 빛은 어떻게 이동할까?"],
+        ["plane-mirror", "svg", "거울 속의 내 모습은 어떻게 생길까?"],
+        ["mirror-lens", "svg", "다양한 거울과 렌즈에 의해 생기는 상은 어떤 모습일까?"],
+        ["mirror-lens-use", "jpg", "우리 주변에는 어떤 거울과 렌즈가 있을까?"],
+        ["light-color", "svg", "물체의 색은 어떻게 보이고, 다양한 색은 어떻게 만들어질까?"],
+        ["wave", "jpg", "파동은 어떻게 발생하고 전달될까?"],
+        ["sound", "jpg", "소리는 어떤 특성이 있을까?"],
+        ["friction-electricity", "jpg", "두 물체를 마찰하면 어떤 힘이 생길까?"],
+        ["ohm", "svg", "전기는 왜 흐를까?"],
+        ["series-parallel", "svg", "전구를 두 개 연결하면?"],
+        ["electric-energy", "svg", "우리는 전기 에너지를 어떻게 이용할까?"],
+        ["coil-field", "svg", "전류가 흐르는 코일 주변에는 무엇이 생길까?"],
+        ["motor-force", "jpg", "전류와 자기가 만나 생긴 힘은 어떤 특성이 있을까?"],
+        ["parallax", "svg", "별까지의 거리는 어떻게 알 수 있을까?"],
+        ["star-brightness", "svg", "별의 밝기는 어떻게 나타낼 수 있을까?"],
+        ["star-color", "svg", "별의 색이 다양하게 나타나는 까닭은 무엇일까?"],
+        ["milky-way", "jpg", "우리은하에는 어떤 천체가 있을까?"],
+        ["expanding-universe", "jpg", "우주의 크기는 항상 일정할까?"],
+        ["space-exploration", "jpg", "인류가 우주를 탐사하는 까닭은 무엇일까?"]
+      ];
+      document.getElementById("strip").innerHTML = LESSONS.map(
+        ([id, ext, t]) => `<div class="card"><div class="th"><img src="assets/thumbs/${id}.${ext}" alt=""></div><div class="t">${t}</div></div>`
+      ).join("");
+    </script>
+
+    <script>
+      const tl = gsap.timeline({ paused: true });
+      const T = ["#tile1", "#tile2", "#tile3", "#tile4"];
+
+      // 칸 위치 (left, top, width, height, radius)
+      const GRID = [
+        [244, 88, 704, 440, 18],
+        [972, 88, 704, 440, 18],
+        [244, 552, 704, 440, 18],
+        [972, 552, 704, 440, 18]
+      ];
+      const MAIN = [96, 170, 1280, 800, 22];
+      // 끝 화면 로고 (136px, 허브 로고와 같은 비율)
+      const s = 136 / 64, mx = 160, my = 180;
+      const LOGO = [
+        [mx + 12 * s, my + 12 * s, 18 * s, 18 * s, 4 * s],
+        [mx + 34 * s, my + 12 * s, 18 * s, 18 * s, 4 * s],
+        [mx + 12 * s, my + 34 * s, 18 * s, 18 * s, 4 * s],
+        [mx + 34 * s, my + 34 * s, 18 * s, 18 * s, 9 * s]
+      ];
+      const box = (r) => ({ left: r[0], top: r[1], width: r[2], height: r[3], borderRadius: r[4] });
+
+      // 장면 시각 (초). 2026-10-20 "전환이 너무 빠르다" 의견으로 전체를 20초 → 30초로 늘림
+      const A_END = 3.0, S0 = 6.2, STEP = 3.6, D0 = S0 + 4 * STEP, E0 = D0 + 2.8, END = 30;
+
+      // ── A. 로고가 한 칸씩 놓인다 (0 ~ 3초)
+      tl.fromTo("#frameA", { autoAlpha: 0, scale: 0.92 }, { autoAlpha: 1, scale: 1, duration: 0.8, ease: "power3.out" }, 0);
+      [0.4, 0.65, 0.9, 1.15].forEach((t, i) => {
+        tl.fromTo(T[i], { scale: 0, autoAlpha: 0 }, { scale: 1, autoAlpha: 1, duration: 0.6, ease: "back.out(1.5)" }, t);
+      });
+      tl.fromTo("#labelA", { autoAlpha: 0, y: 16 }, { autoAlpha: 1, y: 0, duration: 0.8, ease: "power3.out" }, 1.5);
+
+      // ── B. 네 칸이 펼쳐져 네 화면이 된다 (3 ~ 6.2초)
+      tl.to("#frameA", { autoAlpha: 0, scale: 1.2, duration: 0.7, ease: "power2.in" }, A_END);
+      tl.to("#labelA", { autoAlpha: 0, y: 30, duration: 0.6, ease: "power2.in" }, A_END);
+      T.forEach((t, i) => {
+        tl.to(t, { ...box(GRID[i]), duration: 1.6, ease: "expo.inOut" }, A_END + i * 0.08);
+        tl.to(t + " .fill", { autoAlpha: 0, duration: 0.8, ease: "power1.inOut" }, A_END + 0.9 + i * 0.08);
+      });
+
+      // ── C. 한 화면씩 크게 (6.2 ~ 20.6초, 화면마다 3.6초)
+      tl.to("#tile1", { ...box(MAIN), duration: 1.1, ease: "expo.inOut" }, S0);
+      tl.to(["#tile2", "#tile3", "#tile4"], { autoAlpha: 0, scale: 0.96, duration: 0.6, ease: "power2.in" }, S0);
+      tl.fromTo("#eg", { autoAlpha: 0, y: 12 }, { autoAlpha: 1, y: 0, duration: 0.7, ease: "power3.out" }, S0 + 0.75);
+      tl.set("#side", { autoAlpha: 1 }, S0 + 0.7);
+
+      for (let k = 0; k < 4; k++) {
+        const t0 = S0 + k * STEP;
+        // 진행 막대와 설명 글: 새 화면이 들어올 때 같이 바뀐다
+        const ts = k === 0 ? t0 + 0.75 : t0 - 0.1;
+        tl.to("#b" + (k + 1), { scaleX: 1, duration: 0.7, ease: "power3.out" }, ts);
+        tl.fromTo("#st" + (k + 1), { autoAlpha: 0, y: 26 }, { autoAlpha: 1, y: 0, duration: 0.75, ease: "power3.out" }, ts);
+        if (k < 3) {
+          tl.to("#st" + (k + 1), { autoAlpha: 0, y: -18, duration: 0.35, ease: "power2.in" }, t0 + STEP - 0.6);
+          // 지금 화면이 왼쪽으로 빠진 뒤 다음 화면이 오른쪽에서 들어온다 (겹치지 않게)
+          const cur = T[k], nxt = T[k + 1], tc = t0 + STEP - 0.6;
+          tl.to(cur, { x: -140, autoAlpha: 0, duration: 0.45, ease: "power2.in" }, tc);
+          tl.set(nxt, { ...box(MAIN), scale: 1 }, tc - 0.05);
+          tl.fromTo(nxt, { x: 160, autoAlpha: 0 }, { x: 0, autoAlpha: 1, duration: 0.85, ease: "power3.out", immediateRender: false }, tc + 0.45);
+        }
+      }
+
+      // ── D. 네 화면이 다시 모여 로고가 된다 (20.6 ~ 23.4초)
+      tl.to(["#side", "#eg"], { autoAlpha: 0, duration: 0.45, ease: "power2.in" }, D0);
+      tl.to("#tile4", { ...box(GRID[3]), duration: 0.9, ease: "expo.inOut" }, D0);
+      [0, 1, 2].forEach((i) => {
+        tl.set(T[i], { ...box(GRID[i]), x: 0, scale: 0.96 }, D0);
+        tl.to(T[i], { autoAlpha: 1, scale: 1, duration: 0.55, ease: "power2.out" }, D0 + 0.65 + i * 0.08);
+      });
+      T.forEach((t, i) => {
+        tl.to(t + " .fill", { autoAlpha: 1, duration: 0.55, ease: "power1.inOut" }, D0 + 1.3 + i * 0.05);
+        tl.to(t, { ...box(LOGO[i]), duration: 1.3, ease: "expo.inOut" }, D0 + 1.45 + i * 0.06);
+      });
+      tl.fromTo("#frameE", { autoAlpha: 0, scale: 0.6 }, { autoAlpha: 1, scale: 1, duration: 0.7, ease: "back.out(1.4)" }, D0 + 2.3);
+
+      // ── E. 제목, 수업 썸네일, 주소 (23.4 ~ 30초)
+      tl.set("#head", { autoAlpha: 1 }, E0);
+      tl.fromTo("#brandE", { autoAlpha: 0, y: 14 }, { autoAlpha: 1, y: 0, duration: 0.7, ease: "power3.out" }, E0);
+      tl.fromTo("#h1 span", { autoAlpha: 0, y: 40 }, { autoAlpha: 1, y: 0, duration: 0.8, ease: "power3.out", stagger: 0.08 }, E0 + 0.15);
+      tl.fromTo(["#fadeL", "#fadeR"], { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.4 }, E0 + 1.0);
+      tl.fromTo("#strip", { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.8, ease: "power1.out" }, E0 + 1.0);
+      tl.fromTo("#strip", { x: 420 }, { x: -760, duration: END - E0 - 1.0, ease: "none" }, E0 + 1.0);
+      tl.fromTo("#cnt", { autoAlpha: 0, y: 14 }, { autoAlpha: 1, y: 0, duration: 0.7, ease: "power3.out" }, E0 + 1.7);
+      tl.set("#foot", { autoAlpha: 1 }, E0 + 1.7);
+      tl.fromTo("#url", { autoAlpha: 0, y: 18 }, { autoAlpha: 1, y: 0, duration: 0.8, ease: "power3.out" }, E0 + 2.1);
+
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>
