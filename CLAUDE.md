@@ -22,6 +22,7 @@
 | 폴더 | 단원 | 만든 방식 | 기준 문서 (`curriculum/`) |
 |---|---|---|---|
 | `density` | 중2 Ⅰ 물질의 특성: 밀도 (나무 구슬·쇠구슬, 1 cm³ 조각, 밀도 막대·입자 모형, 밀도 실험실 2D: 전자저울·눈금실린더, 뜨고 가라앉는 컵 2D: 액체 붓기·고체 넣기·밀도 범위 추론) | lesson-kit | `중2_물질의특성_밀도.md` |
+| `solubility` | 중2 Ⅰ 물질의 특성: 용해도 (입자 모형 용해 과정, 포화·불포화, 녹는 양 실험실 2D: 질산 칼륨·붕산 시험관, 뜨거운 물·얼음물, 용해도 곡선 실험실: 곡선 예측·물 100 g 비커, 기체의 용해도: 탄산음료·주사기) | lesson-kit | `중2_물질의특성_용해도.md` |
 | `earth-interior` | 중2 Ⅱ 지구 내부의 층상 구조 (지구 속 여행 콘셉트, 3D 단면, 지진파) | lesson-kit | `중2_지권의변화_지구내부의층상구조.md` (Ⅱ 시작 단원은 나중에) |
 | `minerals` | 중2 Ⅱ 광물의 특성 (3D 광물 모형, 3D 광물 실험실, 광물 구별하기) | lesson-kit | `중2_지권의변화_광물의특성.md` |
 | `rocks` | 중2 Ⅱ 암석의 종류 (화성암·퇴적암·변성암, 2D 생성 과정 시뮬레이션, 3D 암석 12종·돋보기 분류 탐구) | lesson-kit | `중2_지권의변화_암석의종류.md` |
@@ -52,6 +53,7 @@
 | `career-map` | 진로 지도 (읽기 자료 모음) | lesson-kit | 없음 |
 
 - 밀도(Ⅰ 물질의 특성): `tools/lesson-kit/src/density/_den.js`(DEN: 비커 속 구슬 beakers, 1 cm³ 조각 cubes, 밀도 막대 chart(그림 Ⅰ-2 값), 입자 모형 particles, 뜨고 가라앉는 컵 jar(방울이 제 층을 찾아감·고체 뜨고 가라앉기), 전자저울·눈금실린더 실험실 lab). 다음 Ⅰ 수업도 재사용한다.
+- 용해도(Ⅰ 물질의 특성): `tools/lesson-kit/src/solubility/_sol.js`(SOL: 용해도 자료·보간 solu/label, 입자 모형 dissolve, 포화·불포화 satur, 용해도 곡선 curve, 결정 알갱이 무더기 pile, 시험관 그리기)와 `_sol2.js`(SOL.tube 시험관 실험실, SOL.beaker 물 100 g 비커, SOL.soda 탄산음료·주사기). 그림 칸을 화면에 맞게 자르는 `surface(…, crop)`/`setCrop`도 여기 있다. 다음 Ⅰ 수업(녹는점·끓는점 등)도 재사용한다.
 - 지권(Ⅱ) 3D 모형: 광물은 `tools/lesson-kit/src/minerals/_min3d.js`(MIN3D), 암석 12종·퇴적물·층리·화석은 `src/rocks/_rock3d.js`(ROCK3D, MIN3D 사본이 `src/rocks/_min3d.js`에 있음). `ROCK3D.thumbs(ids)`로 카드용 사진을 만들 수 있다. 다음 Ⅱ 수업(암석의 순환 등)도 재사용한다.
 - 대륙 지도(Ⅱ 지권의 운동): `tools/lesson-kit/src/continental-drift/_geo.js`(Natural Earth 1:50m 대륙 모양), `_globe.js`(GLOBE: 판게아↔현재 대륙 회전, 캔버스 지구본), `_gond.js`(EVID 화석·빙하 증거, GOND 평면 대륙 조각판). 다음 판 구조 수업도 재사용한다.
 - 지진·화산 지도(Ⅱ 지권의 운동): `tools/lesson-kit/src/quake-volcano/_map.js`(WMAP: 실제 지진·화산·판의 경계 캔버스 지도, 재생·확대·판 강조·띠 칠하기, USGS 실시간 자료), `_bound2d.js`(BND: 교과서 그림 Ⅱ-16 형식 덩어리 그림, 부딪침·갈라짐·어긋남). 자료는 `lessons/quake-volcano/data/`(만드는 법 `_data_prep.py`). 다음 지권의 운동 수업도 재사용한다.

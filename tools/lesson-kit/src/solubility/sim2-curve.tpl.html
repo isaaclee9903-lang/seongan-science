@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>용해도 – 용해도 곡선 실험실</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+/*@@LOCAL:_css_sl.css@@*/
+/*@@LOCAL:_css_sim.css@@*/
+  /* ===== 이 페이지 전용 ===== */
+  .act[hidden],[hidden]{display:none!important}
+  .pane .lbl{margin:8px 0 5px}
+  .pane .lbl:first-child{margin-top:0}
+  .ptabs{margin-bottom:8px}
+  .fbk{margin-top:8px;padding:10px 12px}
+  .duo{flex:1 1 auto;min-height:300px;display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);align-items:stretch}
+  .duo .scene{height:100%;min-height:0}
+  .duo .scene + .scene{border-left:1px solid var(--line)}
+  .subs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+  .three3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+  .five{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+  .two2{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .subs button,.three3 button,.five button,.two2 button{min-height:46px;border-radius:14px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:14.5px;cursor:pointer;padding:4px 6px;word-break:keep-all;line-height:1.2;font-variant-numeric:tabular-nums}
+  .subs button[aria-pressed="true"],.three3 button[aria-pressed="true"],.five button[aria-pressed="true"],.two2 button[aria-pressed="true"]{border-color:var(--fab);background:#e9f3fd;color:#0b3f73}
+  .two2 button.good,.three3 button.good{border-color:var(--ok);background:#e8f7ef;color:#11703f}
+  .two2 button.bad,.three3 button.bad{border-color:#e7a29b;background:#fff4f2;color:#9b3a32}
+  .subs button:disabled,.three3 button:disabled,.five button:disabled,.two2 button:disabled{opacity:.4;cursor:default}
+  .trow{display:flex;align-items:center;gap:10px}
+  .trow input{flex:1;height:44px;accent-color:#0e63b3}
+  .trow output{min-width:4.4em;font-weight:900;font-size:16px;text-align:right;font-variant-numeric:tabular-nums}
+  .runrow{display:flex;gap:8px;margin-top:8px}
+  .runrow .btn{flex:1;min-height:50px}
+  .stepper{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:8px}
+  .stepper span{font-size:13px;font-weight:800;color:var(--muted);background:#eef3f8;border-radius:10px;padding:7px 4px;text-align:center}
+  .stepper span.on{background:var(--fab);color:#fff}
+  .stepper span.ok{background:#e5f5ec;color:#11703f}
+  @media (max-width:900px){.duo{min-height:0}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="ttl">
+      <span class="eyebrow">시뮬레이션 ②</span><h1>용해도 곡선 실험실</h1>
+      <p class="sub" id="sub">용해도 곡선으로 녹는 양을 예측하고, 물 100 g에 직접 넣어 확인해요. (교과서 그림 Ⅰ-6)</p>
+    </div>
+    <div class="ptabs big" role="tablist" id="acts" style="margin:0">
+      <button type="button" role="tab" data-a="solid" aria-selected="true">① 고체의 용해도 곡선</button>
+      <button type="button" role="tab" data-a="gas" aria-selected="false">② 기체의 용해도</button>
+    </div>
+  </header>
+
+  <div class="stage">
+    <section class="card viewer">
+      <div class="duo" id="duo">
+        <div class="scene" id="graph" role="img" aria-label="여러 가지 고체 물질의 용해도 곡선. 고른 물질의 곡선이 파랗게 강조되고, 고른 온도에서의 용해도와 넣은 양이 점으로 표시된다."></div>
+        <div class="scene" id="bk" role="img" aria-label="물 100 g이 든 비커와 온도계. 용질을 넣고 유리 막대로 저으면 녹고, 다 녹지 못한 용질은 바닥에 남는다."></div>
+      </div>
+      <div class="scene grow" id="soda" hidden role="img" aria-label="탄산음료가 든 시험관을 찬물과 뜨거운 물이 든 비커에 넣은 모습, 또는 탄산음료를 넣고 입구를 고무마개로 막은 주사기."></div>
+      <div class="vctl">
+        <span class="hint" id="hint">그래프를 눌러도 온도를 바꿀 수 있어요</span>
+        <span class="sp"></span>
+        <button class="vb" type="button" id="bReset">처음부터</button>
+      </div>
+    </section>
+
+    <section class="card pad">
+      <!-- 활동 ①: 고체의 용해도 곡선 -->
+      <div class="act" data-a="solid">
+        <div class="ptabs" role="tablist" id="ptS">
+          <button type="button" role="tab" data-p="lab" aria-selected="true">실험하기</button>
+          <button type="button" role="tab" data-p="why" aria-selected="false">왜 그럴까?</button>
+        </div>
+        <div class="pane" data-p="lab">
+          <div class="lbl">① 물질 고르기</div>
+          <div class="subs" id="subs"></div>
+          <div class="lbl">② 물의 온도 · 곡선에서 용해도를 읽어요</div>
+          <div class="trow"><input type="range" id="tR" min="0" max="100" step="10" value="20" aria-label="물의 온도"><output id="tV">20 ℃</output></div>
+          <div class="lbl">③ 물 100 g에 넣을 양</div>
+          <div class="five" id="amt"><button type="button" data-v="20">20 g</button><button type="button" data-v="40">40 g</button><button type="button" data-v="60">60 g</button><button type="button" data-v="80">80 g</button><button type="button" data-v="100">100 g</button></div>
+          <div class="lbl">④ 예측하기</div>
+          <div class="two2" id="pred"><button type="button" data-v="all" disabled>모두 녹는다</button><button type="button" data-v="left" disabled>일부가 남는다</button></div>
+          <div class="runrow"><button class="btn primary" type="button" id="go" disabled>⑤ 물 100 g에 넣고 젓기</button></div>
+          <div class="fbk" id="res"><b class="t" id="resT">결과</b><span id="resM">물질, 온도, 넣을 양을 고르고 예측해 봐요.</span></div>
+        </div>
+        <div class="pane" data-p="why" hidden>
+          <div class="phase">
+            <div class="ph on"><i>1</i><span><b>용해도</b>는 어떤 온도에서 용매 100 g에 최대로 녹을 수 있는 용질의 g 수예요. 곡선 위의 점이 그 온도의 용해도예요.</span></div>
+            <div class="ph on"><i>2</i><span>넣은 양이 <b>곡선보다 아래</b>에 있으면 모두 녹아요. 용질이 최대로 녹지 않았으니 <b>불포화 용액</b>이에요.</span></div>
+            <div class="ph on"><i>3</i><span>넣은 양이 <b>곡선보다 위</b>에 있으면 용해도만큼만 녹고 나머지는 녹지 않고 남아요. 이때 용액은 <b>포화 용액</b>이에요.</span></div>
+            <div class="ph on"><i>4</i><span>대부분의 고체 물질은 <b>온도가 높을수록 용해도가 커요</b>. 질산 칼륨은 크게 달라지고, 염화 나트륨은 거의 달라지지 않아요.</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 활동 ②: 기체의 용해도 -->
+      <div class="act" data-a="gas" hidden>
+        <div class="ptabs" role="tablist" id="ptG">
+          <button type="button" role="tab" data-p="lab" aria-selected="true">실험하기</button>
+          <button type="button" role="tab" data-p="why" aria-selected="false">왜 그럴까?</button>
+        </div>
+        <div class="pane" data-p="lab">
+          <div class="stepper" id="stG"><span class="on">1 온도에 따라</span><span>2 압력에 따라</span></div>
+          <div class="lbl" id="qG">① 탄산음료 시험관을 찬물과 뜨거운 물에 넣으면, 기포가 더 많이 생기는 쪽은?</div>
+          <div class="three3" id="predG"></div>
+          <div class="runrow"><button class="btn primary" type="button" id="goG" disabled>시험관을 비커에 넣기</button></div>
+          <div class="fbk" id="resG"><b class="t" id="resGT">결과</b><span id="resGM">예측을 고른 뒤 실험해요.</span></div>
+        </div>
+        <div class="pane" data-p="why" hidden>
+          <div class="phase">
+            <div class="ph on"><i>1</i><span>탄산음료에는 <b>이산화 탄소</b> 기체가 녹아 있어요.</span></div>
+            <div class="ph on"><i>2</i><span>뜨거운 물에 넣으면 기포가 더 많이 생겨요. 온도가 높아져 이산화 탄소의 <b>용해도가 작아져서</b> 물에 녹지 못하고 빠져나오기 때문이에요.</span></div>
+            <div class="ph on"><i>3</i><span>주사기의 피스톤을 잡아당기면 기포가 더 많이 생겨요. 압력이 작아져 이산화 탄소의 <b>용해도가 작아지기</b> 때문이에요.</span></div>
+            <div class="ph on"><i>4</i><span>일반적으로 기체 물질은 <b>온도가 높을수록, 압력이 작을수록</b> 용해도가 작아져요. 기체를 더 많이 녹이려면 온도를 낮추고 압력을 크게 하면 돼요.</span></div>
+          </div>
+        </div>
+      </div>
+      <p class="mnote">교과서에 적힌 값(질산 칼륨 21.4·31.9·109.2 g, 붕산 5.0 g) 밖의 용해도는 곡선에서 읽은 대략의 값이에요. 녹는 빠르기와 기포 수는 보기 좋게 정한 모형이에요.</p>
+    </section>
+  </div>
+</div>
+<script>
+window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
+  reduce: !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches), Q: new URLSearchParams(location.search) };
+</script>
+<script>
+/*@@LOCAL:_sol.js@@*/
+</script>
+<script>
+/*@@LOCAL:_sol2.js@@*/
+</script>
+<script>
+/* ===== 블록 1: 고체의 용해도 곡선 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S, Q = S.Q;
+    let sub = Q.get('sub') || 'kno3', T = +(Q.get('T') || 20), g = Q.get('g') ? +Q.get('g') : null, pred = null, busy = false;
+    const CV = SOL.curve($('#graph'), { W: 760, H: 820, sel: sub, T, step: 10, onT: (t) => { if (busy) return; T = t; syncT(); } });
+    const BK = SOL.beaker($('#bk'));
+    BK.setSub(sub); BK.setT(T);
+    window.CV = CV; window.BK = BK;
+    const jo = (w, a, b) => { const c = w.charCodeAt(w.length - 1) - 0xAC00; return w + (c >= 0 && c <= 11171 && c % 28 ? a : b); };
+    function msg(t, m, cls = '') { $('#res').className = 'fbk ' + cls; $('#resT').textContent = t; $('#resM').innerHTML = m; }
+    $('#subs').innerHTML = SOL.ORDER.map((id) => `<button type="button" data-v="${id}">${SOL.DATA[id].name}</button>`).join('');
+    function syncT() { $('#tR').value = T; $('#tV').textContent = T + ' ℃'; CV.set({ T }); BK.setT(T); clearRun(); }
+    function clearRun() { if (busy) return; CV.set({ pt: null }); BK.reset(); $$('#pred button').forEach((b) => b.classList.remove('good', 'bad')); paint(); }
+    function paint() {
+      $$('#subs button').forEach((b) => { b.setAttribute('aria-pressed', String(b.dataset.v === sub)); b.disabled = busy; });
+      $$('#amt button').forEach((b) => { b.setAttribute('aria-pressed', String(+b.dataset.v === g)); b.disabled = busy; });
+      $$('#pred button').forEach((b) => { b.setAttribute('aria-pressed', String(b.dataset.v === pred)); b.disabled = busy || g == null; });
+      $('#tR').disabled = busy;
+      $('#go').disabled = busy || g == null || !pred;
+    }
+    $$('#subs button').forEach((b) => b.addEventListener('click', () => { sub = b.dataset.v; CV.set({ sel: sub }); BK.setSub(sub); pred = null; clearRun(); msg('결과', `<b>${SOL.DATA[sub].name}</b>의 곡선이 파랗게 표시돼요. ${T} ℃에서 용해도는 <b>${SOL.label(sub, T)}</b>이에요.`); }));
+    $('#tR').addEventListener('input', () => { T = +$('#tR').value; pred = null; syncT(); msg('결과', `${T} ℃에서 ${SOL.DATA[sub].name}의 용해도는 <b>${SOL.label(sub, T)}</b>이에요.`); });
+    $$('#amt button').forEach((b) => b.addEventListener('click', () => { g = +b.dataset.v; pred = null; clearRun(); CV.set({ pt: { T, g } }); msg('결과', `그래프의 검은 점이 넣을 양(${g} g)이에요. 곡선보다 위일까요, 아래일까요? 예측해 봐요.`); }));
+    $$('#pred button').forEach((b) => b.addEventListener('click', () => { pred = b.dataset.v; paint(); }));
+    $('#go').addEventListener('click', () => {
+      if (busy) return; busy = true; paint();
+      const nm = SOL.DATA[sub].name; CV.set({ pt: { T, g } });
+      msg('결과', `${T} ℃ 물 100 g에 ${nm} ${g} g을 넣고 젓는 중이에요…`);
+      BK.run(sub, T, g, (r) => {
+        busy = false; const all = r.left < 0.5, ok = (pred === 'all') === all;
+        $$('#pred button').forEach((b) => { b.classList.toggle('good', (b.dataset.v === 'all') === all); b.classList.toggle('bad', b.dataset.v === pred && !ok); });
+        const sol = `${T} ℃에서 ${nm}의 용해도는 <b>${SOL.label(sub, T)}</b>이에요.`;
+        const m = all
+          ? `${sol} 넣은 ${g} g이 용해도보다 적어서 <b>모두 녹았어요</b>. 이 용액은 <b>불포화 용액</b>이에요.`
+          : `${sol} 넣은 ${g} g이 용해도보다 많아서 약 <b>${Math.round(r.left)} g이 녹지 않고 남았어요</b>. 최대로 녹아 있으니 이 용액은 <b>포화 용액</b>이에요.`;
+        msg(ok ? '결과 · 예측과 같아요' : '결과 · 예측과 달라요', m + ' 온도나 물질을 바꿔 다시 해 봐요.', ok ? 'ok' : 'no');
+        paint();
+      });
+    });
+    window.SOLID_RESET = () => { busy = false; pred = null; g = null; clearRun(); msg('결과', '물질, 온도, 넣을 양을 고르고 예측해 봐요.'); };
+    // 검사용 주소: ?sub=kno3&T=20&g=60&run=1
+    $('#tR').value = T; $('#tV').textContent = T + ' ℃';
+    if (g != null) { CV.set({ pt: { T, g } }); if (Q.get('run') === '1') { pred = 'left'; BK.jump(sub, T, g); const left = Math.max(0, g - SOL.solu(sub, T)); msg('결과 · 예측과 같아요', left > 0.5 ? `넣은 ${g} g이 용해도보다 많아서 약 <b>${Math.round(left)} g이 녹지 않고 남았어요</b>. 이 용액은 <b>포화 용액</b>이에요.` : '모두 녹았어요.', 'ok'); } }
+    paint();
+    window.SM.okUI = true;
+  } catch (err) { window.SM_err('고체의 용해도 곡선', err); }
+})();
+</script>
+<script>
+/* ===== 블록 2: 기체의 용해도 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S, Q = S.Q;
+    const SD = SOL.soda($('#soda'), { mode: 'temp' });
+    window.SD = SD;
+    const STEPS = [
+      { q: '① 탄산음료 시험관을 찬물과 뜨거운 물에 넣으면, 기포가 더 많이 생기는 쪽은?', opts: [['cold', '찬물'], ['hot', '뜨거운 물'], ['same', '같다']], ans: 'hot', run: '시험관을 비커에 넣기' },
+      { q: '② 탄산음료를 넣고 막은 주사기의 피스톤을 잡아당기면, 기포가 더 많이 생기는 때는?', opts: [['before', '당기기 전'], ['after', '잡아당긴 뒤'], ['same', '같다']], ans: 'after', run: '피스톤 잡아당기기' },
+    ];
+    let step = 0, pred = null, busy = false;
+    function msg(t, m, cls = '') { $('#resG').className = 'fbk ' + cls; $('#resGT').textContent = t; $('#resGM').innerHTML = m; }
+    function render() {
+      const s = STEPS[Math.min(step, 1)];
+      $$('#stG span').forEach((e, i) => { e.className = i < step ? 'ok' : i === step ? 'on' : ''; });
+      $('#qG').textContent = step > 1 ? '두 실험을 모두 마쳤어요' : s.q;
+      $('#predG').innerHTML = s.opts.map(([v, t]) => `<button type="button" data-v="${v}">${t}</button>`).join('');
+      $$('#predG button').forEach((b) => b.addEventListener('click', () => { if (busy || step > 1) return; pred = b.dataset.v; paint(); }));
+      $('#goG').textContent = step > 1 ? '실험 끝' : s.run;
+      paint();
+    }
+    function paint() { $$('#predG button').forEach((b) => { b.setAttribute('aria-pressed', String(b.dataset.v === pred)); b.disabled = busy || step > 1; }); $('#goG').disabled = busy || !pred || step > 1; }
+    function finish(i, html) {
+      const ok = pred === STEPS[i].ans;
+      $$('#predG button').forEach((b) => { b.classList.toggle('good', b.dataset.v === STEPS[i].ans); b.classList.toggle('bad', b.dataset.v === pred && !ok); b.disabled = true; });
+      msg(ok ? '결과 · 예측과 같아요' : '결과 · 예측과 달라요', html, ok ? 'ok' : 'no');
+      $('#goG').disabled = true;
+      if (i === 0) { $('#goG').textContent = '다음: 압력에 따라'; $('#goG').disabled = false; $('#goG').dataset.next = '1'; }
+      else { step = 2; $$('#stG span').forEach((e) => (e.className = 'ok')); }
+    }
+    $('#goG').addEventListener('click', () => {
+      if ($('#goG').dataset.next === '1') { delete $('#goG').dataset.next; step = 1; pred = null; SD.setMode('press'); render(); msg('결과', '주사기에 탄산음료를 넣고 입구를 고무마개로 막았어요. 예측을 고른 뒤 피스톤을 잡아당겨요.'); return; }
+      if (busy || !pred) return; busy = true; paint();
+      if (step === 0) { msg('결과', '시험관을 비커에 넣고 기포를 관찰하는 중이에요…'); SD.insert(() => { busy = false; finish(0, '<b>뜨거운 물</b>에 넣은 시험관에서 기포가 훨씬 많이 생겼어요. 온도가 높아지면 이산화 탄소의 <b>용해도가 작아져</b> 물에 녹지 못하고 빠져나와요.'); }); }
+      else { msg('결과', '피스톤을 잡아당기는 중이에요…'); SD.pull(true, () => { busy = false; finish(1, '피스톤을 <b>잡아당긴 뒤</b> 기포가 훨씬 많이 생겼어요. 압력이 작아지면 이산화 탄소의 <b>용해도가 작아져요</b>. 기체는 <b>온도가 높을수록, 압력이 작을수록</b> 용해도가 작아져요.'); }); }
+    });
+    window.GAS_RESET = () => { step = 0; pred = null; busy = false; delete $('#goG').dataset.next; SD.setMode('temp'); msg('결과', '예측을 고른 뒤 실험해요.'); render(); };
+    // 검사용: ?act=gas&g=1|2|3
+    const gq = +(Q.get('gs') || 0);
+    if (gq === 1) { pred = 'hot'; SD.st.ins = 1; SD.st.pt = 5; }
+    if (gq >= 2) { step = 1; SD.setMode('press'); }
+    if (gq === 3) { SD.st.pull = 1; }
+    render();
+    window.SM.okUI2 = true;
+  } catch (err) { window.SM_err('기체의 용해도', err); }
+})();
+</script>
+<script>
+/* ===== 블록 3: 활동 탭 · 칸 탭 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S;
+    function act(a) {
+      $$('#acts button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.a === a)));
+      $$('.act').forEach((e) => (e.hidden = e.dataset.a !== a));
+      $('#duo').hidden = a !== 'solid'; $('#soda').hidden = a !== 'gas';
+      $('#hint').textContent = a === 'solid' ? '그래프를 눌러도 온도를 바꿀 수 있어요' : '뜨거운 물을 다룰 때는 내열 장갑을 껴요';
+    }
+    $$('#acts button').forEach((b) => b.addEventListener('click', () => act(b.dataset.a)));
+    ['S', 'G'].forEach((k) => {
+      const box = $('#pt' + k).parentElement;
+      $$('#pt' + k + ' button').forEach((b) => b.addEventListener('click', () => { $$('#pt' + k + ' button').forEach((x) => x.setAttribute('aria-selected', String(x === b))); $$('.pane', box).forEach((e) => (e.hidden = e.dataset.p !== b.dataset.p)); }));
+    });
+    $('#bReset').addEventListener('click', () => { if ($('#soda').hidden) window.SOLID_RESET(); else window.GAS_RESET(); });
+    act(S.Q.get('act') === 'gas' ? 'gas' : 'solid');
+    if (S.Q.get('tab') === 'why') { const k = S.Q.get('act') === 'gas' ? 'G' : 'S'; $('#pt' + k + ' button[data-p="why"]').click(); }
+  } catch (err) { window.SM_err('탭', err); }
+})();
+</script>
+</body>
+</html>
