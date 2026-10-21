@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>용해도 – 스스로 정리하기</title>
+<!--@@PART:errbox_sum.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sum.css@@*/
+/*@@LOCAL:_css_sl.css@@*/
+  /* ===== 이 수업 전용 ===== */
+  :root{--violet:#0e63b3}
+  .pr.sel{border-color:#0e63b3;background:#eef5fc}
+  .wq{background:#eef5fc;color:#123a63}
+  .starters button{border-color:#9fbbd8;color:#0b3f73}
+  .si .two button{min-width:104px}
+  .si .two button[aria-pressed="true"]{border-color:#0e63b3;background:#e4f0fb;color:#0b3f73}
+  .fq{display:grid;gap:10px}
+  .fr{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;background:#f7fafc;border:2px solid transparent;border-radius:16px;padding:10px 12px 10px 16px}
+  .fr .nm{font-weight:800;font-size:16px;word-break:keep-all;line-height:1.5}
+  .fr .opt{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end}
+  .fr .opt button{min-height:48px;min-width:92px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15px;cursor:pointer}
+  .fr .opt button[aria-pressed="true"]{border-color:#0e63b3;background:#e4f0fb;color:#0b3f73}
+  .fr.good{border-color:#9fdcbb;background:#ecf8f1}.fr.bad{border-color:#f3c2bb;background:#fff4f2}
+  .gfig{border:1px solid var(--line);border-radius:16px;overflow:hidden;margin:0 0 12px;background:#fff}
+  .gfig .scene{aspect-ratio:1000/640}
+  .gfig .cap{font-size:13px;color:var(--muted);padding:6px 12px 8px;border-top:1px solid var(--line);word-break:keep-all}
+  .prompts{grid-template-columns:repeat(3,1fr)}
+  @media (max-width:860px){.prompts{grid-template-columns:1fr}.fr{grid-template-columns:1fr}.fr .opt{justify-content:flex-start}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <span class="eyebrow">용해도 · 스스로 정리하기</span>
+    <h1>용해도 정리하기</h1>
+    <p class="sub">용액에 대한 낱말을 맞추고, 용해도 곡선을 읽고, 용해도의 성질을 확인한 뒤, 내 말로 설명해 봐요.</p>
+  </header>
+  <nav class="tabs" id="tabs"></nav>
+
+  <section class="card" id="s1">
+    <h2><span class="no">1</span>낱말 맞추기</h2>
+    <p class="goal">설명을 읽고 알맞은 낱말을 골라요.</p>
+    <div class="fq" id="fq"></div>
+    <div class="acts"><button type="button" class="btn primary" id="chk1" disabled>확인하기</button></div>
+    <div class="fb" id="fb1"></div>
+  </section>
+
+  <section class="card" id="s2">
+    <h2><span class="no">2</span>용해도 곡선 읽기</h2>
+    <p class="goal">물질을 눌러 곡선을 보고, 물 100 g에 넣은 용질이 모두 녹을지, 일부가 남을지 골라요.</p>
+    <div class="gfig"><div class="scene" id="gS" role="img" aria-label="여러 가지 고체 물질의 용해도 곡선"></div><div class="cap" id="gCap">그래프를 눌러 온도를 바꿀 수 있어요. 교과서 그림 Ⅰ-6 값으로 그렸어요.</div></div>
+    <div class="sort" id="sort2"></div>
+    <div class="acts"><button type="button" class="btn primary" id="chk2" disabled>확인하기</button></div>
+    <div class="fb" id="fb2"></div>
+  </section>
+
+  <section class="card" id="s3">
+    <h2><span class="no">3</span>맞으면 O, 틀리면 X</h2>
+    <p class="goal">용해도와 기체의 용해도에 대한 문장을 읽고 O, X를 골라요.</p>
+    <div class="sort" id="sort3"></div>
+    <div class="acts"><button type="button" class="btn primary" id="chk3" disabled>확인하기</button></div>
+    <div class="fb" id="fb3"></div>
+  </section>
+
+  <section class="card" id="s4">
+    <h2><span class="no">4</span>내 말로 설명하기</h2>
+    <p class="goal">주제를 하나 골라 친구에게 설명하듯 써 봐요. 핵심어를 넣으면 초록색으로 바뀌어요.</p>
+    <div class="prompts" id="prompts"></div>
+    <div class="wq" id="wqText"></div>
+    <div class="starters" id="starters"></div>
+    <textarea id="txt" placeholder="여기에 써 보세요."></textarea>
+    <div class="wmeta"><span id="cnt">0자 · 목표 100자 이상</span><span id="saved"></span></div>
+    <div class="kw" id="kw"></div>
+    <div class="self" id="self"></div>
+    <div class="acts">
+      <button class="btn green" id="copyBtn" type="button">글 복사하기</button>
+      <button class="btn ghost" id="printBtn" type="button">인쇄 / PDF로 저장</button>
+    </div>
+    <p class="note" style="margin-top:10px">※ 글은 이 기기의 브라우저에만 임시로 저장되고 어디에도 보내지 않아요. 다 쓰면 '글 복사하기'로 복사해서 선생님이 안내한 곳에 붙여 넣으세요.</p>
+  </section>
+  <p class="credit" style="margin:20px 0 4px;text-align:center;font-size:13px;font-weight:700;color:#8495a8;letter-spacing:.02em">용해도 · 스스로 정리하기</p>
+</div>
+
+<script>
+/* ===== 공통 ===== */
+window.SW_CHECKS = [['ok1', '낱말 맞추기'], ['ok2', '곡선 읽기'], ['ok3', 'O X'], ['ok4', '글쓰기']];
+window.SW = {
+  $: (s, r = document) => r.querySelector(s),
+  $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
+  shuffle: (a) => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; },
+  fb: (id, ok, html) => { const f = document.querySelector(id); f.className = 'fb show ' + (ok ? 'ok' : 'no'); f.innerHTML = html; },
+  done: {},
+};
+(() => {
+  const { $, $$ } = window.SW;
+  const TABS = ['낱말 맞추기', '곡선 읽기', 'O X', '글쓰기'];
+  window.SW.renderTabs = () => {
+    $('#tabs').innerHTML = TABS.map((t, i) => `<button type="button" class="tab${window.SW.done[i + 1] ? ' done' : ''}" data-s="${i + 1}"><span class="n">${i + 1}</span>${t}</button>`).join('');
+    $$('#tabs .tab').forEach((b) => b.addEventListener('click', () => document.getElementById('s' + b.dataset.s).scrollIntoView({ behavior: 'smooth', block: 'start' })));
+  };
+  window.SW.finish = (n) => { window.SW.done[n] = true; window.SW.renderTabs(); };
+  window.SW.renderTabs();
+})();
+</script>
+<script>
+/*@@LOCAL:_sol.js@@*/
+</script>
+<script>
+/* ===== 블록 1: 낱말 맞추기 ===== */
+(() => {
+  'use strict';
+  try {
+    const { $, $$, fb, finish } = window.SW;
+    // [설명, 답, 선택지]
+    const ITEMS = [
+      ['설탕물에서 설탕처럼 녹는 물질', '용질', ['용질', '용매', '용액']],
+      ['설탕물에서 물처럼 녹이는 물질', '용매', ['용질', '용매', '용액']],
+      ['용질이 용매에 녹아 균일하게 섞인 것', '용액', ['용매', '용액', '용해도']],
+      ['어떤 온도에서 일정한 양의 용매에 용질이 최대로 녹아 있는 용액', '포화 용액', ['포화 용액', '불포화 용액', '용매']],
+      ['포화 용액보다 적은 양의 용질이 녹아 있는 용액', '불포화 용액', ['포화 용액', '불포화 용액', '용질']],
+      ['어떤 온도에서 용매 100 g에 최대로 녹을 수 있는 용질의 g 수', '용해도', ['밀도', '용해도', '용해도 곡선']],
+      ['온도에 따른 용해도 변화를 나타낸 그래프', '용해도 곡선', ['용해도', '용해도 곡선', '용액']],
+    ];
+    const pick = ITEMS.map(() => null);
+    $('#fq').innerHTML = ITEMS.map(([n, , op], i) => `<div class="fr" data-i="${i}"><div class="nm">${n}</div><div class="opt">${op.map((o) => `<button type="button" data-v="${o}" aria-pressed="false">${o}</button>`).join('')}</div></div>`).join('');
+    $$('#fq .fr').forEach((row) => { const i = +row.dataset.i; $$('button', row).forEach((b) => b.addEventListener('click', () => { pick[i] = b.dataset.v; row.classList.remove('good', 'bad'); $$('button', row).forEach((o) => o.setAttribute('aria-pressed', String(o === b))); $('#chk1').disabled = pick.some((v) => v === null); })); });
+    $('#chk1').addEventListener('click', () => {
+      let wrong = 0;
+      $$('#fq .fr').forEach((row) => { const i = +row.dataset.i, ok = pick[i] === ITEMS[i][1]; row.classList.toggle('good', ok); row.classList.toggle('bad', !ok); if (!ok) wrong++; });
+      if (!wrong) { fb('#fb1', true, '모두 맞았어요! <b>용질</b>이 <b>용매</b>에 녹아 <b>용액</b>이 되고, 최대로 녹아 있으면 <b>포화 용액</b>이에요. 그 최대의 양(용매 100 g 기준)이 <b>용해도</b>예요.'); finish(1); }
+      else fb('#fb1', false, `빨간 줄 ${wrong}개를 다시 골라 보세요. '녹는 것'과 '녹이는 것'을 구별해요.`);
+    });
+    window.SW.ok1 = true;
+  } catch (err) { window.SW_err('낱말 맞추기', err); }
+})();
+</script>
+<script>
+/* ===== 블록 2·3: 고르기 두 묶음 + 곡선 그림 ===== */
+(() => {
+  'use strict';
+  try {
+    const { $, $$, shuffle, fb, finish } = window.SW;
+    let cur = 'kno3';
+    const CV = SOL.curve($('#gS'), { sel: 'kno3', T: 20, step: 10, onT: (t) => ($('#gCap').textContent = `${t} ℃ · ${SOL.DATA[cur].name}의 용해도 ${SOL.label(cur, t)}`) });
+    function sorter(box, chk, fbId, n, items, labels, okMsg, noMsg, onPick) {
+      const list = shuffle(items.slice()), pick = list.map(() => null);
+      $(box).innerHTML = list.map((it, i) => `<div class="si" data-i="${i}"><p>${it[0]}</p><div class="two">${labels.map(([v, t]) => `<button type="button" data-v="${v}" aria-pressed="false">${t}</button>`).join('')}</div></div>`).join('');
+      $$(box + ' .si').forEach((row) => { const i = +row.dataset.i; row.addEventListener('click', () => onPick && onPick(list[i])); $$('button', row).forEach((b) => b.addEventListener('click', () => { pick[i] = b.dataset.v; row.classList.remove('good', 'bad'); $$('button', row).forEach((o) => o.setAttribute('aria-pressed', String(o === b))); $(chk).disabled = pick.some((p) => p === null); })); });
+      $(chk).addEventListener('click', () => {
+        let wrong = 0;
+        $$(box + ' .si').forEach((row) => { const i = +row.dataset.i, ok = pick[i] === list[i][1]; row.classList.toggle('good', ok); row.classList.toggle('bad', !ok); if (!ok) wrong++; });
+        if (!wrong) { fb(fbId, true, okMsg); finish(n); } else fb(fbId, false, noMsg(wrong));
+      });
+    }
+    // [문장, 답, 물질, 온도, 양]
+    sorter('#sort2', '#chk2', '#fb2', 2, [
+      ['20 ℃ 물 100 g에 질산 칼륨 20 g', 'a', 'kno3', 20, 20],
+      ['20 ℃ 물 100 g에 붕산 20 g', 'l', 'boric', 20, 20],
+      ['60 ℃ 물 100 g에 질산 칼륨 100 g', 'a', 'kno3', 60, 100],
+      ['10 ℃ 물 100 g에 질산 칼륨 30 g', 'l', 'kno3', 10, 30],
+      ['80 ℃ 물 100 g에 염화 나트륨 50 g', 'l', 'nacl', 80, 50],
+      ['40 ℃ 물 100 g에 질산 나트륨 80 g', 'a', 'nano3', 40, 80],
+    ], [['a', '모두 녹는다'], ['l', '일부가 남는다']],
+    '모두 맞았어요! 넣은 양이 그 온도의 <b>용해도보다 적으면 모두 녹고</b>, <b>많으면 용해도만큼만 녹고 나머지는 남아요</b>. 염화 나트륨은 온도를 높여도 용해도가 거의 커지지 않아요.',
+    (w) => `빨간 문장 ${w}개를 다시 보세요. 문장을 누르면 그래프에 그 물질과 온도, 넣은 양이 표시돼요.`,
+    (it) => { cur = it[2]; CV.set({ sel: it[2], T: it[3], pt: { T: it[3], g: it[4] } }); $('#gCap').textContent = `${it[3]} ℃ · ${SOL.DATA[it[2]].name}의 용해도 ${SOL.label(it[2], it[3])} · 넣은 양 ${it[4]} g`; });
+    sorter('#sort3', '#chk3', '#fb3', 3, [
+      ['용해도는 물질마다 다르므로 물질을 구별할 수 있는 물질의 특성이다.', 'o'],
+      ['용해도를 나타낼 때는 온도와 용매의 종류를 함께 표시해야 한다.', 'o'],
+      ['대부분의 고체 물질은 온도가 높을수록 용해도가 작아진다.', 'x'],
+      ['포화 용액에 같은 용질을 더 넣으면 더 녹는다.', 'x'],
+      ['탄산음료를 뜨거운 물에 넣으면 이산화 탄소의 용해도가 작아져 기포가 많이 생긴다.', 'o'],
+      ['기체는 압력이 작을수록 용해도가 커진다.', 'x'],
+      ['같은 온도, 같은 양의 물에 최대로 녹는 질산 칼륨과 붕산의 양은 같다.', 'x'],
+    ], [['o', 'O'], ['x', 'X']],
+    '모두 맞았어요! 용해도는 물질마다 다른 <b>물질의 특성</b>이에요. 고체는 대부분 <b>온도가 높을수록 용해도가 커지고</b>, 기체는 <b>온도가 높을수록, 압력이 작을수록 용해도가 작아져요</b>.',
+    (w) => `빨간 문장 ${w}개를 다시 읽어 보세요. 고체와 기체는 온도에 따라 반대로 달라져요.`);
+    window.SW.ok2 = true; window.SW.ok3 = true;
+  } catch (err) { window.SW_err('곡선 읽기 · O X', err); }
+})();
+</script>
+<script>
+/* ===== 블록 4: 글쓰기 (저장하지 않고 복사·인쇄만) ===== */
+(() => {
+  'use strict';
+  try {
+    const { $, $$, finish } = window.SW;
+    const PROMPTS = [
+      { t: '설탕과 소금', s: '스스로 평가', q: '같은 온도, 같은 양의 물에 설탕과 소금을 각각 녹일 때 설탕은 모두 녹고, 소금은 일부가 녹지 않았어요. 이 현상을 용해도로 설명해 보세요.', kw: ['용해도', '물질마다', '최대', '녹', '물질의 특성'], st: ['같은 양의 물에 녹을 수 있는 양은', '설탕은', '소금은'] },
+      { t: '질산 칼륨과 붕산', s: '탐구 정리', q: '탐구에서 질산 칼륨과 붕산이 실온의 물 10 g에 녹은 양을 비교하고, 온도를 바꾸었을 때 질산 칼륨이 어떻게 되었는지 설명해 보세요.', kw: ['질산 칼륨', '붕산', '온도', '용해도', '녹'], st: ['실온의 물 10 g에', '뜨거운 물에 넣었더니', '얼음물에 넣었더니'] },
+      { t: '기체를 더 많이 녹이려면', s: '친구에게 설명', q: '기체를 물에 녹일 때 더 많이 녹일 수 있는 방법은 무엇일까요? 탄산음료 실험을 예로 들어 설명해 보세요.', kw: ['온도', '압력', '용해도', '기포', '이산화 탄소'], st: ['탄산음료를 뜨거운 물에 넣으면', '피스톤을 잡아당기면', '그래서 기체를 더 많이 녹이려면'] },
+    ];
+    const SELF = [['측정', '#5a6b7e', '여러 가지 물질이 용해되는 양을 측정하여 비교할 수 있다.'], ['이해', '#0e63b3', '용해도가 물질의 특성임을 설명할 수 있다.']];
+    const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); return true; } catch (e) { return false; } } };
+    let pi = 0; const txt = $('#txt');
+    function renderPrompt() {
+      $('#prompts').innerHTML = PROMPTS.map((p, i) => `<button type="button" class="pr${i === pi ? ' sel' : ''}" data-i="${i}"><b>${p.t}</b><span>${p.s}</span></button>`).join('');
+      $$('#prompts .pr').forEach((b) => b.addEventListener('click', () => { pi = +b.dataset.i; renderPrompt(); }));
+      const p = PROMPTS[pi];
+      $('#wqText').textContent = p.q;
+      $('#starters').innerHTML = p.st.map((s) => `<button type="button">${s}</button>`).join('');
+      $$('#starters button').forEach((b) => b.addEventListener('click', () => { const add = (txt.value && !/[\s\n]$/.test(txt.value) ? ' ' : '') + b.textContent + ' '; txt.value += add; txt.focus(); onInput(); }));
+      txt.value = store.get('solubility-write-' + pi) || '';
+      onInput();
+    }
+    function onInput() {
+      const v = txt.value, p = PROMPTS[pi];
+      const ok = store.set('solubility-write-' + pi, v);
+      $('#saved').textContent = v ? (ok ? '이 기기에 임시 저장됨' : '') : '';
+      const n = v.replace(/\s/g, '').length, hit = p.kw.filter((k) => v.includes(k)).length;
+      $('#cnt').textContent = `${n}자 · 목표 100자 이상`;
+      $('#kw').innerHTML = p.kw.map((k) => `<span class="${v.includes(k) ? 'on' : ''}">${k}</span>`).join('');
+      if (n >= 100 && hit >= 3) finish(4);
+    }
+    txt.addEventListener('input', onInput);
+    $('#self').innerHTML = SELF.map(([c, col, t]) => `<label><input type="checkbox"><span class="cat" style="background:${col}">${c}</span>${t}</label>`).join('');
+    $('#copyBtn').addEventListener('click', async () => {
+      const out = `[${PROMPTS[pi].t}]\n${PROMPTS[pi].q}\n\n${txt.value}`;
+      try { await navigator.clipboard.writeText(out); $('#copyBtn').textContent = '복사했어요!'; }
+      catch (e) { txt.select(); try { document.execCommand('copy'); $('#copyBtn').textContent = '복사했어요!'; } catch (e2) { $('#copyBtn').textContent = '길게 눌러 직접 복사해 주세요'; } }
+      setTimeout(() => ($('#copyBtn').textContent = '글 복사하기'), 2200);
+    });
+    $('#printBtn').addEventListener('click', () => window.print());
+    renderPrompt();
+    window.SW.ok4 = true;
+  } catch (err) { window.SW_err('글쓰기', err); }
+})();
+</script>
+</body>
+</html>
