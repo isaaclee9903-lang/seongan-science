@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>밀도 차를 이용한 분리 – 생활 속 분리</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+/*@@LOCAL:_css_sep.css@@*/
+/*@@LOCAL:_css_sim.css@@*/
+  /* ===== 이 페이지 전용 ===== */
+  #wn{aspect-ratio:1000/600}
+  #bm{aspect-ratio:1000/620}
+  .act[hidden],.scene[hidden]{display:none!important}
+  .seg{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:#eef3f8;border-radius:14px;padding:4px}
+  .seg button{min-height:46px;border:0;border-radius:11px;background:transparent;font-weight:800;font-size:15px;color:var(--ink2);cursor:pointer}
+  .seg button[aria-pressed="true"]{background:#14263b;color:#fff}
+  .seg button:disabled{opacity:.4;cursor:default}
+  .opts{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+  .opts button{min-height:48px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:14.5px;cursor:pointer;line-height:1.3;word-break:keep-all;padding:4px 6px}
+  .opts button[aria-pressed="true"]{border-color:var(--fab);background:#e9f3fd;color:#0b3f73}
+  .opts button.good{border-color:var(--ok);background:#e8f7ef;color:#11703f}
+  .opts button.bad{border-color:#e7a29b;background:#fff4f2;color:#9b3a32}
+  .opts button:disabled{cursor:default}
+  .runrow{display:flex;gap:8px;margin-top:10px}
+  .runrow .btn{flex:1}
+  .cnt{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+  .cnt span{font-size:13.5px;font-weight:800;color:var(--ink2);background:#f2f6fa;border:1px solid var(--line);border-radius:10px;padding:5px 10px;font-variant-numeric:tabular-nums}
+  .cnt b{color:var(--fab)}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="ttl">
+      <span class="eyebrow">시뮬레이션</span><h1>생활 속 밀도 차를 이용한 분리</h1>
+      <p class="sub" id="sub">키질로 알곡과 검불을 나누고, 바다에 유출된 기름을 기름막이로 막아 봐요. (교과서 그림 Ⅰ-11)</p>
+    </div>
+    <div class="ptabs big" role="tablist" id="acts" style="margin:0">
+      <button type="button" role="tab" data-a="wn" aria-selected="true">① 키질하기</button>
+      <button type="button" role="tab" data-a="bm" aria-selected="false">② 기름막이 치기</button>
+    </div>
+  </header>
+
+  <div class="stage">
+    <section class="card viewer">
+      <div class="scene grow" id="wn" role="img" aria-label="키에 알곡과 검불, 티가 섞여 있다. 바람이 불 때 키를 까부르면 밀도가 작은 검불과 티는 바람에 날려 가고 알곡은 키로 다시 떨어진다."></div>
+      <div class="scene grow" id="bm" hidden role="img" aria-label="위에서 본 바다. 배에서 유출된 기름이 바닷물 위에 떠서 퍼진다. 기름막이를 치면 기름이 그 안에 모인다. 오른쪽 아래는 옆에서 자른 모습으로, 기름이 바닷물 위에 떠 있고 기름막이가 막고 있다."></div>
+      <div class="vctl">
+        <span class="hint" id="hint">키질은 여러 번 해야 잘 나뉘어요</span>
+        <span class="sp"></span>
+        <button class="vb" type="button" id="bReset">처음부터</button>
+      </div>
+    </section>
+
+    <section class="card pad">
+      <!-- 활동 ①: 키질 -->
+      <div class="act" data-a="wn">
+        <div class="ptabs" role="tablist" data-g="wn">
+          <button type="button" role="tab" data-p="lab" aria-selected="true">실험하기</button>
+          <button type="button" role="tab" data-p="why" aria-selected="false">왜 그럴까?</button>
+        </div>
+        <div class="pane" data-g="wn" data-p="lab">
+          <p class="what">수확한 말린 곡식에는 <b>알곡</b>과 <b>검불</b>, <b>티</b>가 섞여 있어요. 키로 까불러 나눠 봐요.</p>
+          <div class="lbl">① 바람</div>
+          <div class="seg" id="wind"><button type="button" data-v="1" aria-pressed="true">바람이 불 때</button><button type="button" data-v="0" aria-pressed="false">바람이 없을 때</button></div>
+          <div class="lbl">② 예측하기 · 키질하면 무엇이 날아갈까요?</div>
+          <div class="opts" id="wPred"><button type="button" data-v="grain">알곡</button><button type="button" data-v="chaff">검불·티</button><button type="button" data-v="both">둘 다</button></div>
+          <div class="runrow"><button class="btn primary" type="button" id="wGo" disabled>③ 키질하기</button></div>
+          <div class="cnt"><span>키에 남은 알곡 <b id="cG">70</b></span><span>키에 남은 검불·티 <b id="cC">56</b></span></div>
+          <div class="fbk" id="wRes"><b class="t" id="wResT">결과</b><span id="wResM">먼저 무엇이 날아갈지 예측해요.</span></div>
+        </div>
+        <div class="pane" data-g="wn" data-p="why" hidden>
+          <div class="phase">
+            <div class="ph on"><i>1</i><span>말린 곡식에는 알곡과 <b>검불</b>(마른 줄기·잎 부스러기), <b>티</b>(작은 부스러기)가 섞여 있어요.</span></div>
+            <div class="ph on"><i>2</i><span>키를 위로 까부르면 알곡과 검불이 함께 떠올라요.</span></div>
+            <div class="ph on"><i>3</i><span>검불과 티는 <b>알곡보다 밀도가 작아서</b> 바람에 날려 가고, 알곡은 키로 다시 떨어져요.</span></div>
+            <div class="ph on"><i>4</i><span>이처럼 <b>밀도 차를 이용해</b> 섞여 있는 알곡과 검불을 분리할 수 있어요.</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 활동 ②: 기름막이 -->
+      <div class="act" data-a="bm" hidden>
+        <div class="ptabs" role="tablist" data-g="bm">
+          <button type="button" role="tab" data-p="lab" aria-selected="true">실험하기</button>
+          <button type="button" role="tab" data-p="why" aria-selected="false">왜 그럴까?</button>
+        </div>
+        <div class="pane" data-g="bm" data-p="lab">
+          <div class="runrow" style="margin-top:0"><button class="btn primary" type="button" id="bSpill">① 기름이 바다에 유출됐어요</button></div>
+          <div class="lbl">② 예측하기 · 유출된 기름은 바닷물의 어디에 있을까요?</div>
+          <div class="opts" id="bPred"><button type="button" data-v="top" disabled>바닷물 위에 뜬다</button><button type="button" data-v="mix" disabled>바닷물과 고루 섞인다</button><button type="button" data-v="bot" disabled>바닥으로 가라앉는다</button></div>
+          <div class="lbl">③ 어떻게 할까요?</div>
+          <div class="seg" id="bDo"><button type="button" data-v="0" disabled aria-pressed="false">그대로 두기</button><button type="button" data-v="1" disabled aria-pressed="false">기름막이 치기</button></div>
+          <div class="fbk" id="bRes"><b class="t" id="bResT">결과</b><span id="bResM">배에서 기름이 새어 나왔어요. ①을 눌러 시작해요.</span></div>
+        </div>
+        <div class="pane" data-g="bm" data-p="why" hidden>
+          <div class="phase">
+            <div class="ph on"><i>1</i><span>바닷물에 기름이 유출되면 기름은 <b>바닷물과 섞이지 않아요</b>.</span></div>
+            <div class="ph on"><i>2</i><span>기름은 <b>바닷물보다 밀도가 작아서</b> 바닷물 위에 떠요.</span></div>
+            <div class="ph on"><i>3</i><span>그래서 기름 주위에 <b>기름막이</b>를 치면 기름이 넓게 퍼져 나가는 것을 막을 수 있어요.</span></div>
+            <div class="ph on"><i>4</i><span>기름막이 안에 모인 기름을 바닷물과 <b>분리</b>할 수 있어요.</span></div>
+          </div>
+        </div>
+      </div>
+      <p class="mnote" id="note">까부르는 세기, 바람의 세기, 날아가는 거리는 보기 좋게 정한 모형이에요.</p>
+    </section>
+  </div>
+</div>
+<script>
+window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
+  reduce: !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches), Q: new URLSearchParams(location.search) };
+</script>
+<script>
+/*@@LOCAL:_sep.js@@*/
+</script>
+<script>
+/* ===== 블록 1: 키질하기 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S, Q = S.Q;
+    const K = SEP.winnow($('#wn'));
+    window.WN = K;
+    let pred = null, judged = false, wind = true, tosses = 0;
+    function msg(t, m, cls = '') { $('#wRes').className = 'fbk ' + cls; $('#wResT').textContent = t; $('#wResM').innerHTML = m; }
+    function count() { const c = K.count(); $('#cG').textContent = c.grain; $('#cC').textContent = c.chaff + c.dust; return c; }
+    setInterval(count, 250);
+    $$('#wind button').forEach((b) => b.addEventListener('click', () => {
+      wind = b.dataset.v === '1'; K.setWind(wind);
+      $$('#wind button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+      msg('결과', wind ? '바람이 불어요. 키질해 봐요.' : '바람을 멈췄어요. 이번에도 검불이 날아갈까요? 키질해 봐요.');
+    }));
+    $$('#wPred button').forEach((b) => b.addEventListener('click', () => {
+      if (judged) return; pred = b.dataset.v;
+      $$('#wPred button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+      $('#wGo').disabled = false;
+      msg('결과', '예측했어요. <b>키질하기</b>를 여러 번 눌러 봐요.');
+    }));
+    $('#wGo').addEventListener('click', () => {
+      K.toss(); tosses++;
+      setTimeout(() => {
+        const c = count(), left = c.chaff + c.dust;
+        if (!wind) { msg('바람이 없을 때', `검불·티가 키로 <b>다시 떨어져요</b>. 바람이 없으면 알곡과 검불이 잘 나뉘지 않아요. (남은 검불·티 ${left}개)`, ''); return; }
+        if (!judged) {
+          judged = true;
+          $$('#wPred button').forEach((x) => { x.classList.toggle('good', x.dataset.v === 'chaff'); x.classList.toggle('bad', x.dataset.v === pred && pred !== 'chaff'); x.disabled = true; });
+          msg(pred === 'chaff' ? '결과 · 예측과 같아요' : '결과 · 예측과 달라요', '<b>검불과 티</b>가 바람에 날려 갔어요. 알곡은 키로 다시 떨어졌어요. 몇 번 더 키질해 봐요.', pred === 'chaff' ? 'ok' : 'no');
+          return;
+        }
+        if (left === 0) msg('결과 · 분리 완료', `키에 <b>알곡만</b> 남았어요(${tosses}번 키질). 검불과 티는 <b>알곡보다 밀도가 작아서</b> 바람에 날려 갔어요. <b>바람이 없을 때</b>도 해 봐요.`, 'ok');
+        else msg('결과', `키에 남은 검불·티가 ${left}개예요. 계속 키질해 봐요.`, 'ok');
+      }, S.reduce ? 50 : 1300);
+    });
+    window.WN_reset = () => { K.reset(); pred = null; judged = false; tosses = 0; $$('#wPred button').forEach((x) => { x.disabled = false; x.classList.remove('good', 'bad'); x.setAttribute('aria-pressed', 'false'); }); $('#wGo').disabled = true; msg('결과', '먼저 무엇이 날아갈지 예측해요.'); count(); };
+    // 검사용 주소: ?wp=chaff&toss=3
+    if (Q.get('wp')) { const b = $(`#wPred [data-v="${Q.get('wp')}"]`); b && b.click(); }
+    if (Q.get('toss')) { let n = +Q.get('toss'); const go = () => { if (n-- > 0) { $('#wGo').click(); setTimeout(go, 1500); } }; setTimeout(go, 300); }
+    window.SM.okUI = true;
+  } catch (err) { window.SM_err('키질하기', err); }
+})();
+</script>
+<script>
+/* ===== 블록 2: 기름막이 치기 · 탭 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S, Q = S.Q;
+    const B = SEP.boom($('#bm'), { section: false });
+    window.BM = B;
+    let pred = null, choice = null, tm = null;
+    function msg(t, m, cls = '') { $('#bRes').className = 'fbk ' + cls; $('#bResT').textContent = t; $('#bResM').innerHTML = m; }
+    $('#bSpill').addEventListener('click', () => {
+      B.spill(); $('#bSpill').disabled = true;
+      $$('#bPred button').forEach((x) => (x.disabled = false));
+      msg('결과', '기름이 바다로 흘러나와 퍼지기 시작했어요. 기름은 바닷물의 어디에 있을지 예측해요.');
+    });
+    $$('#bPred button').forEach((b) => b.addEventListener('click', () => {
+      if (pred) return; pred = b.dataset.v; const ok = pred === 'top';
+      $$('#bPred button').forEach((x) => { x.disabled = true; x.classList.toggle('good', x.dataset.v === 'top'); x.classList.toggle('bad', x === b && !ok); });
+      B.show(true);
+      $$('#bDo button').forEach((x) => (x.disabled = false));
+      msg(ok ? '결과 · 예측과 같아요' : '결과 · 예측과 달라요', '오른쪽 아래 <b>옆에서 자른 모습</b>을 봐요. 기름은 바닷물과 섞이지 않고, 바닷물보다 <b>밀도가 작아 바닷물 위에 떠요</b>. 이제 어떻게 할지 골라요.', ok ? 'ok' : 'no');
+    }));
+    $$('#bDo button').forEach((b) => b.addEventListener('click', () => {
+      if (choice !== null) return; choice = b.dataset.v === '1';
+      $$('#bDo button').forEach((x) => { x.setAttribute('aria-pressed', String(x === b)); x.disabled = true; });
+      B.go(choice);
+      msg('결과', choice ? '배 두 척이 기름 주위에 <b>기름막이</b>를 치는 중이에요…' : '기름을 그대로 두었어요. 시간이 흐르는 중이에요…');
+      clearInterval(tm);
+      tm = setInterval(() => {
+        if (!B.settled) return; clearInterval(tm);
+        if (choice) msg('결과 · 기름막이를 쳤을 때', '기름이 기름막이 안에 <b>모여</b> 더 퍼지지 않아요. 기름은 바닷물 위에 떠 있으므로, 물 위에 기름막이를 치면 기름을 바닷물과 <b>분리</b>할 수 있어요. <b>처음부터</b> 눌러 그대로 둘 때와 비교해 봐요.', 'ok');
+        else msg('결과 · 그대로 두었을 때', '기름이 바닷물 위로 <b>넓게 퍼져</b> 나갔어요. 넓게 퍼질수록 거두기 어려워요. <b>처음부터</b> 눌러 기름막이를 쳐 봐요.', 'no');
+      }, 300);
+    }));
+    window.BM_reset = () => { B.reset(); B.show(false); pred = null; choice = null; clearInterval(tm); $('#bSpill').disabled = false; $$('#bPred button').forEach((x) => { x.disabled = true; x.classList.remove('good', 'bad'); }); $$('#bDo button').forEach((x) => { x.disabled = true; x.setAttribute('aria-pressed', 'false'); }); msg('결과', '배에서 기름이 새어 나왔어요. ①을 눌러 시작해요.'); };
+    // 활동 탭
+    function act(a) {
+      $$('#acts button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.a === a)));
+      $$('.act').forEach((e) => (e.hidden = e.dataset.a !== a));
+      $('#wn').hidden = a !== 'wn'; $('#bm').hidden = a !== 'bm';
+      $('#hint').textContent = a === 'wn' ? '키질은 여러 번 해야 잘 나뉘어요' : '오른쪽 아래는 바다를 옆에서 자른 모습이에요';
+      $('#note').textContent = a === 'wn' ? '까부르는 세기, 바람의 세기, 날아가는 거리는 보기 좋게 정한 모형이에요.' : '기름이 퍼지는 빠르기와 넓이, 기름막이 모양은 보기 좋게 정한 모형이에요.';
+      window.dispatchEvent(new Event('resize'));
+    }
+    $$('#acts button').forEach((b) => b.addEventListener('click', () => act(b.dataset.a)));
+    $$('.ptabs[data-g]').forEach((g) => $$('button', g).forEach((b) => b.addEventListener('click', () => {
+      $$('button', g).forEach((x) => x.setAttribute('aria-selected', String(x === b)));
+      $$(`.pane[data-g="${g.dataset.g}"]`).forEach((p) => (p.hidden = p.dataset.p !== b.dataset.p));
+    })));
+    $('#bReset').addEventListener('click', () => { if (!$('#wn').hidden) window.WN_reset(); else window.BM_reset(); });
+    // 검사용 주소: ?act=bm&spill=1&pred=top&do=1 / ?tab=why
+    if (Q.get('act') === 'bm') act('bm');
+    if (Q.get('tab') === 'why') $$('.act:not([hidden]) .ptabs [data-p="why"]').forEach((b) => b.click());
+    if (Q.get('spill') === '1') $('#bSpill').click();
+    if (Q.get('pred')) { const b = $(`#bPred [data-v="${Q.get('pred')}"]`); b && b.click(); }
+    if (Q.get('do')) { const b = $(`#bDo [data-v="${Q.get('do')}"]`); b && b.click(); }
+  } catch (err) { window.SM_err('기름막이 치기', err); }
+})();
+</script>
+</body>
+</html>
