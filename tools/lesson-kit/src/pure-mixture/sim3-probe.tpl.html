@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>순물질과 혼합물 – 물질의 특성으로 분류하기</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<script src="https://cdn.jsdelivr.net/npm/matter-js@0.20.0/build/matter.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
+<style>
+/*@@PART:css_sim.css@@*/
+/*@@LOCAL:_css_mb.css@@*/
+/*@@LOCAL:_css_sim.css@@*/
+/*@@LOCAL:_css_mix.css@@*/
+  /* ===== 이 페이지 전용 ===== */
+  .pane .lbl{margin:8px 0 5px}
+  .pane .lbl:first-child{margin-top:0}
+  .fbk{margin-top:8px;padding:10px 12px}
+  .act[hidden]{display:none!important}
+  /* 활동 1: 기준표 */
+  .crit{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px;flex:1 1 auto;min-height:0}
+  .ctab{display:grid;grid-template-columns:minmax(0,1fr) 130px minmax(0,1fr);border-radius:16px;overflow:hidden;border:1px solid var(--line);align-self:start}
+  .ctab .hd{padding:10px;font-weight:900;font-size:16px;text-align:center;background:#f3f6f9;border-bottom:1px solid var(--line)}
+  .ctab .hd.p{color:#0b3f73;background:#e9f3fd}
+  .ctab .hd.m{color:#fff;background:#14263b}
+  .ctab .pr{display:grid;place-items:center;text-align:center;font-weight:900;font-size:15.5px;color:#34495e;background:#fafbfc;border-left:1px solid var(--line);border-right:1px solid var(--line);border-bottom:1px solid #e9eef3;line-height:1.3;padding:4px}
+  .ctab .cell{min-height:76px;padding:8px;border-bottom:1px solid #e9eef3;display:flex;align-items:center;justify-content:center;background:#fff;cursor:pointer}
+  .ctab .cell:empty::after{content:"여기에 놓기";font-size:13px;font-weight:700;color:#a3b0bd;border:1.5px dashed #cdd8e3;border-radius:10px;padding:14px 10px;width:100%;text-align:center}
+  .ctab .cell.hot:empty::after{border-color:#0e63b3;color:#0e63b3;background:#f2f8fe}
+  .bank{display:flex;flex-direction:column;gap:6px;align-content:flex-start;min-height:60px;padding:10px;border-radius:16px;background:#f3f6f9}
+  .bank .lbl{margin:0 0 4px}
+  .stc{display:block;width:100%;min-height:50px;padding:7px 12px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15px;line-height:1.35;text-align:left;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;word-break:keep-all}
+  .stc[aria-pressed="true"]{border-color:var(--fab);background:#e9f3fd;color:#0b3f73}
+  .stc.good{border-color:var(--ok);background:#e8f7ef;color:#11703f}
+  .stc.bad{border-color:#e7a29b;background:#fff4f2;color:#9b3a32}
+  .stc.ghost{opacity:.35}
+  .cell .stc{min-height:56px}
+  .critcard{display:flex;flex-direction:column;min-height:0;overflow:auto}
+  .critcard .acts{margin-top:8px}
+  /* 활동 2: 물질 조사 */
+  .subs{display:grid;grid-template-columns:repeat(6,1fr);gap:5px}
+  .subs button{min-height:48px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:14px;line-height:1.2;padding:2px;cursor:pointer;position:relative;word-break:keep-all}
+  .subs button[aria-pressed="true"]{border-color:var(--fab);background:#e9f3fd;color:#0b3f73}
+  .subs button.done::after{content:"";position:absolute;right:8px;top:8px;width:8px;height:8px;border-radius:50%;background:#0e63b3}
+  .note{border:1px solid #e3eaf1;border-radius:14px;padding:10px 12px;background:#fbfcfe}
+  .note .sk{display:block;width:100%;max-width:240px;height:auto;margin:0 auto 4px}
+  .note p{margin:0;font-size:14px;line-height:1.55;color:var(--ink2);word-break:keep-all}
+  .note p b{color:#14263b}
+  .note .src2{display:block;font-size:12px;color:var(--muted);margin-top:3px}
+  .note .btn{min-height:46px;width:100%;margin-bottom:6px}
+  .pick{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
+  .pick.four{grid-template-columns:repeat(4,1fr)}
+  .pick button{min-height:46px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:14.5px;cursor:pointer;line-height:1.2;word-break:keep-all;padding:2px 4px}
+  .pick button[aria-pressed="true"]{border-color:var(--fab);background:#e9f3fd;color:#0b3f73}
+  .pick button.good{border-color:var(--ok);background:#e8f7ef;color:#11703f}
+  .pick button.bad{border-color:#e7a29b;background:#fff4f2;color:#9b3a32}
+  @media (max-width:900px){.crit{grid-template-columns:1fr}.ctab{grid-template-columns:minmax(0,1fr) 96px minmax(0,1fr)}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="ttl">
+      <span class="eyebrow">탐구</span><h1>물질의 특성으로 분류하기</h1>
+      <p class="sub" id="sub">물질의 특성으로 순물질과 혼합물을 구별하는 기준을 세우고, 여러 물질을 조사해 분류해요.</p>
+    </div>
+    <div class="ptabs big" role="tablist" id="at">
+      <button type="button" role="tab" data-a="a1" aria-selected="true">활동 1 기준 세우기</button>
+      <button type="button" role="tab" data-a="a2" aria-selected="false">활동 2 물질 조사하기</button>
+    </div>
+  </header>
+
+  <!-- 활동 1 -->
+  <div class="stage act" id="a1" style="grid-template-columns:1fr">
+    <section class="card pad critcard">
+      <div class="crit">
+        <div>
+          <div class="lbl" style="margin-top:0">물질의 특성으로 순물질과 혼합물을 구별하는 기준을 표에 놓아요. 문장을 끌어다 놓거나, 누른 뒤 칸을 눌러요.</div>
+          <div class="ctab" id="ctab">
+            <div class="hd p">순물질</div><div class="hd">물질의 특성</div><div class="hd m">혼합물</div>
+            <div class="cell" data-c="p0"></div><div class="pr">밀도</div><div class="cell" data-c="m0"></div>
+            <div class="cell" data-c="p1"></div><div class="pr">용해도</div><div class="cell" data-c="m1"></div>
+            <div class="cell" data-c="p2"></div><div class="pr">녹는점<br>(어는점)</div><div class="cell" data-c="m2"></div>
+            <div class="cell" data-c="p3"></div><div class="pr">끓는점</div><div class="cell" data-c="m3"></div>
+          </div>
+        </div>
+        <div class="bank" id="bank"><div class="lbl">기준 문장</div></div>
+      </div>
+      <div class="acts"><button class="btn primary" type="button" id="chk1" disabled>확인하기</button><button class="btn ghost" type="button" id="re1">처음부터</button></div>
+      <div class="fbk" id="fb1"><b class="t">결과</b><span id="fb1m">물에 설탕을 섞으면 무엇이 달라질지 떠올리며 칸을 채워요. 모둠 토의로 세우는 기준의 한 예예요.</span></div>
+    </section>
+  </div>
+
+  <!-- 활동 2 -->
+  <div class="stage act" id="a2" hidden>
+    <section class="card viewer">
+      <div class="scene grow" id="smp" role="img" aria-label="고른 물질을 컵에 담은 그림과 입자 모형 돋보기. 순물질은 한 가지 입자, 혼합물은 여러 가지 입자가 보인다."></div>
+      <div class="vctl"><span class="hint" id="hint">모둠별로 한 가지를 골라 조사하고 발표해요</span><span class="sp"></span></div>
+    </section>
+    <section class="card pad">
+      <div class="pane">
+        <div class="lbl">① 조사할 물질 고르기 <small id="cnt2" style="color:var(--muted)">0/6</small></div>
+        <div class="subs" id="subs"></div>
+        <div class="lbl">② 조사 결과</div>
+        <div class="note" id="note"></div>
+        <div class="lbl">③ 순물질일까, 혼합물일까?</div>
+        <div class="pick" id="pk1"><button type="button" data-v="pure">순물질</button><button type="button" data-v="mix">혼합물</button></div>
+        <div class="lbl">④ 근거가 된 물질의 특성</div>
+        <div class="pick four" id="pk2"><button type="button" data-v="den">밀도</button><button type="button" data-v="sol">용해도</button><button type="button" data-v="mp">녹는점<br>(어는점)</button><button type="button" data-v="bp">끓는점</button></div>
+        <div class="fbk" id="fb2"><b class="t" id="fb2t">발표 문장</b><span id="fb2m">③과 ④를 고르면 발표 문장을 만들어 줘요.</span></div>
+      </div>
+    </section>
+  </div>
+</div>
+<script>
+window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
+  reduce: !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches), Q: new URLSearchParams(location.search) };
+</script>
+<script>
+/*@@LOCAL:_sol.js@@*/
+</script>
+<script>
+/*@@LOCAL:_mb.js@@*/
+</script>
+<script>
+/*@@LOCAL:_mix.js@@*/
+</script>
+<script>
+/* ===== 블록 1: 활동 1 기준 세우기 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S;
+    // [칸, 문장] 칸: p=순물질 m=혼합물, 0 밀도 1 용해도 2 녹는점(어는점) 3 끓는점
+    const CARDS = [
+      ['p0', '물질마다 일정한 밀도를 가진다'], ['m0', '섞인 물질의 양에 따라 밀도가 달라진다'],
+      ['p1', '같은 온도에서 용해도가 일정하다'], ['m1', '섞여 있는 물질에 따라 용해도가 달라진다'],
+      ['p2', '녹는(어는) 동안 온도가 일정하다'], ['m2', '녹는(어는) 동안 온도가 계속 변한다'],
+      ['p3', '끓는 동안 온도가 일정하다'], ['m3', '끓는 동안 온도가 계속 변한다'],
+    ];
+    let sel = null;
+    function build() {
+      const order = CARDS.map((c, i) => i).sort(() => Math.random() - 0.5);
+      $('#bank').innerHTML = '<div class="lbl">기준 문장</div>' + order.map((i) => `<button type="button" class="stc" data-k="${CARDS[i][0]}" aria-pressed="false">${CARDS[i][1]}</button>`).join('');
+      $$('.cell').forEach((c) => (c.innerHTML = '')); sel = null; upd();
+      $('#fb1').className = 'fbk'; $('#fb1m').textContent = '물에 설탕을 섞으면 무엇이 달라질지 떠올리며 칸을 채워요. 모둠 토의로 세우는 기준의 한 예예요.';
+    }
+    function upd() {
+      const full = $$('.cell').every((c) => c.querySelector('.stc'));
+      $('#chk1').disabled = !full;
+      $$('.cell').forEach((c) => c.classList.toggle('hot', !!sel));
+      $$('.stc').forEach((b) => b.setAttribute('aria-pressed', String(b === sel)));
+    }
+    function putIn(card, cell) {
+      const old = cell.querySelector('.stc'); if (old && old !== card) $('#bank').appendChild(old);
+      cell.appendChild(card); card.classList.remove('good', 'bad'); sel = null; upd();
+    }
+    document.addEventListener('click', (e) => {
+      const card = e.target.closest('.stc'), cell = e.target.closest('.cell');
+      if (card && !cell) { sel = sel === card ? null : card; upd(); return; }
+      if (cell) { if (sel) putIn(sel, cell); else if (card) { $('#bank').appendChild(card); upd(); } }
+    });
+    if (window.Sortable) {
+      const opt = { group: { name: 'crit', pull: true, put: (to) => !to.el.classList.contains('cell') || to.el.children.length < 1 }, animation: 150, ghostClass: 'ghost', forceFallback: true, fallbackTolerance: 6, draggable: '.stc',
+        onAdd: (e) => { e.item.classList.remove('good', 'bad'); sel = null; upd(); } };
+      Sortable.create($('#bank'), opt); $$('.cell').forEach((c) => Sortable.create(c, opt));
+    }
+    $('#chk1').addEventListener('click', () => {
+      let wrong = 0;
+      $$('.cell').forEach((c) => { const card = c.querySelector('.stc'), ok = card && card.dataset.k === c.dataset.c; if (card) { card.classList.toggle('good', ok); card.classList.toggle('bad', !ok); } if (!ok) wrong++; });
+      if (!wrong) { $('#fb1').className = 'fbk ok'; $('#fb1m').innerHTML = '순물질은 물질마다 <b>고유한 물질의 특성</b>을 가져서 밀도·용해도가 일정하고, 녹거나 끓는 동안 온도가 일정해요. 순물질이 섞여 <b>혼합물</b>이 되면 순물질이 가지고 있던 물질의 특성과 달라져요. 이제 <b>활동 2</b>에서 물질을 조사해 봐요.'; }
+      else { $('#fb1').className = 'fbk no'; $('#fb1m').innerHTML = `빨간 문장 ${wrong}개를 옮겨 봐요. 물(순물질)과 소금물(혼합물)이 끓을 때 온도가 어땠는지 떠올려요.`; }
+    });
+    $('#re1').addEventListener('click', build);
+    build();
+    if (S.Q.get('a1') === 'done') { CARDS.forEach(([k]) => { const card = $(`.stc[data-k="${k}"]`); $(`.cell[data-c="${k}"]`).appendChild(card); }); upd(); $('#chk1').click(); }
+    window.SM.okUI = true;
+  } catch (err) { window.SM_err('기준 세우기', err); }
+})();
+</script>
+<script>
+/* ===== 블록 2: 활동 2 물질 조사하기 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S, Q = S.Q;
+    const EV = { den: '밀도', sol: '용해도', mp: '녹는점(어는점)', bp: '끓는점' };
+    // 조사 결과. 숫자는 교과서 값(물 100 ℃·0 ℃, 염화 나트륨 802.0 ℃)만 씀
+    const DATA = {
+      soda: { name: '탄산음료', sk: 'soda_heat', ans: 'mix', ev: ['bp'],
+        fact: '물에 설탕, 이산화 탄소 등이 녹아 있어요. 가열하면 끓는 동안 온도가 <b>일정하지 않고 계속 올라가요</b>.',
+        say: '탄산음료는 끓는 동안 온도가 계속 변하므로 혼합물이에요.' },
+      milk: { name: '우유', sk: 'milk_heat', ans: 'mix', ev: ['bp'],
+        fact: '물에 여러 가지 물질이 섞여 있어요. 가열하면 끓는 동안 온도가 <b>일정하지 않고 계속 올라가요</b>.',
+        say: '우유는 끓는 동안 온도가 계속 변하므로 혼합물이에요.' },
+      antifreeze: { name: '부동액', sk: 'antifreeze_cool', ans: 'mix', ev: ['mp'],
+        fact: '겨울에 자동차 냉각수가 얼지 않도록 물에 다른 물질을 섞어 만들어요. 냉각하면 <b>0 ℃보다 훨씬 낮은 온도</b>에서 얼기 시작하고, 어는 동안 온도가 <b>계속 내려가요</b>.',
+        say: '부동액은 어는 동안 온도가 계속 변하므로 혼합물이에요.' },
+      nacl: { name: '염화 나트륨', sk: 'nacl_heat', ans: 'pure', ev: ['mp'],
+        fact: '흰 고체예요. 가열하면 <b>802.0 ℃</b>에서 녹기 시작하고, 녹는 동안 온도가 <b>일정해요</b>.', src: '녹는점: 교과서 그림 Ⅰ-9 값',
+        say: '염화 나트륨은 녹는 동안 온도가 802.0 ℃로 일정하므로 순물질이에요.' },
+      water: { name: '물', sk: 'water_heat', ans: 'pure', ev: ['bp', 'mp'],
+        fact: '1 기압에서 <b>100 ℃</b>에서 끓기 시작하고 끓는 동안 온도가 <b>일정해요</b>. <b>0 ℃</b>에서 얼고 어는 동안에도 온도가 일정해요.',
+        say: '물은 끓는점이 100 ℃, 어는점이 0 ℃로 일정하므로 순물질이에요.' },
+      muddy: { name: '흙탕물', settle: true, ans: 'mix', ev: ['den'],
+        fact: '컵을 가만히 두고 지켜봐요.',
+        fact2: '물보다 <b>밀도가 큰 흙</b>이 바닥에 가라앉고 위는 맑아졌어요. 물과 흙이 섞여 있어도 각자의 성질을 그대로 가지고 있어요.',
+        say: '흙탕물은 밀도가 다른 흙과 물이 섞여 있다가 흙이 가라앉으므로 혼합물이에요.' },
+    };
+    const ORDER = ['soda', 'milk', 'antifreeze', 'nacl', 'water', 'muddy'];
+    let cur = null, settled = false;
+    const pk = { cls: null, ev: null }, done = {};
+    const SMP = MIX.sample($('#smp'), { onSettled: () => { settled = true; note(); } });
+    window.SMP = SMP;
+    $('#subs').innerHTML = ORDER.map((id) => `<button type="button" data-id="${id}" aria-pressed="false">${DATA[id].name}</button>`).join('');
+    function note() {
+      const d = DATA[cur];
+      if (d.settle) $('#note').innerHTML = (settled ? '' : '<button class="btn primary" type="button" id="bSet">가만히 두기</button>') + `<p>${settled ? d.fact2 : d.fact}</p>`;
+      else $('#note').innerHTML = MIX.sketch(d.sk) + `<p>${d.fact}</p>` + (d.src ? `<span class="src2">${d.src}</span>` : '');
+      const b = $('#bSet'); if (b) b.addEventListener('click', () => { b.disabled = true; b.textContent = '가라앉는 중…'; SMP.settle(); });
+    }
+    function paint() {
+      $$('#subs button').forEach((b) => { b.setAttribute('aria-pressed', String(b.dataset.id === cur)); b.classList.toggle('done', !!done[b.dataset.id]); });
+      $$('#pk1 button').forEach((b) => { b.setAttribute('aria-pressed', String(b.dataset.v === pk.cls)); });
+      $$('#pk2 button').forEach((b) => { b.setAttribute('aria-pressed', String(b.dataset.v === pk.ev)); });
+      $('#cnt2').textContent = Object.keys(done).length + '/6';
+    }
+    function choose(id) {
+      cur = id; settled = false; pk.cls = null; pk.ev = null; SMP.set(id);
+      $$('.pick button').forEach((b) => b.classList.remove('good', 'bad'));
+      note(); paint();
+      $('#fb2').className = 'fbk'; $('#fb2t').textContent = '발표 문장'; $('#fb2m').textContent = DATA[id].settle ? '먼저 가만히 두기를 눌러 조사한 뒤 ③과 ④를 골라요.' : '조사 결과를 읽고 ③과 ④를 골라요.';
+    }
+    function check() {
+      if (!pk.cls || !pk.ev) return;
+      const d = DATA[cur], okC = pk.cls === d.ans, okE = d.ev.includes(pk.ev);
+      $$('#pk1 button').forEach((b) => { b.classList.toggle('good', b.dataset.v === pk.cls && okC); b.classList.toggle('bad', b.dataset.v === pk.cls && !okC); });
+      $$('#pk2 button').forEach((b) => { b.classList.toggle('good', b.dataset.v === pk.ev && okE); b.classList.toggle('bad', b.dataset.v === pk.ev && !okE); });
+      if (d.settle && !settled) { $('#fb2').className = 'fbk no'; $('#fb2t').textContent = '먼저 조사해요'; $('#fb2m').textContent = '가만히 두기를 눌러 흙탕물이 어떻게 되는지 본 뒤에 정해요.'; return; }
+      if (okC && okE) { done[cur] = true; $('#fb2').className = 'fbk ok'; $('#fb2t').textContent = '발표 문장 · ' + d.name; $('#fb2m').innerHTML = d.say + (Object.keys(done).length < 6 ? ' 다른 물질도 조사해 봐요.' : ' 여섯 물질을 모두 분류했어요.'); }
+      else if (!okC) { $('#fb2').className = 'fbk no'; $('#fb2t').textContent = '다시 생각해 봐요'; $('#fb2m').innerHTML = '조사 결과와 돋보기를 다시 봐요. 입자가 한 가지인지, 녹거나 끓는 동안 온도가 일정한지 살펴요.'; }
+      else { $('#fb2').className = 'fbk no'; $('#fb2t').textContent = '근거를 다시 골라 봐요'; $('#fb2m').innerHTML = `${d.name}의 조사 결과에서 쓴 물질의 특성은 <b>${EV[pk.ev]}</b>이 아니에요. 조사 결과 칸을 다시 읽어요.`; }
+      paint();
+    }
+    $$('#subs button').forEach((b) => b.addEventListener('click', () => choose(b.dataset.id)));
+    $$('#pk1 button').forEach((b) => b.addEventListener('click', () => { pk.cls = b.dataset.v; paint(); check(); }));
+    $$('#pk2 button').forEach((b) => b.addEventListener('click', () => { pk.ev = b.dataset.v; paint(); check(); }));
+    choose(Q.get('sel') || 'soda');
+    if (Q.get('settled') === '1') { settled = true; SMP.st.settle = 1; SMP.core.settle(1); note(); }
+    if (Q.get('ans') === '1') { pk.cls = DATA[cur].ans; pk.ev = DATA[cur].ev[0]; paint(); check(); }
+    window.SM.okUI = true;
+  } catch (err) { window.SM_err('물질 조사하기', err); }
+})();
+</script>
+<script>
+/* ===== 블록 3: 활동 탭 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S;
+    function act(a) { $$('#at button').forEach((x) => x.setAttribute('aria-selected', String(x.dataset.a === a))); $$('.act').forEach((e) => (e.hidden = e.id !== a)); }
+    $$('#at button').forEach((b) => b.addEventListener('click', () => act(b.dataset.a)));
+    if (S.Q.get('act')) act(S.Q.get('act'));
+  } catch (err) { window.SM_err('활동 탭', err); }
+})();
+</script>
+</body>
+</html>

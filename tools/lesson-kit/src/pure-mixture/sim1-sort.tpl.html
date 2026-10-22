@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>순물질과 혼합물 – 입자로 분류하기</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<script src="https://cdn.jsdelivr.net/npm/matter-js@0.20.0/build/matter.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
+<style>
+/*@@PART:css_sim.css@@*/
+/*@@LOCAL:_css_mb.css@@*/
+/*@@LOCAL:_css_sim.css@@*/
+/*@@LOCAL:_css_mix.css@@*/
+  /* ===== 이 페이지 전용 ===== */
+  .pane .lbl{margin:10px 0 6px}
+  .pane .lbl:first-child{margin-top:0}
+  .tray,.bin .drop{display:flex;flex-wrap:wrap;gap:6px;align-content:flex-start}
+  .tray{min-height:52px;padding:8px;border-radius:14px;background:#f3f6f9;border:1px dashed #cdd8e3}
+  .tray:empty::after{content:"모두 분류했어요";font-size:14px;font-weight:700;color:var(--muted);padding:10px 6px}
+  .chip{display:inline-flex;align-items:center;gap:6px;min-height:46px;padding:0 12px 0 8px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15.5px;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;word-break:keep-all}
+  .chip svg{flex:none;width:26px;height:26px}
+  .chip[aria-pressed="true"]{border-color:var(--fab);background:#e9f3fd;color:#0b3f73}
+  .chip.good{border-color:#bcd7f2}
+  .chip.bad{border-color:#e7a29b;background:#fff4f2;color:#9b3a32}
+  .chip.ghost{opacity:.35}
+  .chip.drag{box-shadow:0 8px 22px rgba(20,38,59,.22);transform:rotate(-2deg)}
+  .bins{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .bin{border-radius:14px;border:2px solid #d4dee8;background:#fff;padding:8px;display:flex;flex-direction:column;gap:6px;min-height:150px}
+  .bin h3{margin:0;font-size:15.5px;font-weight:900;display:flex;align-items:center;justify-content:space-between}
+  .bin h3 small{font-size:12.5px;color:var(--muted);font-weight:700}
+  .bin .drop{flex:1;min-height:96px;border-radius:10px;background:#f7fafc;padding:6px}
+  .bin.pure h3{color:#0b3f73}
+  .bin.mix h3{color:#14263b}
+  .bin .put{min-height:44px;border-radius:11px;border:0;background:#eef3f8;font-weight:800;font-size:14.5px;cursor:pointer;color:var(--ink2)}
+  .bin .put:disabled{opacity:.4;cursor:default}
+  .bin.pure .put:not(:disabled){background:#0e63b3;color:#fff}
+  .bin.mix .put:not(:disabled){background:#14263b;color:#fff}
+  .bins .chip{min-height:44px;font-size:14.5px}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="ttl">
+      <span class="eyebrow">시뮬레이션 ①</span><h1>입자로 분류하기</h1>
+      <p class="sub" id="sub">우리 주변 물질 8가지를 입자 모형으로 들여다보고 순물질과 혼합물로 나눠요. (교과서 그림 Ⅰ-10)</p>
+    </div>
+  </header>
+
+  <div class="stage">
+    <section class="card viewer">
+      <div class="scene grow" id="lens" role="img" aria-label="고른 물질을 크게 확대한 입자 모형. 한 가지 색 입자는 한 가지 물질을 나타낸다. 순물질은 한 가지 입자만, 혼합물은 여러 가지 입자가 섞여 있다."></div>
+      <div class="vctl">
+        <span class="hint" id="hint">한 가지 색 입자 = 한 가지 물질을 나타내는 모형이에요</span>
+        <span class="sp"></span>
+        <button class="vb" type="button" id="bReset">처음부터</button>
+      </div>
+    </section>
+
+    <section class="card pad">
+      <div class="ptabs" role="tablist" id="pt">
+        <button type="button" role="tab" data-p="lab" aria-selected="true">분류하기 <small id="cnt">0/8</small></button>
+        <button type="button" role="tab" data-p="why" aria-selected="false">왜 그럴까?</button>
+      </div>
+      <div class="pane" data-p="lab">
+        <div class="lbl">① 물질을 눌러 입자 모형을 봐요</div>
+        <div class="tray" id="tray"></div>
+        <div class="lbl">② 끌어다 놓거나, 고른 뒤 아래 단추를 눌러요</div>
+        <div class="bins">
+          <div class="bin pure"><h3>순물질 <small>한 가지 물질</small></h3><div class="drop" id="pure" data-bin="pure"></div><button class="put" type="button" data-bin="pure" disabled>순물질에 넣기</button></div>
+          <div class="bin mix"><h3>혼합물 <small>두 가지 이상</small></h3><div class="drop" id="mix" data-bin="mix"></div><button class="put" type="button" data-bin="mix" disabled>혼합물에 넣기</button></div>
+        </div>
+        <div class="fbk" id="res"><b class="t" id="resT">결과</b><span id="resM">먼저 물을 눌러 입자 모형을 봐요. 입자가 몇 가지 색인지 세어 보세요.</span></div>
+      </div>
+      <div class="pane" data-p="why" hidden>
+        <div class="phase">
+          <div class="ph on"><i>1</i><span>물이나 설탕처럼 다른 물질이 섞이지 않고 <b>한 가지 물질로만 이루어진 것</b>이 <b>순물질</b>이에요. 돋보기 속 입자가 한 가지뿐이에요.</span></div>
+          <div class="ph on"><i>2</i><span>설탕물처럼 <b>두 가지 이상의 순물질이 섞여 있는 것</b>이 <b>혼합물</b>이에요. 돋보기 속에 여러 가지 입자가 섞여 있어요.</span></div>
+          <div class="ph on"><i>3</i><span>설탕물은 물의 성질과 설탕의 단맛이 모두 나타나요. 혼합물은 섞여 있는 순물질이 <b>각각의 성질을 잃지 않고 그대로</b> 가지고 있어요.</span></div>
+          <div class="ph on"><i>4</i><span>물, 염화 나트륨, 이산화 탄소, 산소는 <b>순물질</b>이고, 과일주스, 바닷물, 공기, 암석은 몇 가지 순물질이 섞여 있는 <b>혼합물</b>이에요.</span></div>
+        </div>
+      </div>
+      <p class="mnote">입자 모형은 개념 이해를 위한 그림이에요. 입자의 크기·수·빠르기와 섞인 양은 실제와 달라요. 입자의 움직임은 Matter.js(MIT 라이선스)로 계산했어요.</p>
+    </section>
+  </div>
+</div>
+<script>
+window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
+  reduce: !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches), Q: new URLSearchParams(location.search) };
+</script>
+<script>
+/*@@LOCAL:_sol.js@@*/
+</script>
+<script>
+/*@@LOCAL:_mb.js@@*/
+</script>
+<script>
+/*@@LOCAL:_mix.js@@*/
+</script>
+<script>
+/* ===== 블록 1: 입자로 분류하기 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S, Q = S.Q;
+    // 교과서 그림 Ⅰ-10의 물질 8가지. 아이콘은 선 그림
+    const ITEMS = [
+      { id: 'air', ans: 'mix', why: '여러 가지 기체가 섞여 있어요. 산소와 이산화 탄소도 공기 속에 들어 있어요.', ic: '<path d="M4 10h11a3 3 0 1 0-3-3M4 14h14a3 3 0 1 1-3 3M4 18h6"/>' },
+      { id: 'oxygen', ans: 'pure', why: '산소 입자 한 가지만 있어요.', ic: '<circle cx="12" cy="12" r="6.5"/><path d="M9.5 9.5a3 3 0 0 1 2.5-1.2"/>' },
+      { id: 'co2', ans: 'pure', why: '이산화 탄소 입자 한 가지만 있어요.', ic: '<circle cx="8" cy="12" r="3.6"/><circle cx="16" cy="12" r="3.6"/>' },
+      { id: 'rock', ans: 'mix', why: '서로 다른 광물 알갱이가 섞여 있어요.', ic: '<path d="M3 17l3-6 4-2 3 2 4-1 4 7z"/><path d="M10 9l1 4 6 4M6 11l4 2"/>' },
+      { id: 'seawater', ans: 'mix', why: '물에 염화 나트륨과 다른 물질이 섞여 있어요.', ic: '<path d="M3 15c2 0 2-2 4.5-2S10 15 12 15s2.5-2 4.5-2 2.5 2 4.5 2M3 19c2 0 2-2 4.5-2S10 19 12 19s2.5-2 4.5-2 2.5 2 4.5 2"/><path d="M7 11c0-4 4-6 8-5-2 1-3 3-2 5"/>' },
+      { id: 'nacl', ans: 'pure', why: '염화 나트륨 입자 한 가지가 규칙적으로 쌓여 있어요.', ic: '<path d="M8 4h8l1 4H7z"/><rect x="6" y="8" width="12" height="12" rx="2"/><path d="M10 6h.01M14 6h.01M12 6h.01"/>' },
+      { id: 'juice', ans: 'mix', why: '물에 설탕과 여러 가지 물질이 섞여 있어요.', ic: '<path d="M6 7h12l-1.5 13h-9z"/><path d="M13 7l3-4"/><circle cx="11" cy="14" r="2.5"/>' },
+      { id: 'water', ans: 'pure', why: '물 입자 한 가지만 있어요.', ic: '<path d="M12 3c3 4 6 7.5 6 11a6 6 0 0 1-12 0c0-3.5 3-7 6-11z"/>' },
+    ];
+    const NAME = (id) => MIX.SUBS[id].name, STATE = { gas: '기체', liq: '액체', sol: '고체' };
+    let cur = null;
+    const placed = {};
+    const L = MIX.lens($('#lens'), { W: 1000, H: 640, cx: 640, cy: 320, R: 290, legend: [70, 300], onDraw: (ctx, ov) => {
+      const s = L && L.sub;
+      if (!s) { ov.hide('nm'); ov.hide('stt'); ov.hide('vd'); return; }
+      ov.put('nm', 70, 120, s.name, 'tx big2 ra');
+      const n = new Set(s.parts.map((p) => p[0])).size;
+      ov.put('stt', 70, 168, `${STATE[s.st]} · 입자 <b>${n}가지</b>`, 'tx dn ra');
+      const p = placed[cur];
+      if (p) ov.put('vd', 70, 214, p === 'pure' ? '<span class="verdict pure">순물질</span>' : '<span class="verdict mix">혼합물</span>', 'tx ra'); else ov.hide('vd');
+    } });
+    window.LENS = L;
+    const chipHTML = (it) => `<button type="button" class="chip" data-id="${it.id}" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="#0e63b3" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${it.ic}</svg>${NAME(it.id)}</button>`;
+    function msg(t, m, cls = '') { $('#res').className = 'fbk ' + cls; $('#resT').textContent = t; $('#resM').innerHTML = m; }
+    function select(id) {
+      cur = id; L.set(id);
+      $$('.chip').forEach((c) => c.setAttribute('aria-pressed', String(c.dataset.id === id)));
+      $$('.put').forEach((b) => (b.disabled = !id));
+      if (!placed[id]) msg(NAME(id), `입자가 몇 가지인지 세어 보고 순물질인지 혼합물인지 정해요.`);
+    }
+    function place(id, bin, chipEl) {
+      const it = ITEMS.find((x) => x.id === id), ok = it.ans === bin;
+      placed[id] = bin;
+      const el = chipEl || $(`.chip[data-id="${id}"]`);
+      if (el.parentElement !== $('#' + bin)) $('#' + bin).appendChild(el);
+      el.classList.toggle('good', ok); el.classList.toggle('bad', !ok);
+      select(id);
+      const nOk = ITEMS.filter((x) => placed[x.id] === x.ans).length;
+      $('#cnt').textContent = nOk + '/8';
+      if (!ok) msg('다시 생각해 봐요 · ' + NAME(id), `돋보기 속 입자가 <b>${new Set(MIX.SUBS[id].parts.map((p) => p[0])).size}가지</b>예요. ${bin === 'pure' ? '여러 가지 물질이 섞여 있으면 혼합물이에요.' : '한 가지 물질로만 이루어져 있으면 순물질이에요.'} 빨간 칸을 다시 옮겨요.`, 'no');
+      else if (nOk === 8) msg('모두 분류했어요', '물, 염화 나트륨, 이산화 탄소, 산소는 한 가지 물질로만 이루어진 <b>순물질</b>, 과일주스, 바닷물, 공기, 암석은 몇 가지 순물질이 섞여 있는 <b>혼합물</b>이에요.', 'ok');
+      else msg('맞아요 · ' + NAME(id), `${it.why} 그래서 <b>${bin === 'pure' ? '순물질' : '혼합물'}</b>이에요. 남은 물질도 눌러 봐요.`, 'ok');
+    }
+    function build() {
+      $('#tray').innerHTML = ITEMS.map(chipHTML).join(''); $('#pure').innerHTML = ''; $('#mix').innerHTML = '';
+      Object.keys(placed).forEach((k) => delete placed[k]); cur = null; $('#cnt').textContent = '0/8';
+      $$('.put').forEach((b) => (b.disabled = true));
+    }
+    build();
+    // 누르기: 고르기 (끌기와 같이 써도 되도록 이벤트 위임)
+    document.addEventListener('click', (e) => { const c = e.target.closest('.chip'); if (c) select(c.dataset.id); });
+    $$('.put').forEach((b) => b.addEventListener('click', () => { if (cur) place(cur, b.dataset.bin); }));
+    // 끌어다 놓기: SortableJS (MIT). 불러오지 못하면 누르기 방식만 씀
+    if (window.Sortable) {
+      const opt = { group: 'subs', animation: 160, ghostClass: 'ghost', dragClass: 'drag', forceFallback: true, fallbackTolerance: 6,
+        onStart: (e) => select(e.item.dataset.id),
+        onAdd: (e) => { const bin = e.to.dataset.bin; if (bin) place(e.item.dataset.id, bin, e.item); else { delete placed[e.item.dataset.id]; e.item.classList.remove('good', 'bad'); } } };
+      ['#tray', '#pure', '#mix'].forEach((s) => Sortable.create($(s), opt));
+    } else $('#hint').textContent = '물질을 고른 뒤 아래 단추로 넣어요';
+    $('#bReset').addEventListener('click', () => { build(); L.set('water'); cur = null; msg('결과', '먼저 물을 눌러 입자 모형을 봐요. 입자가 몇 가지 색인지 세어 보세요.'); });
+    L.set('water');
+    // 검사용 주소: ?sel=air  /  ?all=1
+    if (Q.get('all') === '1') ITEMS.forEach((it) => place(it.id, it.ans));
+    if (Q.get('sel')) select(Q.get('sel'));
+    if (Q.get('bad')) place(Q.get('bad'), ITEMS.find((x) => x.id === Q.get('bad')).ans === 'pure' ? 'mix' : 'pure');
+    window.SM.okUI = true;
+  } catch (err) { window.SM_err('입자로 분류하기', err); }
+})();
+</script>
+<script>
+/* ===== 블록 2: 칸 탭 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S;
+    function tab(p) { $$('#pt button').forEach((x) => x.setAttribute('aria-selected', String(x.dataset.p === p))); $$('.pane').forEach((e) => (e.hidden = e.dataset.p !== p)); }
+    $$('#pt button').forEach((b) => b.addEventListener('click', () => tab(b.dataset.p)));
+    if (S.Q.get('tab')) tab(S.Q.get('tab'));
+  } catch (err) { window.SM_err('탭', err); }
+})();
+</script>
+</body>
+</html>

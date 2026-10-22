@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>순물질과 혼합물 – 물과 소금물 실험실</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+/*@@LOCAL:_css_mb.css@@*/
+/*@@LOCAL:_css_sim.css@@*/
+/*@@LOCAL:_css_mix.css@@*/
+  /* ===== 이 페이지 전용 ===== */
+  .pane .lbl{margin:8px 0 5px}
+  .pane .lbl:first-child{margin-top:0}
+  .ptabs{margin-bottom:8px}
+  .fbk{margin-top:8px;padding:10px 12px}
+  .modes{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .modes button{min-height:54px;border-radius:14px;border:2px solid #d4dee8;background:#fff;font-weight:900;font-size:15.5px;cursor:pointer;padding:4px 8px;word-break:keep-all;line-height:1.25;position:relative}
+  .modes button small{display:block;font-size:13px;font-weight:700;color:var(--muted)}
+  .modes button[aria-pressed="true"]{border-color:var(--fab);background:#e9f3fd;color:#0b3f73}
+  .modes button.done::after{content:"";position:absolute;right:10px;top:10px;width:9px;height:9px;border-radius:50%;background:#0e63b3}
+  .modes button:disabled{opacity:.45;cursor:default}
+  .runrow{display:flex;gap:8px;margin-top:8px}
+  .runrow .btn{flex:1;min-height:52px}
+  .rec{width:100%;border-collapse:collapse;margin-top:8px;font-size:14px}
+  .rec th,.rec td{padding:6px 4px;border-bottom:1px solid #e3eaf1;text-align:center;word-break:keep-all;line-height:1.35}
+  .rec thead th{font-size:12.5px;color:var(--muted);font-weight:800}
+  .rec td:first-child,.rec th:first-child{text-align:left;font-weight:800;color:var(--ink);font-size:13.5px}
+  .rec td.v{font-weight:800;color:var(--ink)}
+  .rec tr.hide{display:none}
+  .qrow{border:1px solid #e3eaf1;border-radius:14px;padding:9px 12px;margin-top:7px;background:#fbfcfe}
+  .qrow p{margin:0 0 7px;font-size:15px;font-weight:800;line-height:1.45;word-break:keep-all;color:var(--ink)}
+  .qrow .two2{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .qrow button{min-height:44px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15px;cursor:pointer}
+  .qrow button[aria-pressed="true"]{border-color:var(--fab);background:#e9f3fd;color:#0b3f73}
+  .qrow button.good{border-color:var(--ok);background:#e8f7ef;color:#11703f}
+  .qrow button.bad{border-color:#e7a29b;background:#fff4f2;color:#9b3a32}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="ttl">
+      <span class="eyebrow">시뮬레이션 ②</span><h1>물과 소금물 실험실</h1>
+      <p class="sub" id="sub">같은 양의 물과 소금물을 가열하고, 냉각하면서 온도 변화를 그래프로 그려요. (교과서 해보기)</p>
+    </div>
+  </header>
+
+  <div class="stage">
+    <section class="card viewer">
+      <div class="scene grow" id="lab" role="img" aria-label="왼쪽에 실험 장치, 오른쪽에 온도-시간 그래프. 가열할 때는 핫플레이트 위 물과 소금물 비커에 디지털 온도계를 꽂고, 냉각할 때는 얼음이 든 그릇에 두 비커를 넣는다. 물은 끓는 동안 100 ℃, 어는 동안 0 ℃로 온도가 일정하고, 소금물은 끓거나 어는 동안 온도가 계속 변한다."></div>
+      <div class="vctl">
+        <span class="hint" id="hint">두 비커에는 같은 양의 물과 소금물이 들어 있어요</span>
+        <span class="sp"></span>
+        <button class="vb" type="button" id="bReset">처음부터</button>
+      </div>
+    </section>
+
+    <section class="card pad">
+      <div class="ptabs" role="tablist" id="pt">
+        <button type="button" role="tab" data-p="lab" aria-selected="true">실험하기</button>
+        <button type="button" role="tab" data-p="sum" aria-selected="false">정리하기 <small id="sumBadge">0/2</small></button>
+        <button type="button" role="tab" data-p="why" aria-selected="false">왜 그럴까?</button>
+      </div>
+      <div class="pane" data-p="lab">
+        <div class="lbl">① 고르기 · 두 가지를 모두 해 봐요</div>
+        <div class="modes" id="modes">
+          <button type="button" data-m="heat" aria-pressed="true">가열할 때<small>핫플레이트로 가열</small></button>
+          <button type="button" data-m="cool" aria-pressed="false">냉각할 때<small>얼음 속에 넣어 냉각</small></button>
+        </div>
+        <div class="runrow"><button class="btn primary" type="button" id="run">② 가열하면서 온도 재기</button></div>
+        <div class="fbk" id="res"><b class="t" id="resT">결과</b><span id="resM">물과 소금물 가운데 어느 쪽이 더 높은 온도에서 끓기 시작할까요? 예상하고 가열해 봐요.</span>
+          <table class="rec" aria-label="물과 소금물의 온도 변화 기록">
+            <thead><tr><th></th><th>물</th><th>소금물</th></tr></thead>
+            <tbody>
+              <tr id="rH1"><td>끓기 시작하는 온도</td><td class="v" id="h1w">-</td><td class="v" id="h1s">-</td></tr>
+              <tr id="rH2"><td>끓는 동안 온도</td><td class="v" id="h2w">-</td><td class="v" id="h2s">-</td></tr>
+              <tr id="rC1"><td>얼기 시작하는 온도</td><td class="v" id="c1w">-</td><td class="v" id="c1s">-</td></tr>
+              <tr id="rC2"><td>어는 동안 온도</td><td class="v" id="c2w">-</td><td class="v" id="c2s">-</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="pane" data-p="sum" hidden>
+        <div class="lbl">그래프를 보고 답해요 (교과서 해보기 1~3)</div>
+        <div class="qrow" data-q="0"><p>1. 더 높은 온도에서 끓기 시작하는 것은?</p><div class="two2"><button type="button" data-v="w">물</button><button type="button" data-v="s">소금물</button></div></div>
+        <div class="qrow" data-q="1"><p>1. 끓는 동안 온도가 일정하게 유지되는 것은?</p><div class="two2"><button type="button" data-v="w">물</button><button type="button" data-v="s">소금물</button></div></div>
+        <div class="qrow" data-q="2"><p>2. 어는 동안 온도가 계속 내려가는 것은?</p><div class="two2"><button type="button" data-v="w">물</button><button type="button" data-v="s">소금물</button></div></div>
+        <div class="qrow" data-q="3"><p>3. 끓는점과 어는점으로 물과 소금물을 구별할 수 있을까?</p><div class="two2"><button type="button" data-v="y">구별할 수 있다</button><button type="button" data-v="n">구별할 수 없다</button></div></div>
+        <div class="fbk" id="sumRes"><b class="t">정리</b><span id="sumM">네 질문에 모두 답하면 확인해 줘요.</span></div>
+      </div>
+      <div class="pane" data-p="why" hidden>
+        <div class="phase">
+          <div class="ph on"><i>1</i><span>1 기압에서 <b>물</b>은 끓는 동안 <b>100 ℃</b>, 어는 동안 <b>0 ℃</b>로 온도가 일정해요. 물은 순물질이라서 끓는점과 어는점이 일정해요.</span></div>
+          <div class="ph on"><i>2</i><span><b>소금물</b>은 물에 염화 나트륨이 섞인 <b>혼합물</b>이에요. 물보다 높은 온도에서 끓기 시작하고, 물보다 낮은 온도에서 얼기 시작해요.</span></div>
+          <div class="ph on"><i>3</i><span>소금물은 <b>끓거나 어는 동안 온도가 계속 변해요</b>. 그래프가 평평해지지 않고 계속 기울어져 있어요.</span></div>
+          <div class="ph on"><i>4</i><span>순물질이 섞여 혼합물이 되면 순물질이 가지고 있던 물질의 특성과 달라져요. 그래서 <b>물질의 특성을 이용하면 순물질과 혼합물을 구별할 수 있어요</b>.</span></div>
+        </div>
+      </div>
+      <p class="mnote">1 기압으로 보고, 교과서 그래프 모양을 따라 그렸어요. 가열·냉각 시간과 기포·얼음 모양은 보기 좋게 정한 모형이에요. 11초 동안 실험 전체를 줄여 보여 줘요.</p>
+    </section>
+  </div>
+</div>
+<script>
+window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
+  reduce: !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches), Q: new URLSearchParams(location.search) };
+</script>
+<script>
+/*@@LOCAL:_sol.js@@*/
+</script>
+<script>
+/*@@LOCAL:_mb.js@@*/
+</script>
+<script>
+/*@@LOCAL:_mix.js@@*/
+</script>
+<script>
+/* ===== 블록 1: 실험 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S, Q = S.Q;
+    const LAB = MIX.ws($('#lab'));
+    window.LAB = LAB;
+    const C = LAB.CURVE, done = {};
+    let mode = 'heat', busy = false, told = { w: false, s: false };
+    function msg(t, m, cls = '') { $('#res').className = 'fbk ' + cls; $('#resT').textContent = t; $('#resM').innerHTML = m; }
+    const START = { heat: '물과 소금물 가운데 어느 쪽이 더 높은 온도에서 끓기 시작할까요? 예상하고 가열해 봐요.', cool: '물과 소금물 가운데 어느 쪽이 더 낮은 온도에서 얼기 시작할까요? 예상하고 냉각해 봐요.' };
+    function paint() {
+      $$('#modes button').forEach((b) => { b.setAttribute('aria-pressed', String(b.dataset.m === mode)); b.disabled = busy; b.classList.toggle('done', !!done[b.dataset.m]); });
+      $('#run').disabled = busy;
+      const verb = mode === 'heat' ? '가열' : '냉각';
+      $('#run').textContent = busy ? `${verb}하는 중…` : done[mode] ? `다시 ${verb}하기` : `② ${verb}하면서 온도 재기`;
+      $('#sumBadge').textContent = Object.keys(done).length + '/2';
+      $('#hint').textContent = mode === 'heat' ? '두 비커에는 같은 양의 물과 소금물이 들어 있어요' : '얼음이 든 그릇에 두 비커를 함께 넣었어요';
+    }
+    function record(m) {
+      done[m] = true;
+      if (m === 'heat') { $('#h1w').textContent = '100.0 ℃'; $('#h1s').textContent = '100 ℃보다 높다'; $('#h2w').textContent = '일정하다'; $('#h2s').textContent = '계속 올라간다'; }
+      else { $('#c1w').textContent = '0.0 ℃'; $('#c1s').textContent = '0 ℃보다 낮다'; $('#c2w').textContent = '일정하다'; $('#c2s').textContent = '계속 내려간다'; }
+    }
+    function setMode(m) { mode = m; LAB.set(m); told = { w: false, s: false }; msg('결과', START[m]); paint(); }
+    $$('#modes button').forEach((b) => b.addEventListener('click', () => { if (!busy) setMode(b.dataset.m); }));
+    $('#run').addEventListener('click', () => {
+      if (busy) return; busy = true; told = { w: false, s: false }; LAB.set(mode); paint();
+      const m = mode, heat = m === 'heat';
+      msg('결과', heat ? '가열하는 중이에요. 두 그래프가 어디에서 꺾이는지 지켜봐요.' : '냉각하는 중이에요. 두 그래프가 어디에서 꺾이는지 지켜봐요.');
+      LAB.start(() => {
+        busy = false; record(m);
+        msg('결과 · ' + (heat ? '가열할 때' : '냉각할 때'), heat
+          ? '물은 <b>100 ℃</b>에서 끓기 시작한 뒤 온도가 <b>일정</b>했어요. 소금물은 100 ℃보다 높은 온도에서 끓기 시작했고, 끓는 동안에도 온도가 <b>계속 올라갔어요</b>.' + (done.cool ? ' <b>정리하기</b> 칸에서 답해 봐요.' : ' 이제 <b>냉각할 때</b>도 해 봐요.')
+          : '물은 <b>0 ℃</b>에서 얼기 시작한 뒤 온도가 <b>일정</b>했어요. 소금물은 0 ℃보다 낮은 온도에서 얼기 시작했고, 어는 동안에도 온도가 <b>계속 내려갔어요</b>.' + (done.heat ? ' <b>정리하기</b> 칸에서 답해 봐요.' : ' 이제 <b>가열할 때</b>도 해 봐요.'), 'ok');
+        paint();
+      }, (u) => {
+        if (!told.w && u >= C[m].kw) { told.w = true; msg('결과', heat ? '물이 <b>끓기 시작했어요</b>. 계속 가열해도 물의 온도는 더 오르지 않아요.' : '물이 <b>얼기 시작했어요</b>. 계속 냉각해도 물의 온도는 더 내려가지 않아요.'); }
+        if (!told.s && u >= C[m].ks) { told.s = true; msg('결과', heat ? '소금물도 끓기 시작했어요. 소금물의 온도는 어떻게 되나요?' : '소금물도 얼기 시작했어요. 소금물의 온도는 어떻게 되나요?'); }
+      });
+    });
+    window.WS_RESET = () => { Object.keys(done).forEach((k) => delete done[k]); ['h1w', 'h1s', 'h2w', 'h2s', 'c1w', 'c1s', 'c2w', 'c2s'].forEach((id) => ($('#' + id).textContent = '-')); busy = false; setMode('heat'); window.SUM_RESET && window.SUM_RESET(); };
+    // 검사용 주소: ?m=cool&u=0.6&keep=heat  /  ?all=1
+    if (Q.get('all') === '1') { record('heat'); record('cool'); mode = 'cool'; LAB.jump('cool', 1); msg('결과 · 냉각할 때', '두 가지를 모두 했어요. <b>정리하기</b> 칸에서 답해 봐요.', 'ok'); }
+    else if (Q.get('m')) { mode = Q.get('m'); if (Q.get('keep')) record(Q.get('keep')); LAB.jump(mode, +(Q.get('u') || 0)); }
+    paint();
+    window.SM.okUI = true;
+  } catch (err) { window.SM_err('물과 소금물 실험', err); }
+})();
+</script>
+<script>
+/* ===== 블록 2: 칸 탭 · 정리하기 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S;
+    function tab(p) { $$('#pt button').forEach((x) => x.setAttribute('aria-selected', String(x.dataset.p === p))); $$('.pane').forEach((e) => (e.hidden = e.dataset.p !== p)); }
+    $$('#pt button').forEach((b) => b.addEventListener('click', () => tab(b.dataset.p)));
+    const ANS = ['s', 'w', 's', 'y'], pick = [null, null, null, null];
+    $$('.qrow').forEach((row) => { const i = +row.dataset.q; $$('button', row).forEach((b) => b.addEventListener('click', () => { pick[i] = b.dataset.v; $$('button', row).forEach((o) => { o.setAttribute('aria-pressed', String(o === b)); o.classList.remove('good', 'bad'); }); check(); })); });
+    function check() {
+      if (pick.some((p) => p === null)) return;
+      let wrong = 0;
+      $$('.qrow').forEach((row) => { const i = +row.dataset.q; $$('button', row).forEach((o) => { o.classList.toggle('good', o.dataset.v === ANS[i] && o.dataset.v === pick[i]); o.classList.toggle('bad', o.dataset.v === pick[i] && pick[i] !== ANS[i]); }); if (pick[i] !== ANS[i]) wrong++; });
+      if (!wrong) { $('#sumRes').className = 'fbk ok'; $('#sumM').innerHTML = '1 기압에서 물은 끓는점이 <b>100 ℃</b>, 어는점이 <b>0 ℃</b>로 일정하지만, 혼합물인 소금물은 <b>끓거나 어는 동안 온도가 계속 변해요</b>. 그래서 끓는점과 어는점으로 물과 소금물을 구별할 수 있어요.'; }
+      else { $('#sumRes').className = 'fbk no'; $('#sumM').innerHTML = `빨간 답 ${wrong}개를 다시 골라 봐요. 실험하기 칸의 그래프에서 평평한 선과 기울어진 선을 비교해요.`; }
+    }
+    window.SUM_RESET = () => { pick.fill(null); $$('.qrow button').forEach((o) => { o.setAttribute('aria-pressed', 'false'); o.classList.remove('good', 'bad'); }); $('#sumRes').className = 'fbk'; $('#sumM').textContent = '네 질문에 모두 답하면 확인해 줘요.'; };
+    $('#bReset').addEventListener('click', () => window.WS_RESET());
+    if (S.Q.get('tab')) tab(S.Q.get('tab'));
+  } catch (err) { window.SM_err('탭', err); }
+})();
+</script>
+</body>
+</html>
