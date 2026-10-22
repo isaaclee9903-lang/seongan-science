@@ -174,14 +174,14 @@
   .ol.tx.pl{background:transparent;padding:0;font-weight:800;color:#34495e;font-size:clamp(11.5px,1.3vw,15px)}
   .ol.tx.pl.on{color:#0e63b3;font-weight:900;text-decoration:underline;text-underline-offset:3px}
   .ol.tx.pl.dim{color:#a3b0bd}
-  .ol.tx.use{background:#fff;color:#0b3f73;font-weight:800;border:1.5px solid #0e63b3;border-radius:8px;padding:2px 8px}
+  .ol.tx.use{background:rgba(255,255,255,.92);color:#0e63b3;font-weight:800;border-radius:6px;padding:1px 6px}
   .ol.tx.lgd{background:transparent;padding:0;color:#5a6b7e;font-weight:700}
   .ol .pd{display:inline-block;width:.72em;height:.72em;border-radius:50%;vertical-align:-.05em;margin:0 3px 0 8px}
   .ol .pd:first-child{margin-left:0}
   .ol .pd.w{background:radial-gradient(circle at 35% 35%,#b9d8f3,#0b56a0)}
   .ol .pd.e{background:radial-gradient(circle at 35% 35%,#d3d9df,#3a434d)}
   .ol.sc2{font-size:clamp(10.5px,1.15vw,13px)}
-  .ol.lcd.s{font-size:clamp(9px,1.05vw,14px)}
+  .ol.lcd.s{font-family:inherit;font-weight:800;font-variant-numeric:tabular-nums;font-size:clamp(10px,1.1vw,15px)}
   .ol.lcd.s small{font-size:.7em;margin-left:1px}
   /* ===== 한 화면 배치 (2026-10-15: 태블릿 한 화면 안에서 실험과 결과가 끝나도록) ===== */
   .app{padding:10px 16px 12px;gap:10px}
@@ -413,7 +413,6 @@ window.BS = (() => {
     if (back) { tubePath(ctx, x, y0, y1, r); ctx.closePath(); ctx.fillStyle = 'rgba(236,242,247,.6)'; ctx.fill(); return; }
     tubePath(ctx, x, y0, y1, r); ctx.strokeStyle = 'rgba(110,130,150,.75)'; ctx.lineWidth = 1.6; ctx.stroke();
     ctx.strokeStyle = 'rgba(110,130,150,.5)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.ellipse(x, y0, r + 1.5, 2.6, 0, 0, TAU); ctx.stroke();
-    ctx.strokeStyle = 'rgba(255,255,255,.75)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x - r + 4, y0 + 10); ctx.lineTo(x - r + 4, y1 - r - 4); ctx.stroke();
   }
   // 비커: 원점 바닥 가운데
   function beakerBack(ctx, x, bot, w, h) { rr(ctx, x - w / 2, bot - h, w, h, 10); ctx.fillStyle = 'rgba(236,242,247,.5)'; ctx.fill(); }
@@ -739,7 +738,6 @@ window.BS = (() => {
       lens(ctx, LX[0], LY, 70, mixG, tsec, { r: 7 });
       tubes.forEach((tb, i) => lens(ctx, LX[i + 1], LY, 70, tb.G, tsec, { r: 7, on: i === st.act && st.on && !st.done }));
       ov.put('lg', 1170, 668, '<i class="pd e"></i>에탄올 <i class="pd w"></i>물', 'tx m la lgd');
-      ov.put('lh', 105, 668, '입자 모형으로 보기', 'tx nm sol ra');
       ov.put('ln0', LX[0], 856, '남은 혼합물', 'tx nm sol');
       const SN = { empty: '비어 있음', eth: '에탄올이 대부분', wat: '물이 대부분', mix: '에탄올과 물이 섞임' };
       tubes.forEach((tb, i) => { ov.put('ln' + (i + 1), LX[i + 1], 856, '시험관 ' + (i + 1), 'tx nm' + (i === st.act && st.on && !st.done ? ' blue' : '')); if (st.done || i < st.act) ov.put('ls' + (i + 1), LX[i + 1], 884, SN[sample(tb)], 'tx sc2 m'); else ov.hide('ls' + (i + 1)); });
@@ -976,14 +974,15 @@ window.BS = (() => {
       wx.forEach((w) => { ctx.fillStyle = '#20262c'; ctx.beginPath(); ctx.arc(w, -8, 11, 0, TAU); ctx.fill(); ctx.fillStyle = '#9aa5b1'; ctx.beginPath(); ctx.arc(w, -8, 4.5, 0, TAU); ctx.fill(); });
       ctx.restore();
     }
-    // 움직이는 물체 위치 (차선 y = 바퀴 아래)
+    // 마을은 멈춘 그림(디자인기준 6장: 움직임은 누른 뒤에만). TT는 물체 자리를 정하는 고정값
+    const TT = 2.5;
+    // 물체 자리 (차선 y = 바퀴 아래)
     const GF = 452, GN = 720, L1 = 800, L2 = 866;
-    const loopX = (speed, x0, span) => 590 + ((x0 + tsec * speed) % span + span) % span - 70;
     const P_ = {
-      taxi: () => [loopX(36, 40, 720), L1], car: () => [loopX(36, 400, 720), L1],
-      bus: () => [loopX(-28, 140, 720), L2], truck: () => [loopX(-28, 500, 720), L2],
-      plane: () => [590 + ((tsec * 30 + 120) % 780) - 50, 120 + Math.sin(tsec * 0.6) * 3],
-      ship: () => [1085, 428 + Math.sin(tsec * 1.2) * 2],
+      taxi: () => [680, L1], car: () => [975, L1],
+      bus: () => [730, L2], truck: () => [1100, L2],
+      plane: () => [590 + ((TT * 30 + 120) % 780) - 50, 120 + Math.sin(TT * 0.6) * 3],
+      ship: () => [1085, 428 + Math.sin(TT * 1.2) * 2],
     };
     // id, 물질, 쓰임 이름표, 그리기, 이름표 자리
     add('taxi', 'lpg', '택시 연료', (c) => { const [x, y] = P_.taxi(); car(c, x, y, 1, '#c9cfd6', 'taxi'); }, () => { const [x, y] = P_.taxi(); return [x, y - 78]; });
@@ -1023,14 +1022,14 @@ window.BS = (() => {
       c.strokeStyle = 'rgba(60,40,20,.5)'; c.lineWidth = 1.2; for (let k = 0; k < 5; k++) { c.beginPath(); c.moveTo(x - 18, y - 63 + k * 8.5); c.lineTo(x + 18, y - 63 + k * 8.5); c.stroke(); }
       c.fillStyle = '#4b5561'; c.beginPath(); c.ellipse(x, y - 84, 26, 6, 0, 0, TAU); c.fill();
       c.fillStyle = '#5f6a76'; rr(c, x - 22, y - 10, 44, 10, 3); c.fill();
-      for (let k = 0; k < 3; k++) { const u = (tsec * 0.4 + k / 3) % 1; c.strokeStyle = `rgba(217,119,58,${0.25 * (1 - u)})`; c.lineWidth = 1.5; c.beginPath(); c.moveTo(x - 10 + k * 10, y - 92 - u * 30); c.quadraticCurveTo(x - 4 + k * 10, y - 100 - u * 30, x - 10 + k * 10, y - 108 - u * 30); c.stroke(); }
+      for (let k = 0; k < 3; k++) { const u = (TT * 0.4 + k / 3) % 1; c.strokeStyle = `rgba(217,119,58,${0.25 * (1 - u)})`; c.lineWidth = 1.5; c.beginPath(); c.moveTo(x - 10 + k * 10, y - 92 - u * 30); c.quadraticCurveTo(x - 4 + k * 10, y - 100 - u * 30, x - 10 + k * 10, y - 108 - u * 30); c.stroke(); }
     }, () => [660, GN - 150]);
     add('stove', 'lpg', '가스레인지 연료', (c) => {
       const x = 790, y = GN - 76;
       c.fillStyle = '#e4e9ee'; c.fillRect(x - 40, y, 80, 66); c.fillStyle = '#c9d1da'; c.fillRect(x - 40, y, 80, 5);
       c.fillStyle = '#d5dce3'; c.fillRect(x - 34, y + 16, 68, 40); c.strokeStyle = 'rgba(20,38,59,.15)'; c.lineWidth = 1; c.strokeRect(x - 34, y + 16, 68, 40);
       c.fillStyle = '#2a323b'; c.fillRect(x - 36, y - 6, 72, 6);
-      [x - 16, x + 16].forEach((bx, k) => { c.fillStyle = 'rgba(79,140,210,.85)'; c.beginPath(); c.moveTo(bx - 8, y - 6); c.quadraticCurveTo(bx, y - 20 - Math.sin(tsec * 8 + k) * 2, bx + 8, y - 6); c.closePath(); c.fill(); });
+      [x - 16, x + 16].forEach((bx, k) => { c.fillStyle = 'rgba(79,140,210,.85)'; c.beginPath(); c.moveTo(bx - 8, y - 6); c.quadraticCurveTo(bx, y - 20 - Math.sin(TT * 8 + k) * 2, bx + 8, y - 6); c.closePath(); c.fill(); });
       const g = c.createLinearGradient(x - 34, 0, x, 0); g.addColorStop(0, '#7d8894'); g.addColorStop(0.5, '#c9d1d9'); g.addColorStop(1, '#8e99a5');
       c.fillStyle = g; rr(c, x - 32, y - 36, 34, 28, 4); c.fill(); c.fillStyle = '#5f6a76'; c.fillRect(x - 36, y - 38, 42, 4);
       c.strokeStyle = '#8e99a5'; c.lineWidth = 3; c.beginPath(); c.moveTo(x + 40, y + 50); c.lineTo(HS.x1 + 22, y + 50); c.stroke();
@@ -1061,11 +1060,11 @@ window.BS = (() => {
       c.fillStyle = '#9aa5b1'; for (let k = 0; k < 4; k++) c.fillRect(x0 + 10 + k * 30, top + 20, 16, 18);
       g = c.createLinearGradient(866, 0, 884, 0); g.addColorStop(0, '#8e99a5'); g.addColorStop(0.5, '#cfd6dd'); g.addColorStop(1, '#7d8894');
       c.fillStyle = g; c.fillRect(866, 296, 18, top - 296 + 2); c.fillStyle = '#6b7682'; c.fillRect(864, 296, 22, 7);
-      for (let k = 0; k < 4; k++) { const u = (tsec * 0.25 + k / 4) % 1, sx = 875 + u * 34, sy = 288 - u * 64, sr = 8 + u * 20; const sg = c.createRadialGradient(sx, sy, 1, sx, sy, sr); sg.addColorStop(0, `rgba(160,172,186,${0.35 * (1 - u)})`); sg.addColorStop(1, 'rgba(160,172,186,0)'); c.fillStyle = sg; c.beginPath(); c.arc(sx, sy, sr, 0, TAU); c.fill(); }
+      for (let k = 0; k < 4; k++) { const u = (TT * 0.25 + k / 4) % 1, sx = 875 + u * 34, sy = 288 - u * 64, sr = 8 + u * 20; const sg = c.createRadialGradient(sx, sy, 1, sx, sy, sr); sg.addColorStop(0, `rgba(160,172,186,${0.35 * (1 - u)})`); sg.addColorStop(1, 'rgba(160,172,186,0)'); c.fillStyle = sg; c.beginPath(); c.arc(sx, sy, sr, 0, TAU); c.fill(); }
     }, () => [815, 352]);
     add('ship', 'hvy', '큰 배 연료', (c) => {
       const [x, y] = P_.ship();
-      c.save(); c.translate(x, y); c.rotate(Math.sin(tsec * 1.2 + 1) * 0.012);
+      c.save(); c.translate(x, y); c.rotate(Math.sin(TT * 1.2 + 1) * 0.012);
       c.fillStyle = '#3e4a57'; c.beginPath(); c.moveTo(-84, -12); c.lineTo(88, -12); c.lineTo(74, 14); c.lineTo(-72, 14); c.closePath(); c.fill();
       c.fillStyle = '#7d8a97'; c.fillRect(-72, 7, 146, 4);
       [['#b8c7d6', -68], ['#8fa6bd', -44], ['#c9d1da', -20], ['#9fb2c4', 4]].forEach(([col, bx], k) => { c.fillStyle = col; c.fillRect(bx, -32, 22, 20); if (k % 2) c.fillRect(bx, -50, 22, 18); c.strokeStyle = 'rgba(20,38,59,.12)'; c.lineWidth = 1; c.strokeRect(bx, -32, 22, 20); });
@@ -1122,7 +1121,7 @@ window.BS = (() => {
       ctx.fillStyle = metal(ctx, 108, 132); ctx.fillRect(108, 594, 24, 68); ctx.fillStyle = '#5f6a76'; ctx.fillRect(105, 590, 30, 7);
       ctx.fillStyle = '#20262c'; rr(ctx, 82, 750, 78, 72, 6); ctx.fill();
       if (st.heat > 0) {
-        for (let k = 0; k < 5; k++) { const fx = 92 + k * 15, hh = (24 + Math.sin(t * 9 + k * 2) * 6 + (k % 2) * 6) * st.heat;
+        for (let k = 0; k < 5; k++) { const fx = 92 + k * 15, hh = (24 + (st.running ? Math.sin(t * 9 + k * 2) * 6 : 0) + (k % 2) * 6) * st.heat;
           const fg = ctx.createLinearGradient(0, 818, 0, 818 - hh); fg.addColorStop(0, '#f0a24a'); fg.addColorStop(1, 'rgba(246,206,120,.3)');
           ctx.fillStyle = fg; ctx.beginPath(); ctx.moveTo(fx - 7, 818); ctx.quadraticCurveTo(fx - 6, 818 - hh * 0.6, fx, 818 - hh); ctx.quadraticCurveTo(fx + 6, 818 - hh * 0.6, fx + 7, 818); ctx.closePath(); ctx.fill(); }
       }
@@ -1138,7 +1137,7 @@ window.BS = (() => {
       ctx.fillStyle = '#f5f7fa'; ctx.fillRect(ix0, T.top + 4, ix1 - ix0, T.bot - T.top - 12);
       ctx.strokeStyle = 'rgba(20,38,59,.25)'; ctx.lineWidth = 1; ctx.strokeRect(ix0, T.top + 4, ix1 - ix0, T.bot - T.top - 12);
       // 기체(옅은 회색 덩어리가 위로)
-      if (!reduce && st.heat > 0.5 && (st.running || st.done) && Math.random() < 0.6) vap.push({ x: lerp(ix0 + 10, ix1 - 10, Math.random()), y: 780, r: 3, life: 0 });
+      if (!reduce && st.heat > 0.5 && st.running && Math.random() < 0.6) vap.push({ x: lerp(ix0 + 10, ix1 - 10, Math.random()), y: 780, r: 3, life: 0 });
       vap.forEach((v) => { v.life += 1 / 60; v.y -= 70 / 60; v.x += Math.sin(v.life * 3 + v.r) * 0.4; v.r += 0.04; });
       for (let i = vap.length - 1; i >= 0; i--) if (vap[i].y < T.top + 20) vap.splice(i, 1);
       ctx.save(); ctx.beginPath(); ctx.rect(ix0, T.top + 4, ix1 - ix0, T.bot - T.top - 12); ctx.clip();
