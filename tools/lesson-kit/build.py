@@ -48,7 +48,7 @@ def main(name):
     frame_html = "\n".join(f'    <iframe data-page="{t["id"]}" data-embed="1" title="{t["title"]}"></iframe>' for t in tabs)
     page_js = "\n".join(f"    {t['id']}: '{t['file']}'," for t in tabs)
     for k, v in {"{{TITLE}}": cfg["title"], "{{SHORT}}": cfg["short"], "{{KIND}}": cfg.get("kind", "읽기 자료"), "{{SUB}}": cfg["sub"],
-                 "{{LOGO_BG}}": cfg["logo_bg"], "{{LOGO_SVG}}": cfg["logo_svg"], "{{TABS}}": tab_html, "{{FRAMES}}": frame_html, "{{PAGES}}": page_js}.items():
+                 "{{LOGO_BG}}": cfg["logo_bg"], "{{LOGO_SVG}}": cfg["logo_svg"], "{{TABS}}": tab_html, "{{FRAMES}}": frame_html, "{{PAGES}}": page_js, "{{START}}": cfg.get("start", "reading")}.items():
         shell = shell.replace(k, v)
     if "{{" in shell:
         sys.exit("index: 남은 {{ }} 표시")
