@@ -5,12 +5,14 @@
 ## 구조
 - `index.html` — 학생이 처음 여는 허브(탭별 단원 목차 + RAS 4단계 소개). 새 수업을 만들면 루트 `index.html`(허브) 스크립트 맨 위 `LESSONS`에 한 줄(제목·부제·썸네일 `lessons/<수업>/card.jpg` 또는 `card.svg`)을 넣고, `TABS`의 해당 단원 `lessons`에 수업 이름을 추가한다. 새 단원이면 `TABS`에 단원 한 줄을 추가한다.
 - `lessons/<수업이름>/` — 수업 하나. `index.html`은 탭 껍데기(iframe으로 각 페이지를 불러옴), 나머지는 CSS·JS가 모두 들어 있는 단독 HTML 페이지.
-  - 기준 예시: `lessons/ohm/` (읽기·퀴즈, 시뮬레이션 2개, 정리·글쓰기)
+  - 페이지 구성 기본형: `lessons/ohm/` (읽기·퀴즈, 시뮬레이션 2개, 정리·글쓰기). **디자인은 ohm을 따르지 않는다** → `docs/디자인기준.md`
 - 로고(2026-10-11 선생님 결정, "네 화면" 2×2 칸): 파랑 바탕 `favicon.svg`(= `assets/ras-mark.svg`, 브라우저 탭·홈 화면, PNG는 `favicon-32.png`·`apple-touch-icon.png`), 흰 바탕 `assets/ras-mark-light.svg`(허브 머리에 인라인 SVG로 넣음). 모든 수업 껍데기 `index.html`과 `tools/lesson-kit/parts/shell.html`의 `<head>`에 아이콘 링크 세 줄이 있으니 새 수업에도 넣는다.
 - 소개 영상(2026-10-21 게시): 허브 머리 오른쪽 "소개 영상" 버튼 → 영상 창. 영상은 `assets/ras-promo.mp4`(3 MB, 누르기 전에는 받지 않음), 버튼 사진 `assets/ras-promo-poster.jpg`, 첫 화면 `assets/ras-promo-start.jpg`. 원본은 하이퍼프레임 프로젝트 `tools/ras-promo/`(30초, 실제 coil-field 녹화 네 화면, 칸 영상은 `make_clips.sh`). 고친 뒤에는 `renders/`에 다시 뽑고 줄여서 `assets/ras-promo.mp4`를 바꾼다. 첫 화면에 바로 띄우지 않는다(목차·네 화면 설명과 부딪힘).
 - `curriculum/` — 단원별 교육과정 기준 문서. **수업 콘텐츠를 만들기 전에 반드시 해당 문서를 읽는다.**
+- `docs/디자인기준.md` — **디자인은 이 문서 하나가 기준**(색·그림·배치·보고 전 점검, 좋은 예 사진 `docs/design/`). 다른 문서와 다르면 이 문서가 맞다.
 - `docs/작업방식_이삭T와_일하는_법.md` — **먼저 읽을 것.** 지난 프로젝트에서 반려·재작업된 일과 선생님 선호.
-- `docs/수업웹자료_표준개발절차.md` — 전체 제작 절차와 디자인 기준값(부록 B).
+- `docs/수업웹자료_표준개발절차.md` — 전체 제작 절차(2장).
+- `tools/lesson-kit/README.md` — 제작 도구 사용법과 수업별로 다시 쓸 수 있는 그리기 도구 목록.
 - `.claude/skills/lesson-web/` — 새 수업 페이지를 만드는 절차 스킬.
 
 ## 배포
@@ -32,6 +34,7 @@
 | `rocks` | 중2 Ⅱ 암석의 종류 (화성암·퇴적암·변성암, 2D 생성 과정 시뮬레이션, 3D 암석 12종·돋보기 분류 탐구) | lesson-kit | `중2_지권의변화_암석의종류.md` |
 | `mineral-use` | 중2 Ⅱ 광물과 암석의 활용 (3D 표본 진열대, 유튜브 멈춤 퀴즈, 교실 속 광물 찾기, 자원의 길, 포스터 만들기) | lesson-kit | `중2_지권의변화_광물과암석의활용.md` |
 | `continental-drift` | 중2 Ⅱ 지권의 운동: 대륙 이동설 (베게너 이야기, 대륙 조각 퍼즐, 대륙 이동 지구본, 2D 캔버스) | lesson-kit | `중2_지권의운동_대륙이동설.md` |
+| `rock-cycle` | 중2 Ⅱ 풍화와 토양, 암석의 순환 (풍화와 토양 실험실 2D, 암석의 순환 여행 2D) | lesson-kit | `중2_지권의변화_풍화와토양_암석의순환.md` |
 | `quake-volcano` | 중2 Ⅱ 지권의 운동: 판의 경계와 지진대, 화산대 (실제 자료 빅데이터 지도, 판의 경계 실험실 2D, 지진·화산 기록실, 카드 뉴스) | lesson-kit | `중2_지권의운동_지진대와화산대.md` |
 | `light-path` | 중2 Ⅲ 빛의 반사와 굴절, 물체를 보는 과정 (반사·굴절 실험실 2D, 통으로 보기, 빛의 경로 그리기·오개념) | lesson-kit | `중2_빛과파동_빛의반사와굴절_물체를보는과정.md` |
 | `plane-mirror` | 중2 Ⅲ 평면거울에 의한 상 (상이 생기는 원리 7단계 작도·직접 작도·모눈 상 찾기, 반투명 거울 가상 실험) | lesson-kit | `중2_빛과파동_평면거울에의한상.md` |
@@ -56,21 +59,8 @@
 | `photo-journey`, `chip-earth`, `battery`, `ev` | 읽기 자료 | lesson-kit | `읽기자료_*` |
 | `career-map` | 진로 지도 (읽기 자료 모음) | lesson-kit | 없음 |
 
-- 밀도(Ⅰ 물질의 특성): `tools/lesson-kit/src/density/_den.js`(DEN: 비커 속 구슬 beakers, 1 cm³ 조각 cubes, 밀도 막대 chart(그림 Ⅰ-2 값), 입자 모형 particles, 뜨고 가라앉는 컵 jar(방울이 제 층을 찾아감·고체 뜨고 가라앉기), 전자저울·눈금실린더 실험실 lab). 다음 Ⅰ 수업도 재사용한다.
-- 용해도(Ⅰ 물질의 특성): `tools/lesson-kit/src/solubility/_sol.js`(SOL: 용해도 자료·보간 solu/label, 입자 모형 dissolve, 포화·불포화 satur, 용해도 곡선 curve, 결정 알갱이 무더기 pile, 시험관 그리기)와 `_sol2.js`(SOL.tube 시험관 실험실, SOL.beaker 물 100 g 비커, SOL.soda 탄산음료·주사기). 그림 칸을 화면에 맞게 자르는 `surface(…, crop)`/`setCrop`도 여기 있다. 다음 Ⅰ 수업(녹는점·끓는점 등)도 재사용한다.
-- 녹는점과 끓는점(Ⅰ 물질의 특성): `tools/lesson-kit/src/melting-boiling/_mb.js`(MB: 핫플레이트·스탠드·온도 센서·디지털 온도계·삼각 플라스크, 온도-시간 그래프 tgraph, 끓는점 실험실 boil, 녹는점 실험실 melt, 그림 Ⅰ-8 mgraph, 그림 Ⅰ-7·Ⅰ-9 ladder, 신기한 물질 도감 atlas, 찻주전자와 솥 pots). `_sol.js`(용해도 SOL) 사본의 그리기 도구를 빌려 쓴다.
-- 순물질과 혼합물(Ⅰ 물질의 특성): `tools/lesson-kit/src/pure-mixture/_mix.js`(MIX: 입자 돋보기 lens·lensCore(Matter.js로 입자 움직임 계산, 기체·액체·고체, 붓기·젓기·가라앉기), 물과 소금물 실험실 ws·읽기용 그래프 wsGraphs, 컵 그림+돋보기 sample, 조사 카드 그래프 sketch). `_mb.js` 사본이 기구 그림을 `MB._`로 내보낸다. 끌어다 놓기는 SortableJS. 둘 다 jsdelivr에서 불러오고, 못 불러오면 자체 계산·누르기 방식으로 대신한다.
-- 밀도 차를 이용한 분리(Ⅰ 혼합물의 분리): `tools/lesson-kit/src/density-separation/_sep.js`(SEP: 그릇 부피↔높이 vessel, 콩기름 방울이 떠올라 층이 되는 emulsion, 흔드는 병 bottle, 스탠드·링·분별 깔때기·비커 3개 funnel(꼭지 3단계, 비커 바꾸기, 입구로 따르기), 키질 winnow, 기름막이 boom). 다음 혼합물의 분리 수업도 재사용한다.
-- 용해도 차를 이용한 분리(Ⅰ 혼합물의 분리): `tools/lesson-kit/src/solubility-separation/_ss.js`(SS: 해 보기 실험실 lab(시약포지·200 mL 비커·유리 막대·500 mL 얼음물 비커·거름 장치, 붕산 결정 석출·거르기·거름종이 확대), 그림 Ⅰ-12 곡선+비커 curve, 용해도 solu(그림 Ⅰ-12 값)). 첫 탭을 영상으로 열려면 `lesson.json`에 `"start": "video"`(build.py가 탭 껍데기 기본 탭으로 넣음, 없으면 reading).
-- 지권(Ⅱ) 3D 모형: 광물은 `tools/lesson-kit/src/minerals/_min3d.js`(MIN3D), 암석 12종·퇴적물·층리·화석은 `src/rocks/_rock3d.js`(ROCK3D, MIN3D 사본이 `src/rocks/_min3d.js`에 있음). `ROCK3D.thumbs(ids)`로 카드용 사진을 만들 수 있다. 다음 Ⅱ 수업(암석의 순환 등)도 재사용한다.
-- 대륙 지도(Ⅱ 지권의 운동): `tools/lesson-kit/src/continental-drift/_geo.js`(Natural Earth 1:50m 대륙 모양), `_globe.js`(GLOBE: 판게아↔현재 대륙 회전, 캔버스 지구본), `_gond.js`(EVID 화석·빙하 증거, GOND 평면 대륙 조각판). 다음 판 구조 수업도 재사용한다.
-- 지진·화산 지도(Ⅱ 지권의 운동): `tools/lesson-kit/src/quake-volcano/_map.js`(WMAP: 실제 지진·화산·판의 경계 캔버스 지도, 재생·확대·판 강조·띠 칠하기, USGS 실시간 자료), `_bound2d.js`(BND: 교과서 그림 Ⅱ-16 형식 덩어리 그림, 부딪침·갈라짐·어긋남). 자료는 `lessons/quake-volcano/data/`(만드는 법 `_data_prep.py`). 다음 지권의 운동 수업도 재사용한다.
-- 3D 로딩: 보기만 하는 3D 그림은 영상(`C3.video`), 나머지는 `C3.lazy` + `C3.prepare`(멈추지 않는 셰이더 준비)와 미리 찍은 사진을 쓴다. 사진·영상은 `tools/lesson-kit/bake.py`로 만든다 (2026-10-12, 로딩이 길다는 선생님 의견으로 도입. 자세한 것은 `tools/lesson-kit/README.md`).
+- 수업별로 다시 쓸 수 있는 그리기 도구(밀도 DEN, 용해도 SOL, 지권 3D, 빛 OP 등)는 `tools/lesson-kit/README.md`의 "수업별 재사용 도구"에 있다. 새 수업을 만들 때 같은 대단원 도구를 먼저 찾아본다.
 - "직접 작성"인 수업은 `tools/lesson-kit/src/`에 원본이 없어 `lessons/<이름>/*.html`을 바로 고친다. lesson-kit 수업은 `src/`를 고치고 다시 빌드한다.
-- 빛 그림(Ⅲ 빛과 파동): `tools/lesson-kit/src/light-path/_optics.js`(OP: 레이저 광선·각도기·슬릿 레이저·빛 알갱이·눈·HTML 이름표), `_art.js`(OPA: 전등·태양·공·책·통·반사판·화분·촬영기 일러스트). 평면거울 작도 장면은 `src/plane-mirror/_mirror.js`(MR: 방·세운 거울·꽃 화분, 단계별 작도 render(0~7)). 볼록·오목 거울과 렌즈는 `src/mirror-lens/_ml.js`(ML: F 모양 물체, 받침대의 둥근 거울·렌즈 속 상, 옆 배치도, 기구 단면 그림)와 `_rays.js`(ML.rays: 나란한 빛의 반사·굴절 실제 계산). 다음 Ⅲ 수업도 재사용한다. 파동 그림(Ⅲ-2 파동)은 `src/wave/_wave.js`(WV: 옆에서 본 물결파 수조 tank, 모눈 파동 graph(마루·골·파장·진폭 표시, 목표 파동), 매질 한 점 높이 기록 timeline, 차례 사진 strip, 위에서 본 물결 ripple). 다음 파동 수업(소리 등)도 재사용한다. 거울·렌즈로 본 모습(캔버스 왜곡)은 `src/mirror-lens-use/_loupe.js`(LP), 비스듬히 내려다본 마을 그림은 `_town.js`(TOWN), 다섯 종류 아이콘은 `_kinds.js`(KINDS·KICON).
-- 마찰 전기(Ⅶ-1 전기): `tools/lesson-kit/src/friction-electricity/_chg.js`(CHG: 원자 구조 atom, 털과 풍선 rub(끌어서 문지르기·전자 이동·떼어 놓으면 털이 끌림), 숟가락 실험실 spoon(장갑으로 문지르기·㉯/장갑 가까이·회전), 매단 두 공 pend, 전하 기호 plus/minus). (−)는 파란 동그라미, (+)는 짙은 회색 테두리. 다음 전기 수업(정전기 유도 등)도 재사용한다.
-- 소리(Ⅲ-2 파동): `tools/lesson-kit/src/sound/_snd.js`(SND: 실제 악기 녹음 재생·소리 분석 화면 scope·기록용 shot, 녹음은 `lessons/sound/audio/`, 만드는 법 `_audio_prep.py`, 출처 `audio/LICENSE.txt` CC BY 3.0), `_inst.js`(ART: 악기 14가지 SVG 그림), `_pair.js`(PAIR: 두 소리 기록 칸), `_fig.js`(FIG.travel: 북→공기 입자→귀). 다음 소리 수업도 재사용한다.
-- 별 그림: Ⅷ 단원은 캔버스로 빛 번짐 별을 그린다(`parallax` sim2의 `window.SKY`, `star-brightness`의 `_glow.js` `window.GLOW`). 실제 하늘 지도는 d3-celestial(BSD-3)을 `lessons/star-brightness/sky/`에 복사해 쓴다(별 목록은 `stars6.json`·`stars8.json`으로 줄임, 라이선스 `sky/LICENSE.txt`). 다음 Ⅷ 수업도 이 폴더를 재사용한다. 별의 밝기 차시까지는 별을 흰색으로 그리고, `star-color`부터는 `_color.js`의 `window.SC`로 색을 칠한다(별 목록 `sky/data/stars6c.json`에 색 정보 포함, 교과서 색 띠 별은 교과서 색).
 
 ## 최우선 규칙: 교육과정 범위
 - 모든 콘텐츠(읽기 글, 시뮬레이션 수식, 퀴즈, 툴팁, 외부 자료)는 `curriculum/`의 기준 문서 범위를 절대 넘지 않는다.
@@ -80,11 +70,11 @@
 
 ## 품질 기준
 - 학생 기기는 태블릿. 가로 1280×800과 세로 800×1280에서 모두 쓸 수 있어야 한다. 터치 영역은 44px 이상.
-- 첫 버전부터 고품질: 그라디언트·질감, 실제처럼 움직이는 애니메이션. 도형만 늘어놓은 모형은 내지 않는다. 그래프에는 "왜 그런지" 단계별 설명을 붙인다.
+- 첫 버전부터 고품질: 손으로 그린 수준의 그림(빛 방향·그림자·원근, 매트한 질감), 실제처럼 움직이는 애니메이션. 도형만 늘어놓은 모형은 내지 않는다. 그래프에는 "왜 그런지" 단계별 설명을 붙인다.
 - "AI티" 금지: 이모지, 과한 장식, 마케팅 말투.
 - 등장 효과는 내용을 숨기지 않는 방식(transform만)으로 만든다. 스크립트는 기능별 `<script>` 블록으로 나누고 try/catch로 감싼다.
 - 페이지에 "제작 · 성안중학교 이삭 T" 같은 제작자 표기를 넣지 않는다 (2026-10-07 선생님 요청으로 모두 삭제). 허브(`index.html`) 첫 화면은 큰 제목을 "수업이 끝난 뒤, 다시 읽고 직접 해 보는 과학"(RAS의 뜻을 한국어로 푼 말)으로 하고, "RAS · Reading After Studying"은 그 위 작은 이름표로 둔다 (2026-10-10 선생님 결정. 사용 안내문을 큰 제목에 두지 않는다. 이전 규칙: 첫 화면 제목 "RAS(Reading After Studying)").
-- 디자인은 `lessons/ohm/`의 색·서체(Pretendard)·탭 껍데기를 따른다.
+- 디자인은 `docs/디자인기준.md`를 따른다(라스 파랑 하나+무채색, 기준 수업은 판의 경계·우주 쪽, 2026-10-22). 탭 껍데기와 서체(Pretendard)만 `lessons/ohm/`과 같다.
 
 ## 공개 저장소 주의
 - 이 저장소는 공개다. 학생 이름·번호·성적·사진, 생활기록부 내용, API 키, 개인 연락처를 절대 올리지 않는다.
@@ -92,6 +82,7 @@
 
 ## 작업 방식
 - 새 수업 요청이 오면 `lesson-web` 스킬의 절차를 따른다.
-- 작업은 `claude/`로 시작하는 브랜치에서 하고, 끝나면 PR을 만든다. PR 설명에 페이지 목록, 사용한 기준 문서, 교육과정 대조 결과(초과·미확인 항목)를 적는다.
+- **세션 이름 (2026-10-22 선생님 결정):** 작업을 시작하면 세션 이름을 `[대단원] 수업 이름 · 작업 종류` 형식으로 바꾼다(`set_session_title`). 예: `Ⅰ 밀도 차를 이용한 분리 · 새 수업`, `Ⅲ 파동의 발생과 전달 · 고침`. 수업 하나에 속하지 않는 일은 `라스 공통 · 소개 영상`처럼 쓴다. 사이드바 묶음은 `라스 수업`, `라스 공통`, `생기부`, `체육`, `기타`.
+- 작업은 `claude/`로 시작하는 브랜치에서 한다. 보고(또는 PR 설명)에 페이지 목록, 사용한 기준 문서, 교육과정 대조 결과(초과·미확인 항목)를 적는다.
 - **게시는 선생님 검토 후에 한다** (선생님 요청 2026-10-11): 작업과 화면 검사가 끝나면 `claude/` 브랜치에 커밋·푸시까지만 하고, 미리보기 주소(로컬 서버)를 드린 뒤 멈춘다. 선생님이 "게시해"라고 하면 그때 `main`에 병합·푸시하고 실제 주소에서 열리는지 확인한다. 순서: 작업 브랜치에서 `git merge origin/main`(충돌 해결) → `git checkout main` → `git pull --ff-only origin main` → `git merge --no-ff claude/<이름>` → `git push origin main`. 뒤의 네 명령은 `.claude/settings.local.json`에 허용 규칙이 있으니 `&&`로 묶지 말고 하나씩 실행한다. `gh`가 없어서 PR은 만들지 않아도 된다.
 - `main`에 병합되면 GitHub Pages에 1~2분 뒤 반영된다. 주소: https://isaaclee9903-lang.github.io/seongan-science/
