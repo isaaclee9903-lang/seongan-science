@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>녹는점과 끓는점 – 녹는점 실험실</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+/*@@LOCAL:_css_mb.css@@*/
+/*@@LOCAL:_css_sim.css@@*/
+  /* ===== 이 페이지 전용 ===== */
+  .act[hidden]{display:none!important}
+  .pane .lbl{margin:8px 0 5px}
+  .pane .lbl:first-child{margin-top:0}
+  .ptabs{margin-bottom:8px}
+  .fbk{margin-top:8px;padding:10px 12px}
+  .three3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+  .two2{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .three3 button,.two2 button{min-height:50px;border-radius:14px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15px;cursor:pointer;padding:4px 8px;word-break:keep-all;line-height:1.25;position:relative}
+  .three3 button small,.two2 button small{display:block;font-size:12.5px;font-weight:700;color:var(--muted)}
+  .three3 button[aria-pressed="true"],.two2 button[aria-pressed="true"]{border-color:var(--fab);background:#e9f3fd;color:#0b3f73}
+  .three3 button.good,.two2 button.good{border-color:var(--ok);background:#e8f7ef;color:#11703f}
+  .three3 button.bad,.two2 button.bad{border-color:#e7a29b;background:#fff4f2;color:#9b3a32}
+  .three3 button:disabled,.two2 button:disabled{opacity:.45;cursor:default}
+  .two2 button.done::after{content:"";position:absolute;right:10px;top:10px;width:9px;height:9px;border-radius:50%;background:#0e63b3}
+  .runrow{display:flex;gap:8px;margin-top:8px}
+  .runrow .btn{flex:1;min-height:52px}
+  .rec{width:100%;border-collapse:collapse;margin-top:8px;font-size:14px;font-variant-numeric:tabular-nums}
+  .rec th,.rec td{padding:5px 4px;border-bottom:1px solid #e3eaf1;text-align:center;word-break:keep-all}
+  .rec thead th{font-size:12.5px;color:var(--muted);font-weight:800;line-height:1.25}
+  .rec td:first-child{text-align:left;font-weight:800;color:var(--ink);font-size:13.5px}
+  .rec td.v{font-weight:900;color:var(--ink)}
+  .rec tr.now td{background:#eef5fc}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="ttl">
+      <span class="eyebrow">시뮬레이션 ②</span><h1>녹는점 실험실</h1>
+      <p class="sub" id="sub">고체 물질을 뜨거운 물에 넣고 온도를 재요. 양이나 종류를 바꾸면 녹는점은 어떻게 될까요? (교과서 그림 Ⅰ-8)</p>
+    </div>
+    <div class="ptabs big" role="tablist" id="acts" style="margin:0">
+      <button type="button" role="tab" data-a="amount" aria-selected="true">① 양이 다를 때</button>
+      <button type="button" role="tab" data-a="kind" aria-selected="false">② 종류가 다를 때</button>
+    </div>
+  </header>
+
+  <div class="stage">
+    <section class="card viewer">
+      <div class="scene grow" id="lab" role="img" aria-label="왼쪽에 스탠드 집게로 잡은 시험관이 뜨거운 물이 든 비커에 잠겨 있고, 시험관 속 흰 고체에 디지털 온도계가 꽂혀 있다. 오른쪽에 온도-시간 그래프가 그려진다."></div>
+      <div class="vctl">
+        <span class="hint" id="hint">뜨거운 물은 약 80 ℃로 정했어요</span>
+        <span class="sp"></span>
+        <button class="vb" type="button" id="bReset">처음부터</button>
+      </div>
+    </section>
+
+    <section class="card pad">
+      <div class="ptabs" role="tablist" id="pt">
+        <button type="button" role="tab" data-p="lab" aria-selected="true">실험하기</button>
+        <button type="button" role="tab" data-p="why" aria-selected="false">왜 그럴까?</button>
+      </div>
+      <div class="pane" data-p="lab">
+        <div class="lbl" id="qP">① 예측하기 · 로르산 100 g과 150 g의 녹는점은?</div>
+        <div class="three3" id="pred"></div>
+        <div class="lbl">② 시료 고르기</div>
+        <div class="two2" id="samp"></div>
+        <div class="runrow"><button class="btn primary" type="button" id="run" disabled>③ 뜨거운 물에 넣고 온도 재기</button></div>
+        <div class="fbk" id="res"><b class="t" id="resT">결과</b><span id="resM">먼저 예측을 골라요.</span>
+          <table class="rec" aria-label="녹는점 기록">
+            <thead><tr><th>시료</th><th>녹는점에 이른 시간</th><th>녹는점</th></tr></thead>
+            <tbody id="recB"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="pane" data-p="why" hidden>
+        <div class="phase">
+          <div class="ph on"><i>1</i><span>고체를 가열하면 온도가 올라가다가, 녹기 시작하면 <b>융해</b>가 일어나면서 <b>온도가 일정하게 유지돼요</b>. 이때의 온도가 <b>녹는점</b>이에요.</span></div>
+          <div class="ph on"><i>2</i><span>로르산 100 g은 약 10분, 150 g은 약 15분에 녹는점에 이르렀어요. 걸리는 <b>시간은 달라도 녹는점은 모두 43.8 ℃</b>예요.</span></div>
+          <div class="ph on"><i>3</i><span>같은 양을 가열해도 로르산은 43.8 ℃, 팔미트산은 <b>62.5 ℃</b>에서 녹아요. 녹는점은 <b>물질의 종류에 따라 달라요</b>.</span></div>
+          <div class="ph on"><i>4</i><span>녹는점은 물질마다 고유한 값이라 <b>물질의 특성</b>이에요. 같은 압력에서 같은 물질의 녹는점과 <b>어는점</b>은 항상 같아서, 어는점도 물질의 특성이에요.</span></div>
+        </div>
+      </div>
+      <p class="mnote">그래프 모양은 교과서 그림 Ⅰ-8을 따랐어요. 20분을 12초로 줄여 보여 주고, 녹는 모습과 빠르기는 보기 좋게 정한 모형이에요.</p>
+    </section>
+  </div>
+</div>
+<script>
+window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
+  reduce: !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches), Q: new URLSearchParams(location.search) };
+</script>
+<script>
+/*@@LOCAL:_sol.js@@*/
+</script>
+<script>
+/*@@LOCAL:_mb.js@@*/
+</script>
+<script>
+/* ===== 블록 1: 실험 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S, Q = S.Q;
+    const LAB = MB.melt($('#lab'));
+    window.LAB = LAB;
+    const SA = MB.SAMP, f1 = MB.f1;
+    const ACTS = {
+      amount: { ids: ['l100', 'l150'], q: '① 예측하기 · 로르산 100 g과 150 g의 녹는점은?', opts: [['big', '150 g이 더 높다'], ['same', '같다'], ['small', '100 g이 더 높다']], ans: 'same',
+        ok: '로르산 100 g은 약 10분, 150 g은 약 15분에 녹는점에 이르렀지만 녹는점은 <b>둘 다 43.8 ℃</b>예요. 녹는점은 같은 물질이면 <b>양에 관계없이 일정해요</b>. 이제 ② 종류가 다를 때도 해 봐요.' },
+      kind: { ids: ['p100', 'l100'], q: '① 예측하기 · 같은 100 g일 때 팔미트산과 로르산의 녹는점은?', opts: [['same', '같다'], ['diff', '다르다'], ['none', '알 수 없다']], ans: 'diff',
+        ok: '같은 100 g을 가열했는데 팔미트산은 <b>62.5 ℃</b>, 로르산은 <b>43.8 ℃</b>에서 온도가 일정해졌어요. 녹는점은 <b>물질의 종류에 따라 달라서</b> 물질을 구별할 수 있어요.' },
+    };
+    let act = 'amount', pred = null, cur = null, busy = false;
+    const rec = { amount: {}, kind: {} };
+    const NM = (k) => `${SA[k].name} ${SA[k].g} g`;
+    function msg(t, m, cls = '') { $('#res').className = 'fbk ' + cls; $('#resT').textContent = t; $('#resM').innerHTML = m; }
+    function render() {
+      const A = ACTS[act];
+      $('#qP').textContent = A.q;
+      $('#pred').innerHTML = A.opts.map(([v, t]) => `<button type="button" data-v="${v}">${t}</button>`).join('');
+      $('#samp').innerHTML = A.ids.map((k) => `<button type="button" data-v="${k}">${NM(k)}</button>`).join('');
+      $$('#pred button').forEach((b) => b.addEventListener('click', () => { if (busy) return; pred = b.dataset.v; $$('#pred button').forEach((x) => x.classList.remove('good', 'bad')); if (!cur) msg('결과', '이제 실험할 시료를 골라요.'); paint(); }));
+      $$('#samp button').forEach((b) => b.addEventListener('click', () => { if (busy) return; cur = b.dataset.v; LAB.set(cur); msg('결과', rec[act][cur] ? `${NM(cur)}은 이미 했어요. 다른 시료를 골라요.` : `시험관에 ${NM(cur)}을 넣었어요. 뜨거운 물에 넣고 온도를 재요.`); paint(); }));
+      $('#recB').innerHTML = A.ids.map((k) => `<tr id="r-${k}"><td>${NM(k)}</td><td id="rt-${k}">${rec[act][k] ? '약 ' + SA[k].tm + '분' : '-'}</td><td class="v" id="rm-${k}">${rec[act][k] ? f1(SA[k].mp) + ' ℃' : '-'}</td></tr>`).join('');
+      paint();
+    }
+    function paint() {
+      const A = ACTS[act];
+      $$('#pred button').forEach((b) => { b.setAttribute('aria-pressed', String(b.dataset.v === pred)); b.disabled = busy; });
+      $$('#samp button').forEach((b) => { b.setAttribute('aria-pressed', String(b.dataset.v === cur)); b.disabled = busy || !pred; b.classList.toggle('done', !!rec[act][b.dataset.v]); });
+      $('#run').disabled = busy || !cur || !!rec[act][cur];
+      $('#run').textContent = busy ? '온도를 재는 중…' : cur ? `③ ${NM(cur)} 뜨거운 물에 넣고 온도 재기` : '③ 뜨거운 물에 넣고 온도 재기';
+      A.ids.forEach((k) => { const r = $('#r-' + k); r && r.classList.toggle('now', k === cur); });
+    }
+    function compare() {
+      const A = ACTS[act], ok = pred === A.ans;
+      $$('#pred button').forEach((b) => { b.classList.toggle('good', b.dataset.v === A.ans); b.classList.toggle('bad', b.dataset.v === pred && !ok); });
+      msg(ok ? '결과 · 예측과 같아요' : '결과 · 예측과 달라요', A.ok, 'ok');
+    }
+    $('#run').addEventListener('click', () => {
+      if (busy || !cur) return; busy = true; paint();
+      const k = cur, s = SA[k]; let told = false;
+      msg('결과', `${NM(k)}을 넣은 시험관을 뜨거운 물에 넣었어요. 그래프를 지켜봐요.`);
+      LAB.start(() => {
+        busy = false; rec[act][k] = true;
+        $('#rt-' + k).textContent = '약 ' + s.tm + '분'; $('#rm-' + k).textContent = f1(s.mp) + ' ℃';
+        const left = ACTS[act].ids.filter((x) => !rec[act][x]);
+        if (!left.length) compare();
+        else msg('결과', `${NM(k)}은 약 ${s.tm}분에 <b>${f1(s.mp)} ℃</b>에 이른 뒤, 녹는 동안 온도가 <b>일정했어요</b>. 이제 ${NM(left[0])}도 해 봐요.`, 'ok');
+        paint();
+      }, (t) => {
+        if (!told && t >= s.tm) { told = true; msg('결과', `녹기 시작했어요! 고체가 녹는 동안 온도가 <b>${f1(s.mp)} ℃에서 더 오르지 않아요</b>.`); }
+      });
+    });
+    function setAct(a) {
+      if (busy) return; act = a; pred = null; cur = null;
+      $$('#acts button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.a === a)));
+      LAB.clearRuns(); ACTS[a].ids.forEach((k) => rec[a][k] && LAB.keep(k)); LAB.set(ACTS[a].ids[0]);
+      msg('결과', '먼저 예측을 골라요.');
+      render();
+    }
+    $$('#acts button').forEach((b) => b.addEventListener('click', () => setAct(b.dataset.a)));
+    $('#bReset').addEventListener('click', () => { if (busy) return; rec[act] = {}; setAct(act); });
+    // 검사용 주소: ?act=kind&s=p100&t=14  /  ?act=amount&done=1
+    const a0 = Q.get('act') === 'kind' ? 'kind' : 'amount';
+    setAct(a0);
+    if (Q.get('done') === '1') { pred = ACTS[a0].ans; ACTS[a0].ids.forEach((k) => { rec[a0][k] = true; LAB.keep(k); }); cur = ACTS[a0].ids[1]; LAB.jump(cur, 20); render(); compare(); }
+    else if (Q.get('s')) { pred = ACTS[a0].ans; if (Q.get('keep')) { rec[a0][Q.get('keep')] = true; LAB.keep(Q.get('keep')); } cur = Q.get('s'); LAB.jump(cur, +(Q.get('t') || 0)); render(); msg('결과', '검사 화면'); }
+    window.SM.okUI = true;
+  } catch (err) { window.SM_err('녹는점 실험', err); }
+})();
+</script>
+<script>
+/* ===== 블록 2: 칸 탭 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S;
+    function tab(p) { $$('#pt button').forEach((x) => x.setAttribute('aria-selected', String(x.dataset.p === p))); $$('.pane').forEach((e) => (e.hidden = e.dataset.p !== p)); }
+    $$('#pt button').forEach((b) => b.addEventListener('click', () => tab(b.dataset.p)));
+    if (S.Q.get('tab')) tab(S.Q.get('tab'));
+  } catch (err) { window.SM_err('탭', err); }
+})();
+</script>
+</body>
+</html>

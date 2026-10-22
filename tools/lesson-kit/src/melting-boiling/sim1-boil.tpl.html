@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>녹는점과 끓는점 – 끓는점 실험실</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+/*@@LOCAL:_css_mb.css@@*/
+/*@@LOCAL:_css_sim.css@@*/
+  /* ===== 이 페이지 전용 ===== */
+  .pane .lbl{margin:8px 0 5px}
+  .pane .lbl:first-child{margin-top:0}
+  .ptabs{margin-bottom:8px}
+  .fbk{margin-top:8px;padding:10px 12px}
+  .conds{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .conds button{min-height:54px;border-radius:14px;border:2px solid #d4dee8;background:#fff;font-weight:900;font-size:15.5px;cursor:pointer;padding:4px 8px;word-break:keep-all;line-height:1.25;position:relative}
+  .conds button small{display:block;font-size:13px;font-weight:700;color:var(--muted)}
+  .conds button[aria-pressed="true"]{border-color:var(--fab);background:#e9f3fd;color:#0b3f73}
+  .conds button.done::after{content:"";position:absolute;right:10px;top:10px;width:9px;height:9px;border-radius:50%;background:#0e63b3}
+  .conds button:disabled{opacity:.45;cursor:default}
+  .runrow{display:flex;gap:8px;margin-top:8px}
+  .runrow .btn{flex:1;min-height:52px}
+  .rec{width:100%;border-collapse:collapse;margin-top:8px;font-size:14px;font-variant-numeric:tabular-nums}
+  .rec th,.rec td{padding:5px 3px;border-bottom:1px solid #e3eaf1;text-align:center;word-break:keep-all}
+  .rec thead th{font-size:12.5px;color:var(--muted);font-weight:800;line-height:1.25}
+  .rec thead th.now{color:#0e63b3}
+  .rec td:first-child,.rec th:first-child{text-align:left;font-weight:800;color:var(--ink);font-size:13px}
+  .rec td.v{font-weight:900;color:var(--ink)}
+  .rec td.now{background:#eef5fc}
+  .qrow{border:1px solid #e3eaf1;border-radius:14px;padding:10px 12px;margin-top:8px;background:#fbfcfe}
+  .qrow p{margin:0 0 8px;font-size:15px;font-weight:800;line-height:1.5;word-break:keep-all;color:var(--ink)}
+  .qrow .two2{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .qrow button{min-height:46px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15px;cursor:pointer}
+  .qrow button[aria-pressed="true"]{border-color:var(--fab);background:#e9f3fd;color:#0b3f73}
+  .qrow button.good{border-color:var(--ok);background:#e8f7ef;color:#11703f}
+  .qrow button.bad{border-color:#e7a29b;background:#fff4f2;color:#9b3a32}
+  .safety{font-size:12.5px;font-weight:700;color:#5a6b7e;margin:8px 0 0;line-height:1.55;word-break:keep-all}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="ttl">
+      <span class="eyebrow">시뮬레이션 ①</span><h1>끓는점 실험실</h1>
+      <p class="sub" id="sub">물과 에탄올을 양을 달리해 가열하면서 온도를 재요. 끓는 동안 온도는 어떻게 될까요? (교과서 탐구)</p>
+    </div>
+  </header>
+
+  <div class="stage">
+    <section class="card viewer">
+      <div class="scene grow" id="lab" role="img" aria-label="왼쪽에 가열 장치, 오른쪽에 온도 센서와 연결된 스마트 기기 그래프. 조건 A·B는 핫플레이트 위 삼각 플라스크 속 물(증류수), 조건 C·D는 물이 든 비커 속 가지 달린 시험관의 에탄올을 물중탕으로 가열하고, 나온 기체는 고무관을 지나 얼음물 속 시험관에 모인다."></div>
+      <div class="vctl">
+        <span class="hint" id="hint">온도 센서 끝이 액체 높이 가운데에 오도록 맞췄어요</span>
+        <span class="sp"></span>
+        <button class="vb" type="button" id="bReset">처음부터</button>
+      </div>
+    </section>
+
+    <section class="card pad">
+      <div class="ptabs" role="tablist" id="pt">
+        <button type="button" role="tab" data-p="lab" aria-selected="true">실험하기</button>
+        <button type="button" role="tab" data-p="sum" aria-selected="false">정리하기 <small id="sumBadge">0/4</small></button>
+        <button type="button" role="tab" data-p="why" aria-selected="false">왜 그럴까?</button>
+      </div>
+      <div class="pane" data-p="lab">
+        <div class="lbl">① 조건 고르기 · 네 조건을 모두 해 봐요</div>
+        <div class="conds" id="conds">
+          <button type="button" data-c="A" aria-pressed="true">조건 A<small>물(증류수) 20 mL</small></button>
+          <button type="button" data-c="B" aria-pressed="false">조건 B<small>물(증류수) 40 mL</small></button>
+          <button type="button" data-c="C" aria-pressed="false">조건 C<small>에탄올 10 mL</small></button>
+          <button type="button" data-c="D" aria-pressed="false">조건 D<small>에탄올 20 mL</small></button>
+        </div>
+        <div class="runrow"><button class="btn primary" type="button" id="run">② 가열하면서 온도 재기</button></div>
+        <div class="fbk" id="res"><b class="t" id="resT">결과</b><span id="resM">조건 A부터 가열해 봐요. 끓기 시작하면 1분 정도 더 재요.</span>
+          <table class="rec" aria-label="조건별 끓는점 기록">
+            <thead><tr><th>조건</th><th data-c="A">A<br>물 20 mL</th><th data-c="B">B<br>물 40 mL</th><th data-c="C">C<br>에탄올 10 mL</th><th data-c="D">D<br>에탄올 20 mL</th></tr></thead>
+            <tbody>
+              <tr><td>끓는점(℃)</td><td class="v" id="bp-A">-</td><td class="v" id="bp-B">-</td><td class="v" id="bp-C">-</td><td class="v" id="bp-D">-</td></tr>
+              <tr><td>끓기 시작</td><td id="tb-A">-</td><td id="tb-B">-</td><td id="tb-C">-</td><td id="tb-D">-</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="pane" data-p="sum" hidden>
+        <div class="lbl">표를 보고 답해요 (교과서 정리하기)</div>
+        <div class="qrow" data-q="0"><p>같은 물질에서 물질의 양에 따라 끓는점은?</p><div class="two2"><button type="button" data-v="same">양에 관계없이 같다</button><button type="button" data-v="diff">양에 따라 다르다</button></div></div>
+        <div class="qrow" data-q="1"><p>물질의 양이 같고 물질의 종류가 다를 때 끓는점은? <small style="font-weight:700;color:var(--muted)">(B와 D)</small></p><div class="two2"><button type="button" data-v="same">같다</button><button type="button" data-v="diff">다르다</button></div></div>
+        <div class="qrow" data-q="2"><p>끓는점으로 물(증류수)과 에탄올을 구별할 수 있을까?</p><div class="two2"><button type="button" data-v="yes">구별할 수 있다</button><button type="button" data-v="no">구별할 수 없다</button></div></div>
+        <div class="fbk" id="sumRes"><b class="t">정리</b><span id="sumM">세 질문에 모두 답하면 확인해 줘요.</span></div>
+      </div>
+      <div class="pane" data-p="why" hidden>
+        <div class="phase">
+          <div class="ph on"><i>1</i><span>액체를 가열하면 온도가 올라가다가, 끓기 시작하면 <b>기화</b>가 일어나면서 <b>온도가 일정하게 유지돼요</b>. 이때의 온도가 <b>끓는점</b>이에요.</span></div>
+          <div class="ph on"><i>2</i><span>물 20 mL(A)와 40 mL(B)는 끓기 시작하는 <b>시간은 달라도</b> 끓는점은 모두 <b>100 ℃</b>예요. 양이 많으면 끓는점까지 가는 데 시간이 더 걸릴 뿐이에요.</span></div>
+          <div class="ph on"><i>3</i><span>에탄올(C, D)은 양에 관계없이 <b>78.2 ℃</b>에서 끓어요. 물과 에탄올은 <b>종류가 달라서 끓는점이 달라요</b>.</span></div>
+          <div class="ph on"><i>4</i><span>끓는점은 같은 물질에서는 압력이 같을 때 양에 관계없이 일정하고, 물질마다 고유한 값이에요. 그래서 끓는점은 물질을 구별할 수 있는 <b>물질의 특성</b>이에요.</span></div>
+        </div>
+      </div>
+      <p class="safety">에탄올은 불이 붙기 쉬워서 주변에 화기를 치우고 물중탕으로 서서히 가열해요. 뜨거운 기구는 내열 장갑을 끼고 다뤄요.</p>
+      <p class="mnote">1 기압으로 보고, 물과 에탄올 모두 20 ℃에서 가열을 시작해요. 끓기 시작하는 시간과 기포 수는 보기 좋게 정한 모형이고, 끓는점은 교과서 값이에요. 1분을 1.5초로 줄여 보여 줘요.</p>
+    </section>
+  </div>
+</div>
+<script>
+window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
+  reduce: !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches), Q: new URLSearchParams(location.search) };
+</script>
+<script>
+/*@@LOCAL:_sol.js@@*/
+</script>
+<script>
+/*@@LOCAL:_mb.js@@*/
+</script>
+<script>
+/* ===== 블록 1: 실험 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S, Q = S.Q;
+    const LAB = MB.boil($('#lab'));
+    window.LAB = LAB;
+    const C = MB.COND, done = {};
+    let cur = 'A', busy = false, told = false;
+    function msg(t, m, cls = '') { $('#res').className = 'fbk ' + cls; $('#resT').textContent = t; $('#resM').innerHTML = m; }
+    function paint() {
+      $$('#conds button').forEach((b) => { b.setAttribute('aria-pressed', String(b.dataset.c === cur)); b.disabled = busy; b.classList.toggle('done', !!done[b.dataset.c]); });
+      $('#run').disabled = busy;
+      $('#run').textContent = busy ? '가열하는 중…' : done[cur] ? `조건 ${cur} 다시 재기` : `② 조건 ${cur} 가열하면서 온도 재기`;
+      $$('.rec thead th[data-c]').forEach((th) => th.classList.toggle('now', th.dataset.c === cur));
+      ['A', 'B', 'C', 'D'].forEach((k) => { $('#bp-' + k).classList.toggle('now', k === cur); $('#tb-' + k).classList.toggle('now', k === cur); });
+      const n = Object.keys(done).length; $('#sumBadge').textContent = n + '/4';
+      $('#hint').textContent = C[cur].sub === 'water' ? '온도 센서 끝이 액체 높이 가운데에 오도록 맞췄어요' : '에탄올은 물중탕으로 서서히 가열해요';
+    }
+    function record(k) {
+      done[k] = true; $('#bp-' + k).textContent = C[k].sub === 'water' ? '100.0' : '78.2'; $('#tb-' + k).textContent = '약 ' + C[k].tb + '분';
+    }
+    function nextHint(k) {
+      const left = ['A', 'B', 'C', 'D'].filter((x) => !done[x]);
+      if (!left.length) return '네 조건을 모두 했어요. <b>정리하기</b> 칸에서 표를 해석해 봐요.';
+      const pair = { A: 'B', B: 'A', C: 'D', D: 'C' }[k];
+      return done[pair] ? `이제 조건 ${left[0]}도 해 봐요.` : `양이 다른 조건 ${pair}도 해 보고 끓는점을 비교해요.`;
+    }
+    $$('#conds button').forEach((b) => b.addEventListener('click', () => {
+      if (busy) return; cur = b.dataset.c; LAB.set(cur); told = false;
+      msg('결과', `조건 ${cur}: ${C[cur].name} ${C[cur].vol} mL. ${C[cur].sub === 'water' ? '삼각 플라스크를 핫플레이트로 가열해요.' : '가지 달린 시험관을 물이 든 비커에 넣고 가열해요.'}`);
+      paint();
+    }));
+    $('#run').addEventListener('click', () => {
+      if (busy) return; busy = true; told = false; LAB.set(cur); paint();
+      msg('결과', '가열하는 중이에요. 그래프에서 온도가 어떻게 바뀌는지 지켜봐요.');
+      const k = cur;
+      LAB.start(() => {
+        busy = false; record(k);
+        const sameDone = Object.keys(done).filter((x) => C[x].sub === C[k].sub && x !== k);
+        const extra = sameDone.length ? ` 조건 ${sameDone[0]}와 끓기 시작한 시간은 달라도 <b>끓는점은 같아요</b>.` : '';
+        msg('결과 · 조건 ' + k, `${C[k].name} ${C[k].vol} mL는 약 ${C[k].tb}분에 끓기 시작했고, 그 뒤로 온도가 <b>${C[k].sub === 'water' ? '100.0' : '78.2'} ℃</b>에서 일정했어요.${extra} ${nextHint(k)}`, 'ok');
+        paint();
+      }, (t, T) => {
+        if (!told && t >= C[k].tb) { told = true; msg('결과', `끓기 시작했어요! 기포가 많이 생기는데도 온도가 <b>더 오르지 않아요</b>. 1분 정도 더 재요.`); }
+      });
+    });
+    window.BOIL_RESET = () => { Object.keys(done).forEach((k) => { delete done[k]; $('#bp-' + k).textContent = '-'; $('#tb-' + k).textContent = '-'; }); LAB.st.runs = {}; cur = 'A'; busy = false; LAB.set('A'); msg('결과', '조건 A부터 가열해 봐요. 끓기 시작하면 1분 정도 더 재요.'); paint(); window.SUM_RESET && window.SUM_RESET(); };
+    // 검사용 주소: ?c=B&t=8  /  ?all=1
+    if (Q.get('all') === '1') { ['A', 'B', 'C', 'D'].forEach((k) => { LAB.keep(k); record(k); }); cur = 'D'; LAB.jump('D', C.D.tb + 1.2); msg('결과 · 조건 D', '네 조건을 모두 했어요. <b>정리하기</b> 칸에서 표를 해석해 봐요.', 'ok'); }
+    else if (Q.get('c')) { cur = Q.get('c'); if (Q.get('keep')) Q.get('keep').split('').forEach((k) => { LAB.keep(k); record(k); }); LAB.jump(cur, +(Q.get('t') || 0)); }
+    window.BOIL_DONE = done;
+    paint();
+    window.SM.okUI = true;
+  } catch (err) { window.SM_err('끓는점 실험', err); }
+})();
+</script>
+<script>
+/* ===== 블록 2: 칸 탭 · 정리하기 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S;
+    function tab(p) { $$('#pt button').forEach((x) => x.setAttribute('aria-selected', String(x.dataset.p === p))); $$('.pane').forEach((e) => (e.hidden = e.dataset.p !== p)); }
+    $$('#pt button').forEach((b) => b.addEventListener('click', () => tab(b.dataset.p)));
+    const ANS = ['same', 'diff', 'yes'], pick = [null, null, null];
+    $$('.qrow').forEach((row) => { const i = +row.dataset.q; $$('button', row).forEach((b) => b.addEventListener('click', () => { pick[i] = b.dataset.v; $$('button', row).forEach((o) => { o.setAttribute('aria-pressed', String(o === b)); o.classList.remove('good', 'bad'); }); check(); })); });
+    function check() {
+      if (pick.some((p) => p === null)) return;
+      let wrong = 0;
+      $$('.qrow').forEach((row) => { const i = +row.dataset.q; $$('button', row).forEach((o) => { o.classList.toggle('good', o.dataset.v === ANS[i] && o.dataset.v === pick[i]); o.classList.toggle('bad', o.dataset.v === pick[i] && pick[i] !== ANS[i]); }); if (pick[i] !== ANS[i]) wrong++; });
+      const box = $('#sumRes');
+      if (!wrong) { box.className = 'fbk ok'; $('#sumM').innerHTML = '끓는점은 <b>같은 물질이면 양에 관계없이 일정</b>하고(물 100.0 ℃, 에탄올 78.2 ℃), <b>물질의 종류에 따라 달라요</b>. 그래서 끓는점으로 물과 에탄올을 구별할 수 있어요.'; }
+      else { box.className = 'fbk no'; $('#sumM').innerHTML = `빨간 답 ${wrong}개를 다시 골라 봐요. 실험하기 칸의 표에서 A와 B, B와 D를 비교해요.`; }
+    }
+    window.SUM_RESET = () => { pick.fill(null); $$('.qrow button').forEach((o) => { o.setAttribute('aria-pressed', 'false'); o.classList.remove('good', 'bad'); }); $('#sumRes').className = 'fbk'; $('#sumM').textContent = '세 질문에 모두 답하면 확인해 줘요.'; };
+    $('#bReset').addEventListener('click', () => window.BOIL_RESET());
+    if (S.Q.get('tab')) tab(S.Q.get('tab'));
+  } catch (err) { window.SM_err('탭', err); }
+})();
+</script>
+</body>
+</html>
