@@ -566,8 +566,8 @@ window.SS = (() => {
       // 온도 (모형으로 보여 주는 값)
       if (b.a === 0 && st.stage < 5) ov.put('temp', b.x, b.y - SH - 24, `용액 약 ${Math.round(st.T)} ℃`, 'tx read'); else ov.hide('temp');
       if (!moving && st.stage === 0) {
-        ov.put('pp', st.paper.x, st.paper.y + 30, '혼합물 <span class="u">황산 구리(Ⅱ) 10 g + 붕산 10 g</span>', 'tx nm');
-        ov.put('sbn', b.x, b.y + 22, '200 mL 비커 <span class="u">뜨거운 물 100 g</span>', 'tx nm');
+        ov.put('pp', st.paper.x, st.paper.y + 30, '혼합물 <span class="u">황산 구리(Ⅱ) 10 g<br>+ 붕산 10 g</span>', 'tx nm twol');
+        ov.put('sbn', b.x, b.y + 22, '200 mL 비커 <span class="u">뜨거운 물 100 g</span>', 'tx nm twol');
       } else { ov.hide('pp'); ov.hide('sbn'); }
       if (!moving && (st.stage === 1 || st.stage === 2) && b.a === 0) ov.put('rod', b.x - SW / 2 - 12, b.y - SH - 20, '유리 막대', 'tx nm la'); else ov.hide('rod');
       if (st.stage <= 3) ov.put('bbn', BX, TY + 22, '500 mL 비커 <span class="u">얼음물</span>', 'tx nm'); else ov.hide('bbn');
