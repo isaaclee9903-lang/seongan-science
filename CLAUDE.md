@@ -26,6 +26,7 @@
 | `melting-boiling` | 중2 Ⅰ 물질의 특성: 녹는점과 끓는점 (찻주전자와 큰 솥, 끓는점 실험실 2D: 조건 A~D·스마트 기기 그래프, 녹는점 실험실 2D: 로르산·팔미트산 그림 Ⅰ-8, 교과서 밖 신기한 물질 도감: 온도 선과 상태 막대 9가지) | lesson-kit | `중2_물질의특성_녹는점과끓는점.md` |
 | `pure-mixture` | 중2 Ⅰ 물질의 특성: 순물질과 혼합물 (입자 돋보기로 그림 Ⅰ-10 분류하기, 물과 소금물 실험실 2D: 가열·냉각 그래프, 탐구: 기준표 세우기·물질 6가지 조사) | lesson-kit | `중2_물질의특성_순물질과혼합물.md` |
 | `density-separation` | 중2 Ⅰ 혼합물의 분리: 밀도 차를 이용한 분리 (흔든 물과 콩기름 병, 분별 깔때기 실험실 2D: 꼭지 잠금·조금·많이, 비커 3개, 입구로 따르기, 생활 속 분리: 키질·기름막이) | lesson-kit | `중2_물질의특성_밀도차를이용한혼합물의분리.md` |
+| `solubility-separation` | 중2 Ⅰ 혼합물의 분리: 용해도 차를 이용한 분리 (첫 탭 아스피린 유튜브 멈춤 퀴즈 6문제, 붕산 분리 실험실 2D: 녹이기·얼음물·거름 장치, 용해도 곡선으로 예측: 그림 Ⅰ-12·넣는 양 바꾸기) | lesson-kit | `중2_물질의특성_용해도차를이용한혼합물의분리.md` |
 | `earth-interior` | 중2 Ⅱ 지구 내부의 층상 구조 (지구 속 여행 콘셉트, 3D 단면, 지진파) | lesson-kit | `중2_지권의변화_지구내부의층상구조.md` (Ⅱ 시작 단원은 나중에) |
 | `minerals` | 중2 Ⅱ 광물의 특성 (3D 광물 모형, 3D 광물 실험실, 광물 구별하기) | lesson-kit | `중2_지권의변화_광물의특성.md` |
 | `rocks` | 중2 Ⅱ 암석의 종류 (화성암·퇴적암·변성암, 2D 생성 과정 시뮬레이션, 3D 암석 12종·돋보기 분류 탐구) | lesson-kit | `중2_지권의변화_암석의종류.md` |
@@ -60,6 +61,7 @@
 - 녹는점과 끓는점(Ⅰ 물질의 특성): `tools/lesson-kit/src/melting-boiling/_mb.js`(MB: 핫플레이트·스탠드·온도 센서·디지털 온도계·삼각 플라스크, 온도-시간 그래프 tgraph, 끓는점 실험실 boil, 녹는점 실험실 melt, 그림 Ⅰ-8 mgraph, 그림 Ⅰ-7·Ⅰ-9 ladder, 신기한 물질 도감 atlas, 찻주전자와 솥 pots). `_sol.js`(용해도 SOL) 사본의 그리기 도구를 빌려 쓴다.
 - 순물질과 혼합물(Ⅰ 물질의 특성): `tools/lesson-kit/src/pure-mixture/_mix.js`(MIX: 입자 돋보기 lens·lensCore(Matter.js로 입자 움직임 계산, 기체·액체·고체, 붓기·젓기·가라앉기), 물과 소금물 실험실 ws·읽기용 그래프 wsGraphs, 컵 그림+돋보기 sample, 조사 카드 그래프 sketch). `_mb.js` 사본이 기구 그림을 `MB._`로 내보낸다. 끌어다 놓기는 SortableJS. 둘 다 jsdelivr에서 불러오고, 못 불러오면 자체 계산·누르기 방식으로 대신한다.
 - 밀도 차를 이용한 분리(Ⅰ 혼합물의 분리): `tools/lesson-kit/src/density-separation/_sep.js`(SEP: 그릇 부피↔높이 vessel, 콩기름 방울이 떠올라 층이 되는 emulsion, 흔드는 병 bottle, 스탠드·링·분별 깔때기·비커 3개 funnel(꼭지 3단계, 비커 바꾸기, 입구로 따르기), 키질 winnow, 기름막이 boom). 다음 혼합물의 분리 수업도 재사용한다.
+- 용해도 차를 이용한 분리(Ⅰ 혼합물의 분리): `tools/lesson-kit/src/solubility-separation/_ss.js`(SS: 해 보기 실험실 lab(시약포지·200 mL 비커·유리 막대·500 mL 얼음물 비커·거름 장치, 붕산 결정 석출·거르기·거름종이 확대), 그림 Ⅰ-12 곡선+비커 curve, 용해도 solu(그림 Ⅰ-12 값)). 첫 탭을 영상으로 열려면 `lesson.json`에 `"start": "video"`(build.py가 탭 껍데기 기본 탭으로 넣음, 없으면 reading).
 - 지권(Ⅱ) 3D 모형: 광물은 `tools/lesson-kit/src/minerals/_min3d.js`(MIN3D), 암석 12종·퇴적물·층리·화석은 `src/rocks/_rock3d.js`(ROCK3D, MIN3D 사본이 `src/rocks/_min3d.js`에 있음). `ROCK3D.thumbs(ids)`로 카드용 사진을 만들 수 있다. 다음 Ⅱ 수업(암석의 순환 등)도 재사용한다.
 - 대륙 지도(Ⅱ 지권의 운동): `tools/lesson-kit/src/continental-drift/_geo.js`(Natural Earth 1:50m 대륙 모양), `_globe.js`(GLOBE: 판게아↔현재 대륙 회전, 캔버스 지구본), `_gond.js`(EVID 화석·빙하 증거, GOND 평면 대륙 조각판). 다음 판 구조 수업도 재사용한다.
 - 지진·화산 지도(Ⅱ 지권의 운동): `tools/lesson-kit/src/quake-volcano/_map.js`(WMAP: 실제 지진·화산·판의 경계 캔버스 지도, 재생·확대·판 강조·띠 칠하기, USGS 실시간 자료), `_bound2d.js`(BND: 교과서 그림 Ⅱ-16 형식 덩어리 그림, 부딪침·갈라짐·어긋남). 자료는 `lessons/quake-volcano/data/`(만드는 법 `_data_prep.py`). 다음 지권의 운동 수업도 재사용한다.

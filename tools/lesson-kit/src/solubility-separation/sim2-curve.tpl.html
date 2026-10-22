@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>용해도 차를 이용한 분리 – 용해도 곡선으로 예측</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+/*@@LOCAL:_css_ss.css@@*/
+/*@@LOCAL:_css_sim.css@@*/
+  /* ===== 이 페이지 전용 ===== */
+  #cv{aspect-ratio:1100/660}
+  .ctl{display:grid;gap:8px}
+  .seglbl{font-size:13px;font-weight:900;color:var(--fab);margin:4px 0 -2px}
+  .seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;background:#eef3f8;border-radius:14px;padding:4px}
+  .seg button{min-height:46px;border:0;border-radius:11px;background:transparent;font-weight:800;font-size:15px;color:var(--ink2);cursor:pointer;word-break:keep-all;line-height:1.3}
+  .seg button[aria-pressed="true"]{background:#14263b;color:#fff}
+  .seg button:disabled{opacity:.4;cursor:default}
+  .amt{display:grid;grid-template-columns:96px 1fr;gap:8px;align-items:center}
+  .amt span{font-size:14.5px;font-weight:800;color:var(--ink2);word-break:keep-all}
+  .pred{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .pred button{min-height:46px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:14.5px;cursor:pointer;word-break:keep-all}
+  .pred button[aria-pressed="true"]{border-color:var(--fab);background:#e9f3fd;color:#0b3f73}
+  .slider{display:grid;grid-template-columns:1fr 68px;gap:10px;align-items:center}
+  .slider input{width:100%;height:34px;accent-color:#0e63b3}
+  .slider b{font-size:20px;font-variant-numeric:tabular-nums;text-align:right}
+  .ctl .btn{width:100%}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="ttl">
+      <span class="eyebrow">시뮬레이션</span><h1>용해도 곡선으로 석출 예측하기</h1>
+      <p class="sub">물 100 g에 녹인 혼합물을 식히면 무엇이 얼마나 석출될까요? (교과서 그림 Ⅰ-12)</p>
+    </div>
+    <div class="ptabs big" role="tablist" id="act">
+      <button type="button" role="tab" data-a="1" aria-selected="true">① 그림 Ⅰ-12 따라 하기</button>
+      <button type="button" role="tab" data-a="2" aria-selected="false">② 넣는 양 바꾸기</button>
+    </div>
+  </header>
+
+  <div class="stage">
+    <section class="card viewer">
+      <div class="scene grow" id="cv" role="img" aria-label="온도에 따른 황산 구리(Ⅱ)와 붕산의 용해도 곡선과 물 100 g이 든 비커. 넣은 양을 나타내는 점선보다 곡선이 아래로 내려가면 그 차이만큼 석출된다."></div>
+      <div class="vctl">
+        <span class="hint">그래프를 눌러도 온도를 바꿀 수 있어요</span>
+        <span class="sp"></span>
+        <button class="vb" type="button" id="bReset">처음부터</button>
+      </div>
+    </section>
+
+    <section class="card pad">
+      <div class="ptabs" role="tablist" id="pt">
+        <button type="button" role="tab" data-p="lab" aria-selected="true">실험하기</button>
+        <button type="button" role="tab" data-p="why" aria-selected="false">왜 그럴까?</button>
+      </div>
+      <div class="pane" data-p="lab">
+        <div class="ctl" id="ctl"></div>
+        <div class="fbk" id="res"><b class="t" id="resT">결과</b><span id="resM"></span></div>
+      </div>
+      <div class="pane" data-p="why" hidden>
+        <div class="phase">
+          <div class="ph on"><i>1</i><span>용해도 곡선은 그 온도에서 물 100 g에 <b>최대로 녹을 수 있는 양</b>이에요. 점선은 실제로 <b>넣은 양</b>이에요.</span></div>
+          <div class="ph on"><i>2</i><span>곡선이 점선보다 위에 있으면 넣은 것이 <b>모두 녹아요</b>(포화 상태에 이르지 않음).</span></div>
+          <div class="ph on"><i>3</i><span>온도를 낮춰 곡선이 점선보다 아래로 내려가면, 용액에 그 물질이 <b>포화 상태보다 많이</b> 들어 있게 돼요. 넘치는 만큼(점선 − 곡선)이 고체로 <b>석출</b>돼요.</span></div>
+          <div class="ph on"><i>4</i><span>그림 Ⅰ-12: 10 ℃에서 붕산은 3.7 g까지 녹으므로 10 − 3.7 = <b>6.3 g</b>이 석출돼요. 황산 구리(Ⅱ)는 16.8 g까지 녹으므로 10 g은 그대로 녹아 있어요.</span></div>
+          <div class="ph on"><i>5</i><span>두 물질이 함께 석출되면 걸러도 <b>순수한 고체를 얻을 수 없어요</b>. 그래서 온도에 따른 용해도 차를 이용할 때는 한 물질만 석출되도록 해요.</span></div>
+        </div>
+      </div>
+      <p class="mnote">70 ℃·10 ℃의 값은 교과서 그림 Ⅰ-12, 그 밖의 온도는 곡선에서 읽은 대략의 값이에요. 석출된 고체의 양은 보기 좋게 정한 모형이에요.</p>
+    </section>
+  </div>
+</div>
+<script>
+window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
+  reduce: !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches), Q: new URLSearchParams(location.search) };
+</script>
+<script>
+/*@@LOCAL:_ss.js@@*/
+</script>
+<script>
+/* ===== 블록 1: 그래프와 조작 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S, Q = S.Q;
+    const st = { act: 1, amt: { c: 10, b: 10 }, pred: null, T: 70, done: false };
+    const C = SS.curve($('#cv'), { T: 70, onT: (T) => { st.T = T; syncT(); live(); } });
+    const PRED = [['b', '붕산만'], ['c', '황산 구리(Ⅱ)만'], ['cb', '둘 다'], ['n', '아무것도 석출되지 않음']];
+    const answer = () => { const c = st.amt.c > SS.solu('c', 10), b = st.amt.b > SS.solu('b', 10); return c && b ? 'cb' : c ? 'c' : b ? 'b' : 'n'; };
+    function msg(t, m, cls = '') { $('#res').className = 'fbk ' + cls; $('#resT').textContent = t; $('#resM').innerHTML = m; }
+    function render() {
+      const A = st.amt;
+      $('#ctl').innerHTML =
+        (st.act === 2 ? `<div class="seglbl">① 물 100 g에 넣을 양 고르기</div>
+          <div class="amt"><span>황산 구리(Ⅱ)</span><div class="seg" id="sc">${[10, 20, 30].map((g) => `<button type="button" data-g="${g}" aria-pressed="${A.c === g}">${g} g</button>`).join('')}</div></div>
+          <div class="amt"><span>붕산</span><div class="seg" id="sb">${[5, 10, 15].map((g) => `<button type="button" data-g="${g}" aria-pressed="${A.b === g}">${g} g</button>`).join('')}</div></div>` : '') +
+        `<div class="seglbl">${st.act === 2 ? '②' : '①'} 예측하기 · 70 ℃에서 모두 녹인 뒤 10 ℃로 식히면 석출되는 것은?</div>
+         <div class="pred" id="pred">${PRED.map(([v, t]) => `<button type="button" data-v="${v}" aria-pressed="${st.pred === v}">${t}</button>`).join('')}</div>
+         <button class="btn ${st.pred ? 'primary' : 'ghost'}" type="button" id="bCool"${st.pred && !C.busy ? '' : ' disabled'}>70 ℃ → 10 ℃로 식히기</button>
+         <div class="seglbl">${st.act === 2 ? '③' : '②'} 온도를 바꿔 보기</div>
+         <div class="slider"><input type="range" id="tR" min="0" max="80" step="1" value="${st.T}" aria-label="온도"><b id="tV">${st.T} ℃</b></div>`;
+      $$('#sc button').forEach((b) => b.addEventListener('click', () => { st.amt.c = +b.dataset.g; reset70(); }));
+      $$('#sb button').forEach((b) => b.addEventListener('click', () => { st.amt.b = +b.dataset.g; reset70(); }));
+      $$('#pred button').forEach((b) => b.addEventListener('click', () => { st.pred = b.dataset.v; st.done = false; render(); msg('결과', '예측했어요. <b>70 ℃ → 10 ℃로 식히기</b>를 눌러 확인해요.'); }));
+      $('#tR').addEventListener('input', (e) => { st.T = +e.target.value; C.set({ T: st.T }); syncT(); live(); });
+      $('#bCool').addEventListener('click', cool);
+    }
+    function syncT() { const r = $('#tR'); if (r) { r.value = st.T; $('#tV').textContent = st.T + ' ℃'; } }
+    function reset70() { st.T = 70; st.pred = null; st.done = false; C.set({ amt: st.amt, T: 70 }); render(); start(); }
+    function start() {
+      const A = st.amt;
+      msg('70 ℃ · 모두 녹아 있어요', `70 ℃ 물 100 g에는 황산 구리(Ⅱ)가 47.9 g, 붕산이 18.9 g까지 녹아요. 넣은 황산 구리(Ⅱ) ${A.c} g과 붕산 ${A.b} g은 <b>모두 녹아요</b>. 식히면 무엇이 석출될지 예측해요.`);
+    }
+    function result() {
+      const A = st.amt, ans = answer(), ok = st.pred === ans;
+      const pc = A.c - SS.solu('c', 10), pb = A.b - SS.solu('b', 10);
+      const parts = [];
+      parts.push(pb > 0 ? `붕산은 10 ℃에서 3.7 g까지 녹아요. ${A.b} − 3.7 = <b>${SS.fmt1(pb)} g 석출</b>.` : `붕산 ${A.b} g은 10 ℃에서도 모두 녹아요.`);
+      parts.push(pc > 0 ? `황산 구리(Ⅱ)는 10 ℃에서 16.8 g까지 녹아요. ${A.c} − 16.8 = <b>${SS.fmt1(pc)} g 석출</b>.` : `황산 구리(Ⅱ)는 10 ℃에서 16.8 g까지 녹으므로 ${A.c} g은 <b>그대로 녹아 있어요</b>.`);
+      if (ans === 'cb') parts.push('두 물질이 함께 석출되어 걸러도 <b>순수한 붕산을 얻을 수 없어요</b>.');
+      else if (ans === 'b') parts.push('붕산만 석출되므로 걸러 내면 <b>순수한 붕산</b>을 얻어요.');
+      msg(ok ? '결과 · 예측과 같아요' : '결과 · 예측과 달라요', parts.join(' '), ok ? 'ok' : 'no');
+    }
+    function cool() {
+      if (C.busy) return;
+      C.set({ T: 70 }); st.T = 70; syncT();
+      msg('결과', '식히는 중이에요. 곡선과 점선을 지켜봐요…');
+      $('#bCool').disabled = true;
+      setTimeout(() => C.set({ T: 10, dur: 3.2, done: () => { st.T = 10; syncT(); st.done = true; result(); render(); } }), 150);
+      const tm = setInterval(() => { const T = Math.round(C.st.Tv); st.T = T; syncT(); if (!C.busy) clearInterval(tm); }, 80);
+    }
+    function live() {
+      if (C.busy) return;
+      const A = st.amt, T = st.T, pc = A.c - SS.solu('c', T), pb = A.b - SS.solu('b', T);
+      const s = [];
+      if (pb > 0.05) s.push(`붕산 <b>${SS.pText('b', T, A.b)}</b>`); if (pc > 0.05) s.push(`황산 구리(Ⅱ) <b>${SS.pText('c', T, A.c)}</b>`);
+      msg(`${T} ℃`, s.length ? `석출: ${s.join(', ')}. ${s.length === 2 ? '두 물질이 함께 나와요.' : ''}` : '두 물질 모두 녹아 있어요. 곡선이 점선보다 위에 있어요.', s.length ? '' : 'ok');
+    }
+    function setAct(a) {
+      st.act = a; $$('#act button').forEach((b) => b.setAttribute('aria-selected', String(+b.dataset.a === a)));
+      if (a === 1) st.amt = { c: 10, b: 10 };
+      reset70();
+    }
+    $$('#act button').forEach((b) => b.addEventListener('click', () => setAct(+b.dataset.a)));
+    $('#bReset').addEventListener('click', () => setAct(st.act));
+    function show(p) { $$('#pt button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.p === p))); $$('.pane').forEach((e) => (e.hidden = e.dataset.p !== p)); }
+    $$('#pt button').forEach((b) => b.addEventListener('click', () => show(b.dataset.p)));
+    // 검사용 주소: ?act=2&c=30&b=10&pred=cb&T=10, ?tab=why
+    setAct(Q.get('act') === '2' ? 2 : 1);
+    if (Q.get('c')) st.amt.c = +Q.get('c'); if (Q.get('b')) st.amt.b = +Q.get('b');
+    if (Q.get('c') || Q.get('b')) reset70();
+    if (Q.get('pred')) { st.pred = Q.get('pred'); render(); }
+    if (Q.get('T')) { st.T = +Q.get('T'); C.set({ T: st.T }); syncT(); if (st.T === 10 && st.pred) { st.done = true; result(); } else live(); }
+    show(Q.get('tab') === 'why' ? 'why' : 'lab');
+    window.SM.okUI = true;
+  } catch (err) { window.SM_err('그래프', err); }
+})();
+</script>
+</body>
+</html>
