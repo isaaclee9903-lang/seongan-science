@@ -318,7 +318,8 @@ window.EMI = (() => {
   const PX = 0.32, PY = 0.18; // 앞쪽(z+)으로 갈수록 오른쪽 아래로 보이는 비스듬한 투영
 
   /* ---- 캔버스 · 이름표 · 반복 ---- */
-  function surface(host, W, H) {
+  // dy: 그림 위쪽 빈 곳을 잘라 내는 양(그림 좌표는 그대로 쓰고 보이는 창만 내림)
+  function surface(host, W, H, dy = 0) {
     const cv = document.createElement('canvas'); cv.className = 'wvc'; host.appendChild(cv);
     const box = document.createElement('div'); box.className = 'olay'; host.appendChild(box);
     const ctx = cv.getContext('2d'); const m = { k: 1, ox: 0, oy: 0, dpr: 1 };
@@ -331,10 +332,10 @@ window.EMI = (() => {
     }
     fit();
     if (window.ResizeObserver) new ResizeObserver(fit).observe(host); else window.addEventListener('resize', fit);
-    return { cv, ctx, box, m, W, H,
-      begin() { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, cv.width, cv.height); ctx.setTransform(m.dpr * m.k, 0, 0, m.dpr * m.k, m.dpr * m.ox, m.dpr * m.oy); },
-      full() { return [-m.ox / m.k, -m.oy / m.k, cv.width / m.dpr / m.k, cv.height / m.dpr / m.k]; },
-      toLocal(e) { const r = cv.getBoundingClientRect(); return [(e.clientX - r.left - m.ox) / m.k, (e.clientY - r.top - m.oy) / m.k]; } };
+    return { cv, ctx, box, m, W, H, dy,
+      begin() { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, cv.width, cv.height); ctx.setTransform(m.dpr * m.k, 0, 0, m.dpr * m.k, m.dpr * m.ox, m.dpr * (m.oy - dy * m.k)); },
+      full() { return [-m.ox / m.k, -m.oy / m.k + dy, cv.width / m.dpr / m.k, cv.height / m.dpr / m.k]; },
+      toLocal(e) { const r = cv.getBoundingClientRect(); return [(e.clientX - r.left - m.ox) / m.k, (e.clientY - r.top - m.oy) / m.k + dy]; } };
   }
   function overlay(S) {
     const box = S.box, map = {};
@@ -343,7 +344,7 @@ window.EMI = (() => {
         let e = map[id]; if (!e) { e = document.createElement('span'); box.appendChild(e); map[id] = e; }
         const c = 'ol ' + cls; if (e.className !== c) e.className = c;
         if (e._h !== html) { e.innerHTML = html; e._h = html; }
-        e.style.left = (x / S.W * 100).toFixed(2) + '%'; e.style.top = (y / S.H * 100).toFixed(2) + '%'; e.hidden = false; return e;
+        e.style.left = (x / S.W * 100).toFixed(2) + '%'; e.style.top = ((y - S.dy) / S.H * 100).toFixed(2) + '%'; e.hidden = false; return e;
       },
       hide(id) { if (map[id]) map[id].hidden = true; },
     };
@@ -583,7 +584,7 @@ window.EMI = (() => {
      1) 배움활동: 코일·검류계·막대자석
      ===================================================================== */
   function lab(host, o = {}) {
-    const S = surface(host, 1200, 760), ctx = S.ctx, OL = overlay(S), tw = tweens();
+    const S = surface(host, 1200, 680, 80), ctx = S.ctx, OL = overlay(S), tw = tweens();
     const CY = 300, CL = 300, CR = 74, N = 22, ML = 250, MH = 50, MD = 50;
     const POS = { magnet: { xc: 470, home: 960, inn: 470 }, coil: { xm: 820, home: 330, inn: 820 } };
     const st = { mode: 'magnet', xm: POS.magnet.home, xc: POS.magnet.xc, needle: 0, nv: 0, phase: 0, emf: 0, v: 0, rest: 0, field: o.field !== false, labels: o.labels !== false, rec: {} };
@@ -683,21 +684,21 @@ window.EMI = (() => {
      2) 그림 Ⅵ-7: 자가 발전 손전등 속
      ===================================================================== */
   function flash(host, o = {}) {
-    const S = surface(host, 1040, 600), ctx = S.ctx, OL = overlay(S);
-    const CY = 270, BL = 780, BR = 66, COILX = 70, CLN = 170, ML = 110, MR = 34;
-    const RMIN = -200 + ML / 2, RMAX = 340 - ML / 2;
+    const S = surface(host, 900, 600), ctx = S.ctx, OL = overlay(S);
+    const CY = 270, BL = 700, BR = 64, COILX = 60, CLN = 160, ML = 104, MR = 33;
+    const RMIN = -175 + ML / 2, RMAX = 300 - ML / 2;
     const flux = fluxer({ L: CLN, n: 18 }, 46);
     const st = { bx: 0, bv: 0, xm: RMAX, vm: 0, lum: 0, emf: 0, phase: 0, auto: 0, t: 0, dragging: false, shakes: 0, lit: 0 };
     const api = { st, onLight: null };
     let grab = 0, prevBx = 0;
-    drag(S, (x, y) => (Math.abs(x - (520 + st.bx)) < BL / 2 + 20 && Math.abs(y - CY) < BR + 40 ? 'b' : null), (x, y, h, first) => {
-      st.auto = 0; st.dragging = true; if (first) grab = x - st.bx; st.bx = clamp(x - grab, -190, 190);
+    drag(S, (x, y) => (Math.abs(x - (450 + st.bx)) < BL / 2 + 20 && Math.abs(y - CY) < BR + 40 ? 'b' : null), (x, y, h, first) => {
+      st.auto = 0; st.dragging = true; if (first) grab = x - st.bx; st.bx = clamp(x - grab, -110, 110);
     }, () => { st.dragging = false; });
     api.shake = (sec = 3) => { st.auto = sec; st.t = 0; st.touched = true; };
     api.reset = () => { Object.assign(st, { bx: 0, bv: 0, xm: RMAX, vm: 0, lum: 0, emf: 0, auto: 0, lit: 0 }); prevBx = 0; };
     addLoop(host, (dt) => {
       if (dt <= 0) { draw(); return; }
-      if (st.auto > 0) { st.t += dt; st.auto -= dt; const ramp = Math.min(1, st.t / 0.3, Math.max(0, st.auto) / 0.3); st.bx = Math.sin(st.t * TAU * 1.9) * 175 * ramp; }
+      if (st.auto > 0) { st.t += dt; st.auto -= dt; const ramp = Math.min(1, st.t / 0.3, Math.max(0, st.auto) / 0.3); st.bx = Math.sin(st.t * TAU * 2.1) * 105 * ramp; }
       else if (!st.dragging) st.bx = lerp(st.bx, 0, Math.min(1, dt * 2));
       const bv = (st.bx - prevBx) / dt; prevBx = st.bx; st.bv = lerp(st.bv, bv, 0.6);
       const sub = 6, h = dt / sub; let emfSum = 0;
@@ -722,7 +723,7 @@ window.EMI = (() => {
     });
     function draw() {
       S.begin(); white(S); desk(S, 420);
-      const X = 520 + st.bx, x0 = X - BL / 2, x1 = X + BL / 2;
+      const X = 450 + st.bx, x0 = X - BL / 2, x1 = X + BL / 2;
       contact(ctx, X, 424, BL * 1.05, 0.2, 0.1);
       // 불빛
       if (st.lum > 0.03) {
@@ -734,7 +735,7 @@ window.EMI = (() => {
       ctx.beginPath(); arcPath(ctx, x0 + 70, CY, BR, Math.PI, 0); arcPath(ctx, x1 - 40, CY, BR, 0, -Math.PI, false); ctx.closePath();
       ctx.fillStyle = 'rgba(221,229,237,.5)'; ctx.fill();
       // 안쪽 고무 받침
-      [[X - 200, -1], [X + 340, 1]].forEach(([bx]) => { ctx.fillStyle = '#4a525c'; ctx.beginPath(); arcPath(ctx, bx, CY, BR - 10, 0, TAU); ctx.fill(); });
+      [[X - 175, -1], [X + 300, 1]].forEach(([bx]) => { ctx.fillStyle = '#4a525c'; ctx.beginPath(); arcPath(ctx, bx, CY, BR - 10, 0, TAU); ctx.fill(); });
       // 회로판과 도선
       ctx.fillStyle = vgrad(ctx, CY - 40, CY + 40, ['#56606b', '#3c444d']); ctx.fillRect(x0 + 90, CY - 38, 70, 76);
       ctx.fillStyle = '#c9a15e'; [0, 1, 2].forEach((i) => ctx.fillRect(x0 + 100 + i * 20, CY - 8, 8, 16));
@@ -778,7 +779,7 @@ window.EMI = (() => {
      3) 그림 Ⅵ-8: 발전기의 구조
      ===================================================================== */
   function gen(host, o = {}) {
-    const S = surface(host, 1200, 720), ctx = S.ctx, OL = overlay(S);
+    const S = surface(host, 1200, 660, 50), ctx = S.ctx, OL = overlay(S);
     const AY = 330, X0 = 650, X1 = 840, H = 112, SH = 210;
     const st = { th: 0.4, w: 0, level: o.level || 0, driver: o.driver || 'hand', lum: 0, phase: 0, field: o.field !== false, grabbing: false, spin: 0, labels: o.labels !== false };
     const WT = [0, 3.2, 8.5];
@@ -868,35 +869,58 @@ window.EMI = (() => {
         return knob;
       }
       if (kind === 'water') {
-        const R = 120, n = 12;
-        // 물받이
-        ctx.fillStyle = vgrad(ctx, 560, 640, ['#cdd6de', '#aab5c0']); rr(ctx, SH - 120, 560, 290, 70, 10); ctx.fill();
-        ctx.fillStyle = 'rgba(120,170,215,.55)'; rr(ctx, SH - 110, 575, 270, 46, 8); ctx.fill();
-        const items = [];
-        for (let i = 0; i < n; i++) { const a = th + (i / n) * TAU; items.push({ a, z: R * Math.sin(a) }); }
+        const R = 120, n = 12, lv = st.level, wdt = lv === 1 ? 13 : 24;
+        const BX0 = SH - 140, BX1 = SH + 190, BY = 566;
+        // 물받이(뒤쪽 벽과 고인 물)
+        ctx.fillStyle = vgrad(ctx, BY, BY + 70, ['#d5dde5', '#b4bfca']); rr(ctx, BX0, BY, BX1 - BX0, 70, 10); ctx.fill();
+        ctx.fillStyle = vgrad(ctx, BY + 12, BY + 60, ['rgba(126,176,219,.85)', 'rgba(84,140,192,.9)']); rr(ctx, BX0 + 10, BY + 14, BX1 - BX0 - 20, 46, 8); ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,.55)'; ctx.lineWidth = 1.4;
+        for (let k = 0; k < 3; k++) { const yy = BY + 22 + k * 11, off = (st.spin * 30 + k * 40) % 60; ctx.beginPath(); for (let x = BX0 + 20; x < BX1 - 20; x += 6) { const y = yy + Math.sin((x + off) / 14) * 1.6; x === BX0 + 20 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); } ctx.stroke(); }
+        // 물레를 받치는 나무 다리(물레 뒤)
+        const hb0 = P(SH, 0, 0); ctx.strokeStyle = '#8a7660'; ctx.lineWidth = 10; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(hb0[0], hb0[1]); ctx.lineTo(SH - 95, BY + 6); ctx.moveTo(hb0[0], hb0[1]); ctx.lineTo(SH + 95, BY + 6); ctx.stroke();
+        // 물레: 뒤쪽 날개 → 테·살 → 앞쪽 날개
+        const items = []; for (let i = 0; i < n; i++) { const ang = th + (i / n) * TAU; items.push({ a: ang, z: R * Math.sin(ang) }); }
         items.sort((p, q) => p.z - q.z);
-        // 테
-        ctx.beginPath(); for (let i = 0; i <= 48; i++) { const a = (i / 48) * TAU, q = P(SH, R * Math.cos(a), R * Math.sin(a)); i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]); } ctx.strokeStyle = '#8a7a64'; ctx.lineWidth = 7; ctx.stroke();
-        items.forEach(({ a, z }) => {
-          const p0 = P(SH, R * 0.18 * Math.cos(a), R * 0.18 * Math.sin(a)), p1 = P(SH, R * Math.cos(a), R * Math.sin(a));
-          ctx.strokeStyle = '#9b8a72'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(p0[0], p0[1]); ctx.lineTo(p1[0], p1[1]); ctx.stroke();
-          const sh = clamp(0.55 + z / (2 * R), 0, 1);
-          const q0 = P(SH - 30, R * Math.cos(a), R * Math.sin(a)), q1 = P(SH + 30, R * Math.cos(a), R * Math.sin(a)), q2 = P(SH + 30, R * 1.28 * Math.cos(a), R * 1.28 * Math.sin(a)), q3 = P(SH - 30, R * 1.28 * Math.cos(a), R * 1.28 * Math.sin(a));
+        const paddle = ({ a: ang, z }) => {
+          const sh = clamp(0.55 + z / (2 * R), 0, 1), c = Math.cos(ang), si = Math.sin(ang);
+          const q0 = P(SH - 28, R * c, R * si), q1 = P(SH + 28, R * c, R * si), q2 = P(SH + 28, R * 1.3 * c, R * 1.3 * si), q3 = P(SH - 28, R * 1.3 * c, R * 1.3 * si);
           ctx.beginPath(); ctx.moveTo(q0[0], q0[1]); ctx.lineTo(q1[0], q1[1]); ctx.lineTo(q2[0], q2[1]); ctx.lineTo(q3[0], q3[1]); ctx.closePath();
-          ctx.fillStyle = `rgb(${Math.round(lerp(120, 196, sh))},${Math.round(lerp(104, 172, sh))},${Math.round(lerp(82, 136, sh))})`; ctx.fill();
-        });
-        ctx.fillStyle = '#6b5d4c'; const hb = P(SH, 0, 0); ctx.beginPath(); ctx.arc(hb[0], hb[1], 16, 0, TAU); ctx.fill();
-        // 관과 떨어지는 물
-        const lv = st.level;
-        ctx.fillStyle = vgrad(ctx, 40, 80, STEEL); rr(ctx, SH - 40, 50, 150, 36, 8); ctx.fill();
-        ctx.fillStyle = vgrad(ctx, 50, 120, ['#9aa4ae', '#c9d0d7', '#8a939c']); rr(ctx, SH + 56, 70, 40, 44, 6); ctx.fill();
+          ctx.fillStyle = `rgb(${Math.round(lerp(118, 200, sh))},${Math.round(lerp(102, 176, sh))},${Math.round(lerp(80, 140, sh))})`; ctx.fill();
+          ctx.strokeStyle = 'rgba(70,58,44,.35)'; ctx.lineWidth = 1; ctx.stroke();
+        };
+        items.filter((it) => it.z < 0).forEach(paddle);
+        const rim = (x) => { ctx.beginPath(); for (let i = 0; i <= 48; i++) { const ang = (i / 48) * TAU, q = P(x, R * Math.cos(ang), R * Math.sin(ang)); i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]); } ctx.strokeStyle = '#7d6c56'; ctx.lineWidth = 6; ctx.stroke(); };
+        rim(SH - 26);
+        items.forEach(({ a: ang }) => { const p0 = P(SH, R * 0.16 * Math.cos(ang), R * 0.16 * Math.sin(ang)), p1 = P(SH, R * Math.cos(ang), R * Math.sin(ang)); ctx.strokeStyle = '#8f7e66'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(p0[0], p0[1]); ctx.lineTo(p1[0], p1[1]); ctx.stroke(); });
+        rim(SH + 26);
+        const hb = P(SH, 0, 0); ctx.fillStyle = '#5f5242'; ctx.beginPath(); ctx.arc(hb[0], hb[1], 15, 0, TAU); ctx.fill();
+        items.filter((it) => it.z >= 0).forEach(paddle);
+        // 수로관(위)
+        const sx = SH + 52, topY = 96;
+        ctx.fillStyle = vgrad(ctx, 60, 96, STEEL); rr(ctx, SH - 70, 62, sx - SH + 92, 34, 8); ctx.fill();
+        ctx.fillStyle = vgrad(ctx, 90, 104, ['#9aa4ae', '#7b8590']); rr(ctx, sx - 20, 90, 40, 14, 4); ctx.fill();
         if (lv > 0) {
-          const wdt = lv === 1 ? 14 : 28, x = SH + 76, top = 112, bot = AY - R * 1.15;
-          ctx.fillStyle = 'rgba(96,152,205,.6)'; ctx.fillRect(x - wdt / 2, top, wdt, bot - top);
-          ctx.strokeStyle = 'rgba(255,255,255,.65)'; ctx.lineWidth = 1.5;
-          for (let k = 0; k < 4; k++) { const yy = top + ((st.spin * 60 + k * 37) % (bot - top)); ctx.beginPath(); ctx.moveTo(x - wdt / 4, yy); ctx.lineTo(x - wdt / 4, yy + 16); ctx.stroke(); }
-          // 물받이로 떨어지는 물
-          ctx.fillStyle = 'rgba(96,152,205,.45)'; ctx.fillRect(x - wdt / 2 + 20, AY + R * 0.9, wdt * 0.8, 575 - AY - R * 0.9);
+          // 떨어지는 물: 관에서 앞쪽 날개까지 끊김 없이
+          const hitY = AY - R * 1.18;
+          const fall = (x0, y0, x1, y1, w0, w1) => {
+            ctx.beginPath(); ctx.moveTo(x0 - w0 / 2, y0); ctx.quadraticCurveTo(x0 - w0 / 2, (y0 + y1) / 2, x1 - w1 / 2, y1); ctx.lineTo(x1 + w1 / 2, y1); ctx.quadraticCurveTo(x0 + w0 / 2, (y0 + y1) / 2, x0 + w0 / 2, y0); ctx.closePath();
+            const g = ctx.createLinearGradient(x0 - w0, 0, x0 + w0, 0); g.addColorStop(0, 'rgba(84,140,192,.75)'); g.addColorStop(0.45, 'rgba(150,196,232,.85)'); g.addColorStop(1, 'rgba(84,140,192,.75)');
+            ctx.fillStyle = g; ctx.fill();
+            ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = 1.3;
+            for (let k = 0; k < 5; k++) { const t = ((st.spin * (lv === 1 ? 0.5 : 0.8) + k / 5) % 1), y = lerp(y0, y1, t), x = lerp(x0, x1, t * t) + (k % 2 ? -w0 * 0.15 : w0 * 0.15); ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, Math.min(y1, y + 14)); ctx.stroke(); }
+          };
+          fall(sx, topY + 6, sx + 4, hitY, wdt, wdt * 1.15);
+          // 날개에 부딪혀 튀는 물방울
+          ctx.fillStyle = 'rgba(120,172,218,.8)';
+          for (let k = 0; k < 6; k++) { const t = (st.spin * 1.6 + k / 6) % 1, ang = -1.2 + k * 0.45; ctx.beginPath(); ctx.arc(sx + 4 + Math.cos(ang) * 26 * t, hitY - Math.sin(ang + 1.6) * 0 - 18 * t + 30 * t * t, 2.4 * (1 - t) + 0.8, 0, TAU); ctx.fill(); }
+          // 물레 오른쪽 아래에서 물받이로 떨어지는 물
+          const outX = SH + 0.62 * R * 0.95, outY = AY + R * 0.8;
+          fall(outX, outY, outX + 10, BY + 16, wdt * 0.9, wdt * 1.3);
+          // 물받이에 떨어지는 곳의 물결
+          ctx.strokeStyle = 'rgba(255,255,255,.65)'; ctx.lineWidth = 1.4;
+          for (let k = 0; k < 2; k++) { const r = 8 + ((st.spin * 30 + k * 12) % 24); ctx.globalAlpha = 1 - r / 32; ctx.beginPath(); ctx.ellipse(outX + 10, BY + 22, r * 1.6, r * 0.35, 0, 0, TAU); ctx.stroke(); }
+          ctx.globalAlpha = 1;
         }
         return null;
       }
@@ -941,6 +965,7 @@ window.EMI = (() => {
       const a = P(SH, 0, 0), b = P(X1 + 160, 0, 0);
       ctx.strokeStyle = vgrad(ctx, AY - 8, AY + 8, STEEL); ctx.lineWidth = 12; ctx.lineCap = 'round';
       ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(X0, AY); ctx.moveTo(X1, AY); ctx.lineTo(b[0], b[1]); ctx.stroke();
+      const knob = wheel(st.driver);
       // 고리 두 개와 솔
       const ringX = [470, 520];
       ringX.forEach((rx) => {
@@ -952,9 +977,9 @@ window.EMI = (() => {
       ctx.strokeStyle = '#a1602e'; ctx.lineWidth = 3;
       ctx.beginPath(); ctx.moveTo(X0, AY - 3); ctx.lineTo(ringX[1] + 8, AY - 3); ctx.moveTo(X0, AY + 3); ctx.lineTo(ringX[0] + 8, AY + 3); ctx.stroke();
       // 솔 → 전구
-      const bp = bulb(ctx, 400, 640, 46, st.lum);
-      const w1 = bez([ringX[0] + 6, AY + 54], [ringX[0], AY + 140], [bp.a[0] - 40, 600], bp.a);
-      const w2 = bez([ringX[1] + 6, AY + 54], [ringX[1] + 30, AY + 170], [bp.b[0] + 60, 620], bp.b);
+      const bp = bulb(ctx, 585, 692, 44, st.lum);
+      const w1 = bez([ringX[0] + 6, AY + 54], [ringX[0] - 10, AY + 190], [bp.a[0] - 70, 690], bp.a);
+      const w2 = bez([ringX[1] + 6, AY + 54], [ringX[1] + 20, AY + 170], [bp.b[0] + 70, 650], bp.b);
       wire(ctx, w1); wire(ctx, w2);
       const amt = clamp(Math.abs(st.w * Math.sin(st.th)) / 4, 0, 1);
       dots(ctx, w1, st.phase, 28, amt); dots(ctx, w2.slice().reverse(), st.phase, 28, amt);
@@ -962,13 +987,12 @@ window.EMI = (() => {
       // 코일 위 흐르는 점
       const [A, B, C, D] = loopPts(st.th).map((p) => P(...p));
       const path = [D, A, B, C]; dots(ctx, path, st.phase, 30, amt * 0.9, 3.2);
-      const knob = wheel(st.driver);
       if (st.labels) {
         OL.put('s', M.sx, M.sy, 'S', 'tx inv pole big2'); OL.put('n', M.nx, M.ny, 'N', 'tx inv pole big2');
         OL.put('lc', 1010, AY - 6, '코일', 'tx nm la2');
-        OL.put('lb', 400, 690, '전구', 'tx nm');
+        OL.put('lb', 640, 650, '전구', 'tx nm la2');
         OL.put('lm', 1010, 130, '자석', 'tx nm la2');
-        OL.put('ld', SH, st.driver === 'wind' ? AY - 175 : st.driver === 'water' ? 30 : AY + 125, { hand: '손잡이', water: '물레', wind: '회전 날개' }[st.driver], 'tx nm');
+        OL.put('ld', st.driver === 'water' ? SH - 120 : SH, st.driver === 'wind' ? AY - 175 : st.driver === 'water' ? 150 : AY + 125, { hand: '손잡이', water: '물레', wind: '회전 날개' }[st.driver], 'tx nm');
       }
       if (st.driver === 'hand' && knob && !st.touched && st.level === 0 && o.hintDrag !== false) OL.put('hd', SH + 30, AY - 140, '손잡이를 돌려 보세요', 'tx hintl'); else OL.hide('hd');
     }
@@ -980,7 +1004,7 @@ window.EMI = (() => {
      4) 그림 Ⅵ-9: (가) 빈 관, (나) 코일 감은 관에 자석 떨어뜨리기
      ===================================================================== */
   function drop(host, o = {}) {
-    const S = surface(host, 1200, 760), ctx = S.ctx, OL = overlay(S);
+    const S = surface(host, 1200, 700, 60), ctx = S.ctx, OL = overlay(S);
     const TX = [300, 560], TOP = 110, BOT = 660, MH = 60, YC = 400, G = 980;
     const Hh = BOT - TOP - MH;
     let DRAG = o.drag || 300;
@@ -1098,7 +1122,7 @@ window.EMI = (() => {
     { id: 'phone', name: '휴대 전화 충전', tag: '배터리', out: '화학 에너지', p: 4 },
   ];
   function bike(host, o = {}) {
-    const S = surface(host, 1200, 760), ctx = S.ctx, OL = overlay(S);
+    const S = surface(host, 1200, 630, 130), ctx = S.ctx, OL = overlay(S);
     const st = { pedal: false, w: 0, a: 0, on: { lamp: false, spk: false, phone: false }, charge: 0.25, t: 0, flow: 0 };
     const api = { st, DEV };
     api.pedal = (v) => { st.pedal = v; };
@@ -1192,9 +1216,9 @@ window.EMI = (() => {
       const wpts = [dyn, [dyn[0] + 60, dyn[1] - 50], [560, 270], [600, wy]];
       const trunk = bez(dyn, [dyn[0] + 90, dyn[1] - 60], [520, wy], [640, wy]);
       wire(ctx, trunk, '#3c4652', 3.5);
-      [[lx, ly - 24], [sx, sy], [px, py - 4]].forEach(([dx, dy2]) => wire(ctx, [[dx, wy], [dx, dy2 + 22]], '#3c4652', 3));
-      wire(ctx, [[640, wy], [px, wy]], '#3c4652', 3.5);
-      if (L > 0) { dots(ctx, trunk.concat([[px, wy]]), st.t * 90 * drive, 30, drive, 3.2); }
+      [[lx, ly - 24], [sx, sy], [px, py - 4]].forEach(([dx, dy2]) => wire(ctx, [[dx + 34, wy], [dx + 34, dy2 + 22]], '#3c4652', 3));
+      wire(ctx, [[640, wy], [px + 34, wy]], '#3c4652', 3.5);
+      if (L > 0) { dots(ctx, trunk.concat([[px + 34, wy]]), st.t * 90 * drive, 30, drive, 3.2); }
       // 에너지 띠(아래)
       const y0 = 625, sc = 9, xin = 100, xg = 350, xe = 500, xo = 860;
       const inW = api.input() * sc * st.flow;
@@ -1222,7 +1246,7 @@ window.EMI = (() => {
       DEV.forEach((d) => { const y = { lamp: 560, spk: 615, phone: 670 }[d.id]; OL.put('o' + d.id, xo + 14, y, `${d.out} <span class="u">${d.tag}</span>`, 'tx lay ra' + (st.on[d.id] && st.flow > 0.3 ? '' : ' dim')); });
       OL.put('oheat', xo + 14, 715, '열에너지 <span class="u">발전기·전선</span>', 'tx lay ra' + (api.heat() > 0 && st.flow > 0.3 ? '' : ' dim'));
       OL.put('dl', lx, 362, '전조등', 'tx nm sm'); OL.put('ds', sx, 362, '스피커', 'tx nm sm'); OL.put('dp', px, 362, '휴대 전화', 'tx nm sm');
-      OL.put('dy', dyn[0] - 70, dyn[1] - 20, '발전기', 'tx nm sm');
+      OL.put('dy', dyn[0] + 46, dyn[1] - 42, '발전기', 'tx nm sm');
       if (inW <= 1) OL.put('none', 600, y0 + 38, st.pedal ? '켠 기구가 없으면 전기 에너지가 쓰이지 않아요' : '페달을 밟으면 에너지가 흐르는 모습이 보여요', 'tx m'); else OL.hide('none');
     }
     return api;
