@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>전자기 유도와 에너지 전환 – 자석과 코일 실험실</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+/*@@LOCAL:_css_emi.css@@*/
+/*@@LOCAL:_css_sim.css@@*/
+  /* ===== 이 페이지 전용 ===== */
+  .ctl{display:grid;gap:8px}
+  .ctl .btn{width:100%}
+  .seg2{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
+  .seg3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+  .seg2 button,.seg3 button,.qa3 button{min-height:48px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:14.5px;cursor:pointer;word-break:keep-all;line-height:1.35;padding:4px 8px}
+  .seg2 button[aria-pressed="true"],.seg3 button[aria-pressed="true"],.qa3 button[aria-pressed="true"]{border-color:var(--fab);background:#e9f3fd;color:#0b3f73}
+  .seg2 button:disabled,.seg3 button:disabled{opacity:.4;cursor:default}
+  .seglbl{font-size:13px;font-weight:800;color:var(--muted);margin:4px 0 -2px}
+  .steps{display:grid;gap:5px;margin:0 0 10px}
+  .steps .ph{padding:6px 10px;font-size:14.5px;line-height:1.5}
+  .steps .ph.done i{background:#8db8e3;color:#fff}
+  .rec{width:100%;border-collapse:collapse;font-size:14.5px;margin:0 0 12px}
+  .rec th,.rec td{border:1px solid var(--line);padding:9px 8px;text-align:center;word-break:keep-all;line-height:1.45}
+  .rec thead th{background:#f3f6f9;font-size:13.5px;color:var(--muted);font-weight:800}
+  .rec td.on{color:#0b3f73;font-weight:800;background:#f2f7fd}
+  .rec td.wait{color:#a3b0bd}
+  .qa{margin-bottom:12px}
+  .qa p{margin:0 0 6px;font-weight:800;font-size:15px;line-height:1.5;word-break:keep-all}
+  .qa3{display:grid;gap:6px}
+  .qa3 button{text-align:left}
+  .qa3 button.good{border-color:var(--ok);background:#e8f7ef;color:#11703f}
+  .qa3 button.bad{border-color:#e7a29b;background:#fff4f2;color:#9b3a32}
+  .chk{display:flex;align-items:center;gap:10px;min-height:44px;font-weight:800;font-size:14.5px;color:var(--ink2);cursor:pointer}
+  .chk input{width:22px;height:22px;accent-color:#0e63b3}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="ttl">
+      <span class="eyebrow">배움활동</span><h1>자석과 코일 실험실</h1>
+      <p class="sub" id="sub">코일과 검류계를 연결하고, 자석이나 코일을 움직이며 검류계 바늘을 관찰해요.</p>
+    </div>
+    <div class="ptabs big" role="tablist" id="act">
+      <button type="button" role="tab" data-a="1" aria-selected="true">자석과 코일</button>
+      <button type="button" role="tab" data-a="2" aria-selected="false">자가 발전 손전등</button>
+    </div>
+  </header>
+
+  <div class="stage">
+    <section class="card viewer">
+      <div class="scene grow" id="lab" role="img" aria-label="책상 위에 플라스틱 관에 구리 도선을 감은 코일이 있고, 코일의 두 끝은 검류계에 연결되어 있다. 오른쪽에는 N극이 코일 쪽을 향한 막대자석이 있다. 자석이나 코일을 끌어 움직이면 검류계 바늘이 움직이고, 전선에 파란 점이 흐른다."></div>
+      <div class="scene grow" id="fl" hidden role="img" aria-label="투명한 자가 발전 손전등의 속. 왼쪽에 전구, 위에 스위치, 가운데 구리 도선을 감은 코일, 오른쪽에 원통 자석이 있다. 손전등을 좌우로 흔들면 자석이 관 속을 오가며 코일을 지나고, 그때 전구에 불이 켜진다."></div>
+      <div class="vctl">
+        <span class="hint" id="hint">자석은 오른쪽의 N·S 막대예요. 손가락으로 끌어 보세요</span>
+        <span class="sp"></span>
+        <button class="vb" type="button" id="bField" aria-pressed="true">자기장 모양</button>
+        <button class="vb" type="button" id="bReset">처음부터</button>
+      </div>
+    </section>
+
+    <section class="card pad">
+      <div class="ptabs" role="tablist" id="pt">
+        <button type="button" role="tab" data-p="lab" aria-selected="true">실험하기</button>
+        <button type="button" role="tab" data-p="rec" aria-selected="false">정리하기</button>
+        <button type="button" role="tab" data-p="why" aria-selected="false">왜 그럴까?</button>
+      </div>
+      <div class="pane" data-p="lab">
+        <div id="labA">
+          <div class="steps" id="steps">
+            <div class="ph" data-s="1"><i>1</i><span>자석을 움직여 코일 속에 넣거나 빼요.</span></div>
+            <div class="ph" data-s="2"><i>2</i><span>자석을 코일 속에 넣고 움직이지 않아요.</span></div>
+            <div class="ph" data-s="3"><i>3</i><span>코일을 움직여 자석을 코일 속에 넣거나 빼요.</span></div>
+          </div>
+          <div class="ctl">
+            <div class="seglbl">움직일 것</div>
+            <div class="seg2" id="mode"><button type="button" data-m="magnet" aria-pressed="true">자석</button><button type="button" data-m="coil" aria-pressed="false">코일</button></div>
+            <div class="seglbl">버튼으로 해 보기 (끌어도 돼요)</div>
+            <div class="seg3" id="moves"><button type="button" data-v="in">코일 속에 넣기</button><button type="button" data-v="stay">넣고 가만히</button><button type="button" data-v="out">코일에서 빼기</button></div>
+          </div>
+          <div class="fbk" id="res"><b class="t" id="resT">결과</b><span id="resM">먼저 자석을 코일 속에 넣어 보세요. 검류계 바늘을 잘 봐요.</span></div>
+        </div>
+        <div id="labB" hidden>
+          <div class="steps">
+            <div class="ph on"><i>1</i><span>손전등을 좌우로 끌어 흔들거나, 아래 버튼을 눌러요.</span></div>
+            <div class="ph on"><i>2</i><span>관 속 자석이 어떻게 움직이는지, 전구가 언제 켜지는지 봐요.</span></div>
+          </div>
+          <div class="ctl"><button class="btn primary" type="button" id="bShake">손전등 흔들기</button></div>
+          <div class="fbk" id="resB"><b class="t">결과</b><span id="resBM">흔들기 전이에요. 자석은 관 오른쪽 끝에 가만히 있어요.</span></div>
+        </div>
+      </div>
+      <div class="pane" data-p="rec" hidden>
+        <p class="what">실험하기 1~3을 해 보면 결과가 표에 채워져요.</p>
+        <table class="rec">
+          <thead><tr><th>실험하기 1</th><th>실험하기 2</th><th>실험하기 3</th></tr></thead>
+          <tbody><tr><td id="r1" class="wait">아직 안 함</td><td id="r2" class="wait">아직 안 함</td><td id="r3" class="wait">아직 안 함</td></tr></tbody>
+        </table>
+        <div class="qa"><p>코일에 전류가 흐르기 위한 조건은?</p><div class="qa3" id="qA"></div></div>
+        <div class="qa"><p>자가 발전 손전등을 흔들면 전구가 켜지는 까닭은?</p><div class="qa3" id="qB"></div></div>
+        <div class="fbk" id="res2"><b class="t" id="res2T">결과</b><span id="res2M">실험을 해 본 뒤 골라 보세요.</span></div>
+      </div>
+      <div class="pane" data-p="why" hidden>
+        <div class="phase">
+          <div class="ph on"><i>1</i><span><b>자기장 모양</b>을 켜면 자석 둘레의 자기장이 얇은 선으로 보여요. 자석을 코일에 가까이 할수록 <b>코일을 지나는 선</b>이 많아져요.</span></div>
+          <div class="ph on"><i>2</i><span>자석이나 코일이 <b>움직이면</b> 코일을 지나는 자기장이 <b>변해요</b>. 이때 코일에 전류가 흘러 검류계 바늘이 움직여요.</span></div>
+          <div class="ph on"><i>3</i><span>자석을 코일 속에 넣고 <b>가만히 두면</b> 코일을 지나는 자기장이 변하지 않아요. 그래서 전류가 흐르지 않아요.</span></div>
+          <div class="ph on"><i>4</i><span>자가 발전 손전등을 흔들면 속에 든 자석이 <b>코일을 지나가며</b> 코일을 지나는 자기장이 변해요. 이때 흐른 전류로 전구를 켜요.</span></div>
+        </div>
+        <p class="what" style="margin-top:8px">이 현상과 이때 흐르는 전류의 이름은 선생님과 함께 읽기 자료의 빈칸에서 확인해요.</p>
+      </div>
+      <p class="mnote">바늘이 움직이는 크기, 손전등 자석의 빠르기, 전구 밝기는 보기 좋게 정한 모형이에요. 자기장 선은 모양만 나타내요.</p>
+    </section>
+  </div>
+</div>
+<script>
+window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
+  reduce: !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches), Q: new URLSearchParams(location.search) };
+</script>
+<script>
+/*@@LOCAL:_emi.js@@*/
+</script>
+<script>
+/* ===== 블록 1: 자석과 코일 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S, Q = S.Q;
+    const L = EMI.lab($('#lab'));
+    window.LAB = L;
+    const done = {};
+    function msg(t, m, cls = '') { $('#res').className = 'fbk ' + cls; $('#resT').textContent = t; $('#resM').innerHTML = m; }
+    function steps() {
+      const cur = !done[1] ? 1 : !done[2] ? 2 : !done[3] ? 3 : 0;
+      $$('#steps .ph').forEach((p) => { const s = +p.dataset.s; p.classList.toggle('on', s === cur); p.classList.toggle('done', !!done[s]); });
+    }
+    const REC = { 1: '검류계 바늘이 움직인다', 2: '검류계 바늘이 움직이지 않는다', 3: '검류계 바늘이 움직인다' };
+    L.onRecord = (k) => {
+      done[k] = true; const td = $('#r' + k); td.textContent = REC[k]; td.className = 'on'; steps();
+      if (k === 1) msg('실험하기 1 · 바늘이 움직였어요', '자석을 <b>움직여 넣거나 뺄 때</b> 검류계 바늘이 움직였어요. 넣을 때와 뺄 때 바늘이 어느 쪽으로 움직이는지도 비교해 봐요. 다음은 <b>넣고 가만히</b>예요.', 'ok');
+      if (k === 2) msg('실험하기 2 · 바늘이 움직이지 않아요', '자석이 코일 속에 있어도 <b>움직이지 않으면</b> 바늘은 0에 머물러요. 이제 <b>움직일 것</b>을 <b>코일</b>로 바꿔 봐요.', 'ok');
+      if (k === 3) msg('실험하기 3 · 바늘이 움직였어요', '자석을 가만히 두고 <b>코일을 움직여도</b> 바늘이 움직였어요. 무엇이 움직이든 <b>자석과 코일 사이가 바뀔 때</b> 바늘이 움직여요. <b>정리하기</b> 탭에서 정리해요.', 'ok');
+    };
+    function setMode(m) {
+      L.setMode(m);
+      $$('#mode button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.m === m)));
+      $('#moves [data-v="stay"]').disabled = m === 'coil';
+      $('#hint').textContent = m === 'magnet' ? '자석은 오른쪽의 N·S 막대예요. 손가락으로 끌어 보세요' : '이번에는 자석을 붙잡아 두고 코일을 끌어 움직여요';
+      if (m === 'coil') msg('코일을 움직여요', '자석은 가만히 있어요. <b>코일 속에 넣기</b>를 누르거나 코일을 끌어 자석 쪽으로 옮겨 보세요.');
+      else msg('자석을 움직여요', '자석을 끌거나 버튼을 눌러 <b>코일 속에 넣어</b> 보세요.');
+    }
+    $$('#mode button').forEach((b) => b.addEventListener('click', () => setMode(b.dataset.m)));
+    $$('#moves button').forEach((b) => b.addEventListener('click', () => {
+      const v = b.dataset.v;
+      if (v === 'in') L.push(0.7);
+      if (v === 'out') L.pull(0.7);
+      if (v === 'stay') { if (!L.inside()) L.push(0.6, () => L.hold(2)); else L.hold(2); msg('넣고 가만히 두는 중', '자석이 코일 속에서 멈춰 있어요. 바늘을 봐요…'); }
+    }));
+    $('#bField').addEventListener('click', (e) => { const on = e.currentTarget.getAttribute('aria-pressed') !== 'true'; e.currentTarget.setAttribute('aria-pressed', String(on)); L.field(on); });
+    window.__reset1 = () => { setMode('magnet'); L.reset(); Object.keys(done).forEach((k) => delete done[k]); [1, 2, 3].forEach((k) => { const td = $('#r' + k); td.textContent = '아직 안 함'; td.className = 'wait'; }); steps(); msg('결과', '먼저 자석을 코일 속에 넣어 보세요. 검류계 바늘을 잘 봐요.'); };
+    steps();
+    // 검사용: ?rec=1 (표 채우기), ?pose=in
+    if (Q.get('rec') === '1') [1, 2, 3].forEach((k) => L.onRecord(k));
+    if (Q.get('pose') === 'in') L.push(0.01);
+    window.SM.okUI = true;
+  } catch (err) { window.SM_err('자석과 코일', err); }
+})();
+</script>
+<script>
+/* ===== 블록 2: 자가 발전 손전등 · 활동 탭 · 정리 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S, Q = S.Q;
+    let F = null;
+    const lit = () => { $('#resB').className = 'fbk ok'; $('#resBM').innerHTML = '자석이 <b>코일을 지나갈 때마다</b> 전구가 켜졌어요. 자석이 관 끝에 멈춰 있을 때는 꺼져요. 전지가 없어도 <b>움직임만으로</b> 전기를 만들었어요.'; };
+    function makeF() { if (F) return; F = EMI.flash($('#fl')); F.onLight = lit; window.FL = F; }
+    $('#bShake').addEventListener('click', () => { makeF(); F.onLight = F.onLight || null; F.shake(3); $('#resB').className = 'fbk'; $('#resBM').textContent = '손전등을 흔드는 중이에요. 자석과 전구를 봐요…'; setTimeout(() => { if ($('#resB').className === 'fbk') lit(); }, 3200); });
+    function setAct(a) {
+      $$('#act button').forEach((b) => b.setAttribute('aria-selected', String(+b.dataset.a === a)));
+      $('#lab').hidden = a !== 1; $('#fl').hidden = a !== 2; $('#labA').hidden = a !== 1; $('#labB').hidden = a !== 2;
+      $('#bField').hidden = a !== 1;
+      $('#sub').textContent = a === 1 ? '코일과 검류계를 연결하고, 자석이나 코일을 움직이며 검류계 바늘을 관찰해요.' : '흔들어서 불을 켜는 손전등 속을 들여다봐요. 전지 대신 무엇이 들어 있을까요?';
+      $('#hint').textContent = a === 1 ? '자석은 오른쪽의 N·S 막대예요. 손가락으로 끌어 보세요' : '손전등을 손가락으로 좌우로 빠르게 끌어도 돼요';
+      if (a === 2) makeF();
+      show('lab');
+    }
+    $$('#act button').forEach((b) => b.addEventListener('click', () => setAct(+b.dataset.a)));
+    $('#bReset').addEventListener('click', () => { if (!$('#lab').hidden) window.__reset1(); else if (F) { F.reset(); $('#resB').className = 'fbk'; $('#resBM').textContent = '흔들기 전이에요. 자석은 관 오른쪽 끝에 가만히 있어요.'; } });
+    // 정리하기
+    const QS = {
+      qA: [['a', '자석이나 코일이 움직여 코일을 지나는 자기장이 변해야 한다', true], ['b', '자석이 코일 속에 들어 있기만 하면 된다', false], ['c', '코일에 전지를 연결해야 한다', false]],
+      qB: [['a', '속에 든 자석이 코일을 지나가며 코일에 전류가 흐르기 때문', true], ['b', '흔들면 속에 든 전지가 충전되기 때문', false], ['c', '자석이 스스로 빛을 내기 때문', false]],
+    };
+    const pick = {};
+    Object.keys(QS).forEach((k) => { $('#' + k).innerHTML = QS[k].map(([v, t]) => `<button type="button" data-v="${v}" aria-pressed="false">${t}</button>`).join(''); });
+    function msg2(t, m, cls = '') { $('#res2').className = 'fbk ' + cls; $('#res2T').textContent = t; $('#res2M').innerHTML = m; }
+    Object.keys(QS).forEach((k) => $$('#' + k + ' button').forEach((b) => b.addEventListener('click', () => {
+      pick[k] = b.dataset.v; $$('#' + k + ' button').forEach((x) => { x.setAttribute('aria-pressed', String(x === b)); x.classList.remove('good', 'bad'); });
+      const ok = QS[k].find((x) => x[0] === b.dataset.v)[2]; b.classList.add(ok ? 'good' : 'bad');
+      if (Object.keys(QS).every((q) => pick[q] && QS[q].find((x) => x[0] === pick[q])[2])) msg2('결과 · 모두 맞았어요', '자석이나 코일이 <b>움직여</b> 코일을 지나는 <b>자기장이 변하면</b> 코일에 전류가 흘러요. 자가 발전 손전등은 이 원리로 전구를 켜요.', 'ok');
+      else if (!ok) msg2('다시 생각해 봐요', '실험하기 2에서 자석이 코일 속에 <b>있기만</b> 할 때 바늘이 어땠는지 떠올려 봐요.', 'no');
+    })));
+    function show(p) { $$('#pt button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.p === p))); $$('.pane').forEach((e) => (e.hidden = e.dataset.p !== p)); }
+    $$('#pt button').forEach((b) => b.addEventListener('click', () => show(b.dataset.p)));
+    setAct(Q.get('act') === '2' ? 2 : 1);
+    if (['rec', 'why'].includes(Q.get('tab'))) show(Q.get('tab'));
+    if (Q.get('ans') === '1') Object.keys(QS).forEach((k) => $('#' + k + ' [data-v="a"]').click());
+    if (Q.get('shake') === '1') setTimeout(() => $('#bShake').click(), 200);
+  } catch (err) { window.SM_err('손전등·정리', err); }
+})();
+</script>
+</body>
+</html>

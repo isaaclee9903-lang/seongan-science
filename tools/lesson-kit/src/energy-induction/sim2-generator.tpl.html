@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>전자기 유도와 에너지 전환 – 발전기 실험실</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+/*@@LOCAL:_css_emi.css@@*/
+/*@@LOCAL:_css_sim.css@@*/
+  /* ===== 이 페이지 전용 ===== */
+  .ctl{display:grid;gap:8px}
+  .seg3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+  .seg3 button,.qa3 button{min-height:48px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:14.5px;cursor:pointer;word-break:keep-all;line-height:1.35;padding:4px 8px}
+  .seg3 button[aria-pressed="true"],.qa3 button[aria-pressed="true"]{border-color:var(--fab);background:#e9f3fd;color:#0b3f73}
+  .seg3 button small{display:block;font-size:12px;font-weight:700;color:var(--muted)}
+  .seglbl{font-size:13px;font-weight:800;color:var(--muted);margin:4px 0 -2px}
+  .flowline{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:12px 0 0;font-size:14.5px;font-weight:800;color:var(--ink2)}
+  .flowline span{background:#f3f6f9;border:1px solid var(--line);border-radius:10px;padding:5px 9px}
+  .flowline span.k{background:#e9f3fd;border-color:#bcd7f2;color:#0b3f73}
+  .flowline i{font-style:normal;color:#8a9bb0}
+  .qa{margin-bottom:12px}
+  .qa p{margin:0 0 6px;font-weight:800;font-size:15px;line-height:1.5;word-break:keep-all}
+  .qa3{display:grid;gap:6px}
+  .qa3 button{text-align:left}
+  .qa3 button.good{border-color:var(--ok);background:#e8f7ef;color:#11703f}
+  .qa3 button.bad{border-color:#e7a29b;background:#fff4f2;color:#9b3a32}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="ttl">
+      <span class="eyebrow">그림 Ⅵ-8</span><h1>발전기 실험실</h1>
+      <p class="sub">말굽 모양 자석 사이에서 코일을 돌려 전구를 켜 봐요. 무엇으로 코일을 돌리는지도 바꿔 봐요.</p>
+    </div>
+  </header>
+
+  <div class="stage">
+    <section class="card viewer">
+      <div class="scene grow" id="gen" role="img" aria-label="말굽 모양 자석의 위쪽은 S극, 아래쪽은 N극이다. 두 극 사이에 사각형 코일이 축에 끼워져 있고, 축 왼쪽 끝에는 손잡이(또는 물레, 회전 날개)가 있다. 축의 고리 두 개에 닿은 솔에서 나온 전선이 전구로 이어진다. 코일이 돌면 전선에 파란 점이 흐르고 전구가 켜진다."></div>
+      <div class="vctl">
+        <span class="hint" id="hint">손잡이를 손가락으로 빙글빙글 돌려도 돼요</span>
+        <span class="sp"></span>
+        <button class="vb" type="button" id="bField" aria-pressed="true">자기장 모양</button>
+        <button class="vb" type="button" id="bReset">처음부터</button>
+      </div>
+    </section>
+
+    <section class="card pad">
+      <div class="ptabs" role="tablist" id="pt">
+        <button type="button" role="tab" data-p="lab" aria-selected="true">실험하기</button>
+        <button type="button" role="tab" data-p="rec" aria-selected="false">정리하기</button>
+        <button type="button" role="tab" data-p="why" aria-selected="false">왜 그럴까?</button>
+      </div>
+      <div class="pane" data-p="lab">
+        <div class="ctl">
+          <div class="seglbl">무엇으로 코일을 돌릴까요?</div>
+          <div class="seg3" id="drv">
+            <button type="button" data-d="hand" aria-pressed="true">손잡이<small>손으로 돌리기</small></button>
+            <button type="button" data-d="water" aria-pressed="false">물레<small>떨어지는 물</small></button>
+            <button type="button" data-d="wind" aria-pressed="false">회전 날개<small>부는 바람</small></button>
+          </div>
+          <div class="seglbl" id="lvlT">돌리는 빠르기</div>
+          <div class="seg3" id="lvl">
+            <button type="button" data-l="0" aria-pressed="true">멈춤</button>
+            <button type="button" data-l="1" aria-pressed="false">천천히</button>
+            <button type="button" data-l="2" aria-pressed="false">빠르게</button>
+          </div>
+        </div>
+        <div class="flowline" id="flow"></div>
+        <div class="fbk" id="res"><b class="t" id="resT">결과</b><span id="resM">손잡이를 돌리거나 <b>천천히</b>를 눌러 코일을 돌려 보세요.</span></div>
+      </div>
+      <div class="pane" data-p="rec" hidden>
+        <div class="qa"><p>코일이 자석 사이에서 돌 때 전구가 켜지는 까닭은?</p><div class="qa3" id="qA"></div></div>
+        <div class="qa"><p>수력 발전소에서 발전기를 돌리는 것은?</p><div class="qa3" id="qB"></div></div>
+        <div class="qa"><p>풍력 발전소에서 발전기를 돌리는 것은?</p><div class="qa3" id="qC"></div></div>
+        <div class="fbk" id="res2"><b class="t" id="res2T">결과</b><span id="res2M">물레와 회전 날개로도 돌려 본 뒤 골라 보세요.</span></div>
+      </div>
+      <div class="pane" data-p="why" hidden>
+        <div class="phase">
+          <div class="ph on"><i>1</i><span>발전기는 <b>자석과 코일</b>로 이루어져 있어요. 코일이 자석 사이에서 회전해요.</span></div>
+          <div class="ph on"><i>2</i><span>코일이 돌면 코일을 지나는 <b>자기장이 계속 변해요</b>. 그래서 코일에 전류가 흘러 전구가 켜져요. 자석과 코일 실험실에서 본 것과 같은 현상이에요.</span></div>
+          <div class="ph on"><i>3</i><span>코일을 돌리려면 무엇인가 <b>힘을 들여 돌려야</b> 해요. 손, 떨어지는 물, 부는 바람이 가진 <b>역학적 에너지</b>가 발전기에서 <b>전기 에너지</b>로 바뀌어요.</span></div>
+          <div class="ph on"><i>4</i><span>발전소의 발전기도 같은 원리예요. 수력 발전소는 높은 곳에서 떨어지는 <b>물</b>로, 풍력 발전소는 <b>바람</b>으로 발전기를 돌려요.</span></div>
+        </div>
+      </div>
+      <p class="mnote">실제 발전소의 발전기는 훨씬 크고 구조가 더 복잡해요. 돌아가는 빠르기와 전구 밝기는 보기 좋게 정한 모형이에요.</p>
+    </section>
+  </div>
+</div>
+<script>
+window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
+  reduce: !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches), Q: new URLSearchParams(location.search) };
+</script>
+<script>
+/*@@LOCAL:_emi.js@@*/
+</script>
+<script>
+/* ===== 블록 1: 실험하기 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S, Q = S.Q;
+    const G = EMI.gen($('#gen'));
+    window.GEN = G;
+    const tried = {};
+    const SRC = { hand: '손으로 돌리는 역학적 에너지', water: '떨어지는 물의 역학적 에너지', wind: '부는 바람의 역학적 에너지' };
+    const LV = { hand: ['멈춤', '천천히', '빠르게'], water: ['수문 잠금', '물 조금', '물 많이'], wind: ['바람 없음', '약한 바람', '센 바람'] };
+    function msg(t, m, cls = '') { $('#res').className = 'fbk ' + cls; $('#resT').textContent = t; $('#resM').innerHTML = m; }
+    function flow() { $('#flow').innerHTML = `<span>${SRC[G.st.driver]}</span><i>→</i><span class="k">발전기</span><i>→</i><span>전기 에너지</span><i>→</i><span>전구의 빛</span>`; }
+    function setLevel(l) { G.setLevel(l); $$('#lvl button').forEach((b) => b.setAttribute('aria-pressed', String(+b.dataset.l === l))); }
+    function setDriver(d) {
+      G.setDriver(d); setLevel(0);
+      $$('#drv button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.d === d)));
+      $$('#lvl button').forEach((b, i) => (b.textContent = LV[d][i]));
+      $('#lvlT').textContent = d === 'hand' ? '돌리는 빠르기' : d === 'water' ? '떨어지는 물의 양' : '바람의 세기';
+      $('#hint').textContent = d === 'hand' ? '손잡이를 손가락으로 빙글빙글 돌려도 돼요' : d === 'water' ? '물이 물레를 밀어 돌려요' : '바람이 회전 날개를 밀어 돌려요';
+      flow();
+      msg('결과', d === 'hand' ? '손잡이를 돌리거나 <b>천천히</b>를 눌러 보세요.' : d === 'water' ? '<b>물 조금</b>이나 <b>물 많이</b>를 눌러 물을 떨어뜨려 보세요.' : '<b>약한 바람</b>이나 <b>센 바람</b>을 눌러 바람을 불어 보세요.');
+    }
+    $$('#drv button').forEach((b) => b.addEventListener('click', () => setDriver(b.dataset.d)));
+    $$('#lvl button').forEach((b) => b.addEventListener('click', () => {
+      const l = +b.dataset.l, d = G.st.driver; setLevel(l);
+      if (l === 0) msg('결과', '코일이 멈추면 전구도 꺼져요. 코일이 <b>돌아야</b> 전류가 흘러요.');
+      else { tried[d] = true;
+        const who = d === 'hand' ? '손으로 돌리는' : d === 'water' ? '떨어지는 물이 물레를 돌려 그' : '바람이 회전 날개를 돌려 그';
+        msg(l === 1 ? '천천히 돌 때' : '빠르게 돌 때', `${who} 힘으로 코일이 자석 사이에서 돌아요. 전구를 봐요. ${l === 1 ? '천천히 돌면 전구가 깜빡이듯 약하게 켜져요.' : '빠르게 돌면 전구가 더 밝게 켜져요.'}`, 'ok'); }
+    }));
+    G.onBright = () => { if (G.st.driver === 'hand' && G.st.level === 0) { tried.hand = true; msg('손으로 돌렸어요', '손잡이를 돌려 코일이 자석 사이에서 돌자 전구가 켜졌어요. 손의 <b>역학적 에너지</b>가 <b>전기 에너지</b>로 바뀌었어요.', 'ok'); } };
+    $('#bField').addEventListener('click', (e) => { const on = e.currentTarget.getAttribute('aria-pressed') !== 'true'; e.currentTarget.setAttribute('aria-pressed', String(on)); G.field(on); });
+    $('#bReset').addEventListener('click', () => { setDriver('hand'); G.st.w = 0; });
+    setDriver(['water', 'wind'].includes(Q.get('d')) ? Q.get('d') : 'hand');
+    if (Q.get('l')) { setLevel(+Q.get('l')); G.st.w = [0, 3.2, 8.5][+Q.get('l')]; }
+    window.SM.okUI = true;
+  } catch (err) { window.SM_err('실험하기', err); }
+})();
+</script>
+<script>
+/* ===== 블록 2: 정리하기 · 탭 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S, Q = S.Q;
+    const QS = {
+      qA: [['a', '코일이 돌며 코일을 지나는 자기장이 변해 코일에 전류가 흐르기 때문', true], ['b', '자석에서 전구로 전기가 흘러 나오기 때문', false], ['c', '코일이 돌며 뜨거워져 빛이 나기 때문', false]],
+      qB: [['a', '높은 곳에서 떨어지는 물', true], ['b', '부는 바람', false], ['c', '햇빛', false]],
+      qC: [['a', '부는 바람', true], ['b', '떨어지는 물', false], ['c', '전지', false]],
+    };
+    const pick = {};
+    Object.keys(QS).forEach((k) => { $('#' + k).innerHTML = QS[k].map(([v, t]) => `<button type="button" data-v="${v}" aria-pressed="false">${t}</button>`).join(''); });
+    function msg(t, m, cls = '') { $('#res2').className = 'fbk ' + cls; $('#res2T').textContent = t; $('#res2M').innerHTML = m; }
+    Object.keys(QS).forEach((k) => $$('#' + k + ' button').forEach((b) => b.addEventListener('click', () => {
+      pick[k] = b.dataset.v; $$('#' + k + ' button').forEach((x) => { x.setAttribute('aria-pressed', String(x === b)); x.classList.remove('good', 'bad'); });
+      const ok = QS[k].find((x) => x[0] === b.dataset.v)[2]; b.classList.add(ok ? 'good' : 'bad');
+      if (Object.keys(QS).every((q) => pick[q] && QS[q].find((x) => x[0] === pick[q])[2])) msg('결과 · 모두 맞았어요', '발전기는 코일을 돌려 전기를 만들어요. 수력 발전소는 <b>떨어지는 물</b>, 풍력 발전소는 <b>바람</b>의 역학적 에너지로 발전기를 돌려 <b>전기 에너지</b>를 만들어요.', 'ok');
+      else if (!ok) msg('다시 생각해 봐요', '실험하기에서 <b>물레</b>와 <b>회전 날개</b>를 골라 무엇이 코일을 돌리는지 봐요.', 'no');
+    })));
+    function show(p) { $$('#pt button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.p === p))); $$('.pane').forEach((e) => (e.hidden = e.dataset.p !== p)); }
+    $$('#pt button').forEach((b) => b.addEventListener('click', () => show(b.dataset.p)));
+    show(['rec', 'why'].includes(Q.get('tab')) ? Q.get('tab') : 'lab');
+    if (Q.get('ans') === '1') Object.keys(QS).forEach((k) => $('#' + k + ' [data-v="a"]').click());
+  } catch (err) { window.SM_err('정리하기', err); }
+})();
+</script>
+</body>
+</html>

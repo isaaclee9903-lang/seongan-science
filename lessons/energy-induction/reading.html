@@ -1,0 +1,1688 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>전자기 유도와 에너지 전환 – 빈칸 읽기</title>
+<script>
+/* 문제 알림: 코드에 오류가 나면 화면 아래에 빨간 상자로 알려 줘요 (선생님 확인용) */
+(function () {
+  function box() {
+    var b = document.getElementById('rdErr');
+    if (!b && document.body) {
+      b = document.createElement('div'); b.id = 'rdErr';
+      b.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;background:#fdecea;color:#8a1f17;border:2px solid #d9534f;border-radius:12px;padding:10px 14px;font:600 14px/1.5 sans-serif;white-space:pre-wrap';
+      document.body.appendChild(b);
+    }
+    return b;
+  }
+  window.RD_err = function (where, err) {
+    var msg = '[' + where + '] ' + (err && err.message ? err.message : String(err));
+    var show = function () { var b = box(); if (b) b.textContent += (b.textContent ? '\n' : '') + msg; };
+    if (document.body) show(); else document.addEventListener('DOMContentLoaded', show);
+  };
+  window.addEventListener('error', function (e) { window.RD_err('스크립트', { message: e.message + ' (줄 ' + e.lineno + ')' }); });
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      var R = window.RD || {}, miss = [];
+      if (!R.ok1) miss.push('기본 기능·퀴즈');
+      if (!R.ok2 && R.need2 !== false) miss.push('그림 조작 버튼');
+      if (miss.length) window.RD_err('실행 안 됨', { message: miss.join(', ') + ' 코드가 실행되지 않았어요. 파일이 끝(</html>)까지 들어 있는지 확인해 주세요.' });
+    }, 1500);
+    setTimeout(function () {
+      if (document.querySelector('.fail3d') && !(window.RD || {}).ok3d) { document.querySelectorAll('.fail3d').forEach(function (f) { f.classList.add('show'); }); window.RD_err('3D 그림', { message: '3D 그림을 불러오지 못했어요. 인터넷 연결(cdn.jsdelivr.net)을 확인하고 새로고침해 주세요.' }); }
+    }, 9000);
+  });
+})();
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+  :root{--bg:#f3f6f9;--paper:#fff;--ink:#15263a;--ink2:#34495e;--muted:#627386;--line:#e1e8ef;--accent:#0e63b3;--accent-soft:#e4f0fb;
+    --V:#2f6fd6;--I:#e89a00;--R:#23a566;--ok:#1f9d5c;--no:#d9534f;--violet:#7d5ad6;
+    --ser:#1784cf;--ser-soft:#e3f2fc;--par:#5e9e1c;--par-soft:#eef7e2;
+    --shadow:0 1px 2px rgba(20,38,59,.05),0 10px 28px rgba(20,38,59,.07);--ease:cubic-bezier(.2,.8,.2,1);--fs:18px}
+  html.big{--fs:20.5px}
+  *{box-sizing:border-box}html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:"Pretendard",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;-webkit-font-smoothing:antialiased;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  button{font:inherit;color:inherit}a{color:var(--accent)}
+  /* 히어로 */
+  .hero{position:relative;color:#fff;overflow:hidden;background:linear-gradient(150deg,#123a6b,#1d6fb8 55%,#4f9a2e)}
+  .hero-in{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:36px 20px 40px;display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.35fr);gap:28px;align-items:center}
+  .hero .kick{display:inline-block;font-size:14px;font-weight:700;background:rgba(255,255,255,.16);padding:6px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.3)}
+  .hero .kick.maker{margin-left:6px;background:rgba(255,255,255,.08)}
+  .hero h1{font-size:clamp(30px,4.4vw,44px);line-height:1.22;letter-spacing:-.03em;margin:14px 0 10px;word-break:keep-all}
+  .hero p{font-size:clamp(16px,2vw,18px);margin:0 0 18px;line-height:1.65;opacity:.95;word-break:keep-all}
+  .route{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px}
+  .route span{font-size:13.5px;font-weight:700;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.28);padding:5px 11px;border-radius:12px}
+  .start{display:inline-flex;align-items:center;gap:10px;white-space:nowrap;background:#fff;color:var(--accent);border:0;border-radius:16px;padding:0 22px;min-height:56px;font-weight:800;font-size:17px;cursor:pointer;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+  .hero svg{width:100%;height:auto;filter:drop-shadow(0 12px 30px rgba(0,0,0,.25))}
+  .msw{cursor:pointer}
+  .msw:focus{outline:none}.msw:focus-visible .rk{stroke:#ffd34d;stroke-width:3}
+  .dev .glow,.dev .lit{transition:opacity .45s var(--ease)}
+  .dev.off .glow,.dev.off .lit{opacity:0}
+  .dev .unlit{opacity:0;transition:opacity .45s}
+  .dev.off .unlit{opacity:1}
+  .fanb{transform-box:fill-box;transform-origin:center;animation:fanspin .45s linear infinite}
+  .dev.off .fanb{animation-duration:6s;animation-play-state:paused}
+  @keyframes fanspin{to{transform:rotate(360deg)}}
+  .credit{text-align:center;font-size:13px;font-weight:700;color:#8495a8;padding:6px 16px 40px;letter-spacing:.02em}
+  /* 진행 */
+  .nav{position:sticky;top:0;z-index:30;background:rgba(255,255,255,.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+  .nav-in{max-width:980px;margin:0 auto;display:flex;align-items:center;gap:6px;padding:8px 12px;overflow-x:auto;scrollbar-width:none}
+  .nav-in::-webkit-scrollbar{display:none}
+  .step{flex:none;display:flex;align-items:center;gap:7px;border:0;background:transparent;border-radius:12px;padding:8px 11px;min-height:44px;font-weight:700;font-size:14.5px;color:var(--muted);cursor:pointer}
+  .step .n{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:12.5px;font-weight:800;background:#e8eef4;color:#607285}
+  .step.active{background:var(--accent-soft);color:var(--accent)}.step.active .n{background:var(--accent);color:#fff}
+  .step.done .n{background:var(--ok);color:#fff}
+  .nav-sp{flex:1}
+  .fsz{flex:none;display:flex;gap:4px}
+  .fsz button{width:44px;height:40px;border:1px solid var(--line);background:#fff;border-radius:10px;font-weight:800;cursor:pointer}
+  .fsz button[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .bar{height:3px}.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--ser),var(--par))}
+  /* 본문 */
+  main{max-width:980px;margin:0 auto;padding:10px 16px 60px}
+  section.part{padding-top:34px;scroll-margin-top:70px}
+  .sec-kick{font-size:14px;font-weight:800;color:var(--accent);display:flex;align-items:center;gap:8px}
+  .sec-kick .time{font-weight:600;color:var(--muted);background:#fff;border:1px solid var(--line);border-radius:999px;padding:2px 10px;font-size:12.5px}
+  h2{font-size:clamp(24px,3.4vw,31px);margin:6px 0 16px;letter-spacing:-.02em;line-height:1.3;word-break:keep-all}
+  h3{font-size:calc(var(--fs) + 3px);margin:0 0 8px;letter-spacing:-.01em;word-break:keep-all}
+  .card{background:var(--paper);border-radius:22px;box-shadow:var(--shadow);border:1px solid rgba(20,38,59,.04)}
+  .read{padding:24px 26px;margin-bottom:16px}
+  .read p{font-size:var(--fs);line-height:1.85;color:var(--ink2);margin:0 0 14px;word-break:keep-all}
+  .read p:last-child{margin-bottom:0}
+  mark{background:linear-gradient(transparent 58%,#fff0a8 58%);color:inherit;padding:0 1px}
+  .term{border:0;background:none;padding:0;font-weight:800;color:var(--accent);border-bottom:2px dotted rgba(14,99,179,.5);cursor:pointer;font-size:inherit;line-height:inherit}
+  .defn{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:14px 0;padding:14px 16px;border-radius:16px;background:#f2f7fd;border:1px solid #d6e5f5;font-size:var(--fs);word-break:keep-all}
+  .defn .k{font-weight:900;color:#fff;padding:4px 12px;border-radius:10px}
+  .defn.ser{background:var(--ser-soft);border-color:#bfe0f5}.defn.ser .k{background:var(--ser)}
+  .defn.par{background:var(--par-soft);border-color:#cfe6b4}.defn.par .k{background:var(--par)}
+  .fig{margin:16px 0;background:#f8fafc;border:1px solid var(--line);border-radius:18px;padding:12px}
+  .fig svg{display:block;width:100%;height:auto}
+  .fig .cap{font-size:14px;color:var(--muted);text-align:center;margin-top:6px;word-break:keep-all;line-height:1.6}
+  .js-reveal .reveal{transform:translateY(18px);transition:transform .7s var(--ease)}
+  .js-reveal .reveal.in{transform:none}
+  details.pause{margin:16px 0 22px;background:linear-gradient(135deg,#fff8e6,#fff);border:2px solid #f6d98a;border-radius:18px;overflow:hidden}
+  details.pause summary{list-style:none;cursor:pointer;padding:15px 18px;display:flex;gap:12px;align-items:center;font-weight:800;font-size:var(--fs);min-height:60px;word-break:keep-all}
+  details.pause summary::-webkit-details-marker{display:none}
+  details.pause .pi{flex:none;width:36px;height:36px;border-radius:12px;background:#f7c948;display:grid;place-items:center}
+  details.pause .tap{margin-left:auto;flex:none;font-size:13px;font-weight:700;color:#9a6b00;background:#fff3cc;padding:4px 10px;border-radius:999px}
+  details.pause[open] .tap{visibility:hidden}
+  details.pause .ans{padding:0 18px 18px 66px;font-size:var(--fs);line-height:1.75;color:#5b4300;word-break:keep-all}
+  .myth{display:flex;gap:14px;align-items:flex-start;background:#fff4f2;border:2px solid #f3c2bb;border-radius:18px;padding:16px 18px;margin:16px 0}
+  .myth .x{flex:none;width:40px;height:40px;border-radius:12px;background:#e0483e;color:#fff;display:grid;place-items:center;font-weight:900;font-size:20px}
+  .myth p{margin:0;font-size:calc(var(--fs) - 1px);line-height:1.7;color:#5e2a25;word-break:keep-all}
+  .formula{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:12px;margin:16px 0;padding:18px;border-radius:20px;background:#f6f9ff;border:1px solid #d6e5f5;font-size:clamp(26px,4vw,36px);font-weight:900;letter-spacing:-.01em}
+  .formula .eqs{font-size:clamp(15px,2vw,17px);font-weight:700;color:var(--muted);flex-basis:100%;text-align:center;word-break:keep-all}
+  .cV{color:var(--V)}.cI{color:var(--I)}.cR{color:var(--R)}.cS{color:var(--ser)}.cP{color:var(--par)}
+  /* 지난 시간 */
+  .recall{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:16px;align-items:center}
+  .backlink{display:inline-flex;align-items:center;gap:8px;min-height:46px;padding:0 16px;border-radius:12px;background:#eef3f8;color:var(--ink2);font-weight:800;font-size:15px;text-decoration:none}
+  /* 직렬·병렬 모형 장면 */
+  .spfig svg{max-width:760px;margin:0 auto}
+  .spfig .etog{display:flex;gap:8px;justify-content:center;margin-bottom:8px;flex-wrap:wrap}
+  .tg{min-height:48px;padding:0 16px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15px;cursor:pointer;transition:all .2s}
+  .tg[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+  .tg.cut{border-style:dashed}
+  .tg.cut[aria-pressed="true"]{border-color:var(--no);background:#fdecea;color:#b33a35;border-style:solid}
+  .tg:disabled{opacity:.35;cursor:default}
+  .mtr{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:10px}
+  .mtr .m{background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px 12px}
+  .mtr .ml{font-size:14px;font-weight:800;color:var(--ink2);word-break:keep-all}
+  .mtr .trk{position:relative;height:16px;border-radius:99px;background:#e9eff5;margin:10px 0 18px}
+  .mtr .fill{position:absolute;left:0;top:0;bottom:0;border-radius:99px;width:0;transition:width .7s var(--ease)}
+  .mtr .ref{position:absolute;top:-4px;bottom:-4px;width:3px;border-radius:2px;background:#14263b;opacity:.55}
+  .mtr .ref::after{content:"전구 1개";position:absolute;top:22px;left:50%;transform:translateX(-50%);font-size:11.5px;font-weight:800;color:#5a6b7e;white-space:nowrap}
+  .mtr .mv{font-size:14.5px;font-weight:800;word-break:keep-all;min-height:22px}
+  /* 왜 그럴까 사슬 */
+  .chain{display:grid;gap:0;margin:16px 0}
+  .ch{display:grid;grid-template-columns:44px 1fr;gap:12px;align-items:start;padding:12px 14px;border-radius:16px;background:#f8fafc;border:1px solid var(--line)}
+  .ch .no{width:36px;height:36px;border-radius:12px;display:grid;place-items:center;font-weight:900;color:#fff}
+  .ch p{margin:0;font-size:calc(var(--fs) - 1px);line-height:1.7;color:var(--ink2);word-break:keep-all}
+  .ch p small{display:block;font-size:calc(var(--fs) - 4px);color:var(--muted);margin-top:2px}
+  .ch-ar{height:22px;display:grid;place-items:center}
+  .ch-ar svg{width:20px;height:20px}
+  .chain.ser .ch .no{background:var(--ser)}.chain.par .ch .no{background:var(--par)}
+  .chain .ch.key{background:#fffdf3;border-color:#f0dc9a}
+  /* 비교표 */
+  .cmp{width:100%;border-collapse:separate;border-spacing:0;margin:8px 0 4px;font-size:calc(var(--fs) - 2px);word-break:keep-all}
+  .cmp th,.cmp td{padding:12px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;line-height:1.6}
+  .cmp thead th{font-size:calc(var(--fs) - 1px);font-weight:900;color:#fff}
+  .cmp thead th:first-child{background:transparent}
+  .cmp thead th.s{background:var(--ser);border-radius:14px 14px 0 0}
+  .cmp thead th.p{background:var(--par);border-radius:14px 14px 0 0}
+  .cmp tbody th{color:var(--muted);font-weight:800;width:24%}
+  .cmp td.s{background:var(--ser-soft)}.cmp td.p{background:var(--par-soft)}
+  .life{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:14px 0}
+  .lc{background:#f8fafc;border:1px solid var(--line);border-radius:18px;padding:14px}
+  .lc svg{display:block;width:100%;height:auto;border-radius:12px;background:#fff}
+  .lc > b{display:block;font-size:calc(var(--fs) - .5px);margin:10px 0 4px}
+  .lc p{margin:0;font-size:calc(var(--fs) - 2px);line-height:1.7;color:var(--ink2);word-break:keep-all}
+  .simlink{display:flex;align-items:center;gap:14px;margin:18px 0 4px;padding:16px 18px;border-radius:18px;background:linear-gradient(120deg,#0e63b3,#1b86c9);color:#fff;text-decoration:none;box-shadow:0 8px 22px rgba(14,99,179,.25)}
+  .simlink .si{flex:none;width:46px;height:46px;border-radius:14px;background:rgba(255,255,255,.18);display:grid;place-items:center}
+  .simlink b{display:block;font-size:17px}.simlink span{font-size:14px;opacity:.9;word-break:keep-all}
+  .simlink .go{margin-left:auto;flex:none}
+  /* 퀴즈 */
+  .quiz{display:flex;flex-direction:column;gap:14px}
+  .qcard{padding:22px 24px}
+  .qhead{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .qno{flex:none;font-weight:800;font-size:13px;color:#fff;background:var(--ink);padding:4px 10px;border-radius:999px}
+  .qtype{font-size:12.5px;font-weight:700;color:var(--muted)}
+  .qstate{margin-left:auto;font-weight:800;font-size:13px;padding:4px 10px;border-radius:999px;display:none}
+  .qcard.right .qstate{display:inline-block;background:#e8f7ef;color:#11703f}
+  .qcard.wrong .qstate{display:inline-block;background:#fdecea;color:#b33a35}
+  .qtext{font-size:calc(var(--fs) + 1px);font-weight:700;line-height:1.65;margin:0 0 16px;word-break:keep-all}
+  .ox{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:420px}
+  .oxb{min-height:80px;border-radius:20px;border:2px solid var(--line);background:#f7fafc;font-size:38px;font-weight:900;cursor:pointer;display:grid;place-items:center}
+  .oxb.o{color:#1f78c8}.oxb.x{color:#d9534f}
+  .mc{display:grid;gap:10px}
+  .mcb{display:flex;align-items:center;gap:12px;text-align:left;min-height:56px;border-radius:16px;border:2px solid var(--line);background:#f7fafc;padding:10px 16px;font-size:var(--fs);font-weight:700;cursor:pointer;word-break:keep-all}
+  .mcb .k{flex:none;width:30px;height:30px;border-radius:50%;background:#fff;border:2px solid #cbd6e1;display:grid;place-items:center;font-size:14px;font-weight:800;color:#5a6b7e}
+  button.good{border-color:var(--ok)!important;background:#e8f7ef!important}
+  button.bad{border-color:var(--no)!important;background:#fdecea!important}
+  button:disabled{cursor:default}
+  .qcard.locked .oxb:not(.good):not(.bad),.qcard.locked .mcb:not(.good):not(.bad){opacity:.55}
+  .sentence{font-size:calc(var(--fs) + 1px);font-weight:700;line-height:2.4;margin:0 0 14px;word-break:keep-all}
+  .slot{display:inline-flex;align-items:center;justify-content:center;min-width:110px;min-height:44px;vertical-align:middle;margin:0 4px;padding:0 14px;border-radius:12px;border:2px dashed #aebdcc;background:#f7fafc;color:var(--muted);font-weight:800;font-size:calc(var(--fs) - 1px);cursor:pointer;line-height:1.2}
+  .slot.filled{border-style:solid;border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+  .slot.cur{box-shadow:0 0 0 4px rgba(14,99,179,.18)}
+  .slot.good{border-style:solid;border-color:var(--ok);background:#e8f7ef;color:#11703f}
+  .slot.bad{border-style:solid;border-color:var(--no);background:#fdecea;color:#b33a35}
+  .bank{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+  .chip{min-height:48px;padding:0 16px;border-radius:14px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:calc(var(--fs) - 1px);cursor:pointer}
+  .chip.used{opacity:.3;pointer-events:none}
+  .btn{min-height:52px;border:0;border-radius:14px;padding:0 20px;font-weight:800;font-size:16px;cursor:pointer}
+  .btn.primary{background:var(--accent);color:#fff}.btn.primary:disabled{opacity:.35}
+  .btn.ghost{background:#eef3f8;color:var(--ink2)}
+  .exp{display:none;margin-top:14px;padding:14px 16px;border-radius:14px;font-size:var(--fs);line-height:1.7;word-break:keep-all}
+  .qcard.right .exp{display:block;background:#e8f7ef;color:#0f5a36}
+  .qcard.wrong .exp{display:block;background:#fff6e8;color:#6d4208}
+  .retry{margin-top:10px}
+  .result{padding:26px;display:grid;grid-template-columns:150px 1fr;gap:24px;align-items:center;margin-top:16px}
+  .ring{width:150px;height:150px;position:relative}.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+  .ring .rv{position:absolute;inset:0;display:grid;place-items:center;text-align:center;font-weight:900;font-size:34px;line-height:1.1}
+  .ring .rv small{display:block;font-size:13px;font-weight:700;color:var(--muted)}
+  .result p{font-size:var(--fs);line-height:1.7;color:var(--ink2);margin:0 0 12px;word-break:keep-all}
+  .wlist{display:flex;flex-wrap:wrap;gap:8px}
+  .wlist button{min-height:44px;border:1px solid #f1c6c3;background:#fdf0ef;color:#b33a35;border-radius:10px;padding:0 12px;font-weight:700;cursor:pointer}
+  .next{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}
+  .next a{text-decoration:none;color:#fff;border-radius:20px;padding:18px;min-height:140px;display:flex;flex-direction:column;justify-content:space-between;box-shadow:var(--shadow)}
+  .next a b{font-size:18px}.next a span{font-size:14px;opacity:.92;word-break:keep-all}
+  .pop{position:absolute;z-index:40;max-width:300px;background:#15263a;color:#fff;border-radius:14px;padding:12px 14px;font-size:15px;line-height:1.6;box-shadow:0 12px 32px rgba(0,0,0,.25);opacity:0;transform:translateY(6px);transition:all .2s;pointer-events:none;word-break:keep-all}
+  .pop.show{opacity:1;transform:none;pointer-events:auto}.pop b{display:block;color:#9fd2ff}
+  @media (max-width:860px){.hero-in{grid-template-columns:1fr}.recall,.life,.next{grid-template-columns:1fr}}
+  @media (max-width:640px){.mtr{grid-template-columns:1fr}}
+  @media (max-width:600px){.read{padding:20px}.result{grid-template-columns:1fr;justify-items:center;text-align:center}.step .t{display:none}.cmp th,.cmp td{padding:10px 8px}}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.js-reveal .reveal{transform:none}}
+
+  .drawln{stroke-dasharray:620;stroke-dashoffset:620;animation:drawln 1.1s var(--ease) forwards}
+  @keyframes drawln{to{stroke-dashoffset:0}}
+
+  /* ===== 3D 화면 공통 ===== */
+  :root{--Bc:#14a5d0;--Ic:#2fae4a;--Fc:#f0522a;--N:#d8433b;--S:#2f62c9;--P:#7d5ad6}
+  .viewer{position:relative;overflow:hidden;padding:0}
+  .gl-host{position:relative;width:100%;height:min(74vh,700px);min-height:380px;background:linear-gradient(#f6f9fc,#d6e3ef);touch-action:none}
+  .gl-host canvas.gl{display:block;width:100%;height:100%;outline:none}
+  .lbls{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+  .lb{position:absolute;left:0;top:0;white-space:nowrap;font-weight:800;font-size:14px;padding:3px 9px;border-radius:9px;background:rgba(255,255,255,.88);color:#34495e;box-shadow:0 2px 8px rgba(20,38,59,.14);will-change:transform}
+  .lb.small{font-size:12px;font-weight:700;color:#5a6b7e;background:rgba(255,255,255,.72);box-shadow:none}
+  .lb.B{background:var(--Bc);color:#fff}.lb.I{background:var(--Ic);color:#fff}.lb.F{background:var(--Fc);color:#fff;font-size:15px}
+  .lb.P{background:var(--P);color:#fff}
+  .lb.dim{opacity:.35}
+  .vt{position:absolute;display:flex;gap:6px;flex-wrap:wrap;z-index:3}
+  .vt.tl{left:10px;top:10px;max-width:calc(100% - 20px)}
+  .vt.tr{right:10px;top:10px;justify-content:flex-end}
+  .vt.bl{left:10px;bottom:10px;align-items:center}
+  .vb{min-height:44px;padding:0 12px;border-radius:12px;border:1px solid rgba(20,38,59,.12);background:rgba(255,255,255,.9);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);font-weight:800;font-size:14px;color:#34495e;cursor:pointer;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 10px rgba(20,38,59,.08)}
+  .vb:active{transform:scale(.96)}
+  .vb .dot{width:12px;height:12px;border-radius:50%;flex:none}
+  .vb[aria-pressed="false"]{opacity:.62}
+  .vb[aria-pressed="false"] .dot{background:#c2ccd6!important}
+  .vb.sel{background:#14263b;color:#fff;border-color:#14263b}
+  .hint{font-size:12.5px;font-weight:700;color:#5a6b7e;background:rgba(255,255,255,.78);border-radius:10px;padding:6px 10px;word-break:keep-all}
+  .inset{position:absolute;z-index:2;border-radius:18px;border:2px solid rgba(255,255,255,.95);box-shadow:0 10px 30px rgba(20,38,59,.22),inset 0 0 0 1px rgba(20,38,59,.08);pointer-events:none;display:none}
+  .inset.on{display:block}
+  .inset .it{position:absolute;left:8px;top:8px;font-size:12.5px;font-weight:900;color:#14263b;background:rgba(255,255,255,.9);border-radius:8px;padding:3px 8px}
+  .inset .ic{position:absolute;left:6px;right:6px;bottom:6px;display:flex;flex-wrap:wrap;gap:4px;justify-content:center}
+  .inset .ic span{font-size:11.5px;font-weight:800;color:#fff;border-radius:7px;padding:2px 7px;white-space:nowrap}
+  .fail3d{position:absolute;inset:0;display:none;place-items:center;text-align:center;padding:24px;font-size:16px;font-weight:700;color:#7a2a22;line-height:1.7;word-break:keep-all;background:#fff4f2}
+  .fail3d.show{display:grid}
+  .model{font-size:13px;color:var(--muted);text-align:right;margin:0;word-break:keep-all}
+  @media (max-width:900px){.gl-host{height:min(56vh,620px)}}
+  /* ===== 전자기 유도 수업 공통 ===== */
+  :root{--fab:#0e63b3;--fab-soft:#e4f0fb}
+  .eyebrow{color:#0e63b3;background:#e4f0fb}
+  .prog i{background:#0e63b3}
+  .ph.done i{background:#8db8e3}
+  .fbk{border-radius:14px;padding:12px 14px;margin-top:10px;font-size:15px;line-height:1.65;word-break:keep-all;background:#f6f9fc;border:1px solid #dbe4ed;color:var(--ink2)}
+  .fbk.ok{background:#e9f3fd;border-color:#bcd7f2;color:#0b3f73}
+  .fbk.no{background:#fff4f2;border-color:#f3c2bb;color:#5e2a25}
+  .fbk b.t{display:block;font-size:13.5px;margin-bottom:2px}
+  [hidden]{display:none!important}
+  /* ===== 그림 공통 ===== */
+  .scene{position:relative;width:100%;overflow:hidden;touch-action:manipulation;user-select:none;-webkit-user-select:none}
+  .scene canvas.wvc{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .olay{position:absolute;inset:0;pointer-events:none}
+  .ol{position:absolute;transform:translate(-50%,-50%);white-space:nowrap;font-weight:700;font-size:clamp(11.5px,1.3vw,14.5px);line-height:1.3;letter-spacing:-.01em}
+  .ol.tx{color:#34495e;background:rgba(255,255,255,.88);padding:1px 6px;border-radius:6px}
+  .ol.tx.m{color:#6b7c8f;background:transparent;padding:0}
+  .ol.la{transform:translate(-100%,-50%)}.ol.ra{transform:translate(0,-50%)}
+  .ol[hidden]{display:none}
+  .ol.tx.big{font-size:clamp(14px,1.7vw,18px);font-weight:900;background:transparent}
+  .ol.tx.cap{font-size:clamp(12.5px,1.45vw,16px);font-weight:700;color:#34495e;background:transparent}
+  .ol.tx.cap b{color:#0e63b3}
+  .ol.tx.cube{background:transparent;color:#fff;font-weight:800;text-shadow:0 1px 2px rgba(0,0,0,.35)}
+  .ol.tx.cube.dark{color:#14263b;text-shadow:none}
+  .ol.tx.nm{font-weight:800;color:#14263b;background:transparent;padding:0}
+  .ol.tx.nm.sol{color:#5a6b7e}
+  .ol.tx.dn{background:transparent;color:#34495e;padding:0}
+  .ol.tx.dn b{color:#0e63b3;font-weight:900}
+  .ol .blank{display:inline-block;width:4.2em;border-bottom:1.6px solid #8b9aab;vertical-align:-2px}
+  .ol.tx.grp{font-weight:900;color:#14263b;background:transparent;transform:translate(0,-50%);font-size:clamp(12.5px,1.4vw,15.5px)}
+  .ol.tx.val{background:transparent;padding:0;color:#34495e;font-variant-numeric:tabular-nums}
+  .ol.tx.val.in{color:#fff}
+  .ol.dim{opacity:.35}
+  .ol.tk2{color:#6b7c8f;font-weight:700;font-size:clamp(10.5px,1.15vw,13px);font-variant-numeric:tabular-nums}
+  .ol.tk2.ra{transform:translate(0,-50%)}
+  .ol.sc{color:#5a6b7e;font-weight:700;font-size:clamp(9.5px,1vw,11.5px)}
+  .ol.sc.la{transform:translate(-100%,-50%)}
+  .ol.lcd{color:#e9f1f7;font-family:ui-monospace,"Cascadia Mono",Consolas,monospace;font-weight:700;font-size:clamp(13px,1.9vw,21px);letter-spacing:.02em;font-variant-numeric:tabular-nums}
+  .ol.lcd small{font-size:.62em;margin-left:3px;opacity:.8}
+  .ol.tx.lensn{background:transparent;padding:0;font-weight:900;color:#14263b}
+  .ol.tx.read{background:#14263b;color:#fff;font-weight:800;border-radius:7px;padding:2px 7px;font-variant-numeric:tabular-nums}
+  .ol.tx.band{background:transparent;color:#0e63b3;font-weight:800;padding:0;font-size:clamp(10.5px,1.15vw,13px)}
+  .ol.tx.pn{background:transparent;padding:0;text-align:center;color:#5a6b7e;line-height:1.15;transform:translate(-50%,0)}
+  .ol.tx.pn small{font-size:.82em;font-weight:700}
+  .ol.tx.pn.on{color:#0e63b3;font-weight:900}
+  .ol .u{font-size:.82em;font-weight:700;color:#6b7c8f;margin-left:4px}
+  .ol.tx.inv{color:#fff;background:transparent;padding:0;text-shadow:0 1px 2px rgba(0,0,0,.35)}
+  .ol.tx.twol .u{display:block;margin:1px 0 0}
+  .ol.tx.lay{background:transparent;padding:0;font-weight:800;color:#34495e;font-size:clamp(11px,1.2vw,14px)}
+  .ol.tx.nm.blue{color:#0e63b3}
+  .ol.tx.dn.bl{color:#0b3f73}
+  .ol.tx.dn b{color:#14263b}
+  /* ===== 전자기 유도 그림 이름표 ===== */
+  .ol.tx.twol{text-align:left;line-height:1.25}
+  .ol.tx.sm{font-size:clamp(10.5px,1.1vw,13px)}
+  .ol.tx.pole{font-weight:900;font-size:clamp(12px,1.4vw,17px);color:#fff;background:transparent;padding:0;text-shadow:none}
+  .ol.tx.pole.big2{font-size:clamp(16px,2vw,24px)}
+  .ol.tx.pole.sm{font-size:clamp(10px,1.1vw,13px)}
+  .ol.tx.hintl{background:#14263b;color:#fff;font-weight:800;border-radius:8px;padding:4px 10px;font-size:clamp(11.5px,1.25vw,14px)}
+  .ol.tx.sc0{background:transparent;padding:0;font-size:clamp(9px,.95vw,11.5px);color:#5a6b7e}
+  .ol.tx.sc2b{background:transparent;padding:0;font-size:clamp(10.5px,1.1vw,13px);color:#5a6b7e;font-weight:800}
+  .ol.tx.lostt{background:transparent;padding:0;color:#0e63b3;font-weight:800;transform:translate(0,-50%)}
+  .ol.tx.la2{transform:translate(0,-50%);background:transparent;padding:0}
+  .ol.tx.cap.on{color:#0e63b3;font-weight:900}
+  .ol.tx.lay.dim{color:#a3b0bd}
+  .ol.tx.lay .u,.ol.tx.twol .u{font-weight:700}
+  /* ===== 이 수업 전용 ===== */
+  .hero{background:linear-gradient(160deg,#0b1a2e,#123155 60%,#0e2643)}
+  .hero-in{grid-template-columns:minmax(0,1fr) minmax(0,1.05fr)}
+  .goal{margin-top:20px;display:inline-block;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);border-radius:14px;padding:12px 16px;font-size:14.5px;line-height:1.7}
+  .goal b{color:#fff}
+  .hfig{background:#fff;border-radius:22px;overflow:hidden;align-self:center}
+  .hfig .scene{aspect-ratio:1040/600}
+  .bar i{background:#0e63b3}
+  .simlink{background:#0e63b3!important;box-shadow:none!important}
+  .simlink b{color:#fff}
+  .fig.wv{background:#fff;padding:0;overflow:hidden}
+  .fig.wv .cap{padding:8px 12px 10px;margin:0}
+  .fbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:10px 12px;background:#f3f6f9;border-top:1px solid var(--line)}
+  .fbar button{min-height:44px;padding:0 14px;border-radius:12px;border:1px solid #d4dee8;background:#fff;color:#34495e;font-weight:800;font-size:14.5px;cursor:pointer}
+  .fbar button[aria-pressed="true"]{background:#14263b;color:#fff;border-color:#14263b}
+  .fbar button:disabled{opacity:.4;cursor:default}
+  .fbar .sp{flex:1}
+  .fbar .st{font-size:14px;font-weight:700;color:#5a6b7e;word-break:keep-all}
+  .fbar .st b{color:#0e63b3}
+  .next{grid-template-columns:repeat(3,1fr)!important}
+  .next a{min-height:110px;background:#0e63b3!important}
+  .next a:nth-child(2){background:#0a4f90!important}.next a:nth-child(3){background:#14263b!important}
+  .sources{font-size:13px;color:var(--muted);line-height:1.7;word-break:keep-all;padding-left:18px;margin:0}
+  .key-box{border-radius:18px;padding:18px 20px;margin:18px 0;background:#f2f7fd;border:1px solid #d6e5f5}
+  .key-box .kt{display:inline-block;font-size:13px;font-weight:900;color:#0e63b3;margin-bottom:6px}
+  .key-box p{font-size:var(--fs);line-height:1.9;margin:0 0 6px;color:#1d2a40;word-break:keep-all}
+  .tbl{width:100%;border-collapse:collapse;margin:14px 0;font-size:16px}
+  .tbl th,.tbl td{border-bottom:1px solid var(--line);padding:10px 10px;text-align:left;word-break:keep-all;line-height:1.6}
+  .tbl thead th{font-size:14px;color:var(--muted);font-weight:800;border-bottom:2px solid #c9d6e2}
+  .tbl tbody th{font-weight:800;color:#14263b;white-space:nowrap}
+  /* 빈칸: 선생님 설명을 듣고 눌러서 확인 */
+  .bk{display:inline-flex;align-items:baseline;gap:5px;min-width:5.2em;padding:0 8px 0 4px;margin:0 2px;border-bottom:2px solid #8b9aab;background:#f3f6f9;border-radius:6px 6px 0 0;cursor:pointer;font-weight:800;color:#14263b;line-height:1.5;vertical-align:baseline;-webkit-tap-highlight-color:transparent}
+  .bk .bn{flex:none;font-size:12px;font-weight:900;color:#5a6b7e;background:#e1e8ef;border-radius:999px;min-width:1.7em;height:1.7em;display:inline-grid;place-items:center;align-self:center}
+  .bk .ba{display:none}
+  .bk.open{background:#e9f3fd;border-bottom-color:#0e63b3;color:#0b3f73}
+  .bk.open .ba{display:inline}
+  .bk.open .bn{background:#0e63b3;color:#fff}
+  .bk:focus-visible{outline:3px solid rgba(14,99,179,.35);outline-offset:2px}
+  .bkall{min-height:40px;padding:0 12px;border-radius:10px;border:1px solid #d4dee8;background:#fff;font-weight:800;font-size:14px;color:#34495e;cursor:pointer;white-space:nowrap}
+  .bkall[aria-pressed="true"]{background:#14263b;color:#fff;border-color:#14263b}
+  .bkcount{font-size:13px;font-weight:800;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+  .howbk{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:#fff8e6;border:1px solid #f3dc9a;color:#5b4300;border-radius:14px;padding:10px 14px;font-size:15px;line-height:1.6;margin:0 0 16px;word-break:keep-all}
+  .howbk .bk{pointer-events:none}
+  @media (max-width:860px){.next{grid-template-columns:1fr!important}.nav .t{display:none}}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-in">
+    <div>
+      <span class="kick">중3 과학 · 에너지 전환과 보존</span>
+      <h1>움직이는 자석이 전기를 만들어<br>에너지는 전환되고 보존돼</h1>
+      <p>흔들기만 해도 불이 켜지는 손전등이 있어요. 전지를 끼우지 않았는데 전기는 어디서 왔을까요? 선생님 설명을 들으며 빈칸을 하나씩 채워 가요.</p>
+      <div class="route"><span>① 흔드는 손전등</span><span>② 자석과 코일</span><span>③ 발전기</span><span>④ 에너지 전환과 보존</span></div>
+      <button class="start" type="button" data-go="r1">읽기 시작하기
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg></button>
+      <div><div class="goal"><b>이번 시간에 나는!</b><br>· 자석의 운동에 의해 전류가 발생하는 현상을 관찰하고 설명할 수 있다.<br>· 역학적 에너지가 전기 에너지로 전환되며, 이때 전체 에너지는 보존된다는 것을 설명할 수 있다.</div></div>
+    </div>
+    <div class="hfig"><div class="scene" id="heroFig" role="img" aria-label="투명한 자가 발전 손전등의 속. 왼쪽에 전구, 위에 스위치, 가운데 구리 도선을 감은 코일, 오른쪽에 원통 모양 자석이 있다. 누르면 손전등이 흔들린다."></div></div>
+  </div>
+</header>
+
+<nav class="nav" aria-label="읽기 진행">
+  <div class="nav-in">
+    <button class="step" data-go="r1" type="button"><span class="n">1</span><span class="t">흔드는 손전등</span></button>
+    <button class="step" data-go="r2" type="button"><span class="n">2</span><span class="t">자석과 코일</span></button>
+    <button class="step" data-go="q1" type="button"><span class="n">Q</span><span class="t">퀴즈 ①</span></button>
+    <button class="step" data-go="r3" type="button"><span class="n">3</span><span class="t">발전기</span></button>
+    <button class="step" data-go="r4" type="button"><span class="n">4</span><span class="t">에너지 전환</span></button>
+    <button class="step" data-go="q2" type="button"><span class="n">Q</span><span class="t">퀴즈 ②</span></button>
+    <span class="nav-sp"></span>
+    <span class="bkcount" id="bkCount">빈칸 0 / 0</span>
+    <button class="bkall" type="button" id="bkAll" aria-pressed="false">빈칸 모두 열기</button>
+    <div class="fsz" role="group" aria-label="글자 크기"><button type="button" id="fsN" aria-pressed="true">가</button><button type="button" id="fsB" aria-pressed="false" style="font-size:19px">가</button></div>
+  </div>
+  <div class="bar"><i id="progress"></i></div>
+</nav>
+
+<main>
+  <!-- 읽기 1 -->
+  <section class="part" id="r1">
+    <div class="howbk"><span>번호가 붙은 칸 <b class="bk"><span class="bn">1</span></b> 은 빈칸이에요. 선생님 설명을 듣고 내 공책이나 학습지에 먼저 써 본 뒤, 칸을 눌러 맞는지 확인해요.</span></div>
+    <div class="sec-kick">읽기 ① <span class="time">함께 시작하기</span></div>
+    <h2>흔들어서 불을 켤 수 있는 손전등</h2>
+    <article class="card read reveal">
+      <span class="tag">자가 발전 손전등</span>
+      <p>그림은 흔들어서 전기를 만들어 불을 켤 수 있는 <b>자가 발전 손전등</b>의 속이에요. 전지를 끼워 사용하는 손전등과 구조가 어떻게 다를까요? 전구, 스위치 말고 무엇이 들어 있는지 찾아보세요.</p>
+      <div class="fig wv"><div class="scene" id="fig1" style="aspect-ratio:1040/600" role="img" aria-label="투명한 자가 발전 손전등의 속. 왼쪽에 전구, 위에 스위치, 가운데 구리 도선을 감은 코일, 오른쪽에 원통 모양 자석이 있다. 흔들면 자석이 관 속을 오가며 코일을 지나고 전구가 켜진다."></div>
+        <div class="fbar"><button type="button" id="f1Go">손전등 흔들기</button><span class="sp"></span><span class="st" id="f1St">손전등을 손가락으로 좌우로 끌어도 돼요</span></div>
+        <div class="cap">그림 ① 자가 발전 손전등의 속 (흔드는 빠르기와 불빛 밝기는 보기 좋게 정한 모형)</div></div>
+      <p>전지를 끼우는 손전등과 달리, 자가 발전 손전등에는 전지 대신 <b class="bk">코일</b> 과 <b class="bk">자석</b> 이 들어 있어요. 손전등을 흔들면 손전등 속에서 <b class="bk">자석</b> 이 움직이고, 이때 <b class="bk">전기</b> 가 만들어져요.</p>
+      <p>그렇다면 어떻게 자석의 움직임으로 전기를 만들 수 있을까요?</p>
+    </article>
+    <details class="pause reveal"><summary><span class="pi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5b4300" stroke-width="2.4" stroke-linecap="round"><path d="M9 9a3 3 0 1 1 4 2.8c-.7.3-1 .9-1 1.6V14M12 18h.01"/></svg></span>생각 멈춤: 손전등을 흔들지 않고 가만히 두면 불이 켜질까요?<span class="tap">눌러서 확인</span></summary>
+      <div class="ans">켜지지 않아요. 그림 ①에서 자석이 관 끝에 <b>멈춰 있을 때</b>는 전구가 꺼져 있었어요. 자석이 <b>움직여 코일을 지나갈 때</b> 불이 켜졌어요.</div></details>
+  </section>
+
+  <!-- 읽기 2 -->
+  <section class="part" id="r2">
+    <div class="sec-kick">읽기 ② <span class="time">배움활동</span></div>
+    <h2>자석이나 코일을 움직여 전류 만들기</h2>
+    <article class="card read reveal">
+      <span class="tag">코일과 검류계를 연결한 후 검류계를 관찰해요</span>
+      <p>코일과 <button class="term" data-term="검류계">검류계</button>를 연결하고, 세 가지 상황에서 검류계 바늘을 관찰해요. 버튼을 눌러 하나씩 살펴보세요.</p>
+      <div class="fig wv"><div class="scene" id="fig2" style="aspect-ratio:1200/760" role="img" aria-label="코일의 두 끝을 검류계에 연결했다. 실험 1은 자석을 코일 속에 넣었다 빼고, 실험 2는 자석을 코일 속에 넣고 가만히 두고, 실험 3은 자석을 붙잡아 두고 코일을 움직인다. 1과 3에서는 바늘이 움직이고, 2에서는 바늘이 0에 머문다."></div>
+        <div class="fbar" id="f2Bar"><button type="button" data-x="1">실험하기 1</button><button type="button" data-x="2">실험하기 2</button><button type="button" data-x="3">실험하기 3</button><span class="sp"></span><span class="st" id="f2St">실험을 골라 보세요</span></div>
+        <div class="cap">그림 ② 자석이나 코일을 움직여 전류 만들기 (바늘이 움직이는 크기는 보기 좋게 정한 모형, 자기장은 얇은 선으로 모양만)</div></div>
+      <table class="tbl">
+        <thead><tr><th>실험하기</th><th>무엇을 했나요?</th><th>검류계 바늘</th></tr></thead>
+        <tbody>
+          <tr><th>1</th><td>자석을 움직여 코일 속에 넣거나 뺀다</td><td><b class="bk">움직인다</b></td></tr>
+          <tr><th>2</th><td>자석을 코일 속에 넣고 움직이지 않는다</td><td><b class="bk">움직이지 않는다</b></td></tr>
+          <tr><th>3</th><td>코일을 움직여 자석을 코일 속에 넣거나 뺀다</td><td><b class="bk">움직인다</b></td></tr>
+        </tbody>
+      </table>
+      <p>코일 근처에서 자석을 움직이거나, 자석 근처에서 코일을 움직이면 코일에 <b class="bk">전류</b> 가 흘러요. 하지만 자석을 코일 속에 넣고 <b class="bk">움직이지 않으면</b> 코일에 전류가 흐르지 않아요.</p>
+      <p>이처럼 자석이나 코일을 움직여 코일을 통과하는 <b class="bk">자기장</b> 이 변하면 코일에 전류가 흐르게 되는데, 이 현상을 <b class="bk">전자기 유도</b> 라고 해요. 그리고 이때 흐르는 전류를 <b class="bk">유도 전류</b> 라고 해요.</p>
+      <p>자가 발전 손전등은 이러한 <b class="bk">전자기 유도</b> 를 이용한 장치예요. 손전등을 흔들면 손전등 속에서 자석이 코일을 통과하면서 <b class="bk">유도 전류</b> 가 만들어지고, 이 전류를 이용하여 전구의 불을 켜요.</p>
+      <a class="simlink" data-link="lab" target="_blank" rel="noopener"><span class="si"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9h9v6H3z"/><path d="M14 7c3 0 7 2 7 5s-4 5-7 5"/></svg></span><span><b>자석과 코일 실험실</b><span>직접 자석과 코일을 끌어 움직여 봐요</span></span><span class="go"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></span></a>
+    </article>
+    <details class="pause reveal"><summary><span class="pi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5b4300" stroke-width="2.4" stroke-linecap="round"><path d="M9 9a3 3 0 1 1 4 2.8c-.7.3-1 .9-1 1.6V14M12 18h.01"/></svg></span>생각 멈춤: 실험 결과를 해석하여 코일에 전류가 흐르기 위한 조건을 말해 보세요.<span class="tap">눌러서 확인</span></summary>
+      <div class="ans">자석이나 코일이 <b>움직여서</b> 코일을 통과하는 <b>자기장이 변해야</b> 해요. 자석이 코일 속에 있어도 움직이지 않으면(실험하기 2) 전류가 흐르지 않아요.</div></details>
+  </section>
+
+  <section class="part" id="q1">
+    <div class="sec-kick">퀴즈 ① <span class="time">5문항</span></div>
+    <h2>자석과 코일로 전류 만들기</h2>
+    <div class="quiz" data-quiz="q1"></div>
+  </section>
+
+  <!-- 읽기 3 -->
+  <section class="part" id="r3">
+    <div class="sec-kick">읽기 ③ <span class="time">발전기와 발전소</span></div>
+    <h2>발전소에서는 어떻게 전기를 만들까요?</h2>
+    <article class="card read reveal">
+      <span class="tag">그림 Ⅵ-8 · 발전기의 구조</span>
+      <p>생활 속에서 우리가 사용하는 전기는 대부분 발전소의 <b class="bk">발전기</b> 로부터 얻어요. 발전기는 그림처럼 <b class="bk">자석</b> 과 <b class="bk">코일</b> 로 이루어져 있어요.</p>
+      <div class="fig wv"><div class="scene" id="fig3" style="aspect-ratio:1200/720" role="img" aria-label="말굽 모양 자석의 위쪽은 S극, 아래쪽은 N극이다. 두 극 사이에서 사각형 코일이 축을 따라 회전하고, 축의 고리에 닿은 솔에서 나온 전선이 전구로 이어진다. 손잡이, 떨어지는 물, 부는 바람으로 코일을 돌릴 수 있다."></div>
+        <div class="fbar" id="f3Bar"><button type="button" data-d="hand" aria-pressed="true">손잡이</button><button type="button" data-d="water" aria-pressed="false">떨어지는 물</button><button type="button" data-d="wind" aria-pressed="false">부는 바람</button><button type="button" id="f3Stop">멈추기</button><span class="sp"></span><span class="st" id="f3St">무엇으로 코일을 돌릴지 골라요</span></div>
+        <div class="cap">그림 ③ 발전기의 구조 (교과서 그림 Ⅵ-8 형식. 실제 발전기는 더 크고 복잡해요)</div></div>
+      <p>다양한 에너지를 이용하여 코일을 <b class="bk">회전</b> 시키면 코일을 통과하는 자기장이 계속 변해 <b class="bk">전자기 유도</b> 현상이 일어나고, 전기가 만들어져요.</p>
+      <p>수력 발전소에서는 높은 곳에서 떨어지는 <b class="bk">물</b> 이, 풍력 발전소에서는 <b class="bk">바람</b> 이 회전 날개를 돌려 발전기를 돌려요. 물과 바람이 가진 <b class="bk">역학적 에너지</b> 가 발전기에서 전기 에너지로 바뀌는 거예요.</p>
+      <a class="simlink" data-link="gen" target="_blank" rel="noopener"><span class="si"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 3v6M12 15v6M3 12h6M15 12h6"/></svg></span><span><b>발전기 실험실</b><span>손잡이, 물, 바람으로 코일을 돌려 전구를 켜 봐요</span></span><span class="go"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></span></a>
+    </article>
+    <details class="pause reveal"><summary><span class="pi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5b4300" stroke-width="2.4" stroke-linecap="round"><path d="M9 9a3 3 0 1 1 4 2.8c-.7.3-1 .9-1 1.6V14M12 18h.01"/></svg></span>생각 멈춤: 발전기에 끼운 회전 날개를 입으로 불면 검류계 바늘이 움직여요. 왜 그럴까요?<span class="tap">눌러서 확인</span></summary>
+      <div class="ans">입김이 회전 날개를 돌리면 발전기 속 코일이 자석 사이에서 <b>회전</b>해요. 코일을 통과하는 자기장이 변해 코일에 <b>전류가 흐르기</b> 때문에 바늘이 움직여요.</div></details>
+  </section>
+
+  <!-- 읽기 4 -->
+  <section class="part" id="r4">
+    <div class="sec-kick">읽기 ④ <span class="time">에너지는 전환되고 보존돼</span></div>
+    <h2>코일을 지나는 자석은 왜 늦게 떨어질까요?</h2>
+    <article class="card read reveal">
+      <span class="tag">그림 Ⅵ-9 · 전자기 유도 현상이 일어날 때 역학적 에너지 전환과 보존</span>
+      <p>똑같은 두 플라스틱 관 중 (나)에만 코일을 감고 발광 다이오드를 연결했어요. 똑같은 자석을 두 관에 동시에 떨어뜨리면 어떤 일이 일어날까요? 먼저 예상해 본 뒤 떨어뜨려 보세요.</p>
+      <div class="fig wv"><div class="scene" id="fig4" style="aspect-ratio:1200/760" role="img" aria-label="같은 자석을 (가) 빈 관과 (나) 코일 감은 관에 동시에 떨어뜨린다. (나)의 자석이 코일을 지날 때 발광 다이오드가 켜지고, (나)가 늦게 떨어진다. 오른쪽 막대는 위치 에너지, 운동 에너지, 역학적 에너지를 나타내며 (나)의 역학적 에너지가 줄어든다."></div>
+        <div class="fbar"><button type="button" id="f4Go">동시에 떨어뜨리기</button><span class="sp"></span><span class="st" id="f4St">어느 자석이 먼저 닿을지 예상해 봐요</span></div>
+        <div class="cap">그림 ④ 같은 자석을 동시에 떨어뜨리기 (교과서 그림 Ⅵ-9 형식. 천천히 보여 주고, 막대 길이는 보기 좋게 정한 모형)</div></div>
+      <p>공기와의 마찰이 없을 때 떨어지는 자석의 <button class="term" data-term="역학적 에너지">역학적 에너지</button>는 <b class="bk">보존</b> 돼요. 그런데 (나)는 (가)보다 지면에 <b class="bk">늦게</b> 떨어져요. (가)의 역학적 에너지는 보존되지만, (나)의 역학적 에너지의 일부는 <b class="bk">전자기 유도</b> 에 사용되면서 그 양이 <b class="bk">감소</b> 하기 때문이에요.</p>
+      <p>이처럼 자석이 운동하여 전자기 유도 현상이 일어날 때 자석의 역학적 에너지는 보존되지 않아요. 그렇다면 감소한 역학적 에너지는 어떻게 된 것일까요? 줄어든 역학적 에너지는 사라진 것이 아니라 <b class="bk">전기 에너지</b> 로 전환되어 발광 다이오드를 켜요.</p>
+    </article>
+    <article class="card read reveal">
+      <span class="tag">다른 예시 · 자전거 발전기로 보는 에너지 전환</span>
+      <p>자전거 뒷바퀴에 작은 발전기를 대고 페달을 밟아 볼까요? 페달을 밟는 <b class="bk">역학적 에너지</b> 는 전자기 유도에 의해 <b class="bk">전기 에너지</b> 로 전환돼요. 이 전기 에너지는 전조등에서 빛에너지로, 스피커에서 소리 에너지로, 휴대 전화 배터리에서 <button class="term" data-term="화학 에너지">화학 에너지</button>로 전환돼요.</p>
+      <div class="fig wv"><div class="scene" id="fig5" style="aspect-ratio:1200/760" role="img" aria-label="받침대에 올린 자전거의 뒷바퀴에 발전기가 닿아 있고, 전선이 전조등, 스피커, 휴대 전화로 이어진다. 아래 띠 그림에서 역학적 에너지가 발전기를 지나 전기 에너지가 되고, 켠 기구에 따라 빛에너지, 소리 에너지, 화학 에너지, 열에너지로 나뉜다."></div>
+        <div class="fbar" id="f5Bar"><button type="button" id="f5Pedal" aria-pressed="false">페달 밟기</button><button type="button" data-d="lamp" aria-pressed="false">전조등</button><button type="button" data-d="spk" aria-pressed="false">스피커</button><button type="button" data-d="phone" aria-pressed="false">휴대 전화</button><span class="sp"></span><span class="st" id="f5St">페달을 밟고 기구를 켜 봐요</span></div>
+        <div class="cap">그림 ⑤ 자전거 발전기의 에너지 전환 (띠 굵기는 비교하기 좋게 정한 모형)</div></div>
+      <p>켠 기구가 많을수록 페달이 무거워져요. 필요한 전기 에너지가 많아질수록 더 많은 역학적 에너지를 전환해야 하기 때문이에요. 이때 역학적 에너지는 <b class="bk">소멸</b> 되지 않고 전기 에너지로 전환되고, 이 전기 에너지의 양은 전환된 빛, 소리, 화학 에너지와 열에너지 양의 <b class="bk">합</b> 과 같아요.</p>
+      <p>우리 주변에서는 에너지가 전환되는 예를 쉽게 찾을 수 있어요. 이 과정에서 에너지는 새로 생기거나 소멸되지 않고 그 총합이 일정하게 <b class="bk">보존</b> 돼요.</p>
+      <table class="tbl">
+        <thead><tr><th>예</th><th>에너지 전환</th></tr></thead>
+        <tbody>
+          <tr><th>손전등</th><td>전기 에너지 → <b class="bk">빛에너지</b></td></tr>
+          <tr><th>기타 연주</th><td>역학적 에너지 → 소리 에너지</td></tr>
+          <tr><th>손뼉</th><td>역학적 에너지 → <b class="bk">소리 에너지</b></td></tr>
+          <tr><th>모닥불</th><td><b class="bk">화학 에너지</b> → 빛, 열에너지</td></tr>
+        </tbody>
+      </table>
+      <div class="key-box"><span class="kt">핵심 정리</span>
+        <p>· 자석이나 코일을 움직여 코일을 통과하는 자기장이 변하면 코일에 전류가 흐르는 현상을 <b class="bk">전자기 유도</b> , 이때 흐르는 전류를 <b class="bk">유도 전류</b> 라고 한다.</p>
+        <p>· 전자기 유도를 이용하여 전기를 만드는 장치를 <b class="bk">발전기</b> 라고 한다.</p>
+        <p>· 전자기 유도가 일어날 때 역학적 에너지는 소멸되지 않고 <b class="bk">전기 에너지</b> 로 전환된다. 에너지는 전환되는 과정에서 새로 생기거나 소멸되지 않고 그 총합이 일정하게 <b class="bk">보존</b> 된다.</p>
+      </div>
+      <a class="simlink" data-link="energy" target="_blank" rel="noopener"><span class="si"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h6l2-5 2 10 2-5h4"/></svg></span><span><b>에너지 전환 실험실</b><span>떨어지는 자석과 자전거 발전기를 직접 해 봐요</span></span><span class="go"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></span></a>
+    </article>
+    <details class="pause reveal"><summary><span class="pi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5b4300" stroke-width="2.4" stroke-linecap="round"><path d="M9 9a3 3 0 1 1 4 2.8c-.7.3-1 .9-1 1.6V14M12 18h.01"/></svg></span>생각 멈춤: (가), (나)가 지면에 도달한 순간의 속력을 비교해 보세요.<span class="tap">눌러서 확인</span></summary>
+      <div class="ans"><b>(가)가 (나)보다 빨라요.</b> 같은 높이에서 떨어졌으므로 처음 역학적 에너지는 같아요. (나)는 역학적 에너지의 일부가 전기 에너지로 전환되어, 지면에 닿는 순간의 운동 에너지가 (가)보다 작아요.</div></details>
+  </section>
+
+  <section class="part" id="q2">
+    <div class="sec-kick">퀴즈 ② <span class="time">5문항</span></div>
+    <h2>발전기와 에너지 전환</h2>
+    <div class="quiz" data-quiz="q2"></div>
+    <div class="card result reveal">
+      <div class="ring"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="50" fill="none" stroke="#e7edf3" stroke-width="12"/><circle id="ringArc" cx="60" cy="60" r="50" fill="none" stroke="#0e63b3" stroke-width="12" stroke-linecap="round" stroke-dasharray="314.16" stroke-dashoffset="314.16" style="transition:stroke-dashoffset 1s"/></svg>
+        <div class="rv"><div><span id="scoreV">0</span><small>/ <span id="scoreT">10</span> 문항</small></div></div></div>
+      <div><h3 id="resTitle">퀴즈를 풀면 결과가 나타나요</h3><p id="resMsg">퀴즈 ①, ②를 모두 풀어 보세요.</p><div class="wlist" id="wlist"></div></div>
+    </div>
+    <div class="next">
+      <a data-link="video" target="_blank" rel="noopener"><b>영상 퀴즈</b><span>손 발전기, 발전소, 떨어지는 자석</span></a>
+      <a data-link="gen" target="_blank" rel="noopener"><b>발전기 실험실</b><span>손잡이·물·바람으로 돌리기</span></a>
+      <a data-link="summary" target="_blank" rel="noopener"><b>정리하기</b><span>빈칸, O X, 에너지 전환 찾기</span></a>
+    </div>
+    <article class="card read reveal" style="margin-top:16px">
+      <h3>자료 출처</h3>
+      <ul class="sources">
+        <li>내용과 그림: 중학교 과학 3 교과서 Ⅵ. 에너지 전환과 보존 「2. 에너지의 전환과 이용」 01 움직이는 자석이 전기를 만들어, 02 에너지는 전환되고 보존돼 (그림 Ⅵ-7, Ⅵ-8, Ⅵ-9, Ⅵ-11)</li>
+        <li>자전거 발전기 예시: 교과서 배움활동(손발전기 두 개) 대신 넣은 다른 예시예요. 같은 생각을 다른 장면으로 보여 줘요.</li>
+        <li>그림은 모두 개념 이해를 위해 새로 그린 것이에요.</li>
+      </ul>
+    </article>
+  </section>
+</main>
+<footer class="credit">전자기 유도와 에너지 전환</footer>
+<div class="pop" id="pop" role="tooltip"></div>
+
+<script>
+window.RD = {
+  $: (s, r = document) => r.querySelector(s),
+  $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
+  reduce: !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches),
+};
+</script>
+<script>
+/* ===== 블록 0: 빈칸 (눌러서 확인) ===== */
+(() => {
+  'use strict';
+  try {
+    const { $, $$ } = window.RD;
+    const all = $$('main .bk').filter((b) => !b.closest('.howbk'));
+    all.forEach((b, i) => {
+      const ans = b.textContent.trim();
+      b.innerHTML = `<span class="bn">${i + 1}</span><span class="ba">${ans}</span>`;
+      b.setAttribute('role', 'button'); b.setAttribute('tabindex', '0'); b.setAttribute('aria-label', `빈칸 ${i + 1}`);
+      const flip = () => { b.classList.toggle('open'); count(); };
+      b.addEventListener('click', (e) => { e.stopPropagation(); flip(); });
+      b.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); } });
+    });
+    function count() {
+      const n = all.filter((b) => b.classList.contains('open')).length;
+      $('#bkCount').textContent = `빈칸 ${n} / ${all.length}`;
+      $('#bkAll').setAttribute('aria-pressed', String(n === all.length)); $('#bkAll').textContent = n === all.length ? '빈칸 모두 닫기' : '빈칸 모두 열기';
+    }
+    $('#bkAll').addEventListener('click', () => { const openAll = $('#bkAll').getAttribute('aria-pressed') !== 'true'; all.forEach((b) => b.classList.toggle('open', openAll)); count(); });
+    count();
+    if (new URLSearchParams(location.search).get('open') === '1') $('#bkAll').click();
+  } catch (err) { window.RD_err && window.RD_err('빈칸', err); }
+})();
+</script>
+<script>
+/* ===== 블록 1: 기본 기능 · 퀴즈 ===== */
+(() => {
+  'use strict';
+  try {
+  const LINKS = { lab: 'sim1-induction.html', gen: 'sim2-generator.html', energy: 'sim3-energy.html', video: 'video.html', summary: 'summary.html' };
+  const flag = (n) => { if (new URLSearchParams(location.search).get(n) === '1') return true; try { return !!(window.frameElement && window.frameElement.dataset[n] === '1'); } catch (e) { return false; } };
+  const EMBED = flag('embed');
+  const GLOSSARY = {
+    '검류계': '아주 약한 전류가 흐르는지, 어느 쪽으로 흐르는지를 바늘로 알려 주는 기구. 바늘의 0은 가운데에 있어요.',
+    '역학적 에너지': '물체의 위치 에너지와 운동 에너지를 더한 것.',
+    '화학 에너지': '화학 결합에 의해 물질 속에 저장된 에너지. 우리가 먹는 음식이나 건전지, 각종 연료에는 화학 에너지가 저장되어 있어요.',
+  };
+  const QUIZ = {
+    q1: [
+      { type: 'blank', parts: ['자석이나 코일을 움직여 코일을 통과하는 자기장이 변하면 코일에 전류가 흐르는데, 이 현상을 ', 0, '(이)라고 한다.'], answers: ['전자기 유도'], bank: ['전자기 유도', '유도 전류', '발전기'], exp: '이 현상을 <b>전자기 유도</b>라고 해요.' },
+      { type: 'ox', q: '자석을 코일 속에 넣고 움직이지 않아도 코일에 전류가 흐른다.', answer: false, exp: '<b>X</b> · 실험하기 2처럼 자석이 코일 속에 있어도 움직이지 않으면 코일을 통과하는 자기장이 변하지 않아 전류가 흐르지 않아요.' },
+      { type: 'mc', q: '코일과 검류계를 연결했을 때 검류계 바늘이 움직이지 않는 경우는?', options: ['자석을 코일 속에 넣고 가만히 둘 때', '자석을 움직여 코일 속에 넣을 때', '자석을 코일에서 뺄 때', '코일을 움직여 자석을 코일 속에 넣을 때'], answer: 0, exp: '자석이나 코일이 <b>움직일 때</b>만 바늘이 움직여요. 가만히 두면 바늘은 0에 머물러요.' },
+      { type: 'blank', parts: ['전자기 유도가 일어날 때 코일에 흐르는 전류를 ', 0, '(이)라고 한다.'], answers: ['유도 전류'], bank: ['유도 전류', '전자기 유도', '자기장'], exp: '이때 흐르는 전류를 <b>유도 전류</b>라고 해요.' },
+      { type: 'mc', q: '자가 발전 손전등을 흔들면 전구의 불이 켜지는 까닭은?', options: ['손전등 속 자석이 코일을 통과하면서 유도 전류가 만들어지기 때문', '손전등 속 전지가 흔들려 전류가 나오기 때문', '자석이 스스로 빛을 내기 때문', '코일이 뜨거워져 빛이 나기 때문'], answer: 0, exp: '흔들면 자석이 코일을 통과하면서 <b>유도 전류</b>가 만들어지고, 이 전류로 전구를 켜요.' },
+    ],
+    q2: [
+      { type: 'blank', parts: ['코일이나 자석이 움직일 때 일어나는 전자기 유도를 이용하여 전기를 만드는 장치를 ', 0, '(이)라고 한다.'], answers: ['발전기'], bank: ['발전기', '검류계', '전구'], exp: '전자기 유도를 이용하여 전기를 만드는 장치는 <b>발전기</b>예요.' },
+      { type: 'mc', q: '수력 발전소에서 발전기를 돌려 전기를 만드는 에너지는?', options: ['높은 곳에서 떨어지는 물의 역학적 에너지', '부는 바람의 역학적 에너지', '햇빛의 빛에너지', '건전지의 화학 에너지'], answer: 0, exp: '수력 발전소는 <b>떨어지는 물</b>이 발전기를 돌려요. 풍력 발전소는 바람이 회전 날개를 돌려요.' },
+      { type: 'ox', q: '자석이 움직여 전자기 유도 현상이 일어날 때 자석의 역학적 에너지의 일부는 소멸된다.', answer: false, exp: '<b>X</b> · 역학적 에너지의 일부는 소멸되는 것이 아니라 <b>전기 에너지로 전환</b>돼요.' },
+      { type: 'ox', q: '에너지는 한 형태에서 다른 형태로 전환되며, 이 과정에서 새로 생기거나 소멸되지 않는다.', answer: true, exp: '<b>O</b> · 에너지는 전환되는 과정에서 그 총합이 일정하게 <b>보존</b>돼요.' },
+      { type: 'mc', q: '같은 자석을 (가) 빈 관과 (나) 코일을 감은 관에 동시에 떨어뜨렸을 때의 결과로 옳은 것은?', options: ['(나)가 (가)보다 늦게 떨어진다', '(가)가 (나)보다 늦게 떨어진다', '두 자석이 동시에 떨어진다', '(나)의 자석은 코일에 붙어 떨어지지 않는다'], answer: 0, exp: '(나)의 역학적 에너지 일부가 전자기 유도에 사용되어 전기 에너지로 전환되므로 (나)가 <b>늦게</b> 떨어져요.' },
+    ],
+  };
+  const { $, $$ } = window.RD;
+  $$('[data-link]').forEach((a) => {
+    const key = a.dataset.link;
+    a.href = LINKS[key];
+    a.addEventListener('click', (e) => { if (!EMBED) return; e.preventDefault(); parent.postMessage({ type: 'ras-nav', target: key }, '*'); });
+  });
+  $$('[data-go]').forEach((b) => b.addEventListener('click', () => document.getElementById(b.dataset.go).scrollIntoView({ behavior: 'smooth', block: 'start' })));
+  const fsN = $('#fsN'), fsB = $('#fsB');
+  const setBig = (v) => { document.documentElement.classList.toggle('big', v); fsN.setAttribute('aria-pressed', String(!v)); fsB.setAttribute('aria-pressed', String(v)); };
+  fsN.addEventListener('click', () => setBig(false)); fsB.addEventListener('click', () => setBig(true));
+
+  const bar = $('#progress'), steps = $$('.step'), parts = ['r1', 'r2', 'q1', 'r3', 'r4', 'q2'].map((id) => document.getElementById(id));
+  function onScroll() {
+    const h = document.documentElement.scrollHeight - innerHeight;
+    bar.style.width = (h > 0 ? (scrollY / h) * 100 : 0) + '%';
+    let cur = -1; parts.forEach((p, i) => { if (p.getBoundingClientRect().top < innerHeight * 0.4) cur = i; });
+    steps.forEach((s, i) => s.classList.toggle('active', i === cur));
+  }
+  addEventListener('scroll', onScroll, { passive: true }); onScroll();
+  // 스크롤 등장 효과: 화면 감지 기능 없이 위치를 직접 계산해요. 글은 항상 보이고 위치만 살짝 움직여요
+  const revs = $$('.reveal');
+  document.documentElement.classList.add('js-reveal');
+  function checkReveal() {
+    const h = window.innerHeight || document.documentElement.clientHeight;
+    if (!h) return;
+    revs.forEach((el) => { if (!el.classList.contains('in')) { const r = el.getBoundingClientRect(); if (r.top < h * 0.92 && r.bottom > 0) el.classList.add('in'); } });
+  }
+  addEventListener('scroll', checkReveal, { passive: true });
+  addEventListener('resize', checkReveal);
+  checkReveal();
+  const revTimer = setInterval(() => { checkReveal(); if (revs.every((el) => el.classList.contains('in'))) clearInterval(revTimer); }, 250);
+  setTimeout(() => {
+    const h = window.innerHeight || document.documentElement.clientHeight;
+    const blind = !h || revs.every((el) => { const r = el.getBoundingClientRect(); return r.top === 0 && r.height === 0; });
+    if (blind) document.documentElement.classList.remove('js-reveal');
+  }, 1500);
+
+  const pop = $('#pop'); let popFor = null;
+  $$('.term').forEach((t) => t.addEventListener('click', (e) => {
+    e.stopPropagation(); if (popFor === t) return hidePop();
+    pop.innerHTML = `<b>${t.dataset.term}</b>${GLOSSARY[t.dataset.term] || ''}`; pop.classList.add('show');
+    const r = t.getBoundingClientRect(), pw = pop.offsetWidth, ph = pop.offsetHeight;
+    let x = Math.max(scrollX + 10, Math.min(r.left + scrollX + r.width / 2 - pw / 2, scrollX + innerWidth - pw - 10));
+    let y = r.top - ph - 10 < 60 ? r.bottom + scrollY + 10 : r.top + scrollY - ph - 10;
+    pop.style.left = x + 'px'; pop.style.top = y + 'px'; popFor = t;
+  }));
+  function hidePop() { pop.classList.remove('show'); popFor = null; }
+  document.addEventListener('click', hidePop);
+
+  /* 퀴즈 엔진 */
+  const results = {}, ALL = []; let qn = 0;
+  Object.entries(QUIZ).forEach(([sec, list]) => {
+    const host = document.querySelector(`[data-quiz="${sec}"]`);
+    list.forEach((q, i) => {
+      qn += 1; const id = `${sec}-${i}`, label = `문제 ${qn}`; ALL.push({ id, sec, label });
+      const card = document.createElement('article'); card.className = 'card qcard'; card.id = id;
+      card.innerHTML = `<div class="qhead"><span class="qno">${label}</span><span class="qtype">${{ ox: 'O / X', mc: '고르기', blank: '빈칸 채우기' }[q.type]}</span><span class="qstate"></span></div><div class="qbody"></div><div class="exp">${q.exp}</div>`;
+      host.appendChild(card); build(card, q, id);
+    });
+  });
+  $('#scoreT').textContent = ALL.length;
+  function mark(card, id, ok) {
+    results[id] = ok; card.classList.remove('right', 'wrong'); card.classList.add(ok ? 'right' : 'wrong', 'locked');
+    $('.qstate', card).textContent = ok ? '정답' : '다시 보기';
+    if (!ok && !$('.retry', card)) {
+      const r = document.createElement('button'); r.type = 'button'; r.className = 'btn ghost retry'; r.textContent = '다시 풀기';
+      r.addEventListener('click', () => { delete results[id]; card.classList.remove('right', 'wrong', 'locked'); r.remove(); build(card, card._q, id); update(); });
+      card.appendChild(r);
+    }
+    update();
+  }
+  function build(card, q, id) {
+    card._q = q; const body = $('.qbody', card);
+    if (q.type === 'ox') {
+      body.innerHTML = `<p class="qtext">${q.q}</p><div class="ox"><button type="button" class="oxb o" data-v="1">O</button><button type="button" class="oxb x" data-v="0">X</button></div>`;
+      $$('.oxb', body).forEach((b) => b.addEventListener('click', () => { const ok = (b.dataset.v === '1') === q.answer; $$('.oxb', body).forEach((o) => { o.disabled = true; if ((o.dataset.v === '1') === q.answer) o.classList.add('good'); }); if (!ok) b.classList.add('bad'); mark(card, id, ok); }));
+    } else if (q.type === 'mc') {
+      body.innerHTML = `<p class="qtext">${q.q}</p><div class="mc">${q.options.map((o, i) => `<button type="button" class="mcb" data-i="${i}"><span class="k">${'①②③④'[i]}</span>${o}</button>`).join('')}</div>`;
+      $$('.mcb', body).forEach((b) => b.addEventListener('click', () => { const ok = +b.dataset.i === q.answer; $$('.mcb', body).forEach((o, j) => { o.disabled = true; if (j === q.answer) o.classList.add('good'); }); if (!ok) b.classList.add('bad'); mark(card, id, ok); }));
+    } else {
+      const fill = q.answers.map(() => null); let cur = 0;
+      body.innerHTML = `<p class="qtext" style="margin-bottom:6px">알맞은 말을 골라 빈칸을 채워 보세요.</p><p class="sentence">${q.parts.map((p) => typeof p === 'number' ? `<button type="button" class="slot">빈칸 ${p + 1}</button>` : `<span>${p}</span>`).join('')}</p>
+        <div class="bank">${q.bank.slice().sort(() => Math.random() - 0.5).map((w) => `<button type="button" class="chip">${w}</button>`).join('')}</div><button type="button" class="btn primary check" disabled>확인하기</button>`;
+      const slots = $$('.slot', body), chips = $$('.chip', body), check = $('.check', body);
+      const paint = () => { slots.forEach((s, i) => { s.textContent = fill[i] ? fill[i].textContent : `빈칸 ${i + 1}`; s.classList.toggle('filled', !!fill[i]); s.classList.toggle('cur', i === cur && !card.classList.contains('locked')); }); if (check.isConnected) check.disabled = fill.some((f) => !f); };
+      chips.forEach((c) => c.addEventListener('click', () => { if (card.classList.contains('locked')) return; if (fill[cur]) fill[cur].classList.remove('used'); fill[cur] = c; c.classList.add('used'); const n = fill.findIndex((f) => !f); cur = n < 0 ? cur : n; paint(); }));
+      slots.forEach((s, i) => s.addEventListener('click', () => { if (card.classList.contains('locked')) return; if (fill[i]) { fill[i].classList.remove('used'); fill[i] = null; } cur = i; paint(); }));
+      check.addEventListener('click', () => {
+        let ok = true; slots.forEach((s, i) => { const g = fill[i].textContent === q.answers[i]; if (!g) ok = false; s.classList.add(g ? 'good' : 'bad'); s.disabled = true; });
+        chips.forEach((c) => (c.disabled = true)); check.remove(); card.classList.add('locked');
+        if (!ok) body.insertAdjacentHTML('beforeend', `<p class="qtext" style="margin:0;font-size:calc(var(--fs) - 1px);color:#6d4208">정답: ${q.answers.map((a, i) => `빈칸 ${i + 1} <b>${a}</b>`).join(' · ')}</p>`);
+        mark(card, id, ok); paint();
+      });
+      paint();
+    }
+  }
+  function update() {
+    const done = ALL.filter((q) => q.id in results), right = done.filter((q) => results[q.id]);
+    [['q1', 2], ['q2', 5]].forEach(([sec, si]) => steps[si].classList.toggle('done', ALL.filter((q) => q.sec === sec).every((q) => q.id in results)));
+    $('#scoreV').textContent = right.length;
+    $('#ringArc').style.strokeDashoffset = 314.16 * (1 - right.length / ALL.length);
+    const t = $('#resTitle'), m = $('#resMsg'), wl = $('#wlist');
+    if (done.length < ALL.length) { t.textContent = `${ALL.length}문항 중 ${done.length}문항을 풀었어요`; m.textContent = '남은 문제도 풀어 보세요. 틀린 문제는 다시 풀 수 있어요.'; }
+    else if (right.length === ALL.length) { t.textContent = '모두 맞혔어요!'; m.textContent = '이제 시뮬레이션에서 직접 해 보고, 스스로 정리해 봐요.'; }
+    else { t.textContent = `${ALL.length}문항 중 ${right.length}문항을 맞혔어요`; m.textContent = '틀린 문제를 눌러 다시 읽고 풀어 보세요.'; }
+    wl.innerHTML = '';
+    ALL.filter((q) => results[q.id] === false).forEach((q) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = `${q.label} 다시 보기`; b.addEventListener('click', () => document.getElementById(q.id).scrollIntoView({ behavior: 'smooth', block: 'center' })); wl.appendChild(b); });
+  }
+  update();
+  window.RD.ok1 = true;
+  } catch (err) { window.RD_err && window.RD_err('기본 기능·퀴즈', err); }
+})();
+</script>
+<script>
+/* ===== 전자기 유도와 에너지 전환 그림 도구 (캔버스 2D) =====
+   EMI.lab(host, o)    배움활동: 코일·검류계·막대자석. 자석이나 코일을 끌어 움직이면 검류계 바늘이 움직임(실험하기 1~3)
+   EMI.flash(host, o)  그림 Ⅵ-7: 자가 발전 손전등 속. 끌어서 흔들면 자석이 코일을 지나며 전구가 켜짐
+   EMI.gen(host, o)    그림 Ⅵ-8: 말굽 모양 자석 사이에서 코일이 회전하는 발전기. 손잡이·물·바람으로 돌리기
+   EMI.drop(host, o)   그림 Ⅵ-9: 같은 자석을 (가) 빈 관, (나) 코일 감은 관에 동시에 떨어뜨리기 + 에너지 막대
+   EMI.bike(host, o)   다른 예시(선생님 요청): 자전거 발전기 → 전조등·스피커·휴대 전화 충전, 에너지 띠 그림
+   그림 원칙(디자인기준): 흰 바탕, 라스 파랑 한 색조 + 무채색, 실제 물체 색은 차분하게(구리, 자석 N 붉은색·S 파란색),
+   매트한 질감, 얇은 선, 그림 속 글씨는 HTML 이름표. 빠르기·바늘 크기·밝기는 보기 좋게 정한 모형이다. */
+window.EMI = (() => {
+  const TAU = Math.PI * 2;
+  const BLUE = '#0e63b3', INK = '#14263b';
+  const NC = ['#d9776c', '#c4584c', '#9c3f35'], SC = ['#7f9fcd', '#4f74ab', '#36578a'];
+  const reduce = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, k) => a + (b - a) * k;
+  const ease = (k) => (k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2);
+  const PX = 0.32, PY = 0.18; // 앞쪽(z+)으로 갈수록 오른쪽 아래로 보이는 비스듬한 투영
+
+  /* ---- 캔버스 · 이름표 · 반복 ---- */
+  function surface(host, W, H) {
+    const cv = document.createElement('canvas'); cv.className = 'wvc'; host.appendChild(cv);
+    const box = document.createElement('div'); box.className = 'olay'; host.appendChild(box);
+    const ctx = cv.getContext('2d'); const m = { k: 1, ox: 0, oy: 0, dpr: 1 };
+    function fit() {
+      const r = host.getBoundingClientRect(); if (r.width < 2 || r.height < 2) return;
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.height * dpr);
+      m.k = Math.min(r.width / W, r.height / H); m.ox = (r.width - W * m.k) / 2; m.oy = (r.height - H * m.k) / 2; m.dpr = dpr;
+      Object.assign(box.style, { left: m.ox + 'px', top: m.oy + 'px', width: W * m.k + 'px', height: H * m.k + 'px', right: 'auto', bottom: 'auto' });
+    }
+    fit();
+    if (window.ResizeObserver) new ResizeObserver(fit).observe(host); else window.addEventListener('resize', fit);
+    return { cv, ctx, box, m, W, H,
+      begin() { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, cv.width, cv.height); ctx.setTransform(m.dpr * m.k, 0, 0, m.dpr * m.k, m.dpr * m.ox, m.dpr * m.oy); },
+      full() { return [-m.ox / m.k, -m.oy / m.k, cv.width / m.dpr / m.k, cv.height / m.dpr / m.k]; },
+      toLocal(e) { const r = cv.getBoundingClientRect(); return [(e.clientX - r.left - m.ox) / m.k, (e.clientY - r.top - m.oy) / m.k]; } };
+  }
+  function overlay(S) {
+    const box = S.box, map = {};
+    return {
+      put(id, x, y, html, cls = '') {
+        let e = map[id]; if (!e) { e = document.createElement('span'); box.appendChild(e); map[id] = e; }
+        const c = 'ol ' + cls; if (e.className !== c) e.className = c;
+        if (e._h !== html) { e.innerHTML = html; e._h = html; }
+        e.style.left = (x / S.W * 100).toFixed(2) + '%'; e.style.top = (y / S.H * 100).toFixed(2) + '%'; e.hidden = false; return e;
+      },
+      hide(id) { if (map[id]) map[id].hidden = true; },
+    };
+  }
+  const loops = new Set();
+  let last = 0;
+  function tick(now) {
+    const dt = Math.min(0.05, last ? (now - last) / 1000 : 0); last = now;
+    loops.forEach((L) => { try { if (L.host.offsetParent !== null) { const r = L.host.getBoundingClientRect(); if (r.bottom > -50 && r.top < innerHeight + 50) L.fn(dt); } } catch (e) { loops.delete(L); (window.SM_err || window.RD_err || console.error)('전자기 유도 그림', e); } });
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+  const addLoop = (host, fn) => { const L = { host, fn }; loops.add(L); return L; };
+  function tweens() {
+    let list = [];
+    return {
+      add(dur, fn, done) { const t = { dur: Math.max(0.001, dur), t: 0, fn, done }; list.push(t); return t; },
+      step(dt) { const cur = list; list = []; cur.forEach((t) => { t.t += dt; const k = Math.min(1, t.t / t.dur); t.fn(k); if (k < 1) list.push(t); else if (t.done) t.done(); }); },
+      clear() { list = []; },
+      get busy() { return list.length > 0; },
+    };
+  }
+  function drag(S, hit, move, up) {
+    const cv = S.cv; cv.style.touchAction = 'pan-y';
+    let on = null;
+    cv.addEventListener('pointerdown', (e) => { const p = S.toLocal(e); const h = hit(p[0], p[1]); if (!h) return; on = h; cv.setPointerCapture(e.pointerId); e.preventDefault(); move(p[0], p[1], on, true); });
+    cv.addEventListener('pointermove', (e) => { const p = S.toLocal(e); if (on) { move(p[0], p[1], on, false); e.preventDefault(); } else cv.style.cursor = hit(p[0], p[1]) ? 'grab' : ''; });
+    const end = () => { if (on) { const h = on; on = null; up && up(h); } };
+    cv.addEventListener('pointerup', end); cv.addEventListener('pointercancel', end);
+    return { get on() { return on; } };
+  }
+  function rr(ctx, x, y, w, h, r) {
+    r = Math.min(r, w / 2, h / 2);
+    ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+  }
+  function white(S) { const [fx, fy, fw, fh] = S.full(); S.ctx.fillStyle = '#fff'; S.ctx.fillRect(fx, fy, fw, fh); }
+  function desk(S, y) {
+    const ctx = S.ctx, [fx, , fw, fh] = S.full();
+    const g = ctx.createLinearGradient(0, y, 0, y + 120); g.addColorStop(0, '#eef2f6'); g.addColorStop(1, '#f8fafc');
+    ctx.fillStyle = g; ctx.fillRect(fx, y, fw, fh); ctx.fillStyle = '#d9e1e9'; ctx.fillRect(fx, y, fw, 1.2);
+  }
+  function contact(ctx, x, y, w, a = 0.18, sq = 0.16) {
+    const g = ctx.createRadialGradient(x, y, 1, x, y, w / 2);
+    g.addColorStop(0, `rgba(20,38,59,${a})`); g.addColorStop(1, 'rgba(20,38,59,0)');
+    ctx.save(); ctx.translate(x, y); ctx.scale(1, sq); ctx.translate(-x, -y);
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, w / 2, 0, TAU); ctx.fill(); ctx.restore();
+  }
+  const vgrad = (ctx, y0, y1, stops) => { const g = ctx.createLinearGradient(0, y0, 0, y1); stops.forEach((c, i) => g.addColorStop(i / (stops.length - 1), c)); return g; };
+  const COPPER = ['#e9b27f', '#cc8549', '#a1602e', '#6f3d1c'];
+  const STEEL = ['#c7ced6', '#eef1f4', '#aeb7c1', '#7b8590'];
+
+  /* ---- 비스듬한 원(축이 좌우인 원통의 단면) ---- */
+  const rp = (x, cy, R, a) => [x + R * Math.sin(a) * PX, cy - R * Math.cos(a) + R * Math.sin(a) * PY];
+  function arcPath(ctx, x, cy, R, a0, a1, first = true) {
+    const n = Math.max(6, Math.ceil(Math.abs(a1 - a0) / 0.14));
+    for (let i = 0; i <= n; i++) { const p = rp(x, cy, R, lerp(a0, a1, i / n)); if (i === 0 && first) ctx.moveTo(p[0], p[1]); else ctx.lineTo(p[0], p[1]); }
+  }
+  // 좌우로 누운 원통(몸통 + 왼쪽 끝 면)
+  function cylinder(ctx, x0, x1, cy, R, stops, endStops) {
+    ctx.beginPath(); arcPath(ctx, x0, cy, R, Math.PI, 0); arcPath(ctx, x1, cy, R, 0, -Math.PI, false); ctx.closePath();
+    ctx.fillStyle = vgrad(ctx, cy - R, cy + R, stops); ctx.fill();
+    ctx.beginPath(); arcPath(ctx, x0, cy, R, 0, TAU); ctx.closePath();
+    ctx.fillStyle = vgrad(ctx, cy - R, cy + R, endStops || stops.slice().reverse()); ctx.fill();
+  }
+
+  /* ---- 코일: 뒤쪽 절반(자석보다 먼저) / 앞쪽 절반(자석 다음) ---- */
+  function coilTurns(o) { const a = []; for (let i = 0; i < o.n; i++) a.push(o.cx - o.L / 2 + (i + 0.5) * o.L / o.n); return a; }
+  function coil(ctx, o, part) {
+    const { cx, cy, L, R } = o, x0 = cx - L / 2, x1 = cx + L / 2, Rt = R - 7, Rf = R + 13;
+    const turns = coilTurns(o), lw = o.lw || Math.min(5.6, (L / o.n) * 0.55);
+    if (part === 'back') {
+      // 투명한 플라스틱 관(안쪽 벽)
+      ctx.beginPath(); arcPath(ctx, x0, cy, Rt, Math.PI, 0); arcPath(ctx, x1, cy, Rt, 0, -Math.PI, false); ctx.closePath();
+      ctx.fillStyle = 'rgba(214,224,233,.45)'; ctx.fill();
+      // 감은 도선의 뒤쪽 절반
+      ctx.lineWidth = lw; ctx.lineCap = 'round';
+      turns.forEach((x) => { ctx.beginPath(); arcPath(ctx, x, cy, R, Math.PI * 1.02, TAU * 0.99); ctx.strokeStyle = '#7d4824'; ctx.stroke(); });
+      // 테 뒤쪽 절반
+      if (o.flange !== false) [x0 - 8, x1 + 8].forEach((x) => {
+        ctx.beginPath(); arcPath(ctx, x, cy, Rf, Math.PI, TAU); arcPath(ctx, x, cy, Rt, TAU, Math.PI, false); ctx.closePath();
+        ctx.fillStyle = 'rgba(226,232,238,.9)'; ctx.fill(); ctx.strokeStyle = 'rgba(120,138,156,.5)'; ctx.lineWidth = 1; ctx.stroke();
+      });
+    } else {
+      ctx.lineWidth = lw; ctx.lineCap = 'round';
+      const g = vgrad(ctx, cy - R, cy + R, COPPER);
+      turns.forEach((x) => {
+        ctx.beginPath(); arcPath(ctx, x, cy, R, 0.02, Math.PI * 0.98); ctx.strokeStyle = g; ctx.stroke();
+        ctx.beginPath(); arcPath(ctx, x - lw * 0.18, cy, R, 0.35, 1.25); ctx.strokeStyle = 'rgba(255,228,196,.55)'; ctx.lineWidth = lw * 0.32; ctx.stroke(); ctx.lineWidth = lw;
+      });
+      if (o.flange !== false) [x0 - 8, x1 + 8].forEach((x) => {
+        ctx.beginPath(); arcPath(ctx, x, cy, Rf, 0, Math.PI); arcPath(ctx, x, cy, Rt, Math.PI, 0, false); ctx.closePath();
+        ctx.fillStyle = vgrad(ctx, cy - Rf, cy + Rf, ['#f7f9fb', '#e3e9ef', '#c9d3dc']); ctx.fill();
+        ctx.strokeStyle = 'rgba(110,128,146,.55)'; ctx.lineWidth = 1; ctx.stroke();
+        ctx.beginPath(); arcPath(ctx, x + 6, cy, Rf, 0.1, Math.PI * 0.9); ctx.strokeStyle = 'rgba(150,165,180,.6)'; ctx.lineWidth = 3; ctx.stroke();
+      });
+      // 관 앞쪽 가장자리 선
+      ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(120,140,160,.35)';
+      ctx.beginPath(); ctx.moveTo(x0, cy - Rt); ctx.lineTo(x1, cy - Rt); ctx.moveTo(x0 + Rt * PX * 0.4, cy + Rt); ctx.lineTo(x1, cy + Rt); ctx.stroke();
+    }
+  }
+  // 코일을 지나는 자기장 양(모형): 막대자석 중심이 코일 중심에서 d만큼 떨어졌을 때
+  function fluxer(o, a) {
+    const zs = coilTurns({ cx: 0, L: o.L, n: o.n });
+    return (d) => { let s = 0; for (const z of zs) { const u = (d - z) / a; s += 1 / Math.pow(1 + u * u, 1.5); } return s; };
+  }
+
+  /* ---- 막대자석(앞면·윗면·왼쪽 면) ---- */
+  function barMagnet(ctx, x, cy, L, h, d, left = 'N', alpha = 1) {
+    const fx = (d / 2) * PX, fy = (d / 2) * PY, x0 = x - L / 2, x1 = x + L / 2, t = cy - h / 2, b = cy + h / 2;
+    const cL = left === 'N' ? NC : SC, cR = left === 'N' ? SC : NC;
+    ctx.save(); ctx.globalAlpha = alpha;
+    // 왼쪽 면
+    ctx.beginPath(); ctx.moveTo(x0 + fx, t + fy); ctx.lineTo(x0 - fx, t - fy); ctx.lineTo(x0 - fx, b - fy); ctx.lineTo(x0 + fx, b + fy); ctx.closePath();
+    ctx.fillStyle = cL[2]; ctx.fill();
+    // 윗면 두 칸
+    [[x0, x, cL], [x, x1, cR]].forEach(([a, c, col]) => {
+      ctx.beginPath(); ctx.moveTo(a + fx, t + fy); ctx.lineTo(c + fx, t + fy); ctx.lineTo(c - fx, t - fy); ctx.lineTo(a - fx, t - fy); ctx.closePath();
+      ctx.fillStyle = col[0]; ctx.fill();
+    });
+    // 앞면 두 칸
+    [[x0, x, cL], [x, x1, cR]].forEach(([a, c, col]) => {
+      ctx.fillStyle = vgrad(ctx, t + fy, b + fy, [col[1], col[1], col[2]]); ctx.fillRect(a + fx, t + fy, c - a, h);
+    });
+    ctx.fillStyle = 'rgba(255,255,255,.18)'; ctx.fillRect(x0 + fx, t + fy, L, 2);
+    ctx.strokeStyle = 'rgba(20,38,59,.25)'; ctx.lineWidth = 1; ctx.strokeRect(x0 + fx, t + fy, L, h);
+    ctx.restore();
+    return { lx: lerp(x0, x, 0.42) + fx, rx: lerp(x, x1, 0.58) + fx, y: cy + fy };
+  }
+  // 막대자석의 자기장 모양(쌍극자 모형). 화살표 없이 얇은 선
+  function fieldLines(ctx, x, cy, L, alpha = 1) {
+    ctx.save(); ctx.globalAlpha = alpha; ctx.strokeStyle = 'rgba(14,99,179,.32)'; ctx.lineWidth = 1.3;
+    [64, 104, 156, 225].forEach((k) => [1, -1].forEach((sg) => {
+      ctx.beginPath(); let first = true;
+      for (let i = 0; i <= 90; i++) {
+        const th = lerp(0.12, Math.PI - 0.12, i / 90), r = k * Math.sin(th) ** 2;
+        const px = x + r * Math.cos(th) * (1 + L / 600), py = cy - sg * r * Math.sin(th) * 0.9;
+        if (Math.abs(px - x) < L / 2 && Math.abs(py - cy) < 26) { first = true; continue; }
+        if (first) { ctx.moveTo(px, py); first = false; } else ctx.lineTo(px, py);
+      }
+      ctx.stroke();
+    }));
+    ctx.restore();
+  }
+
+  /* ---- 검류계 ---- */
+  function galvo(ctx, x, y, w, ang) {
+    const bh = w * 0.26, dp = w * 0.16, fx = dp * PX * 1.4, fy = dp * PY * 1.4;
+    contact(ctx, x, y + 4, w * 1.25, 0.22);
+    // 받침 상자
+    ctx.fillStyle = vgrad(ctx, y - bh, y, ['#f1f3f5', '#dfe4e9', '#c5ccd4']); rr(ctx, x - w / 2, y - bh, w, bh, 8); ctx.fill();
+    ctx.strokeStyle = 'rgba(20,38,59,.18)'; ctx.lineWidth = 1; ctx.stroke();
+    // 비스듬한 눈금판
+    const pb = y - bh, pt = pb - w * 0.5, inset = w * 0.08;
+    ctx.beginPath(); ctx.moveTo(x - w / 2 + 4, pb); ctx.lineTo(x + w / 2 - 4, pb); ctx.lineTo(x + w / 2 - inset, pt); ctx.lineTo(x - w / 2 + inset, pt); ctx.closePath();
+    ctx.fillStyle = vgrad(ctx, pt, pb, ['#e9e5dc', '#ddd8cd']); ctx.fill(); ctx.strokeStyle = 'rgba(20,38,59,.2)'; ctx.stroke();
+    // 눈금 창
+    const wx = x - w * 0.36, wy = pt + w * 0.05, ww = w * 0.72, wh = w * 0.36;
+    rr(ctx, wx, wy, ww, wh, 10); ctx.fillStyle = '#fbfaf7'; ctx.fill(); ctx.strokeStyle = 'rgba(20,38,59,.25)'; ctx.stroke();
+    const px = x, py = wy + wh - w * 0.03, R = w * 0.29;
+    ctx.save(); rr(ctx, wx, wy, ww, wh, 10); ctx.clip();
+    ctx.strokeStyle = '#34495e'; ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.arc(px, py, R * 0.82, -Math.PI / 2 - 0.95, -Math.PI / 2 + 0.95); ctx.stroke();
+    for (let i = -10; i <= 10; i++) {
+      const a = -Math.PI / 2 + (i / 10) * 0.95, r0 = R * (i % 5 === 0 ? 0.7 : 0.76), r1 = R * 0.82;
+      ctx.lineWidth = i === 0 ? 2.2 : i % 5 === 0 ? 1.6 : 1;
+      ctx.beginPath(); ctx.moveTo(px + Math.cos(a) * r0, py + Math.sin(a) * r0); ctx.lineTo(px + Math.cos(a) * r1, py + Math.sin(a) * r1); ctx.stroke();
+    }
+    // 바늘
+    const a = -Math.PI / 2 + ang;
+    ctx.strokeStyle = INK; ctx.lineWidth = 2.2; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(px - Math.cos(a) * R * 0.1, py - Math.sin(a) * R * 0.1); ctx.lineTo(px + Math.cos(a) * R * 0.92, py + Math.sin(a) * R * 0.92); ctx.stroke();
+    ctx.restore();
+    ctx.fillStyle = '#2a3440'; ctx.beginPath(); ctx.arc(px, py, 5, 0, TAU); ctx.fill();
+    // 단자 두 개
+    const ty = y - bh * 0.45, tA = x - w * 0.3, tB = x + w * 0.3;
+    [[tA, '#b8493f'], [tB, '#2b3138']].forEach(([tx, c]) => {
+      contact(ctx, tx, ty + 9, 30, 0.25);
+      ctx.fillStyle = vgrad(ctx, ty - 10, ty + 8, [c, c, '#111']); rr(ctx, tx - 9, ty - 10, 18, 18, 5); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,.25)'; ctx.fillRect(tx - 6, ty - 8, 12, 2);
+    });
+    return { tA: [tA, ty - 2], tB: [tB, ty - 2], zero: [px, py - R * 0.98], fx, fy };
+  }
+
+  /* ---- 전선과 흐르는 점 ---- */
+  function bez(p0, c0, c1, p1, n = 36) {
+    const pts = []; for (let i = 0; i <= n; i++) { const t = i / n, u = 1 - t;
+      pts.push([u * u * u * p0[0] + 3 * u * u * t * c0[0] + 3 * u * t * t * c1[0] + t * t * t * p1[0], u * u * u * p0[1] + 3 * u * u * t * c0[1] + 3 * u * t * t * c1[1] + t * t * t * p1[1]]); }
+    return pts;
+  }
+  function polyLen(pts) { const L = [0]; for (let i = 1; i < pts.length; i++) L.push(L[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1])); return L; }
+  function along(pts, L, s) {
+    const tot = L[L.length - 1]; s = ((s % tot) + tot) % tot;
+    let i = 1; while (i < L.length - 1 && L[i] < s) i++;
+    const k = (s - L[i - 1]) / Math.max(1e-6, L[i] - L[i - 1]);
+    return [lerp(pts[i - 1][0], pts[i][0], k), lerp(pts[i - 1][1], pts[i][1], k)];
+  }
+  function wire(ctx, pts, col = '#3c4652', w = 4.2) {
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.beginPath(); pts.forEach((p, i) => (i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])));
+    ctx.strokeStyle = col; ctx.lineWidth = w; ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,255,255,.22)'; ctx.lineWidth = w * 0.3; ctx.stroke();
+  }
+  function dots(ctx, pts, phase, gap = 34, amt = 1, r = 3.4) {
+    if (amt < 0.04) return;
+    const L = polyLen(pts), tot = L[L.length - 1];
+    ctx.fillStyle = `rgba(14,99,179,${clamp(amt, 0, 1) * 0.95})`;
+    for (let s = phase % gap; s < tot; s += gap) { const p = along(pts, L, s); ctx.beginPath(); ctx.arc(p[0], p[1], r, 0, TAU); ctx.fill(); }
+  }
+
+  /* ---- 전구(꼬마전구) ---- */
+  function bulb(ctx, x, y, s, lum) {
+    // (x,y): 소켓 바닥 가운데
+    contact(ctx, x, y + 2, s * 2.6, 0.2);
+    ctx.fillStyle = vgrad(ctx, y - s * 0.55, y, ['#e4e8ec', '#c3cbd3', '#9aa4ae']); rr(ctx, x - s * 0.9, y - s * 0.5, s * 1.8, s * 0.5, 6); ctx.fill();
+    ctx.fillStyle = vgrad(ctx, y - s * 1.05, y - s * 0.5, STEEL);
+    rr(ctx, x - s * 0.36, y - s * 1.05, s * 0.72, s * 0.58, 4); ctx.fill();
+    ctx.strokeStyle = 'rgba(80,90,100,.45)'; ctx.lineWidth = 1;
+    for (let i = 1; i < 4; i++) { ctx.beginPath(); ctx.moveTo(x - s * 0.36, y - s * 1.05 + i * s * 0.14); ctx.lineTo(x + s * 0.36, y - s * 1.05 + i * s * 0.14 + 3); ctx.stroke(); }
+    const gy = y - s * 1.75, gr = s * 0.75;
+    if (lum > 0.02) {
+      const g = ctx.createRadialGradient(x, gy, gr * 0.2, x, gy, gr * 3.2);
+      g.addColorStop(0, `rgba(255,236,170,${0.55 * lum})`); g.addColorStop(1, 'rgba(255,236,170,0)');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, gy, gr * 3.2, 0, TAU); ctx.fill();
+    }
+    ctx.beginPath(); ctx.arc(x, gy, gr, Math.PI * 0.72, Math.PI * 2.28); ctx.lineTo(x + s * 0.34, y - s * 1.05); ctx.lineTo(x - s * 0.34, y - s * 1.05); ctx.closePath();
+    const gg = ctx.createRadialGradient(x - gr * 0.3, gy - gr * 0.35, 2, x, gy, gr * 1.2);
+    gg.addColorStop(0, lum > 0.02 ? `rgba(255,250,228,${0.6 + 0.4 * lum})` : 'rgba(250,252,254,.75)');
+    gg.addColorStop(1, lum > 0.02 ? `rgba(255,226,150,${0.35 + 0.5 * lum})` : 'rgba(214,224,233,.6)');
+    ctx.fillStyle = gg; ctx.fill(); ctx.strokeStyle = 'rgba(110,128,146,.6)'; ctx.lineWidth = 1.2; ctx.stroke();
+    // 필라멘트
+    ctx.strokeStyle = lum > 0.05 ? `rgb(${Math.round(lerp(120, 255, lum))},${Math.round(lerp(110, 200, lum))},${Math.round(lerp(100, 90, lum))})` : '#7b8590';
+    ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(x - s * 0.18, y - s * 1.1); ctx.lineTo(x - s * 0.2, gy); ctx.lineTo(x - s * 0.1, gy - 5); ctx.lineTo(x, gy + 3); ctx.lineTo(x + s * 0.1, gy - 5); ctx.lineTo(x + s * 0.2, gy); ctx.lineTo(x + s * 0.18, y - s * 1.1); ctx.stroke();
+    return { a: [x - s * 0.7, y - s * 0.25], b: [x + s * 0.7, y - s * 0.25] };
+  }
+
+  /* =====================================================================
+     1) 배움활동: 코일·검류계·막대자석
+     ===================================================================== */
+  function lab(host, o = {}) {
+    const S = surface(host, 1200, 760), ctx = S.ctx, OL = overlay(S), tw = tweens();
+    const CY = 300, CL = 300, CR = 74, N = 22, ML = 250, MH = 50, MD = 50;
+    const POS = { magnet: { xc: 470, home: 960, inn: 470 }, coil: { xm: 820, home: 330, inn: 820 } };
+    const st = { mode: 'magnet', xm: POS.magnet.home, xc: POS.magnet.xc, needle: 0, nv: 0, phase: 0, emf: 0, v: 0, rest: 0, field: o.field !== false, labels: o.labels !== false, rec: {} };
+    const flux = fluxer({ L: CL, n: N }, 88);
+    let prevD = st.xm - st.xc, prevX = st.mode === 'magnet' ? st.xm : st.xc;
+    const api = { st, onRecord: null, onMove: null };
+    function setMode(m) {
+      tw.clear(); st.mode = m;
+      if (m === 'magnet') { st.xc = POS.magnet.xc; st.xm = POS.magnet.home; } else { st.xm = POS.coil.xm; st.xc = POS.coil.home; st.dragged = false; }
+      prevD = st.xm - st.xc; st.needle = 0; st.nv = 0; st.rest = 0;
+    }
+    const mover = () => (st.mode === 'magnet' ? 'xm' : 'xc');
+    function moveTo(target, dur, done) {
+      tw.clear(); st.dragged = true; OL.hide('hd'); const k = mover(), a = st[k];
+      tw.add(dur, (t) => { st[k] = lerp(a, target, ease(t)); }, done);
+    }
+    api.setMode = setMode;
+    api.push = (dur = 0.7, done) => moveTo(st.mode === 'magnet' ? POS.magnet.inn : POS.coil.inn, dur, done);
+    api.pull = (dur = 0.7, done) => moveTo(st.mode === 'magnet' ? POS.magnet.home : POS.coil.home, dur, done);
+    api.hold = (sec = 1.5, done) => { tw.clear(); tw.add(sec, () => {}, done); };
+    api.field = (v) => { st.field = v; };
+    api.inside = () => Math.abs(st.xm - st.xc) < 90;
+    api.reset = () => { setMode(st.mode); st.rec = {}; };
+    api.busy = () => tw.busy;
+    // 끌기: 자석 모드는 자석, 코일 모드는 코일
+    let grab = 0;
+    drag(S, (x, y) => {
+      if (st.mode === 'magnet') return Math.abs(x - st.xm) < ML / 2 + 30 && Math.abs(y - CY) < 70 ? 'm' : null;
+      return Math.abs(x - st.xc) < CL / 2 + 30 && Math.abs(y - CY) < CR + 30 ? 'c' : null;
+    }, (x, y, h, first) => {
+      tw.clear();
+      if (h === 'm') { if (first) grab = x - st.xm; st.xm = clamp(x - grab, POS.magnet.inn, 1040); }
+      else { if (first) grab = x - st.xc; st.xc = clamp(x - grab, 250, POS.coil.inn); }
+    });
+    const lead = (xc) => ({ l: [xc - CL / 2 + 6, CY + CR + 4], r: [xc + CL / 2 - 6, CY + CR + 4] });
+    addLoop(host, (dt) => {
+      tw.step(dt);
+      const d = st.xm - st.xc, X = st[mover()];
+      if (dt > 0) {
+        const v = (X - prevX) / dt; st.v = lerp(st.v, v, 0.5);
+        const e = (flux(d) - flux(prevD)) / dt; st.emf = lerp(st.emf, e, 0.6);
+        const target = clamp(st.emf / 26, -1, 1) * 0.86;
+        const sub = 4, h = dt / sub;
+        for (let i = 0; i < sub; i++) { const acc = 260 * (target - st.needle) - 20 * st.nv; st.nv += acc * h; st.needle += st.nv * h; }
+        st.phase += st.emf * dt * 9;
+        // 기록: 1 자석을 넣거나 뺄 때, 2 넣고 가만히, 3 코일을 움직일 때
+        const big = Math.abs(st.needle) > 0.18;
+        if (st.mode === 'magnet' && big && Math.abs(st.v) > 30 && !st.rec[1]) { st.rec[1] = 1; api.onRecord && api.onRecord(1); }
+        if (st.mode === 'magnet' && Math.abs(d) < 40 && Math.abs(st.v) < 4) { st.rest += dt; if (st.rest > 1.1 && !st.rec[2]) { st.rec[2] = 1; api.onRecord && api.onRecord(2); } } else st.rest = 0;
+        if (st.mode === 'coil' && big && Math.abs(st.v) > 30 && !st.rec[3]) { st.rec[3] = 1; api.onRecord && api.onRecord(3); }
+        api.onMove && api.onMove(st);
+      }
+      prevD = d; prevX = X;
+      draw();
+    });
+    function draw() {
+      S.begin(); white(S); desk(S, 430);
+      const xc = st.xc, xm = st.xm;
+      // 그림자
+      contact(ctx, xc + 8, 436, CL + 70, 0.2);
+      contact(ctx, xm + 10, 438, ML * 0.9, 0.08);
+      // 코일 받침
+      ctx.fillStyle = vgrad(ctx, CY + CR + 2, 432, ['#d9dfe5', '#c3ccd5']);
+      [xc - CL / 2 + 30, xc + CL / 2 - 70].forEach((bx) => { rr(ctx, bx, CY + CR + 8, 40, 432 - CY - CR - 8, 4); ctx.fill(); });
+      // 전선
+      const G = galvo(ctx, 260, 690, 300, st.needle);
+      const ld = lead(xc);
+      const wA = bez(ld.l, [ld.l[0] - 40, ld.l[1] + 110], [G.tA[0], G.tA[1] - 150], G.tA);
+      const wB = bez(ld.r, [ld.r[0] + 30, ld.r[1] + 150], [G.tB[0] + 90, G.tB[1] - 140], G.tB);
+      wire(ctx, wA, '#3c4652'); wire(ctx, wB, '#3c4652');
+      dots(ctx, wA, st.phase * 12, 30, Math.abs(st.needle) * 1.6);
+      dots(ctx, wB.slice().reverse(), st.phase * 12, 30, Math.abs(st.needle) * 1.6);
+      coil(ctx, { cx: xc, cy: CY, L: CL, R: CR, n: N }, 'back');
+      if (st.field) fieldLines(ctx, xm, CY, ML, 0.9);
+      const mg = barMagnet(ctx, xm, CY, ML, MH, MD, 'N');
+      coil(ctx, { cx: xc, cy: CY, L: CL, R: CR, n: N }, 'front');
+      // 코일 끝 도선
+      ctx.strokeStyle = '#a1602e'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(xc - CL / 2 + 6, CY + CR - 2); ctx.lineTo(ld.l[0], ld.l[1]); ctx.moveTo(xc + CL / 2 - 6, CY + CR - 2); ctx.lineTo(ld.r[0], ld.r[1]); ctx.stroke();
+      OL.put('n', mg.lx, mg.y, 'N', 'tx inv pole'); OL.put('s', mg.rx, mg.y, 'S', 'tx inv pole');
+      if (st.labels) {
+        OL.put('lc', xc, CY - CR - 34, '코일', 'tx nm');
+        if (Math.abs(xm - xc) > CL / 2 + ML / 2 - 20) OL.put('lm', xm + 30, CY + 62, '막대자석', 'tx nm'); else OL.hide('lm');
+        OL.put('lg', 260, 718, '검류계', 'tx nm');
+        OL.put('z', G.zero[0], G.zero[1] - 6, '0', 'tx sc0');
+      } else { OL.hide('lc'); OL.hide('lm'); OL.hide('lg'); }
+      if (!st.dragged && !tw.busy && st.labels && o.hintDrag !== false) {
+        const hx = st.mode === 'magnet' ? xm : xc;
+        OL.put('hd', hx, CY - CR - 70 + (st.mode === 'magnet' ? 40 : 0), st.mode === 'magnet' ? '자석을 끌어 움직여 보세요' : '코일을 끌어 움직여 보세요', 'tx hintl');
+      }
+    }
+    S.cv.addEventListener('pointerdown', () => { st.dragged = true; OL.hide('hd'); });
+    return api;
+  }
+
+  /* =====================================================================
+     2) 그림 Ⅵ-7: 자가 발전 손전등 속
+     ===================================================================== */
+  function flash(host, o = {}) {
+    const S = surface(host, 1040, 600), ctx = S.ctx, OL = overlay(S);
+    const CY = 270, BL = 780, BR = 66, COILX = 70, CLN = 170, ML = 110, MR = 34;
+    const RMIN = -200 + ML / 2, RMAX = 340 - ML / 2;
+    const flux = fluxer({ L: CLN, n: 18 }, 46);
+    const st = { bx: 0, bv: 0, xm: RMAX, vm: 0, lum: 0, emf: 0, phase: 0, auto: 0, t: 0, dragging: false, shakes: 0, lit: 0 };
+    const api = { st, onLight: null };
+    let grab = 0, prevBx = 0;
+    drag(S, (x, y) => (Math.abs(x - (520 + st.bx)) < BL / 2 + 20 && Math.abs(y - CY) < BR + 40 ? 'b' : null), (x, y, h, first) => {
+      st.auto = 0; st.dragging = true; if (first) grab = x - st.bx; st.bx = clamp(x - grab, -190, 190);
+    }, () => { st.dragging = false; });
+    api.shake = (sec = 3) => { st.auto = sec; st.t = 0; st.touched = true; };
+    api.reset = () => { Object.assign(st, { bx: 0, bv: 0, xm: RMAX, vm: 0, lum: 0, emf: 0, auto: 0, lit: 0 }); prevBx = 0; };
+    addLoop(host, (dt) => {
+      if (dt <= 0) { draw(); return; }
+      if (st.auto > 0) { st.t += dt; st.auto -= dt; const ramp = Math.min(1, st.t / 0.3, Math.max(0, st.auto) / 0.3); st.bx = Math.sin(st.t * TAU * 1.9) * 175 * ramp; }
+      else if (!st.dragging) st.bx = lerp(st.bx, 0, Math.min(1, dt * 2));
+      const bv = (st.bx - prevBx) / dt; prevBx = st.bx; st.bv = lerp(st.bv, bv, 0.6);
+      const sub = 6, h = dt / sub; let emfSum = 0;
+      for (let i = 0; i < sub; i++) {
+        const bpos = lerp(st.bx - bv * dt, st.bx, (i + 1) / sub);
+        let r = st.xm - bpos, vr = st.vm - st.bv;
+        const dF = (flux(r - COILX + 1) - flux(r - COILX - 1)) / 2;
+        // 관과의 마찰, 코일에 전류가 흐를 때 생기는 작은 제동
+        const fr = Math.abs(vr) > 4 ? -Math.sign(vr) * 380 : -vr * 40;
+        st.vm += (fr - 0.6 * dF * dF * vr) * h; st.xm += st.vm * h;
+        r = st.xm - bpos; vr = st.vm - st.bv;
+        if (r < RMIN) { st.xm = bpos + RMIN; st.vm = st.bv + Math.abs(vr) * 0.3; }
+        if (r > RMAX) { st.xm = bpos + RMAX; st.vm = st.bv - Math.abs(vr) * 0.3; }
+        emfSum += dF * (st.vm - st.bv);
+      }
+      st.emf = emfSum / sub;
+      const target = clamp(Math.abs(st.emf) / 420, 0, 1);
+      st.lum = target > st.lum ? lerp(st.lum, target, Math.min(1, dt * 30)) : lerp(st.lum, target, Math.min(1, dt * 7));
+      st.phase += st.emf * dt * 0.05;
+      if (st.lum > 0.35) { st.lit += dt; if (st.lit > 0.25 && api.onLight) { api.onLight(); api.onLight = null; } }
+      draw();
+    });
+    function draw() {
+      S.begin(); white(S); desk(S, 420);
+      const X = 520 + st.bx, x0 = X - BL / 2, x1 = X + BL / 2;
+      contact(ctx, X, 424, BL * 1.05, 0.2, 0.1);
+      // 불빛
+      if (st.lum > 0.03) {
+        const g = ctx.createLinearGradient(x0 - 10, 0, x0 - 330, 0);
+        g.addColorStop(0, `rgba(255,236,170,${0.55 * st.lum})`); g.addColorStop(1, 'rgba(255,236,170,0)');
+        ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(x0 - 6, CY - 40); ctx.lineTo(x0 - 330, CY - 140); ctx.lineTo(x0 - 330, CY + 140); ctx.lineTo(x0 - 6, CY + 40); ctx.closePath(); ctx.fill();
+      }
+      // 투명한 몸통(뒤쪽)
+      ctx.beginPath(); arcPath(ctx, x0 + 70, CY, BR, Math.PI, 0); arcPath(ctx, x1 - 40, CY, BR, 0, -Math.PI, false); ctx.closePath();
+      ctx.fillStyle = 'rgba(221,229,237,.5)'; ctx.fill();
+      // 안쪽 고무 받침
+      [[X - 200, -1], [X + 340, 1]].forEach(([bx]) => { ctx.fillStyle = '#4a525c'; ctx.beginPath(); arcPath(ctx, bx, CY, BR - 10, 0, TAU); ctx.fill(); });
+      // 회로판과 도선
+      ctx.fillStyle = vgrad(ctx, CY - 40, CY + 40, ['#56606b', '#3c444d']); ctx.fillRect(x0 + 90, CY - 38, 70, 76);
+      ctx.fillStyle = '#c9a15e'; [0, 1, 2].forEach((i) => ctx.fillRect(x0 + 100 + i * 20, CY - 8, 8, 16));
+      const cx = X + COILX, wl = [[cx - CLN / 2, CY + BR - 14], [cx - CLN / 2 - 60, CY + BR - 6], [x0 + 150, CY + BR - 8], [x0 + 150, CY + 30]];
+      const wr = [[cx + CLN / 2, CY + BR - 14], [cx + CLN / 2 + 20, CY + BR - 2], [x0 + 140, CY + BR - 2], [x0 + 140, CY + 30]];
+      [wl, wr].forEach((w) => { ctx.beginPath(); w.forEach((p, i) => (i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]))); ctx.strokeStyle = '#b06a34'; ctx.lineWidth = 2.4; ctx.stroke(); });
+      dots(ctx, wl, st.phase * 40, 26, st.lum * 1.4, 3);
+      dots(ctx, wr.slice().reverse(), st.phase * 40, 26, st.lum * 1.4, 3);
+      coil(ctx, { cx, cy: CY, L: CLN, R: BR - 4, n: 18, flange: false, lw: 5 }, 'back');
+      // 자석(원통형 네오디뮴 자석, 무광 은회색)
+      const mx = X + (st.xm - st.bx);
+      cylinder(ctx, mx - ML / 2, mx + ML / 2, CY, MR, ['#8d96a0', '#c8ced5', '#8a939d', '#5b636c']);
+      coil(ctx, { cx, cy: CY, L: CLN, R: BR - 4, n: 18, flange: false, lw: 5 }, 'front');
+      // 몸통 앞쪽 테두리
+      ctx.lineWidth = 1.2; ctx.strokeStyle = 'rgba(110,128,146,.45)';
+      ctx.beginPath(); ctx.moveTo(x0 + 70, CY - BR); ctx.lineTo(x1 - 40, CY - BR); ctx.moveTo(x0 + 70, CY + BR); ctx.lineTo(x1 - 40, CY + BR); ctx.stroke();
+      ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.fillRect(x0 + 80, CY - BR + 8, BL - 140, 5);
+      // 스위치
+      ctx.fillStyle = vgrad(ctx, CY - BR - 14, CY - BR + 2, ['#59626c', '#2f363e']); rr(ctx, x0 + 210, CY - BR - 12, 46, 16, 5); ctx.fill();
+      // 오른쪽 끝 마개
+      cylinder(ctx, x1 - 44, x1, CY, BR + 4, ['#4b535c', '#6b747e', '#3a4149', '#22282e']);
+      // 왼쪽 머리(전구와 렌즈)
+      cylinder(ctx, x0, x0 + 74, CY, BR + 10, ['#3e464f', '#646d77', '#353c44', '#1f252b']);
+      ctx.beginPath(); arcPath(ctx, x0, CY, BR - 4, 0, TAU); ctx.closePath();
+      const lg = ctx.createRadialGradient(x0, CY, 2, x0, CY, BR);
+      lg.addColorStop(0, st.lum > 0.03 ? `rgba(255,248,220,${0.6 + 0.4 * st.lum})` : '#e9eef2'); lg.addColorStop(1, st.lum > 0.03 ? `rgba(255,224,150,${0.4 + 0.4 * st.lum})` : '#c6d0d9');
+      ctx.fillStyle = lg; ctx.fill(); ctx.strokeStyle = 'rgba(30,40,50,.5)'; ctx.stroke();
+      if (o.labels !== false) {
+        OL.put('l1', x0 + 4, CY - BR - 44, '전구', 'tx nm');
+        OL.put('l2', x0 + 233, CY - BR - 44, '스위치', 'tx nm');
+        OL.put('l3', cx, CY - BR - 44, '코일', 'tx nm');
+        OL.put('l4', mx, CY + BR + 34, '자석', 'tx nm');
+      }
+      if (!st.touched && o.hintDrag !== false) OL.put('hd', X + 120, CY - BR - 92, '손전등을 좌우로 끌어 흔들어 보세요', 'tx hintl'); else OL.hide('hd');
+    }
+    S.cv.addEventListener('pointerdown', () => { st.touched = true; });
+    return api;
+  }
+
+  /* =====================================================================
+     3) 그림 Ⅵ-8: 발전기의 구조
+     ===================================================================== */
+  function gen(host, o = {}) {
+    const S = surface(host, 1200, 720), ctx = S.ctx, OL = overlay(S);
+    const AY = 330, X0 = 650, X1 = 840, H = 112, SH = 210;
+    const st = { th: 0.4, w: 0, level: o.level || 0, driver: o.driver || 'hand', lum: 0, phase: 0, field: o.field !== false, grabbing: false, spin: 0, labels: o.labels !== false };
+    const WT = [0, 3.2, 8.5];
+    const api = { st, onBright: null };
+    api.setDriver = (d) => { st.driver = d; };
+    api.setLevel = (l) => { st.level = l; };
+    api.field = (v) => { st.field = v; };
+    const P = (x, y, z) => [x + z * PX, AY - y + z * PY];
+    let prevA = null, tLast = 0;
+    const WX = 0.62, WY = 0.08;
+    const handA = (x, y) => { const dx = x - SH, dy = y - AY; const z = dx / WX, yy = -(dy - z * WY); return Math.atan2(z, yy); };
+    drag(S, (x, y) => (st.driver === 'hand' && Math.hypot(x - SH, y - AY) < 150 ? 'h' : null), (x, y, h, first) => {
+      const a = handA(x, y); const now = performance.now() / 1000;
+      if (!first && prevA != null) { let da = a - prevA; while (da > Math.PI) da -= TAU; while (da < -Math.PI) da += TAU; const dt = Math.max(0.008, now - tLast); st.w = lerp(st.w, da / dt, 0.35); st.th += da; }
+      st.grabbing = true; prevA = a; tLast = now;
+    }, () => { st.grabbing = false; prevA = null; });
+    addLoop(host, (dt) => {
+      if (dt > 0) {
+        if (st.grabbing) { if (performance.now() / 1000 - tLast > 0.08) st.w = lerp(st.w, 0, Math.min(1, dt * 10)); }
+        else { const tgt = WT[st.level]; st.w = lerp(st.w, tgt, Math.min(1, dt * (tgt > Math.abs(st.w) ? 1.6 : 1.1))); st.th += st.w * dt; }
+        const e = st.w * Math.sin(st.th);
+        const tgtL = clamp(Math.abs(e) / 6, 0, 1);
+        st.lum = tgtL > st.lum ? lerp(st.lum, tgtL, Math.min(1, dt * 25)) : lerp(st.lum, tgtL, Math.min(1, dt * 9));
+        st.phase += e * dt * 26; st.spin += Math.abs(st.w) * dt;
+        if (Math.abs(st.w) > 2.2 && api.onBright) { api.onBright(); api.onBright = null; }
+      }
+      draw();
+    });
+    function poleBlock(x0, x1, yt, yb, col, d) {
+      const fx = (d / 2) * PX, fy = (d / 2) * PY;
+      ctx.beginPath(); ctx.moveTo(x0 + fx, yt + fy); ctx.lineTo(x1 + fx, yt + fy); ctx.lineTo(x1 - fx, yt - fy); ctx.lineTo(x0 - fx, yt - fy); ctx.closePath(); ctx.fillStyle = col[0]; ctx.fill();
+      ctx.beginPath(); ctx.moveTo(x0 + fx, yt + fy); ctx.lineTo(x0 - fx, yt - fy); ctx.lineTo(x0 - fx, yb - fy); ctx.lineTo(x0 + fx, yb + fy); ctx.closePath(); ctx.fillStyle = col[2]; ctx.fill();
+      ctx.fillStyle = vgrad(ctx, yt + fy, yb + fy, [col[1], col[1], col[2]]); ctx.fillRect(x0 + fx, yt + fy, x1 - x0, yb - yt);
+      ctx.strokeStyle = 'rgba(20,38,59,.22)'; ctx.lineWidth = 1; ctx.strokeRect(x0 + fx, yt + fy, x1 - x0, yb - yt);
+    }
+    function magnetC() {
+      // 말굽(C) 모양 자석: 위 팔 S극(파랑), 아래 팔 N극(빨강). 앞면 + 보이는 윗면·왼쪽 면
+      const d = 190, fx = (d / 2) * PX, fy = (d / 2) * PY;
+      const L = 630, R = 950, T = 80, B = 580, IN = 860, GT = 180, GB = 480, MID = (T + B) / 2;
+      const quad = (pts, fill) => { ctx.beginPath(); pts.forEach((p, i) => (i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]))); ctx.closePath(); ctx.fillStyle = fill; ctx.fill(); };
+      const F = (x, y) => [x + fx, y + fy], K = (x, y) => [x - fx, y - fy];
+      quad([F(L, T), F(R, T), K(R, T), K(L, T)], SC[0]);                 // 위 팔 윗면
+      quad([F(L, T), K(L, T), K(L, GT), F(L, GT)], SC[2]);               // 위 팔 왼쪽 끝
+      quad([F(L, GB), K(L, GB), K(L, B), F(L, B)], NC[2]);               // 아래 팔 왼쪽 끝
+      quad([F(L, GB), F(IN, GB), K(IN, GB), K(L, GB)], NC[0]);           // 아래 팔 윗면(극 사이에서 보임)
+      quad([F(IN, GT), K(IN, GT), K(IN, MID), F(IN, MID)], SC[2]);       // 등 안쪽 면
+      quad([F(IN, MID), K(IN, MID), K(IN, GB), F(IN, GB)], NC[2]);
+      const front = (y0, y1, col) => {
+        ctx.save(); ctx.beginPath();
+        [[L, T], [R, T], [R, B], [L, B], [L, GB], [IN, GB], [IN, GT], [L, GT]].forEach((p, i) => { const q = F(p[0], p[1]); i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]); });
+        ctx.closePath(); ctx.clip(); ctx.fillStyle = vgrad(ctx, y0 + fy, y1 + fy, [col[1], col[1], col[2]]); ctx.fillRect(L + fx, y0 + fy, R - L, y1 - y0); ctx.restore();
+      };
+      front(T, MID, SC); front(MID, B, NC);
+      ctx.strokeStyle = 'rgba(20,38,59,.22)'; ctx.lineWidth = 1; ctx.beginPath();
+      [[L, T], [R, T], [R, B], [L, B], [L, GB], [IN, GB], [IN, GT], [L, GT]].forEach((p, i) => { const q = F(p[0], p[1]); i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]); }); ctx.closePath(); ctx.stroke();
+      return { sx: 745 + fx, sy: (T + GT) / 2 + fy, nx: 745 + fx, ny: (GB + B) / 2 + fy, gapT: GT, gapB: GB };
+    }
+    function loopPts(th) {
+      const c = Math.cos(th), s = Math.sin(th);
+      const A = [X0, H * c, H * s], B = [X1, H * c, H * s], C = [X1, -H * c, -H * s], D = [X0, -H * c, -H * s];
+      return [A, B, C, D];
+    }
+    function seg(a, b, w, col) { const p = P(...a), q = P(...b); ctx.beginPath(); ctx.moveTo(p[0], p[1]); ctx.lineTo(q[0], q[1]); ctx.strokeStyle = col; ctx.lineWidth = w; ctx.lineCap = 'round'; ctx.stroke(); }
+    function coilDraw(front) {
+      const [A, B, C, D] = loopPts(st.th);
+      const sides = [[A, B], [B, C], [C, D], [D, A]];
+      sides.forEach(([a, b]) => {
+        const z = (a[2] + b[2]) / 2; if (front ? z < 0 : z >= 0) return;
+        const shade = clamp(0.5 + z / (2 * H), 0, 1);
+        seg(a, b, 13, `rgb(${Math.round(lerp(110, 196, shade))},${Math.round(lerp(60, 124, shade))},${Math.round(lerp(28, 66, shade))})`);
+        seg(a, b, 3, `rgba(255,222,186,${0.15 + 0.35 * shade})`);
+      });
+    }
+    function wheel(kind) {
+      // 축 왼쪽 끝(SH)에 붙은 회전체: 손잡이·물레(수차)·바람개비(회전 날개)
+      const th = st.th;
+      // 회전체는 앞에서 조금 비스듬히 본 모습(날개와 물레가 잘 보이게)
+      const P = (x, y, z) => [x + z * WX, AY - y + z * WY];
+      if (kind === 'hand') {
+        const L = 80, hy = L * Math.cos(th), hz = L * Math.sin(th);
+        const hub = P(SH, 0, 0), end = P(SH, hy, hz), knob = P(SH - 50, hy, hz);
+        ctx.strokeStyle = vgrad(ctx, AY - L, AY + L, STEEL); ctx.lineWidth = 14; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(hub[0], hub[1]); ctx.lineTo(end[0], end[1]); ctx.stroke();
+        ctx.fillStyle = '#7b8590'; ctx.beginPath(); ctx.arc(hub[0], hub[1], 13, 0, TAU); ctx.fill();
+        ctx.strokeStyle = '#3a4149'; ctx.lineWidth = 20; ctx.beginPath(); ctx.moveTo(end[0], end[1]); ctx.lineTo(knob[0], knob[1]); ctx.stroke();
+        ctx.strokeStyle = 'rgba(255,255,255,.2)'; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(end[0], end[1] - 5); ctx.lineTo(knob[0], knob[1] - 5); ctx.stroke();
+        return knob;
+      }
+      if (kind === 'water') {
+        const R = 120, n = 12;
+        // 물받이
+        ctx.fillStyle = vgrad(ctx, 560, 640, ['#cdd6de', '#aab5c0']); rr(ctx, SH - 120, 560, 290, 70, 10); ctx.fill();
+        ctx.fillStyle = 'rgba(120,170,215,.55)'; rr(ctx, SH - 110, 575, 270, 46, 8); ctx.fill();
+        const items = [];
+        for (let i = 0; i < n; i++) { const a = th + (i / n) * TAU; items.push({ a, z: R * Math.sin(a) }); }
+        items.sort((p, q) => p.z - q.z);
+        // 테
+        ctx.beginPath(); for (let i = 0; i <= 48; i++) { const a = (i / 48) * TAU, q = P(SH, R * Math.cos(a), R * Math.sin(a)); i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]); } ctx.strokeStyle = '#8a7a64'; ctx.lineWidth = 7; ctx.stroke();
+        items.forEach(({ a, z }) => {
+          const p0 = P(SH, R * 0.18 * Math.cos(a), R * 0.18 * Math.sin(a)), p1 = P(SH, R * Math.cos(a), R * Math.sin(a));
+          ctx.strokeStyle = '#9b8a72'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(p0[0], p0[1]); ctx.lineTo(p1[0], p1[1]); ctx.stroke();
+          const sh = clamp(0.55 + z / (2 * R), 0, 1);
+          const q0 = P(SH - 30, R * Math.cos(a), R * Math.sin(a)), q1 = P(SH + 30, R * Math.cos(a), R * Math.sin(a)), q2 = P(SH + 30, R * 1.28 * Math.cos(a), R * 1.28 * Math.sin(a)), q3 = P(SH - 30, R * 1.28 * Math.cos(a), R * 1.28 * Math.sin(a));
+          ctx.beginPath(); ctx.moveTo(q0[0], q0[1]); ctx.lineTo(q1[0], q1[1]); ctx.lineTo(q2[0], q2[1]); ctx.lineTo(q3[0], q3[1]); ctx.closePath();
+          ctx.fillStyle = `rgb(${Math.round(lerp(120, 196, sh))},${Math.round(lerp(104, 172, sh))},${Math.round(lerp(82, 136, sh))})`; ctx.fill();
+        });
+        ctx.fillStyle = '#6b5d4c'; const hb = P(SH, 0, 0); ctx.beginPath(); ctx.arc(hb[0], hb[1], 16, 0, TAU); ctx.fill();
+        // 관과 떨어지는 물
+        const lv = st.level;
+        ctx.fillStyle = vgrad(ctx, 40, 80, STEEL); rr(ctx, SH - 40, 50, 150, 36, 8); ctx.fill();
+        ctx.fillStyle = vgrad(ctx, 50, 120, ['#9aa4ae', '#c9d0d7', '#8a939c']); rr(ctx, SH + 56, 70, 40, 44, 6); ctx.fill();
+        if (lv > 0) {
+          const wdt = lv === 1 ? 14 : 28, x = SH + 76, top = 112, bot = AY - R * 1.15;
+          ctx.fillStyle = 'rgba(96,152,205,.6)'; ctx.fillRect(x - wdt / 2, top, wdt, bot - top);
+          ctx.strokeStyle = 'rgba(255,255,255,.65)'; ctx.lineWidth = 1.5;
+          for (let k = 0; k < 4; k++) { const yy = top + ((st.spin * 60 + k * 37) % (bot - top)); ctx.beginPath(); ctx.moveTo(x - wdt / 4, yy); ctx.lineTo(x - wdt / 4, yy + 16); ctx.stroke(); }
+          // 물받이로 떨어지는 물
+          ctx.fillStyle = 'rgba(96,152,205,.45)'; ctx.fillRect(x - wdt / 2 + 20, AY + R * 0.9, wdt * 0.8, 575 - AY - R * 0.9);
+        }
+        return null;
+      }
+      // 바람개비(회전 날개 3장)
+      const R = 150;
+      const bl = [0, 1, 2].map((i) => { const a = th + (i / 3) * TAU; return { a, z: R * Math.sin(a) }; }).sort((p, q) => p.z - q.z);
+      // 기둥
+      ctx.fillStyle = vgrad(ctx, AY, 640, ['#e6eaee', '#c6ced6']); ctx.fillRect(SH - 12, AY, 24, 640 - AY);
+      bl.forEach(({ a, z }) => {
+        const sh = clamp(0.55 + z / (2 * R), 0, 1);
+        const c = Math.cos(a), s = Math.sin(a), nc = Math.cos(a + 0.22), ns = Math.sin(a + 0.22);
+        const p0 = P(SH, 14 * c, 14 * s), p1 = P(SH, R * c, R * s), p2 = P(SH, R * 0.55 * nc, R * 0.55 * ns), p3 = P(SH, 22 * nc, 22 * ns);
+        ctx.beginPath(); ctx.moveTo(p0[0], p0[1]); ctx.lineTo(p1[0], p1[1]); ctx.quadraticCurveTo(p2[0], p2[1], p3[0], p3[1]); ctx.closePath();
+        ctx.fillStyle = `rgb(${Math.round(lerp(176, 244, sh))},${Math.round(lerp(186, 247, sh))},${Math.round(lerp(196, 250, sh))})`; ctx.fill();
+        ctx.strokeStyle = 'rgba(90,107,126,.55)'; ctx.lineWidth = 1.2; ctx.stroke();
+      });
+      const hb = P(SH, 0, 0); ctx.fillStyle = vgrad(ctx, hb[1] - 18, hb[1] + 18, STEEL); ctx.beginPath(); ctx.arc(hb[0], hb[1], 18, 0, TAU); ctx.fill();
+      // 바람 줄기
+      if (st.level > 0) {
+        ctx.strokeStyle = 'rgba(90,107,126,.35)'; ctx.lineWidth = 1.5; ctx.lineCap = 'round';
+        for (let k = 0; k < 6; k++) {
+          const yy = 170 + k * 52, xx = -40 + ((st.spin * (st.level === 1 ? 70 : 45) + k * 53) % 200);
+          ctx.beginPath(); ctx.moveTo(xx, yy); ctx.bezierCurveTo(xx + 20, yy - 6, xx + 40, yy + 6, xx + 60 + st.level * 10, yy); ctx.stroke();
+        }
+      }
+      return null;
+    }
+    function draw() {
+      S.begin(); white(S); desk(S, 640);
+      contact(ctx, 790, 648, 420, 0.18);
+      const M = magnetC();
+      // 자기장(N → S, 아래에서 위로)
+      if (st.field) {
+        ctx.strokeStyle = 'rgba(14,99,179,.28)'; ctx.lineWidth = 1.3;
+        for (let x = 662; x <= 850; x += 28) [-60, 10, 70].forEach((z) => { const p = P(x, AY - M.gapB, z), q = P(x, AY - M.gapT, z); ctx.beginPath(); ctx.moveTo(p[0], p[1]); ctx.lineTo(q[0], q[1]); ctx.stroke(); });
+      }
+      // 받침대 두 개
+      ctx.fillStyle = vgrad(ctx, AY, 640, ['#d8dee4', '#b9c3cc']);
+      [[SH + 260, 22], [960, 22]].forEach(([x, w]) => { rr(ctx, x - w / 2, AY + 6, w, 640 - AY - 6, 4); ctx.fill(); });
+      coilDraw(false);
+      // 축
+      const a = P(SH, 0, 0), b = P(X1 + 160, 0, 0);
+      ctx.strokeStyle = vgrad(ctx, AY - 8, AY + 8, STEEL); ctx.lineWidth = 12; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(X0, AY); ctx.moveTo(X1, AY); ctx.lineTo(b[0], b[1]); ctx.stroke();
+      // 고리 두 개와 솔
+      const ringX = [470, 520];
+      ringX.forEach((rx) => {
+        ctx.beginPath(); arcPath(ctx, rx, AY, 24, 0, TAU); ctx.closePath(); ctx.fillStyle = vgrad(ctx, AY - 24, AY + 24, COPPER); ctx.fill();
+        ctx.beginPath(); arcPath(ctx, rx + 7, AY, 24, 0, TAU); ctx.closePath(); ctx.fillStyle = vgrad(ctx, AY - 24, AY + 24, ['#e9b27f', '#b8743c', '#7a4420']); ctx.fill();
+        ctx.fillStyle = vgrad(ctx, AY + 22, AY + 52, ['#4d555e', '#2b3138']); rr(ctx, rx - 5, AY + 24, 22, 30, 4); ctx.fill();
+      });
+      // 코일 끝 → 고리
+      ctx.strokeStyle = '#a1602e'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(X0, AY - 3); ctx.lineTo(ringX[1] + 8, AY - 3); ctx.moveTo(X0, AY + 3); ctx.lineTo(ringX[0] + 8, AY + 3); ctx.stroke();
+      // 솔 → 전구
+      const bp = bulb(ctx, 400, 640, 46, st.lum);
+      const w1 = bez([ringX[0] + 6, AY + 54], [ringX[0], AY + 140], [bp.a[0] - 40, 600], bp.a);
+      const w2 = bez([ringX[1] + 6, AY + 54], [ringX[1] + 30, AY + 170], [bp.b[0] + 60, 620], bp.b);
+      wire(ctx, w1); wire(ctx, w2);
+      const amt = clamp(Math.abs(st.w * Math.sin(st.th)) / 4, 0, 1);
+      dots(ctx, w1, st.phase, 28, amt); dots(ctx, w2.slice().reverse(), st.phase, 28, amt);
+      coilDraw(true);
+      // 코일 위 흐르는 점
+      const [A, B, C, D] = loopPts(st.th).map((p) => P(...p));
+      const path = [D, A, B, C]; dots(ctx, path, st.phase, 30, amt * 0.9, 3.2);
+      const knob = wheel(st.driver);
+      if (st.labels) {
+        OL.put('s', M.sx, M.sy, 'S', 'tx inv pole big2'); OL.put('n', M.nx, M.ny, 'N', 'tx inv pole big2');
+        OL.put('lc', 1010, AY - 6, '코일', 'tx nm la2');
+        OL.put('lb', 400, 690, '전구', 'tx nm');
+        OL.put('lm', 1010, 130, '자석', 'tx nm la2');
+        OL.put('ld', SH, st.driver === 'wind' ? AY - 175 : st.driver === 'water' ? 30 : AY + 125, { hand: '손잡이', water: '물레', wind: '회전 날개' }[st.driver], 'tx nm');
+      }
+      if (st.driver === 'hand' && knob && !st.touched && st.level === 0 && o.hintDrag !== false) OL.put('hd', SH + 30, AY - 140, '손잡이를 돌려 보세요', 'tx hintl'); else OL.hide('hd');
+    }
+    S.cv.addEventListener('pointerdown', () => { st.touched = true; });
+    return api;
+  }
+
+  /* =====================================================================
+     4) 그림 Ⅵ-9: (가) 빈 관, (나) 코일 감은 관에 자석 떨어뜨리기
+     ===================================================================== */
+  function drop(host, o = {}) {
+    const S = surface(host, 1200, 760), ctx = S.ctx, OL = overlay(S);
+    const TX = [300, 560], TOP = 110, BOT = 660, MH = 60, YC = 400, G = 980;
+    const Hh = BOT - TOP - MH;
+    let DRAG = o.drag || 300;
+    const fluxY = fluxer({ L: 140, n: 14 }, 34);
+    const st = { y: [0, 0], v: [0, 0], done: [false, false], tland: [0, 0], t: 0, run: false, lum: 0, phase: 0, E: [null, null] };
+    const api = { st, onEnd: null };
+    function energy(i) {
+      const pe = 1 - st.y[i] / Hh, ke = (st.v[i] * st.v[i]) / (2 * G * Hh);
+      return { pe: clamp(pe, 0, 1), ke: clamp(ke, 0, 1), me: clamp(pe + ke, 0, 1) };
+    }
+    api.drop = () => { Object.assign(st, { y: [0, 0], v: [0, 0], done: [false, false], tland: [0, 0], t: 0, run: true, E: [null, null] }); };
+    api.reset = () => { Object.assign(st, { y: [0, 0], v: [0, 0], done: [false, false], tland: [0, 0], t: 0, run: false, lum: 0, E: [null, null] }); };
+    api.energy = energy;
+    api.setDrag = (v) => { DRAG = v; };
+    addLoop(host, (dt) => {
+      if (st.run && dt > 0) {
+        const sl = 0.55; // 천천히 보여 주기
+        const sub = 8, h = (dt * sl) / sub;
+        let emf = 0;
+        for (let k = 0; k < sub; k++) {
+          st.t += h;
+          for (let i = 0; i < 2; i++) {
+            if (st.done[i]) continue;
+            let a = G;
+            const yMag = TOP + st.y[i] + MH / 2;
+            if (i === 1) { const dF = (fluxY(yMag - YC + 1) - fluxY(yMag - YC - 1)) / 2; a -= DRAG * dF * dF * st.v[i]; emf = dF * st.v[i]; }
+            st.v[i] += a * h; st.y[i] += st.v[i] * h;
+            if (st.y[i] >= Hh) { st.y[i] = Hh; st.E[i] = energy(i); st.done[i] = true; st.tland[i] = st.t; st.v[i] = 0; }
+          }
+        }
+        const tg = clamp(Math.abs(emf) / 50, 0, 1);
+        st.lum = tg > st.lum ? lerp(st.lum, tg, Math.min(1, dt * 30)) : lerp(st.lum, tg, Math.min(1, dt * 8));
+        if (st.done[0] && st.done[1]) { st.run = false; api.onEnd && api.onEnd(st); }
+      } else st.lum = lerp(st.lum, 0, Math.min(1, dt * 8));
+      draw();
+    });
+    function tube(x) {
+      const R = 34;
+      ctx.beginPath(); arcPath(ctx, x, TOP, R, 0, TAU);
+      ctx.fillStyle = 'rgba(214,224,233,.35)'; ctx.fillRect(x - R, TOP, 2 * R, BOT - TOP);
+      ctx.strokeStyle = 'rgba(110,128,146,.55)'; ctx.lineWidth = 1.3;
+      ctx.beginPath(); ctx.moveTo(x - R, TOP); ctx.lineTo(x - R, BOT); ctx.moveTo(x + R, TOP); ctx.lineTo(x + R, BOT); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(x, TOP, R, 9, 0, 0, TAU); ctx.stroke();
+      ctx.fillStyle = 'rgba(255,255,255,.4)'; ctx.fillRect(x - R + 6, TOP + 10, 5, BOT - TOP - 20);
+      // 받침
+      contact(ctx, x, BOT + 26, 150, 0.22);
+      ctx.fillStyle = vgrad(ctx, BOT - 6, BOT + 26, ['#e3d7c8', '#cdbda9']);
+      ctx.beginPath(); ctx.moveTo(x - 44, BOT - 6); ctx.lineTo(x + 44, BOT - 6); ctx.lineTo(x + 56, BOT + 24); ctx.lineTo(x - 56, BOT + 24); ctx.closePath(); ctx.fill();
+    }
+    function magnetV(x, y) {
+      // 세운 원통 자석: 위 S(파랑), 아래 N(빨강)
+      const R = 24, t = TOP + y, m = t + MH / 2, b = t + MH;
+      ctx.fillStyle = vgrad(ctx, t, m, SC); ctx.fillStyle = (() => { const g = ctx.createLinearGradient(x - R, 0, x + R, 0); g.addColorStop(0, SC[2]); g.addColorStop(0.4, SC[0]); g.addColorStop(1, SC[2]); return g; })();
+      ctx.fillRect(x - R, t, 2 * R, MH / 2);
+      ctx.fillStyle = (() => { const g = ctx.createLinearGradient(x - R, 0, x + R, 0); g.addColorStop(0, NC[2]); g.addColorStop(0.4, NC[0]); g.addColorStop(1, NC[2]); return g; })();
+      ctx.fillRect(x - R, m, 2 * R, MH / 2);
+      ctx.beginPath(); ctx.ellipse(x, b, R, 6, 0, 0, Math.PI); ctx.fill();
+      ctx.fillStyle = SC[0]; ctx.beginPath(); ctx.ellipse(x, t, R, 6, 0, 0, TAU); ctx.fill();
+      return { s: [x, t + MH * 0.27], n: [x, t + MH * 0.75] };
+    }
+    function bars(ox, oy, E, lost, title, show) {
+      const bw = 34, gap = 26, hh = 150;
+      const items = [['위치', E ? E.pe : 1], ['운동', E ? E.ke : 0], ['역학적', E ? E.me : 1]];
+      ctx.fillStyle = '#f6f9fc'; rr(ctx, ox - 18, oy - hh - 44, 3 * bw + 2 * gap + 36, hh + 92, 14); ctx.fill();
+      ctx.strokeStyle = '#dde6ee'; ctx.lineWidth = 1; ctx.stroke();
+      items.forEach(([nm, v], i) => {
+        const x = ox + i * (bw + gap);
+        ctx.strokeStyle = '#b9c6d3'; ctx.lineWidth = 1.2; ctx.strokeRect(x, oy - hh, bw, hh);
+        ctx.fillStyle = i === 2 ? BLUE : '#8fb4da'; ctx.fillRect(x, oy - hh * v, bw, hh * v);
+        if (i === 2 && lost > 0.004) { ctx.setLineDash([4, 3]); ctx.strokeStyle = BLUE; ctx.strokeRect(x + 1, oy - hh * (v + lost), bw - 2, hh * lost); ctx.setLineDash([]); }
+        if (show) OL.put(title + nm, x + bw / 2, oy + 16, nm, 'tx sc2b');
+      });
+      if (show) OL.put(title + 't', ox + (3 * bw + 2 * gap) / 2, oy - hh - 24, title, 'tx nm');
+    }
+    function draw() {
+      S.begin(); white(S); desk(S, BOT + 24);
+      TX.forEach((x) => tube(x));
+      // (나) 코일과 발광 다이오드
+      const xc = TX[1];
+      // 세로로 감은 코일: 뒤쪽 절반 → 자석 → 앞쪽 절반
+      const turnsY = []; for (let k = 0; k < 14; k++) turnsY.push(YC - 70 + (k + 0.5) * 10);
+      turnsY.forEach((yy) => { ctx.beginPath(); ctx.ellipse(xc, yy, 40, 8, 0, Math.PI, TAU); ctx.strokeStyle = '#7d4824'; ctx.lineWidth = 5; ctx.stroke(); });
+      const ms = TX.map((x, i) => magnetV(x, st.y[i]));
+      turnsY.forEach((yy) => { ctx.beginPath(); ctx.ellipse(xc, yy, 40, 8, 0, 0, Math.PI); ctx.strokeStyle = vgrad(ctx, yy - 8, yy + 8, COPPER); ctx.lineWidth = 5; ctx.stroke(); });
+      // 발광 다이오드
+      const lx = xc + 78, ly = YC - 30;
+      ctx.strokeStyle = '#a1602e'; ctx.lineWidth = 2.4; ctx.beginPath(); ctx.moveTo(xc + 40, YC - 60); ctx.lineTo(lx - 8, ly + 14); ctx.moveTo(xc + 40, YC + 60); ctx.lineTo(lx + 8, ly + 14); ctx.stroke();
+      if (st.lum > 0.03) { const g = ctx.createRadialGradient(lx, ly, 2, lx, ly, 46); g.addColorStop(0, `rgba(255,236,170,${0.75 * st.lum})`); g.addColorStop(1, 'rgba(255,236,170,0)'); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(lx, ly, 46, 0, TAU); ctx.fill(); }
+      ctx.fillStyle = st.lum > 0.03 ? `rgba(255,${Math.round(lerp(230, 246, st.lum))},${Math.round(lerp(200, 170, st.lum))},.95)` : 'rgba(236,240,244,.95)';
+      ctx.beginPath(); ctx.arc(lx, ly - 6, 11, Math.PI, 0); ctx.lineTo(lx + 11, ly + 10); ctx.lineTo(lx - 11, ly + 10); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = 'rgba(110,128,146,.6)'; ctx.lineWidth = 1.2; ctx.stroke();
+      // 이름표
+      OL.put('ga', TX[0], TOP - 40, '(가)', 'tx nm'); OL.put('na', TX[1], TOP - 40, '(나)', 'tx nm');
+      ms.forEach((m, i) => { OL.put('s' + i, m.s[0], m.s[1], 'S', 'tx inv pole sm'); OL.put('n' + i, m.n[0], m.n[1], 'N', 'tx inv pole sm'); });
+      OL.put('lc', xc - 76, YC, '코일', 'tx nm la');
+      OL.put('ll', lx + 20, ly - 2, '발광<br>다이오드', 'tx twol sm ra');
+      // 에너지 막대
+      const lost = (i) => (st.done[i] || st.run || st.t > 0 ? 1 - (st.E[i] || energy(i)).me : 0);
+      bars(800, 330, st.E[0] || energy(0), 0, '(가)', true);
+      bars(800, 640, st.E[1] || energy(1), lost(1), '(나)', true);
+      if (st.done[0] && st.tland[0] && (!st.done[1])) OL.put('first', TX[0], BOT + 52, '먼저 도착', 'tx cap on'); else if (!st.done[0]) OL.hide('first');
+      if (st.done[0] && st.done[1]) OL.put('first', TX[0], BOT + 52, '먼저 도착', 'tx cap on');
+      if (st.done[1]) OL.put('second', TX[1], BOT + 52, '늦게 도착', 'tx cap'); else OL.hide('second');
+      if (lost(1) > 0.01) OL.put('lostl', 1010, 640 - 150 * (st.E[1] || energy(1)).me - 26, '줄어든 만큼', 'tx sm lostt'); else OL.hide('lostl');
+    }
+    return api;
+  }
+
+  /* =====================================================================
+     5) 다른 예시: 자전거 발전기와 에너지 띠
+     ===================================================================== */
+  const DEV = [
+    { id: 'lamp', name: '전조등', tag: '전조등', out: '빛에너지', p: 3 },
+    { id: 'spk', name: '스피커', tag: '스피커', out: '소리 에너지', p: 2 },
+    { id: 'phone', name: '휴대 전화 충전', tag: '배터리', out: '화학 에너지', p: 4 },
+  ];
+  function bike(host, o = {}) {
+    const S = surface(host, 1200, 760), ctx = S.ctx, OL = overlay(S);
+    const st = { pedal: false, w: 0, a: 0, on: { lamp: false, spk: false, phone: false }, charge: 0.25, t: 0, flow: 0 };
+    const api = { st, DEV };
+    api.pedal = (v) => { st.pedal = v; };
+    api.toggle = (id, v) => { st.on[id] = v == null ? !st.on[id] : v; };
+    api.load = () => DEV.reduce((s, d) => s + (st.on[d.id] ? d.p : 0), 0);
+    api.heat = () => { const l = api.load(); return l > 0 ? 0.8 + l * 0.12 : 0; };
+    api.input = () => api.load() + api.heat();
+    addLoop(host, (dt) => {
+      if (dt > 0) {
+        st.t += dt;
+        const tgt = st.pedal ? 6.5 : 0; st.w = lerp(st.w, tgt, Math.min(1, dt * (st.pedal ? 1.5 : 0.9))); st.a += st.w * dt;
+        st.flow = lerp(st.flow, st.pedal ? 1 : 0, Math.min(1, dt * 2.5));
+        if (st.on.phone && st.w > 3) st.charge = Math.min(1, st.charge + dt * 0.03);
+      }
+      draw();
+    });
+    function wheel(x, y, r, a) {
+      contact(ctx, x, y + r + 4, r * 2.2, 0.15);
+      ctx.strokeStyle = '#2f363e'; ctx.lineWidth = 11; ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.stroke();
+      ctx.strokeStyle = '#555e68'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, r - 4, 0, TAU); ctx.stroke();
+      ctx.strokeStyle = '#a8b1ba'; ctx.lineWidth = 3.5; ctx.beginPath(); ctx.arc(x, y, r - 9, 0, TAU); ctx.stroke();
+      ctx.strokeStyle = 'rgba(120,130,140,.75)'; ctx.lineWidth = 1;
+      for (let i = 0; i < 16; i++) { const t = a + (i / 16) * TAU; ctx.beginPath(); ctx.moveTo(x + Math.cos(t) * 7, y + Math.sin(t) * 7); ctx.lineTo(x + Math.cos(t + 0.3) * (r - 10), y + Math.sin(t + 0.3) * (r - 10)); ctx.stroke(); }
+      ctx.fillStyle = vgrad(ctx, y - 9, y + 9, STEEL); ctx.beginPath(); ctx.arc(x, y, 9, 0, TAU); ctx.fill();
+    }
+    function band(x0, y0, x1, y1, w, a = 1) {
+      ctx.save(); ctx.globalAlpha = a;
+      ctx.beginPath(); ctx.moveTo(x0, y0 - w / 2);
+      ctx.bezierCurveTo((x0 + x1) / 2, y0 - w / 2, (x0 + x1) / 2, y1 - w / 2, x1, y1 - w / 2);
+      ctx.lineTo(x1, y1 + w / 2);
+      ctx.bezierCurveTo((x0 + x1) / 2, y1 + w / 2, (x0 + x1) / 2, y0 + w / 2, x0, y0 + w / 2); ctx.closePath(); ctx.fill(); ctx.restore();
+    }
+    function draw() {
+      S.begin(); white(S); desk(S, 470);
+      // 자전거(옆모습, 뒷바퀴를 받침대에 올림)
+      const R = 98, rear = [455, 352], front = [150, 372], bb = [320, 382], seat = [293, 205], head = [196, 214];
+      // 받침대
+      ctx.strokeStyle = '#5a636d'; ctx.lineWidth = 7; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(rear[0], rear[1]); ctx.lineTo(rear[0] - 50, 470); ctx.moveTo(rear[0], rear[1]); ctx.lineTo(rear[0] + 50, 470); ctx.stroke();
+      wheel(front[0], front[1], R, 0); wheel(rear[0], rear[1], R, st.a);
+      // 뼈대
+      ctx.strokeStyle = '#3d4855'; ctx.lineWidth = 9;
+      const T = (p, q) => { ctx.beginPath(); ctx.moveTo(p[0], p[1]); ctx.lineTo(q[0], q[1]); ctx.stroke(); };
+      T(bb, seat); T(seat, head); T(head, bb); T(bb, rear); T(seat, rear); T(head, front);
+      ctx.strokeStyle = 'rgba(255,255,255,.18)'; ctx.lineWidth = 2.5; T(bb, seat); T(seat, head); T(head, bb);
+      // 안장·핸들
+      ctx.fillStyle = '#2b3138'; rr(ctx, seat[0] - 34, seat[1] - 20, 64, 14, 7); ctx.fill();
+      ctx.strokeStyle = '#2b3138'; ctx.lineWidth = 7; ctx.beginPath(); ctx.moveTo(head[0], head[1]); ctx.lineTo(head[0] + 6, head[1] - 34); ctx.lineTo(head[0] + 40, head[1] - 40); ctx.stroke();
+      // 체인·톱니
+      ctx.strokeStyle = '#6b747e'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(bb[0], bb[1] - 26); ctx.lineTo(rear[0], rear[1] - 12); ctx.moveTo(bb[0], bb[1] + 26); ctx.lineTo(rear[0], rear[1] + 12); ctx.stroke();
+      ctx.fillStyle = '#8a939d'; ctx.beginPath(); ctx.arc(bb[0], bb[1], 26, 0, TAU); ctx.fill(); ctx.beginPath(); ctx.arc(rear[0], rear[1], 12, 0, TAU); ctx.fill();
+      // 페달
+      const ca = st.a * 0.42;
+      [0, Math.PI].forEach((o2) => { const px = bb[0] + Math.cos(ca + o2) * 48, py = bb[1] + Math.sin(ca + o2) * 48;
+        ctx.strokeStyle = '#2f363e'; ctx.lineWidth = 7; ctx.beginPath(); ctx.moveTo(bb[0], bb[1]); ctx.lineTo(px, py); ctx.stroke();
+        ctx.fillStyle = '#2b3138'; rr(ctx, px - 16, py - 5, 32, 10, 3); ctx.fill(); });
+      // 발전기(뒷바퀴 타이어에 닿은 병 모양)
+      const ta = -2.2, tx = rear[0] + Math.cos(ta) * (R + 4), ty = rear[1] + Math.sin(ta) * (R + 4);
+      ctx.save(); ctx.translate(tx, ty); ctx.rotate(ta + Math.PI / 2);
+      ctx.fillStyle = (() => { const g = ctx.createLinearGradient(-16, 0, 16, 0); g.addColorStop(0, '#7b8590'); g.addColorStop(0.45, '#dfe4e9'); g.addColorStop(1, '#6b747e'); return g; })();
+      rr(ctx, -16, -76, 32, 70, 10); ctx.fill();
+      ctx.fillStyle = '#3a4149'; ctx.save(); ctx.translate(0, -2); ctx.rotate(st.a * 4); ctx.fillRect(-7, -7, 14, 14); ctx.restore();
+      ctx.restore();
+      const dyn = [tx + Math.cos(ta) * 60, ty + Math.sin(ta) * 60];
+      // 기구 받침(오른쪽)
+      ctx.fillStyle = vgrad(ctx, 300, 330, ['#eef2f6', '#dbe2e9']); rr(ctx, 600, 320, 560, 26, 8); ctx.fill();
+      ctx.fillStyle = '#cfd8e0'; ctx.fillRect(630, 346, 14, 124); ctx.fillRect(1116, 346, 14, 124);
+      const L = api.load(), drive = clamp(st.w / 6.5, 0, 1);
+      const share = (id) => (st.on[id] ? drive : 0);
+      // 전조등
+      const lx = 700, ly = 320;
+      if (share('lamp') > 0.05) { const g = ctx.createLinearGradient(lx + 30, 0, lx + 150, 0); g.addColorStop(0, `rgba(255,236,170,${0.6 * share('lamp')})`); g.addColorStop(1, 'rgba(255,236,170,0)'); ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(lx + 26, ly - 70); ctx.lineTo(lx + 150, ly - 110); ctx.lineTo(lx + 150, ly - 10); ctx.lineTo(lx + 26, ly - 34); ctx.closePath(); ctx.fill(); }
+      ctx.fillStyle = vgrad(ctx, ly - 80, ly - 24, ['#5e6772', '#363d45']); rr(ctx, lx - 34, ly - 80, 62, 56, 12); ctx.fill();
+      ctx.fillStyle = share('lamp') > 0.05 ? `rgba(255,${Math.round(lerp(236, 246, share('lamp')))},${Math.round(lerp(210, 170, share('lamp')))},1)` : '#dfe5ea';
+      ctx.beginPath(); ctx.ellipse(lx + 26, ly - 52, 9, 24, 0, 0, TAU); ctx.fill();
+      // 스피커
+      const sx = 880, sy = 320, vib = share('spk') > 0.05 ? Math.sin(st.t * 60) * 1.6 * share('spk') : 0;
+      ctx.fillStyle = vgrad(ctx, sy - 110, sy, ['#59626c', '#2f363e']); rr(ctx, sx - 45, sy - 110, 90, 110, 12); ctx.fill();
+      ctx.fillStyle = '#20262c'; ctx.beginPath(); ctx.arc(sx, sy - 56, 30 + vib, 0, TAU); ctx.fill();
+      ctx.fillStyle = '#4a535c'; ctx.beginPath(); ctx.arc(sx, sy - 56, 11 + vib * 0.5, 0, TAU); ctx.fill();
+      if (share('spk') > 0.05) { ctx.strokeStyle = `rgba(90,107,126,${0.55 * share('spk')})`; ctx.lineWidth = 1.6; for (let k = 0; k < 3; k++) { const r = 44 + ((st.t * 40 + k * 18) % 54); ctx.globalAlpha = 1 - (r - 44) / 54; ctx.beginPath(); ctx.arc(sx, sy - 56, r, -0.6, 0.6); ctx.stroke(); } ctx.globalAlpha = 1; }
+      // 휴대 전화
+      const px = 1050, py = 320;
+      ctx.fillStyle = '#2b3138'; rr(ctx, px - 30, py - 116, 60, 112, 10); ctx.fill();
+      ctx.fillStyle = '#eef2f6'; rr(ctx, px - 24, py - 106, 48, 92, 6); ctx.fill();
+      ctx.strokeStyle = '#5a6b7e'; ctx.lineWidth = 1.5; rr(ctx, px - 12, py - 82, 24, 46, 4); ctx.stroke();
+      ctx.fillStyle = BLUE; const ch = 40 * st.charge; ctx.fillRect(px - 9, py - 39 - ch, 18, ch);
+      // 전선: 발전기 → 기구들
+      const wy = 392;
+      const wpts = [dyn, [dyn[0] + 60, dyn[1] - 50], [560, 270], [600, wy]];
+      const trunk = bez(dyn, [dyn[0] + 90, dyn[1] - 60], [520, wy], [640, wy]);
+      wire(ctx, trunk, '#3c4652', 3.5);
+      [[lx, ly - 24], [sx, sy], [px, py - 4]].forEach(([dx, dy2]) => wire(ctx, [[dx, wy], [dx, dy2 + 22]], '#3c4652', 3));
+      wire(ctx, [[640, wy], [px, wy]], '#3c4652', 3.5);
+      if (L > 0) { dots(ctx, trunk.concat([[px, wy]]), st.t * 90 * drive, 30, drive, 3.2); }
+      // 에너지 띠(아래)
+      const y0 = 625, sc = 9, xin = 100, xg = 350, xe = 500, xo = 860;
+      const inW = api.input() * sc * st.flow;
+      ctx.fillStyle = '#f6f9fc'; rr(ctx, 40, 500, 1120, 240, 16); ctx.fill(); ctx.strokeStyle = '#dde6ee'; ctx.lineWidth = 1; ctx.stroke();
+      if (inW > 1) {
+        ctx.fillStyle = '#8fb4da'; band(xin, y0, xg, y0, inW);
+        ctx.fillStyle = BLUE; band(xg + 70, y0, xe + 120, y0, api.load() * sc * st.flow);
+        // 열에너지(발전기와 전선에서)
+        ctx.fillStyle = '#c3ccd5';
+        const hw = api.heat() * sc * st.flow;
+        band(xg + 70, y0 + api.load() * sc * st.flow / 2 + hw / 2, xo, 715, hw);
+        // 나누기
+        let yy = y0 - (api.load() * sc * st.flow) / 2;
+        const outs = DEV.filter((d) => st.on[d.id]);
+        const slots = { lamp: 560, spk: 615, phone: 670 };
+        outs.forEach((d) => { const w = d.p * sc * st.flow; ctx.fillStyle = BLUE; band(xe + 120, yy + w / 2, xo, slots[d.id], w, 0.9); yy += w; });
+      } else {
+        ctx.strokeStyle = '#c9d4de'; ctx.setLineDash([6, 5]); ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(xin, y0); ctx.lineTo(xo, y0); ctx.stroke(); ctx.setLineDash([]);
+      }
+      // 발전기 칸
+      ctx.fillStyle = '#fff'; rr(ctx, xg, y0 - 38, 70, 76, 10); ctx.fill(); ctx.strokeStyle = '#9fb1c3'; ctx.lineWidth = 1.2; ctx.stroke();
+      OL.put('bg', xg + 35, y0, '발전기', 'tx nm sm');
+      OL.put('bin', xin, y0 - 50, '역학적 에너지<br><span class="u">페달을 밟음</span>', 'tx twol sm');
+      OL.put('bel', xe + 30, y0 - 50, '전기 에너지', 'tx nm sm blue');
+      DEV.forEach((d) => { const y = { lamp: 560, spk: 615, phone: 670 }[d.id]; OL.put('o' + d.id, xo + 14, y, `${d.out} <span class="u">${d.tag}</span>`, 'tx lay ra' + (st.on[d.id] && st.flow > 0.3 ? '' : ' dim')); });
+      OL.put('oheat', xo + 14, 715, '열에너지 <span class="u">발전기·전선</span>', 'tx lay ra' + (api.heat() > 0 && st.flow > 0.3 ? '' : ' dim'));
+      OL.put('dl', lx, 362, '전조등', 'tx nm sm'); OL.put('ds', sx, 362, '스피커', 'tx nm sm'); OL.put('dp', px, 362, '휴대 전화', 'tx nm sm');
+      OL.put('dy', dyn[0] - 70, dyn[1] - 20, '발전기', 'tx nm sm');
+      if (inW <= 1) OL.put('none', 600, y0 + 38, st.pedal ? '켠 기구가 없으면 전기 에너지가 쓰이지 않아요' : '페달을 밟으면 에너지가 흐르는 모습이 보여요', 'tx m'); else OL.hide('none');
+    }
+    return api;
+  }
+
+  return { lab, flash, gen, drop, bike, DEV, _: { surface, overlay, addLoop, coil, barMagnet, galvo, bulb } };
+})();
+</script>
+<script>
+/* ===== 블록 2: 그림 ===== */
+(() => {
+  'use strict';
+  try {
+    const { $, $$ } = window.RD;
+    // 첫 화면: 손전등 (누르면 흔들기)
+    const H = EMI.flash($('#heroFig'), { hintDrag: false });
+    $('#heroFig').addEventListener('click', () => H.shake(2.2));
+    // 그림 ① 자가 발전 손전등
+    const F = EMI.flash($('#fig1'));
+    $('#f1Go').addEventListener('click', () => { F.shake(3); $('#f1St').innerHTML = '흔드는 중이에요. 자석과 전구를 봐요'; setTimeout(() => ($('#f1St').innerHTML = '자석이 <b>코일을 지나갈 때</b> 전구가 켜졌어요'), 3100); });
+    // 그림 ② 실험하기 1~3
+    const L = EMI.lab($('#fig2'), { hintDrag: false });
+    const say2 = (h) => ($('#f2St').innerHTML = h);
+    let seq = 0;
+    const X = {
+      1: (n) => { L.setMode('magnet'); say2('자석을 코일 속에 넣어요…'); L.push(0.7, () => { if (n !== seq) return; L.hold(0.5, () => { if (n !== seq) return; say2('이번에는 빼요…'); L.pull(0.7, () => n === seq && say2('넣을 때도, 뺄 때도 바늘이 <b>움직여요</b>. 방향은 반대예요')); }); }); },
+      2: (n) => { L.setMode('magnet'); say2('자석을 코일 속에 넣고…'); L.push(0.7, () => { if (n !== seq) return; say2('가만히 두는 중이에요…'); L.hold(2, () => n === seq && say2('가만히 있으면 바늘이 <b>0에 머물러요</b>')); }); },
+      3: (n) => { L.setMode('coil'); say2('자석은 그대로, 코일을 움직여 넣어요…'); L.push(0.8, () => { if (n !== seq) return; L.hold(0.5, () => { if (n !== seq) return; say2('코일을 빼요…'); L.pull(0.8, () => n === seq && say2('코일을 움직여도 바늘이 <b>움직여요</b>')); }); }); },
+    };
+    $$('#f2Bar [data-x]').forEach((b) => b.addEventListener('click', () => {
+      seq += 1; $$('#f2Bar [data-x]').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); X[b.dataset.x](seq);
+    }));
+    // 그림 ③ 발전기
+    const G = EMI.gen($('#fig3'), { hintDrag: false });
+    const SAY3 = { hand: '손으로 손잡이를 돌려 코일을 회전시켜요', water: '높은 곳에서 떨어지는 <b>물</b>이 물레를 돌려요', wind: '부는 <b>바람</b>이 회전 날개를 돌려요' };
+    $$('#f3Bar [data-d]').forEach((b) => b.addEventListener('click', () => {
+      $$('#f3Bar [data-d]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+      G.setDriver(b.dataset.d); G.setLevel(1); $('#f3St').innerHTML = SAY3[b.dataset.d] + ' · 전구를 봐요';
+    }));
+    $('#f3Stop').addEventListener('click', () => { G.setLevel(0); $('#f3St').innerHTML = '코일이 멈추면 전구도 꺼져요'; });
+    // 그림 ④ 떨어지는 자석
+    const D = EMI.drop($('#fig4'));
+    $('#f4Go').addEventListener('click', () => { D.drop(); $('#f4Go').disabled = true; $('#f4St').innerHTML = '떨어지는 중이에요. (나)의 발광 다이오드를 봐요'; });
+    D.onEnd = () => { $('#f4Go').disabled = false; $('#f4Go').textContent = '다시 떨어뜨리기'; $('#f4St').innerHTML = '(나)가 <b>늦게</b> 떨어졌어요. (나)의 역학적 에너지 막대를 봐요'; };
+    // 그림 ⑤ 자전거 발전기
+    const B = EMI.bike($('#fig5'));
+    const say5 = () => { const n = EMI.DEV.filter((d) => B.st.on[d.id]).length; $('#f5St').innerHTML = !B.st.pedal ? '페달을 밟고 기구를 켜 봐요' : n === 0 ? '켠 기구가 없어 페달이 <b>아주 가벼워요</b>' : `기구 ${n}개 · 페달이 ${n >= 2 ? '<b>무거워요</b>' : '조금 무거워요'}`; };
+    $('#f5Pedal').addEventListener('click', (e) => { const on = e.currentTarget.getAttribute('aria-pressed') !== 'true'; e.currentTarget.setAttribute('aria-pressed', String(on)); e.currentTarget.textContent = on ? '페달 멈추기' : '페달 밟기'; B.pedal(on); say5(); });
+    $$('#f5Bar [data-d]').forEach((b) => b.addEventListener('click', () => { const on = b.getAttribute('aria-pressed') !== 'true'; b.setAttribute('aria-pressed', String(on)); B.toggle(b.dataset.d, on); say5(); }));
+    window.RD.ok2 = true;
+  } catch (err) { window.RD_err && window.RD_err('그림', err); }
+})();
+</script>
+</body>
+</html>
