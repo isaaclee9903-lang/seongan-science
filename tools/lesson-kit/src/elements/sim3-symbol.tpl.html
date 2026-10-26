@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>원소 – 원소 기호와 화학식</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+/*@@LOCAL:_css_el.css@@*/
+/*@@LOCAL:_css_sim.css@@*/
+  /* ===== 이 페이지 전용 ===== */
+  .act[hidden]{display:none!important}
+  .act{flex:1 1 auto;min-height:0}
+  .viewer.v2{display:flex;flex-direction:column}
+  /* 원소 카드 진열 */
+  .deck{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;padding:12px 12px 0}
+  .ec{position:relative;border:1.5px solid #e1e8ef;background:#fff;border-radius:14px;padding:4px 4px 6px;cursor:pointer;display:grid;grid-template-rows:auto auto auto;justify-items:center;min-height:44px;transition:border-color .2s,background .2s}
+  .ec canvas{width:100%;height:clamp(48px,7vh,88px);display:block}
+  .ec b{font-size:clamp(17px,1.9vw,22px);font-weight:900;line-height:1.1;color:#14263b;letter-spacing:-.01em}
+  .ec b.q{color:#b4c0cc}
+  .ec span{font-size:12.5px;font-weight:700;color:#5a6b7e;line-height:1.3}
+  .ec[aria-pressed="true"]{border-color:#0e63b3;background:#eef5fc}
+  .ec.done::after{content:"";position:absolute;right:6px;top:6px;width:8px;height:8px;border-radius:50%;background:#0e63b3}
+  .bench{flex:1 1 auto;min-height:0;display:grid;grid-template-columns:minmax(130px,28%) 1fr;gap:12px;align-items:center;padding:8px 16px 10px;margin-top:8px;border-top:1px solid var(--line)}
+  .bench canvas{width:100%;height:100%;min-height:150px;max-height:260px;display:block}
+  .bi .ko{font-size:clamp(22px,2.6vw,30px);font-weight:900;letter-spacing:-.02em;color:#14263b;line-height:1.2}
+  .bi .lang{display:inline-block;margin:0 0 6px;font-size:13.5px;font-weight:800;color:#5a6b7e}
+  .tiles{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px}
+  .tiles button{min-width:34px;min-height:46px;border-radius:10px;border:1.5px solid #d4dee8;background:#fff;font-weight:800;font-size:19px;cursor:pointer;color:#34495e;padding:0 3px}
+  .tiles button.first{border-color:#9fbbd8;background:#f4f8fc}
+  .tiles button.used{background:#e9eff5;color:#a5b2bf;border-color:#e1e8ef}
+  .tiles button.hint{border-color:#0e63b3;box-shadow:0 0 0 2px #cfe2f6}
+  .slots{display:flex;align-items:center;gap:8px}
+  .slots i{font-style:normal;width:56px;height:62px;border-radius:14px;border:2px dashed #c3d0dc;display:grid;place-items:center;font-size:34px;font-weight:900;color:#14263b;background:#fbfdff}
+  .slots i.fill{border-style:solid;border-color:#0e63b3;background:#fff;animation:pop .28s ease-out}
+  .slots small{font-size:13px;font-weight:800;color:#5a6b7e;margin-left:4px;word-break:keep-all;line-height:1.4}
+  @keyframes pop{from{transform:scale(.7)}to{transform:scale(1)}}
+  .ctl{display:grid;gap:8px}
+  .two2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .two2 .btn{width:100%}
+  .rules{display:grid;gap:6px;margin:0 0 10px}
+  .rules .ph{font-size:14.5px;padding:7px 10px}
+  .rules .ex{display:block;font-size:13.5px;color:#34495e;margin-top:2px}
+  .rules .ex u{text-decoration:none;font-weight:900;color:#0e63b3}
+  .cnt{display:flex;gap:4px;align-items:center;font-size:13px;font-weight:800;color:var(--muted);margin-top:2px}
+  .cnt i{flex:1;height:8px;border-radius:4px;background:#e6edf4}
+  .cnt i.on{background:#0e63b3}
+  /* 화학식 */
+  #fcv{aspect-ratio:1000/640}
+  .ol.tx.fhead{background:transparent;padding:0;text-align:center;line-height:1.1}
+  .ol.tx.fhead .fx{display:block;font-size:clamp(34px,5.2vw,62px);font-weight:900;color:#14263b;letter-spacing:.01em}
+  .ol.tx.fhead .fx sub{font-size:.55em}
+  .ol.tx.fhead .fn{display:block;font-size:clamp(14px,1.8vw,20px);font-weight:800;color:#5a6b7e;margin-top:4px}
+  .ol.tx.fcomp{background:transparent;padding:0;font-size:clamp(14px,1.9vw,21px);font-weight:800;color:#14263b}
+  .ol.tx.fcomp .pl{margin:0 10px;color:#8a9bad}
+  .fchips{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px}
+  .fchips button,.echips button{min-height:52px;border-radius:12px;border:2px solid #d4dee8;background:#fff;cursor:pointer;line-height:1.2;padding:4px 6px}
+  .fchips button b{display:block;font-size:19px;font-weight:900;color:#14263b}
+  .fchips button b sub{font-size:.62em}
+  .fchips button span{font-size:12.5px;font-weight:700;color:#5a6b7e}
+  .fchips button[aria-pressed="true"],.echips button[aria-pressed="true"]{border-color:var(--fab);background:#e9f3fd}
+  .fchips button.ok{box-shadow:inset 0 -3px 0 #0e63b3}
+  .echips{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+  .echips button{font-weight:800;font-size:15px;color:#34495e;display:flex;align-items:center;justify-content:center;gap:4px}
+  .echips button.good{border-color:var(--ok);background:#e8f7ef;color:#11703f}
+  .echips button.bad{border-color:#e7a29b;background:#fff4f2;color:#9b3a32}
+  .seglbl{font-size:13px;font-weight:800;color:var(--muted);margin:2px 0 6px}
+  .what2{font-size:15px;line-height:1.7;color:var(--ink2);margin:0 0 8px;word-break:keep-all}
+  @media (max-width:900px){.deck{grid-template-columns:repeat(6,1fr)}.ec canvas{height:clamp(46px,4.6vh,60px)}.bench{grid-template-columns:200px 1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="ttl">
+      <span class="eyebrow">원소 기호 규칙 · 그림 Ⅳ-3</span><h1>원소 기호와 화학식</h1>
+      <p class="sub">원소 이름에서 글자를 골라 원소 기호를 만들고, 화학식을 보고 어떤 원소로 이루어졌는지 찾아봐요.</p>
+    </div>
+    <div class="ptabs big" role="tablist" id="acts">
+      <button type="button" role="tab" data-a="sym" aria-selected="true">원소 기호 만들기</button>
+      <button type="button" role="tab" data-a="fml" aria-selected="false">화학식 읽기</button>
+    </div>
+  </header>
+
+  <!-- 활동 1: 원소 기호 만들기 -->
+  <div class="stage act" data-a="sym">
+    <section class="card viewer v2">
+      <div class="deck" id="deck" role="group" aria-label="원소 카드 18장"></div>
+      <div class="bench">
+        <canvas id="bigS" aria-hidden="true"></canvas>
+        <div class="bi">
+          <div class="ko" id="bKo">수소</div>
+          <span class="lang" id="bLang">영어 이름</span>
+          <div class="tiles" id="tiles"></div>
+          <div class="slots" id="slots"><i></i><i></i><small id="slotTip">첫 글자는 대문자로 들어가요</small></div>
+        </div>
+      </div>
+      <div class="vctl">
+        <span class="hint">위 카드에서 원소를 골라요</span>
+        <span class="sp"></span>
+        <button class="vb" type="button" id="bReset">처음부터</button>
+      </div>
+    </section>
+    <section class="card pad">
+      <div class="seglbl">원소 기호 규칙 (베르셀리우스가 제안한 것을 바탕으로)</div>
+      <div class="rules">
+        <div class="ph on"><i>1</i><span>라틴어나 영어로 된 원소 이름의 <b>첫 글자</b>를 알파벳의 <b>대문자</b>로 나타내요.<span class="ex">수소 <u>H</u>ydrogen → H · 탄소 <u>C</u>arbon → C</span></span></div>
+        <div class="ph on"><i>2</i><span>첫 글자가 같을 때는 <b>중간 글자</b>를 택하여 첫 글자 다음에 <b>소문자</b>로 나타내요.<span class="ex">헬륨 <u>He</u>lium → He · 염소 <u>C</u>h<u>l</u>orine → Cl</span></span></div>
+      </div>
+      <div class="ctl">
+        <div class="two2"><button class="btn ghost" type="button" id="bClear">지우기</button><button class="btn primary" type="button" id="bCheck" disabled>확인하기</button></div>
+        <div class="cnt" id="cnt"></div>
+      </div>
+      <div class="fbk" id="res"><b class="t" id="resT">결과</b><span id="resM">이름에서 글자를 눌러 기호를 만들어요. 처음 누른 글자는 대문자, 다음 글자는 소문자로 들어가요.</span></div>
+      <p class="mnote">그림은 원소로 된 물질의 모습을 그린 것이에요. 수소·질소·산소는 색이 없는 기체, 염소는 황록색 기체예요.</p>
+    </section>
+  </div>
+
+  <!-- 활동 2: 화학식 읽기 -->
+  <div class="stage act" data-a="fml" hidden>
+    <section class="card viewer">
+      <div class="scene grow" id="fcv" role="img" aria-label="고른 물질의 화학식과 입자 모형. 모형은 천천히 돌고, 아래에 물질을 이루는 원소의 이름과 원소 기호가 나온다."></div>
+      <div class="vctl"><span class="hint">입자 모형은 천천히 돌아가요</span></div>
+    </section>
+    <section class="card pad">
+      <div class="ptabs" role="tablist" id="pt2">
+        <button type="button" role="tab" data-p="f1" aria-selected="true">알아보기</button>
+        <button type="button" role="tab" data-p="f2" aria-selected="false">좋은 점</button>
+      </div>
+      <div class="pane2" data-p="f1">
+        <div class="seglbl">1. 물질 고르기 (그림 Ⅳ-3)</div>
+        <div class="fchips" id="fchips"></div>
+        <div class="seglbl">2. 이 물질은 어떤 원소로 이루어졌을까? 모두 골라요</div>
+        <div class="echips" id="echips"></div>
+        <div class="ctl" style="margin-top:8px"><button class="btn primary" type="button" id="bFchk" disabled>확인하기</button></div>
+        <div class="fbk" id="res2"><b class="t" id="res2T">결과</b><span id="res2M">화학식 속 원소 기호를 보고 원소를 골라요.</span></div>
+      </div>
+      <div class="pane2" data-p="f2" hidden>
+        <p class="what2">물질을 원소 기호와 숫자로 나타낸 것을 <b>화학식</b>이라고 해요.</p>
+        <p class="what2">원소 기호와 화학식을 사용하면 <b>다른 언어를 사용하는 사람들도</b> 물질을 이루는 성분을 쉽게 알 수 있어요. 그래서 정보를 편리하게 교환할 수 있어요.</p>
+        <p class="what2">도로 표지판이 간단한 기호로 내용을 빠르게 전달하는 것과 같아요. '물'을 영어, 중국어, 스페인어로는 다르게 부르지만, 화학식은 어디서나 H<sub>2</sub>O예요.</p>
+      </div>
+      <p class="mnote">입자 모형의 크기와 색은 보기 좋게 정한 모형이에요. 화학식 속 숫자의 뜻은 다음 시간에 배워요.</p>
+    </section>
+  </div>
+</div>
+<script>
+window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
+  reduce: !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches), Q: new URLSearchParams(location.search) };
+</script>
+<script>
+/*@@LOCAL:_el_core.js@@*/
+</script>
+<script>
+/*@@LOCAL:_el_items.js@@*/
+</script>
+<script>
+/*@@LOCAL:_el_formula.js@@*/
+</script>
+<script>
+/* ===== 블록 1: 원소 기호 만들기 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S, Q = S.Q;
+    // 첫 글자가 같은 원소가 이 목록 안에 있으면 예로 든다
+    const PAIR = { He: 'H', Hg: 'H', Cl: 'C', Ca: 'C', Cu: 'C', Ne: 'N', Na: 'N', Si: 'S' };
+    const ANIM = { He: 1, Ne: 1 };
+    const st = { cur: null, built: [], picked: [], tries: 0, done: new Set() };
+    const info = (s) => EL.SYM.find((x) => x[0] === s);
+    $('#deck').innerHTML = EL.SYM.map(([s, ko]) => `<button type="button" class="ec" data-s="${s}" aria-pressed="false"><canvas></canvas><b class="q">?</b><span>${ko}</span></button>`).join('');
+    $$('#deck .ec').forEach((b) => { EL.thumb($('canvas', b), EL.SAMPLE[b.dataset.s], { anim: !!ANIM[b.dataset.s], scale: 1.05 }); b.addEventListener('click', () => choose(b.dataset.s)); });
+    const big = { draw: null };
+    EL.thumb($('#bigS'), (ctx, x, y, s, t) => big.draw && big.draw(ctx, x, y, s, t), { anim: true, scale: 0.8 });
+    function msg(t, m, cls = '') { $('#res').className = 'fbk ' + cls; $('#resT').textContent = t; $('#resM').innerHTML = m; }
+    function count() { $('#cnt').innerHTML = `<span>만든 기호 ${st.done.size} / 18</span>` + EL.SYM.map(([s]) => `<i class="${st.done.has(s) ? 'on' : ''}"></i>`).join(''); }
+    function slots() {
+      const sl = $$('#slots i');
+      sl.forEach((e, i) => { const c = st.built[i]; e.textContent = c || ''; e.classList.toggle('fill', !!c); });
+      $('#bCheck').disabled = !st.built.length || st.done.has(st.cur);
+      $('#slotTip').textContent = st.built.length === 0 ? '첫 글자는 대문자로 들어가요' : st.built.length === 1 ? '다음 글자는 소문자로 들어가요' : '확인하기를 눌러요';
+    }
+    function tiles() {
+      const [, , nm] = info(st.cur);
+      $('#tiles').innerHTML = nm.split('').map((c, i) => `<button type="button" data-i="${i}" class="${i === 0 ? 'first' : ''}${st.picked.includes(i) ? ' used' : ''}">${c}</button>`).join('');
+      $$('#tiles button').forEach((b) => b.addEventListener('click', () => {
+        const i = +b.dataset.i; if (st.done.has(st.cur) || st.picked.includes(i) || st.built.length >= 2) return;
+        const c = nm[i]; st.built.push(st.built.length === 0 ? c.toUpperCase() : c.toLowerCase()); st.picked.push(i);
+        tiles(); slots();
+      }));
+    }
+    function choose(s) {
+      st.cur = s; st.built = []; st.picked = []; st.tries = 0;
+      $$('#deck .ec').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.s === s)));
+      const [sym, ko, nm, lang] = info(s);
+      big.draw = EL.SAMPLE[s];
+      $('#bKo').textContent = ko; $('#bLang').textContent = `${lang} 이름 · ${nm}`;
+      tiles();
+      if (st.done.has(s)) { st.built = sym.split(''); slots(); msg('결과 · 이미 만들었어요', `${ko}의 원소 기호는 <b>${sym}</b>예요. 다른 카드를 골라 봐요.`, 'ok'); }
+      else { slots(); msg('결과', `<b>${nm}</b>에서 글자를 눌러 ${ko}의 원소 기호를 만들어요.`); }
+    }
+    $('#bClear').addEventListener('click', () => { if (!st.cur || st.done.has(st.cur)) return; st.built = []; st.picked = []; tiles(); slots(); });
+    $('#bCheck').addEventListener('click', () => {
+      const [sym, ko, nm, lang] = info(st.cur), mine = st.built.join('');
+      if (mine === sym) {
+        st.done.add(st.cur); count();
+        const card = $(`#deck .ec[data-s="${st.cur}"]`); card.classList.add('done'); const b = $('b', card); b.textContent = sym; b.classList.remove('q');
+        let why;
+        if (sym.length === 1) why = `${lang} 이름 ${nm}의 <b>첫 글자</b>를 대문자로 썼어요.`;
+        else if (PAIR[sym]) why = `첫 글자가 같은 ${EL.symName(PAIR[sym])}(${PAIR[sym]})가 있어서, <b>중간 글자</b> ${sym[1]}를 소문자로 붙였어요.`;
+        else why = `첫 글자가 같은 원소가 있어서, <b>중간 글자</b> ${sym[1]}를 소문자로 붙였어요.`;
+        if (lang === '라틴어') why += ` 영어가 아니라 <b>라틴어 이름</b>에서 왔어요.`;
+        msg(st.done.size === 18 ? '결과 · 18장을 모두 만들었어요' : `결과 · ${ko} ${sym}`, why + (st.done.size === 18 ? ' 빙고 게임에서 써 봐요.' : ' 다른 카드를 골라요.'), 'ok');
+        tiles(); slots();
+        return;
+      }
+      st.tries++;
+      let m;
+      if (mine[0] !== sym[0]) m = '원소 기호는 이름의 <b>첫 글자</b>부터 시작해요. 지우고 첫 글자부터 다시 골라요.';
+      else if (mine.length < sym.length) m = `첫 글자가 같은 원소가 있어요${PAIR[sym] ? `(${EL.symName(PAIR[sym])} ${PAIR[sym]})` : ''}. <b>중간 글자</b>를 하나 더 골라요.`;
+      else if (mine.length > sym.length) m = '이 원소는 <b>첫 글자 하나</b>만 써요. 지우고 다시 골라요.';
+      else m = '그 글자가 아니에요. 지우고 중간 글자를 다시 골라요.';
+      if (st.tries >= 2 && sym.length === 2) { const idx = nm.toLowerCase().indexOf(sym[1].toLowerCase(), 1); const t = $(`#tiles button[data-i="${idx}"]`); t && t.classList.add('hint'); m += ' 파란 테두리 글자를 봐요.'; }
+      msg('다시 해 봐요', m, 'no');
+    });
+    $('#bReset').addEventListener('click', () => { st.done.clear(); $$('#deck .ec').forEach((b) => { b.classList.remove('done'); const x = $('b', b); x.textContent = '?'; x.classList.add('q'); }); count(); choose('H'); });
+    count(); choose(Q.get('el') || 'H');
+    if (Q.get('all') === '1') EL.SYM.forEach(([s]) => { choose(s); st.built = s.split(''); $('#bCheck').disabled = false; $('#bCheck').click(); });
+    if (Q.get('all') === '1' && Q.get('el')) choose(Q.get('el'));
+    if (Q.get('build')) { Q.get('build').split('').forEach((c) => { const nm = info(st.cur)[2]; const i = nm.toLowerCase().indexOf(c.toLowerCase(), st.picked.length ? 1 : 0); const t = $(`#tiles button[data-i="${i}"]`); t && t.click(); }); }
+    window.SM.okUI = true;
+  } catch (err) { window.SM_err('원소 기호 만들기', err); }
+})();
+</script>
+<script>
+/* ===== 블록 2: 화학식 읽기 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S, Q = S.Q;
+    let F = null;
+    const CH = ['H', 'C', 'N', 'O', 'Na', 'Cl', 'S', 'Fe'];
+    const st = { f: null, pick: new Set(), ok: new Set() };
+    $('#fchips').innerHTML = EL.FORMULA.map((f) => `<button type="button" data-f="${f.id}" aria-pressed="false"><b>${EL.fhtml(f)}</b><span>${f.name}</span></button>`).join('');
+    $('#echips').innerHTML = CH.map((e) => `<button type="button" data-e="${e}" aria-pressed="false">${EL.dot(e)}${EL.symName(e)} ${e}</button>`).join('');
+    function msg(t, m, cls = '') { $('#res2').className = 'fbk ' + cls; $('#res2T').textContent = t; $('#res2M').innerHTML = m; }
+    function selF(id) {
+      st.f = EL.FORMULA.find((x) => x.id === id); st.pick.clear();
+      F.set(id);
+      $$('#fchips button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.f === id)));
+      $$('#echips button').forEach((b) => { b.setAttribute('aria-pressed', 'false'); b.classList.remove('good', 'bad'); });
+      $('#bFchk').disabled = true;
+      msg('결과', `<b>${EL.fhtml(st.f)}</b> 속 원소 기호를 보고, ${st.f.name}을(를) 이루는 원소를 모두 골라요.`);
+    }
+    function init() {
+      if (F) return; F = EL.formula($('#fcv'));
+      $$('#fchips button').forEach((b) => b.addEventListener('click', () => selF(b.dataset.f)));
+      $$('#echips button').forEach((b) => b.addEventListener('click', () => {
+        if (!st.f) return; const e = b.dataset.e;
+        st.pick.has(e) ? st.pick.delete(e) : st.pick.add(e);
+        b.setAttribute('aria-pressed', String(st.pick.has(e))); $$('#echips button').forEach((x) => x.classList.remove('good', 'bad'));
+        $('#bFchk').disabled = !st.pick.size;
+      }));
+      $('#bFchk').addEventListener('click', () => {
+        const ans = new Set(st.f.els), pick = [...st.pick];
+        $$('#echips button').forEach((b) => { const e = b.dataset.e; if (st.pick.has(e)) b.classList.add(ans.has(e) ? 'good' : 'bad'); });
+        const ok = pick.length === ans.size && pick.every((e) => ans.has(e));
+        if (ok) {
+          st.ok.add(st.f.id); $(`#fchips [data-f="${st.f.id}"]`).classList.add('ok');
+          msg(`결과 · ${st.f.name} ${EL.fhtml(st.f)}`, `${st.f.els.map((e) => `<b>${EL.symName(e)}(${e})</b>`).join('와 ')}(으)로 이루어진 <b>화합물</b>이에요. 화학식만 봐도 성분을 알 수 있어요.${st.ok.size === 6 ? ' 6가지를 모두 읽었어요!' : ' 다른 물질도 골라 봐요.'}`, 'ok');
+        } else if (pick.some((e) => !ans.has(e))) msg('다시 골라 봐요', '빨간 원소는 이 화학식에 없는 원소 기호예요. 화학식 속 <b>대문자</b>를 찾아 세어 봐요.', 'no');
+        else msg('하나 더 있어요', '화학식 속 원소 기호를 모두 찾았나요? <b>대문자</b>로 시작하는 기호마다 원소가 하나씩이에요.', 'no');
+      });
+      selF(Q.get('f') || 'H2O');
+    }
+    function showAct(a) {
+      $$('#acts button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.a === a)));
+      $$('.act').forEach((e) => (e.hidden = e.dataset.a !== a));
+      if (a === 'fml') init();
+    }
+    $$('#acts button').forEach((b) => b.addEventListener('click', () => showAct(b.dataset.a)));
+    $$('#pt2 button').forEach((b) => b.addEventListener('click', () => { $$('#pt2 button').forEach((x) => x.setAttribute('aria-selected', String(x === b))); $$('.pane2').forEach((e) => (e.hidden = e.dataset.p !== b.dataset.p)); }));
+    showAct(Q.get('act') === 'fml' ? 'fml' : 'sym');
+    if (Q.get('fans') === '1' && st.f) { st.f.els.forEach((e) => $(`#echips [data-e="${e}"]`).click()); $('#bFchk').click(); }
+  } catch (err) { window.SM_err('화학식 읽기', err); }
+})();
+</script>
+</body>
+</html>
