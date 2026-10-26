@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>원소 – 물 분해 실험실</title>
+<script>
+/* 문제 알림: 코드에 오류가 나면 화면 아래에 빨간 상자로 알려 줘요 (선생님 확인용) */
+(function () {
+  function box() {
+    var b = document.getElementById('smErr');
+    if (!b && document.body) {
+      b = document.createElement('div'); b.id = 'smErr';
+      b.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;background:#fdecea;color:#8a1f17;border:2px solid #d9534f;border-radius:12px;padding:10px 14px;font:600 14px/1.5 sans-serif;white-space:pre-wrap';
+      document.body.appendChild(b);
+    }
+    return b;
+  }
+  window.SM_err = function (where, err) {
+    var msg = '[' + where + '] ' + (err && err.message ? err.message : String(err));
+    var show = function () { var b = box(); if (b) b.textContent += (b.textContent ? '\n' : '') + msg; };
+    if (document.body) show(); else document.addEventListener('DOMContentLoaded', show);
+  };
+  window.addEventListener('error', function (e) { window.SM_err('스크립트', { message: e.message + ' (줄 ' + e.lineno + ')' }); });
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      var S = window.SM || {};
+      if (!S.okUI) window.SM_err('실행 안 됨', { message: '안내·버튼 코드가 실행되지 않았어요. 파일이 끝(</html>)까지 들어 있는지 확인해 주세요.' });
+      if (document.getElementById('fail3d') && !S.ok3d) { var f = document.getElementById('fail3d'); if (f) f.classList.add('show'); window.SM_err('3D 그림', { message: '3D 그림을 불러오지 못했어요. 인터넷 연결(cdn.jsdelivr.net)을 확인하고 새로고침해 주세요.' }); }
+    }, 9000);
+  });
+})();
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+
+  :root{--bg:#edf3f8;--card:#fff;--ink:#14263b;--ink2:#34495e;--muted:#5a6b7e;--line:#dde6ee;--accent:#0e63b3;--accent-soft:#e3effb;
+    --fab:#4b3fb5;--fab-soft:#ecebfb;--ok:#1f9d5c;--no:#d9534f;
+    --shadow:0 1px 2px rgba(20,38,59,.06),0 8px 24px rgba(20,38,59,.07);--ease:cubic-bezier(.2,.8,.2,1)}
+  *{box-sizing:border-box}html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:"Pretendard",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  button{font:inherit;color:inherit}
+  .app{max-width:1320px;margin:0 auto;padding:14px 16px 28px;display:flex;flex-direction:column;gap:12px}
+  .eyebrow{display:inline-flex;font-size:13px;font-weight:700;color:var(--fab);background:var(--fab-soft);padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(21px,2.4vw,28px);margin:6px 0 2px;letter-spacing:-.02em;word-break:keep-all}
+  .sub{margin:0;color:var(--muted);font-size:15px;word-break:keep-all}
+  .card{background:var(--card);border-radius:20px;box-shadow:var(--shadow);border:1px solid rgba(20,38,59,.04)}
+  .pad{padding:14px 16px}
+  .stage{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(330px,1fr);gap:14px;align-items:start}
+  .viewer{position:sticky;top:10px}
+  .flow{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px}
+  .fs{min-height:54px;border:0;border-radius:12px;background:#eef3f8;font-weight:800;font-size:13px;color:var(--muted);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.2;word-break:keep-all;padding:4px}
+  .fs b{font-size:15px}
+  .fs[aria-selected="true"]{background:var(--fab);color:#fff}
+  .fs.seen:not([aria-selected="true"]){background:#e5f5ec;color:#11703f}
+  .stepname{display:flex;align-items:center;gap:10px;margin:2px 0 6px}
+  .stepname .no{flex:none;width:40px;height:40px;border-radius:12px;background:var(--fab);color:#fff;display:grid;place-items:center;font-weight:900;font-size:19px}
+  .stepname h2{margin:0;font-size:21px;letter-spacing:-.01em;word-break:keep-all}
+  .stepname small{display:block;font-size:13px;color:var(--muted);font-weight:700}
+  .what{font-size:16px;line-height:1.75;color:var(--ink2);margin:0 0 10px;word-break:keep-all}
+  .phase{display:grid;gap:6px;margin:8px 0}
+  .ph{display:grid;grid-template-columns:28px 1fr;gap:8px;align-items:start;padding:7px 10px;border-radius:12px;background:#f7fafc;font-size:15px;line-height:1.55;color:var(--muted);word-break:keep-all;transition:background .3s,color .3s}
+  .ph i{font-style:normal;width:26px;height:26px;border-radius:8px;background:#dfe6ee;display:grid;place-items:center;font-weight:900;font-size:13px;color:#607285}
+  .ph.on{background:var(--fab-soft);color:var(--ink)}.ph.on i{background:var(--fab);color:#fff}
+  .ph.done{color:var(--ink2)}.ph.done i{background:#b9b2ee;color:#fff}
+  .box{border-radius:14px;padding:10px 12px;margin-top:8px;font-size:14.5px;line-height:1.65;word-break:keep-all}
+  .box b.t{display:block;font-size:13px;margin-bottom:2px}
+  .an{background:#fff8e6;border:1px solid #f3dc9a;color:#5b4300}
+  .fact{background:#eef6ff;border:1px solid #cfe2f6;color:#1d3f66}
+  .lnk{background:#ecf8f1;border:1px solid #c6e8d4;color:#0f5a36}
+  .src{display:block;font-size:12px;color:var(--muted);margin-top:3px}
+  .acts{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 0}
+  .btn{min-height:50px;border:0;border-radius:14px;padding:0 16px;font-weight:800;font-size:15.5px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;justify-content:center;word-break:keep-all}
+  .btn:active{transform:scale(.97)}
+  .btn.primary{background:var(--fab);color:#fff}.btn.ghost{background:#eef3f8;color:var(--ink2)}
+  .btn[aria-pressed="true"]{background:#14263b;color:#fff}
+  .btn:disabled{opacity:.4;cursor:default;transform:none}
+  .prog{height:6px;border-radius:3px;background:#e6edf4;margin-top:10px;overflow:hidden}
+  .prog i{display:block;height:100%;width:0;background:linear-gradient(90deg,#8a7ff0,var(--fab))}
+  .credit{text-align:center;font-size:13px;font-weight:700;color:#8495a8;letter-spacing:.02em;margin:6px 0 0}
+  /* ===== 3D 화면 공통 ===== */
+  :root{--Bc:#14a5d0;--Ic:#2fae4a;--Fc:#f0522a;--N:#d8433b;--S:#2f62c9;--P:#7d5ad6}
+  .viewer{position:relative;overflow:hidden;padding:0}
+  .gl-host{position:relative;width:100%;height:min(74vh,700px);min-height:380px;background:linear-gradient(#f6f9fc,#d6e3ef);touch-action:none}
+  .gl-host canvas.gl{display:block;width:100%;height:100%;outline:none}
+  .lbls{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+  .lb{position:absolute;left:0;top:0;white-space:nowrap;font-weight:800;font-size:14px;padding:3px 9px;border-radius:9px;background:rgba(255,255,255,.88);color:#34495e;box-shadow:0 2px 8px rgba(20,38,59,.14);will-change:transform}
+  .lb.small{font-size:12px;font-weight:700;color:#5a6b7e;background:rgba(255,255,255,.72);box-shadow:none}
+  .lb.B{background:var(--Bc);color:#fff}.lb.I{background:var(--Ic);color:#fff}.lb.F{background:var(--Fc);color:#fff;font-size:15px}
+  .lb.P{background:var(--P);color:#fff}
+  .lb.dim{opacity:.35}
+  .vt{position:absolute;display:flex;gap:6px;flex-wrap:wrap;z-index:3}
+  .vt.tl{left:10px;top:10px;max-width:calc(100% - 20px)}
+  .vt.tr{right:10px;top:10px;justify-content:flex-end}
+  .vt.bl{left:10px;bottom:10px;align-items:center}
+  .vb{min-height:44px;padding:0 12px;border-radius:12px;border:1px solid rgba(20,38,59,.12);background:rgba(255,255,255,.9);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);font-weight:800;font-size:14px;color:#34495e;cursor:pointer;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 10px rgba(20,38,59,.08)}
+  .vb:active{transform:scale(.96)}
+  .vb .dot{width:12px;height:12px;border-radius:50%;flex:none}
+  .vb[aria-pressed="false"]{opacity:.62}
+  .vb[aria-pressed="false"] .dot{background:#c2ccd6!important}
+  .vb.sel{background:#14263b;color:#fff;border-color:#14263b}
+  .hint{font-size:12.5px;font-weight:700;color:#5a6b7e;background:rgba(255,255,255,.78);border-radius:10px;padding:6px 10px;word-break:keep-all}
+  .inset{position:absolute;z-index:2;border-radius:18px;border:2px solid rgba(255,255,255,.95);box-shadow:0 10px 30px rgba(20,38,59,.22),inset 0 0 0 1px rgba(20,38,59,.08);pointer-events:none;display:none}
+  .inset.on{display:block}
+  .inset .it{position:absolute;left:8px;top:8px;font-size:12.5px;font-weight:900;color:#14263b;background:rgba(255,255,255,.9);border-radius:8px;padding:3px 8px}
+  .inset .ic{position:absolute;left:6px;right:6px;bottom:6px;display:flex;flex-wrap:wrap;gap:4px;justify-content:center}
+  .inset .ic span{font-size:11.5px;font-weight:800;color:#fff;border-radius:7px;padding:2px 7px;white-space:nowrap}
+  .fail3d{position:absolute;inset:0;display:none;place-items:center;text-align:center;padding:24px;font-size:16px;font-weight:700;color:#7a2a22;line-height:1.7;word-break:keep-all;background:#fff4f2}
+  .fail3d.show{display:grid}
+  .model{font-size:13px;color:var(--muted);text-align:right;margin:0;word-break:keep-all}
+  @media (max-width:900px){.gl-host{height:min(56vh,620px)}}
+  .zoombadge{position:absolute;right:10px;top:62px;z-index:3;font-size:13px;font-weight:800;color:#fff;background:rgba(75,63,181,.9);border-radius:10px;padding:6px 10px;display:none;word-break:keep-all;max-width:60%}
+  .zoombadge.on{display:block}
+  @media (max-width:900px){.stage{grid-template-columns:1fr}.viewer{position:relative;top:0}}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+  /* ===== 끓는점 차 분리 수업 공통 ===== */
+  :root{--fab:#0e63b3;--fab-soft:#e4f0fb}
+  .eyebrow{color:#0e63b3;background:#e4f0fb}
+  .prog i{background:#0e63b3}
+  .ph.done i{background:#8db8e3}
+  .fbk{border-radius:14px;padding:12px 14px;margin-top:10px;font-size:15px;line-height:1.65;word-break:keep-all;background:#f6f9fc;border:1px solid #dbe4ed;color:var(--ink2)}
+  .fbk.ok{background:#e9f3fd;border-color:#bcd7f2;color:#0b3f73}
+  .fbk.no{background:#fff4f2;border-color:#f3c2bb;color:#5e2a25}
+  .fbk b.t{display:block;font-size:13.5px;margin-bottom:2px}
+  [hidden]{display:none!important}
+  /* ===== 분리 그림 공통 ===== */
+  .scene{position:relative;width:100%;overflow:hidden;touch-action:manipulation;user-select:none;-webkit-user-select:none}
+  .scene canvas.wvc{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .olay{position:absolute;inset:0;pointer-events:none}
+  .ol{position:absolute;transform:translate(-50%,-50%);white-space:nowrap;font-weight:700;font-size:clamp(11.5px,1.3vw,14.5px);line-height:1.3;letter-spacing:-.01em}
+  .ol.tx{color:#34495e;background:rgba(255,255,255,.88);padding:1px 6px;border-radius:6px}
+  .ol.tx.m{color:#6b7c8f;background:transparent;padding:0}
+  .ol.la{transform:translate(-100%,-50%)}.ol.ra{transform:translate(0,-50%)}
+  .ol[hidden]{display:none}
+  .ol.tx.big{font-size:clamp(14px,1.7vw,18px);font-weight:900;background:transparent}
+  .ol.tx.cap{font-size:clamp(12.5px,1.45vw,16px);font-weight:700;color:#34495e;background:transparent}
+  .ol.tx.cap b{color:#0e63b3}
+  .ol.tx.cube{background:transparent;color:#fff;font-weight:800;text-shadow:0 1px 2px rgba(0,0,0,.35)}
+  .ol.tx.cube.dark{color:#14263b;text-shadow:none}
+  .ol.tx.nm{font-weight:800;color:#14263b;background:transparent;padding:0}
+  .ol.tx.nm.sol{color:#5a6b7e}
+  .ol.tx.dn{background:transparent;color:#34495e;padding:0}
+  .ol.tx.dn b{color:#0e63b3;font-weight:900}
+  .ol .blank{display:inline-block;width:4.2em;border-bottom:1.6px solid #8b9aab;vertical-align:-2px}
+  .ol.tx.grp{font-weight:900;color:#14263b;background:transparent;transform:translate(0,-50%);font-size:clamp(12.5px,1.4vw,15.5px)}
+  /* ===== 원소 수업 그림 이름표 ===== */
+  .ol.tx.la{transform:translate(-100%,-50%)}.ol.tx.ra{transform:translate(0,-50%)}
+  .ol.tx.gas b{color:#14263b;font-weight:900}
+  .ol.tx.say{background:#fff;color:#14263b;font-weight:800;border-radius:8px;padding:3px 9px;box-shadow:0 2px 10px rgba(20,38,59,.12)}
+  .ol.tx.say.big{font-size:clamp(13px,1.6vw,18px)}
+  .ol.tx.lz{background:rgba(255,255,255,.94);font-weight:800;color:#14263b;font-size:clamp(11px,1.25vw,14.5px)}
+  .pdot{display:inline-block;width:.8em;height:.8em;border-radius:50%;vertical-align:-.08em;margin:0 3px 0 1px}
+  .lg{display:inline-flex;align-items:center;gap:5px;font-weight:800;font-size:14px;color:#34495e;margin-right:10px;white-space:nowrap}
+  .lg i{width:14px;height:14px;border-radius:50%;flex:none}
+  .ol .u{font-size:.8em;font-weight:700;color:#6b7c8f;margin-left:6px}
+  .ol.tx.grp2{background:transparent;padding:0;font-size:clamp(13px,1.6vw,19px);color:#14263b}
+  .ol.tx.grp2 b{color:#0e63b3;font-weight:900}
+  .ol.tx.inm{background:transparent;padding:0;text-align:center;font-weight:800;color:#14263b;line-height:1.3;transform:translate(-50%,0);font-size:clamp(11.5px,1.35vw,15.5px)}
+  .ol.tx.inm.on{color:#0e63b3}
+  .ol.tx.inm .u2{display:block;font-size:.8em;font-weight:700;color:#6b7c8f}
+  .ol.tx.kd{background:#fff;border:1.5px solid #0e63b3;color:#0e63b3;font-weight:900;border-radius:8px;padding:0 8px;font-size:clamp(11px,1.2vw,13.5px)}
+  .ol.tx.ph2{background:transparent;text-align:center;color:#8a9bad;font-weight:800;line-height:1.5;white-space:normal;width:9em}
+  .ol.tx.lt{background:transparent;padding:0;transform:translate(0,-50%);font-size:clamp(17px,2.4vw,28px);color:#14263b}
+  .ol.tx.lgd2{background:transparent;padding:0;transform:translate(0,-50%);white-space:normal;max-width:52%}
+  .ol.tx.lgd2 .lg{font-size:clamp(12.5px,1.55vw,17px)}
+  .ol.tx.lgd2 .lg i{width:1em;height:1em}
+  .ol.tx.lk{background:transparent;padding:0;transform:translate(0,-50%);color:#5a6b7e;font-size:clamp(12.5px,1.55vw,17px)}
+  .ol.tx.lk.dn{color:#14263b}.ol.tx.lk b{color:#0e63b3}
+  /* ===== 한 화면 배치 (2026-10-15: 태블릿 한 화면 안에서 실험과 결과가 끝나도록) ===== */
+  .app{padding:10px 16px 12px;gap:10px}
+  header.top{display:flex;align-items:center;justify-content:space-between;gap:10px 16px;flex-wrap:wrap}
+  header.top .ttl{min-width:0}
+  header.top .ttl .eyebrow{margin-right:6px;vertical-align:4px}
+  header.top h1{display:inline;font-size:clamp(20px,2.1vw,25px);margin:0}
+  header.top .sub{margin-top:3px;font-size:14.5px}
+  .stage{align-items:stretch}
+  .stage > .viewer{position:relative;top:0;display:flex;flex-direction:column;justify-content:center}
+  .ptabs{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;background:#eef3f8;border-radius:14px;padding:4px;margin-bottom:12px}
+  .ptabs button{min-height:44px;border:0;border-radius:11px;background:transparent;font-weight:800;font-size:14.5px;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
+  .ptabs button[aria-selected="true"]{background:#fff;color:var(--fab);box-shadow:0 1px 3px rgba(20,38,59,.14)}
+  .ptabs button small{font-size:12px;font-weight:800;color:#0b3f73;background:#dcebfa;border-radius:8px;padding:1px 6px}
+  .ptabs.big{min-width:min(100%,380px)}
+  .ptabs.big button{min-height:48px;font-size:15.5px}
+  .pane[hidden]{display:none!important}
+  .mnote{font-size:12.5px;color:var(--muted);line-height:1.6;margin:10px 0 0;word-break:keep-all}
+  .viewer{background:#fff}
+  .vctl{display:flex;flex-wrap:wrap;gap:8px;padding:10px 12px;background:#f3f6f9;border-top:1px solid var(--line);align-items:center}
+  .vctl .vb{box-shadow:none}
+  .vctl .vb[aria-pressed="true"]{background:#14263b;color:#fff;border-color:#14263b;opacity:1}
+  .vctl .vb[aria-pressed="false"]{opacity:1}
+  .vctl .sp{flex:1}
+  .lbl{font-size:13px;font-weight:900;color:var(--fab);margin:12px 0 6px;word-break:keep-all}
+  .lbl:first-child,.pane > .lbl:first-child{margin-top:0}
+  .what{font-size:15.5px;line-height:1.7;color:var(--ink2);margin:0 0 8px;word-break:keep-all}
+  .ph.on{background:#eef5fc}.ph.on i{background:var(--fab)}
+  .viewer > .scene.grow{flex:1 1 auto;min-height:300px;aspect-ratio:auto!important}
+  /* 화면 높이를 꽉 채우기: 그림 칸이 남는 높이를 차지 */
+  html,body{height:100%}
+  .app{height:100vh;height:100dvh;max-height:1400px}
+  .stage{flex:1 1 auto;min-height:0}
+  .stage > .card.pad{overflow:auto}
+  @media (max-width:900px){.stage{grid-template-rows:minmax(0,1fr) auto}}
+  /* ===== 이 페이지 전용 ===== */
+  #lab{aspect-ratio:1000/800}
+  .steps{display:grid;gap:5px;margin:0 0 10px}
+  .steps .ph{padding:6px 10px;font-size:14.5px;line-height:1.5}
+  .steps .ph.done{color:var(--ink2)}.steps .ph.done i{background:#8db8e3;color:#fff}
+  .ctl{display:grid;gap:8px}
+  .ctl .btn{width:100%}
+  .two2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .pred{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .pred button,.qa3 button{min-height:48px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:14.5px;cursor:pointer;word-break:keep-all;line-height:1.35;padding:4px 8px}
+  .pred button[aria-pressed="true"],.qa3 button[aria-pressed="true"]{border-color:var(--fab);background:#e9f3fd;color:#0b3f73}
+  .seglbl{font-size:13px;font-weight:800;color:var(--muted);margin:2px 0 -2px}
+  .qa{margin-bottom:12px}
+  .qa p{margin:0 0 6px;font-weight:800;font-size:15px;line-height:1.5;word-break:keep-all}
+  .qa3{display:grid;gap:6px}
+  .qa3 button{text-align:left}
+  .qa3 button.good{border-color:var(--ok);background:#e8f7ef;color:#11703f}
+  .qa3 button.bad{border-color:#e7a29b;background:#fff4f2;color:#9b3a32}
+  .tag2{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 8px}
+  .tag2 span{font-size:13.5px;font-weight:800;color:var(--ink2);background:#f2f6fa;border:1px solid var(--line);border-radius:10px;padding:4px 9px}
+  .ph b.k{color:#0e63b3}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="ttl">
+      <span class="eyebrow">해 보기</span><h1>물 분해 실험실</h1>
+      <p class="sub">물에 전기를 흘려 (+)극과 (−)극 관에 모인 기체를 향불로 확인하고, 물을 이루는 입자의 종류를 알아봐요.</p>
+    </div>
+  </header>
+
+  <div class="stage">
+    <section class="card viewer">
+      <div class="scene grow" id="lab" role="img" aria-label="물이 든 수조에 관 두 개가 거꾸로 서 있고, 관 아래에는 전원 장치에 연결된 (+)극과 (−)극이 있다. 전원을 켜면 전극에서 기체 방울이 올라와 관 위쪽에 모이고, (−)극 관에 더 많이 모인다. (+)극 관의 기체에 꺼져가는 향불을 대면 향불이 살아나고, (−)극 관의 기체에 향불을 대면 퍽 소리를 내며 탄다."></div>
+      <div class="vctl">
+        <span class="hint" id="hint">전원을 켜면 전극에서 기체 방울이 올라와요</span>
+        <span class="sp"></span>
+        <button class="vb" type="button" id="bReset">처음부터</button>
+      </div>
+    </section>
+
+    <section class="card pad">
+      <div class="ptabs" role="tablist" id="pt">
+        <button type="button" role="tab" data-p="lab" aria-selected="true">실험하기</button>
+        <button type="button" role="tab" data-p="rec" aria-selected="false">정리하기</button>
+        <button type="button" role="tab" data-p="why" aria-selected="false">왜 그럴까?</button>
+      </div>
+      <div class="pane" data-p="lab">
+        <div class="steps" id="steps">
+          <div class="ph" data-s="1"><i>1</i><span>예측하고, 전원을 켜서 두 관에 기체를 모아요.</span></div>
+          <div class="ph" data-s="2"><i>2</i><span>(+)극 관의 기체에 <b>꺼져가는 향불</b>을 대요.</span></div>
+          <div class="ph" data-s="3"><i>3</i><span>(−)극 관의 기체에 <b>향불</b>을 대요.</span></div>
+          <div class="ph" data-s="4"><i>4</i><span>입자 돋보기로 물과 두 기체 속을 봐요.</span></div>
+        </div>
+        <div class="ctl" id="ctl"></div>
+        <div class="fbk" id="res"><b class="t" id="resT">결과</b><span id="resM">먼저 예측을 골라요.</span></div>
+      </div>
+      <div class="pane" data-p="rec" hidden>
+        <div class="qa"><p>1. 두 관에 모인 기체는 물과 같은 물질일까?</p><div class="qa3" id="qA"></div></div>
+        <div class="qa"><p>그렇게 생각한 까닭은?</p><div class="qa3" id="qB"></div></div>
+        <div class="qa"><p>2. 물은 한 종류의 입자로 이루어져 있을까?</p><div class="qa3" id="qC"></div></div>
+        <div class="fbk" id="res2"><b class="t" id="res2T">결과</b><span id="res2M">실험을 하지 않았어도 생각해서 골라 볼 수 있어요.</span></div>
+      </div>
+      <div class="pane" data-p="why" hidden>
+        <div class="phase">
+          <div class="ph on"><i>1</i><span>물에 전기를 흘려 주면 (+)극과 (−)극에서 기체가 생겨 관 위쪽에 모여요.</span></div>
+          <div class="ph on"><i>2</i><span>(+)극 기체는 꺼져가는 향불을 살려요. 이 기체는 <b>산소</b>예요. (−)극 기체는 향불을 대면 '퍽' 소리를 내며 타요. 이 기체는 <b>수소</b>예요.</span></div>
+          <div class="ph on"><i>3</i><span>물은 불을 살리지도, 타지도 않아요. 두 기체는 <b>물과 다른 물질</b>이에요. 물이 수소와 산소로 나누어진 거예요.</span></div>
+          <div class="ph on"><i>4</i><span>수소나 산소처럼 <b>한 종류의 입자</b>로 이루어진 물질을 <b class="k">원소</b>, 물처럼 <b>두 종류 이상의 입자</b>가 모여 만들어진 물질을 <b class="k">화합물</b>이라고 해요.</span></div>
+        </div>
+      </div>
+      <p class="mnote">기체가 모이는 빠르기와 방울 수, 입자의 수와 색은 보기 좋게 정한 모형이에요.</p>
+    </section>
+  </div>
+</div>
+<script>
+window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
+  reduce: !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches), Q: new URLSearchParams(location.search) };
+</script>
+<script>
+/* ===== 원소 수업 그림 도구: 바탕 (캔버스 2D) =====
+   EL.surface / EL.overlay / EL.addLoop / EL.tweens   캔버스·HTML 이름표·반복·짧은 움직임
+   EL.ball(ctx, x, y, r, el)                         입자 하나(매트한 공, 빛은 왼쪽 위)
+   EL.swarm(spec)                                     돋보기 속 입자 무리(기체·액체·고체)
+   EL.lens(ctx, x, y, R, swarm, dt)                   둥근 돋보기에 입자 무리 그리기
+   그림 원칙(2026-10-26 선생님 요청 "다채롭고 화려하게"): 화면 틀은 라스 파랑 하나, 그림 속 물질은 실제 색을 살린다.
+   입자 색은 널리 쓰는 모형 색(수소 흰색, 산소 빨강, 탄소 검정, 질소 파랑, 염소 초록, 나트륨 보라). 입자 수·배치는 보기 좋게 정한 모형. */
+window.EL = (() => {
+  const TAU = Math.PI * 2;
+  const BLUE = '#0e63b3';
+  const reduce = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, k) => a + (b - a) * k;
+  const ease = (k) => (k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2);
+  const easeOut = (k) => 1 - Math.pow(1 - k, 3);
+  const sstep = (a, b, x) => { const k = clamp((x - a) / (b - a), 0, 1); return k * k * (3 - 2 * k); };
+  function rng(seed) { let s = seed >>> 0; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); }
+
+  /* ---- 캔버스 · 이름표 · 반복 ---- */
+  // crop: [x, y, w, h] 그림 좌표에서 칸에 맞춰 보일 영역(없으면 전체)
+  function surface(host, W, H, crop) {
+    const cv = document.createElement('canvas'); cv.className = 'wvc'; host.appendChild(cv);
+    const box = document.createElement('div'); box.className = 'olay'; host.appendChild(box);
+    const ctx = cv.getContext('2d'); const m = { k: 1, ox: 0, oy: 0, dpr: 1 };
+    const S = { cv, ctx, box, m, W, H, crop: crop || null };
+    function fit() {
+      const r = host.getBoundingClientRect(); if (r.width < 2 || r.height < 2) return;
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.height * dpr);
+      const [cx, cy, cw, ch] = S.crop || [0, 0, W, H];
+      m.k = Math.min(r.width / cw, r.height / ch);
+      m.ox = (r.width - cw * m.k) / 2 - cx * m.k; m.oy = (r.height - ch * m.k) / 2 - cy * m.k; m.dpr = dpr;
+      Object.assign(box.style, { left: m.ox + 'px', top: m.oy + 'px', width: W * m.k + 'px', height: H * m.k + 'px', right: 'auto', bottom: 'auto' });
+      box.style.setProperty('--k', m.k);
+      S.onfit && S.onfit();
+    }
+    S.fit = fit;
+    S.setCrop = (c) => { S.crop = c; fit(); };
+    fit();
+    if (window.ResizeObserver) new ResizeObserver(fit).observe(host); else window.addEventListener('resize', fit);
+    S.begin = () => { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, cv.width, cv.height); ctx.setTransform(m.dpr * m.k, 0, 0, m.dpr * m.k, m.dpr * m.ox, m.dpr * m.oy); };
+    S.full = () => [-m.ox / m.k, -m.oy / m.k, cv.width / m.dpr / m.k, cv.height / m.dpr / m.k];
+    S.toLocal = (e) => { const r = cv.getBoundingClientRect(); return [(e.clientX - r.left - m.ox) / m.k, (e.clientY - r.top - m.oy) / m.k]; };
+    return S;
+  }
+  function overlay(S) {
+    const box = S.box, map = {};
+    return {
+      put(id, x, y, html, cls = '') {
+        let e = map[id]; if (!e) { e = document.createElement('span'); box.appendChild(e); map[id] = e; }
+        const c = 'ol ' + cls; if (e.className !== c) e.className = c;
+        if (e._h !== html) { e.innerHTML = html; e._h = html; }
+        e.style.left = (x / S.W * 100).toFixed(2) + '%'; e.style.top = (y / S.H * 100).toFixed(2) + '%'; e.hidden = false; return e;
+      },
+      hide(id) { if (map[id]) map[id].hidden = true; },
+      hideAll() { Object.keys(map).forEach((k) => (map[k].hidden = true)); },
+      el(id) { return map[id]; },
+    };
+  }
+  const loops = new Set();
+  let last = 0;
+  function tick(now) {
+    const dt = Math.min(0.05, last ? (now - last) / 1000 : 0); last = now;
+    loops.forEach((L) => {
+      try {
+        if (L.host.offsetParent === null && !L.always) return;
+        const r = L.host.getBoundingClientRect();
+        if (r.bottom > -50 && r.top < innerHeight + 50) L.fn(dt);
+      } catch (e) { loops.delete(L); (window.SM_err || window.RD_err || window.SW_err || console.error)('원소 그림', e); }
+    });
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+  const addLoop = (host, fn) => { const L = { host, fn }; loops.add(L); return L; };
+  function tweens() {
+    let list = [];
+    return {
+      add(dur, fn, done) { const t = { dur: Math.max(0.001, reduce ? 0.001 : dur), t: 0, fn, done }; list.push(t); return t; },
+      step(dt) { const cur = list; list = []; cur.forEach((t) => { t.t += dt; const k = Math.min(1, t.t / t.dur); t.fn(k); if (k < 1) list.push(t); else if (t.done) t.done(); }); },
+      clear() { list = []; },
+      get busy() { return list.length > 0; },
+    };
+  }
+
+  /* ---- 그리기 조각 ---- */
+  function rr(ctx, x, y, w, h, r) {
+    r = Math.min(r, w / 2, h / 2);
+    ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+  }
+  function white(S, col = '#fff') { const [fx, fy, fw, fh] = S.full(); S.ctx.fillStyle = col; S.ctx.fillRect(fx, fy, fw, fh); }
+  function desk(S, y) {
+    const ctx = S.ctx, [fx, , fw, fh] = S.full();
+    const g = ctx.createLinearGradient(0, y, 0, y + 90); g.addColorStop(0, '#e9eef4'); g.addColorStop(1, '#f7f9fb');
+    ctx.fillStyle = g; ctx.fillRect(fx, y, fw, fh); ctx.fillStyle = '#d5dee7'; ctx.fillRect(fx, y, fw, 1.2);
+  }
+  function contact(ctx, x, y, w, a = 0.18, sq = 0.16) {
+    const g = ctx.createRadialGradient(x, y, 1, x, y, w / 2);
+    g.addColorStop(0, `rgba(20,38,59,${a})`); g.addColorStop(1, 'rgba(20,38,59,0)');
+    ctx.save(); ctx.translate(x, y); ctx.scale(1, sq); ctx.translate(-x, -y);
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, w / 2, 0, TAU); ctx.fill(); ctx.restore();
+  }
+  // 색 섞기: '#rrggbb' → 밝게(+)/어둡게(−)
+  function shade(hex, k) {
+    const n = parseInt(hex.slice(1), 16); let r = n >> 16, g = (n >> 8) & 255, b = n & 255;
+    if (k >= 0) { r += (255 - r) * k; g += (255 - g) * k; b += (255 - b) * k; } else { r *= 1 + k; g *= 1 + k; b *= 1 + k; }
+    return `rgb(${Math.round(r)},${Math.round(g)},${Math.round(b)})`;
+  }
+  const rgba = (hex, a) => { const n = parseInt(hex.slice(1), 16); return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${a})`; };
+
+  /* ---- 입자 ---- */
+  // 크기 s: 산소를 1로 본 그림 속 크기(모형)
+  const PT = {
+    H: { c: '#f2f4f6', s: 0.66, name: '수소', edge: '#9fabb8' },
+    He: { c: '#56c6dc', s: 0.6, name: '헬륨' },
+    C: { c: '#3a4049', s: 0.95, name: '탄소' },
+    N: { c: '#3f72d9', s: 0.95, name: '질소' },
+    O: { c: '#e2473d', s: 0.9, name: '산소' },
+    Na: { c: '#9b63db', s: 1.15, name: '나트륨' },
+    Cl: { c: '#3fb35a', s: 1.1, name: '염소' },
+    Si: { c: '#d39b4c', s: 1.1, name: '규소' },
+    Al: { c: '#a9b5c2', s: 1.05, name: '알루미늄' },
+    Cu: { c: '#d27536', s: 1.0, name: '구리' },
+    S: { c: '#e8c337', s: 1.05, name: '황' },
+    Fe: { c: '#7d6b62', s: 1.0, name: '철' },
+  };
+  function ball(ctx, x, y, r, el, a = 1) {
+    const p = PT[el] || { c: el };
+    const c = p.c;
+    const g = ctx.createRadialGradient(x - r * 0.38, y - r * 0.42, r * 0.08, x, y, r * 1.02);
+    g.addColorStop(0, shade(c, 0.42)); g.addColorStop(0.55, c); g.addColorStop(1, shade(c, -0.32));
+    ctx.globalAlpha = a;
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fill();
+    ctx.strokeStyle = p.edge ? rgba('#5f6e7e', 0.55) : rgba('#14263b', 0.22); ctx.lineWidth = Math.max(0.6, r * 0.07); ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+  // 묶음 모양(입자 모형): [원소, x, y, z] 단위는 산소 반지름
+  const UNIT = {
+    H2O: [['O', 0, 0, 0], ['H', -0.78, 0.6, 0.3], ['H', 0.78, 0.6, 0.3]],
+    H2: [['H', -0.36, 0, 0], ['H', 0.36, 0, 0.1]],
+    O2: [['O', -0.42, 0, 0], ['O', 0.42, 0, 0.1]],
+    He: [['He', 0, 0, 0]],
+    CO2: [['C', 0, 0, 0], ['O', -0.95, 0, 0.1], ['O', 0.95, 0, 0.1]],
+    CO: [['C', -0.45, 0, 0], ['O', 0.5, 0, 0.1]],
+    CH4: [['C', 0, 0, 0], ['H', -0.72, -0.5, 0.3], ['H', 0.72, -0.5, 0.3], ['H', -0.45, 0.72, -0.3], ['H', 0.5, 0.7, 0.4]],
+    NH3: [['N', 0, -0.1, 0], ['H', -0.78, 0.45, 0.3], ['H', 0.78, 0.45, 0.3], ['H', 0, 0.8, 0.5]],
+  };
+  function unit(ctx, x, y, R, u, ang = 0, a = 1) {
+    const list = (typeof u === 'string' ? UNIT[u] : u).map(([e, dx, dy, z]) => {
+      const c = Math.cos(ang), s = Math.sin(ang);
+      return { e, x: x + (dx * c - dy * s) * R, y: y + (dx * s + dy * c) * R, z: z || 0 };
+    }).sort((p, q) => p.z - q.z);
+    list.forEach((p) => ball(ctx, p.x, p.y, R * (PT[p.e] ? PT[p.e].s : 1), p.e, a));
+  }
+
+  /* ---- 돋보기 속 입자 무리 ----
+     spec: { state:'gas'|'liquid'|'solid', unit:'H2O'|…|[[…]], n, r(입자 반지름, 돋보기 반지름 1 기준), speed,
+             lattice: 'square'|'hex', mix:[원소…](격자 칸마다 돌아가며), chains:[[원소…]…] } */
+  function swarm(spec) {
+    const R = rng(spec.seed || 7), S = { spec, list: [], t: 0 };
+    const r = spec.r || 0.085;
+    if (spec.state === 'solid') {
+      const step = r * (spec.gap || 2.15), rows = [];
+      for (let yy = -1 + step / 2; yy < 1; yy += step * (spec.lattice === 'hex' ? 0.87 : 1)) rows.push(yy);
+      rows.forEach((yy, ri) => {
+        const off = spec.lattice === 'hex' && ri % 2 ? step / 2 : 0;
+        for (let xx = -1 + step / 2 + off - step; xx < 1 + step; xx += step) {
+          if (xx * xx + yy * yy > 1.3) continue;
+          const ci = Math.round((xx + 2) / step) + ri;
+          const el = spec.mix ? spec.mix[ci % spec.mix.length] : null;
+          const jx = spec.jitter ? (R() - 0.5) * spec.jitter * step : 0, jy = spec.jitter ? (R() - 0.5) * spec.jitter * step : 0;
+          S.list.push({ x: xx + jx, y: yy + jy, hx: xx + jx, hy: yy + jy, ph: R() * TAU, u: el ? [[el, 0, 0, 0]] : (spec.unit || 'O2'), a: spec.rot ? R() * TAU : 0 });
+        }
+      });
+    } else if (spec.chains) {
+      // 긴 사슬(플라스틱·비누): 사슬 여러 개가 엉켜 있음
+      spec.chains.forEach((ch, k) => {
+        let x = -0.85 + R() * 0.3, y = -0.75 + k * (1.5 / spec.chains.length) + R() * 0.1, d = (R() - 0.5) * 0.6;
+        const pts = [];
+        ch.forEach((el, i) => { pts.push({ el, x, y, ox: 0, oy: 0 }); d += (R() - 0.5) * 0.9; x += Math.cos(d) * r * 1.55; y += Math.sin(d) * r * 1.2; if (x > 0.85) d = Math.PI - d; });
+        S.list.push({ chain: pts, ph: R() * TAU });
+      });
+    } else {
+      const n = spec.n || 12; let tries = 0;
+      while (S.list.length < n && tries++ < 4000) {
+        const a = R() * TAU, d = Math.sqrt(R()) * 0.86, x = Math.cos(a) * d, y = Math.sin(a) * d;
+        const md = spec.state === 'gas' ? r * 4 : r * 2.6;
+        if (S.list.some((p) => (p.x - x) ** 2 + (p.y - y) ** 2 < md * md)) continue;
+        const sp = (spec.speed || (spec.state === 'gas' ? 0.42 : 0.06)) * (0.6 + R() * 0.8), va = R() * TAU;
+        S.list.push({ x, y, vx: Math.cos(va) * sp, vy: Math.sin(va) * sp, a: R() * TAU, va: (R() - 0.5) * (spec.state === 'gas' ? 2.4 : 0.8), ph: R() * TAU });
+      }
+    }
+    S.step = (dt) => {
+      S.t += dt; const st = spec.state;
+      if (st === 'solid') { S.list.forEach((p) => { const w = r * 0.07; p.x = p.hx + Math.sin(S.t * 9 + p.ph) * w; p.y = p.hy + Math.cos(S.t * 8 + p.ph * 1.3) * w; }); return; }
+      if (spec.chains) return;
+      S.list.forEach((p) => {
+        if (st === 'liquid') { p.vx += (Math.random() - 0.5) * dt * 0.5; p.vy += (Math.random() - 0.5) * dt * 0.5; const sp = Math.hypot(p.vx, p.vy), mx = spec.speed || 0.08; if (sp > mx) { p.vx *= mx / sp; p.vy *= mx / sp; } }
+        p.x += p.vx * dt; p.y += p.vy * dt; p.a += p.va * dt;
+        const d = Math.hypot(p.x, p.y), lim = 0.9 - r;
+        if (d > lim) { const nx = p.x / d, ny = p.y / d, dot = p.vx * nx + p.vy * ny; if (dot > 0) { p.vx -= 2 * dot * nx; p.vy -= 2 * dot * ny; } p.x = nx * lim; p.y = ny * lim; }
+      });
+      if (st === 'liquid') {
+        const md = r * 2.5;
+        for (let i = 0; i < S.list.length; i++) for (let j = i + 1; j < S.list.length; j++) {
+          const p = S.list[i], q = S.list[j], dx = q.x - p.x, dy = q.y - p.y, d = Math.hypot(dx, dy);
+          if (d > 0 && d < md) { const k = (md - d) / d * 0.5; p.x -= dx * k; p.y -= dy * k; q.x += dx * k; q.y += dy * k; }
+        }
+      }
+    };
+    S.draw = (ctx, cx, cy, Rl) => {
+      const rr2 = r * Rl;
+      if (spec.chains) {
+        S.list.forEach((c) => {
+          const pts = c.chain;
+          ctx.strokeStyle = 'rgba(20,38,59,.18)'; ctx.lineWidth = rr2 * 0.5; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+          ctx.beginPath(); pts.forEach((p, i) => { const w = Math.sin(S.t * 2 + c.ph + i) * 0.006; const X = cx + (p.x + w) * Rl, Y = cy + (p.y - w) * Rl; i ? ctx.lineTo(X, Y) : ctx.moveTo(X, Y); }); ctx.stroke();
+          pts.forEach((p, i) => { const w = Math.sin(S.t * 2 + c.ph + i) * 0.006; ball(ctx, cx + (p.x + w) * Rl, cy + (p.y - w) * Rl, rr2 * (PT[p.el] ? PT[p.el].s : 1), p.el); });
+        });
+        return;
+      }
+      const list = S.list.slice().sort((p, q) => p.y - q.y);
+      list.forEach((p) => unit(ctx, cx + p.x * Rl, cy + p.y * Rl, rr2, p.u || spec.unit, p.a || 0));
+    };
+    return S;
+  }
+  // 둥근 돋보기: 테 두께 · 그림자 · 흰 속
+  function lens(ctx, x, y, R, sw, o = {}) {
+    ctx.save();
+    contact(ctx, x, y + R * 0.98, R * 1.7, 0.16, 0.2);
+    ctx.fillStyle = o.bg || '#fbfdff'; ctx.beginPath(); ctx.arc(x, y, R, 0, TAU); ctx.fill();
+    if (o.tint) { const g = ctx.createRadialGradient(x, y - R * 0.3, R * 0.1, x, y, R); g.addColorStop(0, rgba(o.tint, 0.05)); g.addColorStop(1, rgba(o.tint, 0.2)); ctx.fillStyle = g; ctx.fill(); }
+    ctx.beginPath(); ctx.arc(x, y, R - 1, 0, TAU); ctx.clip();
+    sw && sw.draw(ctx, x, y, R);
+    ctx.restore();
+    const g = ctx.createLinearGradient(x, y - R, x, y + R); g.addColorStop(0, '#e8edf2'); g.addColorStop(1, '#a9b6c3');
+    ctx.strokeStyle = g; ctx.lineWidth = Math.max(5, R * 0.075); ctx.beginPath(); ctx.arc(x, y, R + ctx.lineWidth / 2 - 1, 0, TAU); ctx.stroke();
+    if (o.on) { ctx.strokeStyle = BLUE; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(x, y, R + Math.max(5, R * 0.075) + 2, 0, TAU); ctx.stroke(); }
+  }
+  // 돋보기와 가리키는 곳을 잇는 얇은 선
+  function leader(ctx, x0, y0, x1, y1) {
+    ctx.save(); ctx.strokeStyle = 'rgba(90,107,126,.55)'; ctx.lineWidth = 1.2; ctx.setLineDash([4, 4]);
+    ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(90,107,126,.8)'; ctx.beginPath(); ctx.arc(x1, y1, 3, 0, TAU); ctx.fill(); ctx.restore();
+  }
+  // 범례 HTML: 원소 기호 목록 → 색 점 + 이름
+  const legend = (els) => els.map((e) => `<span class="lg"><i style="background:${PT[e].c}${e === 'H' ? ';box-shadow:inset 0 0 0 1px #9fabb8' : ''}"></i>${PT[e].name}</span>`).join('');
+  const dot = (e) => `<i class="pdot" style="background:${PT[e].c}${e === 'H' ? ';box-shadow:inset 0 0 0 1px #9fabb8' : ''}"></i>`;
+
+  return { TAU, BLUE, reduce, clamp, lerp, ease, easeOut, sstep, rng, surface, overlay, addLoop, tweens, rr, white, desk, contact, shade, rgba, PT, UNIT, ball, unit, swarm, lens, leader, legend, dot };
+})();
+</script>
+<script>
+/* ===== 원소 수업 그림 도구: 물 분해 장치 (해 보기 '물을 이루는 입자의 종류 알아보기') =====
+   EL.water(host, o)  수조 속에 세운 관 두 개 + 전극 + 전원 장치. 전원을 켜면 전극에서 기체 방울이 올라와 관 위에 모인다.
+     .power(on)                전원 켜기(기체가 다 모이면 저절로 꺼짐)
+     .test('+'|'-', done)      (+)극 관에 꺼져가는 향불 / (−)극 관에 향불 대기
+     .showLens(on)             입자 돋보기 세 개(산소 기체, 수소 기체, 물)
+     .reset(), .jump({gas, p, m, lens})   검사용으로 바로 그 장면
+     .onEvent = (name) => {}   'full' 기체가 다 모임, 'relit' 향불이 살아남, 'pop' 퍽
+   (−)극 관에 기체가 더 많이 모이는 것은 실제 현상대로 그리되 수치는 쓰지 않는다. 화면 속 빠르기·방울 수는 정한 모형. */
+(() => {
+  const { TAU, BLUE, reduce, clamp, lerp, ease, easeOut, sstep, surface, overlay, addLoop, tweens, rr, white, desk, contact, shade, swarm, lens, leader, unit } = EL;
+  const W = 1000, H = 800, DESK = 700;
+  const T = { L: 300, R: 440, r: 26, top: 104, mouth: 655, max: 300 };
+  const TANK = { x0: 196, x1: 544, top: 540, bot: 690, lv: 576 };
+  const PS = { x0: 690, x1: 940, y0: 596, y1: 704 };
+
+  function glassTube(ctx, x, top, bot, r, fill) {
+    ctx.beginPath(); ctx.moveTo(x - r, bot); ctx.lineTo(x - r, top + r); ctx.arc(x, top + r, r, Math.PI, 0); ctx.lineTo(x + r, bot);
+    if (fill) { ctx.closePath(); ctx.fillStyle = fill; ctx.fill(); return; }
+    ctx.strokeStyle = 'rgba(96,120,146,.8)'; ctx.lineWidth = 2.2; ctx.stroke();
+  }
+  function wire(ctx, pts, col, w = 6) {
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.strokeStyle = 'rgba(20,38,59,.12)'; ctx.lineWidth = w + 3;
+    ctx.beginPath(); ctx.moveTo(pts[0], pts[1] + 4); ctx.bezierCurveTo(pts[2], pts[3] + 4, pts[4], pts[5] + 4, pts[6], pts[7] + 4); ctx.stroke();
+    ctx.strokeStyle = col; ctx.lineWidth = w;
+    ctx.beginPath(); ctx.moveTo(pts[0], pts[1]); ctx.bezierCurveTo(pts[2], pts[3], pts[4], pts[5], pts[6], pts[7]); ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,255,255,.28)'; ctx.lineWidth = w * 0.3;
+    ctx.beginPath(); ctx.moveTo(pts[0], pts[1] - w * 0.2); ctx.bezierCurveTo(pts[2], pts[3] - w * 0.2, pts[4], pts[5] - w * 0.2, pts[6], pts[7] - w * 0.2); ctx.stroke();
+  }
+  function terminal(ctx, x, y, col) {
+    ctx.fillStyle = shade(col, -0.35); ctx.beginPath(); ctx.arc(x, y + 1.5, 9, 0, TAU); ctx.fill();
+    const g = ctx.createRadialGradient(x - 3, y - 3, 1, x, y, 9); g.addColorStop(0, shade(col, 0.35)); g.addColorStop(1, col);
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, 8.5, 0, TAU); ctx.fill();
+    ctx.fillStyle = '#c9d1d9'; ctx.beginPath(); ctx.arc(x, y, 3, 0, TAU); ctx.fill();
+  }
+  function stand(ctx) {
+    contact(ctx, 640, DESK + 2, 180, 0.2);
+    let g = ctx.createLinearGradient(0, DESK - 16, 0, DESK); g.addColorStop(0, '#4a5562'); g.addColorStop(1, '#232a32');
+    ctx.fillStyle = g; rr(ctx, 570, DESK - 16, 150, 16, 5); ctx.fill();
+    g = ctx.createLinearGradient(612, 0, 626, 0); g.addColorStop(0, '#8d99a6'); g.addColorStop(0.45, '#eef2f5'); g.addColorStop(1, '#717d8a');
+    ctx.fillStyle = g; ctx.fillRect(613, 150, 12, DESK - 16 - 150);
+    // 두 관을 함께 잡는 집게
+    const y = 262;
+    g = ctx.createLinearGradient(0, y - 5, 0, y + 5); g.addColorStop(0, '#dfe5ea'); g.addColorStop(0.5, '#fff'); g.addColorStop(1, '#8e99a5');
+    ctx.fillStyle = g; ctx.fillRect(T.L - 10, y - 4, 619 - T.L + 10, 8);
+    g = ctx.createLinearGradient(0, y - 12, 0, y + 12); g.addColorStop(0, '#5d6874'); g.addColorStop(1, '#2b333c');
+    ctx.fillStyle = g; rr(ctx, 606, y - 12, 26, 24, 5); ctx.fill();
+    ctx.fillStyle = '#3a434d'; ctx.beginPath(); ctx.arc(640, y, 6, 0, TAU); ctx.fill();
+  }
+  function clampFront(ctx) {
+    const y = 262;
+    [T.L, T.R].forEach((x) => {
+      const g = ctx.createLinearGradient(0, y - 11, 0, y + 11); g.addColorStop(0, '#59636f'); g.addColorStop(1, '#2a323b');
+      ctx.fillStyle = g; rr(ctx, x - T.r - 6, y - 10, 10, 20, 3); ctx.fill(); rr(ctx, x + T.r - 4, y - 10, 10, 20, 3); ctx.fill();
+      ctx.fillStyle = 'rgba(42,50,59,.35)'; ctx.fillRect(x - T.r, y - 3, T.r * 2, 6);
+    });
+  }
+  function powerBox(ctx, on, t) {
+    const { x0, x1, y0, y1 } = PS, d = 26;
+    contact(ctx, (x0 + x1) / 2 + 8, y1 + 2, x1 - x0 + 60, 0.24);
+    // 윗면
+    ctx.fillStyle = '#4a535d'; ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x0 + d, y0 - d * 0.6); ctx.lineTo(x1 + d, y0 - d * 0.6); ctx.lineTo(x1, y0); ctx.closePath(); ctx.fill();
+    // 옆면
+    ctx.fillStyle = '#1f252b'; ctx.beginPath(); ctx.moveTo(x1, y0); ctx.lineTo(x1 + d, y0 - d * 0.6); ctx.lineTo(x1 + d, y1 - d * 0.6); ctx.lineTo(x1, y1); ctx.closePath(); ctx.fill();
+    // 앞면
+    let g = ctx.createLinearGradient(0, y0, 0, y1); g.addColorStop(0, '#3a424b'); g.addColorStop(1, '#262c33');
+    ctx.fillStyle = g; ctx.fillRect(x0, y0, x1 - x0, y1 - y0);
+    ctx.strokeStyle = 'rgba(255,255,255,.08)'; ctx.lineWidth = 1; ctx.strokeRect(x0 + 0.5, y0 + 0.5, x1 - x0 - 1, y1 - y0 - 1);
+    // 표시 창
+    ctx.fillStyle = on ? '#123a2a' : '#151b20'; rr(ctx, x0 + 18, y0 + 16, 104, 38, 6); ctx.fill();
+    if (on) {
+      ctx.fillStyle = '#5ff0a1';
+      for (let i = 0; i < 4; i++) { const hh = 10 + 14 * (0.5 + 0.5 * Math.sin(t * 6 + i * 1.3)); ctx.fillRect(x0 + 30 + i * 22, y0 + 46 - hh, 12, hh); }
+    }
+    // 손잡이 두 개
+    [[x0 + 158, y0 + 34], [x0 + 210, y0 + 34]].forEach(([x, y], i) => {
+      ctx.fillStyle = '#12171c'; ctx.beginPath(); ctx.arc(x, y + 2, 16, 0, TAU); ctx.fill();
+      g = ctx.createRadialGradient(x - 5, y - 5, 2, x, y, 16); g.addColorStop(0, '#6c7680'); g.addColorStop(1, '#2a3138');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, 15, 0, TAU); ctx.fill();
+      ctx.strokeStyle = '#e8edf2'; ctx.lineWidth = 2.5; const a = -2.2 + (on ? 1.6 : 0) + i * 0.5;
+      ctx.beginPath(); ctx.moveTo(x + Math.cos(a) * 5, y + Math.sin(a) * 5); ctx.lineTo(x + Math.cos(a) * 12, y + Math.sin(a) * 12); ctx.stroke();
+    });
+    // 전원 단추와 불빛
+    ctx.fillStyle = on ? '#2fd27a' : '#55606b'; ctx.beginPath(); ctx.arc(x0 + 34, y1 - 24, 7, 0, TAU); ctx.fill();
+    if (on) { ctx.strokeStyle = 'rgba(47,210,122,.35)'; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(x0 + 34, y1 - 24, 11, 0, TAU); ctx.stroke(); }
+    ctx.fillStyle = '#d8dee4'; rr(ctx, x0 + 54, y1 - 34, 40, 20, 5); ctx.fill();
+    ctx.fillStyle = on ? '#2a323b' : '#8a96a3'; rr(ctx, x0 + (on ? 74 : 56), y1 - 32, 18, 16, 4); ctx.fill();
+    terminal(ctx, x1 - 66, y1 - 24, '#d93a32');
+    terminal(ctx, x1 - 30, y1 - 24, '#2b3138');
+  }
+  function tank(ctx, back, lv, t) {
+    const { x0, x1, top, bot } = TANK;
+    if (back) {
+      contact(ctx, (x0 + x1) / 2, bot + 30, x1 - x0 + 60, 0.2);
+      // 받침
+      let g = ctx.createLinearGradient(0, bot, 0, bot + 28); g.addColorStop(0, '#f4f7fa'); g.addColorStop(1, '#cdd6df');
+      ctx.fillStyle = g; rr(ctx, x0 - 14, bot, x1 - x0 + 28, 28, 6); ctx.fill();
+      ctx.strokeStyle = 'rgba(20,38,59,.14)'; ctx.lineWidth = 1; ctx.stroke();
+      // 뒤 유리
+      ctx.fillStyle = 'rgba(232,240,247,.55)'; ctx.fillRect(x0, top, x1 - x0, bot - top);
+      // 물(뒤)
+      g = ctx.createLinearGradient(0, lv, 0, bot); g.addColorStop(0, 'rgba(120,188,240,.5)'); g.addColorStop(1, 'rgba(60,140,215,.58)');
+      ctx.fillStyle = g; ctx.fillRect(x0, lv, x1 - x0, bot - lv);
+      return;
+    }
+    // 앞 유리 + 물 표면
+    ctx.fillStyle = 'rgba(160,210,244,.16)'; ctx.fillRect(x0, lv, x1 - x0, bot - lv);
+    ctx.fillStyle = 'rgba(200,230,250,.7)'; ctx.beginPath(); ctx.moveTo(x0, lv);
+    for (let x = x0; x <= x1; x += 8) ctx.lineTo(x, lv + Math.sin(x * 0.05 + t * 2) * 0.9);
+    ctx.lineTo(x1, lv + 7); ctx.lineTo(x0, lv + 7); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = 'rgba(70,140,200,.55)'; ctx.lineWidth = 1.4; ctx.beginPath(); ctx.moveTo(x0, lv); ctx.lineTo(x1, lv); ctx.stroke();
+    ctx.strokeStyle = 'rgba(96,120,146,.85)'; ctx.lineWidth = 2.4; ctx.lineJoin = 'round';
+    ctx.strokeRect(x0, top, x1 - x0, bot - top);
+    ctx.strokeStyle = 'rgba(96,120,146,.45)'; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(x0 + 6, top + 6); ctx.lineTo(x1 - 6, top + 6); ctx.stroke();
+  }
+  function electrode(ctx, x) {
+    const g = ctx.createLinearGradient(x - 4, 0, x + 4, 0); g.addColorStop(0, '#2a3138'); g.addColorStop(0.5, '#6a7480'); g.addColorStop(1, '#20262c');
+    ctx.fillStyle = g; ctx.fillRect(x - 4, 610, 8, TANK.bot - 610); ctx.beginPath(); ctx.arc(x, 610, 4, Math.PI, 0); ctx.fill();
+  }
+  function stopcock(ctx, x, open) {
+    const y = 78;
+    ctx.fillStyle = 'rgba(236,243,248,.9)'; ctx.fillRect(x - 6, 56, 12, T.top - 56 + 4);
+    ctx.strokeStyle = 'rgba(96,120,146,.8)'; ctx.lineWidth = 1.8; ctx.beginPath(); ctx.moveTo(x - 6, T.top + 2); ctx.lineTo(x - 6, 56); ctx.moveTo(x + 6, 56); ctx.lineTo(x + 6, T.top + 2); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(x, 56, 7, 2.5, 0, 0, TAU); ctx.stroke();
+    ctx.fillStyle = 'rgba(232,240,247,.95)'; ctx.beginPath(); ctx.ellipse(x, y, 13, 10, 0, 0, TAU); ctx.fill(); ctx.stroke();
+    // 손잡이: 가로면 잠김, 세로면 열림
+    const a = open * Math.PI / 2;
+    ctx.save(); ctx.translate(x, y); ctx.rotate(a);
+    const g = ctx.createLinearGradient(0, -5, 0, 5); g.addColorStop(0, '#5aa0e0'); g.addColorStop(1, '#1f5f9e');
+    ctx.fillStyle = g; rr(ctx, -30, -5, 60, 10, 5); ctx.fill();
+    ctx.restore();
+  }
+  function incense(ctx, x, y, glow, flame, t, smoke) {
+    // 향: 끝(x, y)에서 오른쪽 위로 뻗은 막대
+    const ang = -0.62, L = 150, ex = x + Math.cos(ang) * L, ey = y + Math.sin(ang) * L;
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = '#7a4b2c'; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(x + Math.cos(ang) * 16, y + Math.sin(ang) * 16); ctx.lineTo(ex, ey); ctx.stroke();
+    ctx.strokeStyle = '#c99a6b'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x + Math.cos(ang) * 40, y + Math.sin(ang) * 40 - 1); ctx.lineTo(ex, ey - 1); ctx.stroke();
+    // 손잡이 쪽 대나무 심
+    ctx.strokeStyle = '#d9b98c'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(ex, ey); ctx.lineTo(ex + Math.cos(ang) * 40, ey + Math.sin(ang) * 40); ctx.stroke();
+    // 재
+    ctx.strokeStyle = '#9aa3ab'; ctx.lineWidth = 5.5; ctx.beginPath(); ctx.moveTo(x + Math.cos(ang) * 4, y + Math.sin(ang) * 4); ctx.lineTo(x + Math.cos(ang) * 16, y + Math.sin(ang) * 16); ctx.stroke();
+    // 불씨
+    const fl = 0.85 + 0.15 * Math.sin(t * 23) * Math.sin(t * 7);
+    const g = ctx.createRadialGradient(x, y, 0, x, y, 6 + glow * 16);
+    g.addColorStop(0, glow > 0.5 ? '#fff3b0' : '#ffb06a'); g.addColorStop(0.35, `rgba(255,${Math.round(110 + 60 * glow)},40,${0.5 + 0.5 * glow})`); g.addColorStop(1, 'rgba(255,90,20,0)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, (6 + glow * 16) * fl, 0, TAU); ctx.fill();
+    ctx.fillStyle = glow > 0.3 ? '#ff7a1c' : '#9b3b1e'; ctx.beginPath(); ctx.arc(x, y, 3.6, 0, TAU); ctx.fill();
+    if (flame > 0.02) {
+      const h = (16 + 22 * flame) * (0.9 + 0.1 * Math.sin(t * 31));
+      const gf = ctx.createLinearGradient(x, y, x, y - h); gf.addColorStop(0, 'rgba(255,170,40,.95)'); gf.addColorStop(0.6, 'rgba(255,214,90,.85)'); gf.addColorStop(1, 'rgba(255,240,180,0)');
+      ctx.fillStyle = gf; ctx.beginPath(); ctx.moveTo(x - 6 * flame, y - 1); ctx.quadraticCurveTo(x - 7 * flame, y - h * 0.5, x + Math.sin(t * 9) * 2, y - h); ctx.quadraticCurveTo(x + 7 * flame, y - h * 0.5, x + 6 * flame, y - 1); ctx.closePath(); ctx.fill();
+    }
+    // 연기: 위로 올라가며 옆으로 흔들림
+    if (smoke > 0.02) {
+      ctx.strokeStyle = `rgba(150,160,170,${0.32 * smoke})`; ctx.lineWidth = 2;
+      for (let k = 0; k < 2; k++) {
+        ctx.beginPath();
+        for (let i = 0; i <= 20; i++) { const yy = y - 8 - i * 4.2, xx = x + 2 + Math.sin(i * 0.45 - t * 2.6 + k * 2) * (2 + i * 0.5) + k * 3; i ? ctx.lineTo(xx, yy) : ctx.moveTo(xx, yy); }
+        ctx.stroke();
+      }
+    }
+  }
+
+  EL.water = function (host, o = {}) {
+    const S = surface(host, W, H, o.crop || [0, -90, W, H + 90]), ctx = S.ctx, ol = overlay(S), tw = tweens();
+    const st = { on: false, gL: 0, gR: 0, p: false, m: false, lens: false, busy: false, open: [0, 0], inc: null, pop: 0, popAt: null, t: 0 };
+    const api = { st, onEvent: null };
+    const bubbles = [];
+    const sw = { o2: swarm({ state: 'gas', unit: 'O2', n: 8, r: 0.1, seed: 3 }), h2: swarm({ state: 'gas', unit: 'H2', n: 13, r: 0.1, seed: 5, speed: 0.6 }), w: swarm({ state: 'liquid', unit: 'H2O', n: 24, r: 0.095, seed: 9 }) };
+    const ev = (n) => api.onEvent && api.onEvent(n);
+    const lv = (side) => T.top + 4 + (side === 'L' ? st.gL : st.gR) * T.max;
+    function spawn(dt) {
+      const k = o.mini ? 0.7 : 1;
+      [['L', T.L, 9], ['R', T.R, 18]].forEach(([s, x, rate]) => {
+        if (Math.random() < rate * k * dt) bubbles.push({ s, x: x + (Math.random() - 0.5) * 6, y: 606 + Math.random() * 6, r: s === 'R' ? 1.8 + Math.random() * 2 : 2.4 + Math.random() * 2.4, v: 30 + Math.random() * 20, ph: Math.random() * TAU });
+      });
+    }
+    function draw(dt) {
+      st.t += dt; tw.step(dt);
+      if (st.on) {
+        spawn(dt);
+        const rate = o.mini ? 1 / 4.5 : 1 / 7;
+        st.gR = Math.min(1, st.gR + rate * dt); st.gL = Math.min(0.5, st.gL + rate * 0.5 * dt);
+        if (st.gR >= 1) { st.on = false; ev('full'); }
+      }
+      for (let i = bubbles.length - 1; i >= 0; i--) {
+        const b = bubbles[i]; b.v = Math.min(170, b.v + 260 * dt); b.y -= b.v * dt; b.x += Math.sin(st.t * 9 + b.ph) * 0.35;
+        if (b.y < lv(b.s) + b.r) bubbles.splice(i, 1);
+      }
+      for (const sk of ['o2', 'h2', 'w']) st.lens && sw[sk].step(dt);
+      S.begin(); white(S); desk(S, DESK);
+      stand(ctx);
+      // 전선(바닥에 놓임)
+      wire(ctx, [PS.x1 - 66, PS.y1 - 24, PS.x1 - 70, 770, T.L + 120, 770, T.L, TANK.bot + 16], '#d93a32');
+      wire(ctx, [PS.x1 - 30, PS.y1 - 24, PS.x1 - 20, 760, T.R + 120, 752, T.R, TANK.bot + 16], '#2b3138');
+      powerBox(ctx, st.on, st.t);
+      const tlv = TANK.lv - (st.gL + st.gR) * 10;
+      tank(ctx, true, tlv, st.t);
+      terminal(ctx, T.L, TANK.bot + 16, '#d93a32'); terminal(ctx, T.R, TANK.bot + 16, '#2b3138');
+      [['L', T.L], ['R', T.R]].forEach(([s, x]) => {
+        glassTube(ctx, x, T.top, T.mouth, T.r, 'rgba(240,246,251,.75)');
+        // 관 속 물
+        const y = lv(s);
+        let g = ctx.createLinearGradient(0, y, 0, T.mouth); g.addColorStop(0, 'rgba(120,188,240,.55)'); g.addColorStop(1, 'rgba(70,150,222,.6)');
+        ctx.fillStyle = g; ctx.fillRect(x - T.r, y, T.r * 2, T.mouth - y);
+        ctx.strokeStyle = 'rgba(60,128,190,.7)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(x - T.r, y - 3); ctx.quadraticCurveTo(x, y + 3, x + T.r, y - 3); ctx.stroke();
+        // 눈금(숫자 없음)
+        ctx.strokeStyle = 'rgba(96,120,146,.5)'; ctx.lineWidth = 1;
+        for (let i = 0; i <= 12; i++) { const yy = T.top + 40 + i * 25; ctx.beginPath(); ctx.moveTo(x - T.r + 4, yy); ctx.lineTo(x - T.r + (i % 4 === 0 ? 16 : 10), yy); ctx.stroke(); }
+        electrode(ctx, x);
+      });
+      // 방울
+      bubbles.forEach((b) => {
+        ctx.fillStyle = 'rgba(255,255,255,.75)'; ctx.strokeStyle = 'rgba(70,130,190,.7)'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, TAU); ctx.fill(); ctx.stroke();
+      });
+      // 전극에 붙은 작은 방울
+      if (st.on) [T.L, T.R].forEach((x, i) => { for (let k = 0; k < 5; k++) { const yy = 616 + k * 13, xx = x + (k % 2 ? 5 : -5); ctx.strokeStyle = 'rgba(70,130,190,.6)'; ctx.beginPath(); ctx.arc(xx, yy + Math.sin(st.t * 5 + k + i) * 1.5, 1.6, 0, TAU); ctx.stroke(); } });
+      tank(ctx, false, tlv, st.t);
+      [['L', T.L], ['R', T.R]].forEach(([s, x]) => glassTube(ctx, x, T.top, T.mouth, T.r));
+      clampFront(ctx);
+      stopcock(ctx, T.L, st.open[0]); stopcock(ctx, T.R, st.open[1]);
+      // 퍽: 아주 짧은 불꽃
+      if (st.popAt) {
+        const k = st.pop;
+        if (k > 0 && k < 1) {
+          const [x, y] = st.popAt, rad = 14 + 70 * easeOut(k), a = 1 - k;
+          const g = ctx.createRadialGradient(x, y, 0, x, y, rad);
+          g.addColorStop(0, `rgba(255,250,220,${0.95 * a})`); g.addColorStop(0.35, `rgba(255,196,80,${0.8 * a})`); g.addColorStop(0.7, `rgba(255,120,40,${0.4 * a})`); g.addColorStop(1, 'rgba(255,120,40,0)');
+          ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, rad, 0, TAU); ctx.fill();
+          ctx.strokeStyle = `rgba(255,170,60,${0.7 * a})`; ctx.lineWidth = 2.5;
+          for (let i = 0; i < 9; i++) { const an = i / 9 * TAU + 0.2, r0 = rad * 0.75, r1 = rad * 1.05; ctx.beginPath(); ctx.moveTo(x + Math.cos(an) * r0, y + Math.sin(an) * r0); ctx.lineTo(x + Math.cos(an) * r1, y + Math.sin(an) * r1); ctx.stroke(); }
+        }
+      }
+      if (st.inc) { const I = st.inc; incense(ctx, I.x, I.y, I.glow, I.flame, st.t, I.smoke); }
+      // 이름표
+      const L = o.labels !== false;
+      if (L) {
+        ol.put('p', T.L - 16, TANK.bot + 16, '(+)극', 'tx nm la');
+        ol.put('m', T.R - 16, TANK.bot + 16, '(−)극', 'tx nm la');
+        ol.put('ps', (PS.x0 + PS.x1) / 2, PS.y0 - 34, '전원 장치', 'tx');
+        ol.put('wt', TANK.x0 + 52, TANK.bot - 28, '물', 'tx');
+        const nm = st.p && st.m && !o.hideNames;
+        if (st.gL > 0.1) ol.put('gl', T.L - T.r - 10, T.top + 40, nm ? '<b>산소</b> 기체' : '기체', 'tx la' + (nm ? ' gas' : '')); else ol.hide('gl');
+        if (st.gR > 0.1) ol.put('gr', T.R + T.r + 10, T.top + 40, nm ? '<b>수소</b> 기체' : '기체', 'tx ra' + (nm ? ' gas' : '')); else ol.hide('gr');
+      }
+      if (st.say) ol.put('say', st.say.x, st.say.y, st.say.h, 'tx say' + (st.say.big ? ' big' : '')); else ol.hide('say');
+      // 입자 돋보기
+      if (st.lens) {
+        const Lz = [[sw.o2, 120, 170, 92, T.L - 8, T.top + 50, 'o2'], [sw.h2, 790, 200, 92, T.R + 10, T.top + 90, 'h2'], [sw.w, 112, 486, 84, TANK.x0 + 70, 630, 'w']];
+        Lz.forEach(([s, x, y, R, tx, ty]) => { leader(ctx, x, y, tx, ty); });
+        Lz.forEach(([s, x, y, R]) => lens(ctx, x, y, R, s));
+        ol.put('l1', 120, 170 + 92 + 22, `${EL.dot('O')}산소 기체 · 산소 입자만`, 'tx lz');
+        ol.put('l2', 790, 200 + 92 + 22, `${EL.dot('H')}수소 기체 · 수소 입자만`, 'tx lz');
+        ol.put('l3', 112, 486 + 84 + 22, `물 · ${EL.dot('O')}산소 + ${EL.dot('H')}수소`, 'tx lz');
+      } else ['l1', 'l2', 'l3'].forEach(ol.hide);
+    }
+    addLoop(host, draw);
+
+    api.power = (on) => { if (st.gR >= 1) return false; st.on = on; return true; };
+    api.test = (side, done) => {
+      if (st.busy || st.gR < 0.2) return false;
+      st.busy = true; st.say = null;
+      const plus = side === '+', x = plus ? T.L : T.R, idx = plus ? 0 : 1;
+      const tip = [x + 3, 52];
+      st.inc = { x: x + 230, y: -40, glow: plus ? 0.12 : 0.75, flame: plus ? 0 : 0.25, smoke: plus ? 0.7 : 1 };
+      const from = [st.inc.x, st.inc.y];
+      tw.add(1.1, (k) => { const e = ease(k); st.inc.x = lerp(from[0], tip[0], e); st.inc.y = lerp(from[1], tip[1], e); }, () => {
+        tw.add(0.45, (k) => (st.open[idx] = ease(k)), () => {
+          const g0 = plus ? st.gL : st.gR;
+          tw.add(1.2, (k) => { if (plus) st.gL = g0 - 0.12 * k; else st.gR = g0 - 0.22 * k; });
+          if (plus) {
+            tw.add(0.9, (k) => { const e = sstep(0.25, 1, k); st.inc.glow = lerp(0.12, 1, e); st.inc.flame = lerp(0, 1, sstep(0.5, 1, k)); st.inc.smoke = lerp(0.7, 0.2, e); }, () => {
+              st.say = { x: x - 120, y: -40, h: '향불이 다시 살아났어요', big: true }; ev('relit');
+              tw.add(1.6, () => {}, () => { tw.add(0.4, (k) => (st.open[idx] = 1 - ease(k)), () => { st.p = true; st.busy = false; done && done(); }); });
+            });
+          } else {
+            tw.add(0.25, () => {}, () => {
+              st.popAt = [x, 44]; ev('pop');
+              st.say = { x: x - 70, y: 6, h: '퍽!', big: true };
+              tw.add(0.5, (k) => (st.pop = k), () => { st.pop = 0; st.popAt = null; });
+              tw.add(1.8, () => {}, () => { st.say = { x: x - 140, y: -40, h: "'퍽' 소리를 내며 탔어요", big: true }; tw.add(0.4, (k) => (st.open[idx] = 1 - ease(k)), () => { st.m = true; st.busy = false; done && done(); }); });
+            });
+          }
+        });
+      });
+      return true;
+    };
+    api.leave = () => { const me = st.inc; if (!me) return; const f = [me.x, me.y]; st.say = null; tw.add(0.6, (k) => { me.x = lerp(f[0], f[0] + 260, ease(k)); me.y = lerp(f[1], f[1] - 120, ease(k)); }, () => { if (st.inc === me) st.inc = null; }); };
+    api.showLens = (on) => { st.lens = on; if (on) { st.say = null; st.inc = null; } };
+    api.reset = () => { tw.clear(); bubbles.length = 0; Object.assign(st, { on: false, gL: 0, gR: 0, p: false, m: false, lens: false, busy: false, open: [0, 0], inc: null, pop: 0, popAt: null, say: null }); };
+    api.jump = (j) => {
+      api.reset();
+      st.gR = j.gas == null ? 1 : j.gas; st.gL = st.gR / 2;
+      if (j.p) { st.p = true; st.gL -= 0.12; }
+      if (j.m) { st.m = true; st.gR -= 0.22; }
+      if (j.inc === '+') { st.inc = { x: T.L + 3, y: 52, glow: 1, flame: 1, smoke: 0.2 }; st.say = { x: T.L - 120, y: -40, h: '향불이 다시 살아났어요', big: true }; }
+      if (j.inc === '-') { st.inc = { x: T.R + 3, y: 52, glow: 0.75, flame: 0.25, smoke: 1 }; st.say = { x: T.R - 140, y: -40, h: "'퍽' 소리를 내며 탔어요", big: true }; }
+      if (j.on) st.on = true;
+      st.lens = !!j.lens;
+      if (j.lens) for (let i = 0; i < 40; i++) ['o2', 'h2', 'w'].forEach((k) => sw[k].step(0.05));
+    };
+    api.S = S;
+    return api;
+  };
+})();
+</script>
+<script>
+/* ===== 블록 1: 실험하기 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S, Q = S.Q;
+    const L = EL.water($('#lab'));
+    window.LAB = L;
+    const st = { step: 1, pred: null, started: false };
+    const BTN = (id, t, cls = 'ghost', dis = false) => `<button class="btn ${cls}" type="button" id="${id}"${dis ? ' disabled' : ''}>${t}</button>`;
+    function msg(t, m, cls = '') { $('#res').className = 'fbk ' + cls; $('#resT').textContent = t; $('#resM').innerHTML = m; }
+    function steps() { $$('#steps .ph').forEach((p) => { const s = +p.dataset.s; p.classList.toggle('on', s === st.step); p.classList.toggle('done', s < st.step); }); }
+    const PRED = [['same', '물과 같은 물질'], ['diff', '물과 다른 물질']];
+    function render() {
+      steps();
+      const c = $('#ctl'), busy = L.st.busy || L.st.on, full = L.st.gR >= 0.99 || L.st.p || L.st.m;
+      if (st.step === 1) c.innerHTML = `<div class="seglbl">예측하기 · 두 관에 모일 기체는?</div><div class="pred" id="pred">${PRED.map(([v, t]) => `<button type="button" data-v="${v}" aria-pressed="${st.pred === v}">${t}</button>`).join('')}</div>${BTN('bOn', L.st.on ? '기체가 모이는 중…' : '전원 켜기', st.pred && !L.st.on ? 'primary' : 'ghost', !st.pred || L.st.on)}`;
+      else if (st.step === 2) c.innerHTML = BTN('bP', '(+)극 기체에 꺼져가는 향불 대기', 'primary', busy);
+      else if (st.step === 3) c.innerHTML = BTN('bM', '(−)극 기체에 향불 대기', 'primary', busy);
+      else c.innerHTML = `<div class="two2">${BTN('bLens', L.st.lens ? '입자 돋보기 닫기' : '입자 돋보기로 보기', L.st.lens ? 'ghost' : 'primary', busy)}${BTN('bAgain', '다시 해 보기', 'ghost', busy)}</div>`;
+      $$('#pred button').forEach((b) => b.addEventListener('click', () => { st.pred = b.dataset.v; msg('결과', '예측했어요. <b>전원 켜기</b>를 눌러 전극을 지켜봐요.'); render(); }));
+      const on = (id, fn) => { const e = $('#' + id); e && e.addEventListener('click', fn); };
+      on('bOn', () => { L.power(true); msg('결과', '전원을 켰어요. 두 전극에서 기체 방울이 올라와 관 위쪽에 모여요. 어느 쪽에 더 많이 모이나요?'); render(); });
+      on('bP', () => { if (L.test('+', () => { st.step = 3; msg('결과 · 향불이 살아났어요', '(+)극 관의 기체에 꺼져가는 향불을 대니 <b>향불이 다시 살아났어요</b>. 이제 (−)극 관의 기체를 확인해요.', 'ok'); render(); })) { msg('결과', '(+)극 관의 꼭지를 열고 꺼져가는 향불을 대는 중이에요…'); render(); } });
+      on('bM', () => { if (L.st.busy) return; L.leave(); L.st.busy = true; msg('결과', '(−)극 관의 꼭지를 열고 향불을 대는 중이에요…'); render(); setTimeout(() => { L.st.busy = false; L.test('-', () => { st.step = 4; judge(); render(); }); }, 750); });
+      on('bLens', () => { L.showLens(!L.st.lens); if (L.st.lens) msg('결과 · 입자 돋보기', '산소 기체에는 <b>산소 입자만</b>, 수소 기체에는 <b>수소 입자만</b> 있어요. 물에는 <b>수소와 산소, 두 종류의 입자</b>가 모여 있어요. 그래서 수소·산소는 <b>원소</b>, 물은 <b>화합물</b>이에요.', 'ok'); render(); });
+      on('bAgain', reset);
+    }
+    function judge() {
+      const p = st.pred === 'diff';
+      msg(p ? '결과 · 예측이 맞았어요' : '결과 · 예측과 달라요', `(−)극 관의 기체에 향불을 대니 <b>'퍽' 소리를 내며 탔어요</b>. 물은 불을 살리지도 타지도 않으니, 두 기체는 <b>물과 다른 물질</b>이에요. (+)극에는 <b>산소</b>, (−)극에는 <b>수소</b>가 모였어요. 입자 돋보기로 확인해 봐요.`, p ? 'ok' : 'no');
+    }
+    L.onEvent = (n) => {
+      if (n === 'full') { st.step = 2; msg('결과 · 기체가 모였어요', '전원이 꺼졌어요. 두 관 모두 위쪽에 기체가 모였고, <b>(−)극 관에 더 많이</b> 모였어요. 이 기체들은 물과 같은 물질일까요? 향불로 확인해요.'); render(); }
+    };
+    function reset() { L.reset(); Object.assign(st, { step: 1, pred: null }); msg('결과', '먼저 예측을 골라요.'); render(); }
+    setInterval(() => { const k = (L.st.busy ? 1 : 0) + (L.st.on ? 2 : 0); if (render._b !== k) { render._b = k; render(); } }, 200);
+    $('#bReset').addEventListener('click', reset);
+    // 검사용 주소: ?at=on|full|p|m|lens
+    const at = Q.get('at');
+    if (at) {
+      st.pred = 'diff';
+      if (at === 'on') { L.jump({ gas: 0.45, on: true }); }
+      if (at === 'full') { L.jump({ gas: 1 }); st.step = 2; L.onEvent('full'); }
+      if (at === 'p') { L.jump({ p: true, inc: '+' }); st.step = 3; msg('결과 · 향불이 살아났어요', '(+)극 관의 기체에 꺼져가는 향불을 대니 <b>향불이 다시 살아났어요</b>.', 'ok'); }
+      if (at === 'm') { L.jump({ p: true, m: true, inc: '-' }); st.step = 4; judge(); }
+      if (at === 'lens') { L.jump({ p: true, m: true, lens: true }); st.step = 4; }
+    }
+    render();
+    if (at === 'lens') $('#bLens') && (L.showLens(false), $('#bLens').click());
+    window.SM.okUI = true;
+  } catch (err) { window.SM_err('실험하기', err); }
+})();
+</script>
+<script>
+/* ===== 블록 2: 정리하기 · 탭 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S, Q = S.Q;
+    const QS = {
+      qA: [['a', '물과 다른 물질이다', true], ['b', '물과 같은 물질이다', false]],
+      qB: [['a', '물에는 없는 성질(꺼져가는 향불을 살리거나 퍽 소리를 내며 타는 성질)이 나타나서', true], ['b', '두 관에 모인 기체의 양이 서로 달라서', false], ['c', '물속에서 생긴 기체라서', false]],
+      qC: [['a', '아니다. 수소와 산소, 두 종류의 입자로 이루어져 있다', true], ['b', '그렇다. 물 입자 한 종류로만 이루어져 있다', false]],
+    };
+    const pick = {};
+    Object.keys(QS).forEach((k) => { $('#' + k).innerHTML = QS[k].map(([v, t]) => `<button type="button" data-v="${v}" aria-pressed="false">${t}</button>`).join(''); });
+    function msg(t, m, cls = '') { $('#res2').className = 'fbk ' + cls; $('#res2T').textContent = t; $('#res2M').innerHTML = m; }
+    function check() {
+      const keys = Object.keys(QS); if (keys.some((k) => !pick[k])) return;
+      const wrong = keys.filter((k) => !QS[k].find((x) => x[0] === pick[k])[2]);
+      if (!wrong.length) msg('결과 · 모두 맞았어요', '물에 전기를 흘려 주면 <b>수소</b> 기체와 <b>산소</b> 기체로 나누어져요. 물은 두 종류의 입자로 이루어진 <b>화합물</b>, 수소와 산소는 한 종류의 입자로 이루어진 <b>원소</b>예요.', 'ok');
+      else msg('다시 생각해 봐요', '빨간 답을 다시 골라요. <b>왜 그럴까?</b> 탭을 읽고 생각해요.', 'no');
+    }
+    Object.keys(QS).forEach((k) => $$('#' + k + ' button').forEach((b) => b.addEventListener('click', () => {
+      pick[k] = b.dataset.v; $$('#' + k + ' button').forEach((x) => { x.setAttribute('aria-pressed', String(x === b)); x.classList.remove('good', 'bad'); });
+      b.classList.add(QS[k].find((x) => x[0] === b.dataset.v)[2] ? 'good' : 'bad'); check();
+    })));
+    function show(p) { $$('#pt button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.p === p))); $$('.pane').forEach((e) => (e.hidden = e.dataset.p !== p)); }
+    $$('#pt button').forEach((b) => b.addEventListener('click', () => show(b.dataset.p)));
+    show(['rec', 'why'].includes(Q.get('tab')) ? Q.get('tab') : 'lab');
+    if (Q.get('ans') === '1') Object.keys(QS).forEach((k) => $('#' + k + ' [data-v="a"]').click());
+  } catch (err) { window.SM_err('정리하기', err); }
+})();
+</script>
+</body>
+</html>

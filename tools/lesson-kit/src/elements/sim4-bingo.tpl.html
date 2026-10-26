@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>원소 – 빙고 게임</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+/*@@LOCAL:_css_el.css@@*/
+/*@@LOCAL:_css_sim.css@@*/
+  /* ===== 이 페이지 전용 ===== */
+  .viewer.bv{display:flex;align-items:center;justify-content:center;padding:14px}
+  .boardw{position:relative;height:min(100%,calc(100vh - 170px));aspect-ratio:1/1;max-width:100%}
+  .board{position:absolute;inset:0;display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(4,1fr);border-radius:18px;overflow:hidden;background:#fffdf8;border:2px solid #e3dccb;box-shadow:inset 0 0 0 6px #fff}
+  .cell{position:relative;border-right:1.5px solid #ece4d2;border-bottom:1.5px solid #ece4d2;background:transparent;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:0;min-height:44px}
+  .cell:nth-child(4n){border-right:0}.cell:nth-child(n+13){border-bottom:0}
+  .cell b{font-size:clamp(22px,3.4vw,42px);font-weight:900;color:#2b3a4c;letter-spacing:.01em;line-height:1}
+  .cell b sub{font-size:.55em}
+  .cell small{font-size:clamp(11px,1.2vw,14px);font-weight:800;color:#0e63b3;height:1.3em}
+  .cell.empty b{color:#d3cbb8;font-size:clamp(16px,2vw,24px)}
+  .cell.next{background:#f4f8fc}
+  .cell.shake{animation:shake .4s}
+  .cell.win b{color:#0e63b3}
+  @keyframes shake{25%{transform:translateX(-6px)}50%{transform:translateX(6px)}75%{transform:translateX(-3px)}}
+  .ink{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+  .ink path{fill:none;stroke:#0e63b3;stroke-linecap:round;stroke-linejoin:round}
+  .ink .c{stroke-width:3.2;stroke-dasharray:var(--l);stroke-dashoffset:var(--l);animation:draw .45s ease-out forwards}
+  .ink .ln{stroke-width:5;opacity:.85;stroke-dasharray:var(--l);stroke-dashoffset:var(--l);animation:draw .6s ease-out forwards}
+  @keyframes draw{to{stroke-dashoffset:0}}
+  .bigbingo{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.6);font-size:clamp(40px,7vw,84px);font-weight:900;color:#0e63b3;background:rgba(255,255,255,.94);padding:6px 26px;border-radius:20px;box-shadow:0 10px 30px rgba(20,38,59,.18);pointer-events:none;opacity:0;transition:transform .35s cubic-bezier(.2,1.4,.4,1),opacity .2s}
+  .bigbingo.on{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  .pool{display:grid;grid-template-columns:repeat(6,1fr);gap:5px;margin:0 0 10px}
+  .pool button{min-height:44px;border-radius:10px;border:1.5px solid #d4dee8;background:#fff;font-weight:900;font-size:16px;color:#34495e;cursor:pointer;padding:0 2px}
+  .pool button sub{font-size:.62em}
+  .pool button.used{background:#e9eff5;color:#b0bcc8;border-color:#e1e8ef}
+  .ctl{display:grid;gap:8px}
+  .two2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .two2 .btn,.ctl > .btn{width:100%}
+  .seglbl{font-size:13px;font-weight:800;color:var(--muted);margin:2px 0 6px}
+  .caller{border-radius:16px;background:#f2f7fd;border:1px solid #d6e5f5;padding:14px 16px;text-align:center;margin-bottom:10px}
+  .caller small{display:block;font-size:13px;font-weight:800;color:#5a6b7e}
+  .caller b{display:block;font-size:clamp(26px,3vw,36px);font-weight:900;color:#14263b;letter-spacing:-.02em;line-height:1.3}
+  .caller span{font-size:13px;font-weight:700;color:#5a6b7e}
+  .steps{display:grid;gap:5px;margin:0 0 10px}
+  .steps .ph{padding:6px 10px;font-size:14.5px;line-height:1.5}
+  @media (max-width:900px){.boardw{height:auto;width:min(100%,560px)}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="ttl">
+      <span class="eyebrow">해 보기</span><h1>빙고 게임으로 원소 기호와 화학식 익히기</h1>
+      <p class="sub">140~141쪽의 원소 기호와 화학식 중 16개로 빙고판을 채우고, 부르는 이름에 맞는 칸을 찾아 동그라미를 그려요.</p>
+    </div>
+  </header>
+
+  <div class="stage">
+    <section class="card viewer bv">
+      <div class="boardw">
+        <div class="board" id="board"></div>
+        <svg class="ink" id="ink" viewBox="0 0 400 400" preserveAspectRatio="none" aria-hidden="true"></svg>
+        <div class="bigbingo" id="bingoTxt">빙고!</div>
+      </div>
+    </section>
+
+    <section class="card pad">
+      <div class="steps" id="steps">
+        <div class="ph" data-s="1"><i>1</i><span>원소 기호와 화학식 16개를 골라 빙고판을 채워요.</span></div>
+        <div class="ph" data-s="2"><i>2</i><span>부르는 이름에 맞는 칸을 눌러 동그라미를 그려요. 판에 없으면 <b>판에 없어요</b>.</span></div>
+        <div class="ph" data-s="3"><i>3</i><span>가로, 세로, 대각선 중 한 줄이 완성되면 빙고!</span></div>
+      </div>
+      <div id="fillPane">
+        <div class="seglbl" id="poolLbl">눌러서 판에 넣기 · 0 / 16</div>
+        <div class="pool" id="pool"></div>
+        <div class="ctl">
+          <div class="two2"><button class="btn ghost" type="button" id="bAuto">골고루 채우기</button><button class="btn ghost" type="button" id="bClear">다 지우기</button></div>
+          <button class="btn primary" type="button" id="bStart" disabled>게임 시작</button>
+        </div>
+      </div>
+      <div id="playPane" hidden>
+        <div class="caller"><small>부르는 이름</small><b id="callName">-</b><span id="callCnt">부른 이름 0 / 24</span></div>
+        <div class="ctl">
+          <div class="two2"><button class="btn ghost" type="button" id="bNone">판에 없어요</button><button class="btn ghost" type="button" id="bAgain">한 판 더</button></div>
+        </div>
+      </div>
+      <div class="fbk" id="res"><b class="t" id="resT">결과</b><span id="resM">아래 원소 기호와 화학식을 눌러 빙고판을 채워요. 잘 모르면 <b>골고루 채우기</b>를 눌러요.</span></div>
+    </section>
+  </div>
+</div>
+<script>
+window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
+  reduce: !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches), Q: new URLSearchParams(location.search) };
+</script>
+<script>
+/* ===== 블록 1: 빙고 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S, Q = S.Q;
+    // 교과서 140~141쪽의 원소 기호 18개와 화학식 6개
+    const POOL = [
+      ['H', '수소'], ['He', '헬륨'], ['Li', '리튬'], ['Be', '베릴륨'], ['C', '탄소'], ['O', '산소'], ['Ne', '네온'], ['Na', '나트륨'], ['Mg', '마그네슘'],
+      ['Al', '알루미늄'], ['Si', '규소'], ['S', '황'], ['Cl', '염소'], ['Ca', '칼슘'], ['Fe', '철'], ['Cu', '구리'], ['Hg', '수은'], ['N', '질소'],
+      ['NH3', '암모니아'], ['NaCl', '염화 나트륨'], ['H2O', '물'], ['CH4', '메테인'], ['CO2', '이산화 탄소'], ['CO', '일산화 탄소'],
+    ];
+    const html = (k) => k.replace(/(\d)/g, '<sub>$1</sub>');
+    const name = (k) => POOL.find((p) => p[0] === k)[1];
+    const LINES = []; for (let i = 0; i < 4; i++) { LINES.push([0, 1, 2, 3].map((j) => i * 4 + j)); LINES.push([0, 1, 2, 3].map((j) => j * 4 + i)); }
+    LINES.push([0, 5, 10, 15], [3, 6, 9, 12]);
+    const st = { board: Array(16).fill(null), marks: new Set(), calls: [], ci: 0, won: new Set(), phase: 1 };
+    const shuffle = (a) => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+    function msg(t, m, cls = '') { $('#res').className = 'fbk ' + cls; $('#resT').textContent = t; $('#resM').innerHTML = m; }
+    function steps() { $$('#steps .ph').forEach((p) => { const s = +p.dataset.s; p.classList.toggle('on', s === st.phase); p.classList.toggle('done', s < st.phase); }); }
+    function renderBoard() {
+      const nxt = st.board.indexOf(null);
+      $('#board').innerHTML = st.board.map((k, i) => `<button type="button" class="cell${k ? '' : ' empty'}${st.phase === 1 && i === nxt ? ' next' : ''}${[...st.won].some((l) => LINES[l].includes(i)) ? ' win' : ''}" data-i="${i}">${k ? `<b>${html(k)}</b><small>${st.marks.has(i) ? name(k) : ''}</small>` : `<b>${i + 1}</b><small></small>`}</button>`).join('');
+      $$('#board .cell').forEach((c) => c.addEventListener('click', () => tapCell(+c.dataset.i, c)));
+    }
+    function renderPool() {
+      const n = st.board.filter(Boolean).length;
+      $('#pool').innerHTML = POOL.map(([k]) => `<button type="button" data-k="${k}" class="${st.board.includes(k) ? 'used' : ''}" aria-label="${name(k)}">${html(k)}</button>`).join('');
+      $$('#pool button').forEach((b) => b.addEventListener('click', () => {
+        const k = b.dataset.k, at = st.board.indexOf(k);
+        if (at >= 0) st.board[at] = null; else { const e = st.board.indexOf(null); if (e < 0) return; st.board[e] = k; }
+        renderPool(); renderBoard();
+      }));
+      $('#poolLbl').textContent = `눌러서 판에 넣기 · ${n} / 16`;
+      $('#bStart').disabled = n < 16; $('#bStart').className = 'btn ' + (n < 16 ? 'ghost' : 'primary');
+    }
+    // 손으로 그린 듯한 동그라미 (칸 가운데, 살짝 겹쳐 끝남)
+    function circle(i) {
+      const cx = (i % 4) * 100 + 50, cy = Math.floor(i / 4) * 100 + 50, r = 36 + Math.random() * 4, a0 = -2 + Math.random() * 0.6;
+      let d = ''; for (let k = 0; k <= 26; k++) { const a = a0 + (k / 24) * Math.PI * 2, rr = r * (1 + 0.06 * Math.sin(k * 0.9)) - k * 0.15; d += (k ? 'L' : 'M') + (cx + Math.cos(a) * rr * 1.05).toFixed(1) + ' ' + (cy + Math.sin(a) * rr * 0.9).toFixed(1); }
+      const p = document.createElementNS('http://www.w3.org/2000/svg', 'path'); p.setAttribute('d', d); p.setAttribute('class', 'c'); p.style.setProperty('--l', 260);
+      $('#ink').appendChild(p);
+    }
+    function line(l) {
+      const c = LINES[l], a = c[0], b = c[3];
+      const P = (i) => [(i % 4) * 100 + 50, Math.floor(i / 4) * 100 + 50];
+      const [x0, y0] = P(a), [x1, y1] = P(b), dx = x1 - x0, dy = y1 - y0, len = Math.hypot(dx, dy), ux = dx / len, uy = dy / len;
+      const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      p.setAttribute('d', `M${(x0 - ux * 30).toFixed(1)} ${(y0 - uy * 30).toFixed(1)}L${(x1 + ux * 30).toFixed(1)} ${(y1 + uy * 30).toFixed(1)}`); p.setAttribute('class', 'ln'); p.style.setProperty('--l', Math.ceil(len + 60));
+      $('#ink').appendChild(p);
+    }
+    function call() {
+      while (st.ci < st.calls.length && false);
+      if (st.ci >= st.calls.length) { msg('결과 · 이름을 모두 불렀어요', `빙고 ${st.won.size}줄을 완성했어요. <b>한 판 더</b>를 눌러 새 판으로 해 봐요.`, st.won.size ? 'ok' : ''); $('#callName').textContent = '끝'; return; }
+      const k = st.calls[st.ci];
+      $('#callName').textContent = name(k); $('#callCnt').textContent = `부른 이름 ${st.ci + 1} / ${st.calls.length}`;
+    }
+    function advance() { st.ci++; call(); }
+    function checkLines() {
+      let fresh = 0;
+      LINES.forEach((l, i) => { if (!st.won.has(i) && l.every((j) => st.marks.has(j))) { st.won.add(i); line(i); fresh++; } });
+      if (fresh) { const t = $('#bingoTxt'); t.textContent = st.won.size > 1 ? `빙고 ${st.won.size}줄!` : '빙고!'; t.classList.add('on'); setTimeout(() => t.classList.remove('on'), 1300); st.phase = 3; steps(); }
+      return fresh;
+    }
+    function tapCell(i, el) {
+      if (st.phase === 1) { if (st.board[i]) { st.board[i] = null; renderPool(); renderBoard(); } return; }
+      if (st.ci >= st.calls.length || st.marks.has(i)) return;
+      const k = st.calls[st.ci];
+      if (st.board[i] === k) {
+        st.marks.add(i); circle(i); const fresh = checkLines(); renderBoard();
+        msg(fresh ? '빙고!' : '결과 · 찾았어요', `<b>${name(k)}</b>은(는) <b>${html(k)}</b>예요.${fresh ? ` 한 줄을 완성했어요. 계속하면 더 많은 줄을 만들 수 있어요.` : ''}`, 'ok');
+        advance();
+      } else {
+        el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake');
+        msg('다시 찾아봐요', `그 칸은 <b>${name(st.board[i])}</b>(${html(st.board[i])})예요. <b>${name(k)}</b>을(를) 다시 찾아봐요.`, 'no');
+      }
+    }
+    $('#bNone').addEventListener('click', () => {
+      if (st.ci >= st.calls.length) return;
+      const k = st.calls[st.ci], at = st.board.indexOf(k);
+      if (at >= 0 && !st.marks.has(at)) { const c = $(`#board .cell[data-i="${at}"]`); c.classList.remove('shake'); void c.offsetWidth; c.classList.add('shake'); msg('판에 있어요', `<b>${name(k)}</b>은(는) 판에 있어요. 흔들린 칸을 봐요.`, 'no'); return; }
+      msg('결과 · 판에 없어요', `<b>${name(k)}</b>(${html(k)})은(는) 내 판에 없어요. 다음 이름을 들어 봐요.`);
+      advance();
+    });
+    function start() { st.phase = 2; st.calls = shuffle(POOL.map((p) => p[0])); st.ci = 0; $('#fillPane').hidden = true; $('#playPane').hidden = false; steps(); renderBoard(); call(); msg('결과', '부르는 이름에 맞는 원소 기호나 화학식을 판에서 찾아 눌러요.'); }
+    function newGame(keep) { st.marks.clear(); st.won.clear(); $('#ink').innerHTML = ''; st.phase = 1; if (!keep) st.board.fill(null); $('#fillPane').hidden = false; $('#playPane').hidden = true; steps(); renderPool(); renderBoard(); msg('결과', '빙고판을 채워요. 같은 판으로 하려면 바로 <b>게임 시작</b>을 눌러요.'); }
+    $('#bAuto').addEventListener('click', () => { const left = shuffle(POOL.map((p) => p[0]).filter((k) => !st.board.includes(k))); st.board = st.board.map((k) => k || left.pop()); renderPool(); renderBoard(); });
+    $('#bClear').addEventListener('click', () => { st.board.fill(null); renderPool(); renderBoard(); });
+    $('#bStart').addEventListener('click', start);
+    $('#bAgain').addEventListener('click', () => newGame(false));
+    steps(); renderPool(); renderBoard();
+    // 검사용 주소: ?demo=1 (판 채우고 몇 칸 표시)
+    if (Q.get('demo')) {
+      st.board = ['Ne', 'NaCl', 'Ca', 'Al', 'Cl', 'Li', 'H2O', 'He', 'CO2', 'S', 'Mg', 'Cu', 'Fe', 'NH3', 'C', 'Hg'];
+      renderPool(); start();
+      if (Q.get('demo') === '2') { st.calls = ['Ne', 'Li', 'Mg', 'Hg', 'O', 'CH4'].concat(st.calls.filter((k) => !['Ne', 'Li', 'Mg', 'Hg', 'O', 'CH4'].includes(k))); st.ci = 0; call(); [0, 5, 10, 15].forEach((i) => tapCell(i, $(`#board .cell[data-i="${i}"]`))); }
+    }
+    window.SM.okUI = true;
+  } catch (err) { window.SM_err('빙고', err); }
+})();
+</script>
+</body>
+</html>

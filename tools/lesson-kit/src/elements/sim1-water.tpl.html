@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>원소 – 물 분해 실험실</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+/*@@LOCAL:_css_el.css@@*/
+/*@@LOCAL:_css_sim.css@@*/
+  /* ===== 이 페이지 전용 ===== */
+  #lab{aspect-ratio:1000/800}
+  .steps{display:grid;gap:5px;margin:0 0 10px}
+  .steps .ph{padding:6px 10px;font-size:14.5px;line-height:1.5}
+  .steps .ph.done{color:var(--ink2)}.steps .ph.done i{background:#8db8e3;color:#fff}
+  .ctl{display:grid;gap:8px}
+  .ctl .btn{width:100%}
+  .two2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .pred{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .pred button,.qa3 button{min-height:48px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:14.5px;cursor:pointer;word-break:keep-all;line-height:1.35;padding:4px 8px}
+  .pred button[aria-pressed="true"],.qa3 button[aria-pressed="true"]{border-color:var(--fab);background:#e9f3fd;color:#0b3f73}
+  .seglbl{font-size:13px;font-weight:800;color:var(--muted);margin:2px 0 -2px}
+  .qa{margin-bottom:12px}
+  .qa p{margin:0 0 6px;font-weight:800;font-size:15px;line-height:1.5;word-break:keep-all}
+  .qa3{display:grid;gap:6px}
+  .qa3 button{text-align:left}
+  .qa3 button.good{border-color:var(--ok);background:#e8f7ef;color:#11703f}
+  .qa3 button.bad{border-color:#e7a29b;background:#fff4f2;color:#9b3a32}
+  .tag2{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 8px}
+  .tag2 span{font-size:13.5px;font-weight:800;color:var(--ink2);background:#f2f6fa;border:1px solid var(--line);border-radius:10px;padding:4px 9px}
+  .ph b.k{color:#0e63b3}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="ttl">
+      <span class="eyebrow">해 보기</span><h1>물 분해 실험실</h1>
+      <p class="sub">물에 전기를 흘려 (+)극과 (−)극 관에 모인 기체를 향불로 확인하고, 물을 이루는 입자의 종류를 알아봐요.</p>
+    </div>
+  </header>
+
+  <div class="stage">
+    <section class="card viewer">
+      <div class="scene grow" id="lab" role="img" aria-label="물이 든 수조에 관 두 개가 거꾸로 서 있고, 관 아래에는 전원 장치에 연결된 (+)극과 (−)극이 있다. 전원을 켜면 전극에서 기체 방울이 올라와 관 위쪽에 모이고, (−)극 관에 더 많이 모인다. (+)극 관의 기체에 꺼져가는 향불을 대면 향불이 살아나고, (−)극 관의 기체에 향불을 대면 퍽 소리를 내며 탄다."></div>
+      <div class="vctl">
+        <span class="hint" id="hint">전원을 켜면 전극에서 기체 방울이 올라와요</span>
+        <span class="sp"></span>
+        <button class="vb" type="button" id="bReset">처음부터</button>
+      </div>
+    </section>
+
+    <section class="card pad">
+      <div class="ptabs" role="tablist" id="pt">
+        <button type="button" role="tab" data-p="lab" aria-selected="true">실험하기</button>
+        <button type="button" role="tab" data-p="rec" aria-selected="false">정리하기</button>
+        <button type="button" role="tab" data-p="why" aria-selected="false">왜 그럴까?</button>
+      </div>
+      <div class="pane" data-p="lab">
+        <div class="steps" id="steps">
+          <div class="ph" data-s="1"><i>1</i><span>예측하고, 전원을 켜서 두 관에 기체를 모아요.</span></div>
+          <div class="ph" data-s="2"><i>2</i><span>(+)극 관의 기체에 <b>꺼져가는 향불</b>을 대요.</span></div>
+          <div class="ph" data-s="3"><i>3</i><span>(−)극 관의 기체에 <b>향불</b>을 대요.</span></div>
+          <div class="ph" data-s="4"><i>4</i><span>입자 돋보기로 물과 두 기체 속을 봐요.</span></div>
+        </div>
+        <div class="ctl" id="ctl"></div>
+        <div class="fbk" id="res"><b class="t" id="resT">결과</b><span id="resM">먼저 예측을 골라요.</span></div>
+      </div>
+      <div class="pane" data-p="rec" hidden>
+        <div class="qa"><p>1. 두 관에 모인 기체는 물과 같은 물질일까?</p><div class="qa3" id="qA"></div></div>
+        <div class="qa"><p>그렇게 생각한 까닭은?</p><div class="qa3" id="qB"></div></div>
+        <div class="qa"><p>2. 물은 한 종류의 입자로 이루어져 있을까?</p><div class="qa3" id="qC"></div></div>
+        <div class="fbk" id="res2"><b class="t" id="res2T">결과</b><span id="res2M">실험을 하지 않았어도 생각해서 골라 볼 수 있어요.</span></div>
+      </div>
+      <div class="pane" data-p="why" hidden>
+        <div class="phase">
+          <div class="ph on"><i>1</i><span>물에 전기를 흘려 주면 (+)극과 (−)극에서 기체가 생겨 관 위쪽에 모여요.</span></div>
+          <div class="ph on"><i>2</i><span>(+)극 기체는 꺼져가는 향불을 살려요. 이 기체는 <b>산소</b>예요. (−)극 기체는 향불을 대면 '퍽' 소리를 내며 타요. 이 기체는 <b>수소</b>예요.</span></div>
+          <div class="ph on"><i>3</i><span>물은 불을 살리지도, 타지도 않아요. 두 기체는 <b>물과 다른 물질</b>이에요. 물이 수소와 산소로 나누어진 거예요.</span></div>
+          <div class="ph on"><i>4</i><span>수소나 산소처럼 <b>한 종류의 입자</b>로 이루어진 물질을 <b class="k">원소</b>, 물처럼 <b>두 종류 이상의 입자</b>가 모여 만들어진 물질을 <b class="k">화합물</b>이라고 해요.</span></div>
+        </div>
+      </div>
+      <p class="mnote">기체가 모이는 빠르기와 방울 수, 입자의 수와 색은 보기 좋게 정한 모형이에요.</p>
+    </section>
+  </div>
+</div>
+<script>
+window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
+  reduce: !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches), Q: new URLSearchParams(location.search) };
+</script>
+<script>
+/*@@LOCAL:_el_core.js@@*/
+</script>
+<script>
+/*@@LOCAL:_el_water.js@@*/
+</script>
+<script>
+/* ===== 블록 1: 실험하기 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S, Q = S.Q;
+    const L = EL.water($('#lab'));
+    window.LAB = L;
+    const st = { step: 1, pred: null, started: false };
+    const BTN = (id, t, cls = 'ghost', dis = false) => `<button class="btn ${cls}" type="button" id="${id}"${dis ? ' disabled' : ''}>${t}</button>`;
+    function msg(t, m, cls = '') { $('#res').className = 'fbk ' + cls; $('#resT').textContent = t; $('#resM').innerHTML = m; }
+    function steps() { $$('#steps .ph').forEach((p) => { const s = +p.dataset.s; p.classList.toggle('on', s === st.step); p.classList.toggle('done', s < st.step); }); }
+    const PRED = [['same', '물과 같은 물질'], ['diff', '물과 다른 물질']];
+    function render() {
+      steps();
+      const c = $('#ctl'), busy = L.st.busy || L.st.on, full = L.st.gR >= 0.99 || L.st.p || L.st.m;
+      if (st.step === 1) c.innerHTML = `<div class="seglbl">예측하기 · 두 관에 모일 기체는?</div><div class="pred" id="pred">${PRED.map(([v, t]) => `<button type="button" data-v="${v}" aria-pressed="${st.pred === v}">${t}</button>`).join('')}</div>${BTN('bOn', L.st.on ? '기체가 모이는 중…' : '전원 켜기', st.pred && !L.st.on ? 'primary' : 'ghost', !st.pred || L.st.on)}`;
+      else if (st.step === 2) c.innerHTML = BTN('bP', '(+)극 기체에 꺼져가는 향불 대기', 'primary', busy);
+      else if (st.step === 3) c.innerHTML = BTN('bM', '(−)극 기체에 향불 대기', 'primary', busy);
+      else c.innerHTML = `<div class="two2">${BTN('bLens', L.st.lens ? '입자 돋보기 닫기' : '입자 돋보기로 보기', L.st.lens ? 'ghost' : 'primary', busy)}${BTN('bAgain', '다시 해 보기', 'ghost', busy)}</div>`;
+      $$('#pred button').forEach((b) => b.addEventListener('click', () => { st.pred = b.dataset.v; msg('결과', '예측했어요. <b>전원 켜기</b>를 눌러 전극을 지켜봐요.'); render(); }));
+      const on = (id, fn) => { const e = $('#' + id); e && e.addEventListener('click', fn); };
+      on('bOn', () => { L.power(true); msg('결과', '전원을 켰어요. 두 전극에서 기체 방울이 올라와 관 위쪽에 모여요. 어느 쪽에 더 많이 모이나요?'); render(); });
+      on('bP', () => { if (L.test('+', () => { st.step = 3; msg('결과 · 향불이 살아났어요', '(+)극 관의 기체에 꺼져가는 향불을 대니 <b>향불이 다시 살아났어요</b>. 이제 (−)극 관의 기체를 확인해요.', 'ok'); render(); })) { msg('결과', '(+)극 관의 꼭지를 열고 꺼져가는 향불을 대는 중이에요…'); render(); } });
+      on('bM', () => { if (L.st.busy) return; L.leave(); L.st.busy = true; msg('결과', '(−)극 관의 꼭지를 열고 향불을 대는 중이에요…'); render(); setTimeout(() => { L.st.busy = false; L.test('-', () => { st.step = 4; judge(); render(); }); }, 750); });
+      on('bLens', () => { L.showLens(!L.st.lens); if (L.st.lens) msg('결과 · 입자 돋보기', '산소 기체에는 <b>산소 입자만</b>, 수소 기체에는 <b>수소 입자만</b> 있어요. 물에는 <b>수소와 산소, 두 종류의 입자</b>가 모여 있어요. 그래서 수소·산소는 <b>원소</b>, 물은 <b>화합물</b>이에요.', 'ok'); render(); });
+      on('bAgain', reset);
+    }
+    function judge() {
+      const p = st.pred === 'diff';
+      msg(p ? '결과 · 예측이 맞았어요' : '결과 · 예측과 달라요', `(−)극 관의 기체에 향불을 대니 <b>'퍽' 소리를 내며 탔어요</b>. 물은 불을 살리지도 타지도 않으니, 두 기체는 <b>물과 다른 물질</b>이에요. (+)극에는 <b>산소</b>, (−)극에는 <b>수소</b>가 모였어요. 입자 돋보기로 확인해 봐요.`, p ? 'ok' : 'no');
+    }
+    L.onEvent = (n) => {
+      if (n === 'full') { st.step = 2; msg('결과 · 기체가 모였어요', '전원이 꺼졌어요. 두 관 모두 위쪽에 기체가 모였고, <b>(−)극 관에 더 많이</b> 모였어요. 이 기체들은 물과 같은 물질일까요? 향불로 확인해요.'); render(); }
+    };
+    function reset() { L.reset(); Object.assign(st, { step: 1, pred: null }); msg('결과', '먼저 예측을 골라요.'); render(); }
+    setInterval(() => { const k = (L.st.busy ? 1 : 0) + (L.st.on ? 2 : 0); if (render._b !== k) { render._b = k; render(); } }, 200);
+    $('#bReset').addEventListener('click', reset);
+    // 검사용 주소: ?at=on|full|p|m|lens
+    const at = Q.get('at');
+    if (at) {
+      st.pred = 'diff';
+      if (at === 'on') { L.jump({ gas: 0.45, on: true }); }
+      if (at === 'full') { L.jump({ gas: 1 }); st.step = 2; L.onEvent('full'); }
+      if (at === 'p') { L.jump({ p: true, inc: '+' }); st.step = 3; msg('결과 · 향불이 살아났어요', '(+)극 관의 기체에 꺼져가는 향불을 대니 <b>향불이 다시 살아났어요</b>.', 'ok'); }
+      if (at === 'm') { L.jump({ p: true, m: true, inc: '-' }); st.step = 4; judge(); }
+      if (at === 'lens') { L.jump({ p: true, m: true, lens: true }); st.step = 4; }
+    }
+    render();
+    if (at === 'lens') $('#bLens') && (L.showLens(false), $('#bLens').click());
+    window.SM.okUI = true;
+  } catch (err) { window.SM_err('실험하기', err); }
+})();
+</script>
+<script>
+/* ===== 블록 2: 정리하기 · 탭 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S, Q = S.Q;
+    const QS = {
+      qA: [['a', '물과 다른 물질이다', true], ['b', '물과 같은 물질이다', false]],
+      qB: [['a', '물에는 없는 성질(꺼져가는 향불을 살리거나 퍽 소리를 내며 타는 성질)이 나타나서', true], ['b', '두 관에 모인 기체의 양이 서로 달라서', false], ['c', '물속에서 생긴 기체라서', false]],
+      qC: [['a', '아니다. 수소와 산소, 두 종류의 입자로 이루어져 있다', true], ['b', '그렇다. 물 입자 한 종류로만 이루어져 있다', false]],
+    };
+    const pick = {};
+    Object.keys(QS).forEach((k) => { $('#' + k).innerHTML = QS[k].map(([v, t]) => `<button type="button" data-v="${v}" aria-pressed="false">${t}</button>`).join(''); });
+    function msg(t, m, cls = '') { $('#res2').className = 'fbk ' + cls; $('#res2T').textContent = t; $('#res2M').innerHTML = m; }
+    function check() {
+      const keys = Object.keys(QS); if (keys.some((k) => !pick[k])) return;
+      const wrong = keys.filter((k) => !QS[k].find((x) => x[0] === pick[k])[2]);
+      if (!wrong.length) msg('결과 · 모두 맞았어요', '물에 전기를 흘려 주면 <b>수소</b> 기체와 <b>산소</b> 기체로 나누어져요. 물은 두 종류의 입자로 이루어진 <b>화합물</b>, 수소와 산소는 한 종류의 입자로 이루어진 <b>원소</b>예요.', 'ok');
+      else msg('다시 생각해 봐요', '빨간 답을 다시 골라요. <b>왜 그럴까?</b> 탭을 읽고 생각해요.', 'no');
+    }
+    Object.keys(QS).forEach((k) => $$('#' + k + ' button').forEach((b) => b.addEventListener('click', () => {
+      pick[k] = b.dataset.v; $$('#' + k + ' button').forEach((x) => { x.setAttribute('aria-pressed', String(x === b)); x.classList.remove('good', 'bad'); });
+      b.classList.add(QS[k].find((x) => x[0] === b.dataset.v)[2] ? 'good' : 'bad'); check();
+    })));
+    function show(p) { $$('#pt button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.p === p))); $$('.pane').forEach((e) => (e.hidden = e.dataset.p !== p)); }
+    $$('#pt button').forEach((b) => b.addEventListener('click', () => show(b.dataset.p)));
+    show(['rec', 'why'].includes(Q.get('tab')) ? Q.get('tab') : 'lab');
+    if (Q.get('ans') === '1') Object.keys(QS).forEach((k) => $('#' + k + ' [data-v="a"]').click());
+  } catch (err) { window.SM_err('정리하기', err); }
+})();
+</script>
+</body>
+</html>
