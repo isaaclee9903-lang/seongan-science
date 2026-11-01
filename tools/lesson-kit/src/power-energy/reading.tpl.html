@@ -60,8 +60,10 @@
   .grade-cap{display:flex;justify-content:space-between;font-size:13.5px;font-weight:800;color:var(--muted);margin:0 2px 6px}
   /* 에너지 전환 지도 */
   .emap{margin:16px 0 8px;border:1px solid var(--line);border-radius:16px;background:#fff;overflow:hidden}
+  .emap .scene{border-bottom:1px solid var(--line)}
   .emap .devs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:12px}
-  .emap .devs button{min-height:48px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15px;cursor:pointer;word-break:keep-all}
+  .emap .devs button{min-height:48px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:14.5px;cursor:pointer;word-break:keep-all;display:grid;justify-items:center;gap:2px;padding:6px 4px 8px}
+  .emap .devs canvas{width:96px;height:66px;display:block}
   .emap .devs button[aria-pressed="true"]{border-color:#0e63b3;background:#e9f3fd;color:#0b3f73}
   .emap .flow{display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:center;padding:14px 16px;background:#f6f9fc;border-top:1px solid var(--line)}
   .emap .src{font-weight:900;color:#0e63b3;font-size:16px;white-space:nowrap}
@@ -70,11 +72,24 @@
   .emap .outs span{padding:6px 12px;border-radius:10px;border:1.5px solid #dde6ee;background:#fff;font-weight:800;font-size:15px;color:#a3b0bd;transition:all .25s}
   .emap .outs span.on{color:#14263b;border-color:#14263b}
   .emap .outs span.on i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:0}
-  .emap .why{padding:0 16px 14px;background:#f6f9fc;font-size:15px;line-height:1.65;color:#34495e;word-break:keep-all;min-height:2.6em}
+  .emap .why{padding:12px 16px 14px;background:#f6f9fc;border-top:1px solid var(--line);font-size:15px;line-height:1.65;color:#34495e;word-break:keep-all;min-height:2.6em}
   .myth{margin:16px 0;padding:14px 16px;border-radius:14px;background:#f6f9fc;border:1px solid var(--line);font-size:16px;line-height:1.75;color:#34495e;word-break:keep-all}
   .myth b.t{display:block;font-size:13.5px;color:#5a6b7e;margin-bottom:2px}
   .myth q{font-weight:800;color:#14263b}
   .myth q::before,.myth q::after{content:'"'}
+  /* 빈칸 (눌러서 확인) */
+  .bk{display:inline-flex;align-items:baseline;gap:5px;min-width:5.2em;padding:0 8px 0 4px;margin:0 2px;border-bottom:2px solid #8b9aab;background:#f3f6f9;border-radius:6px 6px 0 0;cursor:pointer;font-weight:800;color:#14263b;line-height:1.5;vertical-align:baseline;-webkit-tap-highlight-color:transparent}
+  .bk .bn{flex:none;font-size:12px;font-weight:900;color:#5a6b7e;background:#e1e8ef;border-radius:999px;min-width:1.7em;height:1.7em;display:inline-grid;place-items:center;align-self:center}
+  .bk .ba{display:none}
+  .bk.open{background:#e9f3fd;border-bottom-color:#0e63b3;color:#0b3f73}
+  .bk.open .ba{display:inline}
+  .bk.open .bn{background:#0e63b3;color:#fff}
+  .bk:focus-visible{outline:3px solid rgba(14,99,179,.35);outline-offset:2px}
+  .bkall{min-height:40px;padding:0 12px;border-radius:10px;border:1px solid #d4dee8;background:#fff;font-weight:800;font-size:14px;color:#34495e;cursor:pointer;white-space:nowrap}
+  .bkall[aria-pressed="true"]{background:#14263b;color:#fff;border-color:#14263b}
+  .bkcount{font-size:13px;font-weight:800;color:var(--muted);white-space:nowrap}
+  .howbk{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:#fff8e6;border:1px solid #f3dc9a;color:#5b4300;border-radius:14px;padding:10px 14px;font-size:15px;line-height:1.6;margin:0 0 16px;word-break:keep-all}
+  .howbk .bk{pointer-events:none}
   /* 그래프 차근차근 */
   .gsteps{display:flex;gap:6px;flex-wrap:wrap}
   .gtext{padding:12px 16px;background:#fff;border-top:1px solid var(--line);font-size:16px;line-height:1.75;color:#1d2a40;word-break:keep-all;min-height:5.6em}
@@ -120,6 +135,8 @@
     <button class="step" data-go="r4" type="button"><span class="n">4</span><span class="t">효율 등급</span></button>
     <button class="step" data-go="q2" type="button"><span class="n">Q</span><span class="t">퀴즈 ②</span></button>
     <span class="nav-sp"></span>
+    <span class="bkcount" id="bkCount">빈칸 0 / 0</span>
+    <button class="bkall" type="button" id="bkAll" aria-pressed="false">빈칸 모두 열기</button>
     <div class="fsz" role="group" aria-label="글자 크기"><button type="button" id="fsN" aria-pressed="true">가</button><button type="button" id="fsB" aria-pressed="false" style="font-size:19px">가</button></div>
   </div>
   <div class="bar"><i id="progress"></i></div>
@@ -128,22 +145,23 @@
 <main>
   <!-- 읽기 1 -->
   <section class="part" id="r1">
+    <div class="howbk"><span>번호가 붙은 칸 <b class="bk"><span class="bn">1</span></b> 은 빈칸이에요. 선생님 설명을 듣고 내 공책이나 학습지에 먼저 써 본 뒤, 칸을 눌러 맞는지 확인해요.</span></div>
     <div class="sec-kick">읽기 ① <span class="time">약 4분</span></div>
-    <h2>소비 전력은 1초 동안 사용한 전기 에너지예요</h2>
+    <h2>전기 기구마다 쓰는 전기 에너지의 양이 달라요</h2>
     <article class="card read reveal">
       <span class="tag">문제 발견하기 · 그림 Ⅵ-13 가전제품에 표시된 소비 전력</span>
       <div class="story"><div><b>우재</b>헤어드라이어 <strong>3분</strong> 사용</div><div><b>지우</b>선풍기 <strong>20분</strong> 사용</div></div>
       <p>여름철에 같은 시간 동안 선풍기를 사용할 때보다 에어컨을 사용할 때 더 많은 전기 에너지를 사용해요. 또 선풍기 중에서도 크기가 크고 강한 바람을 불게 하는 것일수록 같은 시간 동안 더 많은 전기 에너지를 사용해요.</p>
-      <p>전기 기구를 켜면 <b>전기 에너지</b>가 다른 형태의 에너지로 <mark>전환</mark>돼요. 헤어드라이어에서는 열에너지와 운동 에너지(바람)로, 전등에서는 빛에너지와 열에너지로 바뀌어요. 아래에서 기구를 눌러 보세요.</p>
+      <p>전기 기구를 켜면 <b>전기 에너지</b>가 다른 형태의 에너지로 <b class="bk">전환</b>돼요. 헤어드라이어에서는 열에너지와 운동 에너지(바람)로, 전등에서는 빛에너지와 열에너지로 바뀌어요. 아래에서 기구를 눌러 보세요.</p>
       <div class="emap" id="emap">
+        <div class="scene" id="emScene" style="aspect-ratio:1100/440" role="img" aria-label="고른 전기 기구가 일하는 그림. 전선으로 전기 에너지가 들어가고, 오른쪽 띠로 바뀐 에너지가 나간다."></div>
         <div class="devs" id="emDevs"></div>
-        <div class="flow"><span class="src">전기 에너지</span><div class="outs" id="emOuts"></div></div>
-        <div class="why" id="emWhy">기구를 누르면 전기 에너지가 바뀌는 에너지가 진하게 보여요.</div>
+        <div class="why" id="emWhy">기구를 누르면 그 기구가 일하는 모습과, 전기 에너지가 바뀌는 에너지가 띠로 보여요.</div>
       </div>
       <p class="cap" style="margin:0 0 14px">그림 ⓐ 전기 에너지는 어떤 에너지로 바뀔까? (한 기구에서 두 가지 이상의 에너지로 동시에 바뀌기도 해요)</p>
-      <p>이처럼 전기 기구마다 같은 시간 동안 사용하는 전기 에너지의 양이 다른데, 이를 나타낸 것을 <mark>소비 전력</mark>이라고 해요. 소비 전력은 <b>1초 동안 사용한 전기 에너지</b>로, 단위는 <b>W(<button class="term" data-term="와트">와트</button>)</b>를 사용해요.</p>
+      <p>이처럼 전기 기구마다 같은 시간 동안 사용하는 전기 에너지의 양이 다른데, 이를 나타낸 것을 <b class="bk">소비 전력</b>이라고 해요. 소비 전력은 <b class="bk">1초</b> 동안 사용한 전기 에너지로, 단위는 <b class="bk">W</b>(<button class="term" data-term="와트">와트</button>)를 사용해요.</p>
       <div class="eq">소비 전력(W) = <span class="fr"><span>전기 에너지(J)</span><span>시간(초)</span></span></div>
-      <p>어떤 전기 기구의 소비 전력이 <b>20 W</b>라면, 이 전기 기구를 사용할 때 <mark>1초 동안 20 J</mark>의 전기 에너지를 소비해요. 그래서 소비 전력은 전기 기구들이 같은 시간 동안 전기 에너지를 얼마나 사용하는지 알 수 있는 기준이 돼요. 가전제품에는 첫 화면의 헤어드라이어처럼 소비 전력이 표시되어 있어요.</p>
+      <p>어떤 전기 기구의 소비 전력이 <b>20 W</b>라면, 이 전기 기구를 사용할 때 1초 동안 <b class="bk">20 J</b>의 전기 에너지를 소비해요. 그래서 소비 전력은 전기 기구들이 같은 시간 동안 전기 에너지를 얼마나 사용하는지 알 수 있는 기준이 돼요. 가전제품에는 첫 화면의 헤어드라이어처럼 소비 전력이 표시되어 있어요.</p>
       <div class="fig wv"><div class="scene" id="fig1" style="aspect-ratio:1200/850" role="img" aria-label="헤어드라이어(1200 W)와 선풍기(40 W, 예시 값)를 전력 측정기에 연결해 켠다. 아래 막대는 사용한 전기 에너지를 나타내며, 3분 쓴 헤어드라이어는 216,000 J, 20분 쓴 선풍기는 48,000 J이 된다."></div>
         <div class="fbar"><button type="button" id="f1Sec">1초만 켜 보기</button><button type="button" id="f1Go">3분 · 20분 켜기</button><button type="button" id="f1Re">처음부터</button><span class="sp"></span><span class="st" id="f1St">먼저 1초만 켜서 측정기 숫자를 봐요</span></div>
         <div class="cap">그림 ① 우재와 지우가 사용한 전기 에너지 (선풍기 40 W는 예시 값. 시간은 빠르게 돌려 보여 줘요)</div></div>
@@ -157,16 +175,16 @@
   <!-- 읽기 2 -->
   <section class="part" id="r2">
     <div class="sec-kick">읽기 ② <span class="time">약 4분</span></div>
-    <h2>밝기가 같아도 소비 전력은 다를 수 있어요</h2>
+    <h2>밝기가 같은 두 전등을 비교해요</h2>
     <article class="card read reveal">
       <span class="tag">그림 Ⅵ-14 열화상 사진기로 본 두 전등 · 그림 Ⅵ-15 두 전등이 방출하는 열 및 빛에너지</span>
       <p>밝기는 같지만 소비 전력이 다른 두 전등 (가), (나)를 <button class="term" data-term="열화상 사진기">열화상 사진기</button>로 보면 각 전등에서 방출하는 열에너지의 양이 다르다는 것을 알 수 있어요. 그림에서 <b>열화상 사진기로 보기</b>를 눌러 비교해 보세요.</p>
       <div class="fig wv"><div class="scene" id="fig2" style="aspect-ratio:1200/800" role="img" aria-label="밝기가 같은 탁상 전등 (가)와 (나). 열화상으로 보면 (가)가 더 뜨겁다. 1초 동안 (가)에는 전기 에너지 12 J가 들어가 빛에너지 6 J와 열에너지 6 J가 되고, (나)에는 8 J가 들어가 빛에너지 6 J와 열에너지 2 J가 된다."></div>
         <div class="fbar"><button type="button" id="f2Th" aria-pressed="false">열화상 사진기로 보기</button><button type="button" id="f2Go">1초 동안 에너지 따라가기</button><button type="button" id="f2Re">처음부터</button><span class="sp"></span><span class="st" id="f2St">네모 하나는 1 J이에요</span></div>
         <div class="cap">그림 ② 밝기가 같은 두 전등 (에너지 값은 교과서 그림 Ⅵ-15. 1초를 천천히 늘려 보여 줘요)</div></div>
-      <p>두 전등 (가), (나)는 1초 동안 <mark>같은 양의 빛에너지</mark>(6 J)를 방출하지만, 각 전등에서 발생하는 <b>열에너지의 양이 달라요</b>. 따라서 각 전등이 1초 동안 사용하는 전기 에너지의 양, 즉 <mark>소비 전력이 달라요</mark>.</p>
+      <p>두 전등 (가), (나)는 1초 동안 같은 양의 <b class="bk">빛에너지</b>(6 J)를 방출하지만, 각 전등에서 발생하는 <b class="bk">열에너지</b>의 양이 달라요. 따라서 각 전등이 1초 동안 사용하는 전기 에너지의 양, 즉 <b class="bk">소비 전력</b>이 달라요.</p>
       <div class="myth"><b class="t">오개념 바로잡기</b><q>더 밝은 전등이 언제나 소비 전력이 크다?</q> 아니에요. (가)와 (나)는 밝기가 같은데 소비 전력은 12 W와 8 W로 달라요. 전기 에너지 가운데 <b>빛에너지가 아닌 열에너지로 바뀌는 양</b>이 다르기 때문이에요.</div>
-      <p>그러므로 같은 성능을 갖더라도 <b>소비 전력이 더 작은 전기 기구</b>를 선택하면 더 적은 전기 에너지를 소비해요. 전구를 살 때는 포장 용기에 적힌 전구의 <b>밝기와 소비 전력을 모두</b> 살펴봐야 해요. 소비 전력이 같더라도 전구의 종류에 따라 밝기가 다르기 때문이에요.</p>
+      <p>그러므로 같은 성능을 갖더라도 소비 전력이 더 <b class="bk">작은</b> 전기 기구를 선택하면 더 적은 전기 에너지를 소비해요. 전구를 살 때는 포장 용기에 적힌 전구의 <b>밝기와 소비 전력을 모두</b> 살펴봐야 해요. 소비 전력이 같더라도 전구의 종류에 따라 밝기가 다르기 때문이에요.</p>
     </article>
     <details class="pause reveal"><summary><span class="pi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5b4300" stroke-width="2.4" stroke-linecap="round"><path d="M9 9a3 3 0 1 1 4 2.8c-.7.3-1 .9-1 1.6V14M12 18h.01"/></svg></span>그림 이해하기: (가), (나) 중 소비 전력이 더 큰 전구는 무엇일까요?<span class="tap">눌러서 확인</span></summary>
       <div class="ans"><b>(가)</b>예요. (가)는 1초 동안 빛에너지 6 J과 열에너지 6 J, 모두 <b>12 J</b>의 전기 에너지를 사용해요(12 W). (나)는 6 J + 2 J = <b>8 J</b>이에요(8 W). 같은 밝기를 내면서 (가)가 열에너지를 더 많이 내기 때문에 전기 에너지를 더 많이 사용해요.</div></details>
@@ -181,12 +199,12 @@
   <!-- 읽기 3 -->
   <section class="part" id="r3">
     <div class="sec-kick">읽기 ③ <span class="time">약 3분</span></div>
-    <h2>전력량은 소비 전력에 사용한 시간을 곱한 값이에요</h2>
+    <h2>일정 시간 동안 사용한 전기 에너지를 구해요</h2>
     <article class="card read reveal">
       <span class="tag">그림 Ⅵ-16 전기 요금 청구서에 표시된 전력량</span>
-      <p>가정에서는 사용한 전기 에너지의 양인 <mark>전력량</mark>에 따라 전기 요금을 내요. 전력량은 <b>소비 전력을 사용한 시간과 곱한 값</b>으로, 단위로 <b>Wh(와트시)</b>, <b>kWh(킬로와트시)</b> 등을 사용해요.</p>
+      <p>가정에서는 사용한 전기 에너지의 양인 <b class="bk">전력량</b>에 따라 전기 요금을 내요. 전력량은 <b class="bk">소비 전력</b>을 사용한 <b class="bk">시간</b>과 곱한 값으로, 단위로 <b class="bk">Wh</b>(와트시), kWh(킬로와트시) 등을 사용해요.</p>
       <div class="eq">전력량(Wh) = 소비 전력(W) × 시간(h)</div>
-      <p>소비 전력이 20 W인 전기 기구를 1시간 동안 사용한다면, 이때 사용한 전력량은 <mark>20 Wh</mark>예요. 2시간이면 40 Wh, 3시간이면 60 Wh로 <b>사용한 시간에 비례해</b> 늘어나요.</p>
+      <p>소비 전력이 20 W인 전기 기구를 1시간 동안 사용한다면, 이때 사용한 전력량은 <b class="bk">20 Wh</b>예요. 2시간이면 40 Wh, 3시간이면 60 Wh로 <b>사용한 시간에 비례해</b> 늘어나요.</p>
       <h3 style="margin:22px 0 6px">전력량 그래프, 차근차근 읽기</h3>
       <p>켜 둔 시간에 따라 전력량이 어떻게 늘어나는지 그래프로 그려 봐요. 밝기가 같은 두 전구 (가) 12 W와 (나) 8 W를 비교해요. 단계 버튼을 차례로 눌러 보세요.</p>
       <div class="fig wv"><div class="scene" id="fig3g" style="aspect-ratio:1100/640" role="img" aria-label="가로축 시간(h), 세로축 전력량(Wh)인 그래프. (가) 전구 12 W는 1시간마다 12 Wh씩, (나) 전구 8 W는 8 Wh씩 늘어나는 원점을 지나는 직선이다. (가)의 직선이 더 가파르며, 기울기는 소비 전력과 같다."></div>
@@ -220,7 +238,7 @@
     <h2>효율 등급과 대기전력을 살펴봐요</h2>
     <article class="card read reveal">
       <span class="tag">그림 Ⅵ-17 가전제품에 붙이는 에너지 효율 관련 표시</span>
-      <p>우리나라에서는 가전제품이 에너지를 효율적으로 이용하는 정도를 <b>1등급에서 5등급</b>으로 구분하여 표시하는 <mark>에너지 소비 효율 등급 표시제</mark>를 시행하고 있어요. <b>1등급으로 갈수록</b> 전기 에너지를 효율적으로 이용하는 가전제품이에요.</p>
+      <p>우리나라에서는 가전제품이 에너지를 효율적으로 이용하는 정도를 <b>1등급에서 5등급</b>으로 구분하여 표시하는 에너지 소비 효율 등급 표시제를 시행하고 있어요. <b class="bk">1등급</b>으로 갈수록 전기 에너지를 효율적으로 이용하는 가전제품이에요.</p>
       <div class="grade-cap"><span>효율적</span><span>덜 효율적</span></div>
       <div class="grade" role="img" aria-label="에너지 소비 효율 등급 1등급부터 5등급까지. 1등급으로 갈수록 효율적이다.">
         <div style="background:#0e63b3">1<small>등급</small></div><div style="background:#3a7fc1">2<small>등급</small></div><div style="background:#6c9fcf">3<small>등급</small></div><div style="background:#98b6d2">4<small>등급</small></div><div style="background:#b4c3d1">5<small>등급</small></div>
@@ -235,11 +253,11 @@
       <p>성능은 같지만 ㉠이 하루에 <b>200 Wh를 덜</b> 써요. 같은 일을 하는 기구라면 소비 전력이 작고 1등급에 가까운 기구를 고르면 전기 에너지를 아낄 수 있어요.</p>
       <div class="myth"><b class="t">오개념 바로잡기</b><q>소비 전력이 작은 기구는 전기 에너지를 조금만 쓴다?</q> 오래 켜 두면 달라요. 8 W 전구도 하루 종일(24시간) 켜 두면 192 Wh로, 40 W 선풍기를 4시간 켠 것(160 Wh)보다 많아요. 전력량 = 소비 전력 × <b>시간</b>이므로 쓰지 않을 때 끄는 것도 중요해요.</div>
       <p>또 전기 에너지를 효율적으로 소비하는 가전제품에는 별도의 인증 표시를 붙이기도 해요. <b>에너지절약</b> 표시는 에너지 효율이 뛰어나거나, <button class="term" data-term="대기전력">대기전력</button>이 작은 가전제품에 붙여요.</p>
-      <p>가전제품의 전원이 꺼져 있더라도 <mark>플러그가 콘센트에 연결되어 있으면 대기전력을 소비</mark>해요. 그래서 쓰지 않는 가전제품은 플러그를 뽑거나 멀티탭의 스위치를 꺼 두면 전기 에너지를 아낄 수 있어요.</p>
+      <p>가전제품의 전원이 꺼져 있더라도 <b class="bk">플러그</b>가 콘센트에 연결되어 있으면 <b class="bk">대기전력</b>을 소비해요. 그래서 쓰지 않는 가전제품은 플러그를 뽑거나 멀티탭의 스위치를 꺼 두면 전기 에너지를 아낄 수 있어요.</p>
       <div class="key-box"><span class="kt">핵심 정리 · 소비 전력과 전력량</span>
-        <p>· 전기 기구가 <b>1초 동안 소비하는 전기 에너지의 양</b>을 소비 전력이라 하고, 단위로 <b>W</b>를 사용한다. 소비 전력(W) = 전기 에너지(J) ÷ 시간(초)</p>
-        <p>· 같은 성능을 갖더라도 소비 전력이 더 <b>작은</b> 전기 기구를 선택하면 전기 에너지를 절약할 수 있다.</p>
-        <p>· 전기 기구의 <b>소비 전력과 사용한 시간의 곱</b>을 전력량이라 하고, 단위로 <b>Wh</b>, kWh를 사용한다.</p>
+        <p>· 전기 기구가 1초 동안 소비하는 전기 에너지의 양을 <b class="bk">소비 전력</b>이라 하고, 단위로 <b class="bk">W</b>를 사용한다. 소비 전력(W) = 전기 에너지(J) ÷ 시간(초)</p>
+        <p>· 같은 성능을 갖더라도 소비 전력이 더 <b class="bk">작은</b> 전기 기구를 선택하면 전기 에너지를 절약할 수 있다.</p>
+        <p>· 전기 기구의 소비 전력과 사용한 시간의 곱을 <b class="bk">전력량</b>이라 하고, 단위로 <b class="bk">Wh</b>, kWh를 사용한다.</p>
         <p>· 에너지 소비 효율 등급은 1등급으로 갈수록 효율적이다. 꺼져 있어도 플러그가 꽂혀 있으면 대기전력을 소비한다.</p>
       </div>
     </article>
@@ -281,6 +299,32 @@ window.RD = {
   $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
   reduce: !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches),
 };
+</script>
+<script>
+/* ===== 블록 0: 빈칸 (눌러서 확인) ===== */
+(() => {
+  'use strict';
+  try {
+    const { $, $$ } = window.RD;
+    const all = $$('main .bk').filter((b) => !b.closest('.howbk'));
+    all.forEach((b, i) => {
+      const ans = b.textContent.trim();
+      b.innerHTML = `<span class="bn">${i + 1}</span><span class="ba">${ans}</span>`;
+      b.setAttribute('role', 'button'); b.setAttribute('tabindex', '0'); b.setAttribute('aria-label', `빈칸 ${i + 1}`);
+      const flip = () => { b.classList.toggle('open'); count(); };
+      b.addEventListener('click', (e) => { e.stopPropagation(); flip(); });
+      b.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); } });
+    });
+    function count() {
+      const n = all.filter((b) => b.classList.contains('open')).length;
+      $('#bkCount').textContent = `빈칸 ${n} / ${all.length}`;
+      $('#bkAll').setAttribute('aria-pressed', String(n === all.length)); $('#bkAll').textContent = n === all.length ? '빈칸 모두 닫기' : '빈칸 모두 열기';
+    }
+    $('#bkAll').addEventListener('click', () => { const openAll = $('#bkAll').getAttribute('aria-pressed') !== 'true'; all.forEach((b) => b.classList.toggle('open', openAll)); count(); });
+    count();
+    if (new URLSearchParams(location.search).get('open') === '1') $('#bkAll').click();
+  } catch (err) { window.RD_err && window.RD_err('빈칸', err); }
+})();
 </script>
 <script>
 /* ===== 블록 1: 기본 기능 · 퀴즈 ===== */
@@ -347,25 +391,19 @@ window.RD = {
     $('#f2Go').addEventListener('click', () => { L.follow(); $('#f2Go').disabled = true; say2('1초 동안 들어간 전기 에너지를 따라가는 중이에요…'); });
     $('#f2Re').addEventListener('click', () => { L.reset(); $('#f2Go').disabled = false; say2('네모 하나는 1 J이에요'); });
     // 그림 ⓐ 에너지 전환 지도
-    const EN = [['빛', '빛에너지', '#e9b931'], ['열', '열에너지', '#d8643a'], ['운동', '운동 에너지', '#5a8fc4'], ['소리', '소리 에너지', '#7a6bb0'], ['화학', '화학 에너지', '#4f9a6a']];
-    const EM = [
-      ['헤어드라이어', ['열', '운동'], '뜨거운 바람: 열에너지와 운동 에너지(바람)로 바뀌어요.'],
-      ['선풍기', ['운동'], '날개를 돌리는 운동 에너지로 바뀌어요.'],
-      ['전등', ['빛', '열'], '주로 빛에너지로 쓰지만 열에너지로도 바뀌어요. 그림 ②의 두 전등처럼요.'],
-      ['텔레비전', ['빛', '소리'], '화면의 빛에너지와 스피커의 소리 에너지로 동시에 바뀌어요.'],
-      ['전기 주전자', ['열'], '물을 끓이는 열에너지로 바뀌어요.'],
-      ['믹서', ['운동', '소리'], '칼날을 돌리는 운동 에너지로 바뀌고, 소리도 나요.'],
-      ['휴대 전화 충전', ['화학'], '배터리에 화학 에너지로 저장돼요.'],
-      ['헤드폰', ['소리'], '소리 에너지로 바뀌어요.'],
-    ];
-    $('#emDevs').innerHTML = EM.map((d, i) => `<button type="button" data-i="${i}" aria-pressed="false">${d[0]}</button>`).join('');
-    $('#emOuts').innerHTML = EN.map(([k, n, c]) => `<span data-k="${k}">${n}</span>`).join('');
-    window.RD.$$('#emDevs button').forEach((b) => b.addEventListener('click', () => {
-      const d = EM[+b.dataset.i];
-      window.RD.$$('#emDevs button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
-      window.RD.$$('#emOuts span').forEach((sp) => sp.classList.toggle('on', d[1].includes(sp.dataset.k)));
-      $('#emWhy').innerHTML = `<b>${d[0]}</b> · ${d[2]}`;
-    }));
+    const DM = PW.devmap($('#emScene'));
+    const WHY = { dryer: '뜨거운 바람: 열에너지와 운동 에너지(바람)로 바뀌어요.', fan: '날개를 돌리는 운동 에너지로 바뀌어요.', lamp: '주로 빛에너지로 쓰지만 열에너지로도 바뀌어요. 그림 ②의 두 전등처럼요.', tv: '화면의 빛에너지와 스피커의 소리 에너지로 동시에 바뀌어요.', kettle: '물을 끓이는 열에너지로 바뀌어요.', mixer: '칼날을 돌리는 운동 에너지로 바뀌고, 소리도 나요.', phone: '배터리에 화학 에너지로 저장돼요.', hp: '소리 에너지로 바뀌어요.' };
+    $('#emDevs').innerHTML = PW.DEVS.map((d) => `<button type="button" data-d="${d.id}" aria-pressed="false"><canvas aria-hidden="true"></canvas>${d.name}</button>`).join('');
+    window.RD.$$('#emDevs button').forEach((b) => {
+      PW.thumb(b.querySelector('canvas'), b.dataset.d);
+      b.addEventListener('click', () => {
+        const d = PW.DEVS.find((x) => x.id === b.dataset.d);
+        window.RD.$$('#emDevs button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+        DM.set(d.id);
+        $('#emWhy').innerHTML = `<b>${d.name}</b> · ${WHY[d.id]}`;
+      });
+    });
+    $('#emDevs [data-d="dryer"]').click();
     // 그림 ⓑ 전력량 그래프 차근차근
     const GR = PW.graph($('#fig3g'), { a: { name: '(가) 전구', w: 12 }, b: { name: '(나) 전구', w: 8 }, t: 2, step: 1 });
     const tbl = (w) => `<table><tr><th>시간(h)</th>${[0, 1, 2, 3, 4, 5].map((h) => `<td>${h}</td>`).join('')}</tr><tr><th>전력량(Wh)</th>${[0, 1, 2, 3, 4, 5].map((h) => `<td>${w * h}</td>`).join('')}</tr></table>`;
