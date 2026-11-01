@@ -42,6 +42,20 @@
   .qa3 button.bad{border-color:#e7a29b;background:#fff4f2;color:#9b3a32}
   .calc{font-size:15px;line-height:1.7;margin:0;word-break:keep-all}
   .calc b{color:#0b3f73}
+  .seg4{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .seg4 button,.seg3 button{min-height:48px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:14px;cursor:pointer;word-break:keep-all;line-height:1.3;padding:3px 8px}
+  .seg4 button small{display:block;font-size:12px;color:var(--muted);font-weight:700}
+  .seg3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+  .seg4 button[aria-pressed="true"],.seg3 button[aria-pressed="true"]{border-color:var(--fab);background:#e9f3fd;color:#0b3f73}
+  .rng{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center}
+  .rng b{font-size:15px;min-width:58px;text-align:right;color:#0b3f73}
+  .rng span{font-size:14px;font-weight:800;color:var(--muted)}
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:44px;background:transparent;margin:0}
+  input[type=range]::-webkit-slider-runnable-track{height:8px;border-radius:4px;background:#dfe7ef}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:34px;height:34px;border-radius:50%;background:#0e63b3;margin-top:-13px;border:3px solid #fff;box-shadow:0 1px 4px rgba(20,38,59,.3)}
+  input[type=range]::-moz-range-track{height:8px;border-radius:4px;background:#dfe7ef}
+  input[type=range]::-moz-range-thumb{width:30px;height:30px;border-radius:50%;background:#0e63b3;border:3px solid #fff}
+  input[type=range]:disabled{opacity:.4}
 </style>
 </head>
 <body>
@@ -52,7 +66,8 @@
       <p class="sub" id="sub">거실의 전기 기구를 몇 시간씩 쓸지 정하고 켜 봐요. 전력량계에 쓴 전력량이 쌓여요.</p>
     </div>
     <div class="ptabs big" role="tablist" id="act">
-      <button type="button" role="tab" data-a="1" aria-selected="true">하루 동안 쓴 전력량</button>
+      <button type="button" role="tab" data-a="3" aria-selected="true">전력량 그래프</button>
+      <button type="button" role="tab" data-a="1" aria-selected="false">하루 동안 쓴 전력량</button>
       <button type="button" role="tab" data-a="2" aria-selected="false">꺼도 도는 회전판</button>
     </div>
   </header>
@@ -60,6 +75,7 @@
   <div class="stage">
     <section class="card viewer">
       <div class="scene grow" id="room" role="img" aria-label="거실 그림. 천장 전등, 벽걸이 에어컨, 장식장 위 텔레비전, 선풍기, 책상 위 컴퓨터가 있고, 왼쪽 벽에는 회전판이 보이는 전력량계가 있다. 기구들의 플러그는 바닥의 멀티탭에 꽂혀 있다. 기구를 켜면 전선에 전기가 흐르고 전력량계 회전판이 돌며 쓴 전력량(Wh)이 쌓인다."></div>
+      <div class="scene grow" id="graph" hidden role="img" aria-label="가로축은 시간(h), 세로축은 전력량(Wh)인 그래프. 두 기구의 전력량이 원점을 지나는 직선으로 늘어나며, 소비 전력이 큰 기구의 직선이 더 가파르다."></div>
       <div class="vctl">
         <span class="hint" id="hint">회전판은 전기 에너지를 쓰는 동안 돌아요</span>
         <span class="sp"></span>
@@ -83,6 +99,18 @@
           </div>
           <div class="fbk" id="resA"><b class="t" id="resAT">결과</b><span id="resAM">먼저 전력량이 가장 클 것 같은 기구를 골라요. 사용 시간은 −, + 로 바꿀 수 있어요.</span></div>
         </div>
+        <div id="labG" hidden>
+          <div class="ctl">
+            <div class="seglbl">예상하기 · 소비 전력이 큰 기구의 그래프는?</div>
+            <div class="seg3" id="predG"><button type="button" data-v="s" aria-pressed="false">더 가파르다</button><button type="button" data-v="g" aria-pressed="false">더 완만하다</button><button type="button" data-v="e" aria-pressed="false">같다</button></div>
+            <div class="seglbl">비교할 두 기구</div>
+            <div class="seg4" id="pairs"></div>
+            <div class="seglbl">사용 시간</div>
+            <div class="rng"><span>0</span><input type="range" id="tR" min="0" max="5" step="1" value="0" aria-label="사용 시간" disabled><b id="tV">0시간</b></div>
+            <button class="btn ghost" type="button" id="bTri" aria-pressed="false" disabled>1시간 동안 늘어난 양 보기</button>
+          </div>
+          <div class="fbk" id="resG"><b class="t" id="resGT">결과</b><span id="resGM">먼저 예상을 골라요. 그다음 사용 시간을 늘려 봐요.</span></div>
+        </div>
         <div id="labB" hidden>
           <div class="ctl">
             <div class="seglbl">예상하기 · 기구를 모두 끈 밤, 전력량계 회전판은?</div>
@@ -99,6 +127,10 @@
           <div class="qa"><p>전력량을 구하는 식은?</p><div class="qa3" id="qA"></div></div>
           <div class="qa"><p>소비 전력이 1000 W인 에어컨을 2시간 사용했을 때 전력량은?</p><div class="qa3" id="qB"></div></div>
         </div>
+        <div id="recG" hidden>
+          <div class="qa"><p>전력량 그래프의 기울기가 나타내는 것은?</p><div class="qa3" id="qE"></div></div>
+          <div class="qa"><p>소비 전력이 20 W인 전등의 그래프에서 3시간일 때 전력량은?</p><div class="qa3" id="qF"></div></div>
+        </div>
         <div id="recB" hidden>
           <div class="qa"><p>대기전력이란?</p><div class="qa3" id="qC"></div></div>
           <div class="qa"><p>대기전력을 줄이려면?</p><div class="qa3" id="qD"></div></div>
@@ -111,6 +143,13 @@
           <div class="ph on"><i>2</i><span>단위는 <b>Wh(와트시)</b>나 kWh(킬로와트시)예요. 소비 전력이 20 W인 전등을 1시간 쓰면 <b>20 Wh</b>예요.</span></div>
           <div class="ph on"><i>3</i><p class="calc">전등 20 W × 5시간 = <b>100 Wh</b><br>에어컨 1000 W × 2시간 = <b>2000 Wh</b></p></div>
           <div class="ph on"><i>4</i><span>오래 켠 기구보다 <b>소비 전력이 큰 기구</b>가 짧게 써도 전력량이 더 클 수 있어요.</span></div>
+        </div>
+        <div class="phase" id="whyG" hidden>
+          <div class="ph on"><i>1</i><span>소비 전력이 12 W인 (가) 전구는 1시간 켤 때마다 전력량이 <b>12 Wh씩</b> 늘어요. 0, 12, 24, 36 … 점을 이으면 <b>원점을 지나는 직선</b>이에요.</span></div>
+          <div class="ph on"><i>2</i><span>8 W인 (나) 전구는 1시간마다 <b>8 Wh씩</b>만 늘어요. 이것도 원점을 지나는 직선이지만 <b>더 완만</b>해요.</span></div>
+          <div class="ph on"><i>3</i><span>같은 시간을 켜면 소비 전력이 큰 쪽이 전력량이 더 커요. 2시간이면 (가) 24 Wh, (나) 16 Wh예요.</span></div>
+          <div class="ph on"><i>4</i><span>그래프의 <b>기울기</b>는 '1시간 동안 전력량이 얼마나 늘어나는가'예요. 전력량 = 소비 전력 × 시간이므로 1시간 동안 늘어나는 양이 바로 <b>소비 전력</b>이에요.</span></div>
+          <div class="ph on"><i>5</i><span>그래서 소비 전력이 클수록 그래프가 <b>가팔라요</b>. 그래프만 보고도 어느 기구의 소비 전력이 더 큰지 알 수 있어요.</span></div>
         </div>
         <div class="phase" id="whyB" hidden>
           <div class="ph on"><i>1</i><span>가전제품을 실제로 쓰지 않는 대기 상태에서 소비되는 전력을 <b>대기전력</b>이라고 해요.</span></div>
@@ -229,6 +268,49 @@ window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) 
 })();
 </script>
 <script>
+/* ===== 블록 0: 전력량 그래프 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S, fmt = PW.fmt;
+    const PAIRS = [
+      [{ name: '(가) 전구', w: 12 }, { name: '(나) 전구', w: 8 }],
+      [{ name: '선풍기', w: 40 }, { name: '전등', w: 20 }],
+      [{ name: '컴퓨터', w: 200 }, { name: '텔레비전', w: 100 }],
+      [{ name: '헤어드라이어', w: 1200 }, { name: '선풍기', w: 40 }],
+    ];
+    let G = null, pi = 0, pred = null;
+    function make() { if (G) return; G = PW.graph($('#graph'), { a: PAIRS[0][0], b: PAIRS[0][1], t: 0 }); window.GRAPH = G; }
+    function msg(t, m, cls = '') { $('#resG').className = 'fbk ' + cls; $('#resGT').textContent = t; $('#resGM').innerHTML = m; }
+    $('#pairs').innerHTML = PAIRS.map(([a, b], i) => `<button type="button" data-i="${i}" aria-pressed="${i === 0}">${a.name} · ${b.name}<small>${fmt(a.w)} W · ${fmt(b.w)} W</small></button>`).join('');
+    function show() {
+      make();
+      const [a, b] = PAIRS[pi], t = +$('#tR').value;
+      $('#tV').textContent = `${t}시간`;
+      G.set({ a, b, t });
+      if (!pred) return;
+      if (t === 0) { msg('결과', '<b>사용 시간</b> 막대를 오른쪽으로 끌어 봐요. 두 직선이 어떻게 달라지나요?'); return; }
+      const ok = pred === 's', far = t >= 2;
+      msg(far ? (ok ? '예상이 맞았어요 · 더 가팔라요' : '결과 · 소비 전력이 큰 쪽이 더 가팔라요') : `${t}시간 동안 쓴 전력량`,
+        `${a.name} ${fmt(a.w)} W × ${t} h = <b>${fmt(a.w * t)} Wh</b>, ${b.name} ${fmt(b.w)} W × ${t} h = <b>${fmt(b.w * t)} Wh</b>. ${far ? '소비 전력이 큰 ' + a.name + '의 그래프가 더 가팔라요.' : '시간을 더 늘려 봐요.'}`, far ? (ok ? 'ok' : 'no') : '');
+    }
+    $$('#pairs button').forEach((b) => b.addEventListener('click', () => { pi = +b.dataset.i; $$('#pairs button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); show(); }));
+    $$('#predG button').forEach((b) => b.addEventListener('click', () => {
+      pred = b.dataset.v; $$('#predG button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+      $('#tR').disabled = false; $('#bTri').disabled = false; show();
+    }));
+    $('#tR').addEventListener('input', show);
+    $('#bTri').addEventListener('click', (e) => {
+      const on = e.currentTarget.getAttribute('aria-pressed') !== 'true'; e.currentTarget.setAttribute('aria-pressed', String(on)); G.set({ tri: on });
+      const [a, b] = PAIRS[pi];
+      if (on) msg('1시간 동안 늘어난 양', `${a.name}는 1시간마다 <b>${fmt(a.w)} Wh</b>, ${b.name}는 <b>${fmt(b.w)} Wh</b>씩 늘어요. 이 값이 각 기구의 <b>소비 전력</b>과 같아요. 그래서 기울기 = 소비 전력이에요.`, 'ok'); else show();
+    });
+    window.__resetG = () => { make(); pred = null; $$('#predG button').forEach((x) => x.setAttribute('aria-pressed', 'false')); $('#tR').value = 0; $('#tR').disabled = true; const bt = $('#bTri'); bt.disabled = true; bt.setAttribute('aria-pressed', 'false'); G.set({ tri: false }); show(); msg('결과', '먼저 예상을 골라요. 그다음 사용 시간을 늘려 봐요.'); };
+    window.__graphDemo = (q) => { make(); if (q.get('pair')) $(`#pairs [data-i="${q.get('pair')}"]`).click(); if (q.get('t')) { $('#predG [data-v="s"]').click(); $('#tR').value = q.get('t'); show(); G.st.td = +q.get('t'); } if (q.get('tri') === '1') $('#bTri').click(); };
+  } catch (err) { window.SM_err('전력량 그래프', err); }
+})();
+</script>
+<script>
 /* ===== 블록 3: 활동 탭 · 정리 ===== */
 (() => {
   'use strict';
@@ -238,18 +320,20 @@ window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) 
     const QS = {
       qA: [['a', '전력량(Wh) = 소비 전력(W) × 시간(h)', true], ['b', '전력량(Wh) = 소비 전력(W) ÷ 시간(h)', false], ['c', '전력량(W) = 전기 에너지(J) × 시간(초)', false]],
       qB: [['a', '2000 Wh', true], ['b', '500 Wh', false], ['c', '1002 Wh', false]],
+      qE: [['a', '소비 전력(1시간 동안 늘어나는 전력량)', true], ['b', '사용한 시간', false], ['c', '정격 전압', false]],
+      qF: [['a', '60 Wh', true], ['b', '23 Wh', false], ['c', '20 Wh', false]],
       qC: [['a', '가전제품을 쓰지 않는 대기 상태에서 소비되는 전력', true], ['b', '가전제품을 켜는 순간에만 쓰는 전력', false], ['c', '전기 요금 청구서에 적힌 한 달 전력량', false]],
       qD: [['a', '쓰지 않는 기구의 플러그를 뽑거나 멀티탭 스위치를 끈다', true], ['b', '기구의 전원 버튼만 끄고 플러그는 꽂아 둔다', false], ['c', '전력량계를 끈다', false]],
     };
     const pick = {};
     Object.keys(QS).forEach((k) => { $('#' + k).innerHTML = QS[k].map(([v, t]) => `<button type="button" data-v="${v}" aria-pressed="false">${t}</button>`).join(''); });
     function msg(t, m, cls = '') { $('#res2').className = 'fbk ' + cls; $('#res2T').textContent = t; $('#res2M').innerHTML = m; }
-    const set = () => (act === 1 ? ['qA', 'qB'] : ['qC', 'qD']);
+    const set = () => (act === 1 ? ['qA', 'qB'] : act === 3 ? ['qE', 'qF'] : ['qC', 'qD']);
     Object.keys(QS).forEach((k) => $$('#' + k + ' button').forEach((b) => b.addEventListener('click', () => {
       pick[k] = b.dataset.v; $$('#' + k + ' button').forEach((x) => { x.setAttribute('aria-pressed', String(x === b)); x.classList.remove('good', 'bad'); });
       const ok = QS[k].find((x) => x[0] === b.dataset.v)[2]; b.classList.add(ok ? 'good' : 'bad');
-      if (set().every((q) => pick[q] && QS[q].find((x) => x[0] === pick[q])[2])) msg('결과 · 모두 맞았어요', act === 1 ? '전력량은 <b>소비 전력 × 사용한 시간</b>이고 단위는 <b>Wh</b>, kWh예요. 1000 W × 2시간 = 2000 Wh예요.' : '꺼져 있어도 플러그가 꽂혀 있으면 <b>대기전력</b>을 소비해요. 플러그를 뽑으면 줄일 수 있어요.', 'ok');
-      else if (!ok) msg('다시 생각해 봐요', act === 1 ? '소비 전력에 사용한 <b>시간을 곱해요</b>.' : '해 보기에서 회전판이 언제 멈췄는지 떠올려 봐요.', 'no');
+      if (set().every((q) => pick[q] && QS[q].find((x) => x[0] === pick[q])[2])) msg('결과 · 모두 맞았어요', act === 3 ? '전력량 그래프의 기울기는 <b>소비 전력</b>이에요. 20 W × 3 h = 60 Wh예요.' : act === 1 ? '전력량은 <b>소비 전력 × 사용한 시간</b>이고 단위는 <b>Wh</b>, kWh예요. 1000 W × 2시간 = 2000 Wh예요.' : '꺼져 있어도 플러그가 꽂혀 있으면 <b>대기전력</b>을 소비해요. 플러그를 뽑으면 줄일 수 있어요.', 'ok');
+      else if (!ok) msg('다시 생각해 봐요', act === 3 ? '1시간 동안 늘어난 양을 다시 보세요. 전력량 = 소비 전력 × 시간이에요.' : act === 1 ? '소비 전력에 사용한 <b>시간을 곱해요</b>.' : '해 보기에서 회전판이 언제 멈췄는지 떠올려 봐요.', 'no');
     })));
     function show(p) { $$('#pt button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.p === p))); $$('.pane').forEach((e) => (e.hidden = e.dataset.p !== p)); }
     $$('#pt button').forEach((b) => b.addEventListener('click', () => show(b.dataset.p)));
@@ -257,18 +341,19 @@ window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) 
       act = a; $$('#act button').forEach((b) => b.setAttribute('aria-selected', String(+b.dataset.a === a)));
       ['labA', 'recA', 'whyA'].forEach((id) => ($('#' + id).hidden = a !== 1));
       ['labB', 'recB', 'whyB'].forEach((id) => ($('#' + id).hidden = a !== 2));
-      $('#eb').textContent = a === 1 ? '해 보기' : '대기전력';
-      $('#h1').textContent = a === 1 ? '하루 동안 쓴 전력량' : '모두 꺼도 회전판이 돌까?';
-      $('#sub').textContent = a === 1 ? '거실의 전기 기구를 몇 시간씩 쓸지 정하고 켜 봐요. 전력량계에 쓴 전력량이 쌓여요.' : '밤에 거실의 기구를 모두 껐어요. 플러그는 멀티탭에 꽂혀 있어요.';
-      $('#hint').textContent = a === 1 ? '회전판은 전기 에너지를 쓰는 동안 돌아요' : '빨간 불은 대기 상태를 알려 줘요';
-      $('#note').textContent = a === 1 ? '소비 전력은 예시 값이에요(전등 20 W는 교과서 예).' : '회전판이 도는 빠르기는 보기 좋게 정한 모형이에요. 대기전력의 크기는 기구마다 달라요.';
-      if (a === 1) window.__resetA(); else window.__resetB();
+      ['labG', 'recG', 'whyG', 'graph'].forEach((id) => ($('#' + id).hidden = a !== 3));
+      $('#room').hidden = a === 3;
+      const T = { 1: ['해 보기', '하루 동안 쓴 전력량', '거실의 전기 기구를 몇 시간씩 쓸지 정하고 켜 봐요. 전력량계에 쓴 전력량이 쌓여요.', '회전판은 전기 에너지를 쓰는 동안 돌아요', '소비 전력은 예시 값이에요(전등 20 W는 교과서 예).'],
+        2: ['대기전력', '모두 꺼도 회전판이 돌까?', '밤에 거실의 기구를 모두 껐어요. 플러그는 멀티탭에 꽂혀 있어요.', '빨간 불은 대기 상태를 알려 줘요', '회전판이 도는 빠르기는 보기 좋게 정한 모형이에요. 대기전력의 크기는 기구마다 달라요.'],
+        3: ['그래프 해석', '전력량 그래프 읽기', '켜 둔 시간에 따라 두 기구의 전력량이 어떻게 늘어나는지 그래프로 비교해요.', '점선은 5시간까지 켰을 때의 직선이에요', '(가)·(나) 전구와 헤어드라이어는 교과서 값, 나머지는 예시 값이에요.'] }[a];
+      $('#eb').textContent = T[0]; $('#h1').textContent = T[1]; $('#sub').textContent = T[2]; $('#hint').textContent = T[3]; $('#note').textContent = T[4];
+      if (a === 1) window.__resetA(); else if (a === 2) window.__resetB(); else window.__resetG();
       show('lab'); msg('결과', '해 보기를 한 뒤 골라 보세요.');
     }
     $$('#act button').forEach((b) => b.addEventListener('click', () => setAct(+b.dataset.a)));
     $('#bReset').addEventListener('click', () => (act === 1 ? window.__resetA() : window.__resetB()));
-    setAct(Q.get('act') === '2' ? 2 : 1);
-    if (act === 1) window.__dayDemo(Q); else if (Q.get('night') === '1') window.__nightDemo(Q);
+    setAct(Q.get('act') === '2' ? 2 : Q.get('act') === '1' || Q.get('day') ? 1 : 3);
+    if (act === 1) window.__dayDemo(Q); else if (act === 3) window.__graphDemo(Q); else if (Q.get('night') === '1') window.__nightDemo(Q);
     if (['rec', 'why'].includes(Q.get('tab'))) show(Q.get('tab'));
     if (Q.get('ans') === '1') set().forEach((k) => $('#' + k + ' [data-v="a"]').click());
   } catch (err) { window.SM_err('활동 탭·정리', err); }

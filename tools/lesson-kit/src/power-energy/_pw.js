@@ -752,5 +752,59 @@ window.PW = (() => {
     return api;
   }
 
-  return { plate, race, lamps, room, DEV, LAMPS, fmt };
+  /* =====================================================================
+     전력량 그래프: 시간(h)에 따른 전력량(Wh), 기울기 = 소비 전력 (선생님 요청으로 더한 그래프 해석)
+     set({a:{name,w}, b:{name,w}|null, t, step, tri})  step 0 보통, 1~5 차근차근 단계
+     ===================================================================== */
+  function graph(host, o = {}) {
+    const S = surface(host, 1100, 640), ctx = S.ctx, OL = overlay(S);
+    const X0 = 120, X1 = 900, YB = 560, YT = 50, T = 5;
+    const st = Object.assign({ a: { name: '(가) 전구', w: 12 }, b: { name: '(나) 전구', w: 8 }, t: 2, td: 0, step: 0, tri: false }, o);
+    const COL = { a: BLUE, b: '#3f4d5c' };
+    const api = { st, set(v) { Object.assign(st, v); } };
+    function nice(v) { const e = Math.pow(10, Math.floor(Math.log10(v))); for (const m of [1, 1.2, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10]) if (m * e >= v) return m * e; return 10 * e; }
+    addLoop(host, (dt) => { st.td = reduce ? st.t : lerp(st.td, st.t, Math.min(1, dt * 5)); if (Math.abs(st.td - st.t) < 0.002) st.td = st.t; draw(); });
+    function draw() {
+      S.begin(); white(S);
+      const showB = st.b && st.step !== 1, ser = [['a', st.a]].concat(showB ? [['b', st.b]] : []);
+      const ymax = nice(Math.max(st.a.w, st.b ? st.b.w : 0) * T * 1.04);
+      const px = (h) => X0 + (h / T) * (X1 - X0), py = (wh) => YB - (wh / ymax) * (YB - YT);
+      // 눈금과 격자
+      const n = 5;
+      for (let i = 0; i <= n; i++) { const v = (ymax / n) * i, y = py(v); ctx.strokeStyle = i ? '#eef2f6' : '#9fb0c1'; ctx.lineWidth = i ? 1 : 1.6; ctx.beginPath(); ctx.moveTo(X0, y); ctx.lineTo(X1, y); ctx.stroke(); OL.put('y' + i, X0 - 12, y, fmt(v), 'tx sc la'); }
+      for (let h = 0; h <= T; h++) { const x = px(h); if (h) { ctx.strokeStyle = '#eef2f6'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x, YB); ctx.lineTo(x, YT); ctx.stroke(); } OL.put('x' + h, x, YB + 22, String(h), 'tx sc'); }
+      ctx.strokeStyle = '#9fb0c1'; ctx.lineWidth = 1.6; ctx.beginPath(); ctx.moveTo(X0, YT - 10); ctx.lineTo(X0, YB); ctx.stroke();
+      OL.put('ax', (X0 + X1) / 2, YB + 58, '시간(h)', 'tx nm sm'); OL.put('ay', X0 - 80, YT - 26, '전력량(Wh)', 'tx nm sm ra');
+      const td = st.step === 1 || st.step === 2 || st.step >= 4 ? T : st.td;
+      // 지금 시간 세로선
+      const mark = st.step === 0 || st.step === 3;
+      if (mark && td > 0.01) { ctx.strokeStyle = '#b9c6d3'; ctx.setLineDash([5, 5]); ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(px(td), YB); ctx.lineTo(px(td), YT); ctx.stroke(); ctx.setLineDash([]); OL.put('tm', px(td), YT - 22, `${Math.round(td * 10) / 10}시간`, 'tx clock'); } else OL.hide('tm');
+      ['a', 'b'].forEach((k) => { ['e', 'v', 'tr1', 'tr2'].forEach((q) => OL.hide(k + q)); for (let h = 0; h <= T; h++) OL.hide(k + 'p' + h); });
+      ser.forEach(([k, d], si) => {
+        const c = COL[k], end = d.w * T;
+        // 전체 직선(옅게)과 지금까지(진하게)
+        ctx.strokeStyle = k === 'a' ? 'rgba(14,99,179,.22)' : 'rgba(63,77,92,.22)'; ctx.setLineDash([6, 6]); ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(px(0), py(0)); ctx.lineTo(px(T), py(end)); ctx.stroke(); ctx.setLineDash([]);
+        ctx.strokeStyle = c; ctx.lineWidth = 4; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(px(0), py(0)); ctx.lineTo(px(td), py(d.w * td)); ctx.stroke();
+        for (let h = 0; h <= Math.floor(td + 1e-6); h++) {
+          ctx.fillStyle = '#fff'; ctx.strokeStyle = c; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(px(h), py(d.w * h), 6, 0, TAU); ctx.fill(); ctx.stroke();
+          if ((st.step === 1 && k === 'a') || (st.step === 2 && k === 'b')) OL.put(k + 'p' + h, px(h) + (k === 'a' ? -10 : 12), py(d.w * h) + (k === 'a' ? -18 : 18), fmt(d.w * h), 'tx val sm' + (k === 'a' ? ' la' : ' ra'));
+        }
+        if (mark && td > 0.01) { ctx.fillStyle = c; ctx.beginPath(); ctx.arc(px(td), py(d.w * td), 9, 0, TAU); ctx.fill(); OL.put(k + 'v', px(td) + ((st.tri || st.step >= 4) && Math.abs(td - Math.max(1, Math.floor(td + 1e-6) - 1)) < 0.01 ? 96 : 16), py(d.w * td) + (si ? 18 : -18), `<b>${fmt(d.w * td)} Wh</b>`, 'tx val ra'); }
+        // 기울기 계단(1시간 동안 늘어난 양)
+        if (st.tri || st.step >= 4) {
+          const ha = Math.max(0, Math.min(T - 1, Math.floor(td + 1e-6) - 2)), hb = Math.max(0, ha - 1), h0 = st.step >= 4 ? (k === 'a' ? 3 : 1) : (k === 'a' ? ha : hb), h1 = h0 + 1, same = st.step < 4 && ha === hb;
+          const xa = px(h0), xb = px(h1), ya = py(d.w * h0), yb = py(d.w * h1);
+          ctx.fillStyle = k === 'a' ? 'rgba(14,99,179,.08)' : 'rgba(63,77,92,.08)'; ctx.beginPath(); ctx.moveTo(xa, ya); ctx.lineTo(xb, ya); ctx.lineTo(xb, yb); ctx.closePath(); ctx.fill();
+          ctx.strokeStyle = c; ctx.lineWidth = 1.6; ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.moveTo(xa, ya); ctx.lineTo(xb, ya); ctx.lineTo(xb, yb); ctx.stroke(); ctx.setLineDash([]);
+          if (!(same && k === 'a')) OL.put(k + 'tr1', (xa + xb) / 2, ya + 16, '1시간', 'tx sc');
+          OL.put(k + 'tr2', xb + 10, same && k === 'a' ? Math.min((ya + yb) / 2, yb + 6) - 10 : (ya + yb) / 2, `+${fmt(d.w)} Wh`, 'tx val sm ra');
+        }
+        OL.put(k + 'e', X1 + 14, py(end), `${d.name} <span class="u">${fmt(d.w)} W</span>`, 'tx nm sm ra');
+      });
+      if (st.step === 5) OL.put('cap', (X0 + X1) / 2 - 120, YT + 26, '기울기 = 1시간 동안 늘어나는 전력량 = <b>소비 전력</b>', 'tx clock'); else OL.hide('cap');
+    }
+    return api;
+  }
+
+  return { plate, race, lamps, room, graph, DEV, LAMPS, fmt };
 })();
