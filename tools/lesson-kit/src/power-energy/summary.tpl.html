@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>소비 전력과 전력량 – 배운 내용 정리하기</title>
+<!--@@PART:errbox_sum.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sum.css@@*/
+  /* ===== 이 수업 전용 ===== */
+  :root{--violet:#0e63b3}
+  .eyebrow{color:#0e63b3;background:#e4f0fb}
+  .pr.sel{border-color:#0e63b3;background:#eef5fc}
+  .wq{background:#eef5fc;color:#123a63}
+  .starters button{border-color:#9fbbd8;color:#0b3f73}
+  .si .two{flex-wrap:wrap;justify-content:flex-end}
+  .si .two button{min-width:84px;word-break:keep-all;line-height:1.3;padding:4px 10px}
+  .si .two button[aria-pressed="true"]{border-color:#0e63b3;background:#e4f0fb;color:#0b3f73}
+  .si p .gap{display:inline-block;min-width:4.6em;border-bottom:2px solid #8b9aab;text-align:center;color:#0b3f73;font-weight:900;margin:0 4px}
+  .prompts{grid-template-columns:repeat(3,1fr)}
+  @media (max-width:860px){.prompts{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <span class="eyebrow">소비 전력과 전력량 · 배운 내용 정리하기</span>
+    <h1>전기 기구는 전기 에너지를 소비해 정리하기</h1>
+    <p class="sub">빈칸을 채우고, 계산해 보고, 같은 일을 하는 기구 중 무엇을 고를지 정한 뒤, 내 말로 설명해 봐요.</p>
+  </header>
+  <nav class="tabs" id="tabs"></nav>
+
+  <section class="card" id="s1">
+    <h2><span class="no">1</span>배운 내용 정리하기</h2>
+    <p class="goal">교과서 '배운 내용 정리하기'예요. 빈칸에 알맞은 말을 골라요.</p>
+    <div class="sort" id="sort1"></div>
+    <div class="acts"><button type="button" class="btn primary" id="chk1" disabled>확인하기</button></div>
+    <div class="fb" id="fb1"></div>
+  </section>
+
+  <section class="card" id="s2">
+    <h2><span class="no">2</span>계산해 보기</h2>
+    <p class="goal">소비 전력(W) = 전기 에너지(J) ÷ 시간(초), 전력량(Wh) = 소비 전력(W) × 시간(h)을 써서 답을 골라요.</p>
+    <div class="sort" id="sort2"></div>
+    <div class="acts"><button type="button" class="btn primary" id="chk2" disabled>확인하기</button></div>
+    <div class="fb" id="fb2"></div>
+  </section>
+
+  <section class="card" id="s3">
+    <h2><span class="no">3</span>어떤 것을 고를까?</h2>
+    <p class="goal">전기 에너지를 덜 쓰는 쪽을 골라요. 기구의 값은 예시 값이에요.</p>
+    <div class="sort" id="sort3"></div>
+    <div class="acts"><button type="button" class="btn primary" id="chk3" disabled>확인하기</button></div>
+    <div class="fb" id="fb3"></div>
+  </section>
+
+  <section class="card" id="s4">
+    <h2><span class="no">4</span>내 말로 설명하기</h2>
+    <p class="goal">주제를 하나 골라 친구에게 설명하듯 써 봐요. 핵심어를 넣으면 초록색으로 바뀌어요.</p>
+    <div class="prompts" id="prompts"></div>
+    <div class="wq" id="wqText"></div>
+    <div class="starters" id="starters"></div>
+    <textarea id="txt" placeholder="여기에 써 보세요."></textarea>
+    <div class="wmeta"><span id="cnt">0자 · 목표 100자 이상</span><span id="saved"></span></div>
+    <div class="kw" id="kw"></div>
+    <div class="self" id="self"></div>
+    <div class="acts">
+      <button class="btn green" id="copyBtn" type="button">글 복사하기</button>
+      <button class="btn ghost" id="printBtn" type="button">인쇄 / PDF로 저장</button>
+    </div>
+    <p class="note" style="margin-top:10px">※ 글은 이 기기의 브라우저에만 임시로 저장되고 어디에도 보내지 않아요. 다 쓰면 '글 복사하기'로 복사해서 선생님이 안내한 곳에 붙여 넣으세요.</p>
+  </section>
+  <p class="credit" style="margin:20px 0 4px;text-align:center;font-size:13px;font-weight:700;color:#8495a8;letter-spacing:.02em">소비 전력과 전력량 · 배운 내용 정리하기</p>
+</div>
+
+<script>
+/* ===== 공통 ===== */
+window.SW_CHECKS = [['ok1', '빈칸 · 계산 · 고르기'], ['ok4', '글쓰기']];
+window.SW = {
+  $: (s, r = document) => r.querySelector(s),
+  $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
+  shuffle: (a) => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; },
+  fb: (id, ok, html) => { const f = document.querySelector(id); f.className = 'fb show ' + (ok ? 'ok' : 'no'); f.innerHTML = html; },
+  done: {},
+};
+(() => {
+  const { $, $$ } = window.SW;
+  const TABS = ['빈칸', '계산', '고르기', '글쓰기'];
+  window.SW.renderTabs = () => {
+    $('#tabs').innerHTML = TABS.map((t, i) => `<button type="button" class="tab${window.SW.done[i + 1] ? ' done' : ''}" data-s="${i + 1}"><span class="n">${i + 1}</span>${t}</button>`).join('');
+    $$('#tabs .tab').forEach((b) => b.addEventListener('click', () => document.getElementById('s' + b.dataset.s).scrollIntoView({ behavior: 'smooth', block: 'start' })));
+  };
+  window.SW.finish = (n) => { window.SW.done[n] = true; window.SW.renderTabs(); };
+  window.SW.renderTabs();
+})();
+</script>
+<script>
+/* ===== 블록 1~3: 고르기 세 묶음 ===== */
+(() => {
+  'use strict';
+  try {
+    const { $, $$, shuffle, fb, finish } = window.SW;
+    // items: [문장, 답, [[값, 글], …]]  문장 속 ___ 는 고른 말로 채워져요
+    function sorter(box, chk, fbId, n, items, okMsg, noMsg, keep) {
+      const list = keep ? items.slice() : shuffle(items.slice()), pick = list.map(() => null);
+      const sent = (t, w) => t.replace('___', `<span class="gap">${w || ''}</span>`);
+      $(box).innerHTML = list.map((it, i) => `<div class="si" data-i="${i}"><p>${sent(it[0])}</p><div class="two">${it[2].map(([v, t]) => `<button type="button" data-v="${v}" aria-pressed="false">${t}</button>`).join('')}</div></div>`).join('');
+      $$(box + ' .si').forEach((row) => { const i = +row.dataset.i; $$('button', row).forEach((b) => b.addEventListener('click', () => {
+        pick[i] = b.dataset.v; row.classList.remove('good', 'bad'); $$('button', row).forEach((o) => o.setAttribute('aria-pressed', String(o === b)));
+        const g = $('.gap', row); if (g) g.textContent = b.textContent;
+        $(chk).disabled = pick.some((p) => p === null);
+      })); });
+      $(chk).addEventListener('click', () => {
+        let wrong = 0;
+        $$(box + ' .si').forEach((row) => { const i = +row.dataset.i, ok = pick[i] === list[i][1]; row.classList.toggle('good', ok); row.classList.toggle('bad', !ok); if (!ok) wrong++; });
+        if (!wrong) { fb(fbId, true, okMsg); finish(n); } else fb(fbId, false, noMsg(wrong));
+      });
+    }
+    sorter('#sort1', '#chk1', '#fb1', 1, [
+      ['전기 기구가 1초 동안 소비하는 전기 에너지의 양을 ___(이)라 한다.', 'p', [['p', '소비 전력'], ['e', '전력량']]],
+      ['소비 전력의 단위로 ___을/를 사용한다.', 'w', [['w', 'W'], ['h', 'Wh']]],
+      ['같은 성능을 갖더라도 소비 전력이 더 ___ 전기 기구를 선택하면 전기 에너지를 절약할 수 있다.', 's', [['s', '작은'], ['b', '큰']]],
+      ['전기 기구의 소비 전력과 사용한 시간의 곱을 ___(이)라 한다.', 'e', [['e', '전력량'], ['p', '소비 전력']]],
+      ['전력량의 단위로 ___을/를 사용한다.', 'h', [['h', 'Wh'], ['w', 'W']]],
+    ],
+    '모두 맞았어요! <b>소비 전력</b>은 1초 동안 소비하는 전기 에너지(W), <b>전력량</b>은 소비 전력 × 사용한 시간(Wh)이에요.',
+    (w) => `빨간 줄 ${w}개를 다시 보세요. '1초 동안'이면 소비 전력, '시간을 곱한 값'이면 전력량이에요.`, true);
+    sorter('#sort2', '#chk2', '#fb2', 2, [
+      ['1초 동안 60 J의 전기 에너지를 사용하는 전구의 소비 전력은 ___이다.', 'a', [['a', '60 W'], ['b', '60 Wh'], ['c', '1 W']]],
+      ['소비 전력이 100 W인 텔레비전을 3시간 동안 켰을 때 전력량은 ___이다.', 'a', [['a', '300 Wh'], ['b', '103 Wh'], ['c', '100 Wh']]],
+      ['소비 전력이 1200 W인 헤어드라이어를 10초 동안 사용하면 ___의 전기 에너지를 사용한다.', 'a', [['a', '12,000 J'], ['b', '1,210 J'], ['c', '120 J']]],
+      ['소비 전력이 20 W인 전등을 4시간, 같은 전등 2개를 2시간 켰을 때 전력량은 ___.', 'a', [['a', '같다'], ['b', '4시간이 더 크다'], ['c', '2개가 더 크다']]],
+    ],
+    '모두 맞았어요! 60 J ÷ 1초 = 60 W, 100 W × 3 h = 300 Wh, 1200 W × 10초 = 12,000 J, 20 W × 4 h = 80 Wh와 20 W × 2개 × 2 h = 80 Wh로 같아요.',
+    (w) => `빨간 줄 ${w}개를 다시 계산해 보세요. 시간이 초이면 J, 시간(h)이면 Wh로 나와요.`, true);
+    sorter('#sort3', '#chk3', '#fb3', 3, [
+      ['밝기가 같은 전구 ㉠ 15 W와 ㉡ 9 W 중 전기 에너지를 덜 쓰는 것은 ___.', 'b', [['a', '㉠'], ['b', '㉡']]],
+      ['성능이 같은 냉장고 ㉠ 1등급과 ㉡ 4등급 중 전기 에너지를 더 효율적으로 이용하는 것은 ___.', 'a', [['a', '㉠'], ['b', '㉡']]],
+      ['쓰지 않는 컴퓨터는 ㉠ 전원만 끄고 플러그를 꽂아 둔다, ㉡ 플러그를 뽑는다 중 ___.', 'b', [['a', '㉠'], ['b', '㉡']]],
+      ['같은 방을 시원하게 하는 데 ㉠ 소비 전력이 작은 선풍기, ㉡ 소비 전력이 큰 에어컨을 같은 시간 쓴다면 전력량이 작은 것은 ___.', 'a', [['a', '㉠'], ['b', '㉡']]],
+    ],
+    '모두 맞았어요! 같은 일을 한다면 <b>소비 전력이 작은</b> 것, <b>1등급에 가까운</b> 것을 고르고, 쓰지 않을 때는 <b>플러그를 뽑아</b> 대기전력을 줄여요.',
+    (w) => `빨간 줄 ${w}개를 다시 보세요. 소비 전력이 작을수록, 1등급에 가까울수록 전기 에너지를 덜 써요.`, true);
+    window.SW.ok1 = true;
+  } catch (err) { window.SW_err('빈칸 · 계산 · 고르기', err); }
+})();
+</script>
+<script>
+/* ===== 블록 4: 글쓰기 (저장하지 않고 복사·인쇄만) ===== */
+(() => {
+  'use strict';
+  try {
+    const { $, $$, finish } = window.SW;
+    const PROMPTS = [
+      { t: '우재와 지우', s: '문제 발견하기', q: '헤어드라이어를 3분 쓴 우재와 선풍기를 20분 쓴 지우 중 누가 더 많은 전기 에너지를 사용했는지 알려면 무엇을 알아야 하는지 설명해 보세요.', kw: ['소비 전력', '시간', '1초', '곱', 'J'], st: ['사용한 시간만으로는', '소비 전력은', '그래서'] },
+      { t: '두 전등 고르기', s: '그림 이해하기', q: '밝기가 같은 두 전등 (가), (나) 중 어떤 전등을 고르는 것이 좋은지 소비 전력을 써서 설명해 보세요.', kw: ['빛에너지', '열에너지', '소비 전력', '작은', '12', '8'], st: ['두 전등은 1초 동안', '(가)는', '그래서 나는'] },
+      { t: '우리 집 전기 아끼기', s: '생활에 적용', q: '우리 집에서 사용하는 전력량을 줄이는 방법을 소비 전력, 사용 시간, 대기전력 가운데 두 가지 이상을 넣어 설명해 보세요.', kw: ['전력량', '소비 전력', '시간', '대기전력', '플러그', '등급'], st: ['전력량은', '먼저', '또'] },
+    ];
+    const SELF = [['뜻과 단위', '#0e63b3', '소비 전력 및 전력량의 뜻과 각각을 나타내는 단위를 설명할 수 있다.'], ['비교', '#5a6b7e', '가정에서 사용하는 가전제품의 소비 전력을 비교할 수 있다.'], ['경청', '#34495e', '모둠원들과 토의하는 과정에서 다른 사람의 의견을 경청하였다.']];
+    const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); return true; } catch (e) { return false; } } };
+    let pi = 0; const txt = $('#txt');
+    function renderPrompt() {
+      $('#prompts').innerHTML = PROMPTS.map((p, i) => `<button type="button" class="pr${i === pi ? ' sel' : ''}" data-i="${i}"><b>${p.t}</b><span>${p.s}</span></button>`).join('');
+      $$('#prompts .pr').forEach((b) => b.addEventListener('click', () => { pi = +b.dataset.i; renderPrompt(); }));
+      const p = PROMPTS[pi];
+      $('#wqText').textContent = p.q;
+      $('#starters').innerHTML = p.st.map((s) => `<button type="button">${s}</button>`).join('');
+      $$('#starters button').forEach((b) => b.addEventListener('click', () => { const add = (txt.value && !/[\s\n]$/.test(txt.value) ? ' ' : '') + b.textContent + ' '; txt.value += add; txt.focus(); onInput(); }));
+      txt.value = store.get('power-energy-write-' + pi) || '';
+      onInput();
+    }
+    function onInput() {
+      const v = txt.value, p = PROMPTS[pi];
+      const ok = store.set('power-energy-write-' + pi, v);
+      $('#saved').textContent = v ? (ok ? '이 기기에 임시 저장됨' : '') : '';
+      const n = v.replace(/\s/g, '').length, hit = p.kw.filter((k) => v.includes(k)).length;
+      $('#cnt').textContent = `${n}자 · 목표 100자 이상`;
+      $('#kw').innerHTML = p.kw.map((k) => `<span class="${v.includes(k) ? 'on' : ''}">${k}</span>`).join('');
+      if (n >= 100 && hit >= 3) finish(4);
+    }
+    txt.addEventListener('input', onInput);
+    $('#self').innerHTML = SELF.map(([c, col, t]) => `<label><input type="checkbox"><span class="cat" style="background:${col}">${c}</span>${t}</label>`).join('');
+    $('#copyBtn').addEventListener('click', async () => {
+      const out = `[${PROMPTS[pi].t}]\n${PROMPTS[pi].q}\n\n${txt.value}`;
+      try { await navigator.clipboard.writeText(out); $('#copyBtn').textContent = '복사했어요!'; }
+      catch (e) { txt.select(); try { document.execCommand('copy'); $('#copyBtn').textContent = '복사했어요!'; } catch (e2) { $('#copyBtn').textContent = '길게 눌러 직접 복사해 주세요'; } }
+      setTimeout(() => ($('#copyBtn').textContent = '글 복사하기'), 2200);
+    });
+    $('#printBtn').addEventListener('click', () => window.print());
+    renderPrompt();
+    window.SW.ok4 = true;
+  } catch (err) { window.SW_err('글쓰기', err); }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>소비 전력 실험실 – 소비 전력과 전력량</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+/*@@LOCAL:_css_pw.css@@*/
+/*@@LOCAL:_css_sim.css@@*/
+  /* ===== 이 페이지 전용 ===== */
+  .ctl{display:grid;gap:8px}
+  .ctl .btn{width:100%}
+  .two2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .seg3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+  .seg2{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
+  .seg3 button,.seg2 button,.qa3 button{min-height:48px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:14.5px;cursor:pointer;word-break:keep-all;line-height:1.35;padding:4px 8px}
+  .seg3 button[aria-pressed="true"],.seg2 button[aria-pressed="true"],.qa3 button[aria-pressed="true"]{border-color:var(--fab);background:#e9f3fd;color:#0b3f73}
+  .seg3 button:disabled,.seg2 button:disabled{opacity:.4;cursor:default}
+  .seg2 button small{display:block;font-size:12px;font-weight:700;color:var(--muted)}
+  .seglbl{font-size:13px;font-weight:800;color:var(--muted);margin:4px 0 -2px;word-break:keep-all}
+  .qa{margin-bottom:12px}
+  .qa p{margin:0 0 6px;font-weight:800;font-size:15px;line-height:1.5;word-break:keep-all}
+  .qa3{display:grid;gap:6px}
+  .qa3 button{text-align:left}
+  .qa3 button.good{border-color:var(--ok);background:#e8f7ef;color:#11703f}
+  .qa3 button.bad{border-color:#e7a29b;background:#fff4f2;color:#9b3a32}
+  .calc{font-size:15px;line-height:1.7;margin:6px 0 0;padding:8px 12px;border-radius:12px;background:#f6f9fc;border:1px solid var(--line);word-break:keep-all}
+  .calc b{color:#0b3f73}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="ttl">
+      <span class="eyebrow" id="eb">문제 발견하기</span><h1 id="h1">누가 더 많은 전기 에너지를 사용했을까?</h1>
+      <p class="sub" id="sub">우재는 헤어드라이어를 3분, 지우는 선풍기를 20분 사용해 머리카락을 말렸어요.</p>
+    </div>
+    <div class="ptabs big" role="tablist" id="act">
+      <button type="button" role="tab" data-a="1" aria-selected="true">헤어드라이어와 선풍기</button>
+      <button type="button" role="tab" data-a="2" aria-selected="false">밝기가 같은 두 전등</button>
+    </div>
+  </header>
+
+  <div class="stage">
+    <section class="card viewer">
+      <div class="scene grow" id="race" role="img" aria-label="왼쪽에는 거치대에 걸린 헤어드라이어, 오른쪽에는 선풍기가 있고, 각각 콘센트에 꽂은 전력 측정기에 연결되어 있다. 켜면 측정기에 소비 전력(W)과 사용한 전기 에너지(J)가 나타나고, 아래 막대가 사용한 전기 에너지만큼 늘어난다."></div>
+      <div class="scene grow" id="lamps" hidden role="img" aria-label="밝기가 같은 두 탁상 전등 (가)와 (나). (가)는 나선형 전구, (나)는 둥근 전구이다. 열화상 사진기로 보면 (가)가 더 뜨겁다. 1초 동안 에너지를 따라가면 (가)에는 전기 에너지 12 J가 들어가 빛에너지 6 J와 열에너지 6 J가 되고, (나)에는 8 J가 들어가 빛에너지 6 J와 열에너지 2 J가 된다."></div>
+      <div class="vctl">
+        <span class="hint" id="hint">막대는 지금까지 사용한 전기 에너지를 나타내요</span>
+        <span class="sp"></span>
+        <button class="vb" type="button" id="bTh" aria-pressed="false" hidden>열화상 사진기로 보기</button>
+        <button class="vb" type="button" id="bReset">처음부터</button>
+      </div>
+    </section>
+
+    <section class="card pad">
+      <div class="ptabs" role="tablist" id="pt">
+        <button type="button" role="tab" data-p="lab" aria-selected="true">해 보기</button>
+        <button type="button" role="tab" data-p="rec" aria-selected="false">정리하기</button>
+        <button type="button" role="tab" data-p="why" aria-selected="false">왜 그럴까?</button>
+      </div>
+      <div class="pane" data-p="lab">
+        <div id="labA">
+          <div class="ctl">
+            <div class="seglbl">예상하기 · 누가 더 많은 전기 에너지를 사용했을까요?</div>
+            <div class="seg3" id="predA"><button type="button" data-v="d" aria-pressed="false">우재</button><button type="button" data-v="f" aria-pressed="false">지우</button><button type="button" data-v="s" aria-pressed="false">같다</button></div>
+            <div class="seglbl">선풍기 바람 세기</div>
+            <div class="seg2" id="fanP"><button type="button" data-p="20" aria-pressed="false">약<small>20 W</small></button><button type="button" data-p="40" aria-pressed="true">강<small>40 W</small></button></div>
+            <div class="two2">
+              <button class="btn ghost" type="button" id="bSec">1초만 켜 보기</button>
+              <button class="btn ghost" type="button" id="bRace" disabled>3분 · 20분 켜기</button>
+            </div>
+          </div>
+          <div class="fbk" id="resA"><b class="t" id="resAT">결과</b><span id="resAM">먼저 예상을 골라요. <b>1초만 켜 보기</b>로 두 기구가 1초 동안 쓰는 전기 에너지를 먼저 봐도 좋아요.</span></div>
+        </div>
+        <div id="labB" hidden>
+          <div class="ctl">
+            <div class="seglbl">예상하기 · 소비 전력이 더 큰 전구는?</div>
+            <div class="seg3" id="predB"><button type="button" data-v="a" aria-pressed="false">(가)</button><button type="button" data-v="b" aria-pressed="false">(나)</button><button type="button" data-v="s" aria-pressed="false">같다</button></div>
+            <button class="btn ghost" type="button" id="bFollow" disabled>1초 동안 에너지 따라가기</button>
+          </div>
+          <div class="fbk" id="resB"><b class="t" id="resBT">결과</b><span id="resBM">두 전등의 밝기는 같아요. 먼저 <b>열화상 사진기로 보기</b>를 눌러 두 전등을 비교해 봐요.</span></div>
+        </div>
+      </div>
+      <div class="pane" data-p="rec" hidden>
+        <div id="recA">
+          <div class="qa"><p>소비 전력은 무엇일까요?</p><div class="qa3" id="qA"></div></div>
+          <div class="qa"><p>누가 더 많은 전기 에너지를 사용했는지 알려면?</p><div class="qa3" id="qB"></div></div>
+        </div>
+        <div id="recB" hidden>
+          <div class="qa"><p>그림 Ⅵ-15에서 소비 전력이 더 큰 전구와 그 까닭은?</p><div class="qa3" id="qC"></div></div>
+          <div class="qa"><p>밝기가 같다면 어떤 전등을 고르는 것이 좋을까요?</p><div class="qa3" id="qD"></div></div>
+        </div>
+        <div class="fbk" id="res2"><b class="t" id="res2T">결과</b><span id="res2M">해 보기를 한 뒤 골라 보세요.</span></div>
+      </div>
+      <div class="pane" data-p="why" hidden>
+        <div class="phase" id="whyA">
+          <div class="ph on"><i>1</i><span><b>소비 전력</b>은 전기 기구가 <b>1초 동안 사용한 전기 에너지</b>예요. 단위는 W(와트)예요. 1초만 켜면 헤어드라이어는 1200 J, 선풍기(강)는 40 J를 써요.</span></div>
+          <div class="ph on"><i>2</i><span>소비 전력(W) = 전기 에너지(J) ÷ 시간(초)이에요. 거꾸로, 쓴 전기 에너지는 <b>소비 전력 × 시간(초)</b>으로 구할 수 있어요.</span></div>
+          <div class="ph on"><i>3</i><p class="calc" style="margin:0">우재: 1200 W × 180초 = <b>216,000 J</b><br>지우: 40 W × 1200초 = <b>48,000 J</b></p></div>
+          <div class="ph on"><i>4</i><span>오래 쓴 지우보다 우재가 더 많이 썼어요. 누가 더 많이 썼는지 알려면 <b>사용한 시간</b>과 함께 <b>소비 전력</b>을 알아야 해요.</span></div>
+        </div>
+        <div class="phase" id="whyB" hidden>
+          <div class="ph on"><i>1</i><span>두 전등은 1초 동안 <b>같은 양의 빛에너지</b>(6 J)를 내요. 그래서 밝기가 같아요.</span></div>
+          <div class="ph on"><i>2</i><span>그런데 <b>열에너지</b>는 (가)가 6 J, (나)가 2 J로 달라요. 열화상 사진기로 보면 (가)가 더 뜨거워요.</span></div>
+          <div class="ph on"><i>3</i><span>1초 동안 쓴 전기 에너지, 즉 <b>소비 전력</b>은 (가) 6 J + 6 J = 12 J → <b>12 W</b>, (나) 6 J + 2 J = 8 J → <b>8 W</b>예요.</span></div>
+          <div class="ph on"><i>4</i><span>같은 성능을 갖더라도 <b>소비 전력이 더 작은</b> 전기 기구를 선택하면 더 적은 전기 에너지를 소비해요.</span></div>
+        </div>
+      </div>
+      <p class="mnote" id="note">선풍기의 소비 전력(약 20 W, 강 40 W)은 예시 값이에요. 시간은 빠르게 돌려 보여 줘요.</p>
+    </section>
+  </div>
+</div>
+<script>
+window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
+  reduce: !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches), Q: new URLSearchParams(location.search) };
+</script>
+<script>
+/*@@LOCAL:_pw.js@@*/
+</script>
+<script>
+/* ===== 블록 1: 헤어드라이어와 선풍기 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S, Q = S.Q;
+    const R = PW.race($('#race'));
+    window.RACE = R;
+    let pred = null, raced = false;
+    const fmt = PW.fmt;
+    function msg(t, m, cls = '') { $('#resA').className = 'fbk ' + cls; $('#resAT').textContent = t; $('#resAM').innerHTML = m; }
+    const lock = (on) => { $('#bSec').disabled = on; $('#bRace').disabled = on || !pred; $$('#fanP button').forEach((b) => (b.disabled = on)); };
+    $$('#predA button').forEach((b) => b.addEventListener('click', () => {
+      pred = b.dataset.v; $$('#predA button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+      if (!R.st.run) { $('#bRace').disabled = false; $('#bRace').className = 'btn primary'; }
+      msg('결과', '예상했어요. <b>3분 · 20분 켜기</b>를 눌러 두 사람이 쓴 전기 에너지를 비교해요.');
+    }));
+    $$('#fanP button').forEach((b) => b.addEventListener('click', () => {
+      $$('#fanP button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+      R.setFan(+b.dataset.p); R.reset();
+      msg('선풍기 바람 세기를 바꿨어요', `선풍기(${b.dataset.p === '20' ? '약' : '강'})의 소비 전력은 <b>${b.dataset.p} W</b>예요. 다시 켜서 비교해 봐요.`);
+    }));
+    $('#bSec').addEventListener('click', () => { R.second(); lock(true); msg('1초 동안 켜는 중', '측정기의 J 숫자를 지켜봐요…'); });
+    $('#bRace').addEventListener('click', () => { R.race(); lock(true); msg('켜는 중', '헤어드라이어는 3분, 선풍기는 20분 동안 켜요. 시간은 빠르게 돌려 보여 줘요…'); });
+    R.onEnd = (mode) => {
+      lock(false);
+      const P = R.st.fanP;
+      if (mode === 'sec') { msg('1초 동안 쓴 전기 에너지', `헤어드라이어는 1초 동안 <b>1200 J</b>, 선풍기는 <b>${P} J</b>를 썼어요. 이것이 각 기구의 <b>소비 전력</b>(1200 W, ${P} W)이에요.`, 'ok'); return; }
+      raced = true;
+      const E = R.E(), win = E.d > E.f ? 'd' : 'f';
+      msg(pred === win ? '예상이 맞았어요 · 우재가 더 많이 썼어요' : '결과 · 우재가 더 많이 썼어요',
+        `우재 <b>${fmt(E.d)} J</b>, 지우 <b>${fmt(E.f)} J</b>. 지우가 더 오래 썼지만 헤어드라이어의 <b>소비 전력</b>이 훨씬 커서 우재가 더 많은 전기 에너지를 사용했어요.`, pred === win ? 'ok' : 'no');
+    };
+    window.__resetA = () => { R.reset(); lock(false); pred = null; $$('#predA button').forEach((x) => x.setAttribute('aria-pressed', 'false')); $('#bRace').disabled = true; $('#bRace').className = 'btn ghost'; msg('결과', '먼저 예상을 골라요. <b>1초만 켜 보기</b>로 두 기구가 1초 동안 쓰는 전기 에너지를 먼저 봐도 좋아요.'); };
+    if (Q.get('run') === '1') { $('#predA [data-v="d"]').click(); R.jump('race', 1200); R.onEnd('race'); }
+    if (Q.get('run') === 'mid') { $('#predA [data-v="d"]').click(); $('#bRace').click(); R.st.t = 420; }
+    if (Q.get('sec') === '1') { R.jump('sec', 1); R.onEnd('sec'); }
+    window.SM.okUI = true;
+  } catch (err) { window.SM_err('헤어드라이어와 선풍기', err); }
+})();
+</script>
+<script>
+/* ===== 블록 2: 밝기가 같은 두 전등 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S, Q = S.Q;
+    let L = null, pred = null, seenTh = false;
+    function make() { if (L) return; L = PW.lamps($('#lamps')); window.LAMPS = L; L.onEnd = done; }
+    function msg(t, m, cls = '') { $('#resB').className = 'fbk ' + cls; $('#resBT').textContent = t; $('#resBM').innerHTML = m; }
+    function done() {
+      $('#bFollow').disabled = false; $('#bFollow').textContent = '다시 따라가기';
+      msg(pred === 'a' ? '예상이 맞았어요 · (가)가 더 커요' : '결과 · (가)의 소비 전력이 더 커요',
+        '1초 동안 (가)에는 전기 에너지 <b>12 J</b>, (나)에는 <b>8 J</b>가 들어갔어요. 빛에너지는 둘 다 6 J로 같지만 (가)가 열에너지를 더 많이 내요. 소비 전력은 (가) <b>12 W</b>, (나) <b>8 W</b>예요.', pred === 'a' ? 'ok' : 'no');
+    }
+    $('#bTh').addEventListener('click', (e) => {
+      make(); const on = e.currentTarget.getAttribute('aria-pressed') !== 'true';
+      e.currentTarget.setAttribute('aria-pressed', String(on)); L.thermal(on);
+      if (on && !seenTh) { seenTh = true; msg('열화상 사진기로 봤어요', '밝기는 같은데 <b>(가)가 더 뜨거워요</b>. 그렇다면 두 전등이 1초 동안 쓰는 전기 에너지는 같을까요? 예상을 골라요.'); }
+    });
+    $$('#predB button').forEach((b) => b.addEventListener('click', () => {
+      pred = b.dataset.v; $$('#predB button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+      $('#bFollow').disabled = false; $('#bFollow').className = 'btn primary';
+      msg('결과', '예상했어요. <b>1초 동안 에너지 따라가기</b>를 눌러요. 네모 하나가 1 J이에요.');
+    }));
+    $('#bFollow').addEventListener('click', () => { make(); L.follow(); $('#bFollow').disabled = true; msg('따라가는 중', '파란 네모(전기 에너지)가 전구에 들어가 노란 네모(빛에너지)와 주황 네모(열에너지)로 바뀌어요…'); });
+    window.__makeB = make;
+    window.__resetB = () => { if (!L) return; L.reset(); pred = null; $$('#predB button').forEach((x) => x.setAttribute('aria-pressed', 'false')); $('#bFollow').disabled = true; $('#bFollow').className = 'btn ghost'; $('#bFollow').textContent = '1초 동안 에너지 따라가기'; msg('결과', '두 전등의 밝기는 같아요. 먼저 <b>열화상 사진기로 보기</b>를 눌러 두 전등을 비교해 봐요.'); };
+    window.__demoB = (q) => { make(); if (q.get('th') === '1') $('#bTh').click(); if (q.get('follow')) { $('#predB [data-v="a"]').click(); if (q.get('follow') === '1') { L.finish(); done(); } else { $('#bFollow').click(); L.st.t = +q.get('follow'); } } };
+  } catch (err) { window.SM_err('두 전등', err); }
+})();
+</script>
+<script>
+/* ===== 블록 3: 활동 탭 · 정리 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S, Q = S.Q;
+    let act = 1;
+    const QS = {
+      qA: [['a', '전기 기구가 1초 동안 사용한 전기 에너지 (단위 W)', true], ['b', '전기 기구를 사용한 시간 (단위 초)', false], ['c', '전기 기구가 내는 바람의 세기 (단위 J)', false]],
+      qB: [['a', '소비 전력과 사용한 시간을 모두 알아야 한다', true], ['b', '사용한 시간만 알면 된다', false], ['c', '전기 기구의 크기만 알면 된다', false]],
+      qC: [['a', '(가) · 1초 동안 쓰는 전기 에너지가 12 J로 (나)의 8 J보다 많다', true], ['b', '(나) · 빛에너지를 더 많이 낸다', false], ['c', '같다 · 두 전등의 밝기가 같다', false]],
+      qD: [['a', '소비 전력이 더 작은 (나)', true], ['b', '열을 더 많이 내는 (가)', false], ['c', '아무것이나 같다', false]],
+    };
+    const pick = {};
+    Object.keys(QS).forEach((k) => { $('#' + k).innerHTML = QS[k].map(([v, t]) => `<button type="button" data-v="${v}" aria-pressed="false">${t}</button>`).join(''); });
+    function msg(t, m, cls = '') { $('#res2').className = 'fbk ' + cls; $('#res2T').textContent = t; $('#res2M').innerHTML = m; }
+    const set = () => (act === 1 ? ['qA', 'qB'] : ['qC', 'qD']);
+    Object.keys(QS).forEach((k) => $$('#' + k + ' button').forEach((b) => b.addEventListener('click', () => {
+      pick[k] = b.dataset.v; $$('#' + k + ' button').forEach((x) => { x.setAttribute('aria-pressed', String(x === b)); x.classList.remove('good', 'bad'); });
+      const ok = QS[k].find((x) => x[0] === b.dataset.v)[2]; b.classList.add(ok ? 'good' : 'bad');
+      if (set().every((q) => pick[q] && QS[q].find((x) => x[0] === pick[q])[2])) msg('결과 · 모두 맞았어요', act === 1 ? '소비 전력은 <b>1초 동안 사용한 전기 에너지</b>이고 단위는 <b>W(와트)</b>예요. 누가 더 많이 썼는지는 <b>소비 전력과 시간</b>을 함께 봐야 알 수 있어요.' : '밝기가 같아도 소비 전력은 다를 수 있어요. 같은 성능이면 <b>소비 전력이 더 작은</b> 전기 기구를 고르면 전기 에너지를 덜 써요.', 'ok');
+      else if (!ok) msg('다시 생각해 봐요', act === 1 ? '<b>1초만 켜 보기</b>를 다시 눌러 측정기의 W와 J 숫자를 비교해 봐요.' : '1초 동안 전구에 들어간 파란 네모의 수를 세어 봐요.', 'no');
+    })));
+    function show(p) { $$('#pt button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.p === p))); $$('.pane').forEach((e) => (e.hidden = e.dataset.p !== p)); }
+    $$('#pt button').forEach((b) => b.addEventListener('click', () => show(b.dataset.p)));
+    function setAct(a) {
+      act = a; $$('#act button').forEach((b) => b.setAttribute('aria-selected', String(+b.dataset.a === a)));
+      ['race', 'labA', 'recA', 'whyA'].forEach((id) => ($('#' + id).hidden = a !== 1));
+      ['lamps', 'labB', 'recB', 'whyB', 'bTh'].forEach((id) => ($('#' + id).hidden = a !== 2));
+      $('#eb').textContent = a === 1 ? '문제 발견하기' : '그림 Ⅵ-14 · Ⅵ-15';
+      $('#h1').textContent = a === 1 ? '누가 더 많은 전기 에너지를 사용했을까?' : '밝기가 같은 두 전등의 소비 전력';
+      $('#sub').textContent = a === 1 ? '우재는 헤어드라이어를 3분, 지우는 선풍기를 20분 사용해 머리카락을 말렸어요.' : '두 전등 (가), (나)는 밝기가 같아요. 1초 동안 쓰는 전기 에너지도 같을까요?';
+      $('#hint').textContent = a === 1 ? '막대는 지금까지 사용한 전기 에너지를 나타내요' : '네모 하나는 1 J이에요';
+      $('#note').textContent = a === 1 ? '선풍기의 소비 전력(약 20 W, 강 40 W)은 예시 값이에요. 시간은 빠르게 돌려 보여 줘요.' : '에너지 값은 교과서 그림 Ⅵ-15의 값이에요. 1초를 천천히 늘려 보여 줘요.';
+      if (a === 2) window.__makeB();
+      show('lab'); msg('결과', '해 보기를 한 뒤 골라 보세요.');
+    }
+    $$('#act button').forEach((b) => b.addEventListener('click', () => setAct(+b.dataset.a)));
+    $('#bReset').addEventListener('click', () => (act === 1 ? window.__resetA() : window.__resetB()));
+    setAct(Q.get('act') === '2' ? 2 : 1);
+    if (act === 2) window.__demoB(Q);
+    if (['rec', 'why'].includes(Q.get('tab'))) show(Q.get('tab'));
+    if (Q.get('ans') === '1') set().forEach((k) => $('#' + k + ' [data-v="a"]').click());
+  } catch (err) { window.SM_err('활동 탭·정리', err); }
+})();
+</script>
+</body>
+</html>

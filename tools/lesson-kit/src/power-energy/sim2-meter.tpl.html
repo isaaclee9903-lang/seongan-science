@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>우리 집 전력량 – 소비 전력과 전력량</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+/*@@LOCAL:_css_pw.css@@*/
+/*@@LOCAL:_css_sim.css@@*/
+  /* ===== 이 페이지 전용 ===== */
+  .ctl{display:grid;gap:8px}
+  .ctl .btn{width:100%}
+  .seg5{display:grid;grid-template-columns:repeat(5,1fr);gap:5px}
+  .seg2{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
+  .seg5 button,.seg2 button,.qa3 button,.plugs button{min-height:46px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:14px;cursor:pointer;word-break:keep-all;line-height:1.3;padding:3px 6px}
+  .seg5 button[aria-pressed="true"],.seg2 button[aria-pressed="true"],.qa3 button[aria-pressed="true"]{border-color:var(--fab);background:#e9f3fd;color:#0b3f73}
+  .seglbl{font-size:13px;font-weight:800;color:var(--muted);margin:4px 0 -2px;word-break:keep-all}
+  .devs{display:grid;gap:4px}
+  .dv{display:grid;grid-template-columns:minmax(0,1fr) auto 84px;gap:8px;align-items:center;padding:2px 4px 2px 12px;border-radius:12px;background:#f6f9fc;border:1px solid var(--line)}
+  .dv .nm{font-weight:800;font-size:15px;word-break:keep-all;line-height:1.25}
+  .dv .nm small{font-size:12.5px;color:var(--muted);font-weight:700;margin-left:6px}
+  .step{display:flex;align-items:center;gap:4px}
+  .step button{width:44px;height:44px;border-radius:11px;border:1.5px solid #d4dee8;background:#fff;font-weight:900;font-size:20px;color:#34495e;cursor:pointer;line-height:1}
+  .step button:disabled{opacity:.35;cursor:default}
+  .step output{min-width:52px;text-align:center;font-weight:800;font-size:15px}
+  .dv .wh{text-align:right;font-weight:800;font-size:15px;color:#0b3f73;padding-right:6px}
+  .dv.top{border-color:#9fbbd8;background:#eef5fc}
+  @media (max-width:900px){.devs{grid-template-columns:1fr 1fr}}
+  .plugs{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .plugs button{display:flex;justify-content:space-between;align-items:center;padding:3px 12px;font-size:14.5px}
+  .plugs button span{font-size:12.5px;color:var(--muted);font-weight:800}
+  .plugs button[aria-pressed="false"]{background:#f3f6f9;color:#6b7c8f}
+  .plugs button.tap{grid-column:1/-1}
+  .qa{margin-bottom:12px}
+  .qa p{margin:0 0 6px;font-weight:800;font-size:15px;line-height:1.5;word-break:keep-all}
+  .qa3{display:grid;gap:6px}
+  .qa3 button{text-align:left;font-size:14.5px;padding:4px 10px}
+  .qa3 button.good{border-color:var(--ok);background:#e8f7ef;color:#11703f}
+  .qa3 button.bad{border-color:#e7a29b;background:#fff4f2;color:#9b3a32}
+  .calc{font-size:15px;line-height:1.7;margin:0;word-break:keep-all}
+  .calc b{color:#0b3f73}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="ttl">
+      <span class="eyebrow" id="eb">해 보기</span><h1 id="h1">하루 동안 쓴 전력량</h1>
+      <p class="sub" id="sub">거실의 전기 기구를 몇 시간씩 쓸지 정하고 켜 봐요. 전력량계에 쓴 전력량이 쌓여요.</p>
+    </div>
+    <div class="ptabs big" role="tablist" id="act">
+      <button type="button" role="tab" data-a="1" aria-selected="true">하루 동안 쓴 전력량</button>
+      <button type="button" role="tab" data-a="2" aria-selected="false">꺼도 도는 회전판</button>
+    </div>
+  </header>
+
+  <div class="stage">
+    <section class="card viewer">
+      <div class="scene grow" id="room" role="img" aria-label="거실 그림. 천장 전등, 벽걸이 에어컨, 장식장 위 텔레비전, 선풍기, 책상 위 컴퓨터가 있고, 왼쪽 벽에는 회전판이 보이는 전력량계가 있다. 기구들의 플러그는 바닥의 멀티탭에 꽂혀 있다. 기구를 켜면 전선에 전기가 흐르고 전력량계 회전판이 돌며 쓴 전력량(Wh)이 쌓인다."></div>
+      <div class="vctl">
+        <span class="hint" id="hint">회전판은 전기 에너지를 쓰는 동안 돌아요</span>
+        <span class="sp"></span>
+        <button class="vb" type="button" id="bReset">처음부터</button>
+      </div>
+    </section>
+
+    <section class="card pad">
+      <div class="ptabs" role="tablist" id="pt">
+        <button type="button" role="tab" data-p="lab" aria-selected="true">해 보기</button>
+        <button type="button" role="tab" data-p="rec" aria-selected="false">정리하기</button>
+        <button type="button" role="tab" data-p="why" aria-selected="false">왜 그럴까?</button>
+      </div>
+      <div class="pane" data-p="lab">
+        <div id="labA">
+          <div class="ctl">
+            <div class="seglbl">예상하기 · 전력량이 가장 큰 기구는?</div>
+            <div class="seg5" id="predA"></div>
+            <div class="devs" id="devs"></div>
+            <button class="btn ghost" type="button" id="bDay" disabled>정한 시간만큼 켜기</button>
+          </div>
+          <div class="fbk" id="resA"><b class="t" id="resAT">결과</b><span id="resAM">먼저 전력량이 가장 클 것 같은 기구를 골라요. 사용 시간은 −, + 로 바꿀 수 있어요.</span></div>
+        </div>
+        <div id="labB" hidden>
+          <div class="ctl">
+            <div class="seglbl">예상하기 · 기구를 모두 끈 밤, 전력량계 회전판은?</div>
+            <div class="seg2" id="predB"><button type="button" data-v="stop" aria-pressed="false">멈춘다</button><button type="button" data-v="slow" aria-pressed="false">아주 천천히 돈다</button></div>
+            <button class="btn ghost" type="button" id="bNight" disabled>밤이 되어 모두 끄기</button>
+            <div class="seglbl" id="plugLbl">플러그 뽑기 · 눌러서 뽑거나 다시 꽂아요</div>
+            <div class="plugs" id="plugs"></div>
+          </div>
+          <div class="fbk" id="resB"><b class="t" id="resBT">결과</b><span id="resBM">먼저 예상을 골라요.</span></div>
+        </div>
+      </div>
+      <div class="pane" data-p="rec" hidden>
+        <div id="recA">
+          <div class="qa"><p>전력량을 구하는 식은?</p><div class="qa3" id="qA"></div></div>
+          <div class="qa"><p>소비 전력이 1000 W인 에어컨을 2시간 사용했을 때 전력량은?</p><div class="qa3" id="qB"></div></div>
+        </div>
+        <div id="recB" hidden>
+          <div class="qa"><p>대기전력이란?</p><div class="qa3" id="qC"></div></div>
+          <div class="qa"><p>대기전력을 줄이려면?</p><div class="qa3" id="qD"></div></div>
+        </div>
+        <div class="fbk" id="res2"><b class="t" id="res2T">결과</b><span id="res2M">해 보기를 한 뒤 골라 보세요.</span></div>
+      </div>
+      <div class="pane" data-p="why" hidden>
+        <div class="phase" id="whyA">
+          <div class="ph on"><i>1</i><span>가정에서는 사용한 전기 에너지의 양인 <b>전력량</b>에 따라 전기 요금을 내요. 전력량은 <b>소비 전력 × 사용한 시간</b>이에요.</span></div>
+          <div class="ph on"><i>2</i><span>단위는 <b>Wh(와트시)</b>나 kWh(킬로와트시)예요. 소비 전력이 20 W인 전등을 1시간 쓰면 <b>20 Wh</b>예요.</span></div>
+          <div class="ph on"><i>3</i><p class="calc">전등 20 W × 5시간 = <b>100 Wh</b><br>에어컨 1000 W × 2시간 = <b>2000 Wh</b></p></div>
+          <div class="ph on"><i>4</i><span>오래 켠 기구보다 <b>소비 전력이 큰 기구</b>가 짧게 써도 전력량이 더 클 수 있어요.</span></div>
+        </div>
+        <div class="phase" id="whyB" hidden>
+          <div class="ph on"><i>1</i><span>가전제품을 실제로 쓰지 않는 대기 상태에서 소비되는 전력을 <b>대기전력</b>이라고 해요.</span></div>
+          <div class="ph on"><i>2</i><span>전원이 꺼져 있어도 <b>플러그가 콘센트에 연결되어 있으면</b> 대기전력을 소비해요. 그래서 회전판이 아주 천천히 돌아요.</span></div>
+          <div class="ph on"><i>3</i><span>쓰지 않는 기구는 <b>플러그를 뽑거나 멀티탭 스위치를 끄면</b> 대기전력을 줄일 수 있어요.</span></div>
+          <div class="ph on"><i>4</i><span>에너지 효율이 뛰어나거나 <b>대기전력이 작은</b> 가전제품에는 에너지절약 표시를 붙여요.</span></div>
+        </div>
+      </div>
+      <p class="mnote" id="note">소비 전력은 예시 값이에요(전등 20 W는 교과서 예).</p>
+    </section>
+  </div>
+</div>
+<script>
+window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
+  reduce: !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches), Q: new URLSearchParams(location.search) };
+</script>
+<script>
+/*@@LOCAL:_pw.js@@*/
+</script>
+<script>
+/* ===== 블록 1: 하루 동안 쓴 전력량 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S, Q = S.Q, fmt = PW.fmt;
+    const R = PW.room($('#room'));
+    window.ROOM = R;
+    const DEV = PW.DEV, MAXH = 8;
+    let pred = null;
+    function msg(t, m, cls = '') { $('#resA').className = 'fbk ' + cls; $('#resAT').textContent = t; $('#resAM').innerHTML = m; }
+    $('#predA').innerHTML = DEV.map((d) => `<button type="button" data-v="${d.id}" aria-pressed="false">${d.name}</button>`).join('');
+    $('#devs').innerHTML = DEV.map((d) => `<div class="dv" data-d="${d.id}"><span class="nm">${d.name}<small>${fmt(d.w)} W</small></span>
+      <span class="step"><button type="button" data-k="-1" aria-label="${d.name} 사용 시간 줄이기">−</button><output>${R.st.h[d.id]}시간</output><button type="button" data-k="1" aria-label="${d.name} 사용 시간 늘리기">+</button></span><span class="wh">0 Wh</span></div>`).join('');
+    function rows() {
+      const top = DEV.reduce((b, d) => (R.wh(d.id) > R.wh(b.id) ? d : b), DEV[0]);
+      DEV.forEach((d) => {
+        const row = $(`.dv[data-d="${d.id}"]`), h = R.st.h[d.id];
+        $('output', row).textContent = `${h}시간`;
+        $$('.step button', row).forEach((b) => (b.disabled = R.st.run || (b.dataset.k === '-1' ? h <= 0 : h >= MAXH)));
+        $('.wh', row).textContent = `${fmt(R.wh(d.id))} Wh`;
+        row.classList.toggle('top', R.st.t > 0 && !R.st.run && d === top && R.wh(d.id) > 0);
+      });
+    }
+    $$('.dv').forEach((row) => $$('.step button', row).forEach((b) => b.addEventListener('click', () => {
+      const id = row.dataset.d; R.setH(id, clamp(R.st.h[id] + +b.dataset.k)); R.reset(); rows();
+      msg('사용 시간을 바꿨어요', `${DEV.find((d) => d.id === id).name}를 <b>${R.st.h[id]}시간</b> 써요. <b>정한 시간만큼 켜기</b>를 눌러 다시 재 봐요.`);
+    })));
+    const clamp = (v) => Math.max(0, Math.min(MAXH, v));
+    $$('#predA button').forEach((b) => b.addEventListener('click', () => {
+      pred = b.dataset.v; $$('#predA button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+      if (!R.st.run) { $('#bDay').disabled = false; $('#bDay').className = 'btn primary'; }
+      msg('결과', '예상했어요. <b>정한 시간만큼 켜기</b>를 눌러요.');
+    }));
+    $('#bDay').addEventListener('click', () => { R.setMode('day'); R.day(); $('#bDay').disabled = true; msg('켜는 중', '회전판이 돌고 전력량계에 전력량이 쌓여요…'); });
+    let tick = 0;
+    (function loop() { if (R.st.run || tick++ % 10 === 0) rows(); requestAnimationFrame(loop); })();
+    R.onEnd = () => {
+      $('#bDay').disabled = false; rows();
+      const tot = R.total();
+      if (tot === 0) { msg('켠 기구가 없어요', '모든 기구의 사용 시간이 0시간이에요. 시간을 늘려 봐요.'); return; }
+      const top = DEV.reduce((b, d) => (R.wh(d.id) > R.wh(b.id) ? d : b), DEV[0]);
+      const hit = pred === top.id;
+      msg(hit ? `예상이 맞았어요 · ${top.name}` : `결과 · 전력량이 가장 큰 기구는 ${top.name}`,
+        `${top.name} ${fmt(top.w)} W × ${R.st.h[top.id]}시간 = <b>${fmt(R.wh(top.id))} Wh</b>. 거실 전체는 <b>${fmt(tot)} Wh</b>(${tot / 1000} kWh)예요. 소비 전력이 큰 기구는 짧게 써도 전력량이 커요.`, hit ? 'ok' : 'no');
+    };
+    window.__resetA = () => { R.setMode('day'); R.reset(); pred = null; $$('#predA button').forEach((x) => x.setAttribute('aria-pressed', 'false')); $('#bDay').disabled = true; $('#bDay').className = 'btn ghost'; rows(); msg('결과', '먼저 전력량이 가장 클 것 같은 기구를 골라요. 사용 시간은 −, + 로 바꿀 수 있어요.'); };
+    window.__dayDemo = (q) => { if (q.get('day')) { $('#predA [data-v="ac"]').click(); if (q.get('day') === '1') { R.jump(R.maxH()); R.onEnd(); } else { $('#bDay').click(); R.st.t = +q.get('day'); } } };
+    rows();
+    window.SM.okUI = true;
+  } catch (err) { window.SM_err('하루 동안 쓴 전력량', err); }
+})();
+</script>
+<script>
+/* ===== 블록 2: 꺼도 도는 회전판(대기전력) ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S, R = window.ROOM;
+    const PL = PW.DEV.filter((d) => d.plug != null);
+    let pred = null, night = false;
+    function msg(t, m, cls = '') { $('#resB').className = 'fbk ' + cls; $('#resBT').textContent = t; $('#resBM').innerHTML = m; }
+    $('#plugs').innerHTML = PL.map((d) => `<button type="button" data-d="${d.id}" aria-pressed="true">${d.name}<span>꽂힘</span></button>`).join('') + '<button type="button" class="tap" data-d="tap" aria-pressed="true">멀티탭 스위치<span>켜짐</span></button>';
+    const plugBtns = () => $$('#plugs button');
+    function lockPlugs(on) { plugBtns().forEach((b) => (b.disabled = on)); $('#plugs').style.opacity = on ? 0.45 : 1; }
+    function update() {
+      if (!night) return;
+      if (R.standbyAny()) {
+        const left = PW.DEV.filter((d) => d.sb && (d.id === 'lamp' ? false : R.st.plug[d.id] && R.st.tap)).map((d) => d.name);
+        msg('회전판이 아주 천천히 돌아요', `${left.join(', ')}의 빨간 불이 켜져 있어요. 꺼져 있어도 플러그가 꽂혀 있으면 <b>대기전력</b>을 소비해요. 플러그를 뽑거나 멀티탭 스위치를 꺼 봐요.`, '');
+      } else msg('회전판이 멈췄어요', '플러그를 뽑거나 멀티탭 스위치를 끄니 <b>대기전력</b>이 0이 되어 회전판이 멈췄어요. 쓰지 않는 기구는 플러그를 뽑아 두면 전기 에너지를 아낄 수 있어요.', 'ok');
+    }
+    plugBtns().forEach((b) => b.addEventListener('click', () => {
+      const on = b.getAttribute('aria-pressed') !== 'true'; b.setAttribute('aria-pressed', String(on));
+      if (b.dataset.d === 'tap') { R.setTap(on); b.querySelector('span').textContent = on ? '켜짐' : '꺼짐'; }
+      else { R.setPlug(b.dataset.d, on); b.querySelector('span').textContent = on ? '꽂힘' : '뽑힘'; }
+      update();
+    }));
+    $$('#predB button').forEach((b) => b.addEventListener('click', () => {
+      pred = b.dataset.v; $$('#predB button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+      if (!night) { $('#bNight').disabled = false; $('#bNight').className = 'btn primary'; msg('결과', '예상했어요. <b>밤이 되어 모두 끄기</b>를 누르고 전력량계 회전판을 지켜봐요.'); }
+    }));
+    $('#bNight').addEventListener('click', () => {
+      night = true; R.setMode('night'); $('#bNight').disabled = true; lockPlugs(false);
+      setTimeout(() => {
+        if (!night) return;
+        msg(pred === 'slow' ? '예상이 맞았어요 · 아주 천천히 돌아요' : '결과 · 회전판이 아주 천천히 돌아요',
+          '기구를 모두 껐는데도 텔레비전, 컴퓨터, 에어컨에 빨간 불이 켜져 있고 회전판이 <b>아주 천천히</b> 돌아요. 이것이 <b>대기전력</b>이에요. 이제 플러그를 하나씩 뽑아 봐요.', pred === 'slow' ? 'ok' : 'no');
+      }, 1600);
+    });
+    window.__resetB = () => { night = false; pred = null; R.setMode('night'); R.setMode('day'); PL.forEach((d) => R.setPlug(d.id, true)); R.setTap(true);
+      plugBtns().forEach((b) => { b.setAttribute('aria-pressed', 'true'); b.querySelector('span').textContent = b.dataset.d === 'tap' ? '켜짐' : '꽂힘'; });
+      $$('#predB button').forEach((x) => x.setAttribute('aria-pressed', 'false')); $('#bNight').disabled = true; $('#bNight').className = 'btn ghost'; lockPlugs(true); msg('결과', '먼저 예상을 골라요.'); };
+    window.__nightDemo = (q) => { $('#predB [data-v="slow"]').click(); $('#bNight').click(); if (q.get('unplug') === '1') ['tv', 'pc'].forEach((id) => $(`#plugs [data-d="${id}"]`).click()); };
+    lockPlugs(true);
+  } catch (err) { window.SM_err('꺼도 도는 회전판', err); }
+})();
+</script>
+<script>
+/* ===== 블록 3: 활동 탭 · 정리 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S, Q = S.Q;
+    let act = 1;
+    const QS = {
+      qA: [['a', '전력량(Wh) = 소비 전력(W) × 시간(h)', true], ['b', '전력량(Wh) = 소비 전력(W) ÷ 시간(h)', false], ['c', '전력량(W) = 전기 에너지(J) × 시간(초)', false]],
+      qB: [['a', '2000 Wh', true], ['b', '500 Wh', false], ['c', '1002 Wh', false]],
+      qC: [['a', '가전제품을 쓰지 않는 대기 상태에서 소비되는 전력', true], ['b', '가전제품을 켜는 순간에만 쓰는 전력', false], ['c', '전기 요금 청구서에 적힌 한 달 전력량', false]],
+      qD: [['a', '쓰지 않는 기구의 플러그를 뽑거나 멀티탭 스위치를 끈다', true], ['b', '기구의 전원 버튼만 끄고 플러그는 꽂아 둔다', false], ['c', '전력량계를 끈다', false]],
+    };
+    const pick = {};
+    Object.keys(QS).forEach((k) => { $('#' + k).innerHTML = QS[k].map(([v, t]) => `<button type="button" data-v="${v}" aria-pressed="false">${t}</button>`).join(''); });
+    function msg(t, m, cls = '') { $('#res2').className = 'fbk ' + cls; $('#res2T').textContent = t; $('#res2M').innerHTML = m; }
+    const set = () => (act === 1 ? ['qA', 'qB'] : ['qC', 'qD']);
+    Object.keys(QS).forEach((k) => $$('#' + k + ' button').forEach((b) => b.addEventListener('click', () => {
+      pick[k] = b.dataset.v; $$('#' + k + ' button').forEach((x) => { x.setAttribute('aria-pressed', String(x === b)); x.classList.remove('good', 'bad'); });
+      const ok = QS[k].find((x) => x[0] === b.dataset.v)[2]; b.classList.add(ok ? 'good' : 'bad');
+      if (set().every((q) => pick[q] && QS[q].find((x) => x[0] === pick[q])[2])) msg('결과 · 모두 맞았어요', act === 1 ? '전력량은 <b>소비 전력 × 사용한 시간</b>이고 단위는 <b>Wh</b>, kWh예요. 1000 W × 2시간 = 2000 Wh예요.' : '꺼져 있어도 플러그가 꽂혀 있으면 <b>대기전력</b>을 소비해요. 플러그를 뽑으면 줄일 수 있어요.', 'ok');
+      else if (!ok) msg('다시 생각해 봐요', act === 1 ? '소비 전력에 사용한 <b>시간을 곱해요</b>.' : '해 보기에서 회전판이 언제 멈췄는지 떠올려 봐요.', 'no');
+    })));
+    function show(p) { $$('#pt button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.p === p))); $$('.pane').forEach((e) => (e.hidden = e.dataset.p !== p)); }
+    $$('#pt button').forEach((b) => b.addEventListener('click', () => show(b.dataset.p)));
+    function setAct(a) {
+      act = a; $$('#act button').forEach((b) => b.setAttribute('aria-selected', String(+b.dataset.a === a)));
+      ['labA', 'recA', 'whyA'].forEach((id) => ($('#' + id).hidden = a !== 1));
+      ['labB', 'recB', 'whyB'].forEach((id) => ($('#' + id).hidden = a !== 2));
+      $('#eb').textContent = a === 1 ? '해 보기' : '대기전력';
+      $('#h1').textContent = a === 1 ? '하루 동안 쓴 전력량' : '모두 꺼도 회전판이 돌까?';
+      $('#sub').textContent = a === 1 ? '거실의 전기 기구를 몇 시간씩 쓸지 정하고 켜 봐요. 전력량계에 쓴 전력량이 쌓여요.' : '밤에 거실의 기구를 모두 껐어요. 플러그는 멀티탭에 꽂혀 있어요.';
+      $('#hint').textContent = a === 1 ? '회전판은 전기 에너지를 쓰는 동안 돌아요' : '빨간 불은 대기 상태를 알려 줘요';
+      $('#note').textContent = a === 1 ? '소비 전력은 예시 값이에요(전등 20 W는 교과서 예).' : '회전판이 도는 빠르기는 보기 좋게 정한 모형이에요. 대기전력의 크기는 기구마다 달라요.';
+      if (a === 1) window.__resetA(); else window.__resetB();
+      show('lab'); msg('결과', '해 보기를 한 뒤 골라 보세요.');
+    }
+    $$('#act button').forEach((b) => b.addEventListener('click', () => setAct(+b.dataset.a)));
+    $('#bReset').addEventListener('click', () => (act === 1 ? window.__resetA() : window.__resetB()));
+    setAct(Q.get('act') === '2' ? 2 : 1);
+    if (act === 1) window.__dayDemo(Q); else if (Q.get('night') === '1') window.__nightDemo(Q);
+    if (['rec', 'why'].includes(Q.get('tab'))) show(Q.get('tab'));
+    if (Q.get('ans') === '1') set().forEach((k) => $('#' + k + ' [data-v="a"]').click());
+  } catch (err) { window.SM_err('활동 탭·정리', err); }
+})();
+</script>
+</body>
+</html>
