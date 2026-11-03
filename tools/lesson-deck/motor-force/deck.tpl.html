@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>자기장 속 코일이 받는 힘 · 수업 발표</title>
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../../favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="../../apple-touch-icon.png">
+<script>
+/* 문제 알림: 코드에 오류가 나면 화면 아래에 빨간 상자로 알려 줘요 (선생님 확인용) */
+/* 화면 검사용: 주소 끝에 ?raf=timer를 붙이면 창이 가려져 있어도 그림이 움직여요 */
+if (/[?&]raf=timer/.test(location.search)) window.requestAnimationFrame = function (cb) { return setTimeout(function () { cb(performance.now()); }, 16); };
+(function () {
+  function box() {
+    var b = document.getElementById('sgErr');
+    if (!b && document.body) {
+      b = document.createElement('div'); b.id = 'sgErr';
+      b.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;background:#fdecea;color:#8a1f17;border:2px solid #d9534f;border-radius:12px;padding:10px 14px;font:600 14px/1.5 sans-serif;white-space:pre-wrap';
+      document.body.appendChild(b);
+    }
+    return b;
+  }
+  window.SG_err = function (where, err) {
+    var msg = '[' + where + '] ' + (err && err.message ? err.message : String(err));
+    var show = function () { var b = box(); if (b) b.textContent += (b.textContent ? '\n' : '') + msg; };
+    if (document.body) show(); else document.addEventListener('DOMContentLoaded', show);
+  };
+  window.addEventListener('error', function (e) { window.SG_err('스크립트', { message: e.message + ' (줄 ' + e.lineno + ')' }); });
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      var S = window.SG || {}, M = window.MT || {};
+      if (!S.okUI) window.SG_err('실행 안 됨', { message: '발표 넘기기 코드가 실행되지 않았어요. 파일이 끝(</html>)까지 들어 있는지 확인해 주세요.' });
+      if (!S.ok3d || !M.ok3d) {
+        document.querySelectorAll('.fail3d').forEach(function (f) { f.classList.add('show'); });
+        window.SG_err('3D 그림', { message: '3D 그림을 불러오지 못했어요. 인터넷 연결(cdn.jsdelivr.net)을 확인하고 새로고침해 주세요.' });
+      }
+    }, 9000);
+  });
+})();
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+  /* 1rem = 화면(16:9) 너비의 1/120. 1920 너비에서 16px */
+  :root{--paper:#fff;--ink:#14263b;--ink2:#34495e;--muted:#5a6b7e;--line:#dde6ee;--accent:#0e63b3;--accent-soft:#e3effb;
+    --Bc:#14a5d0;--Ic:#2fae4a;--Fc:#f0522a;--N:#d8433b;--S:#2f62c9;--P:#7d5ad6;--ease:cubic-bezier(.2,.8,.2,1)}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;overflow:hidden;background:#cfd8e1;color:var(--ink);
+    font-family:"Pretendard",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;-webkit-font-smoothing:antialiased}
+  button{font:inherit;color:inherit}
+  body{display:grid;place-items:center}
+  .deck{position:relative;width:var(--dw,100vw);height:var(--dh,56.25vw);background:var(--paper);overflow:hidden}
+
+  /* 3D 무대: 장마다 자리(왼쪽 큰 칸 / 표지 오른쪽)가 바뀌어요. 전기 그네(host)와 전동기(host2) 중 하나만 보여요 */
+  .gl-host{position:absolute;left:0;top:0;bottom:4.6rem;width:58%;background:linear-gradient(#f6f9fc,#d6e3ef);touch-action:none}
+  .deck[data-layout="cover"] .gl-host{left:40%;width:60%}
+  .deck[data-layout="text"] .gl-host{display:none}
+  .deck[data-use="motor"] #host,.deck:not([data-use="motor"]) #host2{display:none}
+  .gl-host canvas.gl{display:block;width:100%;height:100%;outline:none}
+  .lbls{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+  .lb{position:absolute;left:0;top:0;white-space:nowrap;font-weight:800;font-size:1.25rem;padding:.25rem .7rem;border-radius:.6rem;background:rgba(255,255,255,.9);color:#34495e;box-shadow:0 2px 8px rgba(20,38,59,.14);will-change:transform}
+  .lb.small{font-size:1.15rem;font-weight:700;color:#5a6b7e;background:rgba(255,255,255,.78);box-shadow:none}
+  .lb.small.hl{font-size:1.5rem;font-weight:800;color:var(--ink);background:#fff;box-shadow:0 2px 10px rgba(20,38,59,.18);border-bottom:.2rem solid var(--accent)}
+  .lb.B{background:var(--Bc);color:#fff}.lb.I{background:var(--Ic);color:#fff}.lb.F{background:var(--Fc);color:#fff;font-size:1.4rem}
+  .lb.P{background:var(--P);color:#fff;font-size:1.4rem}
+  .inset{position:absolute;z-index:2;border-radius:1.2rem;border:2px solid rgba(255,255,255,.95);box-shadow:0 10px 30px rgba(20,38,59,.22);pointer-events:none;display:none}
+  .inset.on{display:block}
+  .inset .it{position:absolute;left:.7rem;top:.7rem;font-size:1.2rem;font-weight:800;color:var(--ink);background:rgba(255,255,255,.9);border-radius:.5rem;padding:.2rem .6rem}
+  .inset .ic{position:absolute;left:.5rem;right:.5rem;bottom:.6rem;display:flex;flex-wrap:wrap;gap:.35rem;justify-content:center}
+  .inset .ic span{font-size:1.05rem;font-weight:800;color:#fff;border-radius:.45rem;padding:.15rem .55rem;white-space:nowrap}
+  .hint{position:absolute;left:1rem;bottom:1rem;z-index:3;font-size:1rem;font-weight:700;color:#5a6b7e;background:rgba(255,255,255,.8);border-radius:.6rem;padding:.35rem .7rem;pointer-events:none}
+  .deck[data-layout="cover"] .hint{display:none}
+  .fail3d{position:absolute;inset:0;display:none;place-items:center;text-align:center;padding:2rem;font-size:1.6rem;font-weight:700;color:#7a2a22;line-height:1.7;background:#fff4f2}
+  .fail3d.show{display:grid}
+  .model{position:absolute;right:1rem;bottom:.8rem;z-index:3;font-size:.95rem;color:var(--muted);pointer-events:none}
+
+  /* 장 */
+  .slide{position:absolute;top:0;bottom:4.6rem;right:0;width:42%;padding:3.4rem 3.4rem 2.2rem 3.2rem;display:none;flex-direction:column;gap:1.4rem;word-break:keep-all;overflow:hidden}
+  .slide.on{display:flex}
+  .deck[data-layout="text"] .slide{width:100%;padding:4.4rem 8rem}
+  .deck[data-layout="cover"] .slide{left:0;right:auto;width:40%;padding:4.4rem 3.4rem 4rem 4.4rem}
+  .slide h2{margin:0;font-size:3rem;line-height:1.3;letter-spacing:-.02em;font-weight:800}
+  .slide p,.slide li{margin:0;font-size:2.1rem;line-height:1.6;color:var(--ink2)}
+  .slide p b,.slide li b{color:var(--ink)}
+  .slide .lead{font-size:2.3rem;color:var(--ink);font-weight:600}
+  .slide .note{font-size:1.65rem;color:var(--muted)}
+  .slide ol,.slide ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:.9rem}
+  .slide ol{counter-reset:k}
+  .slide ol li{counter-increment:k;position:relative;padding-left:3rem}
+  .slide ol li::before{content:counter(k);position:absolute;left:0;top:.35em;width:2.1rem;height:2.1rem;border-radius:50%;background:#e6edf4;color:var(--muted);font-size:1.3rem;font-weight:800;display:grid;place-items:center}
+  .slide ol li.now::before{background:var(--accent);color:#fff}
+  .slide ol li.now{color:var(--ink);font-weight:600}
+  .slide ul li{position:relative;padding-left:1.6rem}
+  .slide ul li::before{content:"";position:absolute;left:0;top:.75em;width:.55rem;height:.55rem;border-radius:50%;background:#9fb0c2}
+  .safe{font-size:1.9rem;line-height:1.6;color:#7a2a22;border-left:.35rem solid #d9534f;padding:.2rem 0 .2rem 1.2rem}
+  .cB{color:#0f87ad}.cI{color:#23913b}.cF{color:#d9441d}.cN{color:var(--N)}.cS{color:var(--S)}.cP{color:var(--P)}
+  .q{font-size:1.5rem;font-weight:800;color:var(--accent);margin:0}
+
+  /* 표지 */
+  .cover{justify-content:flex-end}
+  .cover .tag{font-size:1.7rem;font-weight:700;color:var(--muted)}
+  .cover h1{margin:0;font-size:4.2rem;line-height:1.25;letter-spacing:-.03em;font-weight:800}
+  .cover .who{font-size:2rem;font-weight:700;color:var(--ink2);margin-top:-.2rem}
+
+  /* 고르기(예측) */
+  .pick{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem}
+  .pick div{border:2px solid #d6dfe8;border-radius:1rem;padding:1rem 1.3rem;font-size:1.95rem;font-weight:700;line-height:1.4;color:var(--ink)}
+  .pick div small{display:block;font-size:1.45rem;font-weight:600;color:var(--muted)}
+  .pick div b{color:var(--P)}
+
+  /* 기록표 */
+  table.tbl{border-collapse:collapse;width:100%;font-size:1.85rem}
+  .tbl th,.tbl td{border-bottom:1px solid var(--line);padding:.7rem .8rem;text-align:left;vertical-align:middle}
+  .tbl th{font-size:1.4rem;color:var(--muted);font-weight:700}
+  .tbl td:first-child{color:var(--ink);font-weight:600}
+  .tbl tr.now td{background:#f3f8fd}
+  .tbl tr.now td:first-child{box-shadow:inset .3rem 0 0 var(--accent)}
+
+  /* 정리 두 칸 */
+  .two{display:grid;grid-template-columns:1.25fr 1fr;gap:4rem;align-items:start}
+  .two h3{margin:0 0 1rem;font-size:1.6rem;color:var(--muted);font-weight:800}
+  .quiz p{font-size:1.9rem}
+  .quiz p+p{margin-top:.5rem}
+  .quiz .qq{margin-top:1.6rem}
+
+  /* 단계 등장: 넘길 때마다 하나씩. 자리는 미리 잡아 두어 글이 밀리지 않아요 */
+  [data-s]{visibility:hidden}
+  [data-s].in{visibility:visible;animation:up .45s var(--ease)}
+  @keyframes up{from{transform:translateY(.8rem)}to{transform:none}}
+
+  /* 빈칸: 눌러야 열려요 */
+  .bk{display:inline-flex;align-items:baseline;gap:.4rem;min-width:5.5em;justify-content:center;margin:0 .15em;padding:0 .4em;border:0;border-bottom:.22rem solid var(--accent);background:var(--accent-soft);border-radius:.4rem .4rem 0 0;cursor:pointer;font-weight:800;color:var(--accent);line-height:1.35;vertical-align:baseline}
+  .bk .no{font-size:.95em;font-weight:700;color:var(--accent)}
+  .bk .ans{display:none}
+  .bk.open{background:transparent}
+  .bk.open .no{display:none}
+  .bk.open .ans{display:inline}
+  .tbl .bk{min-width:4.5em}
+
+  /* 아래 막대 */
+  .bar{position:absolute;left:0;right:0;bottom:0;height:4.6rem;display:flex;align-items:center;gap:1rem;padding:0 1.4rem;border-top:1px solid var(--line);background:#fff;z-index:5}
+  .bar .where{font-size:1.35rem;font-weight:700;color:var(--muted);min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .bar .where b{color:var(--ink);font-variant-numeric:tabular-nums;margin-right:.6rem}
+  .dots{display:flex;gap:.45rem;margin-left:.4rem}
+  .dots i{width:.75rem;height:.75rem;border-radius:50%;background:#d3dde7}
+  .dots i.on{background:var(--accent)}
+  .sp{flex:1}
+  .bb{min-height:3.2rem;min-width:3.2rem;padding:0 1.1rem;border:1px solid #d6dfe8;border-radius:.8rem;background:#fff;font-size:1.3rem;font-weight:700;color:var(--ink2);cursor:pointer}
+  .bb:active{transform:scale(.97)}
+  .bb.go{background:var(--accent);border-color:var(--accent);color:#fff;min-width:7rem}
+  .bb:disabled{opacity:.35;cursor:default}
+
+  /* 목차 */
+  .toc{position:absolute;inset:0 0 4.6rem 0;background:rgba(255,255,255,.97);z-index:6;display:none;padding:2.6rem 4rem;overflow:auto}
+  .toc.on{display:block}
+  .toc h3{margin:0 0 1rem;font-size:2.2rem}
+  .toc .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.1rem 2rem}
+  .toc .grp{grid-column:1/-1;font-size:1.3rem;font-weight:800;color:var(--muted);margin-top:.9rem;border-bottom:1px solid var(--line);padding-bottom:.3rem}
+  .toc button{display:flex;gap:.8rem;align-items:baseline;text-align:left;border:0;background:none;padding:.5rem .4rem;font-size:1.45rem;font-weight:600;color:var(--ink);cursor:pointer;border-radius:.5rem}
+  .toc button b{min-width:2.2rem;color:var(--muted);font-variant-numeric:tabular-nums}
+  .toc button:hover{background:#f2f6fa}
+  .toc button.cur{color:var(--accent)}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }
+</script>
+</head>
+<body>
+<div class="deck" id="deck" data-layout="cover">
+  <div class="gl-host" id="host">
+    <div class="inset" id="inset"><span class="it">오른손으로 힘의 방향 찾기</span>
+      <div class="ic"><span style="background:var(--Bc)">네 손가락 = 자기장</span><span style="background:var(--Ic)">엄지 = 전류</span><span style="background:var(--Fc)">손바닥 = 힘</span></div></div>
+    <span class="hint">끌어서 돌려 보기</span>
+    <span class="model">화살표 길이, 움직이는 정도는 개념 이해를 위한 모형</span>
+    <div class="fail3d">3D 그림을 불러오지 못했어요.<br>인터넷 연결을 확인하고 새로고침해 주세요.</div>
+  </div>
+  <div class="gl-host" id="host2">
+    <div class="inset" id="inset2"><span class="it" id="insetT2">오른쪽 부분의 힘</span>
+      <div class="ic"><span style="background:var(--Bc)">네 손가락 = 자기장</span><span style="background:var(--Ic)">엄지 = 전류</span><span style="background:var(--Fc)">손바닥 = 힘</span></div></div>
+    <span class="hint">끌어서 돌려 보기</span>
+    <span class="model">화살표 길이, 도는 빠르기는 개념 이해를 위한 모형</span>
+    <div class="fail3d">3D 그림을 불러오지 못했어요.<br>인터넷 연결을 확인하고 새로고침해 주세요.</div>
+  </div>
+
+  <!-- ===== 장 내용: 글만 고치려면 여기를 고치면 돼요. data-s="1"은 '다음'을 한 번 누르면 나타나요.
+       빈칸은 <span class="bk" data-a="정답"></span> (번호는 저절로 붙어요). 3D 장면은 아래 블록 1의 SCENES에서 장 순서대로 정해요 ===== -->
+
+  <!-- 1 -->
+  <section class="slide cover" data-title="오늘의 질문" data-group="들어가기">
+    <span class="tag">중2 과학 Ⅶ. 전기와 자기</span>
+    <h1>전류와 자기가 만나 생긴 힘은 어떤 특성이 있을까?</h1>
+    <p class="who">이삭 선생님</p>
+    <p class="lead" data-s="1">말굽자석의 두 극 사이에 코일 아랫부분이 들어가 있음. 스위치를 눌러 코일에 전류를 흘리면 매달린 코일은 어떻게 될까?</p>
+  </section>
+
+  <!-- 2 -->
+  <section class="slide" data-title="패러데이의 발견" data-group="들어가기">
+    <h2>자석 옆의 전선에 전류를 흘리면</h2>
+    <p class="lead">영국의 과학자 <b>패러데이</b>: 자석 주변에 전선을 놓고 전류를 흘려 주면 전선이 회전한다는 것을 알아냄.</p>
+    <p data-s="1">오늘날 선풍기처럼 전기로 움직이는 장치를 만드는 출발점이 됨.</p>
+  </section>
+
+  <!-- 3 -->
+  <section class="slide" data-title="지난 시간 다시 보기" data-group="들어가기">
+    <h2>지난 시간에 배운 것</h2>
+    <p class="lead">전류가 흐르는 코일 주위에는 <span class="bk" data-a="자기장"></span>이 생김.</p>
+    <p data-s="1">그 자기장 때문에 코일 옆의 나침반 바늘(작은 자석)이 움직임.</p>
+    <p data-s="2">자기장의 방향 = 나침반 바늘의 <span class="bk" data-a="N극"></span>이 가리키는 방향.</p>
+  </section>
+
+  <!-- 4 -->
+  <section class="slide" data-title="거꾸로도 될까?" data-group="들어가기">
+    <h2>거꾸로도 될까?</h2>
+    <p class="lead">전류는 자석(나침반 바늘)에 힘을 줄 수 있음.</p>
+    <p data-s="1" class="lead">그렇다면 반대로, <b>자석도 전류가 흐르는 전선에 힘을 줄 수 있을까?</b></p>
+    <p data-s="2">전기 그네로 알아보기.</p>
+  </section>
+
+  <!-- 5 -->
+  <section class="slide" data-title="전기 그네 둘러보기" data-group="전기 그네 탐구">
+    <h2>전기 그네 실험 장치</h2>
+    <ol>
+      <li data-s="1"><b>말굽자석</b>: 두 극 사이에 코일 아랫부분이 들어가 있음.</li>
+      <li data-s="2"><b>전기 그네</b>: 코일을 그네처럼 매달아 놓음.</li>
+      <li data-s="3"><b>디지털 전원 장치</b>: 회로에 전류를 흘림.</li>
+      <li data-s="4"><b>니크롬선</b>: 전원 장치와 전기 그네 사이에 이어져 있음.</li>
+    </ol>
+    <p class="safe" data-s="5"><b>안전</b> 6 V 이상의 전압을 가하지 않음.</p>
+  </section>
+
+  <!-- 6 -->
+  <section class="slide" data-title="자기장은 어느 쪽?" data-group="전기 그네 탐구">
+    <h2>자기장은 어느 쪽을 향할까?</h2>
+    <p class="lead">말굽자석을 옆으로 세움. 아래가 <b class="cN">N극</b>, 위가 <b class="cS">S극</b>.</p>
+    <p data-s="1">자석 사이의 자기장은 N극에서 S극 쪽으로 향함.</p>
+    <p data-s="2" class="lead">두 극 사이의 자기장은 <span class="bk" data-a="위쪽"></span>을 향함.</p>
+  </section>
+
+  <!-- 7 -->
+  <section class="slide" data-title="전류는 어느 쪽?" data-group="전기 그네 탐구">
+    <h2>전류는 어느 쪽으로 흐를까?</h2>
+    <p class="lead">스위치를 누르면 회로를 따라 <b class="cI">전류</b>가 흐름.</p>
+    <p data-s="1">그네는 잠시 붙잡아 두고 전류가 흐르는 길만 보기.</p>
+    <p data-s="2" class="lead">앞에서 보면 코일 아랫부분의 전류는 <span class="bk" data-a="오른쪽"></span>으로 흐름.</p>
+    <p data-s="3" class="note">자기장은 위쪽, 전류는 오른쪽. 두 방향이 서로 다름.</p>
+  </section>
+
+  <!-- 8 -->
+  <section class="slide" data-title="예측 ① 처음 장치" data-group="전기 그네 탐구">
+    <h2>예측 ① 스위치를 누르면?</h2>
+    <p class="lead">전기 그네는 어느 쪽으로 움직일까? 손을 들어 고르기.</p>
+    <div class="pick"><div><b>(가)</b> 말굽자석 안쪽<small>그림 왼쪽</small></div><div><b>(나)</b> 말굽자석 바깥쪽<small>그림 오른쪽</small></div></div>
+    <p data-s="1" class="lead">스위치를 누름.</p>
+    <p data-s="2" class="lead">전기 그네는 <span class="bk" data-a="(나) 바깥쪽"></span>으로 움직임.</p>
+    <p data-s="3">전류를 끊으면 그네는 제자리로 돌아옴. 힘이 생기려면 <b>자석의 자기장</b>과 <b>전류</b>가 모두 있어야 함.</p>
+  </section>
+
+  <!-- 9 -->
+  <section class="slide" data-title="예측 ② 전류 반대" data-group="전기 그네 탐구">
+    <h2>예측 ② 전류의 방향을 바꾸면?</h2>
+    <p class="lead" data-s="1">전원 장치에 연결한 두 전선을 서로 바꾸어 꽂음 → <b class="cI">전류의 방향</b>이 반대가 됨.</p>
+    <div class="pick" data-s="1"><div><b>(가)</b> 말굽자석 안쪽<small>그림 왼쪽</small></div><div><b>(나)</b> 말굽자석 바깥쪽<small>그림 오른쪽</small></div></div>
+    <p data-s="2" class="lead">스위치를 누름.</p>
+    <p data-s="3" class="lead">전기 그네는 <span class="bk" data-a="(가) 안쪽"></span>으로 움직임.</p>
+    <p data-s="3" class="note">처음과 반대쪽.</p>
+  </section>
+
+  <!-- 10 -->
+  <section class="slide" data-title="예측 ③ 자석 뒤집기" data-group="전기 그네 탐구">
+    <h2>예측 ③ 자석을 뒤집으면?</h2>
+    <p class="lead" data-s="1">전선은 처음대로. 말굽자석을 뒤집어 N극과 S극의 위치를 바꿈 → <b class="cB">자기장의 방향</b>이 반대가 됨.</p>
+    <div class="pick" data-s="1"><div><b>(가)</b> 말굽자석 안쪽<small>그림 왼쪽</small></div><div><b>(나)</b> 말굽자석 바깥쪽<small>그림 오른쪽</small></div></div>
+    <p data-s="2" class="lead">스위치를 누름.</p>
+    <p data-s="3" class="lead">전기 그네는 <span class="bk" data-a="(가) 안쪽"></span>으로 움직임.</p>
+    <p data-s="3" class="note">처음과 반대쪽.</p>
+  </section>
+
+  <!-- 11 -->
+  <section class="slide" data-title="예측 ④ 둘 다 반대" data-group="전기 그네 탐구">
+    <h2>예측 ④ 둘 다 바꾸면?</h2>
+    <p class="lead" data-s="1">두 전선도 바꾸어 꽂고, 말굽자석도 뒤집음 → 전류의 방향과 자기장의 방향이 모두 반대.</p>
+    <div class="pick" data-s="1"><div><b>(가)</b> 말굽자석 안쪽<small>그림 왼쪽</small></div><div><b>(나)</b> 말굽자석 바깥쪽<small>그림 오른쪽</small></div></div>
+    <p data-s="2" class="lead">스위치를 누름.</p>
+    <p data-s="3" class="lead">전기 그네는 <span class="bk" data-a="(나) 바깥쪽"></span>으로 움직임.</p>
+    <p data-s="4">하나를 바꿀 때마다 힘의 방향이 반대로 바뀜. 두 번 바뀌면 <b>처음 방향</b>으로 돌아옴.</p>
+  </section>
+
+  <!-- 12 -->
+  <section class="slide" data-title="기록표 정리" data-group="전기 그네 탐구">
+    <h2>기록표: 움직이는 방향</h2>
+    <table class="tbl">
+      <thead><tr><th>바꾼 것</th><th>그네가 움직인 방향</th></tr></thead>
+      <tbody>
+        <tr data-row="1"><td>처음 (N극 아래, S극 위)</td><td><span class="bk" data-a="바깥쪽"></span></td></tr>
+        <tr data-row="2"><td>전류의 방향 반대</td><td><span class="bk" data-a="안쪽"></span></td></tr>
+        <tr data-row="3"><td>자기장의 방향 반대</td><td><span class="bk" data-a="안쪽"></span></td></tr>
+        <tr data-row="4"><td>전류와 자기장의 방향 모두 반대</td><td><span class="bk" data-a="바깥쪽"></span></td></tr>
+      </tbody>
+    </table>
+    <p data-s="5" class="lead">전류의 방향이나 자기장의 방향을 바꾸면 힘의 방향도 <span class="bk" data-a="바뀜"></span>.</p>
+    <p data-s="5" class="note">교과서 그림 Ⅶ-15의 네 경우.</p>
+  </section>
+
+  <!-- 13 -->
+  <section class="slide" data-title="세기를 키우면" data-group="전기 그네 탐구">
+    <h2>세기를 키우면?</h2>
+    <p class="lead">전압을 높여 전류의 세기를 크게 하면?</p>
+    <p data-s="1" class="lead">→ 코일이 받는 힘이 <span class="bk" data-a="커짐"></span>. 그네가 더 크게 움직임.</p>
+    <p data-s="2" class="lead">더 센 자석(자기장의 세기 크게) → 힘이 <span class="bk" data-a="커짐"></span>.</p>
+    <p data-s="3">세기를 바꾸어도 힘의 방향은 <span class="bk" data-a="그대로"></span>. 방향을 바꾸려면 전류나 자기장의 <b>방향</b>을 바꿔야 함.</p>
+    <p class="safe" data-s="1"><b>안전</b> 6 V 이상의 전압을 가하지 않음.</p>
+  </section>
+
+  <!-- 14 -->
+  <section class="slide" data-title="왜 힘이 생길까" data-group="힘의 특성">
+    <h2>왜 힘이 생길까?</h2>
+    <p class="lead">코일에 전류가 흐르면 코일 주변에 자기장이 생김(지난 시간).</p>
+    <p data-s="1" class="lead">코일 주변에 생기는 자기장과 자석에 의해 생긴 자기장이 <span class="bk" data-a="상호작용"></span>함.</p>
+    <p data-s="1" class="note">상호작용: 서로 힘을 주고받음.</p>
+    <p data-s="2">그래서 자기장 안에 놓인 코일에 전류가 흐르면 코일이 <b>힘</b>을 받아 움직임.</p>
+  </section>
+
+  <!-- 15 -->
+  <section class="slide" data-title="세 방향을 한꺼번에" data-group="힘의 특성">
+    <h2>세 방향을 한꺼번에 보기</h2>
+    <ul>
+      <li data-s="1"><b class="cB">자기장</b>: N극 → S극, <span class="bk" data-a="위쪽"></span></li>
+      <li data-s="2"><b class="cI">전류</b>: 코일 아랫부분을 따라 옆으로</li>
+      <li data-s="3"><b class="cF">힘</b>: 말굽자석 <span class="bk" data-a="바깥쪽"></span></li>
+    </ul>
+    <p data-s="4" class="lead">장치를 돌려 보면 세 화살표가 가리키는 방향이 모두 다름.</p>
+  </section>
+
+  <!-- 16 -->
+  <section class="slide" data-title="오개념 바로잡기" data-group="힘의 특성">
+    <h2>코일은 자기장 방향으로 밀려날까?</h2>
+    <p class="lead">"코일은 자기장 방향(N극 → S극)으로 밀려난다."</p>
+    <p data-s="1" class="lead"><b>아님.</b></p>
+    <p data-s="2">자기장은 <b class="cB">위쪽</b>인데 코일은 <b class="cF">옆(바깥쪽이나 안쪽)</b>으로 움직임.</p>
+    <p data-s="3">힘의 방향은 자기장 방향도, 전류 방향도 아닌 <b>다른 방향</b>.</p>
+  </section>
+
+  <!-- 17 -->
+  <section class="slide" data-title="오른손 1·2·3단계" data-group="오른손">
+    <h2>오른손으로 힘의 방향 찾기</h2>
+    <ol>
+      <li data-s="1">오른손의 <b>네 손가락</b> → <span class="bk" data-a="자기장"></span> 방향 (N극 → S극)</li>
+      <li data-s="2"><b>엄지손가락</b> → <span class="bk" data-a="전류"></span> 방향</li>
+      <li data-s="3"><b>손바닥</b>이 향하는 방향 = <span class="bk" data-a="힘"></span>의 방향</li>
+    </ol>
+    <p data-s="4" class="note">교과서 그림 Ⅶ-14. 모두 함께 오른손을 들어 따라 하기.</p>
+  </section>
+
+  <!-- 18 -->
+  <section class="slide" data-title="연습 문제 1" data-group="오른손">
+    <p class="q">연습 문제 1</p>
+    <h2>전류의 방향만 바꾼 장치. 힘의 방향은?</h2>
+    <ol>
+      <li data-s="1">네 손가락 → 자기장 방향: <span class="bk" data-a="위쪽"></span></li>
+      <li data-s="2">엄지손가락 → 전류 방향: 처음과 <span class="bk" data-a="반대"></span></li>
+      <li data-s="3">손바닥이 향하는 쪽 확인</li>
+      <li data-s="4">힘의 방향: 말굽자석 <span class="bk" data-a="안쪽"></span></li>
+    </ol>
+  </section>
+
+  <!-- 19 -->
+  <section class="slide" data-title="연습 문제 2" data-group="오른손">
+    <p class="q">연습 문제 2</p>
+    <h2>자석만 뒤집은 장치. 힘의 방향은?</h2>
+    <ol>
+      <li data-s="1">네 손가락 → 자기장 방향: <span class="bk" data-a="아래쪽"></span></li>
+      <li data-s="2">엄지손가락 → 전류 방향: 처음과 같음</li>
+      <li data-s="3">손바닥이 향하는 쪽 확인</li>
+      <li data-s="4">힘의 방향: 말굽자석 <span class="bk" data-a="안쪽"></span></li>
+    </ol>
+  </section>
+
+  <!-- 20 -->
+  <section class="slide" data-title="연습 문제 3" data-group="오른손">
+    <p class="q">연습 문제 3</p>
+    <h2>자석을 뒤집은 채로 그네를 바깥쪽으로 움직이게 하려면?</h2>
+    <ol>
+      <li data-s="1">자석만 뒤집으면 힘은 <span class="bk" data-a="안쪽"></span></li>
+      <li data-s="2">바깥쪽으로 바꾸려면 하나를 더 바꿔야 함 → <span class="bk" data-a="전류의 방향"></span>도 반대로</li>
+      <li data-s="3">두 전선을 바꾸어 꽂고 스위치를 누름 → 바깥쪽으로 움직임</li>
+    </ol>
+    <p data-s="3" class="note">둘 다 바꾸면 처음과 같은 방향.</p>
+  </section>
+
+  <!-- 21 -->
+  <section class="slide" data-title="전동기의 구조" data-group="전동기">
+    <h2>전동기</h2>
+    <p class="lead">자기장 안에 놓인 전류가 흐르는 코일이 받는 힘을 이용한 대표적인 장치.</p>
+    <p data-s="1" class="lead">전동기는 코일과 <span class="bk" data-a="자석"></span>으로 이루어짐.</p>
+    <p data-s="2">왼쪽은 <b class="cS">S극</b>, 오른쪽은 <b class="cN">N극</b> → 자기장은 N극에서 S극 쪽(왼쪽)을 향함.</p>
+    <p data-s="2" class="note">교과서 그림 Ⅶ-16.</p>
+  </section>
+
+  <!-- 22 -->
+  <section class="slide" data-title="왼쪽 부분과 오른쪽 부분" data-group="전동기">
+    <h2>코일의 왼쪽 부분과 오른쪽 부분</h2>
+    <p class="lead" data-s="1">두 부분에 흐르는 전류의 방향은 <span class="bk" data-a="반대"></span>. 왼쪽은 앞쪽으로, 오른쪽은 뒤쪽으로 흐름.</p>
+    <p data-s="2" class="lead">오른쪽 부분: 오른손을 대 보면 힘은 <span class="bk" data-a="위쪽"></span>.</p>
+    <p data-s="3" class="lead">왼쪽 부분: 오른손을 대 보면 힘은 <span class="bk" data-a="아래쪽"></span>.</p>
+    <p data-s="4">왼쪽과 오른쪽이 받는 힘의 방향이 서로 반대.</p>
+  </section>
+
+  <!-- 23 -->
+  <section class="slide" data-title="그래서 돈다" data-group="전동기">
+    <h2>그래서 코일이 돈다</h2>
+    <p class="lead" data-s="1">한쪽은 올라가고 다른 쪽은 내려감 → 코일이 <span class="bk" data-a="회전"></span>함.</p>
+    <p data-s="2" class="q">장난감 자동차의 바퀴가 거꾸로 돌게 하려면?</p>
+    <p data-s="3" class="lead">전지를 반대로 끼움 → 전류의 방향이 바뀜 → <span class="bk" data-a="반대"></span>로 돎.</p>
+    <p data-s="4">자석의 극까지 바꾸면 → 처음과 <span class="bk" data-a="같은"></span> 방향으로 돎.</p>
+  </section>
+
+  <!-- 24 -->
+  <section class="slide" data-title="생활 속 전동기" data-group="전동기">
+    <h2>생활 속 전동기</h2>
+    <p class="lead">전기를 이용하여 움직이는 대부분의 전기 기구에 전동기가 이용됨.</p>
+    <ul>
+      <li data-s="1"><b>선풍기</b>: 날개를 돌려 바람을 만듦.</li>
+      <li data-s="2"><b>스마트폰 진동</b>: 크기가 아주 작은 전동기.</li>
+      <li data-s="3"><b>전기 자동차</b>: 큰 전동기가 바퀴를 돌림.</li>
+      <li data-s="4"><b>로봇</b>: 아주 정교한 움직임을 표현함.</li>
+    </ul>
+  </section>
+
+  <!-- 25 -->
+  <section class="slide" data-title="오늘 정리" data-group="정리">
+    <h2>오늘 정리</h2>
+    <div class="two">
+      <ul>
+        <li>자기장 안에 놓인 코일에 전류가 흐르면 코일이 <span class="bk" data-a="힘"></span>을 받음.</li>
+        <li>전류의 방향이나 자기장의 방향을 바꾸면 힘의 방향이 바뀜. 둘 다 바꾸면 처음과 <span class="bk" data-a="같음"></span>.</li>
+        <li>전류의 세기, 자기장의 세기가 커질수록 힘이 <span class="bk" data-a="커짐"></span>.</li>
+        <li>오른손: 네 손가락 = 자기장, 엄지손가락 = 전류, 손바닥 = <span class="bk" data-a="힘"></span>.</li>
+        <li>전동기: 코일의 왼쪽·오른쪽 부분이 받는 힘이 반대 → <span class="bk" data-a="회전"></span>.</li>
+      </ul>
+      <div class="quiz">
+        <h3>확인 문제</h3>
+        <p data-s="1"><b>1.</b> 전기 그네에서 전류의 방향만 바꾸면 그네가 움직이는 쪽은?</p>
+        <p data-s="1">→ <span class="bk" data-a="(가) 안쪽"></span></p>
+        <p data-s="2" class="qq"><b>2.</b> 전동기의 코일이 더 세게 돌게 하려면?</p>
+        <p data-s="2">→ 전류의 <span class="bk" data-a="세기"></span>를 크게 함.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="toc" id="toc"><h3>목차</h3><div class="grid" id="tocGrid"></div></div>
+
+  <div class="bar">
+    <span class="where" id="where"></span>
+    <span class="dots" id="dots"></span>
+    <span class="sp"></span>
+    <button class="bb" id="bOpen" type="button">이 장 빈칸 열기</button>
+    <button class="bb" id="bToc" type="button">목차</button>
+    <button class="bb" id="bFull" type="button">전체 화면</button>
+    <button class="bb" id="bPrev" type="button" aria-label="이전">이전</button>
+    <button class="bb go" id="bNext" type="button" aria-label="다음">다음</button>
+  </div>
+</div>
+
+<script>
+/* ===== 블록 1: 장마다 3D 장면 상태 ===== */
+window.SG = window.SG || {}; window.MT = window.MT || {};
+(() => {
+  'use strict';
+  try {
+    const S = window.SG, M = window.MT;
+    // 3D 그림은 이 값을 매 순간 읽어서 그려요
+    // 전기 그네: hs = 오른손에 보일 화살표(B 자기장, I 전류, F 힘), bigHand = 오른손 창 크게
+    S.BASE = { wired: true, on: false, rev: false, flip: false, volt: 3, strong: false, freeze: false, parts: 'none', spin: false, hs: 'BIF', bigHand: false,
+      show: { B: false, I: false, F: false, H: false, P: false } };
+    // 전동기: run 회전, hold 코일을 수평으로 멈춰 둠, bat 전지 방향, mag 자석 방향, focus 오른손으로 볼 부분
+    M.BASE = { run: false, slow: false, bat: 1, mag: 1, k: 1, hold: true, focus: 'right', bigHand: false, show: { B: false, I: false, F: false, H: false } };
+    S.state = JSON.parse(JSON.stringify(S.BASE));
+    M.state = JSON.parse(JSON.stringify(M.BASE));
+    M.setSpin = () => {};
+
+    /* 장마다: use = 3D 장면('motor'면 전동기), view = 보는 방향, scene = 처음 상태, steps[i] = '다음'을 i+1번 눌렀을 때 바뀌는 것.
+       show는 적은 것만 켜져요(B 자기장, I 전류, F 힘, H 오른손 창, P (가)(나) 표시) */
+    const P = { B: true, I: true, P: true }, PF = { B: true, I: true, F: true, P: true }, ALL = { B: true, I: true, F: true };
+    S.SCENES = [
+      /* 1 표지 */ { layout: 'cover', view: 'tilt', scene: { spin: true }, steps: [{}] },
+      /* 2 패러데이 */ { view: 'tilt', scene: {}, steps: [{}] },
+      /* 3 복습 */ { view: 'coil', scene: { on: true, freeze: true, show: { I: true } }, steps: [{}, {}] },
+      /* 4 거꾸로 */ { view: 'tilt', scene: {}, steps: [{}, { view: 'swingv' }] },
+      /* 5 둘러보기 */ { view: 'tilt', scene: { parts: 'all' }, steps: [
+        { view: 'magnet', parts: 'mag' }, { view: 'swingv', parts: 'sw' }, { view: 'sup', parts: 'sup' }, { view: 'ni', parts: 'ni' }, { view: 'tilt', parts: 'all' }] },
+      /* 6 자기장 */ { view: 'front', scene: {}, steps: [{ show: { B: true } }, { view: 'magnet' }] },
+      /* 7 전류 */ { view: 'tilt', scene: { show: { B: true } }, steps: [{ on: true, freeze: true, show: { B: true, I: true } }, { view: 'coilF' }, {}] },
+      /* 8 예측 ① */ { view: 'sideP', scene: { show: P }, steps: [{ on: true, show: PF }, {}, { on: false }] },
+      /* 9 예측 ② */ { view: 'sideP', scene: { show: P }, steps: [{ rev: true }, { on: true, show: PF }, {}] },
+      /* 10 예측 ③ */ { view: 'sideP', scene: { show: P }, steps: [{ flip: true }, { on: true, show: PF }, {}] },
+      /* 11 예측 ④ */ { view: 'sideP', scene: { show: P }, steps: [{ rev: true, flip: true }, { on: true, show: PF }, {}, {}] },
+      /* 12 기록표 */ { view: 'sideP', scene: { show: P }, steps: [
+        { on: true, show: PF }, { rev: true }, { rev: false, flip: true }, { rev: true }, { rev: false, flip: false }] },
+      /* 13 세기 */ { view: 'sideP', scene: { on: true, show: PF }, steps: [{ volt: 5 }, { strong: true }, {}] },
+      /* 14 상호작용 */ { view: 'coil', scene: { show: { B: true } }, steps: [{ on: true, freeze: true, show: { B: true, I: true } }, { freeze: false, show: ALL }] },
+      /* 15 세 방향 */ { view: 'near3', scene: {}, steps: [{ show: { B: true } }, { on: true, freeze: true, show: { B: true, I: true } }, { freeze: false, show: ALL }, { spin: true }] },
+      /* 16 오개념 */ { view: 'sideP', scene: { show: { B: true } }, steps: [{}, { on: true, show: { B: true, F: true, P: true } }, {}] },
+      /* 17 오른손 */ { view: 'near3', scene: { on: true, freeze: true, show: { H: true }, hs: '', bigHand: true }, steps: [
+        { hs: 'B', show: { H: true, B: true } }, { hs: 'BI', show: { H: true, B: true, I: true } }, { hs: 'BIF', freeze: false, show: { H: true, B: true, I: true, F: true } }, {}] },
+      /* 18 연습 1 */ { view: 'sideP', scene: { rev: true, show: { P: true } }, steps: [
+        { show: { B: true, H: true, P: true }, hs: 'B' }, { on: true, freeze: true, hs: 'BI', show: { B: true, I: true, H: true, P: true } }, { hs: 'BIF' }, { freeze: false, show: { B: true, I: true, F: true, H: true, P: true } }] },
+      /* 19 연습 2 */ { view: 'sideP', scene: { flip: true, show: { P: true } }, steps: [
+        { show: { B: true, H: true, P: true }, hs: 'B' }, { on: true, freeze: true, hs: 'BI', show: { B: true, I: true, H: true, P: true } }, { hs: 'BIF' }, { freeze: false, show: { B: true, I: true, F: true, H: true, P: true } }] },
+      /* 20 연습 3 */ { view: 'sideP', scene: { flip: true, show: { B: true, P: true } }, steps: [
+        { on: true, show: PF }, { on: false }, { rev: true, on: true, show: PF }] },
+      /* 21 전동기 구조 */ { use: 'motor', view: 'tilt', scene: {}, steps: [{}, { show: { B: true } }] },
+      /* 22 두 부분 */ { use: 'motor', view: 'tilt', scene: { show: { B: true } }, steps: [
+        { show: { B: true, I: true } }, { view: 'rightW', focus: 'right', show: { B: true, I: true, F: true, H: true } }, { view: 'leftW', focus: 'left' }, { view: 'tilt', show: { B: true, I: true, F: true } }] },
+      /* 23 회전 */ { use: 'motor', view: 'tilt', scene: { show: ALL }, steps: [{ run: true, hold: false }, {}, { bat: -1 }, { mag: -1 }] },
+      /* 24 생활 속 */ { use: 'motor', view: 'front', scene: { run: true, hold: false, show: { B: true } }, steps: [{}, {}, {}, {}] },
+      /* 25 정리 */ { layout: 'text', view: 'tilt', scene: {}, steps: [{}, {}] },
+    ];
+
+    function merge(a, b) {
+      const o = Object.assign({}, a, b);
+      o.show = Object.assign({ B: false, I: false, F: false, H: false, P: false }, b && b.show ? b.show : a.show); // show는 새로 적은 것으로 바꿔요(적지 않은 것은 꺼짐)
+      return o;
+    }
+    // k번째 단계까지 차례로 쌓은 상태 (뒤로 가도 같은 화면이 나와요)
+    S.stateAt = (n, k) => {
+      const d = S.SCENES[n] || {}, base = d.use === 'motor' ? M.BASE : S.BASE;
+      let s = merge(base, d.scene || {}), view = d.view;
+      for (let i = 0; i < k; i++) { const p = (d.steps || [])[i] || {}; if (p.view) view = p.view; const q = Object.assign({}, p); delete q.view; s = merge(s, q); }
+      return { s, view, use: d.use || 'swing' };
+    };
+    S.apply = (n, k) => {
+      const { s, view, use } = S.stateAt(n, k), T = use === 'motor' ? M : S, st = T.state;
+      Object.keys(s).forEach((key) => (st[key] = s[key]));
+      if (T.view) { T.view.view(view); if (T.view.spin) T.view.spin(!!s.spin); }
+      if (use === 'motor' && S.view) S.view.spin(false);
+    };
+    S.okScenes = true;
+  } catch (err) { window.SG_err('장면 상태', err); }
+})();
+</script>
+
+<script>
+/* ===== 블록 2: 넘기기 · 빈칸 · 목차 (3D 그림 없이도 동작) ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SG;
+    const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+    const deck = $('#deck'), slides = $$('.slide');
+    const TOTAL = slides.length;
+
+    // 빈칸 번호 매기기 (처음부터 끝까지 이어서) ① ~ ㊿
+    const CIRC = [];
+    for (let c = 0x2460; c <= 0x2473; c++) CIRC.push(String.fromCharCode(c));
+    for (let c = 0x3251; c <= 0x325f; c++) CIRC.push(String.fromCharCode(c));
+    for (let c = 0x32b1; c <= 0x32bf; c++) CIRC.push(String.fromCharCode(c));
+    $$('.bk').forEach((b, i) => {
+      b.setAttribute('role', 'button'); b.tabIndex = 0;
+      b.innerHTML = `<span class="no">${CIRC[i] || i + 1}</span><span class="ans">${b.dataset.a}</span>`;
+      b.setAttribute('aria-label', `빈칸 ${i + 1}, 눌러서 열기`);
+      const t = (e) => { e.stopPropagation(); b.classList.toggle('open'); if (e.type === 'click') b.blur(); };
+      b.addEventListener('click', t);
+      b.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); t(e); } });
+    });
+
+    let n = 0, k = 0;
+    const steps = (i) => ((S.SCENES || [])[i] || {}).steps || [];
+    const maxK = (i) => Math.max(steps(i).length, ...$$('[data-s]', slides[i]).map((e) => +e.dataset.s));
+
+    function render() {
+      const sl = slides[n], d = (S.SCENES || [])[n] || {};
+      slides.forEach((s, i) => s.classList.toggle('on', i === n));
+      deck.dataset.layout = d.layout || 'split';
+      deck.dataset.use = d.use || 'swing';
+      $$('[data-s]', sl).forEach((e) => { const on = +e.dataset.s <= k; if (on && !e.classList.contains('in')) e.classList.add('in'); if (!on) e.classList.remove('in'); });
+      // 지금 단계에서 나온 목록 줄, 기록표 줄을 강조
+      $$('ol li', sl).forEach((li) => li.classList.toggle('now', +li.dataset.s === k));
+      $$('tr[data-row]', sl).forEach((tr) => tr.classList.toggle('now', +tr.dataset.row === k));
+      $('#where').innerHTML = `<b>${n + 1} / ${TOTAL}</b>${sl.dataset.group} · ${sl.dataset.title}`;
+      const m = maxK(n);
+      $('#dots').innerHTML = m ? Array.from({ length: m + 1 }, (_, i) => `<i class="${i <= k ? 'on' : ''}"></i>`).join('') : '';
+      $('#bPrev').disabled = n === 0 && k === 0;
+      $('#bNext').disabled = n === slides.length - 1 && k === m;
+      $('#bOpen').disabled = !$$('.bk', sl).length;
+      try { S.apply && S.apply(n, k); } catch (e) { window.SG_err('장면 바꾸기', e); }
+      try { history.replaceState(null, '', location.pathname + location.search + '#' + (n + 1)); } catch (e) {}
+    }
+    function next() { if (k < maxK(n)) k++; else if (n < slides.length - 1) { n++; k = 0; } render(); }
+    function prev() { if (k > 0) k--; else if (n > 0) { n--; k = maxK(n); } render(); }
+    function goto(i) { n = Math.max(0, Math.min(slides.length - 1, i)); k = 0; $('#toc').classList.remove('on'); render(); }
+    S.goto = goto; S.next = next; S.prev = prev; S.render = render;
+
+    $('#bNext').addEventListener('click', next);
+    $('#bPrev').addEventListener('click', prev);
+    // 지금 보이는 빈칸만 열고 닫아요
+    $('#bOpen').addEventListener('click', () => { const b = $$('.bk', slides[n]).filter((x) => { const p = x.closest('[data-s]'); return !p || p.classList.contains('in'); }); const all = b.every((x) => x.classList.contains('open')); b.forEach((x) => x.classList.toggle('open', !all)); });
+    $('#bFull').addEventListener('click', () => { try { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen(); } catch (e) {} });
+    document.addEventListener('fullscreenchange', () => { $('#bFull').textContent = document.fullscreenElement ? '전체 화면 끝내기' : '전체 화면'; });
+
+    // 목차
+    let html = '', g = '';
+    slides.forEach((s, i) => {
+      if (s.dataset.group !== g) { g = s.dataset.group; html += `<div class="grp">${g}</div>`; }
+      html += `<button type="button" data-i="${i}"><b>${i + 1}</b>${s.dataset.title}</button>`;
+    });
+    $('#tocGrid').innerHTML = html;
+    $$('#tocGrid button').forEach((b) => b.addEventListener('click', () => goto(+b.dataset.i)));
+    $('#bToc').addEventListener('click', () => { $$('#tocGrid button').forEach((b) => b.classList.toggle('cur', +b.dataset.i === n)); $('#toc').classList.toggle('on'); });
+
+    // 키보드와 발표용 리모컨: → ↓ 스페이스 PageDown = 다음, ← ↑ PageUp = 이전
+    document.addEventListener('keydown', (e) => {
+      if (e.target.closest && e.target.closest('.bk') && (e.key === 'Enter' || e.key === ' ')) return; // 빈칸 위에서 Enter·스페이스는 빈칸 열기
+      if (['ArrowRight', 'ArrowDown', 'PageDown', ' ', 'Enter'].includes(e.key)) { e.preventDefault(); next(); }
+      else if (['ArrowLeft', 'ArrowUp', 'PageUp', 'Backspace'].includes(e.key)) { e.preventDefault(); prev(); }
+      else if (e.key === 'Home') goto(0);
+      else if (e.key === 'Escape') $('#toc').classList.remove('on');
+    });
+
+    // 16:9 화면을 창에 맞추고, 글자 크기 기준(1rem)을 화면 너비에 맞춰요
+    function fit() {
+      const W = innerWidth, H = innerHeight, w = Math.min(W, H * 16 / 9), h = w * 9 / 16;
+      document.documentElement.style.setProperty('--dw', w + 'px'); document.documentElement.style.setProperty('--dh', h + 'px');
+      document.documentElement.style.fontSize = (w / 120) + 'px';
+    }
+    addEventListener('resize', fit); fit();
+
+    const start = parseInt((location.hash || '').slice(1), 10);
+    if (start > 0) n = Math.min(slides.length - 1, start - 1);
+    render();
+    S.okUI = true;
+  } catch (err) { window.SG_err('발표 넘기기', err); }
+})();
+</script>
+
+<script type="module">
+/* ===== 블록 3: 3D 전기 그네 · 3D 전동기 (lessons/motor-force/sim1-swing-3d.html, sim3-motor-3d.html에서 옮겨 옴) ===== */
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+/*@@C3@@*/
+/* --- 전기 그네 --- */
+/*@@SWING@@*/
+/* --- 전동기 --- */
+/*@@MOTOR@@*/
+</script>
+</body>
+</html>
