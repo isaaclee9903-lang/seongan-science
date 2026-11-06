@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>시험 자료 가중치</title>
+<style>
+:root{--blue:#0e63b3;--ink:#14263b;--sub:#5a6b7e;--line:#dde6ee;--tint:#e3effb}
+*{box-sizing:border-box}
+body{margin:0;background:#fff;color:var(--ink);font:16px/1.5 "Pretendard","Malgun Gothic",sans-serif;word-break:keep-all}
+main{max-width:860px;margin:0 auto;padding:16px 16px 96px}
+h1{font-size:22px;font-weight:600;margin:8px 0 4px}
+.lead{color:var(--sub);font-size:14px;margin:0 0 8px}
+h2{font-size:18px;font-weight:600;margin:28px 0 4px}
+.row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 16px;padding:12px 0;border-top:1px solid var(--line);align-items:start}
+.t{font-size:15px;font-weight:600}.p{font-size:12px;font-weight:400;color:var(--sub);margin-left:6px}
+.d{font-size:14px;color:var(--sub);margin-top:2px}
+.seg{display:flex;gap:4px}
+button{font:inherit;cursor:pointer;touch-action:manipulation}
+.seg button{width:46px;height:44px;border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:8px}
+.seg button.on{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:600}
+.seg button.drop.on{background:#5a6b7e;border-color:#5a6b7e}
+.memo{grid-column:1/-1;width:100%;height:44px;padding:0 10px;font:inherit;font-size:14px;border:1px solid var(--line);border-radius:8px}
+textarea{width:100%;padding:10px;font:inherit;font-size:14px;border:1px solid var(--line);border-radius:8px}
+.bar{position:sticky;bottom:0;background:#fff;border-top:1px solid var(--line);padding:10px 0;margin-top:20px;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.main{height:44px;padding:0 18px;border:0;border-radius:8px;background:var(--blue);color:#fff;font-weight:600}
+#cnt{font-size:14px;color:var(--sub)}
+@media(max-width:600px){.row{grid-template-columns:minmax(0,1fr)}}
+</style></head><body><main>
+<h1>시험 자료 가중치</h1>
+<p class="lead">파란 칸이 지금 값입니다. 다른 것만 눌러 바꾸고, 의견은 항목 아래 칸에 적어 주세요.</p>
+<div id="list"></div>
+<h2>빠진 내용이나 전체 의견</h2>
+<textarea id="gen" rows="3" placeholder="수업에서 안 한 실험, 강조한 문제, 교과서 밖에서 다룬 내용"></textarea>
+<div class="bar"><span id="cnt"></span><button class="main" id="copy" type="button">결과 복사</button></div>
+<textarea id="out" rows="8" hidden readonly style="margin-top:8px"></textarea>
+</main>
+<script>
+/* 시험 범위마다 아래 D만 바꾼다. [단원 이름, [[항목 이름, 쪽, 한 줄 내용, 제안 가중치(상·중·하·뺌)], ...]]. 아래 값은 예시(Ⅲ-2, Ⅵ)다. */
+var D=[
+["Ⅲ-2 일과 에너지",[
+["과학에서의 일의 뜻","107","힘이 작용하여 물체가 힘의 방향으로 이동할 때 힘이 일을 함. 일상의 '일'과 다름","상"],
+["일의 양 계산","108","일 = 힘 × 이동 거리, 단위 J. 1 J = 1 N으로 1 m 이동. 예: 5 N, 2 m → 10 J","상"],
+["일이 0인 경우","108","역기를 들고 서 있을 때(이동 거리 0), 상자를 들고 수평으로 걸을 때(힘과 이동 방향 수직)","상"],
+["에너지의 뜻과 단위","110","일을 할 수 있는 능력, 단위 J. 일과 에너지는 서로 전환됨","중"],
+["중력에 의한 위치 에너지의 뜻","111","높은 곳의 물체가 가지는 에너지. 중력에 대하여 한 일이 위치 에너지로 전환됨","상"],
+["위치 에너지 계산","111, 122","9.8mh. 질량·높이에 각각 비례. 5 kg, 1 m → 49 J / 거꾸로: 4 kg, 19.6 J → 0.5 m","상"],
+["기준면","111","같은 위치라도 기준면에 따라 위치 에너지가 달라짐","중"],
+["질량 m과 단위 m 구별","111","기울임체 m은 질량, 정자체 m은 미터","하"],
+["위치 에너지를 가진 물체의 예","110, 112","말뚝 박는 추 등 생활 속 예","하"],
+["운동 에너지의 뜻과 예","113, 116","운동하는 물체가 가지는 에너지. 볼링공이 핀을 튕겨 냄","중"],
+["수레와 나무 도막 자료 해석","113~114","질량 300·600·900 g → 4·8·12 cm / 속력 1·2·3 m/s → 4·16·36 cm","상"],
+["운동 에너지 계산","114","½mv². 질량에 비례, 속력의 제곱에 비례. 속력 2배면 4배","상"],
+["중력이 한 일 → 운동 에너지","114~115","자유 낙하: 중력이 한 일 = 운동 에너지 증가. 1 kg, 490 m → 4802 J","상"],
+["운동 에너지로 속력 구하기","122","2 kg, 2.5 m → 49 J → 7 m/s. 제곱근이 들어가는 역산","중"],
+["추 낙하 실험","115","100 g 추, 10·20·30 cm, 속력 측정기로 일과 운동 에너지 비교","중"],
+["제동 거리와 속력","116, 118","속력이 클수록 운동 에너지가 커서 제동 거리가 길어짐. 어린이 보호 구역","중"]
+]],
+["Ⅵ-1 역학적 에너지 전환과 보존",[
+["역학적 에너지의 뜻","215","중력에 의한 위치 에너지 + 운동 에너지","상"],
+["낙하할 때 에너지 전환","215","위치 에너지 감소, 운동 에너지 증가. 위치 에너지 → 운동 에너지","상"],
+["역학적 에너지 보존 법칙","217","마찰이 없으면 위치 에너지 감소량 = 운동 에너지 증가량, 합은 높이와 관계없이 일정","상"],
+["쇠구슬 낙하 실험","216","100 cm 관, 속력 측정기 2개, 0·50·100 cm 높이의 표 완성","중"],
+["식으로 같은 값 찾기","217, 219","그림 Ⅵ-2·Ⅵ-4의 ㉠: 감소한 위치 에너지 = 증가한 운동 에너지를 식으로 쓰기","중"],
+["던져 올린 물체의 운동","218","힘의 방향과 운동 방향이 반대, 속력 감소, 가장 높은 곳에서 속력 0","상"],
+["올라갈 때 에너지 전환","219","운동 에너지 → 위치 에너지, 마찰이 없으면 역학적 에너지 일정","상"],
+["같은 지점 같은 속력","219, 245","올라갈 때와 내려올 때 같은 높이에서 속력·운동 에너지·위치 에너지가 같음","상"],
+["자유 낙하와 던져 올림 비교표","218","작용하는 힘, 힘의 방향, 운동 방향, 속력 변화","중"],
+["롤러코스터·레일 위의 구슬","220, 244","위치 에너지·운동 에너지가 가장 큰 지점 찾기, 구간별 전환","상"],
+["하프파이프 등 다른 예","220","올라갈 때와 내려갈 때 전환 설명","하"],
+["작은 올림픽 활동","222","쇠구슬 경기장 설계","뺌"]
+]],
+["Ⅵ-2 에너지의 전환과 이용",[
+["전류가 흐르는 조건","225~226","자석이나 코일이 움직일 때 흐름. 자석을 넣고 가만히 두면 안 흐름","상"],
+["전자기 유도·유도 전류 용어","226","코일을 통과하는 자기장이 변해 전류가 흐르는 현상과 그 전류","상"],
+["자가 발전 손전등","226","흔들면 자석이 코일을 통과해 유도 전류로 불이 켜짐","중"],
+["발전기의 구조와 원리","226","자석과 코일. 코일을 회전시키면 전자기 유도로 전기 생산","상"],
+["발전소와 회전 날개 실험","227","수력·풍력에서 발전기를 돌리는 에너지","중"],
+["코일 관 속 자석 낙하","228","코일이 있는 관의 자석이 늦게 떨어짐. 역학적 에너지 일부가 전자기 유도에 쓰임","상"],
+["전기 에너지로 전환된 양 계산","244","위치 20 J + 운동 0 J → 위치 2 J + 운동 14 J이면 전기 에너지 4 J","상"],
+["손발전기 A·B 실험","229~230","손잡이 돌리는 역학적 에너지 → 전기 → 빛, 소리, B의 역학적 에너지","중"],
+["여러 가지 에너지 전환 예","230","손전등, 기타 연주, 손뼉, 모닥불. 빈칸 채우기","상"],
+["화학 에너지의 뜻","230","물질 속에 저장된 에너지. 음식, 건전지, 연료","중"],
+["에너지 보존","230","새로 생기거나 소멸하지 않고 총합이 일정. 일부가 소멸한다는 말이 틀린 말","상"],
+["전기 에너지의 장점 세 가지","232","먼 곳까지 전달, 전지에 저장해 휴대, 다양한 에너지로 전환","상"],
+["스마트폰·가전제품 전환 예","233, 244","전기 에너지 → 빛, 열, 소리, 역학적 에너지 기구 짝짓기","중"],
+["소비 전력의 뜻과 식","234~235","1초 동안 사용한 전기 에너지, 단위 W. 소비 전력 = 전기 에너지(J) ÷ 시간(초)","상"],
+["밝기가 같은 두 전등 비교","235, 245","1초에 빛 6 J + 열 6 J = 12 W / 빛 6 J + 열 2 J = 8 W. 10분 총량으로 묻는 변형도 있음","상"],
+["같은 성능이면 작은 소비 전력","235","더 적은 전기 에너지를 소비함","중"],
+["가전제품 소비 전력 조사","236","집에 있는 제품 소비 전력 비교, 큰 제품의 특징 토의","하"],
+["전력량의 뜻과 식","237","전력량(Wh) = 소비 전력(W) × 시간(h). 20 W, 1시간 → 20 Wh. 전기 요금 기준","상"],
+["kWh와 전기 요금 청구서","237","단위 kWh, 청구서의 사용량 읽기","중"],
+["표 보고 전력량 비교","245","선풍기 100, 드라이어 1500, 전자레인지 800, 청소기 2400, 세탁기 3500, 조명 200 Wh","상"],
+["에너지 소비 효율 등급","237","1등급에서 5등급, 1등급으로 갈수록 효율적. 에너지절약 표시","중"],
+["대기전력","237~238","꺼져 있어도 플러그가 꽂혀 있으면 소비","중"],
+["풍력 발전기 만들기 프로젝트","240~241","날개 모양·수 바꾸기","뺌"]
+]]];
+var L=["상","중","하","뺌"],S={},host=document.getElementById("list");
+var KEY="exam-weights-v1",saved={};
+try{saved=JSON.parse(localStorage.getItem(KEY)||"{}")}catch(e){}
+function esc(x){return x}
+function save(){try{localStorage.setItem(KEY,JSON.stringify({S:S,g:document.getElementById("gen").value}))}catch(e){}}
+D.forEach(function(s,si){
+ var h=document.createElement("h2");h.textContent=s[0];host.appendChild(h);
+ s[1].forEach(function(it,ii){
+  var k=si+"-"+ii,sv=saved.S&&saved.S[k];
+  S[k]=sv||{w:it[3],m:""};
+  var r=document.createElement("div");r.className="row";
+  var a=document.createElement("div");
+  var t=document.createElement("div");t.className="t";t.textContent=it[0];
+  var p=document.createElement("span");p.className="p";p.textContent=it[1]+"쪽";t.appendChild(p);
+  var d=document.createElement("div");d.className="d";d.textContent=it[2];
+  a.appendChild(t);a.appendChild(d);
+  var g=document.createElement("div");g.className="seg";
+  L.forEach(function(l){
+   var b=document.createElement("button");b.type="button";b.textContent=l;
+   if(l==="뺌")b.classList.add("drop");
+   if(l===S[k].w)b.classList.add("on");
+   b.setAttribute("aria-pressed",l===S[k].w);
+   b.setAttribute("aria-label",it[0]+" "+l);
+   b.addEventListener("click",function(){S[k].w=l;Array.prototype.forEach.call(g.children,function(c){var o=c===b;c.classList.toggle("on",o);c.setAttribute("aria-pressed",o)});update()});
+   g.appendChild(b)});
+  r.appendChild(a);r.appendChild(g);
+  var i=document.createElement("input");i.type="text";i.className="memo";i.placeholder="의견(있을 때만)";i.value=S[k].m;
+  i.addEventListener("input",function(){S[k].m=i.value;update()});
+  r.appendChild(i);host.appendChild(r)})});
+var gen=document.getElementById("gen");gen.value=saved.g||"";gen.addEventListener("input",update);
+function result(){
+ var o=["가중치 검토 결과입니다. 표시하지 않은 항목은 제안 그대로입니다."];
+ D.forEach(function(s,si){var x=[];s[1].forEach(function(it,ii){var v=S[si+"-"+ii];
+  if(v.w!==it[3]||v.m.trim())x.push("- "+it[0]+": "+(v.w!==it[3]?it[3]+" → "+v.w:v.w)+(v.m.trim()?" / "+v.m.trim():""))});
+  if(x.length)o.push(s[0]+"\n"+x.join("\n"))});
+ var g=gen.value.trim();if(g)o.push("전체 의견: "+g);
+ if(o.length===1)o.push("바꾼 항목 없음");
+ return o.join("\n\n")}
+window.weightsResult=result;
+function update(){var c=0;D.forEach(function(s,si){s[1].forEach(function(it,ii){var v=S[si+"-"+ii];if(v.w!==it[3]||v.m.trim())c++})});
+ document.getElementById("cnt").textContent="제안에서 바꾼 항목 "+c+"개";save()}
+update();
+document.getElementById("copy").addEventListener("click",function(){
+ var t=document.getElementById("out"),b=this;t.hidden=false;t.value=result();t.select();
+ var ok=false;try{ok=document.execCommand("copy")}catch(e){}
+ b.textContent=ok?"복사됨":"아래 글을 복사해 주세요";setTimeout(function(){b.textContent="결과 복사"},1800)});
+</script></body></html>
