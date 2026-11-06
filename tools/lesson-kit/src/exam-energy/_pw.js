@@ -262,16 +262,16 @@ window.PW = (() => {
   /* =====================================================================
      에너지 전환 지도: 기구를 고르면 그 기구가 일하는 모습과 바뀌는 에너지 띠
      ===================================================================== */
-  const EN = { light: ['빛에너지', [233, 185, 49]], heat: ['열에너지', [216, 100, 58]], move: ['운동 에너지', [90, 143, 196]], sound: ['소리 에너지', [122, 107, 176]], chem: ['화학 에너지', [79, 154, 106]] };
+  const EN = { light: ['빛에너지', [233, 185, 49]], heat: ['열에너지', [216, 100, 58]], move: ['역학적 에너지', [90, 143, 196]], sound: ['소리 에너지', [122, 107, 176]], chem: ['화학 에너지', [79, 154, 106]] };
   const DEVS = [
-    { id: 'dryer', name: '헤어드라이어', out: ['heat', 'move'] },
-    { id: 'fan', name: '선풍기', out: ['move'] },
+    { id: 'dryer', name: '헤어드라이어', out: ['heat', 'move', 'sound'] },
+    { id: 'fan', name: '선풍기', out: ['move', 'sound', 'heat'] },
     { id: 'lamp', name: '전등', out: ['light', 'heat'] },
-    { id: 'tv', name: '텔레비전', out: ['light', 'sound'] },
+    { id: 'tv', name: '텔레비전', out: ['light', 'sound', 'heat'] },
     { id: 'kettle', name: '전기 주전자', out: ['heat'] },
-    { id: 'mixer', name: '믹서', out: ['move', 'sound'] },
+    { id: 'mixer', name: '믹서', out: ['move', 'sound', 'heat'] },
     { id: 'phone', name: '휴대 전화 충전', out: ['chem'] },
-    { id: 'hp', name: '헤드폰', out: ['sound'] },
+    { id: 'hp', name: '헤드폰', out: ['sound', 'heat'] },
   ];
   function heatWaves(ctx, x, y, w, h, t, a = 1) {
     ctx.lineWidth = 2.4; ctx.lineCap = 'round';
@@ -406,7 +406,7 @@ window.PW = (() => {
       const n = d.out.length, x0 = 500, x1 = 800;
       d.out.forEach((k, i) => {
         const y = cy + (i - (n - 1) / 2) * 110, [name, rgb] = EN[k];
-        band(x0, cy + (i - (n - 1) / 2) * 26, x1, y, 22, rgb, 0.25 * st.k);
+        band(x0, cy + (i - (n - 1) / 2) * 26, x1, y, i === 0 ? 24 : 9, rgb, 0.25 * st.k);
         for (let j = 0; j < 4; j++) { const u = ((st.t * 0.5 + j / 4) % 1); const px = lerp(x0, x1, u), py = lerp(cy + (i - (n - 1) / 2) * 26, y, ease(u)); ctx.fillStyle = `rgba(${rgb.join(',')},${0.9 * st.k})`; rr(ctx, px - 8, py - 8, 16, 16, 4); ctx.fill(); }
         ctx.fillStyle = `rgba(${rgb.join(',')},1)`; rr(ctx, x1 + 6, y - 14, 28, 28, 7); ctx.fill();
         OL.put('e' + k, x1 + 46, y, name, 'tx nm ra');

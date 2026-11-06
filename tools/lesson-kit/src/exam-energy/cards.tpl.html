@@ -259,7 +259,7 @@
       <li>선풍기, 세탁기, 진동 알림: 전기 에너지 → <span class="bk" data-a="역학적 에너지"></span></li>
       <li>스피커, 음악 듣기: 전기 에너지 → <span class="bk" data-a="소리 에너지"></span></li>
     </ul>
-    <p class="trap"><b>스마트폰</b> 기능마다 다름. 화면은 빛, 음악은 소리, 진동은 역학적 에너지.</p>
+    <p class="trap"><b>함정</b> 한 가지로만 바뀌지 않음. 선풍기도 소리·열에너지가 함께 나옴. 스마트폰은 화면 빛, 음악 소리, 진동 역학적 에너지.</p>
   </div>
 </section>
 <section class="slide q" data-group="Ⅵ-2 에너지의 전환과 이용" data-title="문제: 에너지 전환" data-qs="c-m7,c-m9"></section>
@@ -347,23 +347,36 @@
         row('그대로 두기', () => L.hold(1.5));
         row('자석 빼기', () => L.pull(.7));
         row('코일 움직이기', () => { L.setMode('coil'); L.push(.8); });
+        return { play() { L.setMode('magnet'); L.push(.9, () => L.hold(1.4, () => L.pull(.9))); } };
       },
-      gen(h) { h.classList.add('scene'); EMI.gen(h, {}); },
+      gen(h, c) {
+        h.classList.add('scene'); const G = EMI.gen(h, {});
+        const b = mk('button', 'ctl go'); b.type = 'button'; b.textContent = '코일 멈추기';
+        b.addEventListener('click', () => { const on = !G.st.level; G.setLevel(on ? 1 : 0); b.textContent = on ? '코일 멈추기' : '코일 돌리기'; }); c.appendChild(b);
+        return { play() { G.setLevel(1); b.textContent = '코일 멈추기'; } };
+      },
       drop(h, c) {
         h.classList.add('scene'); const D = EMI.drop(h);
         const b = mk('button', 'ctl go'); b.type = 'button'; b.textContent = '자석 동시에 떨어뜨리기'; b.addEventListener('click', () => D.drop()); c.appendChild(b);
+        return { play: () => D.drop() };
       },
       lamps(h, c) {
         h.classList.add('scene'); const L = PW.lamps(h);
         const b = mk('button', 'ctl go'); b.type = 'button'; b.textContent = '1초 동안 따라가기'; b.addEventListener('click', () => L.follow()); c.appendChild(b);
         const t = mk('button', 'ctl'); t.type = 'button'; t.textContent = '열화상으로 보기'; t.setAttribute('aria-pressed', 'false'); t.addEventListener('click', () => { L.thermal(); t.setAttribute('aria-pressed', String(L.st.thermal)); }); c.appendChild(t);
+        return { play: () => L.follow() };
       },
       map(h, c) {
         h.classList.add('scene'); const M = PW.devmap(h, { id: 'fan' });
-        const bs = [['fan', '선풍기'], ['lamp', '전등'], ['kettle', '전기 주전자'], ['tv', '텔레비전'], ['hp', '헤드폰']].map(([id, t]) => {
-          const b = mk('button', 'ctl'); b.type = 'button'; b.textContent = t; b.setAttribute('aria-pressed', String(id === 'fan'));
-          b.addEventListener('click', () => { M.set(id); bs.forEach((x) => x.setAttribute('aria-pressed', String(x === b))); }); c.appendChild(b); return b;
+        const LIST = [['fan', '선풍기'], ['lamp', '전등'], ['kettle', '전기 주전자'], ['tv', '텔레비전'], ['hp', '헤드폰'], ['dryer', '헤어드라이어'], ['mixer', '믹서']];
+        let tm = 0, i = 0;
+        const pick = (k) => { i = k; M.set(LIST[k][0]); bs.forEach((x, j) => x.setAttribute('aria-pressed', String(j === k))); };
+        const bs = LIST.map(([id, t], k) => {
+          const b = mk('button', 'ctl'); b.type = 'button'; b.textContent = t;
+          b.addEventListener('click', () => { clearInterval(tm); pick(k); }); c.appendChild(b); return b;
         });
+        pick(0);
+        return { play() { clearInterval(tm); pick(0); tm = setInterval(() => pick((i + 1) % LIST.length), 3200); }, stop() { clearInterval(tm); } };
       },
     };
     function mount(sl) {
@@ -372,7 +385,7 @@
       if (key) {
         const f = mk('div', 'fig'), body = mk('div', 'figbody'), ctl = mk('div', 'figctl');
         f.appendChild(body); f.appendChild(ctl); sl.insertBefore(f, sl.firstChild);
-        try { FIG[key](body, ctl, sl.dataset.figo ? JSON.parse(sl.dataset.figo) : {}); } catch (e) { window.SM_err('그림 ' + key, e); }
+        try { sl._fig = FIG[key](body, ctl, sl.dataset.figo ? JSON.parse(sl.dataset.figo) : {}) || null; } catch (e) { window.SM_err('그림 ' + key, e); }
       }
       if (sl.dataset.qs) {
         const head = mk('div', 'qhead'); head.innerHTML = `<h2>${sl.dataset.title}</h2>`; sl.appendChild(head);
@@ -388,10 +401,14 @@
       b.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); t(e); } });
     });
 
-    let n = 0;
+    let n = 0, autoTm = 0, lastSl = null;
     function render() {
       slides.forEach((s, i) => s.classList.toggle('on', i === n));
       const sl = slides[n]; mount(sl);
+      // 장에 들어오면 그림이 바로 움직여요. 다시 보려면 그림 아래 버튼을 눌러요
+      clearTimeout(autoTm); if (lastSl && lastSl !== sl && lastSl._fig && lastSl._fig.stop) lastSl._fig.stop();
+      if (sl !== lastSl && sl._fig && sl._fig.play) autoTm = setTimeout(() => { try { sl._fig.play(); } catch (e) { window.SM_err('그림 재생', e); } }, 450);
+      lastSl = sl;
       $('#where').innerHTML = `<b>${n + 1} / ${slides.length}</b>${sl.dataset.group} · ${sl.dataset.title}`;
       $('#bPrev').disabled = n === 0; $('#bNext').disabled = n === slides.length - 1;
       const bk = $$('.bk', sl); $('#bOpen').hidden = !bk.length;

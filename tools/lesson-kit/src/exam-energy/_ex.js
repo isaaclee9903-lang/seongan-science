@@ -29,7 +29,7 @@ window.EX = (() => {
     const i = document.createElement('input'); i.type = 'range'; i.min = min; i.max = max; i.step = step; i.value = val; i.setAttribute('aria-label', label);
     i.addEventListener('input', () => fn(+i.value)); l.appendChild(i); ctl.appendChild(l); return i;
   }
-  const seg = (ctl, items, cur, fn) => { const bs = items.map(([v, t]) => { const b = button(ctl, t, () => { bs.forEach((x, i) => x.setAttribute('aria-pressed', String(items[i][0] === v))); fn(v); }); b.setAttribute('aria-pressed', String(v === cur)); return b; }); return bs; };
+  const seg = (ctl, items, cur, fn) => { const mark = (v) => bs.forEach((x, i) => x.setAttribute('aria-pressed', String(items[i][0] === v))); const bs = items.map(([v, t]) => { const b = button(ctl, t, () => { mark(v); fn(v); }); b.setAttribute('aria-pressed', String(v === cur)); return b; }); bs.mark = mark; return bs; };
   function anim(host, dur, step, done) {
     if (REDUCE) { step(1); done && done(); return () => {}; }
     let t0 = 0, live = true;
@@ -127,11 +127,13 @@ window.EX = (() => {
         res2.textContent = st.moved ? '중력은 아래, 이동은 수평 → 힘의 방향으로 이동한 거리 0' : '당겨서 이동시켜 보세요';
       }
     }
-    const go = () => { st.moved = false; anim(host, 1.5, (k) => { st.x = (k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2) * DIST * PX; draw(); }, () => { st.moved = true; draw(); }); };
-    button(ctl, '당겨서 이동시키기', go, 'go');
-    button(ctl, '처음으로', () => { st.x = 0; st.moved = false; draw(); });
-    if (tabs) seg(ctl, [['el', '탄성력 보기'], ['g', '중력 보기']], 'el', (v) => { st.show = v; draw(); });
+    let stop = null, tm = 0, sg = null;
+    const go = (done) => { stop && stop(); clearTimeout(tm); st.moved = false; stop = anim(host, 1.5, (k) => { st.x = (k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2) * DIST * PX; draw(); }, () => { st.moved = true; draw(); done && done(); }); };
+    button(ctl, '당겨서 이동시키기', () => go(), 'go');
+    button(ctl, '처음으로', () => { stop && stop(); clearTimeout(tm); st.x = 0; st.moved = false; draw(); });
+    if (tabs) sg = seg(ctl, [['el', '탄성력 보기'], ['g', '중력 보기']], 'el', (v) => { clearTimeout(tm); st.show = v; draw(); });
     draw();
+    return { play() { st.show = 'el'; sg && sg.mark('el'); st.x = 0; draw(); go(() => { if (tabs) tm = setTimeout(() => { st.show = 'g'; sg.mark('g'); draw(); }, 1500); }); } };
   }
 
   /* ---- 일이 0인 두 경우 ---- */
@@ -139,45 +141,65 @@ window.EX = (() => {
     const g = svg(host, 760, 540), s = g.s;
     S('rect', { width: 760, height: 540, fill: '#fff' }, s);
     S('line', { x1: 380, x2: 380, y1: 30, y2: 500, stroke: C.line, 'stroke-width': 1 }, s);
-    const arrow = (x1, y1, x2, y2, c = C.blue) => { const a = Math.atan2(y2 - y1, x2 - x1); S('line', { x1, y1, x2: x2 - Math.cos(a) * 10, y2: y2 - Math.sin(a) * 10, stroke: c, 'stroke-width': 4, 'stroke-linecap': 'round' }, s); S('path', { d: `M${x2},${y2} l${-14 * Math.cos(a - .5)},${-14 * Math.sin(a - .5)} l${-14 * Math.cos(a + .5)},${-14 * Math.sin(a + .5)}Z`, fill: c }, s); };
-    // 바닥
-    S('rect', { x: 20, y: 430, width: 340, height: 14, rx: 2, fill: '#d9e1e8' }, s); S('rect', { x: 400, y: 430, width: 340, height: 14, rx: 2, fill: '#d9e1e8' }, s);
-    // 왼쪽: 역기
-    const skin = '#eebf9d', cx = 190;
-    S('ellipse', { cx, cy: 432, rx: 84, ry: 7, fill: 'rgba(20,38,59,.16)', filter: g.blurUrl }, s);
-    S('path', { d: `M${cx - 30},300 L${cx - 52},430 h24 L${cx - 6},318 Z M${cx + 30},300 L${cx + 52},430 h-24 L${cx + 6},318 Z`, fill: '#2d4a72' }, s);
-    S('rect', { x: cx - 36, y: 196, width: 72, height: 116, rx: 16, fill: g.lg('sh', [[0, '#d9574a'], [1, '#b93f33']]) }, s);
-    S('rect', { x: cx - 36, y: 288, width: 72, height: 14, fill: '#3a3f45' }, s);
-    S('path', { d: `M${cx - 32},208 L${cx - 70},140 L${cx - 56},92`, stroke: skin, 'stroke-width': 19, fill: 'none', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, s);
-    S('path', { d: `M${cx + 32},208 L${cx + 70},140 L${cx + 56},92`, stroke: skin, 'stroke-width': 19, fill: 'none', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, s);
-    S('rect', { x: cx - 9, y: 174, width: 18, height: 26, fill: skin }, s);
-    S('circle', { cx, cy: 158, r: 27, fill: skin }, s);
-    S('path', { d: `M${cx - 27},156 a27,27 0 0 1 54,0 q-14,-14 -27,-12 q-14,0 -27,12Z`, fill: '#2d2a28' }, s);
-    S('rect', { x: cx - 148, y: 84, width: 296, height: 8, rx: 4, fill: '#7f8b97' }, s);
-    [[-142, 24, 92], [-122, 16, 72], [118, 16, 72], [130, 24, 92]].forEach(([dx, w, h], i) => S('rect', { x: cx + dx - (i > 1 ? 12 : 0), y: 88 - h / 2, width: w * .55, height: h, rx: 4, fill: i % 3 === 0 ? '#2e5f9e' : '#c9503f' }, s));
-    S('rect', { x: cx - 66, y: 80, width: 22, height: 16, rx: 5, fill: skin }, s); S('rect', { x: cx + 44, y: 80, width: 22, height: 16, rx: 5, fill: skin }, s);
-    arrow(cx, 72, cx, 26);
-    T(s, cx + 12, 40, '힘의 방향', { a: 'start', c: C.blue, size: 20, w: 800 });
+    const arrow = (x1, y1, x2, y2, c = C.blue) => {
+      const a = Math.atan2(y2 - y1, x2 - x1), L = 18, W = 9, bx = x2 - Math.cos(a) * L, by = y2 - Math.sin(a) * L, nx = -Math.sin(a) * W, ny = Math.cos(a) * W;
+      S('line', { x1, y1, x2: bx, y2: by, stroke: c, 'stroke-width': 4.5, 'stroke-linecap': 'round' }, s);
+      S('path', { d: `M${x2},${y2} L${bx + nx},${by + ny} L${bx - nx},${by - ny}Z`, fill: c, 'stroke-linejoin': 'round' }, s);
+    };
+    const limb = (d, c, w) => S('path', { d, stroke: c, 'stroke-width': w, fill: 'none', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, s);
+    const skin = '#eebf9d', skinD = '#dcaa86', navy = '#2d4a72', navyL = '#47638a', shoe = '#2b3138';
+    S('rect', { x: 20, y: 430, width: 340, height: 12, rx: 3, fill: '#d9e1e8' }, s); S('rect', { x: 400, y: 430, width: 340, height: 12, rx: 3, fill: '#d9e1e8' }, s);
+
+    /* 왼쪽: 역기를 들고 서 있는 사람(앞모습) */
+    const cx = 190;
+    S('ellipse', { cx, cy: 431, rx: 88, ry: 7, fill: 'rgba(20,38,59,.18)', filter: g.blurUrl }, s);
+    limb(`M${cx - 17},300 Q${cx - 30},360 ${cx - 33},416`, navy, 30);
+    limb(`M${cx + 17},300 Q${cx + 30},360 ${cx + 33},416`, navy, 30);
+    S('path', { d: `M${cx - 52},430 q0,-17 19,-17 q19,0 21,17Z`, fill: shoe }, s);
+    S('path', { d: `M${cx + 52},430 q0,-17 -19,-17 q-19,0 -21,17Z`, fill: shoe }, s);
+    // 팔(몸통 뒤에서 나옴)
+    limb(`M${cx - 37},214 L${cx - 73},150 L${cx - 62},100`, skin, 20);
+    limb(`M${cx + 37},214 L${cx + 73},150 L${cx + 62},100`, skin, 20);
+    limb(`M${cx - 37},214 L${cx - 50},191`, '#c9483c', 26);
+    limb(`M${cx + 37},214 L${cx + 50},191`, '#c9483c', 26);
+    S('rect', { x: cx - 11, y: 172, width: 22, height: 30, rx: 8, fill: skinD }, s);
+    S('path', { d: `M${cx - 46},216 Q${cx - 46},194 ${cx - 22},192 Q${cx},200 ${cx + 22},192 Q${cx + 46},194 ${cx + 46},216 L${cx + 33},300 Q${cx},310 ${cx - 33},300Z`, fill: g.lg('sh', [[0, '#dd5e50'], [1, '#b93f33']]) }, s);
+    S('path', { d: `M${cx - 34},294 Q${cx},304 ${cx + 34},294 L${cx + 36},326 Q${cx + 16},332 ${cx},316 Q${cx - 16},332 ${cx - 36},326Z`, fill: navy }, s);
+    S('circle', { cx, cy: 150, r: 28, fill: skin }, s);
+    S('path', { d: `M${cx - 28},150 C${cx - 30},116 ${cx + 30},116 ${cx + 28},150 C${cx + 16},134 ${cx - 16},134 ${cx - 28},150Z`, fill: '#2d2a28' }, s);
+    // 역기
+    S('rect', { x: cx - 156, y: 84, width: 312, height: 8, rx: 4, fill: '#7f8b97' }, s);
+    [[-142, 13, 96, '#2e5f9e'], [-125, 11, 72, '#c9503f'], [114, 11, 72, '#c9503f'], [129, 13, 96, '#2e5f9e']].forEach(([dx, w, h, c]) => S('rect', { x: cx + dx, y: 88 - h / 2, width: w, height: h, rx: 4, fill: c }, s));
+    [-62, 62].forEach((dx) => S('circle', { cx: cx + dx, cy: 90, r: 13, fill: skin }, s));
+    arrow(cx, 72, cx, 18);
+    T(s, cx + 14, 40, '힘의 방향', { a: 'start', c: C.blue, size: 20, w: 800 });
     T(s, 190, 476, '역기를 들고 서 있을 때', { size: 22, w: 800, c: C.ink });
     T(s, 190, 506, '이동 거리 0 → 일 = 0', { size: 21, c: C.blue, w: 800 });
-    // 오른쪽: 상자 들고 걷기
-    const cx2 = 520;
-    S('ellipse', { cx: cx2, cy: 432, rx: 88, ry: 7, fill: 'rgba(20,38,59,.16)', filter: g.blurUrl }, s);
-    S('path', { d: `M${cx2 - 14},296 L${cx2 - 54},430 h26 L${cx2 + 6},318Z`, fill: '#4b5f7a' }, s);
-    S('path', { d: `M${cx2 + 6},296 L${cx2 + 42},428 h26 L${cx2 + 28},296Z`, fill: '#2d4a72' }, s);
-    S('rect', { x: cx2 - 30, y: 184, width: 62, height: 122, rx: 18, fill: g.lg('sg', [[0, '#62ac86'], [1, '#478f6b']]) }, s);
-    S('rect', { x: cx2 - 9, y: 164, width: 18, height: 26, fill: skin }, s);
-    S('circle', { cx: cx2 + 2, cy: 146, r: 26, fill: skin }, s);
-    S('path', { d: `M${cx2 - 24},148 a26,26 0 0 1 50,-8 q-16,-4 -26,-2 q-12,2 -24,10Z`, fill: '#2d2a28' }, s);
+
+    /* 오른쪽: 상자를 들고 걷는 사람(옆모습) */
+    const c2 = 500;
+    S('ellipse', { cx: c2 + 6, cy: 431, rx: 92, ry: 7, fill: 'rgba(20,38,59,.18)', filter: g.blurUrl }, s);
+    limb(`M${c2 - 6},302 Q${c2 - 18},362 ${c2 - 52},412`, navyL, 27);
+    S('path', { d: `M${c2 - 72},430 q2,-18 20,-20 q18,2 24,20Z`, fill: shoe }, s);
+    limb(`M${c2 + 6},302 Q${c2 + 28},358 ${c2 + 40},414`, navy, 28);
+    S('path', { d: `M${c2 + 22},430 q2,-19 20,-19 q24,4 32,19Z`, fill: shoe }, s);
+    S('rect', { x: c2 - 9, y: 164, width: 22, height: 30, rx: 8, fill: skinD }, s);
+    S('path', { d: `M${c2 - 32},214 Q${c2 - 32},190 ${c2 - 6},188 Q${c2 + 28},188 ${c2 + 31},214 L${c2 + 25},302 Q${c2},314 ${c2 - 25},302Z`, fill: g.lg('sg', [[0, '#68b28c'], [1, '#478f6b']]) }, s);
+    S('path', { d: `M${c2 - 26},296 Q${c2},306 ${c2 + 26},296 L${c2 + 28},326 Q${c2},336 ${c2 - 28},326Z`, fill: navy }, s);
+    S('circle', { cx: c2 + 4, cy: 142, r: 27, fill: skin }, s);
+    S('path', { d: `M${c2 - 23},146 C${c2 - 30},110 ${c2 + 26},106 ${c2 + 30},134 C${c2 + 12},124 ${c2 - 8},126 ${c2 - 23},146Z`, fill: '#2d2a28' }, s);
     // 상자
-    S('rect', { x: cx2 + 42, y: 196, width: 104, height: 78, rx: 3, fill: g.lg('bx2', [[0, '#e2bb8c'], [1, '#c9985f']]) }, s);
-    S('path', { d: `M${cx2 + 42},196 l12,-10 h104 l-12,10Z`, fill: '#efcfa6' }, s);
-    S('path', { d: `M${cx2 + 146},274 v-78 l12,-10 v78Z`, fill: '#ab7f50' }, s);
-    S('path', { d: `M${cx2 + 8},210 L${cx2 + 42},282 L${cx2 + 104},276`, stroke: skin, 'stroke-width': 16, fill: 'none', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, s);
-    arrow(cx2 + 94, 180, cx2 + 94, 106);
-    T(s, cx2 + 94, 96, '힘의 방향', { c: C.blue, size: 20, w: 800 });
-    arrow(cx2 - 40, 60, cx2 + 60, 60, C.ink2);
-    T(s, cx2 + 5, 42, '이동 방향', { c: C.ink2, size: 20, w: 800 });
+    const bx = c2 + 44, by = 190, bw = 110, bh = 84;
+    S('rect', { x: bx, y: by, width: bw, height: bh, rx: 2, fill: g.lg('bx2', [[0, '#e2bb8c'], [1, '#c9985f']]) }, s);
+    S('path', { d: `M${bx},${by} l13,-11 h${bw} l-13,11Z`, fill: '#efcfa6' }, s);
+    S('path', { d: `M${bx + bw},${by + bh} v${-bh} l13,-11 v${bh}Z`, fill: '#ab7f50' }, s);
+    // 앞 팔: 어깨 → 팔꿈치 → 상자 밑을 받치는 손
+    limb(`M${c2 + 4},216 Q${c2 + 8},262 ${c2 + 30},280 L${bx + 58},${by + bh + 8}`, skin, 18);
+    limb(`M${c2 + 4},216 L${c2 + 7},240`, '#55a07b', 24);
+    arrow(bx + 58, 170, bx + 58, 106);
+    T(s, bx + 58, 96, '힘의 방향', { c: C.blue, size: 20, w: 800 });
+    arrow(c2 - 70, 60, c2 + 40, 60, C.ink2);
+    T(s, c2 - 15, 42, '이동 방향', { c: C.ink2, size: 20, w: 800 });
     T(s, 570, 476, '상자를 들고 걸어갈 때', { size: 22, w: 800, c: C.ink });
     T(s, 570, 506, '힘과 이동 방향이 수직 → 일 = 0', { size: 21, c: C.blue, w: 800 });
   }
@@ -225,9 +247,13 @@ window.EX = (() => {
       const H = (E / (9.8 * 25)) * 240; bar.setAttribute('y', 460 - H); bar.setAttribute('height', H);
     }
     slider(ctl, '질량', 1, 5, 1, 2, (v) => { st.m = v; draw(); });
-    slider(ctl, '높이', 1, 5, 1, 3, (v) => { st.h = v; draw(); });
+    let stop = null;
+    const hi = slider(ctl, '높이', 1, 5, .5, 3, (v) => { stop && stop(); st.h = v; draw(); });
     seg(ctl, [[0, '바닥 기준'], [1, '1 m 선반 기준']], 0, (v) => { st.base = v; draw(); });
     draw();
+    const play = () => { stop && stop(); stop = anim(host, 1.6, (k) => { st.h = Math.round((1 + 2 * (1 - (1 - k) * (1 - k))) * 10) / 10; hi.value = st.h; draw(); }); };
+    button(ctl, '다시 들어 올리기', play, 'go');
+    return { play };
   }
 
   /* ---- 수레와 나무 도막 (교과서 자료 값) ---- */
@@ -267,6 +293,7 @@ window.EX = (() => {
     seg(ctl, [[1, '1 m/s'], [2, '2 m/s'], [3, '3 m/s']], 1, (v) => { st.v = v; reset(); });
     button(ctl, '수레 밀기', pushIt, 'go');
     draw();
+    return { play: pushIt };
   }
 
   /* ---- 낙하: 위치 에너지 → 운동 에너지 ---- */
@@ -312,9 +339,9 @@ window.EX = (() => {
     if (o.controls !== false) {
       button(ctl, '떨어뜨리기', go, 'go');
       inp = slider(ctl, '지금 높이', 0, H0, H0 / 20, H0, (v) => { stop && stop(); ghosts.innerHTML = ''; st.h = v; draw(); });
-    } else { const loop = () => { go(); setTimeout(() => { st.h = H0; ghosts.innerHTML = ''; draw(); }, 2600); }; loop(); }
+    }
     draw();
-    return { go };
+    return { play: go };
   }
 
   /* ---- 던져 올리기 ---- */
@@ -359,6 +386,9 @@ window.EX = (() => {
     inp = slider(ctl, '지금 높이', 0, H0, H0 / 20, pair ? H0 / 2 : 0, (v) => { stop && stop(); st.h = v; draw(); });
     if (pair) st.h = H0 / 2;
     draw();
+    const sweep = () => { stop && stop(); stop = anim(host, 2.6, (k) => { st.h = H0 * (.5 + .42 * Math.sin(k * Math.PI * 2)); draw(); }, () => { st.h = H0 / 2; draw(); }); };
+    if (pair) button(ctl, '높이 바꿔 보기', sweep, 'go');
+    return { play: pair ? sweep : go };
   }
 
   /* ---- 질량이 다른 두 공 ---- */
@@ -391,9 +421,11 @@ window.EX = (() => {
       f.textContent = '같은 지점: 속력 같음, 운동 에너지 2배';
       if (inp && document.activeElement !== inp) inp.value = st.h;
     }
-    button(ctl, '동시에 떨어뜨리기', () => { stop && stop(); stop = anim(host, 1.5, (k) => { st.h = H0 * (1 - k * k); draw(); }); }, 'go');
+    const play = () => { stop && stop(); stop = anim(host, 1.5, (k) => { st.h = H0 * (1 - k * k); draw(); }); };
+    button(ctl, '동시에 떨어뜨리기', play, 'go');
     inp = slider(ctl, '지금 높이', 0, H0, H0 / 20, H0, (v) => { stop && stop(); st.h = v; draw(); });
     draw();
+    return { play };
   }
 
   /* ---- 롤러코스터 ---- */
@@ -443,6 +475,7 @@ window.EX = (() => {
     button(ctl, '출발', go, 'go');
     inp = slider(ctl, '레일 위 위치', 0, 100, 1, 0, (v) => { stop && stop(); st.u = v / 100; draw(); });
     draw();
+    return { play: go };
   }
 
   /* ---- 코일 관 에너지 계산: 20 J → 2 J + 14 J + 전기 4 J ---- */
@@ -469,23 +502,55 @@ window.EX = (() => {
     S('line', { x1: XA + W, x2: XB, y1: B0 - 20 * K, y2: B0 - 20 * K, stroke: C.line, 'stroke-width': 2, 'stroke-dasharray': '5 6' }, s);
     eg.style.display = 'none';
     T(s, (XA + XB + W) / 2, 40, '에너지의 총합은 그대로', { size: 22, w: 800, c: C.blue });
-    let on = false; const b = button(ctl, '사라진 4 J 보기', () => { on = !on; eg.style.display = on ? '' : 'none'; b.textContent = on ? '사라진 4 J 가리기' : '사라진 4 J 보기'; }, 'go');
+    let on = false, tm = 0; const set = (v) => { on = v; eg.style.display = on ? '' : 'none'; b.textContent = on ? '사라진 4 J 가리기' : '사라진 4 J 보기'; };
+    const b = button(ctl, '사라진 4 J 보기', () => { clearTimeout(tm); set(!on); }, 'go');
+    return { play() { clearTimeout(tm); set(false); tm = setTimeout(() => set(true), 1400); } };
   }
 
   /* ---- 일주일 전력량 (교과서 245쪽 표) ---- */
-  function table(host) {
-    const g = svg(host, 760, 500), s = g.s;
+  function table(host, ctl) {
+    const g = svg(host, 760, 500), s = g.s, BR = [], TX = [];
     S('rect', { width: 760, height: 500, fill: '#fff' }, s);
     const D = [['세탁기', 500, '7시간', 3500], ['진공청소기', 1200, '2시간', 2400], ['헤어드라이어', 1500, '1시간', 1500], ['전자레인지', 1600, '30분', 800], ['욕실 조명', 50, '4시간', 200], ['선풍기', 50, '2시간', 100]];
     T(s, 170, 36, '가전제품', { a: 'end', size: 18, c: C.mut }); T(s, 190, 36, '소비 전력 × 시간 = 전력량', { a: 'start', size: 18, c: C.mut });
     D.forEach(([n, w, t, wh], i) => {
       const y = 58 + i * 72;
       T(s, 170, y + 34, n, { a: 'end', size: 21, w: 800, c: C.ink });
-      S('rect', { x: 190, y: y + 8, width: Math.max(4, (wh / 3500) * 500), height: 38, fill: C.blue, opacity: 1 - i * .1 }, s);
+      const bar = S('rect', { x: 190, y: y + 8, width: Math.max(4, (wh / 3500) * 500), height: 38, fill: C.blue, opacity: 1 - i * .1 }, s); BR.push([bar, Math.max(4, (wh / 3500) * 500)]);
       T(s, 190, y + 66, `${w} W × ${t}`, { a: 'start', size: 16, c: C.mut, w: 600 });
-      const big = wh > 1000; T(s, 190 + (big ? (wh / 3500) * 500 - 12 : Math.max(4, (wh / 3500) * 500) + 12), y + 35, wh + ' Wh', { a: big ? 'end' : 'start', size: 21, w: 800, c: big ? '#fff' : C.ink });
+      const big = wh > 1000; TX.push(T(s, 190 + (big ? (wh / 3500) * 500 - 12 : Math.max(4, (wh / 3500) * 500) + 12), y + 35, wh + ' Wh', { a: big ? 'end' : 'start', size: 21, w: 800, c: big ? '#fff' : C.ink }));
     });
+    const play = () => anim(host, 1.1, (k) => { const e = 1 - (1 - k) * (1 - k); BR.forEach(([r, w]) => r.setAttribute('width', w * e)); TX.forEach((t) => t.setAttribute('opacity', k > .8 ? 1 : 0)); });
+    if (ctl) button(ctl, '다시 보기', play, 'go');
+    return { play };
   }
 
-  return { pull, zero, lift, cart, fall, throwUp, two, coaster, stack, table };
+  /* ---- 속력과 운동 에너지 (요약용) ---- */
+  function keRatio(host) {
+    const g = svg(host, 760, 420), s = g.s, B = 340, X = 110, K = 27; const rs = [];
+    S('rect', { width: 760, height: 420, fill: '#fff' }, s);
+    T(s, 380, 40, '속력이 2배, 3배 → 운동 에너지는 4배, 9배', { size: 24, w: 800, c: C.ink });
+    [[1, 1], [2, 4], [3, 9]].forEach(([v, e], i) => { const x = X + i * 200; const r = S('rect', { x, width: 140, fill: C.ke }, s); rs.push([r, e * K, T(s, x + 70, 0, e + '배', { size: 26, w: 800, c: C.ink })]); T(s, x + 70, B + 36, `속력 ${v}배`, { size: 22 }); });
+    S('line', { x1: 80, x2: 680, y1: B, y2: B, stroke: C.ink2, 'stroke-width': 2 }, s);
+    const set = (k) => rs.forEach(([r, h, t]) => { r.setAttribute('y', B - h * k); r.setAttribute('height', h * k); t.setAttribute('y', B - h * k - 10); });
+    set(1);
+    return { play() { anim(host, .9, (k) => set(1 - (1 - k) * (1 - k))); } };
+  }
+  /* ---- 밝기가 같은 두 전등 (그림 Ⅵ-15 값) ---- */
+  function bulbs(host) {
+    const g = svg(host, 760, 420), s = g.s, B = 340, K = 21; const P = [];
+    S('rect', { width: 760, height: 420, fill: '#fff' }, s);
+    T(s, 380, 40, '1초 동안: 빛 + 열 = 소비 전력', { size: 24, w: 800, c: C.ink });
+    [['(가)', 6, 6, 170], ['(나)', 6, 2, 440]].forEach(([n, l, h, x]) => {
+      const a = S('rect', { x, width: 150, fill: '#f0c64a' }, s), b = S('rect', { x, width: 150, fill: '#d8643a' }, s);
+      const tl = T(s, x + 75, 0, `빛 ${l} J`, { size: 21, w: 800, c: '#5f4a08' }), th = T(s, x + 75, 0, `열 ${h} J`, { size: h < 3 ? 17 : 21, w: 800, c: '#fff' }), tv = T(s, x + 75, 0, `${l + h} W`, { size: 28, w: 800, c: C.ink });
+      T(s, x + 75, B + 34, n, { size: 23, w: 800 }); P.push({ a, b, tl, th, tv, l, h });
+    });
+    S('line', { x1: 120, x2: 640, y1: B, y2: B, stroke: C.ink2, 'stroke-width': 2 }, s);
+    const set = (k) => P.forEach(({ a, b, tl, th, tv, l, h }) => { const hl = l * K * k, hh = h * K * k; a.setAttribute('y', B - hl); a.setAttribute('height', hl); b.setAttribute('y', B - hl - hh); b.setAttribute('height', hh); tl.setAttribute('y', B - hl / 2 + 8); th.setAttribute('y', B - hl - hh / 2 + 7); tv.setAttribute('y', B - hl - hh - 10); });
+    set(1);
+    return { play() { anim(host, .9, (k) => set(1 - (1 - k) * (1 - k))); } };
+  }
+
+  return { pull, zero, lift, cart, fall, throwUp, two, coaster, stack, table, keRatio, bulbs };
 })();
