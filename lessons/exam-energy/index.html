@@ -26,16 +26,17 @@
   .tab{flex:none;border:0;background:transparent;cursor:pointer;min-height:44px;padding:0 14px;border-radius:10px;font-weight:700;font-size:15px;color:var(--muted)}
   .tab[aria-selected="true"]{background:var(--accent-soft);color:var(--accent)}
   .tab:focus-visible,.full:focus-visible{outline:3px solid rgba(14,99,179,.35);outline-offset:2px}
-  .full{flex:none;min-height:44px;padding:0 12px;border:1px solid var(--line);border-radius:10px;background:#fff;font-size:14px;font-weight:700;color:var(--muted);cursor:pointer}
+  .full{flex:none;display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 12px;border:1px solid var(--line);border-radius:10px;background:#fff;font-size:14px;font-weight:700;color:var(--muted);cursor:pointer}
   .stage{flex:1;position:relative;min-height:0}
   .stage iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff;visibility:hidden}
   .stage iframe.on{visibility:visible}
-  :fullscreen header{display:none}
+  body.big header{display:none}
   /* 휴대 전화 세로: 제목을 줄이고 탭을 넓게 */
   @media (max-width:720px){
     header{gap:8px;padding:4px 8px}
     .brand{flex:none}
-    .title,.full{display:none}
+    .title,.full span{display:none}
+    .full{width:44px;padding:0;justify-content:center}
     nav{flex:1;gap:2px}
     .tab{flex:1;padding:0 4px;font-size:14px}
   }
@@ -46,7 +47,7 @@
     .title small{display:none}
     .title{font-size:14px}
     .tab{min-height:36px;font-size:14px}
-    .full{display:none}
+    .full{min-height:36px}
   }
 </style>
 </head>
@@ -62,7 +63,7 @@
       <button class="tab" role="tab" data-page="bank" aria-selected="false">문제</button>
       <button class="tab" role="tab" data-page="sheet" aria-selected="false">요약</button>
     </nav>
-    <button class="full" id="bFull" type="button" hidden>전체 화면</button>
+    <button class="full" id="bFull" type="button" aria-label="전체 화면으로 보기"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg><span>전체 화면</span></button>
   </header>
   <main class="stage">
     <iframe data-page="cards" title="개념"></iframe>
@@ -87,14 +88,31 @@
       try { frames[id].contentWindow && frames[id].contentWindow.focus(); } catch (e) {}
     }
     Object.keys(tabs).forEach((k) => tabs[k].addEventListener('click', () => show(k)));
-    const b = document.getElementById('bFull');
-    if (document.documentElement.requestFullscreen) {
-      b.hidden = false;
-      b.addEventListener('click', () => { document.documentElement.requestFullscreen().catch(() => {}); });
+    // 전체 화면: 브라우저 전체 화면을 지원하면 쓰고, 지원하지 않는 기기(아이폰 등)는 머리 줄만 숨겨 그림을 넓혀요
+    let big = false;
+    const tell = (w) => { try { w.postMessage({ type: 'ex-big', on: big }, '*'); } catch (e) {} };
+    const tellAll = () => Object.keys(frames).forEach((k) => { if (frames[k].contentWindow) tell(frames[k].contentWindow); });
+    const fsEl = () => document.fullscreenElement || document.webkitFullscreenElement;
+    function setBig(on) { big = on; document.body.classList.toggle('big', on); tellAll(); }
+    function enter() {
+      setBig(true);
+      const el = document.documentElement, rq = el.requestFullscreen || el.webkitRequestFullscreen;
+      if (rq) { try { const r = rq.call(el); if (r && r.catch) r.catch(() => {}); } catch (e) {} }
     }
+    function leave() {
+      setBig(false);
+      if (fsEl()) { const ex = document.exitFullscreen || document.webkitExitFullscreen; if (ex) { try { const r = ex.call(document); if (r && r.catch) r.catch(() => {}); } catch (e) {} } }
+    }
+    document.getElementById('bFull').addEventListener('click', enter);
+    let wasFs = false;
+    const onFs = () => { if (fsEl()) wasFs = true; else if (wasFs) { wasFs = false; if (big) setBig(false); } };
+    document.addEventListener('fullscreenchange', onFs);
+    document.addEventListener('webkitfullscreenchange', onFs);
     window.addEventListener('message', (e) => {
       const d = e.data;
       if (d && d.type === 'ras-nav' && frames[d.target]) show(d.target);
+      if (d && d.type === 'ex-big-exit') leave();
+      if (d && d.type === 'ex-big-ask' && e.source) tell(e.source);
     });
     const r = new URLSearchParams(location.search).get('page');
     show(PAGES[r] ? r : 'cards');
