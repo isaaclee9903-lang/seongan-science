@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>식물도 호흡을 할까 – 물질과 에너지 분석</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+/*@@LOCAL:_css_ps.css@@*/
+/*@@LOCAL:_css_sim.css@@*/
+/*@@LOCAL:_css_pf.css@@*/
+.tbl{width:100%;border-collapse:collapse;font-size:14.5px;table-layout:fixed;word-break:keep-all}
+.tbl th,.tbl td{border-bottom:1px solid #e3eaf0;padding:6px 5px;text-align:center;line-height:1.35}
+.tbl th{font-size:13px;color:#14263b;background:#f1f6fb}.tbl td.k{font-weight:800;font-size:12.5px;color:#5a6b7e}
+.tbl .bk{min-height:44px;min-width:76px;padding:0 6px;border:0;border-bottom:2.5px solid #8b9aab;background:#f4f7fa;border-radius:8px 8px 0 0;font:inherit;font-weight:800;color:#0b3f73;cursor:pointer}
+.tbl .bk.cur{background:#e4f0fb;border-color:#0e63b3}.tbl .bk.good{background:#e8f7ef;border-color:#1f9d5c;color:#11703f}.tbl .bk.bad{background:#fff4f2;border-color:#d9534f;color:#9b3a32}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}.chips button{min-height:44px;padding:0 12px;border-radius:11px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:14.5px;cursor:pointer}
+.seg3{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:6px}.seg3 button{min-height:46px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:14.5px;cursor:pointer;word-break:keep-all;line-height:1.2;padding:2px 6px}.seg3 button[aria-pressed="true"]{border-color:#0e63b3;background:#e9f3fd;color:#0b3f73}.seg3 button:disabled{opacity:.4;cursor:default}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top"><div class="ttl"><span class="eyebrow">해 보기</span><h1>물질과 에너지 변화 분석하기</h1>
+    <p class="sub">광합성과 호흡을 번갈아 돌려 보고, 두 과정을 비교해 표를 채워요.</p></div></header>
+  <div class="stage">
+    <section class="card viewer">
+      <div class="scene grow" id="fig" role="img" aria-label="커다란 잎 위에 포도당과 산소, 물과 이산화 탄소가 있다. 빛에너지로 광합성이 일어나 물과 이산화 탄소가 포도당과 산소가 되고, 호흡으로 다시 물과 이산화 탄소가 되며 에너지가 나온다."></div>
+      <div class="vctl"><button class="vb" type="button" id="gP">광합성 돌리기</button><button class="vb" type="button" id="gR">호흡 돌리기</button><span class="hint" id="hint">버튼을 눌러 입자가 어디로 가는지 봐요</span></div>
+    </section>
+    <section class="card pad">
+      <div class="ptabs" role="tablist" id="pt">
+        <button type="button" role="tab" data-p="lab" aria-selected="true">표 채우기</button>
+        <button type="button" role="tab" data-p="why" aria-selected="false">왜 그럴까?</button>
+      </div>
+      <div class="pane" data-p="lab">
+        <p class="ptxt" style="margin-bottom:6px">빈칸을 누른 뒤 아래 낱말을 눌러 채워요.</p>
+        <table class="tbl"><thead><tr><th>광합성</th><th style="width:27%"></th><th>호흡</th></tr></thead><tbody id="tb"></tbody></table>
+        <div class="chips" id="bank"></div>
+        <div class="ctl"><button class="btn primary" type="button" id="chk" disabled>확인하기</button></div>
+        <div class="fbk" id="res" hidden></div>
+      </div>
+      <div class="pane" data-p="why" hidden>
+        <ol class="whylist">
+          <li><i>1</i><span>광합성은 빛에너지를 이용하여 양분에 에너지를 <b>저장</b>하는 과정이에요.</span></li>
+          <li><i>2</i><span>호흡은 양분을 분해하여 생활에 필요한 에너지를 <b>얻는</b> 과정이에요.</span></li>
+          <li><i>3</i><span>광합성으로 만들어진 양분이 산소와 반응해 분해되면서 에너지가 나와요. 이 에너지는 식물의 여러 가지 <b>생명활동</b>에 쓰여요.</span></li>
+          <li><i>4</i><span>식물의 광합성으로 생산된 물질은 생물의 호흡에 이용되고, 생물의 호흡으로 생산된 물질은 식물의 광합성에 이용돼요.</span></li>
+        </ol>
+      </div>
+    </section>
+  </div>
+</div>
+<script>
+/*@@LOCAL:_ps.js@@*/
+</script>
+<script>
+/*@@LOCAL:_pf.js@@*/
+</script>
+<script>
+/*@@LOCAL:_rs.js@@*/
+</script>
+<script>
+(() => {
+  'use strict';
+  try {
+    const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+    const q = new URLSearchParams(location.search);
+    const C = RS.cycle($('#fig'));
+    let busy = false;
+    const run = (k) => { if (busy) return; busy = true; $('#gP').disabled = $('#gR').disabled = true; $('#hint').textContent = k === 'p' ? '물과 이산화 탄소로 포도당과 산소를 만들어요' : '포도당과 산소가 물과 이산화 탄소로 분해돼요'; C.play(k, () => { busy = false; $('#gP').disabled = $('#gR').disabled = false; $('#hint').innerHTML = k === 'p' ? '빛에너지가 양분에 <b>저장</b>돼요' : '양분 속 에너지가 <b>방출</b>돼요'; }); };
+    $('#gP').addEventListener('click', () => run('p')); $('#gR').addEventListener('click', () => run('r'));
+    const ROWS = [['필요한 물질', ['B:이산화 탄소', ', 물'], ['포도당, 산소']], ['생산되는 물질', ['포도당, 산소'], ['B:이산화 탄소', ', 물']], ['물질의 변화', ['포도당(양분) 합성'], ['포도당(양분) ', 'B:분해']], ['에너지 출입', ['에너지 ', 'B:저장'], ['에너지 ', 'B:방출']], ['일어나는 시기', ['B:빛', '이 있을 때'], ['항상']]];
+    const ANS = []; const cell = (a) => a.map((x) => { if (x.startsWith('B:')) { ANS.push(x.slice(2)); return `<button type="button" class="bk" data-i="${ANS.length - 1}"></button>`; } return x; }).join('');
+    $('#tb').innerHTML = ROWS.map(([k, l, r]) => { const Lc = cell(l), Rc = cell(r); return `<tr><td>${Lc}</td><td class="k">${k}</td><td>${Rc}</td></tr>`; }).join('');
+    const words = ['이산화 탄소', '분해', '저장', '방출', '빛', '산소', '합성'];
+    let pick = ANS.map(() => null), cur = 0;
+    function render() {
+      $$('#tb .bk').forEach((b) => { const i = +b.dataset.i; b.textContent = pick[i] || ''; b.classList.toggle('cur', i === cur); });
+      $('#bank').innerHTML = words.map((w) => `<button type="button">${w}</button>`).join('');
+      $$('#bank button').forEach((b) => b.addEventListener('click', () => { pick[cur] = b.textContent; const n = pick.indexOf(null); cur = n < 0 ? cur : n; render(); }));
+      $('#chk').disabled = pick.includes(null);
+    }
+    $$('#tb .bk').forEach((b) => b.addEventListener('click', () => { const i = +b.dataset.i; pick[i] = null; cur = i; b.classList.remove('good', 'bad'); render(); }));
+    $('#chk').addEventListener('click', () => {
+      let w = 0; $$('#tb .bk').forEach((b) => { const i = +b.dataset.i, ok = pick[i] === ANS[i]; b.classList.remove('cur'); b.classList.toggle('good', ok); b.classList.toggle('bad', !ok); if (!ok) w++; });
+      const r = $('#res'); r.hidden = false; r.className = 'fbk ' + (w ? 'no' : 'ok');
+      r.innerHTML = w ? `빨간 칸 ${w}개를 다시 생각해 봐요. 입자가 움직이는 쪽을 보면 알 수 있어요.` : '광합성은 양분을 <b>합성</b>하여 에너지를 <b>저장</b>하고, 호흡은 양분을 <b>분해</b>하여 에너지를 <b>방출</b>해요.';
+    });
+    render();
+    if (q.get('filled')) { pick = ANS.slice(); render(); $('#chk').click(); }
+    const tab = (p) => { $$('#pt button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.p === p))); $$('.pane').forEach((e) => { e.hidden = e.dataset.p !== p; }); };
+    $$('#pt button').forEach((b) => b.addEventListener('click', () => tab(b.dataset.p)));
+    if (q.get('tab')) tab(q.get('tab'));
+    window.SM = window.SM || {}; window.SM.okUI = true;
+  } catch (err) { window.SM_err && window.SM_err('물질과 에너지 분석', err); }
+})();
+</script>
+</body>
+</html>

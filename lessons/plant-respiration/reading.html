@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>식물도 호흡을 할까 – 읽기</title>
+<script>
+/* 문제 알림: 코드에 오류가 나면 화면 아래에 빨간 상자로 알려 줘요 (선생님 확인용) */
+(function () {
+  function box() {
+    var b = document.getElementById('rdErr');
+    if (!b && document.body) {
+      b = document.createElement('div'); b.id = 'rdErr';
+      b.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;background:#fdecea;color:#8a1f17;border:2px solid #d9534f;border-radius:12px;padding:10px 14px;font:600 14px/1.5 sans-serif;white-space:pre-wrap';
+      document.body.appendChild(b);
+    }
+    return b;
+  }
+  window.RD_err = function (where, err) {
+    var msg = '[' + where + '] ' + (err && err.message ? err.message : String(err));
+    var show = function () { var b = box(); if (b) b.textContent += (b.textContent ? '\n' : '') + msg; };
+    if (document.body) show(); else document.addEventListener('DOMContentLoaded', show);
+  };
+  window.addEventListener('error', function (e) { window.RD_err('스크립트', { message: e.message + ' (줄 ' + e.lineno + ')' }); });
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      var R = window.RD || {}, miss = [];
+      if (!R.ok1) miss.push('기본 기능·퀴즈');
+      if (!R.ok2 && R.need2 !== false) miss.push('그림 조작 버튼');
+      if (miss.length) window.RD_err('실행 안 됨', { message: miss.join(', ') + ' 코드가 실행되지 않았어요. 파일이 끝(</html>)까지 들어 있는지 확인해 주세요.' });
+    }, 1500);
+    setTimeout(function () {
+      if (document.querySelector('.fail3d') && !(window.RD || {}).ok3d) { document.querySelectorAll('.fail3d').forEach(function (f) { f.classList.add('show'); }); window.RD_err('3D 그림', { message: '3D 그림을 불러오지 못했어요. 인터넷 연결(cdn.jsdelivr.net)을 확인하고 새로고침해 주세요.' }); }
+    }, 9000);
+  });
+})();
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+  :root{--bg:#f3f6f9;--paper:#fff;--ink:#15263a;--ink2:#34495e;--muted:#627386;--line:#e1e8ef;--accent:#0e63b3;--accent-soft:#e4f0fb;
+    --V:#2f6fd6;--I:#e89a00;--R:#23a566;--ok:#1f9d5c;--no:#d9534f;--violet:#7d5ad6;
+    --ser:#1784cf;--ser-soft:#e3f2fc;--par:#5e9e1c;--par-soft:#eef7e2;
+    --shadow:0 1px 2px rgba(20,38,59,.05),0 10px 28px rgba(20,38,59,.07);--ease:cubic-bezier(.2,.8,.2,1);--fs:18px}
+  html.big{--fs:20.5px}
+  *{box-sizing:border-box}html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:"Pretendard",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;-webkit-font-smoothing:antialiased;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  button{font:inherit;color:inherit}a{color:var(--accent)}
+  /* 히어로 */
+  .hero{position:relative;color:#fff;overflow:hidden;background:linear-gradient(150deg,#123a6b,#1d6fb8 55%,#4f9a2e)}
+  .hero-in{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:36px 20px 40px;display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.35fr);gap:28px;align-items:center}
+  .hero .kick{display:inline-block;font-size:14px;font-weight:700;background:rgba(255,255,255,.16);padding:6px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.3)}
+  .hero .kick.maker{margin-left:6px;background:rgba(255,255,255,.08)}
+  .hero h1{font-size:clamp(30px,4.4vw,44px);line-height:1.22;letter-spacing:-.03em;margin:14px 0 10px;word-break:keep-all}
+  .hero p{font-size:clamp(16px,2vw,18px);margin:0 0 18px;line-height:1.65;opacity:.95;word-break:keep-all}
+  .route{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px}
+  .route span{font-size:13.5px;font-weight:700;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.28);padding:5px 11px;border-radius:12px}
+  .start{display:inline-flex;align-items:center;gap:10px;white-space:nowrap;background:#fff;color:var(--accent);border:0;border-radius:16px;padding:0 22px;min-height:56px;font-weight:800;font-size:17px;cursor:pointer;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+  .hero svg{width:100%;height:auto;filter:drop-shadow(0 12px 30px rgba(0,0,0,.25))}
+  .msw{cursor:pointer}
+  .msw:focus{outline:none}.msw:focus-visible .rk{stroke:#ffd34d;stroke-width:3}
+  .dev .glow,.dev .lit{transition:opacity .45s var(--ease)}
+  .dev.off .glow,.dev.off .lit{opacity:0}
+  .dev .unlit{opacity:0;transition:opacity .45s}
+  .dev.off .unlit{opacity:1}
+  .fanb{transform-box:fill-box;transform-origin:center;animation:fanspin .45s linear infinite}
+  .dev.off .fanb{animation-duration:6s;animation-play-state:paused}
+  @keyframes fanspin{to{transform:rotate(360deg)}}
+  .credit{text-align:center;font-size:13px;font-weight:700;color:#8495a8;padding:6px 16px 40px;letter-spacing:.02em}
+  /* 진행 */
+  .nav{position:sticky;top:0;z-index:30;background:rgba(255,255,255,.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+  .nav-in{max-width:980px;margin:0 auto;display:flex;align-items:center;gap:6px;padding:8px 12px;overflow-x:auto;scrollbar-width:none}
+  .nav-in::-webkit-scrollbar{display:none}
+  .step{flex:none;display:flex;align-items:center;gap:7px;border:0;background:transparent;border-radius:12px;padding:8px 11px;min-height:44px;font-weight:700;font-size:14.5px;color:var(--muted);cursor:pointer}
+  .step .n{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:12.5px;font-weight:800;background:#e8eef4;color:#607285}
+  .step.active{background:var(--accent-soft);color:var(--accent)}.step.active .n{background:var(--accent);color:#fff}
+  .step.done .n{background:var(--ok);color:#fff}
+  .nav-sp{flex:1}
+  .fsz{flex:none;display:flex;gap:4px}
+  .fsz button{width:44px;height:40px;border:1px solid var(--line);background:#fff;border-radius:10px;font-weight:800;cursor:pointer}
+  .fsz button[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .bar{height:3px}.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--ser),var(--par))}
+  /* 본문 */
+  main{max-width:980px;margin:0 auto;padding:10px 16px 60px}
+  section.part{padding-top:34px;scroll-margin-top:70px}
+  .sec-kick{font-size:14px;font-weight:800;color:var(--accent);display:flex;align-items:center;gap:8px}
+  .sec-kick .time{font-weight:600;color:var(--muted);background:#fff;border:1px solid var(--line);border-radius:999px;padding:2px 10px;font-size:12.5px}
+  h2{font-size:clamp(24px,3.4vw,31px);margin:6px 0 16px;letter-spacing:-.02em;line-height:1.3;word-break:keep-all}
+  h3{font-size:calc(var(--fs) + 3px);margin:0 0 8px;letter-spacing:-.01em;word-break:keep-all}
+  .card{background:var(--paper);border-radius:22px;box-shadow:var(--shadow);border:1px solid rgba(20,38,59,.04)}
+  .read{padding:24px 26px;margin-bottom:16px}
+  .read p{font-size:var(--fs);line-height:1.85;color:var(--ink2);margin:0 0 14px;word-break:keep-all}
+  .read p:last-child{margin-bottom:0}
+  mark{background:linear-gradient(transparent 58%,#fff0a8 58%);color:inherit;padding:0 1px}
+  .term{border:0;background:none;padding:0;font-weight:800;color:var(--accent);border-bottom:2px dotted rgba(14,99,179,.5);cursor:pointer;font-size:inherit;line-height:inherit}
+  .defn{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:14px 0;padding:14px 16px;border-radius:16px;background:#f2f7fd;border:1px solid #d6e5f5;font-size:var(--fs);word-break:keep-all}
+  .defn .k{font-weight:900;color:#fff;padding:4px 12px;border-radius:10px}
+  .defn.ser{background:var(--ser-soft);border-color:#bfe0f5}.defn.ser .k{background:var(--ser)}
+  .defn.par{background:var(--par-soft);border-color:#cfe6b4}.defn.par .k{background:var(--par)}
+  .fig{margin:16px 0;background:#f8fafc;border:1px solid var(--line);border-radius:18px;padding:12px}
+  .fig svg{display:block;width:100%;height:auto}
+  .fig .cap{font-size:14px;color:var(--muted);text-align:center;margin-top:6px;word-break:keep-all;line-height:1.6}
+  .js-reveal .reveal{transform:translateY(18px);transition:transform .7s var(--ease)}
+  .js-reveal .reveal.in{transform:none}
+  details.pause{margin:16px 0 22px;background:linear-gradient(135deg,#fff8e6,#fff);border:2px solid #f6d98a;border-radius:18px;overflow:hidden}
+  details.pause summary{list-style:none;cursor:pointer;padding:15px 18px;display:flex;gap:12px;align-items:center;font-weight:800;font-size:var(--fs);min-height:60px;word-break:keep-all}
+  details.pause summary::-webkit-details-marker{display:none}
+  details.pause .pi{flex:none;width:36px;height:36px;border-radius:12px;background:#f7c948;display:grid;place-items:center}
+  details.pause .tap{margin-left:auto;flex:none;font-size:13px;font-weight:700;color:#9a6b00;background:#fff3cc;padding:4px 10px;border-radius:999px}
+  details.pause[open] .tap{visibility:hidden}
+  details.pause .ans{padding:0 18px 18px 66px;font-size:var(--fs);line-height:1.75;color:#5b4300;word-break:keep-all}
+  .myth{display:flex;gap:14px;align-items:flex-start;background:#fff4f2;border:2px solid #f3c2bb;border-radius:18px;padding:16px 18px;margin:16px 0}
+  .myth .x{flex:none;width:40px;height:40px;border-radius:12px;background:#e0483e;color:#fff;display:grid;place-items:center;font-weight:900;font-size:20px}
+  .myth p{margin:0;font-size:calc(var(--fs) - 1px);line-height:1.7;color:#5e2a25;word-break:keep-all}
+  .formula{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:12px;margin:16px 0;padding:18px;border-radius:20px;background:#f6f9ff;border:1px solid #d6e5f5;font-size:clamp(26px,4vw,36px);font-weight:900;letter-spacing:-.01em}
+  .formula .eqs{font-size:clamp(15px,2vw,17px);font-weight:700;color:var(--muted);flex-basis:100%;text-align:center;word-break:keep-all}
+  .cV{color:var(--V)}.cI{color:var(--I)}.cR{color:var(--R)}.cS{color:var(--ser)}.cP{color:var(--par)}
+  /* 지난 시간 */
+  .recall{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:16px;align-items:center}
+  .backlink{display:inline-flex;align-items:center;gap:8px;min-height:46px;padding:0 16px;border-radius:12px;background:#eef3f8;color:var(--ink2);font-weight:800;font-size:15px;text-decoration:none}
+  /* 직렬·병렬 모형 장면 */
+  .spfig svg{max-width:760px;margin:0 auto}
+  .spfig .etog{display:flex;gap:8px;justify-content:center;margin-bottom:8px;flex-wrap:wrap}
+  .tg{min-height:48px;padding:0 16px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15px;cursor:pointer;transition:all .2s}
+  .tg[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+  .tg.cut{border-style:dashed}
+  .tg.cut[aria-pressed="true"]{border-color:var(--no);background:#fdecea;color:#b33a35;border-style:solid}
+  .tg:disabled{opacity:.35;cursor:default}
+  .mtr{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:10px}
+  .mtr .m{background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px 12px}
+  .mtr .ml{font-size:14px;font-weight:800;color:var(--ink2);word-break:keep-all}
+  .mtr .trk{position:relative;height:16px;border-radius:99px;background:#e9eff5;margin:10px 0 18px}
+  .mtr .fill{position:absolute;left:0;top:0;bottom:0;border-radius:99px;width:0;transition:width .7s var(--ease)}
+  .mtr .ref{position:absolute;top:-4px;bottom:-4px;width:3px;border-radius:2px;background:#14263b;opacity:.55}
+  .mtr .ref::after{content:"전구 1개";position:absolute;top:22px;left:50%;transform:translateX(-50%);font-size:11.5px;font-weight:800;color:#5a6b7e;white-space:nowrap}
+  .mtr .mv{font-size:14.5px;font-weight:800;word-break:keep-all;min-height:22px}
+  /* 왜 그럴까 사슬 */
+  .chain{display:grid;gap:0;margin:16px 0}
+  .ch{display:grid;grid-template-columns:44px 1fr;gap:12px;align-items:start;padding:12px 14px;border-radius:16px;background:#f8fafc;border:1px solid var(--line)}
+  .ch .no{width:36px;height:36px;border-radius:12px;display:grid;place-items:center;font-weight:900;color:#fff}
+  .ch p{margin:0;font-size:calc(var(--fs) - 1px);line-height:1.7;color:var(--ink2);word-break:keep-all}
+  .ch p small{display:block;font-size:calc(var(--fs) - 4px);color:var(--muted);margin-top:2px}
+  .ch-ar{height:22px;display:grid;place-items:center}
+  .ch-ar svg{width:20px;height:20px}
+  .chain.ser .ch .no{background:var(--ser)}.chain.par .ch .no{background:var(--par)}
+  .chain .ch.key{background:#fffdf3;border-color:#f0dc9a}
+  /* 비교표 */
+  .cmp{width:100%;border-collapse:separate;border-spacing:0;margin:8px 0 4px;font-size:calc(var(--fs) - 2px);word-break:keep-all}
+  .cmp th,.cmp td{padding:12px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;line-height:1.6}
+  .cmp thead th{font-size:calc(var(--fs) - 1px);font-weight:900;color:#fff}
+  .cmp thead th:first-child{background:transparent}
+  .cmp thead th.s{background:var(--ser);border-radius:14px 14px 0 0}
+  .cmp thead th.p{background:var(--par);border-radius:14px 14px 0 0}
+  .cmp tbody th{color:var(--muted);font-weight:800;width:24%}
+  .cmp td.s{background:var(--ser-soft)}.cmp td.p{background:var(--par-soft)}
+  .life{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:14px 0}
+  .lc{background:#f8fafc;border:1px solid var(--line);border-radius:18px;padding:14px}
+  .lc svg{display:block;width:100%;height:auto;border-radius:12px;background:#fff}
+  .lc > b{display:block;font-size:calc(var(--fs) - .5px);margin:10px 0 4px}
+  .lc p{margin:0;font-size:calc(var(--fs) - 2px);line-height:1.7;color:var(--ink2);word-break:keep-all}
+  .simlink{display:flex;align-items:center;gap:14px;margin:18px 0 4px;padding:16px 18px;border-radius:18px;background:linear-gradient(120deg,#0e63b3,#1b86c9);color:#fff;text-decoration:none;box-shadow:0 8px 22px rgba(14,99,179,.25)}
+  .simlink .si{flex:none;width:46px;height:46px;border-radius:14px;background:rgba(255,255,255,.18);display:grid;place-items:center}
+  .simlink b{display:block;font-size:17px}.simlink span{font-size:14px;opacity:.9;word-break:keep-all}
+  .simlink .go{margin-left:auto;flex:none}
+  /* 퀴즈 */
+  .quiz{display:flex;flex-direction:column;gap:14px}
+  .qcard{padding:22px 24px}
+  .qhead{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .qno{flex:none;font-weight:800;font-size:13px;color:#fff;background:var(--ink);padding:4px 10px;border-radius:999px}
+  .qtype{font-size:12.5px;font-weight:700;color:var(--muted)}
+  .qstate{margin-left:auto;font-weight:800;font-size:13px;padding:4px 10px;border-radius:999px;display:none}
+  .qcard.right .qstate{display:inline-block;background:#e8f7ef;color:#11703f}
+  .qcard.wrong .qstate{display:inline-block;background:#fdecea;color:#b33a35}
+  .qtext{font-size:calc(var(--fs) + 1px);font-weight:700;line-height:1.65;margin:0 0 16px;word-break:keep-all}
+  .ox{display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:420px}
+  .oxb{min-height:80px;border-radius:20px;border:2px solid var(--line);background:#f7fafc;font-size:38px;font-weight:900;cursor:pointer;display:grid;place-items:center}
+  .oxb.o{color:#1f78c8}.oxb.x{color:#d9534f}
+  .mc{display:grid;gap:10px}
+  .mcb{display:flex;align-items:center;gap:12px;text-align:left;min-height:56px;border-radius:16px;border:2px solid var(--line);background:#f7fafc;padding:10px 16px;font-size:var(--fs);font-weight:700;cursor:pointer;word-break:keep-all}
+  .mcb .k{flex:none;width:30px;height:30px;border-radius:50%;background:#fff;border:2px solid #cbd6e1;display:grid;place-items:center;font-size:14px;font-weight:800;color:#5a6b7e}
+  button.good{border-color:var(--ok)!important;background:#e8f7ef!important}
+  button.bad{border-color:var(--no)!important;background:#fdecea!important}
+  button:disabled{cursor:default}
+  .qcard.locked .oxb:not(.good):not(.bad),.qcard.locked .mcb:not(.good):not(.bad){opacity:.55}
+  .sentence{font-size:calc(var(--fs) + 1px);font-weight:700;line-height:2.4;margin:0 0 14px;word-break:keep-all}
+  .slot{display:inline-flex;align-items:center;justify-content:center;min-width:110px;min-height:44px;vertical-align:middle;margin:0 4px;padding:0 14px;border-radius:12px;border:2px dashed #aebdcc;background:#f7fafc;color:var(--muted);font-weight:800;font-size:calc(var(--fs) - 1px);cursor:pointer;line-height:1.2}
+  .slot.filled{border-style:solid;border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+  .slot.cur{box-shadow:0 0 0 4px rgba(14,99,179,.18)}
+  .slot.good{border-style:solid;border-color:var(--ok);background:#e8f7ef;color:#11703f}
+  .slot.bad{border-style:solid;border-color:var(--no);background:#fdecea;color:#b33a35}
+  .bank{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+  .chip{min-height:48px;padding:0 16px;border-radius:14px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:calc(var(--fs) - 1px);cursor:pointer}
+  .chip.used{opacity:.3;pointer-events:none}
+  .btn{min-height:52px;border:0;border-radius:14px;padding:0 20px;font-weight:800;font-size:16px;cursor:pointer}
+  .btn.primary{background:var(--accent);color:#fff}.btn.primary:disabled{opacity:.35}
+  .btn.ghost{background:#eef3f8;color:var(--ink2)}
+  .exp{display:none;margin-top:14px;padding:14px 16px;border-radius:14px;font-size:var(--fs);line-height:1.7;word-break:keep-all}
+  .qcard.right .exp{display:block;background:#e8f7ef;color:#0f5a36}
+  .qcard.wrong .exp{display:block;background:#fff6e8;color:#6d4208}
+  .retry{margin-top:10px}
+  .result{padding:26px;display:grid;grid-template-columns:150px 1fr;gap:24px;align-items:center;margin-top:16px}
+  .ring{width:150px;height:150px;position:relative}.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+  .ring .rv{position:absolute;inset:0;display:grid;place-items:center;text-align:center;font-weight:900;font-size:34px;line-height:1.1}
+  .ring .rv small{display:block;font-size:13px;font-weight:700;color:var(--muted)}
+  .result p{font-size:var(--fs);line-height:1.7;color:var(--ink2);margin:0 0 12px;word-break:keep-all}
+  .wlist{display:flex;flex-wrap:wrap;gap:8px}
+  .wlist button{min-height:44px;border:1px solid #f1c6c3;background:#fdf0ef;color:#b33a35;border-radius:10px;padding:0 12px;font-weight:700;cursor:pointer}
+  .next{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}
+  .next a{text-decoration:none;color:#fff;border-radius:20px;padding:18px;min-height:140px;display:flex;flex-direction:column;justify-content:space-between;box-shadow:var(--shadow)}
+  .next a b{font-size:18px}.next a span{font-size:14px;opacity:.92;word-break:keep-all}
+  .pop{position:absolute;z-index:40;max-width:300px;background:#15263a;color:#fff;border-radius:14px;padding:12px 14px;font-size:15px;line-height:1.6;box-shadow:0 12px 32px rgba(0,0,0,.25);opacity:0;transform:translateY(6px);transition:all .2s;pointer-events:none;word-break:keep-all}
+  .pop.show{opacity:1;transform:none;pointer-events:auto}.pop b{display:block;color:#9fd2ff}
+  @media (max-width:860px){.hero-in{grid-template-columns:1fr}.recall,.life,.next{grid-template-columns:1fr}}
+  @media (max-width:640px){.mtr{grid-template-columns:1fr}}
+  @media (max-width:600px){.read{padding:20px}.result{grid-template-columns:1fr;justify-items:center;text-align:center}.step .t{display:none}.cmp th,.cmp td{padding:10px 8px}}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.js-reveal .reveal{transform:none}}
+
+  .drawln{stroke-dasharray:620;stroke-dashoffset:620;animation:drawln 1.1s var(--ease) forwards}
+  @keyframes drawln{to{stroke-dashoffset:0}}
+
+  /* ===== 3D 화면 공통 ===== */
+  :root{--Bc:#14a5d0;--Ic:#2fae4a;--Fc:#f0522a;--N:#d8433b;--S:#2f62c9;--P:#7d5ad6}
+  .viewer{position:relative;overflow:hidden;padding:0}
+  .gl-host{position:relative;width:100%;height:min(74vh,700px);min-height:380px;background:linear-gradient(#f6f9fc,#d6e3ef);touch-action:none}
+  .gl-host canvas.gl{display:block;width:100%;height:100%;outline:none}
+  .lbls{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+  .lb{position:absolute;left:0;top:0;white-space:nowrap;font-weight:800;font-size:14px;padding:3px 9px;border-radius:9px;background:rgba(255,255,255,.88);color:#34495e;box-shadow:0 2px 8px rgba(20,38,59,.14);will-change:transform}
+  .lb.small{font-size:12px;font-weight:700;color:#5a6b7e;background:rgba(255,255,255,.72);box-shadow:none}
+  .lb.B{background:var(--Bc);color:#fff}.lb.I{background:var(--Ic);color:#fff}.lb.F{background:var(--Fc);color:#fff;font-size:15px}
+  .lb.P{background:var(--P);color:#fff}
+  .lb.dim{opacity:.35}
+  .vt{position:absolute;display:flex;gap:6px;flex-wrap:wrap;z-index:3}
+  .vt.tl{left:10px;top:10px;max-width:calc(100% - 20px)}
+  .vt.tr{right:10px;top:10px;justify-content:flex-end}
+  .vt.bl{left:10px;bottom:10px;align-items:center}
+  .vb{min-height:44px;padding:0 12px;border-radius:12px;border:1px solid rgba(20,38,59,.12);background:rgba(255,255,255,.9);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);font-weight:800;font-size:14px;color:#34495e;cursor:pointer;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 10px rgba(20,38,59,.08)}
+  .vb:active{transform:scale(.96)}
+  .vb .dot{width:12px;height:12px;border-radius:50%;flex:none}
+  .vb[aria-pressed="false"]{opacity:.62}
+  .vb[aria-pressed="false"] .dot{background:#c2ccd6!important}
+  .vb.sel{background:#14263b;color:#fff;border-color:#14263b}
+  .hint{font-size:12.5px;font-weight:700;color:#5a6b7e;background:rgba(255,255,255,.78);border-radius:10px;padding:6px 10px;word-break:keep-all}
+  .inset{position:absolute;z-index:2;border-radius:18px;border:2px solid rgba(255,255,255,.95);box-shadow:0 10px 30px rgba(20,38,59,.22),inset 0 0 0 1px rgba(20,38,59,.08);pointer-events:none;display:none}
+  .inset.on{display:block}
+  .inset .it{position:absolute;left:8px;top:8px;font-size:12.5px;font-weight:900;color:#14263b;background:rgba(255,255,255,.9);border-radius:8px;padding:3px 8px}
+  .inset .ic{position:absolute;left:6px;right:6px;bottom:6px;display:flex;flex-wrap:wrap;gap:4px;justify-content:center}
+  .inset .ic span{font-size:11.5px;font-weight:800;color:#fff;border-radius:7px;padding:2px 7px;white-space:nowrap}
+  .fail3d{position:absolute;inset:0;display:none;place-items:center;text-align:center;padding:24px;font-size:16px;font-weight:700;color:#7a2a22;line-height:1.7;word-break:keep-all;background:#fff4f2}
+  .fail3d.show{display:grid}
+  .model{font-size:13px;color:var(--muted);text-align:right;margin:0;word-break:keep-all}
+  @media (max-width:900px){.gl-host{height:min(56vh,620px)}}
+  /* ===== 광합성 수업 공통 ===== */
+  :root{--fab:#0e63b3;--fab-soft:#e4f0fb}
+  .eyebrow{color:#0e63b3;background:#e4f0fb}
+  .prog i{background:#0e63b3}
+  .ph.done i{background:#8db8e3}
+  [hidden]{display:none!important}
+  .fbk{border-radius:14px;padding:12px 14px;margin-top:10px;font-size:15px;line-height:1.65;word-break:keep-all;background:#f6f9fc;border:1px solid #dbe4ed;color:var(--ink2)}
+  .fbk.ok{background:#e9f3fd;border-color:#bcd7f2;color:#0b3f73}
+  .fbk.no{background:#fff4f2;border-color:#f3c2bb;color:#5e2a25}
+  .fbk b.t{display:block;font-size:13.5px;margin-bottom:2px}
+  .scene{position:relative;width:100%;overflow:hidden;touch-action:manipulation;user-select:none;-webkit-user-select:none;background:#fff}
+  .psv{position:absolute;inset:0;width:100%;height:100%;display:block;overflow:visible}
+  .olay{position:absolute;inset:0;pointer-events:none}
+  .ol{position:absolute;transform:translate(-50%,-50%);white-space:nowrap;font-weight:800;font-size:clamp(12px,1.35vw,15.5px);line-height:1.3;letter-spacing:-.01em;color:#14263b;transition:opacity .25s}
+  .ol.la{transform:translate(-100%,-50%)}.ol.ra{transform:translate(0,-50%)}
+  .ol.bg{background:rgba(255,255,255,.9);padding:2px 8px;border-radius:7px}
+  .ol.lt{color:#fff;text-shadow:0 1px 3px rgba(10,30,20,.55)}
+  .ol.m{font-weight:700;color:#5a6b7e}
+  .ol.big{font-size:clamp(14px,1.7vw,18px)}
+  .ol small{font-weight:700;color:#5a6b7e;font-size:.88em}
+  .ol[data-off="1"]{opacity:0}
+  .psv .tap{cursor:pointer}
+  .steps{display:grid;gap:5px;margin:0 0 10px}
+  .steps .ph{padding:6px 10px;font-size:14.5px;line-height:1.5}
+  .ctl{display:grid;gap:8px}
+  .ctl .btn{width:100%}
+  .ctl .two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .btn.done,.btn:disabled{background:#eef3f8;color:#8b9aab;cursor:default}
+  .pred{display:grid;gap:6px}
+  .pred button,.qa3 button{min-height:46px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:14.5px;cursor:pointer;word-break:keep-all;line-height:1.35;padding:4px 10px;text-align:left}
+  .pred button[aria-pressed="true"],.qa3 button[aria-pressed="true"]{border-color:var(--fab);background:#e9f3fd;color:#0b3f73}
+  .pred button:disabled{cursor:default}
+  .seglbl{font-size:13px;font-weight:800;color:var(--muted);margin:2px 0}
+  .qa{margin-bottom:12px}
+  .qa p{margin:0 0 6px;font-weight:800;font-size:15px;line-height:1.5;word-break:keep-all}
+  .qa3{display:grid;gap:6px}
+  .qa3 button.good{border-color:var(--ok);background:#e8f7ef;color:#11703f}
+  .qa3 button.bad{border-color:#e7a29b;background:#fff4f2;color:#9b3a32}
+  .eqn{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:4px 8px;padding:10px 8px;border-radius:14px;background:#f6f9fc;border:1px solid #dbe4ed;font-weight:800;font-size:15px;word-break:keep-all}
+  .eqn span{transition:color .3s,opacity .3s}.eqn .off{color:#a7b3c0}
+  .eqn .ar{display:inline-flex;flex-direction:column;align-items:center;font-size:12px;line-height:1.1;color:#5a6b7e}
+  .eqn .ar i{font-style:normal;font-size:17px;color:#14263b}
+  .tog{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+  .tog button{min-height:64px;border-radius:14px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:14.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:#5a6b7e;word-break:keep-all;line-height:1.25;padding:4px}
+  .tog button svg{width:38px;height:22px;display:block;overflow:visible}
+  .tog button[aria-pressed="true"]{border-color:var(--fab);background:#e9f3fd;color:#0b3f73}
+  .lvls{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:6px;flex:1 1 320px}
+  .lvls button{min-height:46px;border-radius:12px;border:1px solid #d4dee8;background:#fff;color:#34495e;font-weight:800;font-size:14.5px;cursor:pointer;word-break:keep-all;line-height:1.2;padding:2px 4px}
+  .lvls button[aria-pressed="true"]{background:#14263b;color:#fff;border-color:#14263b}
+  .ptxt{font-size:15px;line-height:1.65;color:var(--ink2);margin:0 0 10px;word-break:keep-all}
+  .ptxt b{color:#0b3f73}
+  .whylist{display:grid;gap:6px;margin:0;padding:0;list-style:none}
+  .whylist li{display:grid;grid-template-columns:26px 1fr;gap:8px;font-size:14.5px;line-height:1.55;color:var(--ink2);word-break:keep-all;padding:7px 10px;border-radius:12px;background:#f7fafc}
+  .whylist li i{font-style:normal;width:24px;height:24px;border-radius:8px;background:#0e63b3;color:#fff;display:grid;place-items:center;font-weight:900;font-size:13px}
+  .whylist b{color:#0b3f73}
+  /* ===== 이 수업 전용 ===== */
+  .hero{background:linear-gradient(160deg,#0b1a2e,#123155 60%,#0e2643)}
+  .hero-in{grid-template-columns:minmax(0,1fr) minmax(0,1.08fr)}
+  .goal{margin-top:20px;display:inline-block;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);border-radius:14px;padding:12px 16px;font-size:14.5px;line-height:1.7}
+  .goal b{color:#fff}
+  .hfig{background:#fff;border-radius:22px;overflow:hidden;align-self:center}
+  .hfig .scene{aspect-ratio:1000/780}
+  .hero .psv{filter:none}
+  .bar i{background:#0e63b3}
+  .simlink{background:#0e63b3!important;box-shadow:none!important}
+  .simlink b{color:#fff}
+  .fig.wv{background:#fff;padding:0;overflow:hidden}
+  .fig.wv svg.psv{height:100%}
+  .fig.wv .cap{padding:8px 12px 10px;margin:0}
+  .fbar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:10px 12px;background:#f3f6f9;border-top:1px solid var(--line)}
+  .fbar button{min-height:44px;padding:0 14px;border-radius:12px;border:1px solid #d4dee8;background:#fff;color:#34495e;font-weight:800;font-size:14.5px;cursor:pointer}
+  .fbar button[aria-pressed="true"]{background:#14263b;color:#fff;border-color:#14263b}
+  .fbar button:disabled{opacity:.4;cursor:default}
+  .fbar .st{font-size:14px;font-weight:700;color:#5a6b7e;word-break:keep-all;flex:1 1 200px}
+  .fbar .st b{color:#0e63b3}
+  .next{grid-template-columns:repeat(4,1fr)!important}
+  .next a{min-height:110px;background:#0e63b3!important}
+  .next a:nth-child(2){background:#0a4f90!important}.next a:nth-child(3){background:#0b3f73!important}.next a:nth-child(4){background:#14263b!important}
+  .sources{font-size:13px;color:var(--muted);line-height:1.7;word-break:keep-all;padding-left:18px;margin:0}
+  .key-box{border-radius:18px;padding:18px 20px;margin:18px 0;background:#f2f7fd;border:1px solid #d6e5f5}
+  .key-box .kt{display:inline-block;font-size:13px;font-weight:900;color:#0e63b3;margin-bottom:6px}
+  .key-box p{font-size:var(--fs);line-height:1.8;margin:0 0 6px;color:#1d2a40;word-break:keep-all}
+  .bigeq{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;justify-content:center;font-weight:800;font-size:clamp(16px,2.2vw,20px);padding:14px 10px;margin:14px 0;word-break:keep-all;background:#f7fafc;border:1px solid var(--line);border-radius:14px}
+  .cmp{width:100%;border-collapse:collapse;margin:14px 0;font-size:16px;word-break:keep-all;table-layout:fixed}
+  .cmp th,.cmp td{border-bottom:1px solid #e3eaf0;padding:9px 8px;text-align:center;line-height:1.45}
+  .cmp thead th{background:#f1f6fb;color:#14263b}.cmp td.k{font-weight:800;color:#5a6b7e;font-size:14.5px}
+  @media (max-width:860px){.next{grid-template-columns:1fr 1fr!important}}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-in">
+    <div>
+      <span class="kick">중2 과학 · 식물과 에너지</span>
+      <h1>식물도 호흡을 할까?</h1>
+      <p>식물도 싹을 틔우고 꽃을 피워요. 이런 생명활동을 하려면 에너지가 필요해요. 식물은 그 에너지를 어떻게 얻을까요?</p>
+      <div class="route"><span>① 호흡이란</span><span>② 낮과 밤의 기체 출입</span><span>③ 밀폐된 방의 낮과 밤</span><span>④ 광합성과 호흡 비교</span></div>
+      <button class="start" type="button" data-go="r1">읽기 시작하기
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg></button>
+      <div><div class="goal"><b>이번 시간에 나는!</b><br>· 식물의 호흡과 광합성의 관계를 설명할 수 있다.</div></div>
+    </div>
+    <div class="hfig"><div class="scene" id="heroFig" role="img" aria-label="밤하늘 아래의 토마토 식물과 뿌리. 산소가 들어가고 이산화 탄소가 나온다."></div></div>
+  </div>
+</header>
+
+<nav class="nav" aria-label="읽기 진행">
+  <div class="nav-in">
+    <button class="step" data-go="r1" type="button"><span class="n">1</span><span class="t">호흡</span></button>
+    <button class="step" data-go="r2" type="button"><span class="n">2</span><span class="t">낮과 밤</span></button>
+    <button class="step" data-go="q1" type="button"><span class="n">Q</span><span class="t">퀴즈 ①</span></button>
+    <button class="step" data-go="r3" type="button"><span class="n">3</span><span class="t">밀폐된 방</span></button>
+    <button class="step" data-go="r4" type="button"><span class="n">4</span><span class="t">비교</span></button>
+    <button class="step" data-go="q2" type="button"><span class="n">Q</span><span class="t">퀴즈 ②</span></button>
+    <span class="nav-sp"></span>
+    <div class="fsz" role="group" aria-label="글자 크기"><button type="button" id="fsN" aria-pressed="true">가</button><button type="button" id="fsB" aria-pressed="false" style="font-size:19px">가</button></div>
+  </div>
+  <div class="bar"><i id="progress"></i></div>
+</nav>
+
+<main>
+  <section class="part" id="r1">
+    <div class="sec-kick">읽기 ① <span class="time">약 2분</span></div>
+    <h2>식물은 양분을 분해해 에너지를 얻어요</h2>
+    <article class="card read reveal">
+      <p>식물도 싹을 틔우고, 꽃을 피우며 다양한 <button class="term" data-term="생명활동">생명활동</button>을 하려면 에너지가 필요해요. 식물세포에서는 광합성으로 만들어진 양분이 산소와 반응하여 이산화 탄소와 물로 분해되면서 에너지가 방출돼요.</p>
+      <p>이와 같이 <mark>양분을 분해하여 에너지를 얻는 과정</mark>을 <b>호흡</b>이라고 해요.</p>
+      <div class="bigeq"><span>양분(포도당)</span><span>+</span><span>산소</span><span>→</span><span>이산화 탄소</span><span>+</span><span>물</span><span>+</span><span>에너지</span></div>
+      <div class="fig wv"><div class="scene" id="figE" style="aspect-ratio:1000/400" role="img" aria-label="잎 위에서 포도당과 산소가 만나 이산화 탄소와 물로 나뉘고 에너지가 나온다."></div>
+        <div class="fbar"><button type="button" id="gE">양분 분해하기</button><span class="st" id="stE">포도당과 산소가 어떻게 되는지 봐요</span></div>
+        <div class="cap">그림 ① 호흡 과정 (입자의 수는 정한 모형)</div></div>
+    </article>
+    <details class="pause reveal"><summary><span class="pi"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5b4300" stroke-width="2.4" stroke-linecap="round"><path d="M9 9a3 3 0 1 1 4 2.8c-.7.3-1 .9-1 1.6V14M12 18h.01"/></svg></span>생각 멈춤: 식물이 산소를 흡수하는 까닭은 무엇일까요?<span class="tap">눌러서 확인</span></summary>
+      <div class="ans">양분을 분해하여 생명활동에 필요한 <b>에너지를 얻는 호흡</b>에 산소가 필요하기 때문이에요.</div></details>
+  </section>
+
+  <section class="part" id="r2">
+    <div class="sec-kick">읽기 ② <span class="time">약 3분</span></div>
+    <h2>낮과 밤, 어떤 기체가 드나들까요?</h2>
+    <article class="card read reveal">
+      <span class="tag">그림 Ⅴ-4 · 광합성과 호흡의 관계</span>
+      <p>식물이 광합성을 할 때는 이산화 탄소를 흡수하고 산소를 방출해요. 호흡할 때는 반대로 <mark>산소를 흡수하고 이산화 탄소를 방출</mark>해요.</p>
+      <p>또 광합성은 빛이 있을 때 일어나지만, 호흡은 <mark>빛이 없을 때도 항상</mark> 일어나며 뿌리, 줄기, 잎 등 살아있는 모든 세포에서 일어나요.</p>
+      <div class="fig wv"><div class="scene" id="figD" style="aspect-ratio:1000/780" role="img" aria-label="토마토 식물의 낮과 밤. 낮에는 이산화 탄소가 들어가고 산소가 나가며, 밤에는 산소가 들어가고 이산화 탄소가 나간다."></div>
+        <div class="fbar"><button type="button" id="dD" aria-pressed="true">낮</button><button type="button" id="dN" aria-pressed="false">밤</button><span class="st" id="stD">낮에는 광합성과 호흡이 함께 일어나요</span></div>
+        <div class="cap">그림 ② 낮과 밤의 기체 출입 (입자의 수와 빠르기는 정한 모형)</div></div>
+      <p>낮에는 광합성으로 발생한 산소 중 일부를 호흡에 이용하고, 남는 것은 방출해요. 호흡으로 발생한 이산화 탄소는 대부분 광합성에 이용해요.</p>
+      <a class="simlink" data-link="daynight" target="_blank" rel="noopener"><span class="si"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="9" r="3.2"/><path d="M8 2.5v1.2M2 9h1.2M8 15v1.2M3.8 4.8l.9.9"/><path d="M20 15.5A6 6 0 0 1 12.5 8a7 7 0 1 0 7.5 7.5z"/></svg></span><span><b>낮과 밤의 토마토</b><span>과정을 골라 보고, 부분마다 호흡을 확인해 봐요</span></span></a>
+    </article>
+  </section>
+
+  <section class="part" id="q1">
+    <div class="sec-kick">퀴즈 ① <span class="time">4문항</span></div>
+    <h2>호흡과 기체 출입</h2>
+    <div class="quiz" data-quiz="q1"></div>
+  </section>
+
+  <section class="part" id="r3">
+    <div class="sec-kick">읽기 ③ <span class="time">약 2분</span></div>
+    <h2>밀폐된 방에서 식물을 키우면</h2>
+    <article class="card read reveal">
+      <p>밀폐된 방에서 식물을 키울 때 낮과 밤에 방 안 산소와 이산화 탄소의 양은 같을까요? 앞 시간의 밀폐 장치로 생각해 봐요.</p>
+      <p>빛이 있으면 이산화 탄소를 흡수하고 산소를 방출해요. 빛이 없으면 호흡만 일어나 산소를 흡수하고 이산화 탄소를 방출해요. 그래서 <mark>낮과 밤에 기체의 양이 달라요</mark>.</p>
+      <a class="simlink" data-link="room" target="_blank" rel="noopener"><span class="si"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5M4 19h16M6 16l4-5 4 3 5-7"/></svg></span><span><b>낮밤 측정 실험실</b><span>LED등을 켜고 끄며 그래프를 그려 봐요</span></span></a>
+    </article>
+  </section>
+
+  <section class="part" id="r4">
+    <div class="sec-kick">읽기 ④ <span class="time">약 3분</span></div>
+    <h2>광합성과 호흡을 비교해요</h2>
+    <article class="card read reveal">
+      <span class="tag">해 보기 · 식물에서 출입하는 에너지와 물질의 변화</span>
+      <div class="fig wv"><div class="scene" id="figC" style="aspect-ratio:1000/700" role="img" aria-label="잎 위의 광합성과 호흡 순환. 물과 이산화 탄소가 빛에너지로 포도당과 산소가 되고, 호흡으로 다시 물과 이산화 탄소가 되며 에너지가 나온다."></div>
+        <div class="cap">그림 ③ 광합성과 호흡 (입자의 수는 정한 모형)</div></div>
+      <table class="cmp"><thead><tr><th>광합성</th><th style="width:26%"></th><th>호흡</th></tr></thead><tbody>
+        <tr><td>이산화 탄소, 물</td><td class="k">필요한 물질</td><td>포도당, 산소</td></tr>
+        <tr><td>포도당, 산소</td><td class="k">생산되는 물질</td><td>이산화 탄소, 물</td></tr>
+        <tr><td>포도당(양분) 합성</td><td class="k">물질의 변화</td><td>포도당(양분) 분해</td></tr>
+        <tr><td>에너지 저장</td><td class="k">에너지 출입</td><td>에너지 방출</td></tr>
+        <tr><td>빛이 있을 때</td><td class="k">일어나는 시기</td><td>항상</td></tr>
+      </tbody></table>
+      <p>광합성이 빛에너지를 이용하여 <mark>양분에 에너지를 저장</mark>하는 과정이라면, 호흡은 양분을 분해하여 <mark>생활에 필요한 에너지를 얻는</mark> 과정이에요. 식물의 광합성으로 생산된 물질은 생물의 호흡에 이용되고, 생물의 호흡으로 생산된 물질은 식물의 광합성에 이용돼요.</p>
+      <div class="key-box"><span class="kt">핵심 정리 · 식물도 호흡을 해요</span>
+        <p>· <b>호흡</b>: 양분을 분해하여 에너지를 얻는 과정. 양분(포도당) + 산소 → 이산화 탄소 + 물 + 에너지</p>
+        <p>· 호흡은 빛이 없을 때도 <b>항상</b>, 살아있는 <b>모든 세포</b>에서 일어난다.</p>
+        <p>· 낮에는 이산화 탄소를 흡수하고 산소를 방출한다. 밤에는 산소를 흡수하고 이산화 탄소를 방출한다.</p>
+      </div>
+      <a class="simlink" data-link="cycle" target="_blank" rel="noopener"><span class="si"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 0 1-14 5M4 12a8 8 0 0 1 14-5"/><path d="M18 3v4h-4M6 21v-4h4"/></svg></span><span><b>물질과 에너지 분석</b><span>과정을 돌려 보고 표를 직접 채워 봐요</span></span></a>
+    </article>
+  </section>
+
+  <section class="part" id="q2">
+    <div class="sec-kick">퀴즈 ② <span class="time">4문항</span></div>
+    <h2>광합성과 호흡의 관계</h2>
+    <div class="quiz" data-quiz="q2"></div>
+    <div class="card result reveal">
+      <div class="ring"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="50" fill="none" stroke="#e7edf3" stroke-width="12"/><circle id="ringArc" cx="60" cy="60" r="50" fill="none" stroke="#0e63b3" stroke-width="12" stroke-linecap="round" stroke-dasharray="314.16" stroke-dashoffset="314.16" style="transition:stroke-dashoffset 1s"/></svg>
+        <div class="rv"><div><span id="scoreV">0</span><small>/ <span id="scoreT">8</span> 문항</small></div></div></div>
+      <div><h3 id="resTitle">퀴즈를 풀면 결과가 나타나요</h3><p id="resMsg">퀴즈 ①, ②를 모두 풀어 보세요.</p><div class="wlist" id="wlist"></div></div>
+    </div>
+    <div class="next">
+      <a data-link="daynight" target="_blank" rel="noopener"><b>낮과 밤의 토마토</b><span>낮과 밤의 기체 출입 보기</span></a>
+      <a data-link="room" target="_blank" rel="noopener"><b>낮밤 측정 실험실</b><span>LED등 켜고 끄며 측정</span></a>
+      <a data-link="cycle" target="_blank" rel="noopener"><b>물질과 에너지 분석</b><span>비교표 채우기</span></a>
+      <a data-link="summary" target="_blank" rel="noopener"><b>정리하기</b><span>빈칸, 고르기, O X, 글쓰기</span></a>
+    </div>
+    <article class="card read reveal" style="margin-top:16px">
+      <h3>자료 출처</h3>
+      <ul class="sources">
+        <li>내용: 중학교 과학 2 교과서 Ⅴ. 식물과 에너지 「식물도 호흡을 할까?」, 그림 Ⅴ-4, 해 보기</li>
+        <li>잎맥 그리는 방법: Runions 등(2005)의 잎맥 생성 연구를 참고해 새로 구현. 토마토·잎·장치 그림은 수업을 위해 새로 그린 것이에요.</li>
+      </ul>
+    </article>
+  </section>
+</main>
+<footer class="credit">식물도 호흡을 할까</footer>
+<div class="pop" id="pop" role="tooltip"></div>
+
+<script>
+window.RD = {
+  $: (s, r = document) => r.querySelector(s),
+  $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
+  reduce: !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches),
+};
+</script>
+<script>
+/* ===== 블록 1: 기본 기능 · 퀴즈 ===== */
+(() => {
+  'use strict';
+  try {
+  const LINKS = { daynight: 'sim1-daynight.html', room: 'sim2-room.html', cycle: 'sim3-cycle.html', summary: 'summary-writing.html' };
+  const flag = (n) => { if (new URLSearchParams(location.search).get(n) === '1') return true; try { return !!(window.frameElement && window.frameElement.dataset[n] === '1'); } catch (e) { return false; } };
+  const EMBED = flag('embed');
+  const GLOSSARY = {
+    '생명활동': '싹 틔우기, 꽃 피우기, 자라기처럼 생물이 살아가며 하는 여러 가지 활동.',
+  };
+  const QUIZ = {
+    q1: [
+      { type: 'blank', parts: ['양분을 분해하여 ', 0, '을(를) 얻는 과정을 ', 1, '(이)라고 한다.'], answers: ['에너지', '호흡'], bank: ['에너지', '호흡', '광합성', '녹말'], exp: '양분을 분해하여 <b>에너지</b>를 얻는 과정이 <b>호흡</b>이에요.' },
+      { type: 'mc', q: '호흡할 때 식물이 흡수하는 기체는?', options: ['산소', '이산화 탄소', '수소', '질소'], answer: 0, exp: '호흡할 때는 <b>산소를 흡수</b>하고 이산화 탄소를 방출해요.' },
+      { type: 'ox', q: '호흡은 빛이 있을 때만 일어난다.', answer: false, exp: '<b>X</b> · 호흡은 빛이 없을 때도 항상 일어나요.' },
+      { type: 'ox', q: '호흡은 뿌리, 줄기, 잎 등 살아있는 모든 세포에서 일어난다.', answer: true, exp: '<b>O</b> · 살아있는 모든 세포에서 일어나요.' },
+    ],
+    q2: [
+      { type: 'mc', q: '밤에 식물에서 일어나는 기체 출입으로 옳은 것은?', options: ['산소 흡수, 이산화 탄소 방출', '이산화 탄소 흡수, 산소 방출', '기체가 드나들지 않음', '산소와 이산화 탄소 모두 방출'], answer: 0, exp: '밤에는 호흡만 일어나 <b>산소를 흡수</b>하고 <b>이산화 탄소를 방출</b>해요.' },
+      { type: 'blank', parts: ['광합성은 양분에 에너지를 ', 0, '하고, 호흡은 양분을 분해하여 에너지를 ', 1, '한다.'], answers: ['저장', '방출'], bank: ['저장', '방출', '합성', '흡수'], exp: '광합성은 에너지 <b>저장</b>, 호흡은 에너지 <b>방출</b>이에요.' },
+      { type: 'mc', q: '광합성에 필요한 물질과 호흡에 필요한 물질을 바르게 짝 지은 것은?', options: ['광합성: 이산화 탄소, 물 / 호흡: 포도당, 산소', '광합성: 포도당, 산소 / 호흡: 이산화 탄소, 물', '광합성: 산소 / 호흡: 물', '광합성: 포도당 / 호흡: 물'], answer: 0, exp: '한 과정에서 생산된 물질이 다른 과정에 필요한 물질이에요.' },
+      { type: 'ox', q: '밀폐된 방에서 식물을 키우면 낮과 밤에 방 안 산소와 이산화 탄소의 양이 서로 다르다.', answer: true, exp: '<b>O</b> · 낮과 밤에 드나드는 기체가 반대이기 때문이에요.' },
+    ],
+  };
+  const { $, $$ } = window.RD;
+  $$('[data-link]').forEach((a) => {
+    const key = a.dataset.link;
+    a.href = LINKS[key];
+    a.addEventListener('click', (e) => { if (!EMBED) return; e.preventDefault(); parent.postMessage({ type: 'ras-nav', target: key }, '*'); });
+  });
+  $$('[data-go]').forEach((b) => b.addEventListener('click', () => document.getElementById(b.dataset.go).scrollIntoView({ behavior: 'smooth', block: 'start' })));
+  const fsN = $('#fsN'), fsB = $('#fsB');
+  const setBig = (v) => { document.documentElement.classList.toggle('big', v); fsN.setAttribute('aria-pressed', String(!v)); fsB.setAttribute('aria-pressed', String(v)); };
+  fsN.addEventListener('click', () => setBig(false)); fsB.addEventListener('click', () => setBig(true));
+
+  const bar = $('#progress'), steps = $$('.step'), parts = ['r1', 'r2', 'q1', 'r3', 'r4', 'q2'].map((id) => document.getElementById(id));
+  function onScroll() {
+    const h = document.documentElement.scrollHeight - innerHeight;
+    bar.style.width = (h > 0 ? (scrollY / h) * 100 : 0) + '%';
+    let cur = -1; parts.forEach((p, i) => { if (p.getBoundingClientRect().top < innerHeight * 0.4) cur = i; });
+    steps.forEach((s, i) => s.classList.toggle('active', i === cur));
+  }
+  addEventListener('scroll', onScroll, { passive: true }); onScroll();
+  // 스크롤 등장 효과: 화면 감지 기능 없이 위치를 직접 계산해요. 글은 항상 보이고 위치만 살짝 움직여요
+  const revs = $$('.reveal');
+  document.documentElement.classList.add('js-reveal');
+  function checkReveal() {
+    const h = window.innerHeight || document.documentElement.clientHeight;
+    if (!h) return;
+    revs.forEach((el) => { if (!el.classList.contains('in')) { const r = el.getBoundingClientRect(); if (r.top < h * 0.92 && r.bottom > 0) el.classList.add('in'); } });
+  }
+  addEventListener('scroll', checkReveal, { passive: true });
+  addEventListener('resize', checkReveal);
+  checkReveal();
+  const revTimer = setInterval(() => { checkReveal(); if (revs.every((el) => el.classList.contains('in'))) clearInterval(revTimer); }, 250);
+  setTimeout(() => {
+    const h = window.innerHeight || document.documentElement.clientHeight;
+    const blind = !h || revs.every((el) => { const r = el.getBoundingClientRect(); return r.top === 0 && r.height === 0; });
+    if (blind) document.documentElement.classList.remove('js-reveal');
+  }, 1500);
+
+  const pop = $('#pop'); let popFor = null;
+  $$('.term').forEach((t) => t.addEventListener('click', (e) => {
+    e.stopPropagation(); if (popFor === t) return hidePop();
+    pop.innerHTML = `<b>${t.dataset.term}</b>${GLOSSARY[t.dataset.term] || ''}`; pop.classList.add('show');
+    const r = t.getBoundingClientRect(), pw = pop.offsetWidth, ph = pop.offsetHeight;
+    let x = Math.max(scrollX + 10, Math.min(r.left + scrollX + r.width / 2 - pw / 2, scrollX + innerWidth - pw - 10));
+    let y = r.top - ph - 10 < 60 ? r.bottom + scrollY + 10 : r.top + scrollY - ph - 10;
+    pop.style.left = x + 'px'; pop.style.top = y + 'px'; popFor = t;
+  }));
+  function hidePop() { pop.classList.remove('show'); popFor = null; }
+  document.addEventListener('click', hidePop);
+
+  /* 퀴즈 엔진 */
+  const results = {}, ALL = []; let qn = 0;
+  Object.entries(QUIZ).forEach(([sec, list]) => {
+    const host = document.querySelector(`[data-quiz="${sec}"]`);
+    list.forEach((q, i) => {
+      qn += 1; const id = `${sec}-${i}`, label = `문제 ${qn}`; ALL.push({ id, sec, label });
+      const card = document.createElement('article'); card.className = 'card qcard'; card.id = id;
+      card.innerHTML = `<div class="qhead"><span class="qno">${label}</span><span class="qtype">${{ ox: 'O / X', mc: '고르기', blank: '빈칸 채우기' }[q.type]}</span><span class="qstate"></span></div><div class="qbody"></div><div class="exp">${q.exp}</div>`;
+      host.appendChild(card); build(card, q, id);
+    });
+  });
+  $('#scoreT').textContent = ALL.length;
+  function mark(card, id, ok) {
+    results[id] = ok; card.classList.remove('right', 'wrong'); card.classList.add(ok ? 'right' : 'wrong', 'locked');
+    $('.qstate', card).textContent = ok ? '정답' : '다시 보기';
+    if (!ok && !$('.retry', card)) {
+      const r = document.createElement('button'); r.type = 'button'; r.className = 'btn ghost retry'; r.textContent = '다시 풀기';
+      r.addEventListener('click', () => { delete results[id]; card.classList.remove('right', 'wrong', 'locked'); r.remove(); build(card, card._q, id); update(); });
+      card.appendChild(r);
+    }
+    update();
+  }
+  function build(card, q, id) {
+    card._q = q; const body = $('.qbody', card);
+    if (q.type === 'ox') {
+      body.innerHTML = `<p class="qtext">${q.q}</p><div class="ox"><button type="button" class="oxb o" data-v="1">O</button><button type="button" class="oxb x" data-v="0">X</button></div>`;
+      $$('.oxb', body).forEach((b) => b.addEventListener('click', () => { const ok = (b.dataset.v === '1') === q.answer; $$('.oxb', body).forEach((o) => { o.disabled = true; if ((o.dataset.v === '1') === q.answer) o.classList.add('good'); }); if (!ok) b.classList.add('bad'); mark(card, id, ok); }));
+    } else if (q.type === 'mc') {
+      body.innerHTML = `<p class="qtext">${q.q}</p><div class="mc">${q.options.map((o, i) => `<button type="button" class="mcb" data-i="${i}"><span class="k">${'①②③④'[i]}</span>${o}</button>`).join('')}</div>`;
+      $$('.mcb', body).forEach((b) => b.addEventListener('click', () => { const ok = +b.dataset.i === q.answer; $$('.mcb', body).forEach((o, j) => { o.disabled = true; if (j === q.answer) o.classList.add('good'); }); if (!ok) b.classList.add('bad'); mark(card, id, ok); }));
+    } else {
+      const fill = q.answers.map(() => null); let cur = 0;
+      body.innerHTML = `<p class="qtext" style="margin-bottom:6px">알맞은 말을 골라 빈칸을 채워 보세요.</p><p class="sentence">${q.parts.map((p) => typeof p === 'number' ? `<button type="button" class="slot">빈칸 ${p + 1}</button>` : `<span>${p}</span>`).join('')}</p>
+        <div class="bank">${q.bank.slice().sort(() => Math.random() - 0.5).map((w) => `<button type="button" class="chip">${w}</button>`).join('')}</div><button type="button" class="btn primary check" disabled>확인하기</button>`;
+      const slots = $$('.slot', body), chips = $$('.chip', body), check = $('.check', body);
+      const paint = () => { slots.forEach((s, i) => { s.textContent = fill[i] ? fill[i].textContent : `빈칸 ${i + 1}`; s.classList.toggle('filled', !!fill[i]); s.classList.toggle('cur', i === cur && !card.classList.contains('locked')); }); if (check.isConnected) check.disabled = fill.some((f) => !f); };
+      chips.forEach((c) => c.addEventListener('click', () => { if (card.classList.contains('locked')) return; if (fill[cur]) fill[cur].classList.remove('used'); fill[cur] = c; c.classList.add('used'); const n = fill.findIndex((f) => !f); cur = n < 0 ? cur : n; paint(); }));
+      slots.forEach((s, i) => s.addEventListener('click', () => { if (card.classList.contains('locked')) return; if (fill[i]) { fill[i].classList.remove('used'); fill[i] = null; } cur = i; paint(); }));
+      check.addEventListener('click', () => {
+        let ok = true; slots.forEach((s, i) => { const g = fill[i].textContent === q.answers[i]; if (!g) ok = false; s.classList.add(g ? 'good' : 'bad'); s.disabled = true; });
+        chips.forEach((c) => (c.disabled = true)); check.remove(); card.classList.add('locked');
+        if (!ok) body.insertAdjacentHTML('beforeend', `<p class="qtext" style="margin:0;font-size:calc(var(--fs) - 1px);color:#6d4208">정답: ${q.answers.map((a, i) => `빈칸 ${i + 1} <b>${a}</b>`).join(' · ')}</p>`);
+        mark(card, id, ok); paint();
+      });
+      paint();
+    }
+  }
+  function update() {
+    const done = ALL.filter((q) => q.id in results), right = done.filter((q) => results[q.id]);
+    [['q1', 2], ['q2', 5]].forEach(([sec, si]) => steps[si].classList.toggle('done', ALL.filter((q) => q.sec === sec).every((q) => q.id in results)));
+    $('#scoreV').textContent = right.length;
+    $('#ringArc').style.strokeDashoffset = 314.16 * (1 - right.length / ALL.length);
+    const t = $('#resTitle'), m = $('#resMsg'), wl = $('#wlist');
+    if (done.length < ALL.length) { t.textContent = `${ALL.length}문항 중 ${done.length}문항을 풀었어요`; m.textContent = '남은 문제도 풀어 보세요. 틀린 문제는 다시 풀 수 있어요.'; }
+    else if (right.length === ALL.length) { t.textContent = '모두 맞혔어요!'; m.textContent = '이제 시뮬레이션에서 직접 해 보고, 스스로 정리해 봐요.'; }
+    else { t.textContent = `${ALL.length}문항 중 ${right.length}문항을 맞혔어요`; m.textContent = '틀린 문제를 눌러 다시 읽고 풀어 보세요.'; }
+    wl.innerHTML = '';
+    ALL.filter((q) => results[q.id] === false).forEach((q) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = `${q.label} 다시 보기`; b.addEventListener('click', () => document.getElementById(q.id).scrollIntoView({ behavior: 'smooth', block: 'center' })); wl.appendChild(b); });
+  }
+  update();
+  window.RD.ok1 = true;
+  } catch (err) { window.RD_err && window.RD_err('기본 기능·퀴즈', err); }
+})();
+</script>
+<script>
+/* ===== 광합성 수업 공통 그림 도구 PS =====
+   잎맥: Runions 등(2005)의 공간 군집화(space colonization) 방법을 이 수업에 맞게 새로 구현(코드 복사 아님).
+   해바라기 꽃판: 보겔의 잎차례 공식(황금각 137.5도). 모두 SVG로 그리고 글씨는 HTML 이름표로 올린다. */
+window.PS = (() => {
+  'use strict';
+  const NS = 'http://www.w3.org/2000/svg';
+  const REDUCE = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const el = (t, a, p) => { const e = document.createElementNS(NS, t); if (a) for (const k in a) if (a[k] != null) e.setAttribute(k, a[k]); if (p) p.appendChild(e); return e; };
+  const mk = (seed) => () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
+  const ease = (t) => t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+  const f1 = (n) => Math.round(n * 10) / 10;
+  let uid = 0;
+  const nid = (s = 'p') => `ps${s}${++uid}`;
+
+  /* --- 시간 --- */
+  function tween(ms, fn, done, ez = ease) {
+    if (REDUCE || ms <= 0) { fn(1); done && done(); return () => {}; }
+    let t0 = null, stop = false;
+    const step = (now) => { if (stop) return; if (t0 == null) t0 = now; const t = clamp((now - t0) / ms); fn(ez(t)); if (t < 1) requestAnimationFrame(step); else done && done(); };
+    requestAnimationFrame(step);
+    return () => { stop = true; };
+  }
+  function loop(fn) {
+    let last = null, stop = false;
+    const step = (now) => { if (stop) return; if (last == null) last = now; const dt = Math.min(.05, (now - last) / 1000); last = now; fn(dt, now / 1000); requestAnimationFrame(step); };
+    requestAnimationFrame(step);
+    return () => { stop = true; };
+  }
+
+  /* --- 무대: SVG + HTML 이름표 --- */
+  function stage(host, vb = [0, 0, 1000, 800]) {
+    host.innerHTML = '';
+    const svg = el('svg', { viewBox: vb.join(' '), preserveAspectRatio: 'xMidYMid meet', class: 'psv', 'aria-hidden': 'true' }, host);
+    const ol = document.createElement('div'); ol.className = 'olay'; host.appendChild(ol);
+    const labels = [];
+    const place = () => {
+      const m = svg.getScreenCTM(); if (!m) return; const b = host.getBoundingClientRect();
+      labels.forEach((l) => { l.e.style.left = (m.a * l.x + m.c * l.y + m.e - b.left) + 'px'; l.e.style.top = (m.b * l.x + m.d * l.y + m.f - b.top) + 'px'; });
+    };
+    const label = (x, y, html, cls = '') => {
+      const e = document.createElement('div'); e.className = 'ol ' + cls; e.innerHTML = html; ol.appendChild(e);
+      const l = { e, x, y, set(h) { e.innerHTML = h; return l; }, show(v) { e.dataset.off = v ? '0' : '1'; return l; }, move(a, c) { l.x = a; l.y = c; place(); return l; } };
+      labels.push(l); place(); return l;
+    };
+    if (window.ResizeObserver) new ResizeObserver(place).observe(host);
+    window.addEventListener('resize', place);
+    return { svg, ol, label, place, labels };
+  }
+
+  /* --- 공통 정의: 입자 모형, 재질 --- */
+  let shared = null;
+  function defs() {
+    if (shared) return shared;
+    const s = document.createElementNS(NS, 'svg'); s.setAttribute('style', 'position:absolute;width:0;height:0;overflow:hidden'); s.setAttribute('aria-hidden', 'true');
+    s.innerHTML = `<defs>
+      <radialGradient id="psO" cx=".36" cy=".32" r=".8"><stop offset="0" stop-color="#ff9a8a"/><stop offset=".55" stop-color="#e5533f"/><stop offset="1" stop-color="#b5301f"/></radialGradient>
+      <radialGradient id="psC" cx=".36" cy=".32" r=".8"><stop offset="0" stop-color="#77808a"/><stop offset=".6" stop-color="#3b424a"/><stop offset="1" stop-color="#1f252b"/></radialGradient>
+      <radialGradient id="psH" cx=".36" cy=".32" r=".85"><stop offset="0" stop-color="#ffffff"/><stop offset=".7" stop-color="#e7eef6"/><stop offset="1" stop-color="#b7c6d6"/></radialGradient>
+      <linearGradient id="psGlu" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd76a"/><stop offset="1" stop-color="#e8a21c"/></linearGradient>
+      <g id="mCO2"><circle cx="-15" cy="0" r="8.5" fill="url(#psO)" stroke="#8a2416" stroke-width=".7"/><circle cx="15" cy="0" r="8.5" fill="url(#psO)" stroke="#8a2416" stroke-width=".7"/><circle r="10" fill="url(#psC)" stroke="#14181c" stroke-width=".7"/></g>
+      <g id="mH2O"><circle cx="-10" cy="8" r="6" fill="url(#psH)" stroke="#7f92a6" stroke-width=".7"/><circle cx="10" cy="8" r="6" fill="url(#psH)" stroke="#7f92a6" stroke-width=".7"/><circle r="10.5" fill="url(#psO)" stroke="#8a2416" stroke-width=".7"/></g>
+      <g id="mO2"><circle cx="-7.5" cy="0" r="9" fill="url(#psO)" stroke="#8a2416" stroke-width=".7"/><circle cx="7.5" cy="0" r="9" fill="url(#psO)" stroke="#8a2416" stroke-width=".7"/></g>
+      <g id="mGlu"><path d="M12 0 6 10.4H-6L-12 0-6-10.4H6Z" fill="url(#psGlu)" stroke="#a66d0a" stroke-width="1.2" stroke-linejoin="round"/><path d="M6.5 0 3.2 5.6H-3.2L-6.5 0-3.2-5.6H3.2Z" fill="none" stroke="#fff3c4" stroke-width="1.2" opacity=".75"/></g>
+    </defs>`;
+    (document.body || document.documentElement).appendChild(s);
+    shared = s.querySelector('defs'); return shared;
+  }
+  function grad(stops, o = {}) {
+    const id = nid('g'); const d = defs();
+    const g = el(o.r ? 'radialGradient' : 'linearGradient', o.r ? { id, cx: o.cx ?? .5, cy: o.cy ?? .5, r: o.rr ?? .6 } : { id, x1: o.x1 ?? 0, y1: o.y1 ?? 0, x2: o.x2 ?? 0, y2: o.y2 ?? 1 }, d);
+    stops.forEach(([p, c, a]) => el('stop', { offset: p, 'stop-color': c, 'stop-opacity': a }, g));
+    return `url(#${id})`;
+  }
+  const sprite = (name, x, y, s, p) => el('use', { href: '#' + name, transform: `translate(${f1(x)} ${f1(y)}) scale(${s})` }, p);
+
+  /* --- 잎: 윤곽 + 공간 군집화 잎맥 --- */
+  const cache = {};
+  function leafData(o) {
+    const key = JSON.stringify(o); if (cache[key]) return cache[key];
+    const R = mk(o.seed || 7), L = o.L, W = o.W, p = o.p ?? .72, q = o.q ?? .85, bend = o.bend ?? 0;
+    const hw = (t) => t <= 0 || t >= 1 ? 0 : W * Math.pow(Math.sin(Math.PI * Math.pow(t, p)), q);
+    const yb = (x) => bend * x * x / L;
+    const tooth = (t, s) => { let k = 1; if (o.teeth) { const n = o.nt || 22, f = (t * n) % 1; k += o.teeth * (f < .75 ? f / .75 : (1 - f) / .25) * Math.sin(Math.PI * t); } if (o.ruffle) k += o.ruffle * Math.sin(t * 27 + s) * Math.sin(Math.PI * t); return k; };
+    const N = o.n || 90, top = [], bot = [];
+    for (let i = 0; i <= N; i++) { const t = i / N, x = t * L, w = hw(t); top.push([x, -w * tooth(t, 1) + yb(x)]); bot.push([x, w * tooth(t, 4) + yb(x)]); }
+    const pd = (a) => a.map((v, i) => (i ? 'L' : 'M') + f1(v[0]) + ' ' + f1(v[1])).join('');
+    const back = bot.slice().reverse();
+    const outline = pd(top) + pd(back).replace(/^M/, 'L') + 'Z';
+    const lower = pd(top.map((v) => [v[0], yb(v[0])])) + pd(back).replace(/^M/, 'L') + 'Z';
+    /* 잎맥 */
+    const D = o.D || L / 42, di = o.di || L / 7, dk = o.dk || D * 1.5;
+    const at = []; let tries = 0;
+    while (at.length < (o.nA || 240) && tries++ < 8000) { const t = R(); const y = (R() * 2 - 1) * W; if (Math.abs(y) < hw(t) * .95) at.push([t * L, y]); }
+    const nodes = [];
+    const nMid = Math.round(L / D);
+    for (let i = 0; i <= nMid; i++) nodes.push({ x: i * D * .985, y: 0, p: i ? i - 1 : -1, k: 'm' });
+    /* 곁맥: 가운데 잎맥에서 가장자리로 휘어 나가는 굵은 맥 */
+    const nSec = o.sec ?? 8;
+    for (let i = 0; i < nSec; i++) [-1, 1].forEach((sd) => {
+      const t0 = .045 + .74 * (i + (sd > 0 ? .28 : 0)) / nSec, t1 = Math.min(.97, t0 + .2 + .06 * (1 - t0)), x0 = t0 * L, xe = t1 * L, ye = sd * hw(t1) * .93;
+      const cx = x0 + (xe - x0) * .32, cy = ye * .68, n = Math.max(5, Math.round(Math.hypot(xe - x0, ye) / D));
+      let par = Math.round(x0 / (D * .985)); par = Math.min(par, nMid);
+      for (let k = 1; k <= n; k++) { const u = k / n, x = (1 - u) * (1 - u) * x0 + 2 * u * (1 - u) * cx + u * u * xe, y = 2 * u * (1 - u) * cy + u * u * ye; nodes.push({ x, y, p: par, k: 's', u }); par = nodes.length - 1; }
+    });
+    let alive = at;
+    for (let it = 0; it < 60 && alive.length; it++) {
+      const pull = new Map();
+      for (const a of alive) { let best = -1, bd = di * di; for (let i = 0; i < nodes.length; i++) { const dx = a[0] - nodes[i].x, dy = a[1] - nodes[i].y, d = dx * dx + dy * dy; if (d < bd) { bd = d; best = i; } } if (best >= 0) { const v = pull.get(best) || [0, 0]; const dx = a[0] - nodes[best].x, dy = a[1] - nodes[best].y, m = Math.hypot(dx, dy) || 1; v[0] += dx / m; v[1] += dy / m; pull.set(best, v); } }
+      if (!pull.size) break;
+      const start = nodes.length;
+      pull.forEach((v, i) => { const n = nodes[i]; const dx = v[0], dy = v[1]; const m = Math.hypot(dx, dy) || 1; nodes.push({ x: n.x + D * dx / m, y: n.y + D * dy / m, p: i, k: 't' }); });
+      alive = alive.filter((a) => { for (let i = start; i < nodes.length; i++) { const dx = a[0] - nodes[i].x, dy = a[1] - nodes[i].y; if (dx * dx + dy * dy < dk * dk) return false; } return true; });
+    }
+    /* 굵기: 가운데 잎맥 > 곁맥 > 잔맥. 끝으로 갈수록 가늘게 */
+    const V = o.vw || L / 80, bk = [V, V * .78, V * .58, V * .42, V * .34, V * .24, V * .1], ds = bk.map(() => []);
+    for (let i = 1; i < nodes.length; i++) {
+      const n = nodes[i]; if (n.p < 0) continue; const b = nodes[n.p];
+      const k = n.k === 'm' ? Math.min(3, Math.floor(n.x / L * 4)) : n.k === 's' ? (n.u < .55 ? 4 : 5) : 6;
+      ds[k].push(`M${f1(b.x)} ${f1(b.y + yb(b.x))}L${f1(n.x)} ${f1(n.y + yb(n.x))}`);
+    }
+    const res = { outline, lower, L, W, yb, hw, veins: ds.map((a, i) => ({ d: a.join(''), w: Math.round(bk[i] * 100) / 100 })) };
+    cache[key] = res; return res;
+  }
+  /* pal: {a,b,v,e,p} 앞쪽 색, 끝쪽 색, 잎맥, 테두리, 잎자루. layers: 윤곽과 같은 덧칠 층 이름들 */
+  function drawLeaf(parent, data, pal, o = {}) {
+    const g = el('g', { transform: o.tf }, parent);
+    if (o.pet) el('path', { d: `M${-o.pet} ${o.petY || 0}Q${-o.pet * .4} 2 2 0`, fill: 'none', stroke: pal.p || pal.e, 'stroke-width': o.petW || data.L / 45, 'stroke-linecap': 'round' }, g);
+    const fill = grad([[0, pal.a], [1, pal.b]], { x1: 0, x2: 1, y1: .1, y2: .5 });
+    const base = el('path', { d: data.outline, fill, stroke: pal.e, 'stroke-width': o.edge ?? .9, 'stroke-linejoin': 'round' }, g);
+    const lo = el('path', { d: data.lower, fill: pal.s || '#0b3a14', opacity: o.shade ?? .13 }, g);
+    const layers = {}; (o.layers || []).forEach((n) => { layers[n] = el('path', { d: data.outline, fill: 'none', opacity: 0 }, g); });
+    const veins = el('g', { fill: 'none', stroke: pal.v, 'stroke-linecap': 'round', opacity: o.veinOp ?? .85 }, g);
+    data.veins.forEach((v) => { if (v.d) el('path', { d: v.d, 'stroke-width': v.w }, veins); });
+    return { g, base, lo, layers, veins };
+  }
+  const PAL = {
+    sun: { a: '#3f8f35', b: '#5fb044', v: '#b8e08a', e: '#28692b', p: '#4c9a3a', s: '#0b3a14' },
+    sunBack: { a: '#2f7a2e', b: '#4b9b3b', v: '#94cc72', e: '#215a25', p: '#3f8a33', s: '#0b3a14' },
+    pep: { a: '#2f8a38', b: '#55ac45', v: '#a8dc86', e: '#1f6329', p: '#5aa244', s: '#0b3a14' },
+    let: { a: '#79bd47', b: '#a9d962', v: '#def2b4', e: '#5d9c36', p: '#c7e59a', s: '#245c1c' },
+  };
+
+  /* --- 굵기가 변하는 줄기·뿌리 --- */
+  function taper(pts, w0, w1) {
+    const A = [], B = [], n = pts.length;
+    pts.forEach((p, i) => { const a = pts[Math.max(0, i - 1)], b = pts[Math.min(n - 1, i + 1)], dx = b[0] - a[0], dy = b[1] - a[1], m = Math.hypot(dx, dy) || 1, w = lerp(w0, w1, i / (n - 1)) / 2; A.push([p[0] - dy / m * w, p[1] + dx / m * w]); B.push([p[0] + dy / m * w, p[1] - dx / m * w]); });
+    const smooth = (a) => { let d = ''; a.forEach((p, i) => { if (!i) return; const q = a[i - 1], mx = (p[0] + q[0]) / 2, my = (p[1] + q[1]) / 2; d += `Q${f1(q[0])} ${f1(q[1])} ${f1(mx)} ${f1(my)}`; }); const e = a[a.length - 1]; return d + `L${f1(e[0])} ${f1(e[1])}`; };
+    return `M${f1(A[0][0])} ${f1(A[0][1])}` + smooth(A) + `L${f1(B[n - 1][0])} ${f1(B[n - 1][1])}` + smooth(B.slice().reverse()) + 'Z';
+  }
+  function polyAt(pts, t) {
+    if (!pts._l) { let s = 0; pts._l = [0]; for (let i = 1; i < pts.length; i++) { s += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]); pts._l.push(s); } pts._s = s; }
+    const d = t * pts._s; let i = 1; while (i < pts.length - 1 && pts._l[i] < d) i++;
+    const u = (d - pts._l[i - 1]) / ((pts._l[i] - pts._l[i - 1]) || 1);
+    return [lerp(pts[i - 1][0], pts[i][0], u), lerp(pts[i - 1][1], pts[i][1], u)];
+  }
+
+  /* --- 입자 흐름: 길을 따라 움직이는 입자 묶음 --- */
+  function flock(parent) {
+    const g = el('g', null, parent); let list = [];
+    const place = (p) => {
+      const t = clamp(p.t), tt = p.ez ? p.ez(t) : t, c = polyAt(p.pts, tt);
+      const w = p.wob ? Math.sin(t * 9 + p.ph) * p.wob * Math.sin(Math.PI * t) : 0;
+      const a = (p.fi && t < p.fi ? t / p.fi : 1) * (p.fo && t > 1 - p.fo ? (1 - t) / p.fo : 1);
+      p.u.setAttribute('transform', `translate(${f1(c[0] + w)} ${f1(c[1] + w * .6)}) rotate(${f1(p.rot + p.t * p.spin)}) scale(${p.s})`);
+      p.u.setAttribute('opacity', Math.round(a * 20) / 20);
+    };
+    return {
+      g,
+      add(name, pts, o = {}) {
+        const u = el('use', { href: '#' + name }, g);
+        const p = { u, pts, t: 0, dur: o.dur || 3, s: o.s || 1, wob: o.wob || 0, ph: Math.random() * 6.28, rot: o.rot ?? (Math.random() * 360), spin: o.spin ?? 40, fi: o.fi ?? .12, fo: o.fo ?? 0, stay: o.stay || 0, cb: o.cb, ez: o.ez };
+        list.push(p); place(p); return p;
+      },
+      step(dt) {
+        const cbs = [];
+        list = list.filter((p) => {
+          p.t += dt / p.dur;
+          if (p.t >= 1 && !p.done) { p.done = true; if (p.cb) cbs.push(p); }
+          if (p.t >= 1 + p.stay) { p.u.remove(); return false; }
+          place(p); return true;
+        });
+        cbs.forEach((p) => p.cb(p));
+      },
+      clear() { list.forEach((p) => p.u.remove()); list = []; },
+      get n() { return list.length; },
+    };
+  }
+
+  /* --- 실험대 --- */
+  function bench(g, y = 690) {
+    el('rect', { x: -600, y: -700, width: 2200, height: y + 700, fill: '#fff' }, g);
+    el('rect', { x: -600, y, width: 2200, height: 900, fill: grad([[0, '#e9eef3'], [.2, '#f3f6f9'], [1, '#fbfcfd']]) }, g);
+    el('line', { x1: -600, x2: 1600, y1: y, y2: y, stroke: '#cfd9e3', 'stroke-width': 1.2 }, g);
+  }
+  const shadow = (g, cx, cy, rx, ry, op = .28) => el('ellipse', { cx, cy, rx, ry, fill: grad([[0, '#2a3a4a', op], [.6, '#2a3a4a', op * .4], [1, '#2a3a4a', 0]], { r: 1, rr: .5 }) }, g);
+
+  return { el, mk, lerp, clamp, ease, f1, nid, tween, loop, stage, defs, grad, sprite, leafData, drawLeaf, PAL, taper, polyAt, flock, bench, shadow, REDUCE };
+})();
+</script>
+<script>
+/* ===== 식물의 호흡 그림 도구 RS =====
+   토마토는 앞 차시 PS.leafData로 잎을 그리고 줄기·열매·뿌리는 이 수업을 위해 새로 그렸다.
+   입자 수와 빠르기는 정한 모형이다. 낮에는 광합성과 호흡이 함께, 밤에는 호흡만 일어난다. */
+window.RS = (() => {
+  'use strict';
+  const { el, grad, leafData, drawLeaf, flock, tween, loop, mk, lerp, clamp, stage, shadow, defs, f1, taper, PAL, REDUCE } = PS;
+  let symOK = false;
+  function symbols() {
+    if (symOK) return; symOK = true;
+    const d = defs();
+    /* 에너지: 뾰족한 별 */
+    const pts = []; for (let i = 0; i < 16; i++) { const a = i / 16 * 6.283, r = i % 2 ? 7 : 17; pts.push(`${f1(Math.cos(a) * r)} ${f1(Math.sin(a) * r)}`); }
+    const e = el('g', { id: 'mEn' }, d);
+    el('path', { d: 'M' + pts.join('L') + 'Z', fill: grad([[0, '#fff3a6'], [.55, '#ffc62e'], [1, '#f08a12']], { r: 1, rr: .55 }), stroke: '#c8700a', 'stroke-width': .8, 'stroke-linejoin': 'round' }, e);
+  }
+  const TOM = { a: '#2c7f33', b: '#4fa53f', v: '#a2d97f', e: '#1f6329', p: '#4d9a3c', s: '#0b3a14' };
+  const TOM2 = { a: '#24712e', b: '#3f9639', v: '#8ecb70', e: '#1a5a25', p: '#4d9a3c', s: '#0b3a14' };
+  const LFD = [3, 8, 15].map((seed) => leafData({ L: 92, W: 30, p: .85, q: .72, seed, sec: 6, teeth: .1, nt: 13, nA: 30, vw: 2.8, D: 5, di: 20 }));
+
+  function compound(p, x, y, ang, s, pal, n = 3) {
+    const g = el('g', { transform: `translate(${x} ${y}) rotate(${ang}) scale(${s})` }, p);
+    const len = 76 * n + 40;
+    el('path', { d: `M0 0Q${len * .5} -14 ${len} 6`, fill: 'none', stroke: pal.p, 'stroke-width': 5, 'stroke-linecap': 'round' }, g);
+    for (let i = 0; i < n; i++) {
+      const t = (i + .45) / n, xx = len * t, yy = -14 * 2 * t * (1 - t) + 6 * t * t, ss = .92 - i * .08;
+      [-1, 1].forEach((sd, k) => drawLeaf(g, LFD[(i + k) % 3], pal, { tf: `translate(${f1(xx)} ${f1(yy)}) rotate(${sd * 58}) scale(${ss})`, edge: .8, shade: .14, veinOp: .75 }));
+    }
+    drawLeaf(g, LFD[1], pal, { tf: `translate(${len - 8} 5) rotate(4) scale(1.02)`, edge: .8, shade: .14, veinOp: .75 });
+    return g;
+  }
+  function tomatoFruit(p, x, y, r, ripe) {
+    const g = el('g', { transform: `translate(${x} ${y})` }, p);
+    el('circle', { r, fill: ripe ? grad([[0, '#ff8a6a'], [.5, '#e5402b'], [1, '#ad2214']], { r: 1, cx: .36, cy: .3, rr: .78 }) : grad([[0, '#c3df75'], [.6, '#8cbc47'], [1, '#5e8f30']], { r: 1, cx: .36, cy: .3, rr: .78 }), stroke: ripe ? '#8d1b10' : '#4f7a28', 'stroke-width': .9 }, g);
+    const c = el('g', { fill: '#2f7d2f', stroke: '#1f5c24', 'stroke-width': .6 }, g);
+    for (let i = 0; i < 5; i++) el('path', { d: `M0 ${-r + 1}Q${r * .18} ${-r - 2} ${r * .46} ${-r * .72}Q${r * .14} ${-r * .88} 0 ${-r + 1}`, transform: `rotate(${i * 72 - 144} 0 ${-r + 1})` }, c);
+    return g;
+  }
+
+  /* --- 낮과 밤의 토마토 (그림 Ⅴ-4 형식) --- */
+  function tomato(host, o = {}) {
+    symbols();
+    const ST = stage(host, [0, 0, 1000, 780]); ST.svg.setAttribute('preserveAspectRatio', 'xMidYMid slice');
+    const root = el('g', null, ST.svg);
+    /* 하늘 */
+    el('rect', { x: -300, y: -300, width: 1600, height: 1300, fill: grad([[0, '#a9d6f3'], [.55, '#def1fb'], [.75, '#f6fbf4']]) }, root);
+    const night = el('g', { opacity: 0 }, root);
+    el('rect', { x: -300, y: -300, width: 1600, height: 1300, fill: grad([[0, '#0d1a3f'], [.55, '#1e2f63'], [.78, '#3a4a7a']]) }, night);
+    const Rs = mk(9); for (let i = 0; i < 90; i++) el('circle', { cx: f1(Rs() * 1200 - 100), cy: f1(Rs() * 540), r: f1(.7 + Rs() * 1.5), fill: '#fff', opacity: f1(.35 + Rs() * .6) }, night);
+    const sun = el('g', null, root);
+    el('circle', { r: 120, fill: grad([[0, '#fff3b0', .9], [.5, '#fff3b0', .32], [1, '#fff3b0', 0]], { r: 1, rr: .5 }) }, sun);
+    el('circle', { r: 44, fill: grad([[0, '#ffe58a'], [.7, '#fbb92e'], [1, '#ef8f14']], { r: 1, cx: .4, cy: .36, rr: .7 }) }, sun);
+    const moon = el('g', null, root);
+    el('path', { d: 'M18 -38A42 42 0 1 0 18 38A34 34 0 1 1 18 -38Z', fill: grad([[0, '#fff5c9'], [1, '#f1d67c']]), stroke: '#d9b95c', 'stroke-width': .8 }, moon);
+    /* 흙 단면과 뿌리 */
+    el('path', { d: 'M-300 668Q250 618 500 612T1300 668V1000H-300Z', fill: grad([[0, '#a26a3c'], [.4, '#7f4f2b'], [1, '#5b3519']]) }, root);
+    const Rg = mk(21), grains = el('g', null, root); for (let i = 0; i < 120; i++) el('ellipse', { cx: f1(Rg() * 1100 - 50), cy: f1(650 + Rg() * 140), rx: f1(1 + Rg() * 3.5), ry: f1(.8 + Rg() * 1.8), fill: Rg() < .5 ? '#c79462' : '#4a2a13', opacity: .55 }, grains);
+    el('path', { d: 'M-300 668Q250 618 500 612T1300 668', fill: 'none', stroke: '#5f8f3a', 'stroke-width': 5, opacity: .55 }, root);
+    const roots = el('g', { fill: '#e7d3ad', stroke: '#b89a6c', 'stroke-width': .6 }, root);
+    [[[500, 610], [492, 660], [505, 720], [498, 790]], [[498, 628], [450, 665], [400, 680], [335, 735]], [[502, 628], [555, 668], [620, 680], [672, 742]], [[496, 655], [440, 700], [395, 770]], [[505, 655], [560, 705], [598, 785]], [[452, 662], [420, 648], [370, 655]], [[556, 666], [600, 648], [650, 660]]].forEach((a, i) => { el('path', { d: taper(a, i < 3 ? 11 : 7, 1.6) }, roots); });
+    /* 줄기·잎 */
+    const plant = el('g', null, root);
+    shadow(plant, 500, 616, 110, 12, .28);
+    const back = el('g', null, plant);
+    [[500, 470, 200, .96], [500, 410, -22, .98], [505, 335, 205, .86], [505, 280, -30, .84]].forEach(([x, y, a, s]) => compound(back, x, y, a, s, TOM2));
+    const stemPts = [[500, 618], [494, 520], [506, 420], [498, 320], [508, 220], [504, 120]];
+    el('path', { d: taper(stemPts, 24, 7), fill: grad([[0, '#3f8a35'], [.5, '#6fb14e'], [1, '#347a2f']], { x2: 1, y2: 0 }), stroke: '#2a6a2b', 'stroke-width': .9 }, plant);
+    [[497, 525, -14, 1.02], [500, 520, 194, 1.02], [502, 372, -6, .9], [500, 372, 186, .82], [506, 222, -38, .68], [506, 222, 218, .68], [505, 128, -80, .55]].forEach(([x, y, a, s]) => compound(plant, x, y, a, s, TOM));
+    /* 열매 */
+    const fruit = el('g', null, plant);
+    el('path', { d: 'M504 300Q575 318 610 372M610 372Q640 372 660 386M610 372Q605 410 618 426M560 330Q566 360 580 386', fill: 'none', stroke: '#4d9a3c', 'stroke-width': 4, 'stroke-linecap': 'round' }, fruit);
+    [[658, 408, 30, 1], [620, 448, 28, 1], [580, 410, 25, 1]].forEach(([x, y, r, ripe]) => tomatoFruit(fruit, x, y, r, ripe));
+    el('path', { d: 'M500 440Q430 452 400 488M400 488Q375 500 362 520M400 488Q410 516 402 534', fill: 'none', stroke: '#4d9a3c', 'stroke-width': 3.6, 'stroke-linecap': 'round' }, fruit);
+    [[360, 540, 22, 0], [404, 556, 24, 1]].forEach(([x, y, r, ripe]) => tomatoFruit(fruit, x, y, r, ripe));
+    const dimP = el('rect', { x: -300, y: -300, width: 1600, height: 1300, fill: '#0a1636', opacity: 0, 'pointer-events': 'none' }, root);
+    const LEAF = [[300, 490], [700, 500], [360, 360], [660, 370], [420, 250], [590, 260], [270, 420], [740, 420]];
+    /* 입자 */
+    const mol = el('g', null, root), fl = flock(mol), sp = el('g', null, root), R = Math.random;
+    const lIn = ST.label(120, 320, '', 'big'), lOut = ST.label(880, 320, '', 'big'), lc = ST.label(500, 748, '', 'bg');
+    lIn.e.style.textAlign = 'center'; lOut.e.style.textAlign = 'center';
+    const sparks = [];
+    const spark = (x, y) => { const u = el('use', { href: '#mEn' }, sp); sparks.push({ u, x, y, t: 0 }); };
+    /* 부위 돋보기 */
+    const PARTS = { leaf: [340, 420, '잎'], stem: [500, 450, '줄기'], root: [440, 700, '뿌리'], fruit: [640, 420, '열매'] };
+    const ring = el('circle', { r: 38, fill: 'none', stroke: '#fff', 'stroke-width': 3, opacity: 0 }, root), ring2 = el('circle', { r: 38, fill: 'none', stroke: '#0e63b3', 'stroke-width': 1.6, opacity: 0 }, root);
+    let day = o.day !== false, tt = day ? 1 : 0, showP = true, showR = true, part = null, acc = [0, 0, 0];
+    const P = 5, RR = 2.2;
+    const place = () => {
+      sun.setAttribute('transform', `translate(${f1(lerp(-40, 135, tt))} ${f1(lerp(560, 100, Math.sqrt(tt)))})`);
+      sun.setAttribute('opacity', tt);
+      moon.setAttribute('transform', `translate(${f1(lerp(820, 880, tt))} ${f1(lerp(110, 420, tt))})`);
+      moon.setAttribute('opacity', 1 - tt);
+      night.setAttribute('opacity', 1 - tt);
+      dimP.setAttribute('opacity', (1 - tt) * .42);
+    };
+    const words = () => {
+      const pOn = day && showP, rOn = showR;
+      const w = (k, c) => `<span style="color:${day ? '#14263b' : '#fff'}">${k}</span><br><small style="color:${day ? '#34495e' : '#d7e2f2'}">${c}</small>`;
+      if (pOn) { lIn.set(w('이산화 탄소', '흡수')); lOut.set(w('산소', '방출')); }
+      else if (rOn) { lIn.set(w('산소', '흡수')); lOut.set(w('이산화 탄소', '방출')); }
+      else { lIn.set(''); lOut.set(''); }
+      lc.set(pOn && rOn ? '광합성과 호흡이 함께 일어나요' : pOn ? '광합성만 골라 보는 중' : rOn ? (day ? '호흡만 골라 보는 중' : '빛이 없어 호흡만 일어나요') : '보이는 과정을 골라요');
+    };
+    const inF = () => [[lerp(30, 180, R()), lerp(380, 520, R())], [lerp(220, 280, R()), lerp(330, 500, R())]];
+    const outF = (p) => [p, [lerp(p[0], 900, .55), p[1] + (R() - .5) * 60], [lerp(880, 990, R()), lerp(360, 520, R())]];
+    const api = {
+      ST,
+      setDay(v, cb) { day = v; words(); tween(REDUCE ? 0 : 1600, (t) => { tt = v ? t : 1 - t; place(); }, cb); },
+      show(p, r) { showP = p; showR = r; words(); },
+      focus(k) { part = k; const pp = PARTS[k]; if (!pp) { ring.setAttribute('opacity', 0); ring2.setAttribute('opacity', 0); return; } [ring, ring2].forEach((c) => { c.setAttribute('cx', pp[0]); c.setAttribute('cy', pp[1]); c.setAttribute('opacity', 1); }); },
+      jump(v) { day = v; tt = v ? 1 : 0; place(); words(); },
+      get day() { return day; },
+    };
+    place(); words();
+    if (o.labels === false) { lc.show(false); lIn.show(false); lOut.show(false); }
+    loop((dt) => {
+      fl.step(dt);
+      for (let i = sparks.length - 1; i >= 0; i--) { const s = sparks[i]; s.t += dt / .9; if (s.t >= 1) { s.u.remove(); sparks.splice(i, 1); continue; } const k = Math.sin(s.t * Math.PI); s.u.setAttribute('transform', `translate(${f1(s.x)} ${f1(s.y)}) scale(${f1(.6 + k * .7)})`); s.u.setAttribute('opacity', f1(k)); }
+      const pOn = day && showP && tt > .5, rOn = showR;
+      const net = pOn ? (rOn ? P - RR : P) : 0;
+      acc[0] += dt * net; acc[1] += dt * (rOn && !pOn ? RR : 0); acc[2] += dt * (rOn ? RR : 0);
+      const pick = () => LEAF[Math.floor(R() * LEAF.length)];
+      while (acc[0] > 1 && fl.n < 40) { acc[0] -= 1; const t = pick(), [a, b] = inF(); fl.add('mCO2', [a, b, t], { dur: 1.9, s: 1.05, wob: 6, fi: .15, fo: .08, cb: () => fl.add('mO2', outF(pick()), { dur: 2.2, s: 1.1, wob: 7, fi: .2, fo: .2 }) }); }
+      while (acc[1] > 1 && fl.n < 40) { acc[1] -= 1; const t = pick(), [a, b] = inF(); fl.add('mO2', [a, b, t], { dur: 2.1, s: 1.1, wob: 6, fi: .15, fo: .08, cb: () => fl.add('mCO2', outF(pick()), { dur: 2.2, s: 1.05, wob: 7, fi: .2, fo: .2 }) }); }
+      while (acc[2] > 1) { acc[2] -= 1; const q = R() < .22 ? [lerp(430, 570, R()), lerp(650, 720, R())] : pick(); spark(q[0] + (R() - .5) * 40, q[1] + (R() - .5) * 40); if (pOn) { const a = pick(), b = pick(); fl.add('mO2', [a, [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2 - 40], b], { dur: 1.6, s: .66, fi: .2, fo: .2 }); } }
+      if (acc[0] > 3) acc[0] = 3; if (acc[1] > 3) acc[1] = 3;
+    });
+    return api;
+  }
+
+  /* --- 호흡 식 입자 그림 --- */
+  function eq(host) {
+    symbols();
+    const ST = stage(host, [0, 0, 1000, 400]), root = el('g', null, ST.svg);
+    el('rect', { width: 1000, height: 400, fill: '#fff' }, root);
+    const D = leafData({ L: 880, W: 195, p: .9, q: .72, seed: 5, sec: 8, nA: 150, vw: 6, D: 12, di: 70 });
+    drawLeaf(root, D, { a: '#c9e6ae', b: '#def0c9', v: '#f1f8e7', e: '#a4cd83', s: '#74a55b' }, { tf: 'translate(60 190)', edge: 1, shade: .05, veinOp: .9 });
+    const g = el('g', null, root);
+    const use = (n, s) => el('use', { href: '#' + n, 'data-s': s }, g);
+    const glu = use('mGlu', 3.3), oo = [use('mO2', 1.6), use('mO2', 1.6), use('mO2', 1.6)];
+    const cc = [use('mCO2', 1.5), use('mCO2', 1.5)], hh = [use('mH2O', 1.6), use('mH2O', 1.6)];
+    const en = use('mEn', 2.3);
+    const put = (u, x, y, a, rot = 0) => { u.setAttribute('transform', `translate(${f1(x)} ${f1(y)}) rotate(${rot}) scale(${u.dataset.s})`); u.setAttribute('opacity', f1(a)); };
+    const l1 = ST.label(205, 330, '양분(포도당)'), l2 = ST.label(395, 330, '산소'), l3 = ST.label(650, 330, '이산화 탄소'), l4 = ST.label(800, 330, '물'), l5 = ST.label(905, 110, '에너지');
+    const plus = ST.label(305, 190, '+', 'big'), ar = ST.label(525, 190, '→', 'big'); ar.e.style.fontSize = plus.e.style.fontSize = 'clamp(20px,3vw,30px)';
+    const draw = (t) => {
+      const a = clamp(t * 2), b = clamp(t * 2 - 1);
+      put(glu, lerp(205, 500, a), 190, 1 - clamp(a * 2 - 1.2));
+      oo.forEach((o, i) => put(o, lerp(395, 500, a) + (1 - a) * [0, -18, 26][i], 190 + (1 - a) * [-62, 58, 30][i], 1 - clamp(a * 2 - 1.2), i * 40));
+      cc.forEach((c, i) => put(c, lerp(500, 650, b), 190 + b * [-48, 48][i], b, i ? 30 : -20));
+      hh.forEach((h, i) => put(h, lerp(500, 800, b), 190 + b * [-44, 44][i], b));
+      put(en, lerp(500, 905, b), lerp(190, 175, b), b, b * 90);
+      l3.show(b > .5); l4.show(b > .5); l5.show(b > .5); l1.show(a < .5); l2.show(a < .5); plus.show(a < .5); ar.show(false);
+    };
+    draw(0);
+    return { play(cb) { tween(3600, draw, cb, (x) => x); }, reset() { draw(0); } };
+  }
+
+  /* --- 광합성·호흡 순환 잎 (177쪽 형식) --- */
+  function cycle(host, o = {}) {
+    symbols();
+    const ST = stage(host, [0, 12, 1000, 640]), root = el('g', null, ST.svg);
+    el('rect', { y: -200, width: 1000, height: 1100, fill: '#fff' }, root);
+    const sun = el('g', { transform: 'translate(112 92)' }, root);
+    el('path', { d: 'M40 30L420 180V520L-10 110Z', fill: grad([[0, '#fff0a0', .75], [1, '#fff0a0', .1]], { x1: 0, y1: 0, x2: 1, y2: .7 }) }, sun);
+    el('circle', { r: 58, fill: grad([[0, '#ffe58a'], [.7, '#fbb92e'], [1, '#ef8f14']], { r: 1, cx: .4, cy: .36, rr: .7 }) }, sun);
+    const D = leafData({ L: 760, W: 245, p: .85, q: .72, seed: 13, sec: 9, teeth: .025, nt: 34, nA: 220, vw: 9, D: 12, di: 60 });
+    drawLeaf(root, D, { a: '#67b24f', b: '#8ecb63', v: '#c7eaa1', e: '#3f8a35', p: '#4d9a3c', s: '#1c5a22' }, { tf: 'translate(150 380) rotate(-6)', pet: 90, petW: 13, petY: 26, edge: 1.5, shade: .12, veinOp: .75 });
+    /* 네 자리 */
+    const POS = { glu: [440, 225], o2: [650, 225], h2o: [440, 505], co2: [650, 505] };
+    const mk2 = (n, x, y, s) => el('use', { href: '#' + n, transform: `translate(${x} ${y}) scale(${s})` }, root);
+    const A = { glu: mk2('mGlu', POS.glu[0], POS.glu[1], 3), o2: mk2('mO2', POS.o2[0], POS.o2[1], 1.9), h2o: mk2('mH2O', POS.h2o[0], POS.h2o[1], 1.9), co2: mk2('mCO2', POS.co2[0], POS.co2[1], 1.9) };
+    const lb = (x, y, t) => { const l = ST.label(x, y, t, 'bg'); return l; };
+    lb(POS.glu[0], POS.glu[1] + 56, '포도당'); lb(POS.o2[0], POS.o2[1] + 40, '산소'); lb(POS.h2o[0], POS.h2o[1] + 42, '물'); lb(POS.co2[0], POS.co2[1] + 40, '이산화 탄소');
+    ST.label(545, POS.glu[1], '+', 'big lt'); ST.label(545, POS.h2o[1], '+', 'big lt');
+    ST.label(190, 200, '빛에너지', 'bg');
+    /* 화살표: 고른 과정 하나만 */
+    const arrP = el('path', { d: 'M360 480Q280 365 360 250', fill: 'none', stroke: '#fff', 'stroke-width': 9, 'stroke-linecap': 'round', opacity: .35 }, root);
+    const arrR = el('path', { d: 'M730 250Q810 365 730 480', fill: 'none', stroke: '#fff', 'stroke-width': 9, 'stroke-linecap': 'round', opacity: .35 }, root);
+    const heads = [el('path', { d: 'M342 268L362 240L376 272Z', fill: '#fff', opacity: .35 }, root), el('path', { d: 'M748 462L728 490L714 458Z', fill: '#fff', opacity: .35 }, root)];
+    const tP = ST.label(262, 365, '광합성', 'big lt'), tR = ST.label(828, 365, '호흡', 'big lt');
+    const en = el('use', { href: '#mEn', transform: 'translate(905 365) scale(3.4)', opacity: .25 }, root), tE = ST.label(905, 440, '에너지', 'bg');
+    const fl = flock(root); loop((dt) => fl.step(dt));
+    const pulse = (ks, on) => ks.forEach((k) => A[k].setAttribute('opacity', on ? 1 : .35));
+    const api = {
+      mode(k) {
+        arrP.setAttribute('opacity', k === 'p' ? 1 : .35); heads[0].setAttribute('opacity', k === 'p' ? 1 : .35);
+        arrR.setAttribute('opacity', k === 'r' ? 1 : .35); heads[1].setAttribute('opacity', k === 'r' ? 1 : .35);
+        en.setAttribute('opacity', k === 'r' ? 1 : .25); sun.setAttribute('opacity', k === 'r' ? .35 : 1);
+      },
+      play(k, cb) {
+        api.mode(k);
+        const from = k === 'p' ? ['h2o', 'co2'] : ['glu', 'o2'], to = k === 'p' ? ['glu', 'o2'] : ['h2o', 'co2'];
+        pulse(to, false); pulse(from, true);
+        const n = { glu: 'mGlu', o2: 'mO2', h2o: 'mH2O', co2: 'mCO2' };
+        const mid = k === 'p' ? [300, 365] : [790, 365];
+        to.forEach((t, i) => fl.add(n[t], [POS[from[i]], mid, POS[t]], { dur: 1.6, s: t === 'glu' ? 3 : 1.9, spin: 0, rot: 0, fi: 0, ez: PS.ease }));
+        if (k === 'r') { tween(1200, (t) => en.setAttribute('transform', `translate(905 365) scale(${f1(3.4 + Math.sin(t * Math.PI) * 1.2)})`)); }
+        setTimeout(() => { pulse(to, true); cb && cb(); }, REDUCE ? 0 : 1650);
+      },
+    };
+    api.mode(o.mode || 'none');
+    return api;
+  }
+
+  /* --- 밀폐 장치 낮과 밤 측정 --- */
+  function room(host) {
+    symbols(); PF.symbols();
+    const ST = stage(host, [0, 62, 1000, 690]), root = el('g', null, ST.svg);
+    PS.bench(root, 700);
+    const SX = 448, SY = 88, SW = 528, SH = 570;
+    shadow(root, SX + SW / 2, 706, 250, 14, .22);
+    el('path', { d: `M${SX + SW / 2 - 60} ${SY + SH + 14}L${SX + SW / 2 - 96} 702H${SX + SW / 2 + 96}L${SX + SW / 2 + 60} ${SY + SH + 14}Z`, fill: grad([[0, '#cdd6de'], [1, '#a9b6c2']]), stroke: '#94a3b0' }, root);
+    el('rect', { x: SX - 14, y: SY - 14, width: SW + 28, height: SH + 28, rx: 20, fill: '#20262c', stroke: '#0f1316' }, root);
+    el('rect', { x: SX, y: SY, width: SW, height: SH, rx: 5, fill: '#fff' }, root);
+    const gx = SX + 66, gy = SY + 60, gw = SW - 98, gh = SH - 140;
+    const bandG = el('g', null, root);
+    const gr = el('g', { stroke: '#e9eff4' }, root); for (let i = 1; i < 4; i++) el('line', { x1: gx, x2: gx + gw, y1: gy + gh * i / 4, y2: gy + gh * i / 4 }, gr);
+    for (let i = 1; i < 4; i++) el('line', { x1: gx + gw * i / 4, x2: gx + gw * i / 4, y1: gy, y2: gy + gh, stroke: '#dfe6ec', 'stroke-dasharray': '4 5' }, root);
+    el('path', { d: `M${gx} ${gy}V${gy + gh}H${gx + gw}`, fill: 'none', stroke: '#34495e', 'stroke-width': 1.8 }, root);
+    const stl = ST.label(SX + SW / 2, SY + 26, '밀폐 장치 속 기체의 농도', ''); stl.e.style.fontSize = 'clamp(13px,1.4vw,16px)';
+    const yl = ST.label(gx - 30, gy + gh / 2, '농도', 'm'); yl.e.style.writingMode = 'vertical-rl';
+    const xl = ST.label(gx + gw, gy + gh + 22, '시간', 'la m');
+    const CO = '#39424c', OC = '#d9472f';
+    const lC = el('path', { fill: 'none', stroke: CO, 'stroke-width': 4, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, root), lO = el('path', { fill: 'none', stroke: OC, 'stroke-width': 4, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }, root);
+    const tC = ST.label(gx, gy, '이산화 탄소', ''), tO = ST.label(gx, gy, '산소', ''); tC.e.style.color = CO; tO.e.style.color = OC; tC.e.style.fontSize = tO.e.style.fontSize = 'clamp(12.5px,1.35vw,15px)';
+    const px = (t) => gx + gw * t, py = (v) => gy + gh * (1 - v);
+    /* LED·장치 */
+    const LX = 44, BX = 96, BW = 268, BY = 236, BB = 684;
+    shadow(root, BX + BW / 2, 706, 170, 12, .26);
+    const cone = el('path', { d: `M${LX + 12} 170L${BX + BW + 8} ${BY}V${BB}L${LX + 12} 630Z`, fill: grad([[0, '#fff2a8', .85], [1, '#fff2a8', .08]], { x2: 1, y2: 0 }), opacity: 0 }, root);
+    el('path', { d: `M${LX - 34} 702L${LX - 22} 668H${LX + 22}L${LX + 34} 702Z`, fill: grad([[0, '#7a8894'], [1, '#55616c']]), stroke: '#47525c' }, root);
+    el('rect', { x: LX - 13, y: 140, width: 26, height: 530, rx: 7, fill: grad([[0, '#8b98a4'], [.5, '#a9b5bf'], [1, '#70808d']], { x2: 1, y2: 0 }), stroke: '#5e6b76' }, root);
+    const strip = el('rect', { x: LX + 4, y: 154, width: 7, height: 502, rx: 3.5, fill: '#c8d2da' }, root);
+    const shade = el('path', { d: `M${BX} ${BY}L${BX + 8} ${BB - 8}Q${BX + 9} ${BB} ${BX + 18} ${BB}H${BX + BW - 18}Q${BX + BW - 9} ${BB} ${BX + BW - 8} ${BB - 8}L${BX + BW} ${BY}Z`, fill: '#17233d', opacity: 0, style: 'transition:opacity .6s' }, root);
+    el('path', { d: `M${BX} ${BY}L${BX + 8} ${BB - 8}Q${BX + 9} ${BB} ${BX + 18} ${BB}H${BX + BW - 18}Q${BX + BW - 9} ${BB} ${BX + BW - 8} ${BB - 8}L${BX + BW} ${BY}Z`, fill: 'rgba(226,238,245,.28)', stroke: '#8ba0b2', 'stroke-width': 2 }, root);
+    PF.lettuce(root, 'g', true, `translate(${BX + BW / 2} ${BB - 22}) scale(.98)`);
+    el('rect', { x: BX - 10, y: BY - 18, width: BW + 20, height: 16, rx: 5, fill: grad([[0, '#f6f8fa'], [1, '#d3dce4']]), stroke: '#a4b2bf' }, root);
+    el('rect', { x: BX - 6, y: BY - 4, width: BW + 12, height: 6, rx: 3, fill: '#c9483a' }, root);
+    [BX + 72, BX + BW - 72].forEach((x) => { el('rect', { x: x - 4, y: BY - 18, width: 8, height: 44, fill: '#67737e' }, root); el('rect', { x: x - 24, y: BY - 92, width: 48, height: 74, rx: 7, fill: grad([[0, '#2aa2d6'], [1, '#157eb0']], { x2: 1, y2: 0 }), stroke: '#0f6a95' }, root); el('rect', { x: x - 17, y: BY - 84, width: 34, height: 18, rx: 3, fill: '#16242e' }, root); el('circle', { cx: x, cy: BY - 46, r: 6, fill: '#e9f2f7', stroke: '#0f6a95' }, root); });
+    const c1 = ST.label(BX + 72, BY - 108, '이산화 탄소 센서', 'm'), c2 = ST.label(BX + BW - 72, BY - 108, '산소 센서', 'm'); c1.e.style.fontSize = c2.e.style.fontSize = 'clamp(10.5px,1.05vw,12.5px)';
+    ST.label(LX + 8, 122, 'LED등', 'm').e.style.fontSize = 'clamp(12px,1.25vw,14.5px)';
+    ST.label(BX + BW / 2, 726, '투명 밀폐 장치와 상추', 'm').e.style.fontSize = 'clamp(12px,1.25vw,14.5px)';
+    ST.label(SX + SW / 2, 726, '스마트 기기', 'm').e.style.fontSize = 'clamp(12px,1.25vw,14.5px)';
+    /* 입자 */
+    const mol = el('g', null, root), R = Math.random, mols = [];
+    const INB = () => [BX + 30 + R() * (BW - 60), BY + 24 + R() * 250];
+    const LS = [[BX + BW / 2, BB - 80], [BX + BW / 2 - 50, BB - 60], [BX + BW / 2 + 50, BB - 60], [BX + BW / 2, BB - 110]];
+    const add = (k, at) => { const b = at || INB(); const a = R() * 6.28; const u = el('use', { href: k === 'c' ? '#mCO2' : '#mO2' }, mol); const m = { u, k, x: b[0], y: b[1], a, seek: null }; mols.push(m); return m; };
+    /* 값 */
+    const SEG = 4; let t = 0, O = .3, C = .7, ptsO = [[0, .3]], ptsC = [[0, .7]], running = false, light = false, cbF = null, segEnd = 0, segO = 0, segC = 0, t0 = 0, o0 = 0, c0 = 0, bands = 0;
+    for (let i = 0; i < 12; i++) add('c'); for (let i = 0; i < 6; i++) add('o');
+    const pathD = (a) => a.map((p, i) => (i ? 'L' : 'M') + f1(px(p[0])) + ' ' + f1(py(p[1]))).join('');
+    const redraw = () => {
+      lO.setAttribute('d', pathD(ptsO)); lC.setAttribute('d', pathD(ptsC));
+      const a = ptsO[ptsO.length - 1], b = ptsC[ptsC.length - 1];
+      const ly = (v, o) => py(v) + (v > o ? -16 : 16);
+      tO.move(clamp(px(a[0]) + 2, gx + 24, gx + gw - 40), ly(a[1], b[1])); tC.move(clamp(px(b[0]) + 2, gx + 46, gx + gw - 50), ly(b[1], a[1]));
+    };
+    const syncM = () => {
+      const wC = Math.round(lerp(2, 18, C)), wO = Math.round(lerp(2, 18, O));
+      const nC = mols.filter((m) => m.k === 'c' && !m.seek).length, nO = mols.filter((m) => m.k === 'o' && !m.seek).length;
+      if (nC > wC) { const m = mols.find((x) => x.k === 'c' && !x.seek); m.seek = LS[Math.floor(R() * 4)]; }
+      if (nO > wO) { const m = mols.find((x) => x.k === 'o' && !x.seek); m.seek = LS[Math.floor(R() * 4)]; }
+      if (nC < wC) add('c', LS[Math.floor(R() * 4)]);
+      if (nO < wO) add('o', LS[Math.floor(R() * 4)]);
+    };
+    const api = {
+      setLight(v) { light = v; cone.setAttribute('opacity', v ? 1 : 0); strip.setAttribute('fill', v ? '#fff6c0' : '#c8d2da'); shade.setAttribute('opacity', v ? 0 : .16); },
+      run(on, cb) {
+        api.setLight(on); cbF = cb; running = true; t0 = t; o0 = O; c0 = C; segEnd = t + 1 / SEG; segO = on ? .14 : -.06; segC = on ? -.14 : .06;
+        const b = el('rect', { x: px(t), y: gy, width: gw / SEG, height: gh, fill: on ? '#fff6cf' : '#dfe5f1', opacity: .7 }, bandG);
+        const tag = ST.label(px(t + .5 / SEG), gy + 14, on ? '켬' : '끔', 'm'); tag.e.style.fontSize = 'clamp(11.5px,1.2vw,13.5px)';
+        bands++;
+      },
+      jump(list) { list.forEach((on) => { api.setLight(on); const b = el('rect', { x: px(t), y: gy, width: gw / SEG, height: gh, fill: on ? '#fff6cf' : '#dfe5f1', opacity: .7 }, bandG); const tag = ST.label(px(t + .5 / SEG), gy + 14, on ? '켬' : '끔', 'm'); tag.e.style.fontSize = 'clamp(11.5px,1.2vw,13.5px)'; t += 1 / SEG; O += on ? .14 : -.06; C += on ? -.14 : .06; ptsO.push([t, O]); ptsC.push([t, C]); }); redraw(); },
+      get left() { return SEG - Math.round(t * SEG); },
+      get O() { return O; }, get C() { return C; },
+    };
+    redraw();
+    let Dur = REDUCE ? .1 : 3.4;
+    loop((dt, now) => {
+      if (running) {
+        t = Math.min(segEnd, t + dt / (Dur * SEG));
+        const u = clamp((t - t0) * SEG); O = o0 + segO * u; C = c0 + segC * u;
+        ptsO.push([t, O + (R() - .5) * .004]); ptsC.push([t, C + (R() - .5) * .004]); redraw();
+        if (t >= segEnd - 1e-6) { running = false; const f = cbF; cbF = null; f && f(); }
+      }
+      if (Math.floor(now * 8) % 2 === 0) syncM();
+      for (let i = mols.length - 1; i >= 0; i--) {
+        const m = mols[i];
+        if (m.seek) { const dx = m.seek[0] - m.x, dy = m.seek[1] - m.y, d = Math.hypot(dx, dy) || 1; m.x += dx / d * 110 * dt; m.y += dy / d * 110 * dt; if (d < 8) { m.u.remove(); mols.splice(i, 1); continue; } }
+        else { m.a += (R() - .5) * dt * 3; m.x += Math.cos(m.a) * 17 * dt; m.y += Math.sin(m.a) * 15 * dt; if (m.x < BX + 28) m.a = 0; if (m.x > BX + BW - 28) m.a = 3.14; if (m.y < BY + 24) m.a = 1.57; if (m.y > BY + 300) m.a = -1.57; }
+        m.u.setAttribute('transform', `translate(${f1(m.x)} ${f1(m.y)}) scale(.62)`);
+      }
+    });
+    return api;
+  }
+  return { tomato, eq, cycle, room, symbols };
+})();
+</script>
+<script>
+/* ===== 블록 2: 그림 ===== */
+(() => {
+  'use strict';
+  try {
+    const { $ } = window.RD;
+    const H = RS.tomato($('#heroFig'), { labels: false }); H.jump(false); H.show(false, true);
+    const E = RS.eq($('#figE'));
+    $('#gE').addEventListener('click', (e) => { e.target.disabled = true; $('#stE').textContent = '양분이 분해되고 있어요'; E.play(() => { e.target.disabled = false; e.target.textContent = '다시 보기'; $('#stE').innerHTML = '이산화 탄소와 물로 분해되며 <b>에너지</b>가 나왔어요'; }); });
+    const D = RS.tomato($('#figD'));
+    let busy = false;
+    const go = (v) => { if (busy || D.day === v) return; busy = true; $('#dD').setAttribute('aria-pressed', String(v)); $('#dN').setAttribute('aria-pressed', String(!v)); D.show(v, true); D.setDay(v, () => { busy = false; }); $('#stD').innerHTML = v ? '낮에는 광합성과 호흡이 함께 일어나요' : '밤에는 <b>호흡만</b> 일어나 산소를 흡수해요'; };
+    $('#dD').addEventListener('click', () => go(true)); $('#dN').addEventListener('click', () => go(false));
+    RS.cycle($('#figC'));
+    window.RD.ok2 = true;
+  } catch (err) { window.RD_err && window.RD_err('그림', err); }
+})();
+</script>
+</body>
+</html>
