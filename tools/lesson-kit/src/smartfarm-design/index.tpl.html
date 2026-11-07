@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>스마트팜 디자인하기</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+/*@@LOCAL:_css_ps.css@@*/
+/*@@LOCAL:_css_sim.css@@*/
+/*@@LOCAL:_css_pf.css@@*/
+.cond{display:grid;gap:7px}
+.cond .rw{display:grid;grid-template-columns:96px 1fr;gap:8px;align-items:center}
+.cond .nm{font-weight:800;font-size:13.5px;line-height:1.25;word-break:keep-all}
+.cond .chs{display:flex;flex-wrap:wrap;gap:5px}
+.cond .chs button{min-height:44px;padding:2px 10px;border-radius:11px;border:2px solid #d4dee8;background:#fff;font-weight:700;font-size:13.5px;cursor:pointer;word-break:keep-all;line-height:1.2}
+.cond .chs button[aria-pressed="true"]{border-color:#0e63b3;background:#e9f3fd;color:#0b3f73}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top"><div class="ttl"><span class="eyebrow">과학과 나</span><h1>스마트팜 디자인하기</h1>
+    <p class="sub">식물이 잘 자라는 환경을 유지하고, 언제 어디서나 관찰하고 조절할 수 있는 미래의 스마트팜을 설계해요.</p></div></header>
+  <div class="stage">
+    <section class="card viewer">
+      <div class="scene grow" id="fig" role="img" aria-label="정면에서 본 유리 온실과 상추. 장치를 고르면 LED등, 환풍기, 이산화 탄소 공급 장치, 물 공급기, 카메라, 로봇 팔 등이 온실에 나타난다."></div>
+      <div class="vctl">
+        <span class="mlabel">갖춘 조건</span><span class="meter"><i id="meter"></i></span>
+        <button class="vb" type="button" id="bReset">처음부터</button>
+      </div>
+    </section>
+    <section class="card pad">
+      <div class="ptabs" role="tablist" id="pt">
+        <button type="button" role="tab" data-p="lab" aria-selected="true">장치 고르기</button>
+        <button type="button" role="tab" data-p="doc" aria-selected="false">설계서</button>
+        <button type="button" role="tab" data-p="peer" aria-selected="false">평가</button>
+      </div>
+      <div class="pane" data-p="lab">
+        <div class="cond" id="cond"></div>
+        <div class="fbk" id="res"><b class="t" id="resT">결과</b><span id="resM"></span></div>
+      </div>
+      <div class="pane" data-p="doc" hidden>
+        <p class="ptxt">고른 장치가 왼쪽에 보여요. 설계서에 까닭을 적고 복사하거나 인쇄해 공유해요.</p>
+        <textarea class="fbtxt" id="fName" rows="1" placeholder="우리 스마트팜 이름과 키울 작물"></textarea>
+        <textarea class="fbtxt" id="fWhy" rows="3" placeholder="장치를 고른 까닭. 광합성의 환경요인과 연결해 써요"></textarea>
+        <textarea class="fbtxt" id="fNew" rows="2" placeholder="우리 모둠만의 새 아이디어"></textarea>
+        <div class="pfoot"><button class="btn ghost" type="button" id="cp">설계서 복사하기</button><button class="btn ghost" type="button" id="pr">인쇄하기</button></div>
+      </div>
+      <div class="pane" data-p="peer" hidden>
+        <p class="ptxt">조사 → 디자인 → 공유 → 평가 순서로 해요. 다 했으면 돌아봐요.</p>
+        <div class="peer"><label><input type="checkbox"><span>식물의 생장 환경에 맞고 효율적으로 일할 수 있는 디자인인가?</span></label><label><input type="checkbox"><span>전시와 발표를 잘 했는가?</span></label><label><input type="checkbox"><span>동료의 디자인을 올바르게 평가했는가?</span></label></div>
+        <p class="mnote">장치의 이름과 생김새는 설계를 돕는 예시예요. 최신 기술 자료를 더 찾아 새로운 장치를 넣어 봐요.</p>
+      </div>
+    </section>
+  </div>
+</div>
+<script>
+/*@@LOCAL:_ps.js@@*/
+</script>
+<script>
+/*@@LOCAL:_pf.js@@*/
+</script>
+<script>
+/*@@LOCAL:_sd.js@@*/
+</script>
+<script>
+(() => {
+  'use strict';
+  try {
+    const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+    const q = new URLSearchParams(location.search);
+    const F = SD.farm($('#fig'));
+    const COND = [
+      { n: '빛의 세기', o: [['led', 'LED등'], ['shade', '차광막']] },
+      { n: '이산화 탄소 농도', o: [['co2', '이산화 탄소 공급 장치']] },
+      { n: '온도, 습도', o: [['heat', '난방관'], ['fan', '환풍기'], ['sensor', '센서']] },
+      { n: '해충 방제', o: [['net', '방충망'], ['cam', '감시 카메라']] },
+      { n: '기타', o: [['water', '물 공급기'], ['robot', '로봇 팔'], ['tablet', '원격 조절 기기']] },
+    ];
+    const NAME = {}; COND.forEach((c) => c.o.forEach(([k, t]) => { NAME[k] = t; }));
+    const on = new Set();
+    $('#cond').innerHTML = COND.map((c, i) => `<div class="rw"><div class="nm">${c.n}</div><div class="chs">${c.o.map(([k, t]) => `<button type="button" data-k="${k}" aria-pressed="false">${t}</button>`).join('')}</div></div>`).join('');
+    const say = (t, m, c = '') => { $('#res').className = 'fbk ' + c; $('#resT').textContent = t; $('#resM').innerHTML = m; };
+    const met = () => COND.filter((c) => c.o.some(([k]) => on.has(k))).length;
+    function update() {
+      const n = met(); $('#meter').style.width = (n / COND.length * 100) + '%';
+      const core = ['led', 'co2'].every((k) => on.has(k)) && (on.has('heat') || on.has('sensor') || on.has('fan'));
+      F.grow(core ? .92 : .45 + n * .05);
+      if (!on.size) say('결과', '조건마다 넣을 장치를 눌러 봐요. 여러 개 골라도 돼요.');
+      else if (n === COND.length) say('모든 조건을 갖췄어요', '빛, 이산화 탄소, 온도를 알맞게 유지해 광합성이 활발해요. 이제 <b>설계서</b>에 까닭을 적어요.', 'ok');
+      else if (core) say('상추가 잘 자라요', '빛, 이산화 탄소, 온도가 모두 알맞아 광합성이 활발해요. 해충 방제와 효율적인 일도 생각해 봐요.', 'ok');
+      else { const miss = COND.filter((c) => !c.o.some(([k]) => on.has(k))).map((c) => c.n); say(`${n}가지 조건을 갖췄어요`, `아직 없는 조건: <b>${miss.join(', ')}</b>`); }
+    }
+    $$('#cond button').forEach((b) => b.addEventListener('click', () => { const k = b.dataset.k, v = !on.has(k); v ? on.add(k) : on.delete(k); b.setAttribute('aria-pressed', String(v)); F.set(k, v); update(); }));
+    $('#bReset').addEventListener('click', () => { on.forEach((k) => F.set(k, false)); on.clear(); $$('#cond button').forEach((b) => b.setAttribute('aria-pressed', 'false')); update(); });
+    say('결과', '조건마다 넣을 장치를 눌러 봐요. 여러 개 골라도 돼요.');
+    if (q.get('all')) { $$('#cond button').forEach((b) => { if (b.dataset.k !== 'shade') b.click(); }); }
+    const text = () => `[스마트팜 설계서]\n이름과 작물: ${$('#fName').value}\n고른 장치: ${[...on].map((k) => NAME[k]).join(', ')}\n고른 까닭: ${$('#fWhy').value}\n새 아이디어: ${$('#fNew').value}`;
+    $('#cp').addEventListener('click', async () => { const b = $('#cp'); try { await navigator.clipboard.writeText(text()); b.textContent = '복사했어요'; } catch (e) { b.textContent = '칸을 길게 눌러 복사해요'; } setTimeout(() => { b.textContent = '설계서 복사하기'; }, 2000); });
+    $('#pr').addEventListener('click', () => window.print());
+    const tab = (p) => { $$('#pt button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.p === p))); $$('.pane').forEach((e) => { e.hidden = e.dataset.p !== p; }); };
+    $$('#pt button').forEach((b) => b.addEventListener('click', () => tab(b.dataset.p)));
+    if (q.get('tab')) tab(q.get('tab'));
+    window.SM = window.SM || {}; window.SM.okUI = true;
+  } catch (err) { window.SM_err && window.SM_err('스마트팜 디자인', err); }
+})();
+</script>
+</body>
+</html>
