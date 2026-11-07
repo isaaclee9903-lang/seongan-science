@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>혈액의 순환 경로 – 혈액 순환 지도</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+/*@@LOCAL:_css_ps.css@@*/
+/*@@LOCAL:_css_sim.css@@*/
+/*@@LOCAL:_css_pf.css@@*/
+.chain{display:flex;flex-wrap:wrap;gap:4px}.chain span{font-size:13.5px;font-weight:800;padding:6px 9px;border-radius:9px;background:#eef3f8;color:#5a6b7e;word-break:keep-all}.chain span.done{background:#dcebfa;color:#0b3f73}.chain span.on{background:#0e63b3;color:#fff}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top"><div class="ttl"><span class="eyebrow">시뮬레이션</span><h1>혈액 순환 지도</h1>
+    <p class="sub">혈액이 심장, 폐, 온몸을 도는 길을 따라가요. 어디에서 어떤 물질을 주고받을까요?</p></div></header>
+  <div class="stage">
+    <section class="card viewer"><div class="scene grow" id="fig" role="img" aria-label="위쪽에 폐, 가운데 심장, 아래쪽에 온몸의 세포가 있고 혈액이 폐동맥, 폐, 폐정맥, 좌심방, 좌심실, 대동맥, 온몸, 대정맥, 우심방, 우심실 순서로 돈다."></div><div class="vctl"><span class="hint">빨강과 파랑은 구분하려고 칠한 색이에요. 입자 수와 빠르기는 모형이에요</span></div></section>
+    <section class="card pad"><div class="ptabs" role="tablist" id="pt">
+        <button type="button" role="tab" data-p="lab" aria-selected="true">따라가기</button>
+        <button type="button" role="tab" data-p="rec" aria-selected="false">정리하기</button>
+        <button type="button" role="tab" data-p="why" aria-selected="false">왜 그럴까?</button>
+      </div><div class="pane" data-p="lab"><div class="seg3" id="m"><button type="button" data-v="all" aria-pressed="true">모두</button><button type="button" data-v="p" aria-pressed="false">허파순환</button><button type="button" data-v="b" aria-pressed="false">온몸순환</button></div>
+      <div class="seglbl" style="margin-top:10px">한 칸씩 따라가기</div><div class="chain" id="ch"></div>
+      <button class="btn primary" type="button" id="go" style="width:100%;margin-top:8px">다음 칸으로</button>
+      <div class="fbk" id="res"><b class="t" id="resT">우심실</b><span id="resM"></span></div></div>
+      <div class="pane" data-p="rec" hidden><div id="qs"></div><div class="fbk" id="recRes" hidden></div></div>
+      <div class="pane" data-p="why" hidden><ol class="whylist"><li><i>1</i><span><b>허파순환</b>: 우심실 → 폐동맥 → 폐의 모세혈관 → 폐정맥 → 좌심방. 이산화 탄소를 내보내고 산소를 받아요.</span></li><li><i>2</i><span><b>온몸순환</b>: 좌심실 → 대동맥 → 온몸의 모세혈관 → 대정맥 → 우심방. 세포에 산소와 영양소를 주고, 이산화 탄소와 노폐물을 받아요.</span></li><li><i>3</i><span>두 순환은 서로 <b>연결</b>되어 있어요. 혈액은 두 순환을 반복해요.</span></li><li><i>4</i><span>혈액 순환이 멈추면 세포가 산소와 영양소를 받지 못해 에너지를 얻을 수 없어요.</span></li></ol></div></section>
+  </div>
+</div>
+<script>
+/*@@LOCAL:_ps.js@@*/
+</script>
+<script>
+/*@@LOCAL:_bc.js@@*/
+</script>
+<script>
+(() => {
+  'use strict';
+  try {
+    const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+    const q = new URLSearchParams(location.search);
+    const say = (t, m, c = '') => { $('#res').className = 'fbk ' + c; $('#resT').textContent = t; $('#resM').innerHTML = m; };
+    const M = BC.map($('#fig'));
+    const S = BC.ST_; let i = 0, busy = false;
+    const POS = [[418, 452], [250, 280], [500, 100], [720, 230], [582, 336], [582, 452], [810, 470], [500, 680], [150, 450], [418, 336]];
+    const seg = [null, 'pa', 'lung', 'pv', null, 'lh', 'ao', 'body', 'vc', null, 'rh'];
+    const cols = (k) => k >= 3 && k <= 7;
+    $('#ch').innerHTML = S.map((s, k) => `<span data-i="${k}">${s[0]}</span>`).join('');
+    const paint = () => { $$('#ch span').forEach((e) => { const k = +e.dataset.i; e.classList.toggle('on', k === i); e.classList.toggle('done', k < i); }); say(S[i][0], S[i][1], S[i][2] === 'lung' || S[i][2] === 'body' ? 'ok' : ''); $('#go').textContent = i === S.length - 1 ? '우심실로 내려가 다시 돌기' : '다음 칸으로'; };
+    M.place(POS[0], false); paint();
+    $('#go').addEventListener('click', () => { if (busy) return; const nx = (i + 1) % S.length, k = seg[nx] || (nx === 0 ? 'rh' : null); const fin = () => { busy = false; i = nx; M.place(POS[i], cols(i)); paint(); }; if (k) { busy = true; M.step(k, fin); } else fin(); });
+    const setM = (v) => { $$('#m button').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.v === v))); M.focus(v); };
+    $$('#m button').forEach((b) => b.addEventListener('click', () => setM(b.dataset.v)));
+    if (q.get('m')) setM(q.get('m'));
+    const tab = (p) => { $$('#pt button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.p === p))); $$('.pane').forEach((e) => { e.hidden = e.dataset.p !== p; }); };
+    $$('#pt button').forEach((b) => b.addEventListener('click', () => tab(b.dataset.p)));
+    if (q.get('tab')) tab(q.get('tab'));
+    const QS = [
+      { q: '우심실에서 나온 혈액이 처음 지나는 혈관은?', o: ['폐동맥', '대동맥', '폐정맥'], a: 0, ok: '우심실 → <b>폐동맥</b> → 폐로 이동해요.' },
+      { q: '좌심방으로 들어오는 혈액이 지나는 혈관은?', o: ['폐정맥', '대정맥', '폐동맥'], a: 0, ok: '폐를 지난 혈액은 <b>폐정맥</b>을 거쳐 좌심방으로 들어와요.' },
+      { q: '폐의 모세혈관에서 일어나는 일은?', o: ['이산화 탄소를 내보내고 산소를 받는다', '영양소를 세포에 준다', '노폐물을 받는다'], a: 0, ok: '폐에서는 <b>이산화 탄소를 내보내고 산소를 받아요</b>.' },
+    ];
+    $('#qs').innerHTML = QS.map((x, i) => `<div class="qa" data-i="${i}"><p>${x.q}</p><div class="qa3">${x.o.map((t, k) => `<button type="button" data-k="${k}">${t}</button>`).join('')}</div></div>`).join('');
+    $$('#qs .qa').forEach((row) => { const x = QS[+row.dataset.i]; $$('button', row).forEach((b) => b.addEventListener('click', () => {
+      const good = +b.dataset.k === x.a; $$('button', row).forEach((o) => o.classList.remove('good', 'bad')); b.classList.add(good ? 'good' : 'bad');
+      const r = $('#recRes'); r.hidden = false; r.className = 'fbk ' + (good ? 'ok' : 'no'); r.innerHTML = good ? x.ok : '다시 골라 봐요. 그림을 떠올려요.';
+    })); });
+    window.SM = window.SM || {}; window.SM.okUI = true;
+  } catch (err) { window.SM_err && window.SM_err('혈액 순환 지도', err); }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>순환계의 구성과 기능 – 심장 관찰실</title>
+<script>
+/* 문제 알림: 코드에 오류가 나면 화면 아래에 빨간 상자로 알려 줘요 (선생님 확인용) */
+(function () {
+  function box() {
+    var b = document.getElementById('smErr');
+    if (!b && document.body) {
+      b = document.createElement('div'); b.id = 'smErr';
+      b.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;background:#fdecea;color:#8a1f17;border:2px solid #d9534f;border-radius:12px;padding:10px 14px;font:600 14px/1.5 sans-serif;white-space:pre-wrap';
+      document.body.appendChild(b);
+    }
+    return b;
+  }
+  window.SM_err = function (where, err) {
+    var msg = '[' + where + '] ' + (err && err.message ? err.message : String(err));
+    var show = function () { var b = box(); if (b) b.textContent += (b.textContent ? '\n' : '') + msg; };
+    if (document.body) show(); else document.addEventListener('DOMContentLoaded', show);
+  };
+  window.addEventListener('error', function (e) { window.SM_err('스크립트', { message: e.message + ' (줄 ' + e.lineno + ')' }); });
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      var S = window.SM || {};
+      if (!S.okUI) window.SM_err('실행 안 됨', { message: '안내·버튼 코드가 실행되지 않았어요. 파일이 끝(</html>)까지 들어 있는지 확인해 주세요.' });
+      if (document.getElementById('fail3d') && !S.ok3d) { var f = document.getElementById('fail3d'); if (f) f.classList.add('show'); window.SM_err('3D 그림', { message: '3D 그림을 불러오지 못했어요. 인터넷 연결(cdn.jsdelivr.net)을 확인하고 새로고침해 주세요.' }); }
+    }, 9000);
+  });
+})();
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+
+  :root{--bg:#edf3f8;--card:#fff;--ink:#14263b;--ink2:#34495e;--muted:#5a6b7e;--line:#dde6ee;--accent:#0e63b3;--accent-soft:#e3effb;
+    --fab:#4b3fb5;--fab-soft:#ecebfb;--ok:#1f9d5c;--no:#d9534f;
+    --shadow:0 1px 2px rgba(20,38,59,.06),0 8px 24px rgba(20,38,59,.07);--ease:cubic-bezier(.2,.8,.2,1)}
+  *{box-sizing:border-box}html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:"Pretendard",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  button{font:inherit;color:inherit}
+  .app{max-width:1320px;margin:0 auto;padding:14px 16px 28px;display:flex;flex-direction:column;gap:12px}
+  .eyebrow{display:inline-flex;font-size:13px;font-weight:700;color:var(--fab);background:var(--fab-soft);padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(21px,2.4vw,28px);margin:6px 0 2px;letter-spacing:-.02em;word-break:keep-all}
+  .sub{margin:0;color:var(--muted);font-size:15px;word-break:keep-all}
+  .card{background:var(--card);border-radius:20px;box-shadow:var(--shadow);border:1px solid rgba(20,38,59,.04)}
+  .pad{padding:14px 16px}
+  .stage{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(330px,1fr);gap:14px;align-items:start}
+  .viewer{position:sticky;top:10px}
+  .flow{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px}
+  .fs{min-height:54px;border:0;border-radius:12px;background:#eef3f8;font-weight:800;font-size:13px;color:var(--muted);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.2;word-break:keep-all;padding:4px}
+  .fs b{font-size:15px}
+  .fs[aria-selected="true"]{background:var(--fab);color:#fff}
+  .fs.seen:not([aria-selected="true"]){background:#e5f5ec;color:#11703f}
+  .stepname{display:flex;align-items:center;gap:10px;margin:2px 0 6px}
+  .stepname .no{flex:none;width:40px;height:40px;border-radius:12px;background:var(--fab);color:#fff;display:grid;place-items:center;font-weight:900;font-size:19px}
+  .stepname h2{margin:0;font-size:21px;letter-spacing:-.01em;word-break:keep-all}
+  .stepname small{display:block;font-size:13px;color:var(--muted);font-weight:700}
+  .what{font-size:16px;line-height:1.75;color:var(--ink2);margin:0 0 10px;word-break:keep-all}
+  .phase{display:grid;gap:6px;margin:8px 0}
+  .ph{display:grid;grid-template-columns:28px 1fr;gap:8px;align-items:start;padding:7px 10px;border-radius:12px;background:#f7fafc;font-size:15px;line-height:1.55;color:var(--muted);word-break:keep-all;transition:background .3s,color .3s}
+  .ph i{font-style:normal;width:26px;height:26px;border-radius:8px;background:#dfe6ee;display:grid;place-items:center;font-weight:900;font-size:13px;color:#607285}
+  .ph.on{background:var(--fab-soft);color:var(--ink)}.ph.on i{background:var(--fab);color:#fff}
+  .ph.done{color:var(--ink2)}.ph.done i{background:#b9b2ee;color:#fff}
+  .box{border-radius:14px;padding:10px 12px;margin-top:8px;font-size:14.5px;line-height:1.65;word-break:keep-all}
+  .box b.t{display:block;font-size:13px;margin-bottom:2px}
+  .an{background:#fff8e6;border:1px solid #f3dc9a;color:#5b4300}
+  .fact{background:#eef6ff;border:1px solid #cfe2f6;color:#1d3f66}
+  .lnk{background:#ecf8f1;border:1px solid #c6e8d4;color:#0f5a36}
+  .src{display:block;font-size:12px;color:var(--muted);margin-top:3px}
+  .acts{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 0}
+  .btn{min-height:50px;border:0;border-radius:14px;padding:0 16px;font-weight:800;font-size:15.5px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;justify-content:center;word-break:keep-all}
+  .btn:active{transform:scale(.97)}
+  .btn.primary{background:var(--fab);color:#fff}.btn.ghost{background:#eef3f8;color:var(--ink2)}
+  .btn[aria-pressed="true"]{background:#14263b;color:#fff}
+  .btn:disabled{opacity:.4;cursor:default;transform:none}
+  .prog{height:6px;border-radius:3px;background:#e6edf4;margin-top:10px;overflow:hidden}
+  .prog i{display:block;height:100%;width:0;background:linear-gradient(90deg,#8a7ff0,var(--fab))}
+  .credit{text-align:center;font-size:13px;font-weight:700;color:#8495a8;letter-spacing:.02em;margin:6px 0 0}
+  /* ===== 3D 화면 공통 ===== */
+  :root{--Bc:#14a5d0;--Ic:#2fae4a;--Fc:#f0522a;--N:#d8433b;--S:#2f62c9;--P:#7d5ad6}
+  .viewer{position:relative;overflow:hidden;padding:0}
+  .gl-host{position:relative;width:100%;height:min(74vh,700px);min-height:380px;background:linear-gradient(#f6f9fc,#d6e3ef);touch-action:none}
+  .gl-host canvas.gl{display:block;width:100%;height:100%;outline:none}
+  .lbls{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+  .lb{position:absolute;left:0;top:0;white-space:nowrap;font-weight:800;font-size:14px;padding:3px 9px;border-radius:9px;background:rgba(255,255,255,.88);color:#34495e;box-shadow:0 2px 8px rgba(20,38,59,.14);will-change:transform}
+  .lb.small{font-size:12px;font-weight:700;color:#5a6b7e;background:rgba(255,255,255,.72);box-shadow:none}
+  .lb.B{background:var(--Bc);color:#fff}.lb.I{background:var(--Ic);color:#fff}.lb.F{background:var(--Fc);color:#fff;font-size:15px}
+  .lb.P{background:var(--P);color:#fff}
+  .lb.dim{opacity:.35}
+  .vt{position:absolute;display:flex;gap:6px;flex-wrap:wrap;z-index:3}
+  .vt.tl{left:10px;top:10px;max-width:calc(100% - 20px)}
+  .vt.tr{right:10px;top:10px;justify-content:flex-end}
+  .vt.bl{left:10px;bottom:10px;align-items:center}
+  .vb{min-height:44px;padding:0 12px;border-radius:12px;border:1px solid rgba(20,38,59,.12);background:rgba(255,255,255,.9);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);font-weight:800;font-size:14px;color:#34495e;cursor:pointer;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 10px rgba(20,38,59,.08)}
+  .vb:active{transform:scale(.96)}
+  .vb .dot{width:12px;height:12px;border-radius:50%;flex:none}
+  .vb[aria-pressed="false"]{opacity:.62}
+  .vb[aria-pressed="false"] .dot{background:#c2ccd6!important}
+  .vb.sel{background:#14263b;color:#fff;border-color:#14263b}
+  .hint{font-size:12.5px;font-weight:700;color:#5a6b7e;background:rgba(255,255,255,.78);border-radius:10px;padding:6px 10px;word-break:keep-all}
+  .inset{position:absolute;z-index:2;border-radius:18px;border:2px solid rgba(255,255,255,.95);box-shadow:0 10px 30px rgba(20,38,59,.22),inset 0 0 0 1px rgba(20,38,59,.08);pointer-events:none;display:none}
+  .inset.on{display:block}
+  .inset .it{position:absolute;left:8px;top:8px;font-size:12.5px;font-weight:900;color:#14263b;background:rgba(255,255,255,.9);border-radius:8px;padding:3px 8px}
+  .inset .ic{position:absolute;left:6px;right:6px;bottom:6px;display:flex;flex-wrap:wrap;gap:4px;justify-content:center}
+  .inset .ic span{font-size:11.5px;font-weight:800;color:#fff;border-radius:7px;padding:2px 7px;white-space:nowrap}
+  .fail3d{position:absolute;inset:0;display:none;place-items:center;text-align:center;padding:24px;font-size:16px;font-weight:700;color:#7a2a22;line-height:1.7;word-break:keep-all;background:#fff4f2}
+  .fail3d.show{display:grid}
+  .model{font-size:13px;color:var(--muted);text-align:right;margin:0;word-break:keep-all}
+  @media (max-width:900px){.gl-host{height:min(56vh,620px)}}
+  .zoombadge{position:absolute;right:10px;top:62px;z-index:3;font-size:13px;font-weight:800;color:#fff;background:rgba(75,63,181,.9);border-radius:10px;padding:6px 10px;display:none;word-break:keep-all;max-width:60%}
+  .zoombadge.on{display:block}
+  @media (max-width:900px){.stage{grid-template-columns:1fr}.viewer{position:relative;top:0}}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+  /* ===== 광합성 수업 공통 ===== */
+  :root{--fab:#0e63b3;--fab-soft:#e4f0fb}
+  .eyebrow{color:#0e63b3;background:#e4f0fb}
+  .prog i{background:#0e63b3}
+  .ph.done i{background:#8db8e3}
+  [hidden]{display:none!important}
+  .fbk{border-radius:14px;padding:12px 14px;margin-top:10px;font-size:15px;line-height:1.65;word-break:keep-all;background:#f6f9fc;border:1px solid #dbe4ed;color:var(--ink2)}
+  .fbk.ok{background:#e9f3fd;border-color:#bcd7f2;color:#0b3f73}
+  .fbk.no{background:#fff4f2;border-color:#f3c2bb;color:#5e2a25}
+  .fbk b.t{display:block;font-size:13.5px;margin-bottom:2px}
+  .scene{position:relative;width:100%;overflow:hidden;touch-action:manipulation;user-select:none;-webkit-user-select:none;background:#fff}
+  .psv{position:absolute;inset:0;width:100%;height:100%;display:block;overflow:visible}
+  .olay{position:absolute;inset:0;pointer-events:none}
+  .ol{position:absolute;transform:translate(-50%,-50%);white-space:nowrap;font-weight:800;font-size:clamp(12px,1.35vw,15.5px);line-height:1.3;letter-spacing:-.01em;color:#14263b;transition:opacity .25s}
+  .ol.la{transform:translate(-100%,-50%)}.ol.ra{transform:translate(0,-50%)}
+  .ol.bg{background:rgba(255,255,255,.9);padding:2px 8px;border-radius:7px}
+  .ol.lt{color:#fff;text-shadow:0 1px 3px rgba(10,30,20,.55)}
+  .ol.m{font-weight:700;color:#5a6b7e}
+  .ol.big{font-size:clamp(14px,1.7vw,18px)}
+  .ol small{font-weight:700;color:#5a6b7e;font-size:.88em}
+  .ol[data-off="1"]{opacity:0}
+  .psv .tap{cursor:pointer}
+  .steps{display:grid;gap:5px;margin:0 0 10px}
+  .steps .ph{padding:6px 10px;font-size:14.5px;line-height:1.5}
+  .ctl{display:grid;gap:8px}
+  .ctl .btn{width:100%}
+  .ctl .two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .btn.done,.btn:disabled{background:#eef3f8;color:#8b9aab;cursor:default}
+  .pred{display:grid;gap:6px}
+  .pred button,.qa3 button{min-height:46px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:14.5px;cursor:pointer;word-break:keep-all;line-height:1.35;padding:4px 10px;text-align:left}
+  .pred button[aria-pressed="true"],.qa3 button[aria-pressed="true"]{border-color:var(--fab);background:#e9f3fd;color:#0b3f73}
+  .pred button:disabled{cursor:default}
+  .seglbl{font-size:13px;font-weight:800;color:var(--muted);margin:2px 0}
+  .qa{margin-bottom:12px}
+  .qa p{margin:0 0 6px;font-weight:800;font-size:15px;line-height:1.5;word-break:keep-all}
+  .qa3{display:grid;gap:6px}
+  .qa3 button.good{border-color:var(--ok);background:#e8f7ef;color:#11703f}
+  .qa3 button.bad{border-color:#e7a29b;background:#fff4f2;color:#9b3a32}
+  .eqn{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:4px 8px;padding:10px 8px;border-radius:14px;background:#f6f9fc;border:1px solid #dbe4ed;font-weight:800;font-size:15px;word-break:keep-all}
+  .eqn span{transition:color .3s,opacity .3s}.eqn .off{color:#a7b3c0}
+  .eqn .ar{display:inline-flex;flex-direction:column;align-items:center;font-size:12px;line-height:1.1;color:#5a6b7e}
+  .eqn .ar i{font-style:normal;font-size:17px;color:#14263b}
+  .tog{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+  .tog button{min-height:64px;border-radius:14px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:14.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:#5a6b7e;word-break:keep-all;line-height:1.25;padding:4px}
+  .tog button svg{width:38px;height:22px;display:block;overflow:visible}
+  .tog button[aria-pressed="true"]{border-color:var(--fab);background:#e9f3fd;color:#0b3f73}
+  .lvls{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:6px;flex:1 1 320px}
+  .lvls button{min-height:46px;border-radius:12px;border:1px solid #d4dee8;background:#fff;color:#34495e;font-weight:800;font-size:14.5px;cursor:pointer;word-break:keep-all;line-height:1.2;padding:2px 4px}
+  .lvls button[aria-pressed="true"]{background:#14263b;color:#fff;border-color:#14263b}
+  .ptxt{font-size:15px;line-height:1.65;color:var(--ink2);margin:0 0 10px;word-break:keep-all}
+  .ptxt b{color:#0b3f73}
+  .whylist{display:grid;gap:6px;margin:0;padding:0;list-style:none}
+  .whylist li{display:grid;grid-template-columns:26px 1fr;gap:8px;font-size:14.5px;line-height:1.55;color:var(--ink2);word-break:keep-all;padding:7px 10px;border-radius:12px;background:#f7fafc}
+  .whylist li i{font-style:normal;width:24px;height:24px;border-radius:8px;background:#0e63b3;color:#fff;display:grid;place-items:center;font-weight:900;font-size:13px}
+  .whylist b{color:#0b3f73}
+  /* ===== 한 화면 배치 (2026-10-15: 태블릿 한 화면 안에서 실험과 결과가 끝나도록) ===== */
+  .app{padding:10px 16px 12px;gap:10px}
+  header.top{display:flex;align-items:center;justify-content:space-between;gap:10px 16px;flex-wrap:wrap}
+  header.top .ttl{min-width:0}
+  header.top .ttl .eyebrow{margin-right:6px;vertical-align:4px}
+  header.top h1{display:inline;font-size:clamp(20px,2.1vw,25px);margin:0}
+  header.top .sub{margin-top:3px;font-size:14.5px}
+  .stage{align-items:stretch}
+  .stage > .viewer{position:relative;top:0;display:flex;flex-direction:column;justify-content:center}
+  .ptabs{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;background:#eef3f8;border-radius:14px;padding:4px;margin-bottom:12px}
+  .ptabs button{min-height:44px;border:0;border-radius:11px;background:transparent;font-weight:800;font-size:14.5px;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
+  .ptabs button[aria-selected="true"]{background:#fff;color:var(--fab);box-shadow:0 1px 3px rgba(20,38,59,.14)}
+  .ptabs button small{font-size:12px;font-weight:800;color:#0b3f73;background:#dcebfa;border-radius:8px;padding:1px 6px}
+  .ptabs.big{min-width:min(100%,380px)}
+  .ptabs.big button{min-height:48px;font-size:15.5px}
+  .pane[hidden]{display:none!important}
+  .mnote{font-size:12.5px;color:var(--muted);line-height:1.6;margin:10px 0 0;word-break:keep-all}
+  .viewer{background:#fff}
+  .vctl{display:flex;flex-wrap:wrap;gap:8px;padding:10px 12px;background:#f3f6f9;border-top:1px solid var(--line);align-items:center}
+  .vctl .vb{box-shadow:none}
+  .vctl .vb[aria-pressed="true"]{background:#14263b;color:#fff;border-color:#14263b;opacity:1}
+  .vctl .vb[aria-pressed="false"]{opacity:1}
+  .vctl .sp{flex:1}
+  .lbl{font-size:13px;font-weight:900;color:var(--fab);margin:12px 0 6px;word-break:keep-all}
+  .lbl:first-child,.pane > .lbl:first-child{margin-top:0}
+  .what{font-size:15.5px;line-height:1.7;color:var(--ink2);margin:0 0 8px;word-break:keep-all}
+  .ph.on{background:#eef5fc}.ph.on i{background:var(--fab)}
+  .viewer > .scene.grow{flex:1 1 auto;min-height:300px;aspect-ratio:auto!important}
+  /* 화면 높이를 꽉 채우기: 그림 칸이 남는 높이를 차지 */
+  html,body{height:100%}
+  .app{height:100vh;height:100dvh;max-height:1400px}
+  .stage{flex:1 1 auto;min-height:0}
+  .stage > .card.pad{overflow:auto}
+  @media (max-width:900px){.stage{grid-template-rows:minmax(0,1fr) auto}}
+  /* ===== 환경요인 수업 전용 ===== */
+  .mlabel{font-weight:800;font-size:14.5px;color:#14263b;white-space:nowrap}
+  .meter{flex:1 1 auto;height:18px;border-radius:9px;background:#dfe7ee;overflow:hidden;min-width:120px}
+  .meter i{display:block;height:100%;background:#0e63b3;border-radius:9px;width:0;transition:width .45s cubic-bezier(.2,.8,.2,1)}
+  .presets{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:4px 0 8px}
+  .presets button{min-height:44px;border-radius:12px;border:1px solid #d4dee8;background:#fff;color:#34495e;font-weight:800;font-size:14px;cursor:pointer;word-break:keep-all;line-height:1.25;padding:2px 8px}
+  .presets button:active{background:#eef3f8}
+  .sl{display:grid;grid-template-columns:118px 1fr;column-gap:10px;align-items:center;margin-top:2px}
+  .sl label{font-weight:800;font-size:14px;word-break:keep-all;line-height:1.25;color:#14263b}
+  .sl .ticks{grid-column:2;display:flex;justify-content:space-between;font-size:12px;font-weight:700;color:#5a6b7e;margin-top:-6px}
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:36px;background:transparent;margin:0;cursor:pointer;touch-action:pan-y}
+  input[type=range]::-webkit-slider-runnable-track{height:8px;border-radius:4px;background:linear-gradient(90deg,#0e63b3 var(--v,50%),#dbe4ed var(--v,50%))}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:34px;height:34px;margin-top:-13px;border-radius:50%;background:#fff;border:2px solid #0e63b3;box-shadow:0 2px 5px rgba(20,38,59,.22)}
+  input[type=range]::-moz-range-track{height:8px;border-radius:4px;background:#dbe4ed}
+  input[type=range]::-moz-range-progress{height:8px;border-radius:4px;background:#0e63b3}
+  input[type=range]::-moz-range-thumb{width:30px;height:30px;border-radius:50%;background:#fff;border:2px solid #0e63b3}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .two button{min-height:44px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:14.5px;cursor:pointer;word-break:keep-all;line-height:1.25;padding:2px 8px}
+  .two button[aria-pressed="true"]{border-color:#0e63b3;background:#e9f3fd;color:#0b3f73}
+  .rt{width:100%;border-collapse:collapse;font-size:14.5px}
+  .rt th{font-size:12.5px;color:#5a6b7e;text-align:left;padding:4px 6px;border-bottom:1px solid #dde6ee;word-break:keep-all}
+  .rt td{padding:8px 6px;border-bottom:1px solid #eef2f6;font-weight:700;color:#34495e}
+  .rt .none td{font-weight:600;color:#5a6b7e;text-align:center;padding:18px 6px}
+  .mini{display:block;height:10px;border-radius:5px;background:#e3eaf0;overflow:hidden;min-width:70px}
+  .mini i{display:block;height:100%;background:#0e63b3}
+  .vars{display:grid;grid-template-columns:auto 1fr;gap:3px 10px;font-size:14px;line-height:1.45;margin:0 0 8px;padding:8px 10px;border-radius:12px;background:#f6f9fc;border:1px solid #dbe4ed;word-break:keep-all}
+  .vars dt{font-weight:700;color:#5a6b7e}
+  .vars dd{margin:0;font-weight:800;color:#14263b}
+  .vars dd.on{color:#0e63b3}
+  .seg3{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:6px}.seg3 button{min-height:46px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:14.5px;cursor:pointer;word-break:keep-all;line-height:1.2;padding:2px 6px}.seg3 button[aria-pressed="true"]{border-color:#0e63b3;background:#e9f3fd;color:#0b3f73}.seg3 button:disabled{opacity:.55;cursor:default}
+  /* 탐구 계획서 */
+  .paper{display:flex;flex-direction:column;min-height:0;padding:12px 14px;overflow:auto}
+  .paper h2{margin:0 0 8px;font-size:18px;display:flex;align-items:baseline;gap:8px}
+  .paper h2 small{font-size:12.5px;color:#5a6b7e;font-weight:700}
+  .pgrid{display:grid;grid-template-columns:116px 1fr;grid-template-rows:repeat(7,auto) minmax(148px,1fr) auto;border:1px solid #b9c8d6;border-radius:10px;overflow:hidden;flex:1 1 auto;min-height:0}
+  .pgrid > .k{background:#e8f1fa;font-weight:800;font-size:13.5px;line-height:1.3;color:#14263b;padding:6px 8px;display:flex;align-items:center;border-bottom:1px solid #c9d7e4;word-break:keep-all}
+  .pgrid > .k.sub{padding-left:14px;font-size:12.5px;font-weight:700;background:#f1f6fb}
+  .pgrid > .v{border-bottom:1px solid #dbe4ed;border-left:1px solid #c9d7e4;display:flex;min-height:0}
+  .pgrid > .k.last,.pgrid > .v.last{border-bottom:0}
+  .pgrid textarea{flex:1;border:0;background:#fff;resize:none;font:inherit;font-size:14px;line-height:1.5;color:#14263b;padding:5px 8px;min-height:34px;word-break:keep-all;width:100%;outline-offset:-2px}
+  .pgrid textarea:focus{background:#f7fbff}
+  .pgrid textarea::placeholder{color:#a3afbb;font-weight:500}
+  .pgrid .tall textarea{min-height:148px}
+  .stepper{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:3px;margin:0 0 10px}
+  .stepper button{min-height:44px;border:0;border-radius:10px;background:#eef3f8;font-weight:800;font-size:13px;color:#5a6b7e;cursor:pointer;line-height:1.15;word-break:keep-all;padding:2px}
+  .stepper button[aria-selected="true"]{background:#0e63b3;color:#fff}
+  .stepper button.done:not([aria-selected="true"]){background:#dcebfa;color:#0b3f73}
+  .ask{font-size:16px;font-weight:800;line-height:1.45;margin:0 0 4px;word-break:keep-all}
+  .ask + p{font-size:14px;color:#34495e;line-height:1.55;margin:0 0 8px;word-break:keep-all}
+  .opts{display:grid;gap:6px}
+  .opts button{min-height:46px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:700;font-size:14.5px;cursor:pointer;word-break:keep-all;line-height:1.35;padding:4px 10px;text-align:left;color:#14263b}
+  .opts button[aria-pressed="true"]{border-color:#0e63b3;background:#e9f3fd;color:#0b3f73}
+  .opts.g2{grid-template-columns:1fr 1fr}
+  .vsort{display:grid;gap:6px}
+  .vsort .row{display:grid;grid-template-columns:1fr 92px 92px;gap:4px;align-items:center;font-weight:800;font-size:14px;word-break:keep-all;line-height:1.25}
+  .vsort .row button{min-height:44px;border-radius:10px;border:2px solid #d4dee8;background:#fff;font-weight:700;font-size:12.5px;cursor:pointer;line-height:1.15;padding:2px;word-break:keep-all}
+  .vsort .row button[aria-pressed="true"]{border-color:#0e63b3;background:#e9f3fd;color:#0b3f73}
+  .order{display:grid;gap:5px}
+  .order button{display:grid;grid-template-columns:28px 1fr;gap:8px;align-items:center;min-height:44px;border-radius:11px;border:2px solid #d4dee8;background:#fff;font-weight:700;font-size:13.5px;line-height:1.3;cursor:pointer;text-align:left;padding:3px 8px;word-break:keep-all;color:#14263b}
+  .order button i{font-style:normal;width:24px;height:24px;border-radius:7px;background:#eef3f8;display:grid;place-items:center;font-weight:900;font-size:13px;color:#5a6b7e}
+  .order button.picked{border-color:#0e63b3;background:#e9f3fd}.order button.picked i{background:#0e63b3;color:#fff}
+  .navb{display:grid;grid-template-columns:1fr 1.4fr;gap:6px;margin-top:10px}
+  .navb .btn{width:100%;min-height:46px}
+  .pfoot{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+  .pfoot .btn{min-height:44px;font-size:14px;padding:0 8px}
+  .peer{display:grid;gap:3px;margin:0 0 6px}
+  .peer label{display:grid;grid-template-columns:30px 1fr;align-items:center;font-size:14px;font-weight:700;line-height:1.35;min-height:38px;word-break:keep-all;cursor:pointer}
+  .peer input{width:22px;height:22px;accent-color:#0e63b3}
+  .fbtxt{width:100%;border:1px solid #cdd9e4;border-radius:10px;font:inherit;font-size:14px;line-height:1.45;padding:6px 9px;resize:none;margin-top:4px;min-height:52px}
+  .slx{display:grid;grid-template-columns:auto 1fr;align-items:center;gap:10px;margin-top:4px}
+  .slx label{font-weight:800;font-size:14px;word-break:keep-all}
+  @media print{
+    body{background:#fff}
+    .stage{display:block}
+    .helper,header.top,.pfoot{display:none!important}
+    .paper{box-shadow:none;border:0;overflow:visible}
+    .app{height:auto;max-height:none}
+    .pgrid textarea{min-height:48px}
+  }
+  @media (max-width:900px){
+    .sl{grid-template-columns:140px 1fr}
+  }
+.pr{display:grid;grid-template-columns:1fr auto;gap:4px 8px;align-items:center;margin-bottom:10px;font-weight:800;font-size:14px;word-break:keep-all}.pb{grid-column:1/3;height:12px;background:#e6edf3;border-radius:6px;overflow:hidden;display:block}.pb u{display:block;height:100%;background:#0e63b3}.stp{display:flex;align-items:center;gap:4px}.stp b{min-width:42px;text-align:center}.stp button{min-width:44px;min-height:44px;border-radius:10px;border:1px solid #d4dee8;background:#fff;font-weight:800;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top"><div class="ttl"><span class="eyebrow">시뮬레이션</span><h1>심장 관찰실</h1>
+    <p class="sub">심장이 수축과 이완을 반복할 때 혈액과 판막이 어떻게 움직이는지 봐요.</p></div></header>
+  <div class="stage">
+    <section class="card viewer"><div class="scene grow" id="fig" role="img" aria-label="사람 심장 단면. 우심방과 우심실은 파란 혈액, 좌심방과 좌심실은 붉은 혈액이 지나고, 판막이 열리고 닫힌다."></div><div class="vctl"><span class="mlabel">지금</span><span class="hint" id="ph">심방 수축</span><span class="sp"></span><button class="vb" type="button" id="bP">멈춤</button></div></section>
+    <section class="card pad"><div class="ptabs" role="tablist" id="pt">
+        <button type="button" role="tab" data-p="lab" aria-selected="true">관찰하기</button>
+        <button type="button" role="tab" data-p="rec" aria-selected="false">맥박 재기</button>
+        <button type="button" role="tab" data-p="why" aria-selected="false">왜 그럴까?</button>
+      </div><div class="pane" data-p="lab"><div class="seglbl">상황 고르기</div><div class="seg3" id="sp"><button type="button" data-v=".7" aria-pressed="true">안정을 취할 때</button><button type="button" data-v="1.6" aria-pressed="false">운동할 때</button></div>
+      <div class="seglbl" style="margin-top:10px">알아볼 곳</div><div class="seg3" id="pt2" style="grid-auto-flow:row;grid-template-columns:1fr 1fr"><button type="button" data-v="a" aria-pressed="false">심방</button><button type="button" data-v="v" aria-pressed="false">심실</button><button type="button" data-v="val" aria-pressed="false">판막</button><button type="button" data-v="wall" aria-pressed="false">심장벽</button></div>
+      <div class="fbk" id="res"><b class="t" id="resT">결과</b><span id="resM"></span></div><p class="mnote">파란 혈액과 붉은 혈액의 색은 구분하기 쉽게 정한 모형이에요.</p></div>
+      <div class="pane" data-p="rec" hidden><p class="ptxt">손목이나 귀밑에서 맥박을 찾아 1분 동안 세요. 수를 넣으면 막대로 비교해요. 저장되지 않아요.</p>
+      <div class="pulse" id="pul"></div><div class="fbk" id="pR"></div></div>
+      <div class="pane" data-p="why" hidden><ol class="whylist"><li><i>1</i><span>온몸의 세포에 영양소와 산소를 <b>끊임없이</b> 공급해야 해요. 그래서 심장은 쉬지 않고 수축과 이완을 반복해요.</span></li><li><i>2</i><span><b>심방</b>은 혈액이 들어오는 곳으로 정맥과, <b>심실</b>은 혈액을 내보내는 곳으로 동맥과 연결돼요.</span></li><li><i>3</i><span>심실은 심방보다 두껍고 탄력성이 강한 근육이라 강하게 수축할 수 있어요.</span></li><li><i>4</i><span><b>판막</b>이 혈액이 거꾸로 흐르는 것을 막아요. 그래서 정맥 → 심방 → 심실 → 동맥 방향으로만 흘러요.</span></li><li><i>5</i><span>운동할 때 맥박 수가 많아지는 것은 세포에 더 많은 영양소와 산소를 공급해야 하기 때문이에요.</span></li></ol></div></section>
+  </div>
+</div>
+<script>
+/* ===== 광합성 수업 공통 그림 도구 PS =====
+   잎맥: Runions 등(2005)의 공간 군집화(space colonization) 방법을 이 수업에 맞게 새로 구현(코드 복사 아님).
+   해바라기 꽃판: 보겔의 잎차례 공식(황금각 137.5도). 모두 SVG로 그리고 글씨는 HTML 이름표로 올린다. */
+window.PS = (() => {
+  'use strict';
+  const NS = 'http://www.w3.org/2000/svg';
+  const REDUCE = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const el = (t, a, p) => { const e = document.createElementNS(NS, t); if (a) for (const k in a) if (a[k] != null) e.setAttribute(k, a[k]); if (p) p.appendChild(e); return e; };
+  const mk = (seed) => () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
+  const ease = (t) => t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+  const f1 = (n) => Math.round(n * 10) / 10;
+  let uid = 0;
+  const nid = (s = 'p') => `ps${s}${++uid}`;
+
+  /* --- 시간 --- */
+  function tween(ms, fn, done, ez = ease) {
+    if (REDUCE || ms <= 0) { fn(1); done && done(); return () => {}; }
+    let t0 = null, stop = false;
+    const step = (now) => { if (stop) return; if (t0 == null) t0 = now; const t = clamp((now - t0) / ms); fn(ez(t)); if (t < 1) requestAnimationFrame(step); else done && done(); };
+    requestAnimationFrame(step);
+    return () => { stop = true; };
+  }
+  function loop(fn) {
+    let last = null, stop = false;
+    const step = (now) => { if (stop) return; if (last == null) last = now; const dt = Math.min(.05, (now - last) / 1000); last = now; fn(dt, now / 1000); requestAnimationFrame(step); };
+    requestAnimationFrame(step);
+    return () => { stop = true; };
+  }
+
+  /* --- 무대: SVG + HTML 이름표 --- */
+  function stage(host, vb = [0, 0, 1000, 800]) {
+    host.innerHTML = '';
+    const svg = el('svg', { viewBox: vb.join(' '), preserveAspectRatio: 'xMidYMid meet', class: 'psv', 'aria-hidden': 'true' }, host);
+    const ol = document.createElement('div'); ol.className = 'olay'; host.appendChild(ol);
+    const labels = [];
+    const place = () => {
+      const m = svg.getScreenCTM(); if (!m) return; const b = host.getBoundingClientRect();
+      labels.forEach((l) => { l.e.style.left = (m.a * l.x + m.c * l.y + m.e - b.left) + 'px'; l.e.style.top = (m.b * l.x + m.d * l.y + m.f - b.top) + 'px'; });
+    };
+    const label = (x, y, html, cls = '') => {
+      const e = document.createElement('div'); e.className = 'ol ' + cls; e.innerHTML = html; ol.appendChild(e);
+      const l = { e, x, y, set(h) { e.innerHTML = h; return l; }, show(v) { e.dataset.off = v ? '0' : '1'; return l; }, move(a, c) { l.x = a; l.y = c; place(); return l; } };
+      labels.push(l); place(); return l;
+    };
+    if (window.ResizeObserver) new ResizeObserver(place).observe(host);
+    window.addEventListener('resize', place);
+    return { svg, ol, label, place, labels };
+  }
+
+  /* --- 공통 정의: 입자 모형, 재질 --- */
+  let shared = null;
+  function defs() {
+    if (shared) return shared;
+    const s = document.createElementNS(NS, 'svg'); s.setAttribute('style', 'position:absolute;width:0;height:0;overflow:hidden'); s.setAttribute('aria-hidden', 'true');
+    s.innerHTML = `<defs>
+      <radialGradient id="psO" cx=".36" cy=".32" r=".8"><stop offset="0" stop-color="#ff9a8a"/><stop offset=".55" stop-color="#e5533f"/><stop offset="1" stop-color="#b5301f"/></radialGradient>
+      <radialGradient id="psC" cx=".36" cy=".32" r=".8"><stop offset="0" stop-color="#77808a"/><stop offset=".6" stop-color="#3b424a"/><stop offset="1" stop-color="#1f252b"/></radialGradient>
+      <radialGradient id="psH" cx=".36" cy=".32" r=".85"><stop offset="0" stop-color="#ffffff"/><stop offset=".7" stop-color="#e7eef6"/><stop offset="1" stop-color="#b7c6d6"/></radialGradient>
+      <linearGradient id="psGlu" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd76a"/><stop offset="1" stop-color="#e8a21c"/></linearGradient>
+      <g id="mCO2"><circle cx="-15" cy="0" r="8.5" fill="url(#psO)" stroke="#8a2416" stroke-width=".7"/><circle cx="15" cy="0" r="8.5" fill="url(#psO)" stroke="#8a2416" stroke-width=".7"/><circle r="10" fill="url(#psC)" stroke="#14181c" stroke-width=".7"/></g>
+      <g id="mH2O"><circle cx="-10" cy="8" r="6" fill="url(#psH)" stroke="#7f92a6" stroke-width=".7"/><circle cx="10" cy="8" r="6" fill="url(#psH)" stroke="#7f92a6" stroke-width=".7"/><circle r="10.5" fill="url(#psO)" stroke="#8a2416" stroke-width=".7"/></g>
+      <g id="mO2"><circle cx="-7.5" cy="0" r="9" fill="url(#psO)" stroke="#8a2416" stroke-width=".7"/><circle cx="7.5" cy="0" r="9" fill="url(#psO)" stroke="#8a2416" stroke-width=".7"/></g>
+      <g id="mGlu"><path d="M12 0 6 10.4H-6L-12 0-6-10.4H6Z" fill="url(#psGlu)" stroke="#a66d0a" stroke-width="1.2" stroke-linejoin="round"/><path d="M6.5 0 3.2 5.6H-3.2L-6.5 0-3.2-5.6H3.2Z" fill="none" stroke="#fff3c4" stroke-width="1.2" opacity=".75"/></g>
+    </defs>`;
+    (document.body || document.documentElement).appendChild(s);
+    shared = s.querySelector('defs'); return shared;
+  }
+  function grad(stops, o = {}) {
+    const id = nid('g'); const d = defs();
+    const g = el(o.r ? 'radialGradient' : 'linearGradient', o.r ? { id, cx: o.cx ?? .5, cy: o.cy ?? .5, r: o.rr ?? .6 } : { id, x1: o.x1 ?? 0, y1: o.y1 ?? 0, x2: o.x2 ?? 0, y2: o.y2 ?? 1 }, d);
+    stops.forEach(([p, c, a]) => el('stop', { offset: p, 'stop-color': c, 'stop-opacity': a }, g));
+    return `url(#${id})`;
+  }
+  const sprite = (name, x, y, s, p) => el('use', { href: '#' + name, transform: `translate(${f1(x)} ${f1(y)}) scale(${s})` }, p);
+
+  /* --- 잎: 윤곽 + 공간 군집화 잎맥 --- */
+  const cache = {};
+  function leafData(o) {
+    const key = JSON.stringify(o); if (cache[key]) return cache[key];
+    const R = mk(o.seed || 7), L = o.L, W = o.W, p = o.p ?? .72, q = o.q ?? .85, bend = o.bend ?? 0;
+    const hw = (t) => t <= 0 || t >= 1 ? 0 : W * Math.pow(Math.sin(Math.PI * Math.pow(t, p)), q);
+    const yb = (x) => bend * x * x / L;
+    const tooth = (t, s) => { let k = 1; if (o.teeth) { const n = o.nt || 22, f = (t * n) % 1; k += o.teeth * (f < .75 ? f / .75 : (1 - f) / .25) * Math.sin(Math.PI * t); } if (o.ruffle) k += o.ruffle * Math.sin(t * 27 + s) * Math.sin(Math.PI * t); return k; };
+    const N = o.n || 90, top = [], bot = [];
+    for (let i = 0; i <= N; i++) { const t = i / N, x = t * L, w = hw(t); top.push([x, -w * tooth(t, 1) + yb(x)]); bot.push([x, w * tooth(t, 4) + yb(x)]); }
+    const pd = (a) => a.map((v, i) => (i ? 'L' : 'M') + f1(v[0]) + ' ' + f1(v[1])).join('');
+    const back = bot.slice().reverse();
+    const outline = pd(top) + pd(back).replace(/^M/, 'L') + 'Z';
+    const lower = pd(top.map((v) => [v[0], yb(v[0])])) + pd(back).replace(/^M/, 'L') + 'Z';
+    /* 잎맥 */
+    const D = o.D || L / 42, di = o.di || L / 7, dk = o.dk || D * 1.5;
+    const at = []; let tries = 0;
+    while (at.length < (o.nA || 240) && tries++ < 8000) { const t = R(); const y = (R() * 2 - 1) * W; if (Math.abs(y) < hw(t) * .95) at.push([t * L, y]); }
+    const nodes = [];
+    const nMid = Math.round(L / D);
+    for (let i = 0; i <= nMid; i++) nodes.push({ x: i * D * .985, y: 0, p: i ? i - 1 : -1, k: 'm' });
+    /* 곁맥: 가운데 잎맥에서 가장자리로 휘어 나가는 굵은 맥 */
+    const nSec = o.sec ?? 8;
+    for (let i = 0; i < nSec; i++) [-1, 1].forEach((sd) => {
+      const t0 = .045 + .74 * (i + (sd > 0 ? .28 : 0)) / nSec, t1 = Math.min(.97, t0 + .2 + .06 * (1 - t0)), x0 = t0 * L, xe = t1 * L, ye = sd * hw(t1) * .93;
+      const cx = x0 + (xe - x0) * .32, cy = ye * .68, n = Math.max(5, Math.round(Math.hypot(xe - x0, ye) / D));
+      let par = Math.round(x0 / (D * .985)); par = Math.min(par, nMid);
+      for (let k = 1; k <= n; k++) { const u = k / n, x = (1 - u) * (1 - u) * x0 + 2 * u * (1 - u) * cx + u * u * xe, y = 2 * u * (1 - u) * cy + u * u * ye; nodes.push({ x, y, p: par, k: 's', u }); par = nodes.length - 1; }
+    });
+    let alive = at;
+    for (let it = 0; it < 60 && alive.length; it++) {
+      const pull = new Map();
+      for (const a of alive) { let best = -1, bd = di * di; for (let i = 0; i < nodes.length; i++) { const dx = a[0] - nodes[i].x, dy = a[1] - nodes[i].y, d = dx * dx + dy * dy; if (d < bd) { bd = d; best = i; } } if (best >= 0) { const v = pull.get(best) || [0, 0]; const dx = a[0] - nodes[best].x, dy = a[1] - nodes[best].y, m = Math.hypot(dx, dy) || 1; v[0] += dx / m; v[1] += dy / m; pull.set(best, v); } }
+      if (!pull.size) break;
+      const start = nodes.length;
+      pull.forEach((v, i) => { const n = nodes[i]; const dx = v[0], dy = v[1]; const m = Math.hypot(dx, dy) || 1; nodes.push({ x: n.x + D * dx / m, y: n.y + D * dy / m, p: i, k: 't' }); });
+      alive = alive.filter((a) => { for (let i = start; i < nodes.length; i++) { const dx = a[0] - nodes[i].x, dy = a[1] - nodes[i].y; if (dx * dx + dy * dy < dk * dk) return false; } return true; });
+    }
+    /* 굵기: 가운데 잎맥 > 곁맥 > 잔맥. 끝으로 갈수록 가늘게 */
+    const V = o.vw || L / 80, bk = [V, V * .78, V * .58, V * .42, V * .34, V * .24, V * .1], ds = bk.map(() => []);
+    for (let i = 1; i < nodes.length; i++) {
+      const n = nodes[i]; if (n.p < 0) continue; const b = nodes[n.p];
+      const k = n.k === 'm' ? Math.min(3, Math.floor(n.x / L * 4)) : n.k === 's' ? (n.u < .55 ? 4 : 5) : 6;
+      ds[k].push(`M${f1(b.x)} ${f1(b.y + yb(b.x))}L${f1(n.x)} ${f1(n.y + yb(n.x))}`);
+    }
+    const res = { outline, lower, L, W, yb, hw, veins: ds.map((a, i) => ({ d: a.join(''), w: Math.round(bk[i] * 100) / 100 })) };
+    cache[key] = res; return res;
+  }
+  /* pal: {a,b,v,e,p} 앞쪽 색, 끝쪽 색, 잎맥, 테두리, 잎자루. layers: 윤곽과 같은 덧칠 층 이름들 */
+  function drawLeaf(parent, data, pal, o = {}) {
+    const g = el('g', { transform: o.tf }, parent);
+    if (o.pet) el('path', { d: `M${-o.pet} ${o.petY || 0}Q${-o.pet * .4} 2 2 0`, fill: 'none', stroke: pal.p || pal.e, 'stroke-width': o.petW || data.L / 45, 'stroke-linecap': 'round' }, g);
+    const fill = grad([[0, pal.a], [1, pal.b]], { x1: 0, x2: 1, y1: .1, y2: .5 });
+    const base = el('path', { d: data.outline, fill, stroke: pal.e, 'stroke-width': o.edge ?? .9, 'stroke-linejoin': 'round' }, g);
+    const lo = el('path', { d: data.lower, fill: pal.s || '#0b3a14', opacity: o.shade ?? .13 }, g);
+    const layers = {}; (o.layers || []).forEach((n) => { layers[n] = el('path', { d: data.outline, fill: 'none', opacity: 0 }, g); });
+    const veins = el('g', { fill: 'none', stroke: pal.v, 'stroke-linecap': 'round', opacity: o.veinOp ?? .85 }, g);
+    data.veins.forEach((v) => { if (v.d) el('path', { d: v.d, 'stroke-width': v.w }, veins); });
+    return { g, base, lo, layers, veins };
+  }
+  const PAL = {
+    sun: { a: '#3f8f35', b: '#5fb044', v: '#b8e08a', e: '#28692b', p: '#4c9a3a', s: '#0b3a14' },
+    sunBack: { a: '#2f7a2e', b: '#4b9b3b', v: '#94cc72', e: '#215a25', p: '#3f8a33', s: '#0b3a14' },
+    pep: { a: '#2f8a38', b: '#55ac45', v: '#a8dc86', e: '#1f6329', p: '#5aa244', s: '#0b3a14' },
+    let: { a: '#79bd47', b: '#a9d962', v: '#def2b4', e: '#5d9c36', p: '#c7e59a', s: '#245c1c' },
+  };
+
+  /* --- 굵기가 변하는 줄기·뿌리 --- */
+  function taper(pts, w0, w1) {
+    const A = [], B = [], n = pts.length;
+    pts.forEach((p, i) => { const a = pts[Math.max(0, i - 1)], b = pts[Math.min(n - 1, i + 1)], dx = b[0] - a[0], dy = b[1] - a[1], m = Math.hypot(dx, dy) || 1, w = lerp(w0, w1, i / (n - 1)) / 2; A.push([p[0] - dy / m * w, p[1] + dx / m * w]); B.push([p[0] + dy / m * w, p[1] - dx / m * w]); });
+    const smooth = (a) => { let d = ''; a.forEach((p, i) => { if (!i) return; const q = a[i - 1], mx = (p[0] + q[0]) / 2, my = (p[1] + q[1]) / 2; d += `Q${f1(q[0])} ${f1(q[1])} ${f1(mx)} ${f1(my)}`; }); const e = a[a.length - 1]; return d + `L${f1(e[0])} ${f1(e[1])}`; };
+    return `M${f1(A[0][0])} ${f1(A[0][1])}` + smooth(A) + `L${f1(B[n - 1][0])} ${f1(B[n - 1][1])}` + smooth(B.slice().reverse()) + 'Z';
+  }
+  function polyAt(pts, t) {
+    if (!pts._l) { let s = 0; pts._l = [0]; for (let i = 1; i < pts.length; i++) { s += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]); pts._l.push(s); } pts._s = s; }
+    const d = t * pts._s; let i = 1; while (i < pts.length - 1 && pts._l[i] < d) i++;
+    const u = (d - pts._l[i - 1]) / ((pts._l[i] - pts._l[i - 1]) || 1);
+    return [lerp(pts[i - 1][0], pts[i][0], u), lerp(pts[i - 1][1], pts[i][1], u)];
+  }
+
+  /* --- 입자 흐름: 길을 따라 움직이는 입자 묶음 --- */
+  function flock(parent) {
+    const g = el('g', null, parent); let list = [];
+    const place = (p) => {
+      const t = clamp(p.t), tt = p.ez ? p.ez(t) : t, c = polyAt(p.pts, tt);
+      const w = p.wob ? Math.sin(t * 9 + p.ph) * p.wob * Math.sin(Math.PI * t) : 0;
+      const a = (p.fi && t < p.fi ? t / p.fi : 1) * (p.fo && t > 1 - p.fo ? (1 - t) / p.fo : 1);
+      p.u.setAttribute('transform', `translate(${f1(c[0] + w)} ${f1(c[1] + w * .6)}) rotate(${f1(p.rot + p.t * p.spin)}) scale(${p.s})`);
+      p.u.setAttribute('opacity', Math.round(a * 20) / 20);
+    };
+    return {
+      g,
+      add(name, pts, o = {}) {
+        const u = el('use', { href: '#' + name }, g);
+        const p = { u, pts, t: 0, dur: o.dur || 3, s: o.s || 1, wob: o.wob || 0, ph: Math.random() * 6.28, rot: o.rot ?? (Math.random() * 360), spin: o.spin ?? 40, fi: o.fi ?? .12, fo: o.fo ?? 0, stay: o.stay || 0, cb: o.cb, ez: o.ez };
+        list.push(p); place(p); return p;
+      },
+      step(dt) {
+        const cbs = [];
+        list = list.filter((p) => {
+          p.t += dt / p.dur;
+          if (p.t >= 1 && !p.done) { p.done = true; if (p.cb) cbs.push(p); }
+          if (p.t >= 1 + p.stay) { p.u.remove(); return false; }
+          place(p); return true;
+        });
+        cbs.forEach((p) => p.cb(p));
+      },
+      clear() { list.forEach((p) => p.u.remove()); list = []; },
+      get n() { return list.length; },
+    };
+  }
+
+  /* --- 실험대 --- */
+  function bench(g, y = 690) {
+    el('rect', { x: -600, y: -700, width: 2200, height: y + 700, fill: '#fff' }, g);
+    el('rect', { x: -600, y, width: 2200, height: 900, fill: grad([[0, '#e9eef3'], [.2, '#f3f6f9'], [1, '#fbfcfd']]) }, g);
+    el('line', { x1: -600, x2: 1600, y1: y, y2: y, stroke: '#cfd9e3', 'stroke-width': 1.2 }, g);
+  }
+  const shadow = (g, cx, cy, rx, ry, op = .28) => el('ellipse', { cx, cy, rx, ry, fill: grad([[0, '#2a3a4a', op], [.6, '#2a3a4a', op * .4], [1, '#2a3a4a', 0]], { r: 1, rr: .5 }) }, g);
+
+  return { el, mk, lerp, clamp, ease, f1, nid, tween, loop, stage, defs, grad, sprite, leafData, drawLeaf, PAL, taper, polyAt, flock, bench, shadow, REDUCE };
+})();
+</script>
+<script>
+/* ===== 순환계 그림 도구 CR: 심장 단면, 세 혈관, 모세혈관 물질 교환, 혈액 성분. 모두 새로 그림 =====
+   크기·빠르기·입자 수는 정한 모형이다. 교과서 그림 Ⅵ-8~Ⅵ-10 형식을 빌렸다. */
+window.CR = (() => {
+  'use strict';
+  const { el, grad, tween, loop, lerp, clamp, stage, shadow, f1, mk, polyAt, flock, defs, ease, REDUCE } = PS;
+  let okS = false;
+  function symbols() {
+    if (okS) return; okS = true; PS.defs(); const d = defs();
+    const rbc = (id, a, b, st) => { const g = el('g', { id }, d); el('ellipse', { rx: 13, ry: 9, fill: grad([[0, a], [1, b]], { r: 1, cx: .38, cy: .32, rr: .85 }), stroke: st, 'stroke-width': .8 }, g); el('ellipse', { rx: 6, ry: 3.6, fill: b, opacity: .5 }, g); };
+    rbc('cRbc', '#f06a5a', '#b5281d', '#7f1a12'); rbc('cRbcB', '#7d6ec2', '#4a3f8f', '#2e2663');
+    const w = el('g', { id: 'cWbc' }, d); el('circle', { r: 19, fill: grad([[0, '#fbfbf4'], [1, '#d9dce6']], { r: 1, cx: .38, cy: .32, rr: .85 }), stroke: '#9aa1b5' }, w); [[-6, -3, 7], [5, -5, 6], [3, 6, 7]].forEach(([x, y, r]) => el('circle', { cx: x, cy: y, r, fill: '#7a68b8' }, w));
+    const p = el('g', { id: 'cPlt' }, d); el('path', { d: 'M-7 -1C-6 -7 2 -8 6 -4C9 0 6 7 0 6C-6 6 -8 3 -7 -1Z', fill: '#e8c96a', stroke: '#b5923a' }, p);
+    const b = el('g', { id: 'cBac' }, d); el('rect', { x: -10, y: -4.5, width: 20, height: 9, rx: 4.5, fill: '#7fb04f', stroke: '#4f7f2a' }, b);
+    const nu = el('g', { id: 'cNut' }, d); el('path', { d: 'M9 0 4.5 7.8H-4.5L-9 0-4.5-7.8H4.5Z', fill: '#f5c04a', stroke: '#a66d0a' }, nu);
+    const ws = el('g', { id: 'cWst' }, d); el('rect', { x: -7, y: -7, width: 14, height: 14, rx: 3, fill: '#8f8678', stroke: '#5f5749' }, ws);
+  }
+
+  /* --- 심장 단면 --- */
+  const PATHS = {
+    rv: [[214, 20], [238, 130], [262, 220], [280, 300], [305, 400], [335, 540], [385, 470], [394, 360], [392, 260], [370, 170], [330, 130], [296, 122]],
+    lv: [[850, 150], [720, 205], [640, 262], [622, 340], [612, 440], [565, 590], [545, 470], [534, 390], [500, 270], [472, 150], [490, 70], [570, 45], [640, 90]],
+  };
+  function heart(host) {
+    symbols();
+    const ST = stage(host, [0, 0, 1000, 720]), root = el('g', null, ST.svg);
+    el('rect', { x: -200, width: 1400, height: 720, fill: '#fff' }, root);
+    const vs = (d, c1, c2, w) => { el('path', { d, fill: 'none', stroke: c1, 'stroke-width': w, 'stroke-linecap': 'round' }, root); el('path', { d, fill: 'none', stroke: c2, 'stroke-width': w - 10, 'stroke-linecap': 'round' }, root); };
+    /* 큰 혈관 뒤쪽 */
+    vs('M214 6C228 80 242 140 270 200', '#3c5a9a', '#6b8ecf', 62); vs('M280 700C276 620 262 460 270 330', '#3c5a9a', '#6b8ecf', 62);
+    vs('M860 150C780 170 720 200 660 250', '#b02c20', '#e0604f', 46); vs('M870 270C780 262 720 262 650 280', '#b02c20', '#e0604f', 46);
+    /* 심장 근육 */
+    const heartG = el('g', null, root);
+    const body = el('path', { d: 'M250 230C300 150 420 170 500 200C580 170 700 150 742 240C790 340 740 470 620 580C560 640 510 680 480 690C440 660 360 610 310 540C230 450 200 320 250 230Z', fill: grad([[0, '#c9685a'], [.5, '#a84234'], [1, '#7c2a20']], { x2: .8, y2: 1 }), stroke: '#5f1f16', 'stroke-width': 2 }, heartG);
+    /* 네 방 */
+    const room = (d, c, stroke) => el('path', { d, fill: c, stroke, 'stroke-width': 1.6 }, heartG);
+    const RA = room('M226 250C262 206 332 218 352 262C362 306 326 348 280 346C238 342 212 296 226 250Z', grad([[0, '#6d88cf'], [1, '#49609f']]), '#2f4378');
+    const LA = room('M556 262C576 216 650 206 696 248C716 294 688 342 640 346C590 348 546 306 556 262Z', grad([[0, '#e8796a'], [1, '#c2483b']]), '#8f2a1f');
+    const RV = room('M284 398C316 372 396 372 420 396C440 470 430 560 394 616C350 588 300 520 284 398Z', grad([[0, '#6d88cf'], [1, '#394f89']]), '#2f4378');
+    const LV = room('M528 396C556 372 640 372 672 398C664 470 610 590 516 642C500 560 506 460 528 396Z', grad([[0, '#e8796a'], [1, '#a93529']]), '#8f2a1f');
+    /* 큰 혈관 앞쪽: 대동맥과 폐동맥 */
+    vs('M536 400C522 300 472 210 470 110C475 45 610 25 640 90', '#b02c20', '#e0604f', 62);
+    vs('M640 90C650 40 660 20 668 -10', '#b02c20', '#e0604f', 40);
+    vs('M392 404C396 300 392 220 370 170C350 130 322 122 296 122', '#3c5a9a', '#6b8ecf', 54);
+    /* 입자 길 */
+    const fl = flock(root);
+    /* 판막 */
+    const leaf = (x, y, dir, c) => { const g = el('g', { transform: `translate(${x} ${y})` }, root); const a = el('path', { d: 'M0 0Q18 2 34 26', fill: 'none', stroke: '#fff', 'stroke-width': 6, 'stroke-linecap': 'round' }, g), b = el('path', { d: 'M0 0Q18 2 34 26', fill: 'none', stroke: '#fff', 'stroke-width': 6, 'stroke-linecap': 'round' }, g); return { set(open) { const ang = open ? 62 : 8; a.setAttribute('transform', `translate(-30 0) rotate(${f1(ang * dir)})`); b.setAttribute('transform', `translate(30 0) scale(-1 1) rotate(${f1(ang * dir)})`); } }; };
+    const VAL = { ta: leaf(300, 362, 1), ma: leaf(615, 362, 1), pa: leaf(392, 352, -1), ao: leaf(530, 352, -1) };
+    /* 이름표 */
+    const LB = {};
+    [['대정맥', 96, 62], ['대정맥', 196, 660], ['폐동맥', 296, 76], ['대동맥', 690, 44], ['폐정맥', 905, 196], ['우심방', 284, 288, 'lt'], ['좌심방', 628, 288, 'lt'], ['우심실', 360, 484, 'lt'], ['좌심실', 590, 484, 'lt'], ['판막', 192, 392], ['심장벽이 가장 두꺼운 곳', 840, 590]].forEach(([t, x, y, c], i) => { LB[i] = ST.label(x, y, t, c === 'lt' ? 'lt big' : 'bg'); });
+    el('line', { x1: 220, y1: 390, x2: 272, y2: 368, stroke: '#14263b', 'stroke-width': 1.1 }, root);
+    el('line', { x1: 740, y1: 590, x2: 668, y2: 560, stroke: '#14263b', 'stroke-width': 1.1 }, root);
+    const flow = (rv) => (rv ? PATHS.rv : PATHS.lv);
+    let bpm = 1, t = 0, acc = 0, paused = false, phase = '';
+    const bTF = (sa, sv) => { [[RA, 285, 280], [LA, 622, 280]].forEach(([r, x, y]) => r.setAttribute('transform', `translate(${x} ${y}) scale(${f1(sa * 100) / 100}) translate(${-x} ${-y})`)); [[RV, 355, 490], [LV, 590, 500]].forEach(([r, x, y]) => r.setAttribute('transform', `translate(${x} ${y}) scale(${f1(sv * 100) / 100}) translate(${-x} ${-y})`)); body.setAttribute('transform', `translate(490 420) scale(${f1((.98 + (sv - .84) * .13) * 1000) / 1000}) translate(-490 -420)`); };
+    const api = {
+      ST,
+      get phase() { return phase; },
+      speed(v) { bpm = v; },
+      pause(v) { paused = v; },
+      set(p) { t = p; },
+    };
+    loop((dt) => {
+      if (!paused) t = (t + dt * bpm * .62) % 1;
+      /* 0~.35 심방 수축, .35~.7 심실 수축, 나머지 쉼 */
+      const inA = t < .35, inV = t >= .35 && t < .7;
+      const sa = inA ? 1 - .1 * Math.sin(t / .35 * Math.PI) : 1, sv = inV ? 1 - .16 * Math.sin((t - .35) / .35 * Math.PI) : 1;
+      bTF(sa, sv);
+      VAL.ta.set(!inV); VAL.ma.set(!inV); VAL.pa.set(inV); VAL.ao.set(inV);
+      phase = inA ? '심방 수축' : inV ? '심실 수축' : '이완';
+      fl.step(dt * (inV ? 1.45 : .75) * bpm);
+      acc += dt * 3.2 * bpm;
+      while (acc > 1 && fl.n < 40) { acc -= 1; [true, false].forEach((b) => { const P = flow(b); fl.add(b ? 'cRbcB' : 'cRbc', P, { dur: 3.4, s: 1, spin: 30, wob: 3, fi: .03, fo: .03 }); }); }
+      if (acc > 2) acc = 2;
+    });
+    return api;
+  }
+
+  /* --- 세 혈관 --- */
+  function vessels(host) {
+    symbols();
+    const ST = stage(host, [0, 0, 1000, 720]), root = el('g', null, ST.svg);
+    el('rect', { x: -200, width: 1400, height: 720, fill: '#fff' }, root);
+    const defsV = [
+      { k: 'art', n: '동맥', y: 130, w: 86, wall: 26, sp: 2.4, col1: '#d8574a', col2: '#a93024', wc: '#efb3a6' },
+      { k: 'cap', n: '모세혈관', y: 360, w: 18, wall: 2, sp: .6, col1: '#b86ca0', col2: '#884d78', wc: '#f1dbe8' },
+      { k: 'vei', n: '정맥', y: 590, w: 86, wall: 9, sp: 1.3, col1: '#5d73bd', col2: '#3b4f8f', wc: '#c6d0ea' },
+    ];
+    const fl = flock(root), rows = {};
+    defsV.forEach((v) => {
+      const g = el('g', null, root), x0 = 40, x1 = 800, hw = v.w;
+      el('rect', { x: x0, y: v.y - hw, width: x1 - x0, height: hw * 2, rx: 8, fill: grad([[0, v.wc], [.5, '#fff7f4'], [1, v.wc]]), stroke: '#9a7468', 'stroke-width': .9 }, g);
+      const iw = hw - v.wall;
+      el('rect', { x: x0, y: v.y - iw, width: x1 - x0, height: iw * 2, fill: grad([[0, v.col2], [.5, v.col1], [1, v.col2]]) }, g);
+      /* 잘린 끝 */
+      el('ellipse', { cx: x1, cy: v.y, rx: 22 * hw / 86 + 4, ry: hw, fill: v.wc, stroke: '#9a7468' }, g);
+      el('ellipse', { cx: x1, cy: v.y, rx: (22 * hw / 86 + 4) * iw / hw, ry: iw, fill: v.col2 }, g);
+      if (v.k === 'vei') [240, 560].forEach((x) => { const p = el('path', { d: `M${x - 30} ${v.y - iw}Q${x + 10} ${v.y - 20} ${x + 26} ${v.y - 8}M${x - 30} ${v.y + iw}Q${x + 10} ${v.y + 20} ${x + 26} ${v.y + 8}`, fill: 'none', stroke: '#eef1fb', 'stroke-width': 7, 'stroke-linecap': 'round' }, g); });
+      const l = ST.label(895, v.y, v.n, 'big'); rows[v.k] = { ...v, g, l };
+    });
+    const R = Math.random, ac = { art: 0, cap: 0, vei: 0 };
+    let only = null;
+    const add = (v) => { const y0 = v.y + (v.k === 'cap' ? 0 : (R() - .5) * (v.w - v.wall) * 1.4); fl.add(v.k === 'vei' ? 'cRbcB' : 'cRbc', [[40, y0], [800, y0 + (R() - .5) * 6]], { dur: 760 / (v.sp * 95), s: v.k === 'cap' ? .85 : 1.25, spin: 25, fi: .02, fo: .03, wob: v.k === 'cap' ? 0 : 3 }); };
+    const pulse = () => 1 + .6 * Math.sin(performance.now() / 340);
+    loop((dt) => { fl.step(dt); Object.values(rows).forEach((v) => { ac[v.k] += dt * (v.k === 'cap' ? 1.1 : v.k === 'art' ? 4 * pulse() : 3); if (ac[v.k] > 1 && fl.n < 44) { ac[v.k] -= 1; add(v); } if (ac[v.k] > 2) ac[v.k] = 1; }); });
+    return { ST, focus(k) { Object.values(rows).forEach((v) => v.g.setAttribute('opacity', !k || v.k === k ? 1 : .22)); } };
+  }
+
+  /* --- 모세혈관 물질 교환 --- */
+  function exchange(host) {
+    symbols();
+    const ST = stage(host, [0, 0, 1000, 720]), root = el('g', null, ST.svg); ST.svg.setAttribute('preserveAspectRatio', 'xMidYMid slice');
+    el('rect', { x: -200, width: 1400, height: 720, fill: '#fdf6f0' }, root);
+    /* 세포 줄 */
+    const R0 = mk(5);
+    [[200, 70], [420, 70], [640, 70], [860, 70], [200, 650], [420, 650], [640, 650], [860, 650], [90, 160], [90, 560], [970, 160], [970, 560]].forEach(([x, y]) => { el('path', { d: `M${x - 90} ${y - 30}C${x - 96} ${y - 90} ${x + 76} ${y - 96} ${x + 88} ${y - 30}C${x + 100} ${y + 30} ${x + 80} ${y + 86} ${x + 10} ${y + 84}C${x - 62} ${y + 88} ${x - 96} ${y + 34} ${x - 90} ${y - 30}Z`, fill: grad([[0, '#f6d7c4'], [1, '#e7b79e']], { r: 1, cx: .4, cy: .35, rr: .8 }), stroke: '#b57f62', 'stroke-width': 1.2 }, root); el('circle', { cx: x + (R0() - .5) * 30, cy: y + (R0() - .5) * 26, r: 25, fill: '#a47a9f', stroke: '#6f4f6c' }, root); });
+    /* 모세혈관 */
+    el('rect', { x: -40, y: 268, width: 1080, height: 180, fill: grad([[0, '#f7c8b8'], [.08, '#d9796a'], [.92, '#b95c6e'], [1, '#f7c8b8']]) }, root);
+    el('rect', { x: -40, y: 268, width: 1080, height: 180, fill: grad([[0, '#d9493a', .4], [1, '#4f60b3', .55]], { x2: 1, y2: 0 }) }, root);
+    [[-40, 268], [-40, 448]].forEach(([x, y]) => el('line', { x1: x, x2: 1040, y1: y, y2: y, stroke: '#9e4a3c', 'stroke-width': 3, 'stroke-dasharray': '30 3' }, root));
+    const lIn = ST.label(90, 300, '동맥 쪽', 'lt'), lOut = ST.label(910, 300, '정맥 쪽', 'lt'), lCe = ST.label(530, 180, '세포', 'bg'), lW = ST.label(270, 358, '모세혈관', 'lt big');
+    const fl = flock(root), R = Math.random; let acc = [0, 0, 0];
+    loop((dt) => {
+      fl.step(dt);
+      acc[0] += dt * 1.8; if (acc[0] > 1) { acc[0] -= 1; const y = 300 + R() * 120; fl.add('cRbc', [[-20, y], [1020, y + (R() - .5) * 10]], { dur: 7, s: 1.3, spin: 20, wob: 2 }); }
+      acc[1] += dt * 2.2; if (acc[1] > 1) { acc[1] -= 1; const x = 150 + R() * 700, up = R() < .5, yc = up ? 80 : 640, n = R() < .5 ? 'mO2' : 'cNut'; fl.add(n, [[x - 40, 360], [x, up ? 270 : 446], [x + (R() - .5) * 60, yc]], { dur: 2.6, s: 1.05, spin: 10, fi: .1, fo: .15, wob: 2 }); }
+      acc[2] += dt * 2.2; if (acc[2] > 1) { acc[2] -= 1; const x = 150 + R() * 700, up = R() < .5, yc = up ? 80 : 640, n = R() < .5 ? 'mCO2' : 'cWst'; fl.add(n, [[x, yc], [x + 10, up ? 270 : 446], [x + 70, 360]], { dur: 2.6, s: .95, spin: 10, fi: .1, fo: .15, wob: 2 }); }
+    });
+    return { ST };
+  }
+
+  /* --- 혈액 성분 --- */
+  function blood(host) {
+    symbols();
+    const ST = stage(host, [0, 0, 1000, 720]), root = el('g', null, ST.svg); ST.svg.setAttribute('preserveAspectRatio', 'xMidYMid slice');
+    el('rect', { x: -200, width: 1400, height: 720, fill: grad([[0, '#f6e1ac'], [1, '#efcf85']]) }, root);
+    const WALL = el('path', { d: 'M-200 0H1200V54Q500 92 -200 54Z', fill: grad([[0, '#c9685a'], [1, '#e79a88']]), stroke: '#a84234' }, root);
+    el('path', { d: 'M-200 720H1200V666Q500 628 -200 666Z', fill: grad([[0, '#e79a88'], [1, '#c9685a']]), stroke: '#a84234' }, root);
+    const lP = ST.label(120, 610, '혈장', 'big');
+    const R = mk(31), rnd = Math.random;
+    const items = [];
+    const add = (k, x, y, s, vx) => { const u = el('use', { href: '#' + k }, root); const it = { k, u, x, y, s, vx, ph: rnd() * 6, rot: rnd() * 360 }; items.push(it); return it; };
+    for (let i = 0; i < 26; i++) add('cRbc', R() * 1000, 110 + R() * 500, 1.7, 26 + R() * 12);
+    for (let i = 0; i < 3; i++) add('cWbc', 150 + i * 330, 200 + (i % 2) * 280, 1.7, 15);
+    for (let i = 0; i < 10; i++) add('cPlt', R() * 1000, 120 + R() * 480, 1.3, 22);
+    const O = []; for (let i = 0; i < 10; i++) { const u = el('use', { href: '#mO2', opacity: 0 }, root); O.push(u); }
+    const lay = {};
+    /* 상처 장면 */
+    const wound = el('g', { opacity: 0 }, root);
+    el('path', { d: 'M420 90C460 130 530 130 570 90L560 40H430Z', fill: '#fbf1e8', stroke: '#a84234' }, wound);
+    const clot = []; for (let i = 0; i < 9; i++) clot.push(el('use', { href: '#cPlt', opacity: 0, transform: `translate(${430 + i * 16} ${108 + Math.sin(i) * 8}) scale(1.6)` }, wound));
+    const crust = el('path', { d: 'M420 92C460 128 530 128 570 92', fill: 'none', stroke: '#6f2a20', 'stroke-width': 13, 'stroke-linecap': 'round', opacity: 0 }, wound);
+    /* 세균 */
+    const bac = el('use', { href: '#cBac', opacity: 0 }, root);
+    let mode = null, mT = 0, tgt = null;
+    const api = {
+      ST,
+      show(k) {
+        mode = k; mT = 0;
+        items.forEach((it) => { const dim = k && !((k === 'rbc' && it.k === 'cRbc') || (k === 'wbc' && it.k === 'cWbc') || (k === 'plt' && it.k === 'cPlt')); it.u.setAttribute('opacity', k === 'pla' ? .25 : dim ? .22 : 1); });
+        wound.setAttribute('opacity', k === 'plt' ? 1 : 0); clot.forEach((c) => c.setAttribute('opacity', 0)); crust.setAttribute('opacity', 0);
+        bac.setAttribute('opacity', k === 'wbc' ? 1 : 0);
+        O.forEach((u) => u.setAttribute('opacity', k === 'rbc' ? 1 : 0));
+        lP.e.style.fontSize = k === 'pla' ? 'clamp(20px,2.4vw,28px)' : '';
+      },
+    };
+    const pl = []; for (let i = 0; i < 16; i++) { const k = ['mCO2', 'cNut', 'cWst'][i % 3], u = el('use', { href: '#' + k, opacity: 0 }, root); pl.push({ u, x: R() * 1000, y: 110 + R() * 500 }); }
+    loop((dt, now) => {
+      items.forEach((it) => { it.x += it.vx * dt; if (it.x > 1040) it.x = -40; it.rot += 10 * dt; const y = it.y + Math.sin(now + it.ph) * 7; it.u.setAttribute('transform', `translate(${f1(it.x)} ${f1(y)}) rotate(${f1(it.rot)}) scale(${it.s})`); it.Y = y; });
+      if (mode === 'rbc') { const R2 = items.filter((i) => i.k === 'cRbc').slice(0, O.length); O.forEach((u, i) => { const r = R2[i]; u.setAttribute('transform', `translate(${f1(r.x + 2)} ${f1(r.Y - 22)}) scale(.82)`); }); }
+      if (mode === 'pla') pl.forEach((p, i) => { p.x = (p.x + 26 * dt) % 1040; p.u.setAttribute('opacity', 1); p.u.setAttribute('transform', `translate(${f1(p.x)} ${f1(p.y + Math.sin(now + i) * 6)}) scale(1.1)`); }); else pl.forEach((p) => p.u.setAttribute('opacity', 0));
+      if (mode === 'plt') { mT += dt / 3.2; clot.forEach((c, i) => c.setAttribute('opacity', mT > i * .08 ? 1 : 0)); crust.setAttribute('opacity', clamp((mT - .85) * 4)); }
+      if (mode === 'wbc') { mT = (mT + dt / 4.5) % 1; const w = items.find((i) => i.k === 'cWbc' && i.x > 200 && i.x < 800) || items.find((i) => i.k === 'cWbc'), x = lerp(w.x + 170, w.x + 10, clamp(mT * 1.5)), y = lerp(w.Y - 60, w.Y, clamp(mT * 1.5)); bac.setAttribute('transform', `translate(${f1(x)} ${f1(y)}) rotate(30) scale(1.3)`); bac.setAttribute('opacity', mT > .68 ? 0 : 1); }
+    });
+    return api;
+  }
+  return { heart, vessels, exchange, blood };
+})();
+</script>
+<script>
+(() => {
+  'use strict';
+  try {
+    const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+    const q = new URLSearchParams(location.search);
+    const say = (t, m, c = '') => { $('#res').className = 'fbk ' + c; $('#resT').textContent = t; $('#resM').innerHTML = m; };
+    const H = CR.heart($('#fig')); H.speed(.7);
+    const TXT = { a: ['심방', '혈액이 <b>들어오는</b> 곳이에요. 정맥과 연결돼요.'], v: ['심실', '혈액을 <b>내보내는</b> 곳이에요. 동맥과 연결돼요. 심방보다 두꺼운 근육이에요.'], val: ['판막', '심방과 심실 사이, 심실과 동맥 사이에 있어요. 혈액이 <b>거꾸로 흐르는 것을 막아요</b>.'], wall: ['심장벽', '가장 두꺼운 곳은 <b>좌심실</b> 벽이에요. 강하게 수축해 혈액을 내보내요.'] };
+    say('결과', '심방이 수축하면 혈액이 심실로, 심실이 수축하면 혈액이 동맥으로 나가요. 왼쪽 그림의 흰 판막을 봐요.');
+    $$('#sp button').forEach((b) => b.addEventListener('click', () => { $$('#sp button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); H.speed(+b.dataset.v); say(b.textContent, +b.dataset.v > 1 ? '운동할 때는 심장이 <b>더 빠르게</b> 뛰어요. 세포에 산소와 영양소를 더 많이 보내요.' : '안정을 취할 때는 심장이 <b>느리게</b> 뛰어요.'); }));
+    $$('#pt2 button').forEach((b) => b.addEventListener('click', () => { $$('#pt2 button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); const t = TXT[b.dataset.v]; say(t[0], t[1], 'ok'); }));
+    let paused = false; $('#bP').addEventListener('click', () => { paused = !paused; H.pause(paused); $('#bP').textContent = paused ? '다시 뛰게 하기' : '멈춤'; });
+    setInterval(() => { $('#ph').textContent = H.phase; }, 120);
+    const PS2 = [['안정을 취했을 때', 0], ['제자리 뛰기 후', 0], ['직접 정한 상황', 0]];
+    const render = () => { const mx = Math.max(1, ...PS2.map((x) => x[1])); $('#pul').innerHTML = PS2.map(([t, v], i) => `<div class="pr"><span>${t}</span><span class="stp"><button type="button" data-i="${i}" data-d="-5">−5</button><b>${v}</b><button type="button" data-i="${i}" data-d="5">+5</button><button type="button" data-i="${i}" data-d="1">+1</button></span><i class="pb"><u style="width:${v / mx * 100}%"></u></i></div>`).join(''); $$('#pul button').forEach((b) => b.addEventListener('click', () => { const p = PS2[+b.dataset.i]; p[1] = Math.max(0, p[1] + +b.dataset.d); render(); })); const r = $('#pR'); const a = PS2[0][1], c = PS2[1][1]; r.className = 'fbk ' + (a && c ? 'ok' : ''); r.innerHTML = a && c ? (c > a ? '운동 뒤 맥박 수가 많아졌어요. 세포에 산소와 영양소를 <b>더 많이</b> 공급해야 하기 때문이에요.' : '다시 재 봐요. 움직인 뒤에는 보통 맥박 수가 많아져요.') : '위아래 칸에 잰 수를 넣어요.'; };
+    render();
+    const tab = (p) => { $$('#pt button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.p === p))); $$('.pane').forEach((e) => { e.hidden = e.dataset.p !== p; }); };
+    $$('#pt button').forEach((b) => b.addEventListener('click', () => tab(b.dataset.p)));
+    if (q.get('tab')) tab(q.get('tab'));
+    window.SM = window.SM || {}; window.SM.okUI = true;
+  } catch (err) { window.SM_err && window.SM_err('심장 관찰실', err); }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>순환계의 구성과 기능 – 심장 관찰실</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+/*@@LOCAL:_css_ps.css@@*/
+/*@@LOCAL:_css_sim.css@@*/
+/*@@LOCAL:_css_pf.css@@*/
+.pr{display:grid;grid-template-columns:1fr auto;gap:4px 8px;align-items:center;margin-bottom:10px;font-weight:800;font-size:14px;word-break:keep-all}.pb{grid-column:1/3;height:12px;background:#e6edf3;border-radius:6px;overflow:hidden;display:block}.pb u{display:block;height:100%;background:#0e63b3}.stp{display:flex;align-items:center;gap:4px}.stp b{min-width:42px;text-align:center}.stp button{min-width:44px;min-height:44px;border-radius:10px;border:1px solid #d4dee8;background:#fff;font-weight:800;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top"><div class="ttl"><span class="eyebrow">시뮬레이션</span><h1>심장 관찰실</h1>
+    <p class="sub">심장이 수축과 이완을 반복할 때 혈액과 판막이 어떻게 움직이는지 봐요.</p></div></header>
+  <div class="stage">
+    <section class="card viewer"><div class="scene grow" id="fig" role="img" aria-label="사람 심장 단면. 우심방과 우심실은 파란 혈액, 좌심방과 좌심실은 붉은 혈액이 지나고, 판막이 열리고 닫힌다."></div><div class="vctl"><span class="mlabel">지금</span><span class="hint" id="ph">심방 수축</span><span class="sp"></span><button class="vb" type="button" id="bP">멈춤</button></div></section>
+    <section class="card pad"><div class="ptabs" role="tablist" id="pt">
+        <button type="button" role="tab" data-p="lab" aria-selected="true">관찰하기</button>
+        <button type="button" role="tab" data-p="rec" aria-selected="false">맥박 재기</button>
+        <button type="button" role="tab" data-p="why" aria-selected="false">왜 그럴까?</button>
+      </div><div class="pane" data-p="lab"><div class="seglbl">상황 고르기</div><div class="seg3" id="sp"><button type="button" data-v=".7" aria-pressed="true">안정을 취할 때</button><button type="button" data-v="1.6" aria-pressed="false">운동할 때</button></div>
+      <div class="seglbl" style="margin-top:10px">알아볼 곳</div><div class="seg3" id="pt2" style="grid-auto-flow:row;grid-template-columns:1fr 1fr"><button type="button" data-v="a" aria-pressed="false">심방</button><button type="button" data-v="v" aria-pressed="false">심실</button><button type="button" data-v="val" aria-pressed="false">판막</button><button type="button" data-v="wall" aria-pressed="false">심장벽</button></div>
+      <div class="fbk" id="res"><b class="t" id="resT">결과</b><span id="resM"></span></div><p class="mnote">파란 혈액과 붉은 혈액의 색은 구분하기 쉽게 정한 모형이에요.</p></div>
+      <div class="pane" data-p="rec" hidden><p class="ptxt">손목이나 귀밑에서 맥박을 찾아 1분 동안 세요. 수를 넣으면 막대로 비교해요. 저장되지 않아요.</p>
+      <div class="pulse" id="pul"></div><div class="fbk" id="pR"></div></div>
+      <div class="pane" data-p="why" hidden><ol class="whylist"><li><i>1</i><span>온몸의 세포에 영양소와 산소를 <b>끊임없이</b> 공급해야 해요. 그래서 심장은 쉬지 않고 수축과 이완을 반복해요.</span></li><li><i>2</i><span><b>심방</b>은 혈액이 들어오는 곳으로 정맥과, <b>심실</b>은 혈액을 내보내는 곳으로 동맥과 연결돼요.</span></li><li><i>3</i><span>심실은 심방보다 두껍고 탄력성이 강한 근육이라 강하게 수축할 수 있어요.</span></li><li><i>4</i><span><b>판막</b>이 혈액이 거꾸로 흐르는 것을 막아요. 그래서 정맥 → 심방 → 심실 → 동맥 방향으로만 흘러요.</span></li><li><i>5</i><span>운동할 때 맥박 수가 많아지는 것은 세포에 더 많은 영양소와 산소를 공급해야 하기 때문이에요.</span></li></ol></div></section>
+  </div>
+</div>
+<script>
+/*@@LOCAL:_ps.js@@*/
+</script>
+<script>
+/*@@LOCAL:_cr.js@@*/
+</script>
+<script>
+(() => {
+  'use strict';
+  try {
+    const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+    const q = new URLSearchParams(location.search);
+    const say = (t, m, c = '') => { $('#res').className = 'fbk ' + c; $('#resT').textContent = t; $('#resM').innerHTML = m; };
+    const H = CR.heart($('#fig')); H.speed(.7);
+    const TXT = { a: ['심방', '혈액이 <b>들어오는</b> 곳이에요. 정맥과 연결돼요.'], v: ['심실', '혈액을 <b>내보내는</b> 곳이에요. 동맥과 연결돼요. 심방보다 두꺼운 근육이에요.'], val: ['판막', '심방과 심실 사이, 심실과 동맥 사이에 있어요. 혈액이 <b>거꾸로 흐르는 것을 막아요</b>.'], wall: ['심장벽', '가장 두꺼운 곳은 <b>좌심실</b> 벽이에요. 강하게 수축해 혈액을 내보내요.'] };
+    say('결과', '심방이 수축하면 혈액이 심실로, 심실이 수축하면 혈액이 동맥으로 나가요. 왼쪽 그림의 흰 판막을 봐요.');
+    $$('#sp button').forEach((b) => b.addEventListener('click', () => { $$('#sp button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); H.speed(+b.dataset.v); say(b.textContent, +b.dataset.v > 1 ? '운동할 때는 심장이 <b>더 빠르게</b> 뛰어요. 세포에 산소와 영양소를 더 많이 보내요.' : '안정을 취할 때는 심장이 <b>느리게</b> 뛰어요.'); }));
+    $$('#pt2 button').forEach((b) => b.addEventListener('click', () => { $$('#pt2 button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); const t = TXT[b.dataset.v]; say(t[0], t[1], 'ok'); }));
+    let paused = false; $('#bP').addEventListener('click', () => { paused = !paused; H.pause(paused); $('#bP').textContent = paused ? '다시 뛰게 하기' : '멈춤'; });
+    setInterval(() => { $('#ph').textContent = H.phase; }, 120);
+    const PS2 = [['안정을 취했을 때', 0], ['제자리 뛰기 후', 0], ['직접 정한 상황', 0]];
+    const render = () => { const mx = Math.max(1, ...PS2.map((x) => x[1])); $('#pul').innerHTML = PS2.map(([t, v], i) => `<div class="pr"><span>${t}</span><span class="stp"><button type="button" data-i="${i}" data-d="-5">−5</button><b>${v}</b><button type="button" data-i="${i}" data-d="5">+5</button><button type="button" data-i="${i}" data-d="1">+1</button></span><i class="pb"><u style="width:${v / mx * 100}%"></u></i></div>`).join(''); $$('#pul button').forEach((b) => b.addEventListener('click', () => { const p = PS2[+b.dataset.i]; p[1] = Math.max(0, p[1] + +b.dataset.d); render(); })); const r = $('#pR'); const a = PS2[0][1], c = PS2[1][1]; r.className = 'fbk ' + (a && c ? 'ok' : ''); r.innerHTML = a && c ? (c > a ? '운동 뒤 맥박 수가 많아졌어요. 세포에 산소와 영양소를 <b>더 많이</b> 공급해야 하기 때문이에요.' : '다시 재 봐요. 움직인 뒤에는 보통 맥박 수가 많아져요.') : '위아래 칸에 잰 수를 넣어요.'; };
+    render();
+    const tab = (p) => { $$('#pt button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.p === p))); $$('.pane').forEach((e) => { e.hidden = e.dataset.p !== p; }); };
+    $$('#pt button').forEach((b) => b.addEventListener('click', () => tab(b.dataset.p)));
+    if (q.get('tab')) tab(q.get('tab'));
+    window.SM = window.SM || {}; window.SM.okUI = true;
+  } catch (err) { window.SM_err && window.SM_err('심장 관찰실', err); }
+})();
+</script>
+</body>
+</html>
