@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>오줌이 만들어지는 과정 – 네프론</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+/*@@LOCAL:_css_ps.css@@*/
+/*@@LOCAL:_css_sim.css@@*/
+/*@@LOCAL:_css_pf.css@@*/
+.leg{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:13px;font-weight:700;margin-top:8px}.leg span{display:inline-flex;align-items:center;gap:3px}.tbl{width:100%;border-collapse:collapse;font-size:13.5px;word-break:keep-all}.tbl th,.tbl td{border-bottom:1px solid #e3eaf0;padding:7px 5px;text-align:left;line-height:1.4}.tbl td.k{font-weight:800}.tbl th{font-size:12.5px;background:#f1f6fb;color:#14263b}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top"><div class="ttl"><span class="eyebrow">시뮬레이션</span><h1>네프론에서 오줌 만들기</h1>
+    <p class="sub">혈액이 콩팥에 들어와 여과, 재흡수, 분비를 거쳐 오줌이 되는 과정을 차례대로 켜 봐요.</p></div></header>
+  <div class="stage">
+    <section class="card viewer"><div class="scene grow" id="fig" role="img" aria-label="네프론 모식도. 토리에서 작은 물질이 보먼주머니로 여과되고, 세뇨관에서 모세혈관으로 재흡수되며, 모세혈관에서 세뇨관으로 분비되어 콩팥깔때기로 오줌이 모인다."></div><div class="vctl"><span class="hint">입자의 수와 크기는 정한 모형이에요</span><span class="sp"></span><button class="vb" type="button" id="bReset">처음부터</button></div></section>
+    <section class="card pad"><div class="ptabs" role="tablist" id="pt">
+        <button type="button" role="tab" data-p="lab" aria-selected="true">켜 보기</button>
+        <button type="button" role="tab" data-p="rec" aria-selected="false">표 보기</button>
+        <button type="button" role="tab" data-p="why" aria-selected="false">왜 그럴까?</button>
+      </div><div class="pane" data-p="lab"><div class="steps" id="steps"><div class="ph" data-s="0"><i>1</i><span>여과: 토리 → 보먼주머니</span></div><div class="ph" data-s="1"><i>2</i><span>재흡수: 세뇨관 → 모세혈관</span></div><div class="ph" data-s="2"><i>3</i><span>분비: 모세혈관 → 세뇨관</span></div></div>
+      <div class="ctl" id="ctl"></div><div class="leg" id="leg"></div><div class="fbk" id="res"><b class="t" id="resT">결과</b><span id="resM"></span></div></div>
+      <div class="pane" data-p="rec" hidden><table class="tbl"><thead><tr><th></th><th>일어나는 곳</th><th>물질</th></tr></thead><tbody>
+        <tr><td class="k">여과됨</td><td>토리 → 보먼주머니</td><td>포도당, 아미노산, 무기염류, 물, 요소 등</td></tr><tr><td class="k">여과 안 됨</td><td>토리에 남음</td><td>혈구, 단백질</td></tr>
+        <tr><td class="k">모두 재흡수</td><td>세뇨관 → 모세혈관</td><td>포도당, 아미노산</td></tr><tr><td class="k">대부분 재흡수</td><td>세뇨관 → 모세혈관</td><td>물, 무기염류</td></tr><tr><td class="k">분비</td><td>모세혈관 → 세뇨관</td><td>여과되지 못한 노폐물</td></tr></tbody></table></div>
+      <div class="pane" data-p="why" hidden><ol class="whylist"><li><i>1</i><span>단백질이 분해되면 독성이 강한 <b>암모니아</b>가 생겨요. 간에서 독성이 약한 <b>요소</b>로 바뀌어요.</span></li><li><i>2</i><span>크기가 작은 물질만 토리에서 보먼주머니로 <b>여과</b>돼요. 혈구와 단백질은 크기가 커서 여과되지 않아요.</span></li><li><i>3</i><span>우리 몸에 필요한 성분은 세뇨관에서 모세혈관으로 <b>재흡수</b>돼요.</span></li><li><i>4</i><span>여과되지 못한 노폐물은 모세혈관에서 세뇨관으로 <b>분비</b>돼요.</span></li><li><i>5</i><span>이렇게 만들어진 오줌은 콩팥깔때기 → 오줌관 → 방광 → 요도를 거쳐 나가요.</span></li></ol></div></section>
+  </div>
+</div>
+<script>
+/*@@LOCAL:_ps.js@@*/
+</script>
+<script>
+/*@@LOCAL:_ex.js@@*/
+</script>
+<script>
+(() => {
+  'use strict';
+  try {
+    const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+    const q = new URLSearchParams(location.search);
+    const say = (t, m, c = '') => { $('#res').className = 'fbk ' + c; $('#resT').textContent = t; $('#resM').innerHTML = m; };
+    let N = EX.nephron($('#fig')), step = 0;
+    const LG = [['xGlu', '포도당'], ['xAmi', '아미노산'], ['xMin', '무기염류'], ['xWat', '물'], ['xUre', '요소'], ['xRbc', '혈구'], ['xPro', '단백질']];
+    $('#leg').innerHTML = LG.map(([k, t]) => `<span><svg viewBox="-16 -14 32 28" width="26" height="22" aria-hidden="true"><use href="#${k}"/></svg>${t}</span>`).join('');
+    const TXT = [['여과', '크기가 작은 물질이 물과 함께 <b>보먼주머니</b>로 나가요. 혈구와 단백질은 혈액에 남아요.'], ['재흡수', '포도당과 아미노산은 <b>모두</b>, 물과 무기염류는 <b>대부분</b> 모세혈관으로 돌아가요.'], ['분비', '혈액에 남아 있던 노폐물이 세뇨관으로 나가요. 이제 <b>오줌</b>이 콩팥깔때기에 모여요.']];
+    const btn = (t, fn) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'btn primary'; b.textContent = t; b.addEventListener('click', fn); return b; };
+    function render() {
+      $$('#steps .ph').forEach((e) => { const i = +e.dataset.s; e.classList.toggle('on', i === step); e.classList.toggle('done', i < step); });
+      const c = $('#ctl'); c.innerHTML = '';
+      if (step < 3) c.append(btn(TXT[step][0] + ' 켜기', () => { N.setStep(step + 1); say(TXT[step][0], TXT[step][1], 'ok'); step++; render(); }));
+    }
+    $('#bReset').addEventListener('click', () => { N = EX.nephron($('#fig')); step = 0; say('결과', '먼저 여과를 켜 봐요.'); render(); });
+    say('결과', '먼저 여과를 켜 봐요.'); render();
+    const J = +(q.get('st') || 0); if (J) { N.setStep(J); step = J; say(TXT[J - 1][0], TXT[J - 1][1], 'ok'); render(); }
+    const tab = (p) => { $$('#pt button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.p === p))); $$('.pane').forEach((e) => { e.hidden = e.dataset.p !== p; }); };
+    $$('#pt button').forEach((b) => b.addEventListener('click', () => tab(b.dataset.p)));
+    if (q.get('tab')) tab(q.get('tab'));
+    window.SM = window.SM || {}; window.SM.okUI = true;
+  } catch (err) { window.SM_err && window.SM_err('네프론', err); }
+})();
+</script>
+</body>
+</html>

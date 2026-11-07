@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>오줌이 만들어지는 과정 – 인공소변</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+/*@@LOCAL:_css_ps.css@@*/
+/*@@LOCAL:_css_sim.css@@*/
+/*@@LOCAL:_css_pf.css@@*/
+.ct{display:grid;grid-template-columns:64px 1fr 1fr;gap:4px;font-size:13px;font-weight:700;text-align:center;margin-bottom:8px;align-items:center}.ct .k{font-weight:800;text-align:left}.ct i{height:24px;border-radius:5px;border:1px solid rgba(20,38,59,.2)}.dr{display:grid;grid-template-columns:82px 1fr;gap:6px;align-items:center;margin-bottom:6px;font-size:13.5px}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top"><div class="ttl"><span class="eyebrow">탐구</span><h1>인공소변으로 질병 진단하기</h1>
+    <p class="sub">인공소변에 소변검사지를 담가 색을 비색표와 비교하고, 어느 과정에 문제가 있는지 생각해요.</p></div></header>
+  <div class="stage">
+    <section class="card viewer"><div class="scene grow" id="fig" role="img" aria-label="인공소변이 든 비커 세 개와 소변검사지. 검사지의 포도당 칸과 단백질 칸 색이 변한다."></div><div class="vctl"><span class="hint">비색표 색은 모형이에요. 실제 제품과 다를 수 있어요</span><span class="sp"></span><button class="vb" type="button" id="bReset">처음부터</button></div></section>
+    <section class="card pad"><div class="ptabs" role="tablist" id="pt"><button type="button" role="tab" data-p="lab" aria-selected="true">검사하기</button><button type="button" role="tab" data-p="why" aria-selected="false">왜 그럴까?</button></div>
+      <div class="pane" data-p="lab"><div class="seglbl">비색표</div><div class="ct"><span></span><span>정상</span><span>많음</span><span class="k">포도당</span><i style="background:#d9e7c0"></i><i style="background:#3f6b2e"></i><span class="k">단백질</span><i style="background:#e7e0a1"></i><i style="background:#1c7f86"></i></div>
+      <div class="seglbl">비커를 눌러 검사지를 담가요</div><div id="dx"></div><div class="fbk" id="res"><b class="t" id="resT">결과</b><span id="resM"></span></div></div>
+      <div class="pane" data-p="why" hidden><ol class="whylist"><li><i>1</i><span><b>당뇨</b>: 오줌에 포도당이 나오는 질병이에요. 세뇨관에서 포도당이 모두 재흡수되지 못한 것이에요. <b>재흡수</b>와 관련돼요.</span></li><li><i>2</i><span><b>단백뇨</b>: 오줌에 단백질이 나오는 질병이에요. 크기가 큰 단백질이 여과된 것이에요. <b>여과</b>와 관련돼요.</span></li><li><i>3</i><span>정상 오줌에는 포도당과 단백질이 거의 나오지 않아요.</span></li></ol><p class="mnote">교과서 부록 333쪽 모식도에 339쪽 붙임딱지를 붙여 과정을 표현해 봐요.</p></div></section>
+  </div>
+</div>
+<script>
+/*@@LOCAL:_ps.js@@*/
+</script>
+<script>
+/*@@LOCAL:_ex.js@@*/
+</script>
+<script>
+(() => {
+  'use strict';
+  try {
+    const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+    const q = new URLSearchParams(location.search);
+    const say = (t, m, c = '') => { $('#res').className = 'fbk ' + c; $('#resT').textContent = t; $('#resM').innerHTML = m; };
+    let U = EX.urine($('#fig')); const LS = EX.URINE, ch = {}, seen = {};
+    const OPT = ['정상', '당뇨', '단백뇨'];
+    function render() { $('#dx').innerHTML = LS.map((u, i) => `<div class="dr" data-i="${i}"><b>${u.n}</b><div class="seg3">${OPT.map((o) => `<button type="button" data-o="${o}" ${seen[i] ? '' : 'disabled'} aria-pressed="${ch[i] === o}">${o}</button>`).join('')}</div></div>`).join(''); $$('.dr').forEach((r) => { const i = +r.dataset.i; $$('button', r).forEach((b) => b.addEventListener('click', () => { ch[i] = b.dataset.o; render(); const u = LS[i]; if (ch[i] !== u.ans) say(u.n, '비색표와 다시 비교해 봐요. 어느 칸 색이 변했나요?', 'no'); else if (u.ans === '정상') say(u.n, '두 칸 모두 정상 색이에요.', 'ok'); else if (u.ans === '당뇨') say(u.n, '포도당 칸이 변했어요. <b>당뇨</b>예요. 포도당이 <b>재흡수</b>되지 못했어요.', 'ok'); else say(u.n, '단백질 칸이 변했어요. <b>단백뇨</b>예요. 크기가 큰 단백질이 <b>여과</b>되었어요.', 'ok'); })); }); }
+    const wire = () => $$('#fig .tap').forEach((g) => g.addEventListener('click', () => { const i = +g.dataset.i; U.dip(i, () => { seen[i] = true; render(); say(LS[i].n, '검사지 색을 비색표와 비교해 진단을 골라요.'); }); }));
+    wire(); render(); say('결과', '왼쪽 비커를 눌러 소변검사지를 담가요.');
+    $('#bReset').addEventListener('click', () => { U = EX.urine($('#fig')); wire(); Object.keys(ch).forEach((k) => delete ch[k]); Object.keys(seen).forEach((k) => delete seen[k]); render(); say('결과', '왼쪽 비커를 눌러 소변검사지를 담가요.'); });
+    if (q.get('all')) { U.fill(); LS.forEach((u, i) => { seen[i] = true; ch[i] = u.ans; }); render(); say('진단 끝', '인공소변 1은 단백뇨, 2는 정상, 3은 당뇨예요.', 'ok'); }
+    const tab = (p) => { $$('#pt button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.p === p))); $$('.pane').forEach((e) => { e.hidden = e.dataset.p !== p; }); };
+    $$('#pt button').forEach((b) => b.addEventListener('click', () => tab(b.dataset.p)));
+    if (q.get('tab')) tab(q.get('tab'));
+    window.SM = window.SM || {}; window.SM.okUI = true;
+  } catch (err) { window.SM_err && window.SM_err('인공소변', err); }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>숨을 쉴 때 일어나는 일 – 호흡 운동 모형</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+/*@@LOCAL:_css_ps.css@@*/
+/*@@LOCAL:_css_sim.css@@*/
+/*@@LOCAL:_css_pf.css@@*/
+
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top"><div class="ttl"><span class="eyebrow">탐구</span><h1>호흡 운동 모형 실험실</h1>
+    <p class="sub">고무 막을 움직여 작은 고무풍선의 변화를 보고, 사람의 가슴과 비교해요.</p></div></header>
+  <div class="stage">
+    <section class="card viewer"><div class="scene grow" id="fig" role="img" aria-label="왼쪽에 접이식 물통, Y자관, 작은 고무풍선, 고무 막으로 만든 호흡 운동 모형, 오른쪽에 사람의 가슴 단면. 고무 막을 당기면 풍선이 부풀고 폐도 커진다."></div><div class="vctl"><span class="hint">모형은 실제 구조와 완전히 똑같지는 않아요</span></div></section>
+    <section class="card pad"><div class="ptabs" role="tablist" id="pt">
+        <button type="button" role="tab" data-p="lab" aria-selected="true">실험하기</button>
+        <button type="button" role="tab" data-p="rec" aria-selected="false">정리하기</button>
+        <button type="button" role="tab" data-p="why" aria-selected="false">왜 그럴까?</button>
+      </div><div class="pane" data-p="lab">
+      <div class="seglbl">예측: 고무 막을 아래로 당기면 작은 고무풍선은?</div><div class="seg3" id="pr"><button type="button" data-k="a" aria-pressed="false">부푼다</button><button type="button" data-k="b" aria-pressed="false">작아진다</button><button type="button" data-k="c" aria-pressed="false">그대로</button></div>
+      <div class="two" style="margin-top:8px"><button class="btn primary" type="button" id="pull" disabled>(가) 물통은 위로, 고무 막은 아래로</button><button class="btn ghost" type="button" id="push" disabled>(나) 물통을 누르고 고무 막을 위로</button></div>
+      <div class="sl" style="grid-template-columns:96px 1fr;margin-top:8px"><label for="sv">직접 움직이기</label><input type="range" id="sv" min="0" max="100" value="0" disabled><div class="ticks"><span>날숨</span><span>들숨</span></div></div>
+      <div class="fbk" id="res"><b class="t" id="resT">결과</b><span id="resM"></span></div></div>
+      <div class="pane" data-p="rec" hidden><div id="qs"></div><div class="fbk" id="recRes" hidden></div></div>
+      <div class="pane" data-p="why" hidden><ol class="whylist"><li><i>1</i><span>폐에는 <b>근육이 없어</b> 스스로 수축하거나 이완할 수 없어요.</span></li><li><i>2</i><span><b>들숨</b>: 갈비뼈가 올라가고 가로막이 내려가 흉강과 폐의 부피가 커져요. 폐의 압력이 외부보다 낮아져 공기가 들어와요.</span></li><li><i>3</i><span><b>날숨</b>: 갈비뼈가 내려가고 가로막이 올라가 부피가 작아져요. 폐의 압력이 외부보다 높아져 공기가 나가요.</span></li><li><i>4</i><span>공기는 압력이 높은 곳에서 낮은 곳으로 이동해요.</span></li></ol></div></section>
+  </div>
+</div>
+<script>
+/*@@LOCAL:_ps.js@@*/
+</script>
+<script>
+/*@@LOCAL:_br.js@@*/
+</script>
+<script>
+(() => {
+  'use strict';
+  try {
+    const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+    const q = new URLSearchParams(location.search);
+    const say = (t, m, c = '') => { $('#res').className = 'fbk ' + c; $('#resT').textContent = t; $('#resM').innerHTML = m; };
+    const M = BR.model($('#fig')); let busy = false, pred = null;
+    const sv = $('#sv');
+    const sync = () => { sv.value = Math.round(M.v * 100); sv.style.setProperty('--v', sv.value + '%'); };
+    sync(); say('결과', '먼저 예측을 골라요.');
+    const arm = () => { $('#pull').disabled = busy || !pred; $('#push').disabled = busy || !pred; sv.disabled = busy || !pred; };
+    $$('#pr button').forEach((b) => b.addEventListener('click', () => { pred = b.dataset.k; $$('#pr button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); arm(); say('결과', '이제 고무 막을 움직여요.'); }));
+    const IN = '작은 고무풍선이 <b>부풀어요</b>. 물통 안 부피가 커져 압력이 낮아지고 공기가 들어와요. 사람의 <b>들숨</b>과 같아요.', OUT = '작은 고무풍선이 <b>작아져요</b>. 물통 안 부피가 작아져 압력이 높아지고 공기가 나가요. 사람의 <b>날숨</b>과 같아요.';
+    const go = (to) => { busy = true; arm(); M.anim(to, () => { busy = false; arm(); sync(); say(to ? (pred === 'a' ? '예측이 맞았어요' : '예측과 달라요') : '날숨', to ? IN : OUT, 'ok'); }); };
+    $('#pull').addEventListener('click', () => go(1)); $('#push').addEventListener('click', () => go(0));
+    let last = 0, tmr = 0; sv.addEventListener('input', () => { const a = +sv.value / 100; M.set(a); sync(); clearTimeout(tmr); tmr = setTimeout(() => M.breathe(0), 160); say(a > last ? '들숨 쪽으로' : '날숨 쪽으로', a > last ? IN : OUT, 'ok'); last = a; });
+    if (q.get('v')) { M.set(+q.get('v')); M.breathe(0); pred = 'a'; arm(); sync(); say('예측이 맞았어요', IN, 'ok'); }
+    const tab = (p) => { $$('#pt button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.p === p))); $$('.pane').forEach((e) => { e.hidden = e.dataset.p !== p; }); };
+    $$('#pt button').forEach((b) => b.addEventListener('click', () => tab(b.dataset.p)));
+    if (q.get('tab')) tab(q.get('tab'));
+    const QS = [
+      { q: '모형의 고무 막은 우리 몸의 어느 부위일까요?', o: ['가로막', '폐', '숨관'], a: 0, ok: '고무 막은 <b>가로막</b>을 비유해요.' },
+      { q: '숨을 들이쉴 때 가로막은?', o: ['내려간다', '올라간다', '움직이지 않는다'], a: 0, ok: '들숨 때 갈비뼈는 올라가고 가로막은 <b>내려가요</b>.' },
+      { q: '숨을 들이쉴 때 폐의 압력은 외부보다?', o: ['낮아진다', '높아진다', '같다'], a: 0, ok: '폐의 부피가 커져 압력이 <b>낮아지고</b> 공기가 들어와요.' },
+    ];
+    $('#qs').innerHTML = QS.map((x, i) => `<div class="qa" data-i="${i}"><p>${x.q}</p><div class="qa3">${x.o.map((t, k) => `<button type="button" data-k="${k}">${t}</button>`).join('')}</div></div>`).join('');
+    $$('#qs .qa').forEach((row) => { const x = QS[+row.dataset.i]; $$('button', row).forEach((b) => b.addEventListener('click', () => {
+      const good = +b.dataset.k === x.a; $$('button', row).forEach((o) => o.classList.remove('good', 'bad')); b.classList.add(good ? 'good' : 'bad');
+      const r = $('#recRes'); r.hidden = false; r.className = 'fbk ' + (good ? 'ok' : 'no'); r.innerHTML = good ? x.ok : '다시 골라 봐요. 그림을 떠올려요.';
+    })); });
+    window.SM = window.SM || {}; window.SM.okUI = true;
+  } catch (err) { window.SM_err && window.SM_err('호흡 운동 모형', err); }
+})();
+</script>
+</body>
+</html>
