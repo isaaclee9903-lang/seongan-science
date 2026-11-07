@@ -113,30 +113,6 @@
     return { play() { cancel && cancel(); cancel = once(2, (t) => { st.forEach((a, i) => { a.size(R[i] * ease(clamp(t * 2 - i * .25, 0, 1))); }); }); }, stop() { cancel && cancel(); } };
   }
 
-  /* 거리와 빛의 세기 (그림 Ⅷ-4) */
-  function inv(host, ctl) {
-    const g = svg(host, 760, 540); sky(g, 30); const s = g.s;
-    const sx = 70, sy = 250; star(g, s, sx, sy, 22, '#ffe9a8');
-    T(s, sx, sy + 76, '광원', { size: 21, c: W1 });
-    const cols = [200, 400, 660], sizes = [50, 100, 150];
-    const beam = S('path', { fill: 'rgba(255,233,160,.1)' }, s);
-    const panels = cols.map((x, i) => {
-      const n = i + 1, h = sizes[i], G = S('g', {}, s), cells = [];
-      for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) { const u = h * 2 / n; const q = S('rect', { x: x - h * .34 + c * (h * .68 / n), y: sy - h + r * u, width: h * .68 / n - 2, height: u - 2, fill: '#ffe9a8', stroke: '#f1cd70', 'stroke-width': 1 }, G); q._k = i; cells.push(q); }
-      T(G, x, sy + h + 32, `거리 ${n} 배`, { size: 21, w: 800, c: W1 });
-      T(G, x, sy + h + 60, `${n * n} 칸, 한 칸 ${i === 0 ? '1 배' : '1/' + (n * n) + ' 배'}`, { size: 19, c: W2 });
-      return { G, cells, x, h };
-    });
-    const dotsG = []; for (let i = 0; i < 24; i++) dotsG.push({ a: (i / 24 - .5) * .5, ph: (i * 7 % 24) / 24, c: S('circle', { r: 3.4, fill: '#ffe9a8' }, s) });
-    let k = 3;
-    function look() { panels.forEach((p, i) => { p.cells.forEach((c) => { c.setAttribute('opacity', (i + 1) <= k ? [1, 1 / 4 + .15, 1 / 9 + .1][i] : .05); }); p.G.style.opacity = (i + 1) <= k ? 1 : .5; }); const h = panels[k - 1]; beam.setAttribute('d', `M${sx},${sy} L${h.x},${sy - h.h} V${sy + h.h}Z`); }
-    look();
-    const L = loop(host, (dt) => { const x1 = panels[k - 1].x; dotsG.forEach((d) => { d.ph = (d.ph + dt * .3) % 1; const X = lerp(sx, x1, d.ph), slope = (panels[2].h / (panels[2].x - sx)) * d.a * 4; d.c.setAttribute('cx', X); d.c.setAttribute('cy', sy + (X - sx) * slope); }); });
-    const bs = seg(ctl, [[1, '거리 1 배'], [2, '거리 2 배'], [3, '거리 3 배']], 3, (v) => { k = v; look(); });
-    let tm = 0;
-    return { play() { L.start(); clearInterval(tm); k = 1; bs.mark(1); look(); let i = 1; tm = setInterval(() => { i = i % 3 + 1; k = i; bs.mark(k); look(); }, 2000); ctl.addEventListener('click', () => clearInterval(tm), { once: true }); }, stop() { L.stop(); clearInterval(tm); } };
-  }
-
   /* 10 pc로 옮겨 보기 (그림 Ⅷ-5) */
   function tenpc(host, ctl) {
     const g = svg(host, 760, 560); sky(g, 60); const s = g.s;
@@ -391,47 +367,109 @@
     return { play() { L.start(); clearInterval(tm); tm = setInterval(() => { i = (i + 1) % 4; show(); }, 2400); }, stop() { L.stop(); clearInterval(tm); } };
   }
 
-  /* 탐사 성과 (그림 Ⅷ-11) */
-  const MIS = [
-    ['sun', '파커 태양 탐사선', '태양에 접근하여 태양 코로나를 관측'],
-    ['sun', '태양 궤도선', '태양의 극지방을 관측'],
-    ['moon', '아폴로 계획', '총 11차례 유인 우주선 발사, 이 중 6번 달에 착륙'],
-    ['moon', '아르테미스 계획', '새로운 유인 달 탐사, 우리나라도 참여'],
-    ['moon', '다누리', '우리나라의 달 탐사선, 달-지구 간 인터넷 통신 성공'],
-    ['mars', '큐리오시티', '2012년 화성에 착륙한 탐사차'],
-    ['jup', '주노', '목성 탐사선'],
-    ['sat', '카시니-하위헌스', '토성 탐사선'],
-    ['nep', '보이저 2호', '1977년 발사, 목성·토성·천왕성·해왕성을 지나 태양계를 벗어남'],
-    ['com', '로제타', '혜성에 탐사 로봇 필레를 착륙시켜 표면을 직접 탐사'],
-    ['com', '딥 임팩트호', '혜성에 충돌체를 떨어뜨려 구성 물질을 조사'],
-  ];
-  function missions(host, ctl) {
-    const g = svg(host, 760, 540); sky(g, 70); const s = g.s, Y = 230;
-    S('circle', { cx: -40, cy: Y, r: 130, fill: g.rg('sn', [[0, '#fff0b8'], [.6, '#ffc94f'], [1, '#f09a2b']]) }, s);
-    const body = (x, r, c1, c2, n, y = Y) => { S('circle', { cx: x, cy: y, r, fill: g.rg('pl' + n, [[0, c1], [1, c2]]) }, s); T(s, x, y + r + 28, n, { size: 19, c: W1 }); };
-    const P = { sun: [70, Y], moon: [215, Y - 58], mars: [292, Y], jup: [395, Y], sat: [510, Y], nep: [688, Y], com: [330, 110] };
-    body(180, 16, '#7cc4f5', '#1f5ea9', '지구'); body(P.moon[0], 8, '#e6e6e6', '#9a9a9a', '달', P.moon[1]);
-    body(P.mars[0], 12, '#ee9a6a', '#b4532c', '화성'); body(P.jup[0], 38, '#ecd2ad', '#b98a57', '목성');
-    S('ellipse', { cx: P.sat[0], cy: Y, rx: 58, ry: 11, fill: 'none', stroke: '#d9c79c', 'stroke-width': 4, transform: `rotate(-14 ${P.sat[0]} ${Y})` }, s);
-    body(P.sat[0], 30, '#f1deb4', '#c6a56b', '토성'); body(610, 20, '#bfeaf0', '#6fb5c4', '천왕성'); body(P.nep[0], 20, '#8db4f5', '#3a60c0', '해왕성');
-    // 혜성
-    S('path', { d: `M${P.com[0]},${P.com[1]} L${P.com[0] + 90},${P.com[1] - 28} L${P.com[0] + 90},${P.com[1] + 16}Z`, fill: g.lg('tail', [[0, 'rgba(220,235,255,.8)'], [1, 'rgba(220,235,255,0)']], 1, 0) }, s);
-    S('circle', { cx: P.com[0], cy: P.com[1], r: 9, fill: '#dfe7f2' }, s); T(s, P.com[0], P.com[1] - 18, '혜성', { size: 19, c: W1 });
-    const ship = S('g', {}, s); S('rect', { x: -5, y: -6, width: 10, height: 12, fill: '#f3d27a' }, ship); S('rect', { x: -16, y: -3, width: 10, height: 6, fill: '#6c94c9' }, ship); S('rect', { x: 6, y: -3, width: 10, height: 6, fill: '#6c94c9' }, ship);
-    const trail = S('line', { x1: 180, y1: Y, stroke: '#ffe9a8', 'stroke-width': 1.8, 'stroke-dasharray': '4 6' }, s);
-    const n1 = T(s, 380, 400, '', { size: 28, w: 800, c: '#fff' }), n2 = T(s, 380, 438, '', { size: 21, c: '#cfe0f4' });
-    let i = 0, cancel = null, tm = 0;
-    function pick(k) {
-      i = k; const [t, a, b] = MIS[k]; n1.textContent = a; n2.textContent = b;
-      const P0 = P[t]; cancel && cancel();
-      const fly = (u) => { const x = lerp(180, P0[0], u), y = lerp(Y, P0[1] - 26, u) - Math.sin(u * 3.14) * 44; ship.setAttribute('transform', `translate(${x},${y})`); trail.setAttribute('x2', x); trail.setAttribute('y2', y); };
-      cancel = once(1.1, (tt) => fly(ease(tt / 1.1)));
-    }
-    pick(0);
-    const prev = button(ctl, '이전 탐사', () => { clearInterval(tm); pick((i + MIS.length - 1) % MIS.length); });
-    const next = button(ctl, '다음 탐사', () => { clearInterval(tm); pick((i + 1) % MIS.length); }, 'go');
-    return { play() { clearInterval(tm); pick(0); tm = setInterval(() => pick((i + 1) % MIS.length), 3000); }, stop() { clearInterval(tm); cancel && cancel(); } };
+  /* 표지: 은하수가 보이는 밤하늘과 지구, 지구를 도는 인공위성 한 장면 */
+  function cover(host) {
+    const g = svg(host, 760, 720); sky(g, 0); const s = g.s, r = rnd32(5);
+    const band = S('g', { transform: 'rotate(-24 380 280)' }, s);
+    S('ellipse', { cx: 380, cy: 280, rx: 560, ry: 104, fill: g.glow('mwb', '#8ea6d6'), opacity: .6 }, band);
+    S('ellipse', { cx: 380, cy: 280, rx: 400, ry: 42, fill: g.glow('mwc', '#ffe6c9'), opacity: .35 }, band);
+    const gs = () => (r() + r() + r() - 1.5) / 1.5, tw = [];
+    for (let i = 0; i < 420; i++) { const c = S('circle', { cx: (r() * 1.3 - .15) * 760, cy: 280 + gs() * 150, r: r() * r() * 1.8 + .4, fill: ['#fff', '#ffe9c4', '#cfe0ff', '#ffc9b8'][i % 4], opacity: .35 + r() * .6 }, band); if (i % 9 === 0) tw.push(c); }
+    for (let i = 0; i < 130; i++) S('circle', { cx: r() * 760, cy: r() * 560, r: r() * r() * 1.5 + .4, fill: '#dfe8f5', opacity: .3 + r() * .5 }, s);
+    [[120, 110, 22, '#ffd9b8'], [640, 80, 26, '#bcd2ff'], [560, 330, 16, '#fff1cf']].forEach(([x, y, q, c]) => star(g, s, x, y, q * .4, c));
+    // 지구
+    const E = [300, 1120], ER = 560;
+    S('circle', { cx: E[0], cy: E[1], r: ER + 34, fill: g.glow('atm', '#6db4ff'), opacity: .75 }, s);
+    S('circle', { cx: E[0], cy: E[1], r: ER, fill: g.rg('eb', [[0, '#7cc4f5'], [.55, '#2f7fc6'], [1, '#143f77']], .5, .05) }, s);
+    [['M60,640 q40,-34 90,-36 q30,-14 60,-2 q40,6 44,28 q-20,16 -54,22 q-24,22 -60,16 q-50,-4 -80,-28Z', '#4f8f52'], ['M400,590 q40,-16 80,-6 q40,6 66,30 q6,24 -36,32 q-16,20 -46,14 q-50,-14 -64,-70Z', '#5a9a58']].forEach(([d, c]) => S('path', { d, fill: c, opacity: .8 }, s));
+    S('path', { d: 'M20,610 q90,-30 200,-14 M300,585 q80,-14 150,6 M460,660 q70,-8 130,14', stroke: 'rgba(255,255,255,.42)', 'stroke-width': 6, fill: 'none', 'stroke-linecap': 'round' }, s);
+    // 궤도와 인공위성
+    S('ellipse', { cx: 380, cy: 500, rx: 330, ry: 96, fill: 'none', stroke: 'rgba(190,215,245,.4)', 'stroke-width': 1.6, transform: 'rotate(-10 380 500)' }, s);
+    const sat = S('g', {}, s);
+    [-1, 1].forEach((k) => { S('rect', { x: k > 0 ? 16 : -70, y: -13, width: 54, height: 26, fill: g.lg('pn', [[0, '#3e6ea8'], [1, '#27507f']]), stroke: '#a9c2df', 'stroke-width': 1 }, sat); for (let i = 1; i < 4; i++) S('line', { x1: (k > 0 ? 16 : -70) + i * 13.5, x2: (k > 0 ? 16 : -70) + i * 13.5, y1: -13, y2: 13, stroke: '#a9c2df', 'stroke-width': .8 }, sat); });
+    S('rect', { x: -16, y: -18, width: 32, height: 36, rx: 3, fill: g.lg('foil', [[0, '#f3d27a'], [1, '#c79a35']]) }, sat);
+    S('path', { d: 'M-10,-18 Q0,-34 10,-18Z', fill: '#e6ebef' }, sat);
+    const place = (a) => { const x = Math.cos(a) * 330, y = Math.sin(a) * 96, c = Math.cos(-.1745), si = Math.sin(-.1745); sat.setAttribute('transform', `translate(${380 + x * c - y * si},${500 + x * si + y * c}) rotate(-10)`); };
+    place(-2.2);
+    let A = -2.2;
+    const L = loop(host, (dt, t) => { A += dt * .16; if (A > -.5) A = -2.7; place(A); tw.forEach((c, i) => c.setAttribute('opacity', .55 + .4 * Math.sin(t * 1.5 + i))); });
+    return { play: L.start, stop: L.stop };
   }
 
-  Object.assign(EX, { para, annual, mag, inv, tenpc, scolor, mw, cluster, nebula, balloon, bang, earth, missions });
+  /* 탐사 성과 (그림 Ⅷ-11): 태양 둘레 타원 궤도를 도는 행성과 탐사선 */
+  const MIS = [
+    [['sun'], '파커 태양 탐사선', '태양에 접근하여 태양 코로나를 관측'],
+    [['pole'], '태양 궤도선', '태양의 극지방을 관측'],
+    [['moon'], '아폴로 계획', '총 11차례 유인 우주선 발사, 이 중 6번 달에 착륙'],
+    [['moon'], '아르테미스 계획', '새로운 유인 달 탐사, 우리나라도 참여'],
+    [['moon'], '다누리', '우리나라의 달 탐사선, 달-지구 간 인터넷 통신 성공'],
+    [['mars'], '큐리오시티', '2012년 화성에 착륙한 탐사차'],
+    [['jup'], '주노', '목성 탐사선'],
+    [['sat'], '카시니-하위헌스', '토성 탐사선'],
+    [['jup', 'sat', 'ura', 'nep', 'out'], '보이저 2호', '1977년 발사, 목성·토성·천왕성·해왕성을 지나 태양계를 벗어남'],
+    [['com'], '로제타', '혜성에 탐사 로봇 필레를 착륙시켜 표면을 직접 탐사'],
+    [['com'], '딥 임팩트호', '혜성에 충돌체를 떨어뜨려 구성 물질을 조사'],
+  ];
+  function missions(host, ctl) {
+    const g = svg(host, 760, 520); sky(g, 80); const s = g.s, SX = 380, SY = 205, TILT = .36;
+    const PL = {
+      earth: { a: 92, w: .85, r: 8, n: '지구', c: ['#7cc4f5', '#1f5ea9'], p: .6 },
+      mars: { a: 128, w: .62, r: 6, n: '화성', c: ['#ee9a6a', '#b4532c'], p: 2.6 },
+      jup: { a: 178, w: .34, r: 17, n: '목성', c: ['#ecd2ad', '#b98a57'], p: 4.3 },
+      sat: { a: 226, w: .26, r: 13, n: '토성', c: ['#f1deb4', '#c6a56b'], p: .3, ring: 1 },
+      ura: { a: 276, w: .19, r: 9.5, n: '천왕성', c: ['#bfeaf0', '#6fb5c4'], p: 2.1 },
+      nep: { a: 330, w: .15, r: 9.5, n: '해왕성', c: ['#8db4f5', '#3a60c0'], p: 5.3 },
+    };
+    const orbitOf = {};
+    Object.keys(PL).forEach((k) => { orbitOf[k] = S('ellipse', { cx: SX, cy: SY, rx: PL[k].a, ry: PL[k].a * TILT, fill: 'none', stroke: 'rgba(170,195,230,.32)', 'stroke-width': 1.4 }, s); });
+    // 혜성: 길쭉한 타원 궤도(태양이 한쪽 초점 근처)
+    const CA = 250, CB = 62, CC = 215, CR = -.32, cCX = SX + Math.cos(CR) * CC * .86, cCY = SY + Math.sin(CR) * CC * .86;
+    orbitOf.com = S('ellipse', { cx: cCX, cy: cCY, rx: CA, ry: CB, fill: 'none', stroke: 'rgba(170,195,230,.32)', 'stroke-width': 1.4, 'stroke-dasharray': '5 6', transform: `rotate(${CR * 57.3} ${cCX} ${cCY})` }, s);
+    S('circle', { cx: SX, cy: SY, r: 62, fill: g.glow('sg', '#ffcf6a') }, s);
+    S('circle', { cx: SX, cy: SY, r: 24, fill: g.rg('sn', [[0, '#fff0b8'], [.6, '#ffc94f'], [1, '#f09a2b']]) }, s);
+    T(s, SX, SY + 44, '태양', { size: 18, c: '#ffe7ad' });
+    Object.keys(PL).forEach((k) => { const q = PL[k]; q.g = S('g', {}, s); if (q.ring) S('ellipse', { rx: q.r * 1.9, ry: q.r * .42, fill: 'none', stroke: '#d9c79c', 'stroke-width': 3, transform: 'rotate(-14)' }, q.g); S('circle', { r: q.r, fill: g.rg('pl' + k, [[0, q.c[0]], [1, q.c[1]]]) }, q.g); T(q.g, 0, q.r + 20, q.n, { size: 17, c: W1 }); });
+    const moon = S('circle', { r: 3.6, fill: '#d9d9d9' }, s), moonT = T(s, 0, 0, '달', { size: 15, c: W1 });
+    const cg = S('g', {}, s), tail = S('path', { fill: g.lg('tail', [[0, 'rgba(220,235,255,.85)'], [1, 'rgba(220,235,255,0)']], 1, 0) }, cg); S('circle', { r: 6, fill: '#e6edf6' }, cg); const cT = T(cg, 0, -13, '혜성', { size: 16, c: W1 });
+    const ship = S('g', {}, s); S('rect', { x: -4, y: -5, width: 8, height: 10, fill: '#f3d27a' }, ship); S('rect', { x: -13, y: -2.5, width: 9, height: 5, fill: '#7ea9df' }, ship); S('rect', { x: 4, y: -2.5, width: 9, height: 5, fill: '#7ea9df' }, ship);
+    const trail = S('polyline', { fill: 'none', stroke: '#ffe9a8', 'stroke-width': 1.6, 'stroke-dasharray': '4 6' }, s);
+    const n1 = T(s, 380, 420, '', { size: 28, w: 800, c: '#fff' }), n2 = T(s, 380, 458, '', { size: 21, c: '#cfe0f4' });
+    const POS = {}; let T0 = 0, now = 0, i = 0, cA = 2.7;
+    function bodies(t, dt) {
+      Object.keys(PL).forEach((k) => { const q = PL[k], a = q.p + t * q.w * .35; POS[k] = [SX + Math.cos(a) * q.a, SY + Math.sin(a) * q.a * TILT]; q.g.setAttribute('transform', `translate(${POS[k][0]},${POS[k][1]})`); });
+      const ma = t * 2.1, mx = POS.earth[0] + Math.cos(ma) * 17, my = POS.earth[1] + Math.sin(ma) * 9; POS.moon = [mx, my]; moon.setAttribute('cx', mx); moon.setAttribute('cy', my); moonT.setAttribute('x', mx); moonT.setAttribute('y', my - 7);
+      // 혜성: 태양에 가까울수록 빠름
+      const lx0 = cCX + Math.cos(cA) * CA * Math.cos(CR) - Math.sin(cA) * CB * Math.sin(CR), ly0 = cCY + Math.cos(cA) * CA * Math.sin(CR) + Math.sin(cA) * CB * Math.cos(CR);
+      cA += dt * (90 / (Math.hypot(lx0 - SX, ly0 - SY) + 40)) * .55;
+      POS.com = [lx0, ly0]; cg.setAttribute('transform', `translate(${lx0},${ly0})`);
+      const tx = lx0 - SX, ty = ly0 - SY, l = Math.hypot(tx, ty) || 1, ux = tx / l, uy = ty / l, len = 34 + 1400 / (l + 40), nx = -uy * 7, ny = ux * 7;
+      tail.setAttribute('d', `M${nx},${ny} L${ux * len},${uy * len} L${-nx},${-ny}Z`);
+      POS.sun = [SX + 26, SY - 12]; POS.pole = [SX, SY - 34]; POS.out = [790, 40];
+    }
+    function pick(k) { i = k; T0 = now; n1.textContent = MIS[k][1]; n2.textContent = MIS[k][2]; Object.keys(orbitOf).forEach((o) => orbitOf[o].setAttribute('stroke', MIS[k][0].includes(o) || (MIS[k][0][0] === 'moon' && o === 'earth') ? 'rgba(255,233,168,.85)' : 'rgba(170,195,230,.32)')); }
+    function flyShip() {
+      const stops = MIS[i][0], leg = 1.15, u = (now - T0) / leg, n = Math.min(stops.length - 1, Math.floor(u)), f = Math.min(1, ease(clamp(u - n, 0, 1)));
+      const from = n === 0 ? POS.earth : POS[stops[n - 1]], to = POS[stops[n]], x = lerp(from[0], to[0], f), y = lerp(from[1], to[1], f) - Math.sin(f * 3.14) * 18 - (f >= 1 ? 12 : 0);
+      ship.setAttribute('transform', `translate(${x},${y})`);
+      const pts = [POS.earth, ...stops.slice(0, n).map((q) => POS[q]), [x, y]]; trail.setAttribute('points', pts.map((q) => q.join(',')).join(' '));
+    }
+    let auto = false, wait = 0;
+    const L = loop(host, (dt) => { now += dt; bodies(now, dt); flyShip(); if (auto && now - T0 > MIS[i][0].length * 1.15 + 2) pick((i + 1) % MIS.length); });
+    bodies(0, 0); pick(0); flyShip();
+    button(ctl, '이전 탐사', () => { auto = false; pick((i + MIS.length - 1) % MIS.length); });
+    button(ctl, '다음 탐사', () => { auto = false; pick((i + 1) % MIS.length); }, 'go');
+    return { play() { auto = true; L.start(); }, stop() { L.stop(); auto = false; } };
+  }
+
+  /* 3D 그림은 그 장을 처음 볼 때 three.js를 받아 만들어요 */
+  let p3 = null;
+  const load3 = () => p3 || (p3 = Promise.all([import('three'), import('three/addons/controls/OrbitControls.js'), import('three/addons/environments/RoomEnvironment.js'), import('three/addons/geometries/RoundedBoxGeometry.js')]).then(([T3, O, Rm, B]) => EX3INIT(T3, O.OrbitControls, Rm.RoomEnvironment, B.RoundedBoxGeometry)));
+  const lazy = (name) => (h, c) => {
+    const msg = document.createElement('div'); msg.className = 'load3d'; msg.textContent = '3D 그림을 불러오는 중'; h.appendChild(msg);
+    let real = null, want = false;
+    load3().then((E) => { msg.remove(); real = E[name](h, c); if (want && real.play) real.play(); }).catch((e) => { msg.textContent = '3D 그림을 불러오지 못했어요. 인터넷 연결을 확인해 주세요.'; window.SM_err && window.SM_err('3D 그림', e); });
+    return { play() { want = true; if (real && real.play) real.play(); }, stop() { want = false; if (real && real.stop) real.stop(); } };
+  };
+
+  Object.assign(EX, { cover, para, annual, mag, tenpc, scolor, mw, cluster, nebula, balloon, bang, earth, missions, swing: lazy('swing'), hand: lazy('hand'), motor: lazy('motor'), inv: lazy('inv') });
 })();
