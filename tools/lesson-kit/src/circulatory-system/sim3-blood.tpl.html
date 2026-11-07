@@ -12,6 +12,7 @@
 /*@@LOCAL:_css_sim.css@@*/
 /*@@LOCAL:_css_pf.css@@*/
 
+.tree{display:grid;grid-template-columns:1fr 2.6fr;gap:10px}.tl{display:block;font-size:13px;font-weight:700;color:#5a6b7e;margin-bottom:5px;word-break:keep-all}.tree button{width:100%;min-height:56px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15px;cursor:pointer}.tree button[aria-pressed="true"]{border-color:#0e63b3;background:#e9f3fd;color:#0b3f73}.r3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
 </style>
 </head>
 <body>
@@ -19,42 +20,44 @@
   <header class="top"><div class="ttl"><span class="eyebrow">해 보기</span><h1>혈액 성분 소개서</h1>
     <p class="sub">혈액을 크게 확대해 보고, 성분을 눌러 하는 일을 봐요. 그다음 소개서를 만들어요.</p></div></header>
   <div class="stage">
-    <section class="card viewer"><div class="scene grow" id="fig" role="img" aria-label="혈관 속 혈액 확대 그림. 혈장 속에 적혈구, 백혈구, 혈소판이 떠 있다."></div><div class="vctl"><span class="hint">크기와 수는 구분이 잘 되게 정한 모형이에요</span></div></section>
+    <section class="card viewer"><div class="scene grow gl-host" id="fig" style="height:auto;background:#f3dca4" role="img" aria-label="혈관 속 혈액 3D 모형. 혈장 속에 적혈구, 백혈구, 혈소판이 떠 흐른다."></div><div class="vctl"><span class="hint">크기와 수는 구분이 잘 되게 정한 모형이에요</span></div></section>
     <section class="card pad"><div class="ptabs" role="tablist" id="pt">
         <button type="button" role="tab" data-p="lab" aria-selected="true">성분 보기</button>
         <button type="button" role="tab" data-p="rec" aria-selected="false">소개서</button>
         <button type="button" role="tab" data-p="why" aria-selected="false">왜 그럴까?</button>
-      </div><div class="pane" data-p="lab"><div class="seg3" id="kk" style="grid-auto-flow:row;grid-template-columns:1fr 1fr"><button type="button" data-v="rbc" aria-pressed="false">적혈구</button><button type="button" data-v="wbc" aria-pressed="false">백혈구</button><button type="button" data-v="plt" aria-pressed="false">혈소판</button><button type="button" data-v="pla" aria-pressed="false">혈장</button></div><div class="fbk" id="res"><b class="t" id="resT">결과</b><span id="resM"></span></div></div>
+      </div><div class="pane" data-p="lab"><div class="seglbl">혈액의 구성</div><div class="tree" id="kk"><div><span class="tl">액체 성분</span><button type="button" data-v="pla" aria-pressed="false">혈장</button></div><div class="gr"><span class="tl">세포 성분: 혈구</span><div class="r3"><button type="button" data-v="rbc" aria-pressed="false">적혈구</button><button type="button" data-v="wbc" aria-pressed="false">백혈구</button><button type="button" data-v="plt" aria-pressed="false">혈소판</button></div></div></div><div class="fbk" id="res"><b class="t" id="resT">결과</b><span id="resM"></span></div></div>
       <div class="pane" data-p="rec" hidden><p class="ptxt">성분 하나를 골라 캐릭터 소개서를 써요.</p><div class="seg3" id="cc"><button type="button" aria-pressed="true">적혈구</button><button type="button" aria-pressed="false">백혈구</button><button type="button" aria-pressed="false">혈소판</button><button type="button" aria-pressed="false">혈장</button></div>
         <textarea class="fbtxt" id="cN" rows="1" placeholder="캐릭터 별명 (예: 산소 배달부)"></textarea><textarea class="fbtxt" id="cR" rows="2" placeholder="역할"></textarea><textarea class="fbtxt" id="cF" rows="2" placeholder="특징"></textarea><button class="btn ghost" type="button" id="cp" style="width:100%;margin-top:8px">소개서 복사하기</button></div>
       <div class="pane" data-p="why" hidden><ol class="whylist"><li><i>1</i><span>혈액은 액체 성분인 <b>혈장</b>과 세포 성분인 <b>혈구</b>로 구성돼요.</span></li><li><i>2</i><span><b>혈장</b>은 대부분이 물이고 영양소, 이산화 탄소, 노폐물을 운반해요.</span></li><li><i>3</i><span><b>적혈구</b>에는 산소를 운반하는 헤모글로빈이 있어 붉은색으로 보여요.</span></li><li><i>4</i><span><b>백혈구</b>는 세균을 잡아먹는 등 방어작용을 해요. <b>혈소판</b>은 혈액을 응고시켜 출혈을 막아요.</span></li></ol></div></section>
   </div>
 </div>
-<script>
-/*@@LOCAL:_ps.js@@*/
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }
 </script>
-<script>
-/*@@LOCAL:_cr.js@@*/
-</script>
-<script>
-(() => {
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+/*@@PART:c3.js@@*/
+/*@@LOCAL:_cv3b.js@@*/
+(async () => {
   'use strict';
   try {
     const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
     const q = new URLSearchParams(location.search);
     const say = (t, m, c = '') => { $('#res').className = 'fbk ' + c; $('#resT').textContent = t; $('#resM').innerHTML = m; };
-    const B = CR.blood($('#fig'));
+    const B = await CVB.blood($('#fig')); window.__B = B;
     const T = { rbc: ['적혈구', '산소를 운반하는 <b>헤모글로빈</b>이 있어 붉은색으로 보여요. 원반 모양이에요.'], wbc: ['백혈구', '몸 밖에서 들어온 <b>세균을 잡아먹는</b> 등 방어작용을 해요.'], plt: ['혈소판', '상처가 나면 혈액을 <b>응고</b>시켜 딱지를 만들고 출혈을 막아요.'], pla: ['혈장', '대부분이 물이에요. <b>영양소, 이산화 탄소, 노폐물</b>을 운반해요.'] };
-    say('결과', '성분을 눌러 하는 일을 봐요.');
+    say('처음 할 일', '혈액은 액체 성분인 <b>혈장</b>과 세포 성분인 <b>혈구</b>로 구성돼요. 성분을 눌러 하는 일을 봐요.');
     const pick = (k) => { $$('#kk button').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.v === k))); B.show(k); say(T[k][0], T[k][1], 'ok'); };
     $$('#kk button').forEach((b) => b.addEventListener('click', () => pick(b.dataset.v)));
     if (q.get('k')) pick(q.get('k'));
     let cname = '적혈구'; $$('#cc button').forEach((b) => b.addEventListener('click', () => { cname = b.textContent; $$('#cc button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); }));
-    $('#cp').addEventListener('click', async () => { const t = `[${cname}를 소개해요]\n별명: ${$('#cN').value}\n역할: ${$('#cR').value}\n특징: ${$('#cF').value}`; const b = $('#cp'); try { await navigator.clipboard.writeText(t); b.textContent = '복사했어요'; } catch (e) { b.textContent = '칸을 길게 눌러 복사해요'; } setTimeout(() => { b.textContent = '소개서 복사하기'; }, 2000); });
+    $('#cp').addEventListener('click', async () => { const josa = /[혈구]$/.test(cname) && cname.endsWith('구') ? '를' : '을'; const t = `[${cname}${josa} 소개해요]\n별명: ${$('#cN').value}\n역할: ${$('#cR').value}\n특징: ${$('#cF').value}`; const b = $('#cp'); try { await navigator.clipboard.writeText(t); b.textContent = '복사했어요'; } catch (e) { b.textContent = '칸을 길게 눌러 복사해요'; } setTimeout(() => { b.textContent = '소개서 복사하기'; }, 2000); });
     const tab = (p) => { $$('#pt button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.p === p))); $$('.pane').forEach((e) => { e.hidden = e.dataset.p !== p; }); };
     $$('#pt button').forEach((b) => b.addEventListener('click', () => tab(b.dataset.p)));
     if (q.get('tab')) tab(q.get('tab'));
-    window.SM = window.SM || {}; window.SM.okUI = true;
+    window.SM = window.SM || {}; window.SM.okUI = true; window.__ready = true;
   } catch (err) { window.SM_err && window.SM_err('혈액 성분', err); }
 })();
 </script>

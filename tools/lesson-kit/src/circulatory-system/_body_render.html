@@ -1,0 +1,19 @@
+<!doctype html><meta charset=utf8><title>온몸 혈관 영상 찍기</title>
+<!-- 사용: _anat_bake.py 가 ?d=<자료폴더> 로 연다. BodyParts3D 4.0 CC BY 4.0 -->
+<style>html,body{margin:0;height:100%;background:#fff}canvas{display:block}</style>
+<script type=importmap>{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"}}</script>
+<script type=module>
+import * as T from 'three';
+const q=new URLSearchParams(location.search);
+const get=(u)=>new Promise((ok,no)=>{const x=new XMLHttpRequest();x.open('GET',u);x.responseType='arraybuffer';x.onload=()=>ok(x.response);x.onerror=no;x.send()});
+const b=await get('body.bin');const man=JSON.parse(new TextDecoder().decode(await get('body.json')));
+const r=new T.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});r.setPixelRatio(1);r.setSize(innerWidth,innerHeight);r.setClearColor(0xffffff);r.toneMapping=T.ACESFilmicToneMapping;r.toneMappingExposure=1.05;document.body.append(r.domElement);
+const s=new T.Scene();s.add(new T.HemisphereLight(0xffffff,0xb0a8a0,1.4));const d=new T.DirectionalLight(0xfff4e8,2.2);d.position.set(-1,2,3);s.add(d);const f=new T.DirectionalLight(0xdfeaff,.7);f.position.set(2,0,1);s.add(f);
+const g=new T.Group();s.add(g);
+for(const m of man.groups){const G=new T.BufferGeometry();G.setAttribute('position',new T.BufferAttribute(new Float32Array(b,m.p,m.v*3),3));G.setAttribute('normal',new T.BufferAttribute(new Int16Array(b,m.n,m.v*3),3,true));G.setIndex(new T.BufferAttribute(new Uint32Array(b,m.i,m.c),1));
+ const skin=m.k==='skin';const M=new T.MeshStandardMaterial({color:m.col,roughness:skin?.8:.55,transparent:skin,opacity:skin?.13:1,depthWrite:!skin,side:skin?T.FrontSide:T.DoubleSide});const me=new T.Mesh(G,M);me.renderOrder=skin?5:0;g.add(me);}
+const box=new T.Box3().setFromObject(g),c=box.getCenter(new T.Vector3()),z=box.getSize(new T.Vector3());
+g.children.forEach(m=>{m.position.sub(c)});
+const cam=new T.PerspectiveCamera(22,innerWidth/innerHeight,.05,30);cam.position.set(0,0,z.y*2.78);cam.lookAt(0,0,0);
+window.setA=(a)=>{g.rotation.y=a;r.render(s,cam)};window.setA(0);window.__ok=true;
+</script>

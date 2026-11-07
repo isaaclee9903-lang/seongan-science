@@ -55,6 +55,7 @@ python tools/lesson-kit/shot.py URL out.png 1280 800 "#선택자" 3 "#버튼1,wa
 ## 수업별 재사용 도구
 2026-10-22에 프로젝트 규칙 문서(`CLAUDE.md`)에서 옮겨 왔어요. 새 수업을 만들 때 같은 대단원 도구를 먼저 찾아 다시 써요. 새 도구를 만들면 여기에 한 줄 더해요.
 
+- 인체 3D(Ⅵ 동물과 에너지): `tools/lesson-kit/src/circulatory-system/_cv3.js`(CV3.heart: 실제 심장 모형, 네 방 단면, 뛰는 모습, 판막, 혈액 흐름), `_cv3b.js`(CVB.vessels: 혈관 연결·세 혈관·물질 교환, CVB.blood: 혈액 성분). 모형 자료는 BodyParts3D 4.0(CC BY 4.0, 출처 표기 필요), 뽑는 법은 `_anat_prep.py`, 읽기용 영상 찍기는 `_anat_bake.py`. 학생용 그림이라 생식기 쪽 혈관과 알몸 피부는 넣지 않는다. 폐 표면과 간 전체는 이 자료에 없어 Human Reference Atlas(CC BY 4.0)에서 가져온다.
 - 밀도(Ⅰ 물질의 특성): `tools/lesson-kit/src/density/_den.js`(DEN: 비커 속 구슬 beakers, 1 cm³ 조각 cubes, 밀도 막대 chart(그림 Ⅰ-2 값), 입자 모형 particles, 뜨고 가라앉는 컵 jar(방울이 제 층을 찾아감·고체 뜨고 가라앉기), 전자저울·눈금실린더 실험실 lab). 다음 Ⅰ 수업도 재사용한다.
 - 용해도(Ⅰ 물질의 특성): `tools/lesson-kit/src/solubility/_sol.js`(SOL: 용해도 자료·보간 solu/label, 입자 모형 dissolve, 포화·불포화 satur, 용해도 곡선 curve, 결정 알갱이 무더기 pile, 시험관 그리기)와 `_sol2.js`(SOL.tube 시험관 실험실, SOL.beaker 물 100 g 비커, SOL.soda 탄산음료·주사기). 그림 칸을 화면에 맞게 자르는 `surface(…, crop)`/`setCrop`도 여기 있다. 다음 Ⅰ 수업(녹는점·끓는점 등)도 재사용한다.
 - 녹는점과 끓는점(Ⅰ 물질의 특성): `tools/lesson-kit/src/melting-boiling/_mb.js`(MB: 핫플레이트·스탠드·온도 센서·디지털 온도계·삼각 플라스크, 온도-시간 그래프 tgraph, 끓는점 실험실 boil, 녹는점 실험실 melt, 그림 Ⅰ-8 mgraph, 그림 Ⅰ-7·Ⅰ-9 ladder, 신기한 물질 도감 atlas, 찻주전자와 솥 pots). `_sol.js`(용해도 SOL) 사본의 그리기 도구를 빌려 쓴다.

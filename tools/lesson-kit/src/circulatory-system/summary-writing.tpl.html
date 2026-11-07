@@ -34,6 +34,7 @@
   .gcard .opt button[aria-pressed="true"]{border-color:#0e63b3;background:#e4f0fb;color:#0b3f73}
   .gcard.good{border-color:#1f9d5c}.gcard.bad{border-color:#d9534f}
   @media (max-width:700px){.gmatch{grid-template-columns:1fr}}
+.hq{display:grid;grid-template-columns:1.15fr 1fr;gap:16px;align-items:start}.hq img{width:100%;border-radius:12px;border:1px solid #dde6ee;display:block}.hqn{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px}.hqn label{display:grid;grid-template-columns:24px 1fr;align-items:center;gap:6px;font-weight:800;font-size:14.5px}.hqn button{min-height:44px;border-radius:10px;border:2px dashed #b9c8d6;background:#fff;font:700 14.5px Pretendard,sans-serif;cursor:pointer}.hqn button.cur{border:2px solid #0e63b3;background:#e9f3fd}.hqn button.good{border:2px solid #0e63b3;background:#e9f3fd;color:#0b3f73}.hqn button.bad{border:2px solid #d9534f;background:#fff4f2}@media (max-width:760px){.hq{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -46,8 +47,10 @@
   <nav class="tabs" id="tabs"></nav>
 
   <section class="card" id="s1">
-    <h2><span class="no">1</span>빈칸 채우기</h2>
-    <p class="goal">빈칸을 누른 뒤 아래 낱말을 눌러 채워요.</p>
+    <h2><span class="no">1</span>그림과 빈칸</h2>
+    <p class="goal">그림의 번호에 맞는 이름을 골라요. 번호를 누른 뒤 낱말을 눌러요.</p>
+    <div class="hq"><img src="media/p-quiz.jpg" alt="번호가 붙은 심장 단면 모형"><div><div class="hqn" id="hqn"></div><div class="bank" id="hqb"></div><div class="acts"><button type="button" class="btn primary" id="hqc" disabled>이름 확인하기</button></div><div class="fb" id="hqf"></div></div></div>
+    <p class="goal" style="margin-top:18px">이제 빈칸을 누른 뒤 아래 낱말을 눌러 채워요.</p>
     <div class="fill" id="fill"></div>
     <div class="bank" id="bank"></div>
     <div class="acts"><button type="button" class="btn ghost" id="re1">다시 고르기</button><button type="button" class="btn primary" id="chk1" disabled>확인하기</button></div>
@@ -90,7 +93,25 @@
 </div>
 
 <script>
-/*@@LOCAL:_ps.js@@*/
+/* ===== 그림 이름 붙이기 ===== */
+(() => {
+  'use strict';
+  try {
+    const ANS = ['대정맥', '우심방', '판막', '우심실', '대동맥', '폐동맥', '폐정맥', '좌심방', '판막', '좌심실'];
+    const WORDS = ['대정맥', '폐정맥', '대동맥', '폐동맥', '우심방', '좌심방', '우심실', '좌심실', '판막'];
+    const pick = ANS.map(() => null); let cur = 0;
+    const $ = (s) => document.querySelector(s);
+    const render = () => {
+      $('#hqn').innerHTML = ANS.map((_, i) => `<label>${i + 1}<button type="button" data-i="${i}" class="${i === cur ? 'cur' : ''}">${pick[i] || ''}</button></label>`).join('');
+      document.querySelectorAll('#hqn button').forEach((b) => b.addEventListener('click', () => { cur = +b.dataset.i; render(); }));
+      $('#hqc').disabled = pick.includes(null);
+    };
+    $('#hqb').innerHTML = WORDS.map((w) => `<button type="button">${w}</button>`).join('');
+    document.querySelectorAll('#hqb button').forEach((b) => b.addEventListener('click', () => { pick[cur] = b.textContent; const n = pick.indexOf(null); if (n >= 0) cur = n; render(); }));
+    $('#hqc').addEventListener('click', () => { let w = 0; document.querySelectorAll('#hqn button').forEach((b) => { const i = +b.dataset.i, ok = pick[i] === ANS[i]; b.className = ok ? 'good' : 'bad'; if (!ok) w++; }); const f = $('#hqf'); f.className = 'fb show ' + (w ? 'no' : 'ok'); f.innerHTML = w ? `${w}곳이 달라요. 붉게 표시된 번호를 누르고 다시 골라요. 사람을 마주 본 그림이라 심장의 오른쪽이 그림의 왼쪽에 있어요.` : '모두 맞았어요. 심장의 오른쪽(우심방, 우심실)이 그림의 왼쪽에 있어요.'; });
+    render();
+  } catch (err) { console.error(err); }
+})();
 </script>
 <script>
 window.SW_CHECKS = [['ok1', '빈칸'], ['ok2', '성분'], ['ok3', 'O X'], ['ok4', '글쓰기']];
@@ -103,7 +124,7 @@ window.SW = {
 };
 (() => {
   const { $, $$ } = window.SW;
-  const TABS = ['빈칸', '성분', 'O X', '글쓰기'];
+  const TABS = ['그림·빈칸', '성분', 'O X', '글쓰기'];
   window.SW.renderTabs = () => {
     $('#tabs').innerHTML = TABS.map((t, i) => `<button type="button" class="tab${window.SW.done[i + 1] ? ' done' : ''}" data-s="${i + 1}"><span class="n">${i + 1}</span>${t}</button>`).join('');
     $$('#tabs .tab').forEach((b) => b.addEventListener('click', () => document.getElementById('s' + b.dataset.s).scrollIntoView({ behavior: 'smooth', block: 'start' })));
@@ -167,7 +188,7 @@ window.SW = {
   try {
     const { $, $$, shuffle, fb, finish } = window.SW;
     const OX = [['o', 'O'], ['x', 'X']];
-    const items = [["심장은 2개의 심방과 2개의 심실로 나뉘어 있다.", 'o', OX],["심방은 동맥과 연결되어 혈액을 내보낸다.", 'x', OX],["동맥은 벽이 두껍고 탄력성이 강하다.", 'o', OX],["정맥에는 판막이 전혀 없다.", 'x', OX],["혈장은 대부분이 물이다.", 'o', OX],["백혈구는 산소를 운반한다.", 'x', OX]];
+    const items = [["심장은 2개의 심방과 2개의 심실로 나뉘어 있다.", 'o', OX],["심방은 동맥과 연결되어 혈액을 내보낸다.", 'x', OX],["동맥은 벽이 두껍고 탄력성이 강하다.", 'o', OX],["정맥에는 판막이 전혀 없다.", 'x', OX],["모세혈관은 혈액이 흐르는 속도가 느려 주변의 세포와 물질 교환이 일어난다.", 'o', OX],["심방은 심실보다 두껍고 탄력성이 강한 근육으로 이루어져 있다.", 'x', OX],["혈장은 대부분이 물이다.", 'o', OX],["백혈구는 산소를 운반한다.", 'x', OX]];
     const list = shuffle(items.slice()), pick = list.map(() => null);
     $('#sort3').innerHTML = list.map((it, i) => `<div class="si" data-i="${i}"><p>${it[0]}</p><div class="two">${it[2].map(([v, t]) => `<button type="button" data-v="${v}" aria-pressed="false">${t}</button>`).join('')}</div></div>`).join('');
     $$('#sort3 .si').forEach((row) => { const i = +row.dataset.i; $$('button', row).forEach((b) => b.addEventListener('click', () => { pick[i] = b.dataset.v; row.classList.remove('good', 'bad'); $$('button', row).forEach((o) => o.setAttribute('aria-pressed', String(o === b))); $('#chk3').disabled = pick.includes(null); })); });
