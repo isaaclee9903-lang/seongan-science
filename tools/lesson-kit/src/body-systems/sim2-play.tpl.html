@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>기관계의 상호작용 – 역할놀이</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+/*@@LOCAL:_css_ps.css@@*/
+/*@@LOCAL:_css_sim.css@@*/
+/*@@LOCAL:_css_pf.css@@*/
+.rr{display:grid;grid-template-columns:76px 1fr;gap:6px;align-items:center;margin-bottom:5px;font-size:14px}.rr input{min-height:44px;border:1px solid #cdd9e4;border-radius:10px;padding:0 9px;font:inherit;font-size:14px;width:100%}.seg3 button{font-size:13.5px}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top"><div class="ttl"><span class="eyebrow">탐구</span><h1>역할놀이 계획과 노래 가사</h1>
+    <p class="sub">모둠 역할을 나누어 무엇을 어떻게 표현할지 계획해요. 기관계 노래 가사도 써 봐요.</p></div></header>
+  <div class="stage">
+    <section class="card viewer"><div class="scene grow" id="fig" role="img" aria-label="기관계와 조직세포 연결 그림."></div><div class="vctl"><span class="hint">6명이 모둠이에요. 순환계는 2명이 맡아요</span></div></section>
+    <section class="card pad"><div class="ptabs" role="tablist" id="pt"><button type="button" role="tab" data-p="lab" aria-selected="true">역할놀이</button><button type="button" role="tab" data-p="song" aria-selected="false">노래 가사</button></div>
+      <div class="pane" data-p="lab"><p class="ptxt">맡은 역할을 어떤 재료로 표현할지 적어요. 예: 영양소는 과자, 산소는 파란 풍선.</p><div id="rs"></div><div class="peer" style="margin-top:6px"><label><input type="checkbox"><span>한 기관계가 제대로 못하면 어떤 일이 일어날지 이야기했나요?</span></label></div><button class="btn ghost" type="button" id="cp1" style="width:100%;margin-top:4px">계획 복사하기</button></div>
+      <div class="pane" data-p="song" hidden><p class="ptxt">기관계 하나를 골라 주요 기관이 모두 들어가는 가사를 써요. 인공지능 프로그램은 선생님이 안내해요.</p><div class="seg3" id="sg"><button type="button" aria-pressed="true">소화계</button><button type="button" aria-pressed="false">순환계</button><button type="button" aria-pressed="false">호흡계</button><button type="button" aria-pressed="false">배설계</button></div><p class="mnote" id="ks"></p><textarea class="fbtxt" id="ly" rows="5" placeholder="가사"></textarea><div class="peer"><label><input type="checkbox"><span>주요 기관이 모두 포함되었나요?</span></label><label><input type="checkbox"><span>부르기 쉽게 만들었나요?</span></label></div><button class="btn ghost" type="button" id="cp2" style="width:100%">가사 복사하기</button></div></section>
+  </div>
+</div>
+<script>
+/*@@LOCAL:_ps.js@@*/
+</script>
+<script>
+/*@@LOCAL:_bs2.js@@*/
+</script>
+<script>
+(() => {
+  'use strict';
+  try {
+    const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+    const q = new URLSearchParams(location.search);
+    const say = (t, m, c = '') => { $('#res').className = 'fbk ' + c; $('#resT').textContent = t; $('#resM').innerHTML = m; };
+    BY.map($('#fig'));
+    const RO = [['소화계', '음식물과 영양소'], ['순환계 1', '산소와 영양소 전달'], ['순환계 2', '이산화 탄소와 노폐물 전달'], ['호흡계', '산소와 이산화 탄소'], ['배설계', '노폐물, 오줌'], ['조직세포', '에너지 만들기']];
+    $('#rs').innerHTML = RO.map(([n, t], i) => `<label class="rr"><b>${n}</b><input type="text" data-i="${i}" placeholder="${t}"></label>`).join('');
+    const KS = { '소화계': '주요 기관: 입, 식도, 위, 작은창자, 큰창자, 간, 쓸개, 이자', '순환계': '주요 기관: 심장, 혈관, 혈액', '호흡계': '주요 기관: 코, 숨관, 숨관가지, 폐', '배설계': '주요 기관: 콩팥, 오줌관, 방광, 요도' };
+    let cur = '소화계'; const pk = () => { $('#ks').textContent = KS[cur]; }; pk();
+    $$('#sg button').forEach((b) => b.addEventListener('click', () => { cur = b.textContent; $$('#sg button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); pk(); }));
+    const cp = (id, get, label) => $(id).addEventListener('click', async () => { const b = $(id); try { await navigator.clipboard.writeText(get()); b.textContent = '복사했어요'; } catch (e) { b.textContent = '칸을 길게 눌러 복사해요'; } setTimeout(() => { b.textContent = label; }, 2000); });
+    cp('#cp1', () => RO.map(([n], i) => `${n}: ${$(`[data-i="${i}"]`).value}`).join('\n'), '계획 복사하기');
+    cp('#cp2', () => `[${cur}]\n${$('#ly').value}`, '가사 복사하기');
+    const tab = (p) => { $$('#pt button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.p === p))); $$('.pane').forEach((e) => { e.hidden = e.dataset.p !== p; }); };
+    $$('#pt button').forEach((b) => b.addEventListener('click', () => tab(b.dataset.p)));
+    if (q.get('tab')) tab(q.get('tab'));
+    window.SM = window.SM || {}; window.SM.okUI = true;
+  } catch (err) { window.SM_err && window.SM_err('역할놀이', err); }
+})();
+</script>
+</body>
+</html>

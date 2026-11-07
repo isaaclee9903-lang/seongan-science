@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>기관계의 상호작용 – 스스로 정리하기</title>
+<script>
+/* 문제 알림: 코드에 오류가 나면 화면 아래에 빨간 상자로 알려 줘요 (선생님 확인용) */
+(function () {
+  function box() {
+    var b = document.getElementById('swErr');
+    if (!b && document.body) {
+      b = document.createElement('div'); b.id = 'swErr';
+      b.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;background:#fdecea;color:#8a1f17;border:2px solid #d9534f;border-radius:12px;padding:10px 14px;font:600 14px/1.5 sans-serif;white-space:pre-wrap';
+      document.body.appendChild(b);
+    }
+    return b;
+  }
+  window.SW_err = function (where, err) {
+    var msg = '[' + where + '] ' + (err && err.message ? err.message : String(err));
+    var show = function () { var b = box(); if (b) b.textContent += (b.textContent ? '\n' : '') + msg; };
+    if (document.body) show(); else document.addEventListener('DOMContentLoaded', show);
+  };
+  window.addEventListener('error', function (e) { window.SW_err('스크립트', { message: e.message + ' (줄 ' + e.lineno + ')' }); });
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      var S = window.SW || {}, miss = [];
+      (window.SW_CHECKS || []).forEach(function (p) { if (!S[p[0]]) miss.push(p[1]); });
+      if (miss.length) window.SW_err('실행 안 됨', { message: miss.join(', ') + ' 코드가 실행되지 않았어요. 파일이 끝(</html>)까지 들어 있는지 확인해 주세요.' });
+    }, 1500);
+  });
+})();
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+  :root{--bg:#f3f6f9;--card:#fff;--ink:#14263b;--ink2:#34495e;--muted:#5a6b7e;--line:#dde6ee;--accent:#0e63b3;--accent-soft:#e3effb;
+    --ok:#1f9d5c;--no:#d9534f;--violet:#7d5ad6;--ser:#1784cf;--ser-soft:#e3f2fc;--par:#5e9e1c;--par-soft:#eef7e2;
+    --shadow:0 1px 2px rgba(20,38,59,.06),0 8px 24px rgba(20,38,59,.07);--ease:cubic-bezier(.2,.8,.2,1)}
+  *{box-sizing:border-box}html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:"Pretendard",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  button{font:inherit;color:inherit}
+  .app{max-width:1000px;margin:0 auto;padding:16px 16px 28px;display:flex;flex-direction:column;gap:16px}
+  .eyebrow{display:inline-flex;font-size:13px;font-weight:700;color:var(--accent);background:var(--accent-soft);padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(22px,2.8vw,30px);margin:8px 0 2px;letter-spacing:-.02em}
+  .sub{margin:0;color:var(--muted);font-size:15px;word-break:keep-all}
+  .tabs{display:flex;gap:8px;flex-wrap:wrap;position:sticky;top:0;z-index:5;background:rgba(243,246,249,.94);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);padding:8px 0}
+  .tab{display:flex;align-items:center;gap:8px;min-height:46px;padding:0 14px;border:0;border-radius:12px;background:#fff;box-shadow:var(--shadow);font-weight:800;font-size:14.5px;color:var(--muted);cursor:pointer}
+  .tab .n{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:12.5px;background:#e6edf4;color:#607285}
+  .tab.done .n{background:var(--ok);color:#fff}
+  .card{background:var(--card);border-radius:22px;box-shadow:var(--shadow);border:1px solid rgba(20,38,59,.04);padding:20px 22px;scroll-margin-top:70px}
+  h2{font-size:21px;margin:0 0 4px;display:flex;align-items:center;gap:10px}
+  h2 .no{width:30px;height:30px;border-radius:10px;background:var(--accent);color:#fff;display:grid;place-items:center;font-size:15px}
+  .goal{font-size:14.5px;color:var(--muted);margin:0 0 14px;word-break:keep-all}
+  .fb{margin-top:12px;padding:12px 14px;border-radius:14px;font-size:15px;line-height:1.6;word-break:keep-all;display:none}
+  .fb.show{display:block;animation:fade .35s var(--ease)}
+  .fb.ok{background:#e8f7ef;color:#0f5a36}.fb.no{background:#fff5e6;color:#7a4508}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .btn{min-height:50px;border:0;border-radius:14px;padding:0 18px;font-weight:800;font-size:15.5px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;justify-content:center}
+  .btn:active{transform:scale(.97)}
+  .btn.primary{background:var(--accent);color:#fff}.btn.ghost{background:#eef3f8;color:var(--ink2)}.btn.green{background:var(--ok);color:#fff}
+  .btn:disabled{opacity:.4}
+  /* 1. 분류 */
+  .sort{display:grid;gap:10px}
+  .si{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;background:#f7fafc;border:2px solid transparent;border-radius:16px;padding:10px 12px 10px 16px;transition:all .25s}
+  .si p{margin:0;font-weight:700;font-size:16.5px;line-height:1.5;word-break:keep-all}
+  .si .two{display:flex;gap:6px}
+  .si .two button{min-height:48px;min-width:84px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15px;cursor:pointer}
+  .si .two button.s[aria-pressed="true"]{border-color:var(--ser);background:var(--ser-soft);color:var(--ser)}
+  .si .two button.p[aria-pressed="true"]{border-color:var(--par);background:var(--par-soft);color:#3f6e10}
+  .si.good{border-color:#9fdcbb;background:#ecf8f1}.si.bad{border-color:#f3c2bb;background:#fff4f2}
+  /* 2. 잇기 */
+  .chains{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .chn h3{margin:0 0 8px;font-size:16px}
+  .chn.s h3{color:var(--ser)}.chn.p h3{color:var(--par)}
+  .slots{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+  .sl{min-height:50px;border-radius:12px;border:2px dashed #b8c6d4;background:#f7fafc;display:flex;align-items:center;gap:10px;padding:6px 12px;font-weight:800;font-size:15px;color:var(--muted);word-break:keep-all}
+  .sl .k{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:13px;color:#fff;background:#aebdcc}
+  .chn.s .sl.f{border-style:solid;border-color:var(--ser);background:var(--ser-soft);color:#0f4f7d}.chn.s .sl.f .k{background:var(--ser)}
+  .chn.p .sl.f{border-style:solid;border-color:var(--par);background:var(--par-soft);color:#3f6e10}.chn.p .sl.f .k{background:var(--par)}
+  .pool{display:flex;flex-direction:column;gap:6px}
+  .pc{min-height:50px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15px;cursor:pointer;text-align:left;padding:6px 12px;word-break:keep-all}
+  .pc.shake{animation:shake .4s;border-color:var(--no)}
+  @keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+  .pc[hidden]{display:none}
+  /* 3. 생활 */
+  .lq{padding:14px 0;border-bottom:1px dashed var(--line)}
+  .lq:last-child{border-bottom:0;padding-bottom:0}
+  .lq p{margin:0 0 10px;font-weight:700;font-size:16.5px;line-height:1.6;word-break:keep-all}
+  .opts{display:grid;gap:8px}
+  .ob{display:flex;align-items:center;gap:10px;text-align:left;min-height:52px;border-radius:14px;border:2px solid var(--line);background:#f7fafc;padding:8px 14px;font-size:15.5px;font-weight:700;cursor:pointer;word-break:keep-all}
+  .ob .k{flex:none;width:28px;height:28px;border-radius:50%;background:#fff;border:2px solid #cbd6e1;display:grid;place-items:center;font-size:13px;font-weight:800;color:#5a6b7e}
+  .ob.good{border-color:var(--ok);background:#e8f7ef}.ob.bad{border-color:var(--no);background:#fdecea}
+  .ob:disabled{cursor:default}
+  .lexp{display:none;margin-top:10px;padding:12px 14px;border-radius:14px;background:#f2f7fd;font-size:15px;line-height:1.65;word-break:keep-all}
+  .lexp.show{display:block}
+  /* 4. 글쓰기 */
+  .prompts{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+  .pr{border-radius:16px;border:2px solid #d4dee8;background:#fff;padding:12px 14px;text-align:left;cursor:pointer;min-height:96px}
+  .pr b{display:block;font-size:15.5px;margin-bottom:4px}.pr span{font-size:13.5px;color:var(--muted);word-break:keep-all}
+  .pr.sel{border-color:var(--violet);background:#f3effd}
+  .wq{font-size:17px;font-weight:800;background:#f3effd;border-radius:14px;padding:12px 14px;margin-bottom:10px;color:#3d2f73;word-break:keep-all}
+  .starters{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+  .starters button{min-height:44px;border-radius:10px;border:1px dashed #b8a6ec;background:#fff;color:#5a43a8;font-weight:700;font-size:13.5px;padding:0 10px;cursor:pointer}
+  textarea{width:100%;min-height:220px;border-radius:16px;border:2px solid #cbd6e1;padding:14px 16px;font-size:17px;line-height:1.8;resize:vertical;font-family:inherit}
+  textarea:focus{outline:none;border-color:var(--violet);box-shadow:0 0 0 4px rgba(125,90,214,.15)}
+  .wmeta{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-top:8px;font-size:14px;color:var(--muted);font-weight:700}
+  .kw{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+  .kw span{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:6px 12px;font-size:14px;font-weight:800;background:#eef3f8;color:#7a8a9b;transition:all .3s}
+  .kw span.on{background:#e8f7ef;color:#11703f}
+  .kw span::before{content:"○"}.kw span.on::before{content:"●"}
+  .self{display:grid;gap:8px;margin-top:14px}
+  .self label{display:flex;align-items:center;gap:10px;background:#f7fafc;border-radius:12px;padding:10px 12px;font-size:15px;font-weight:700;cursor:pointer;word-break:keep-all;min-height:48px}
+  .self input{width:22px;height:22px;accent-color:var(--ok)}
+  .self .cat{flex:none;font-size:12px;font-weight:800;color:#fff;border-radius:999px;padding:2px 8px}
+  .acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+  .note{font-size:12.5px;color:var(--muted);line-height:1.6;word-break:keep-all}
+  @media (max-width:760px){.chains,.prompts{grid-template-columns:1fr}.si{grid-template-columns:1fr}}
+  @media print{body{background:#fff}.tabs,.card:not(#s4),.acts,.starters,.prompts,.self,.kw,header .sub{display:none!important}#s4{box-shadow:none;border:0}textarea{border:0;min-height:0;height:auto}}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+  /* ===== 광합성 수업 공통 ===== */
+  :root{--fab:#0e63b3;--fab-soft:#e4f0fb}
+  .eyebrow{color:#0e63b3;background:#e4f0fb}
+  .prog i{background:#0e63b3}
+  .ph.done i{background:#8db8e3}
+  [hidden]{display:none!important}
+  .fbk{border-radius:14px;padding:12px 14px;margin-top:10px;font-size:15px;line-height:1.65;word-break:keep-all;background:#f6f9fc;border:1px solid #dbe4ed;color:var(--ink2)}
+  .fbk.ok{background:#e9f3fd;border-color:#bcd7f2;color:#0b3f73}
+  .fbk.no{background:#fff4f2;border-color:#f3c2bb;color:#5e2a25}
+  .fbk b.t{display:block;font-size:13.5px;margin-bottom:2px}
+  .scene{position:relative;width:100%;overflow:hidden;touch-action:manipulation;user-select:none;-webkit-user-select:none;background:#fff}
+  .psv{position:absolute;inset:0;width:100%;height:100%;display:block;overflow:visible}
+  .olay{position:absolute;inset:0;pointer-events:none}
+  .ol{position:absolute;transform:translate(-50%,-50%);white-space:nowrap;font-weight:800;font-size:clamp(12px,1.35vw,15.5px);line-height:1.3;letter-spacing:-.01em;color:#14263b;transition:opacity .25s}
+  .ol.la{transform:translate(-100%,-50%)}.ol.ra{transform:translate(0,-50%)}
+  .ol.bg{background:rgba(255,255,255,.9);padding:2px 8px;border-radius:7px}
+  .ol.lt{color:#fff;text-shadow:0 1px 3px rgba(10,30,20,.55)}
+  .ol.m{font-weight:700;color:#5a6b7e}
+  .ol.big{font-size:clamp(14px,1.7vw,18px)}
+  .ol small{font-weight:700;color:#5a6b7e;font-size:.88em}
+  .ol[data-off="1"]{opacity:0}
+  .psv .tap{cursor:pointer}
+  .steps{display:grid;gap:5px;margin:0 0 10px}
+  .steps .ph{padding:6px 10px;font-size:14.5px;line-height:1.5}
+  .ctl{display:grid;gap:8px}
+  .ctl .btn{width:100%}
+  .ctl .two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .btn.done,.btn:disabled{background:#eef3f8;color:#8b9aab;cursor:default}
+  .pred{display:grid;gap:6px}
+  .pred button,.qa3 button{min-height:46px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:14.5px;cursor:pointer;word-break:keep-all;line-height:1.35;padding:4px 10px;text-align:left}
+  .pred button[aria-pressed="true"],.qa3 button[aria-pressed="true"]{border-color:var(--fab);background:#e9f3fd;color:#0b3f73}
+  .pred button:disabled{cursor:default}
+  .seglbl{font-size:13px;font-weight:800;color:var(--muted);margin:2px 0}
+  .qa{margin-bottom:12px}
+  .qa p{margin:0 0 6px;font-weight:800;font-size:15px;line-height:1.5;word-break:keep-all}
+  .qa3{display:grid;gap:6px}
+  .qa3 button.good{border-color:var(--ok);background:#e8f7ef;color:#11703f}
+  .qa3 button.bad{border-color:#e7a29b;background:#fff4f2;color:#9b3a32}
+  .eqn{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:4px 8px;padding:10px 8px;border-radius:14px;background:#f6f9fc;border:1px solid #dbe4ed;font-weight:800;font-size:15px;word-break:keep-all}
+  .eqn span{transition:color .3s,opacity .3s}.eqn .off{color:#a7b3c0}
+  .eqn .ar{display:inline-flex;flex-direction:column;align-items:center;font-size:12px;line-height:1.1;color:#5a6b7e}
+  .eqn .ar i{font-style:normal;font-size:17px;color:#14263b}
+  .tog{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+  .tog button{min-height:64px;border-radius:14px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:14.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:#5a6b7e;word-break:keep-all;line-height:1.25;padding:4px}
+  .tog button svg{width:38px;height:22px;display:block;overflow:visible}
+  .tog button[aria-pressed="true"]{border-color:var(--fab);background:#e9f3fd;color:#0b3f73}
+  .lvls{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:6px;flex:1 1 320px}
+  .lvls button{min-height:46px;border-radius:12px;border:1px solid #d4dee8;background:#fff;color:#34495e;font-weight:800;font-size:14.5px;cursor:pointer;word-break:keep-all;line-height:1.2;padding:2px 4px}
+  .lvls button[aria-pressed="true"]{background:#14263b;color:#fff;border-color:#14263b}
+  .ptxt{font-size:15px;line-height:1.65;color:var(--ink2);margin:0 0 10px;word-break:keep-all}
+  .ptxt b{color:#0b3f73}
+  .whylist{display:grid;gap:6px;margin:0;padding:0;list-style:none}
+  .whylist li{display:grid;grid-template-columns:26px 1fr;gap:8px;font-size:14.5px;line-height:1.55;color:var(--ink2);word-break:keep-all;padding:7px 10px;border-radius:12px;background:#f7fafc}
+  .whylist li i{font-style:normal;width:24px;height:24px;border-radius:8px;background:#0e63b3;color:#fff;display:grid;place-items:center;font-weight:900;font-size:13px}
+  .whylist b{color:#0b3f73}
+  :root{--violet:#0e63b3}
+  .pr.sel{border-color:#0e63b3;background:#eef5fc}
+  .wq{background:#eef5fc;color:#123a63}
+  .starters button{border-color:#9fbbd8;color:#0b3f73}
+  .si .two button{min-width:92px;word-break:keep-all;line-height:1.3;padding:4px 10px}
+  .si .two button[aria-pressed="true"]{border-color:#0e63b3;background:#e4f0fb;color:#0b3f73}
+  .prompts{grid-template-columns:repeat(3,1fr)}
+  @media (max-width:860px){.prompts{grid-template-columns:1fr}}
+  .fill{font-size:18px;font-weight:700;line-height:2.5;word-break:keep-all;margin:6px 0 10px}
+  .fill .bk{display:inline-flex;align-items:center;justify-content:center;min-width:120px;min-height:44px;padding:0 12px;margin:0 4px;border:0;border-bottom:2.5px solid #8b9aab;background:#f4f7fa;border-radius:8px 8px 0 0;font:inherit;font-weight:800;cursor:pointer;line-height:1.2;vertical-align:middle;color:#0b3f73}
+  .fill .bk.cur{background:#e4f0fb;border-color:#0e63b3}
+  .fill .bk.good{background:#e8f7ef;border-color:#1f9d5c;color:#11703f}
+  .fill .bk.bad{background:#fff4f2;border-color:#d9534f;color:#9b3a32}
+  .bank{display:flex;flex-wrap:wrap;gap:8px}
+  .bank button{min-height:46px;padding:0 16px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15.5px;cursor:pointer}
+  .bank button:disabled{opacity:.35;cursor:default}
+  /* 그래프 고르기 */
+  .gmatch{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin:8px 0}
+  .gh{margin:0 0 6px;font-weight:700;font-size:15.5px}.gcard .opt{grid-template-columns:1fr 1fr}
+  .gcard{border:1px solid #dbe4ed;border-radius:14px;padding:10px;background:#fff}
+  .gcard .opt{display:grid;gap:4px;margin-top:6px}
+  .gcard .opt button{min-height:44px;border-radius:10px;border:2px solid #d4dee8;background:#fff;font-weight:700;font-size:14px;cursor:pointer;word-break:keep-all;line-height:1.2;padding:2px 6px}
+  .gcard .opt button[aria-pressed="true"]{border-color:#0e63b3;background:#e4f0fb;color:#0b3f73}
+  .gcard.good{border-color:#1f9d5c}.gcard.bad{border-color:#d9534f}
+  @media (max-width:700px){.gmatch{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <span class="eyebrow">기관계의 상호작용 · 스스로 정리하기</span>
+    <h1>상호작용 정리하기</h1>
+    <p class="sub">빈칸을 채우고, 하는 일을 고르고, O X로 확인한 뒤, 내 말로 설명해 봐요.</p>
+  </header>
+  <nav class="tabs" id="tabs"></nav>
+
+  <section class="card" id="s1">
+    <h2><span class="no">1</span>빈칸 채우기</h2>
+    <p class="goal">빈칸을 누른 뒤 아래 낱말을 눌러 채워요.</p>
+    <div class="fill" id="fill"></div>
+    <div class="bank" id="bank"></div>
+    <div class="acts"><button type="button" class="btn ghost" id="re1">다시 고르기</button><button type="button" class="btn primary" id="chk1" disabled>확인하기</button></div>
+    <div class="fb" id="fb1"></div>
+  </section>
+
+  <section class="card" id="s2">
+    <h2><span class="no">2</span>기관계가 하는 일 고르기</h2>
+    <p class="goal">기관계마다 하는 일을 골라요.</p>
+    <div class="gmatch" id="gm"></div>
+    <div class="acts"><button type="button" class="btn primary" id="chk2" disabled>확인하기</button></div>
+    <div class="fb" id="fb2"></div>
+  </section>
+
+  <section class="card" id="s3">
+    <h2><span class="no">3</span>맞으면 O, 틀리면 X</h2>
+    <p class="goal">문장을 읽고 O, X를 골라요.</p>
+    <div class="sort" id="sort3"></div>
+    <div class="acts"><button type="button" class="btn primary" id="chk3" disabled>확인하기</button></div>
+    <div class="fb" id="fb3"></div>
+  </section>
+
+  <section class="card" id="s4">
+    <h2><span class="no">4</span>내 말로 설명하기</h2>
+    <p class="goal">주제를 하나 골라 친구에게 설명하듯 써 봐요. 핵심어를 넣으면 초록색으로 바뀌어요.</p>
+    <div class="prompts" id="prompts"></div>
+    <div class="wq" id="wqText"></div>
+    <div class="starters" id="starters"></div>
+    <textarea id="txt" placeholder="여기에 써 보세요."></textarea>
+    <div class="wmeta"><span id="cnt">0자 · 목표 80자 이상</span><span id="saved"></span></div>
+    <div class="kw" id="kw"></div>
+    <div class="self" id="self"></div>
+    <div class="acts">
+      <button class="btn green" id="copyBtn" type="button">글 복사하기</button>
+      <button class="btn ghost" id="printBtn" type="button">인쇄 / PDF로 저장</button>
+    </div>
+    <p class="note" style="margin-top:10px">※ 글은 이 기기의 브라우저에만 임시로 저장되고 어디에도 보내지 않아요. 다 쓰면 '글 복사하기'로 복사해서 선생님이 안내한 곳에 붙여 넣으세요.</p>
+  </section>
+  <p class="credit" style="margin:20px 0 4px;text-align:center;font-size:13px;font-weight:700;color:#8495a8;letter-spacing:.02em">기관계의 상호작용 · 스스로 정리하기</p>
+</div>
+
+<script>
+/* ===== 광합성 수업 공통 그림 도구 PS =====
+   잎맥: Runions 등(2005)의 공간 군집화(space colonization) 방법을 이 수업에 맞게 새로 구현(코드 복사 아님).
+   해바라기 꽃판: 보겔의 잎차례 공식(황금각 137.5도). 모두 SVG로 그리고 글씨는 HTML 이름표로 올린다. */
+window.PS = (() => {
+  'use strict';
+  const NS = 'http://www.w3.org/2000/svg';
+  const REDUCE = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const el = (t, a, p) => { const e = document.createElementNS(NS, t); if (a) for (const k in a) if (a[k] != null) e.setAttribute(k, a[k]); if (p) p.appendChild(e); return e; };
+  const mk = (seed) => () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
+  const ease = (t) => t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+  const f1 = (n) => Math.round(n * 10) / 10;
+  let uid = 0;
+  const nid = (s = 'p') => `ps${s}${++uid}`;
+
+  /* --- 시간 --- */
+  function tween(ms, fn, done, ez = ease) {
+    if (REDUCE || ms <= 0) { fn(1); done && done(); return () => {}; }
+    let t0 = null, stop = false;
+    const step = (now) => { if (stop) return; if (t0 == null) t0 = now; const t = clamp((now - t0) / ms); fn(ez(t)); if (t < 1) requestAnimationFrame(step); else done && done(); };
+    requestAnimationFrame(step);
+    return () => { stop = true; };
+  }
+  function loop(fn) {
+    let last = null, stop = false;
+    const step = (now) => { if (stop) return; if (last == null) last = now; const dt = Math.min(.05, (now - last) / 1000); last = now; fn(dt, now / 1000); requestAnimationFrame(step); };
+    requestAnimationFrame(step);
+    return () => { stop = true; };
+  }
+
+  /* --- 무대: SVG + HTML 이름표 --- */
+  function stage(host, vb = [0, 0, 1000, 800]) {
+    host.innerHTML = '';
+    const svg = el('svg', { viewBox: vb.join(' '), preserveAspectRatio: 'xMidYMid meet', class: 'psv', 'aria-hidden': 'true' }, host);
+    const ol = document.createElement('div'); ol.className = 'olay'; host.appendChild(ol);
+    const labels = [];
+    const place = () => {
+      const m = svg.getScreenCTM(); if (!m) return; const b = host.getBoundingClientRect();
+      labels.forEach((l) => { l.e.style.left = (m.a * l.x + m.c * l.y + m.e - b.left) + 'px'; l.e.style.top = (m.b * l.x + m.d * l.y + m.f - b.top) + 'px'; });
+    };
+    const label = (x, y, html, cls = '') => {
+      const e = document.createElement('div'); e.className = 'ol ' + cls; e.innerHTML = html; ol.appendChild(e);
+      const l = { e, x, y, set(h) { e.innerHTML = h; return l; }, show(v) { e.dataset.off = v ? '0' : '1'; return l; }, move(a, c) { l.x = a; l.y = c; place(); return l; } };
+      labels.push(l); place(); return l;
+    };
+    if (window.ResizeObserver) new ResizeObserver(place).observe(host);
+    window.addEventListener('resize', place);
+    return { svg, ol, label, place, labels };
+  }
+
+  /* --- 공통 정의: 입자 모형, 재질 --- */
+  let shared = null;
+  function defs() {
+    if (shared) return shared;
+    const s = document.createElementNS(NS, 'svg'); s.setAttribute('style', 'position:absolute;width:0;height:0;overflow:hidden'); s.setAttribute('aria-hidden', 'true');
+    s.innerHTML = `<defs>
+      <radialGradient id="psO" cx=".36" cy=".32" r=".8"><stop offset="0" stop-color="#ff9a8a"/><stop offset=".55" stop-color="#e5533f"/><stop offset="1" stop-color="#b5301f"/></radialGradient>
+      <radialGradient id="psC" cx=".36" cy=".32" r=".8"><stop offset="0" stop-color="#77808a"/><stop offset=".6" stop-color="#3b424a"/><stop offset="1" stop-color="#1f252b"/></radialGradient>
+      <radialGradient id="psH" cx=".36" cy=".32" r=".85"><stop offset="0" stop-color="#ffffff"/><stop offset=".7" stop-color="#e7eef6"/><stop offset="1" stop-color="#b7c6d6"/></radialGradient>
+      <linearGradient id="psGlu" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd76a"/><stop offset="1" stop-color="#e8a21c"/></linearGradient>
+      <g id="mCO2"><circle cx="-15" cy="0" r="8.5" fill="url(#psO)" stroke="#8a2416" stroke-width=".7"/><circle cx="15" cy="0" r="8.5" fill="url(#psO)" stroke="#8a2416" stroke-width=".7"/><circle r="10" fill="url(#psC)" stroke="#14181c" stroke-width=".7"/></g>
+      <g id="mH2O"><circle cx="-10" cy="8" r="6" fill="url(#psH)" stroke="#7f92a6" stroke-width=".7"/><circle cx="10" cy="8" r="6" fill="url(#psH)" stroke="#7f92a6" stroke-width=".7"/><circle r="10.5" fill="url(#psO)" stroke="#8a2416" stroke-width=".7"/></g>
+      <g id="mO2"><circle cx="-7.5" cy="0" r="9" fill="url(#psO)" stroke="#8a2416" stroke-width=".7"/><circle cx="7.5" cy="0" r="9" fill="url(#psO)" stroke="#8a2416" stroke-width=".7"/></g>
+      <g id="mGlu"><path d="M12 0 6 10.4H-6L-12 0-6-10.4H6Z" fill="url(#psGlu)" stroke="#a66d0a" stroke-width="1.2" stroke-linejoin="round"/><path d="M6.5 0 3.2 5.6H-3.2L-6.5 0-3.2-5.6H3.2Z" fill="none" stroke="#fff3c4" stroke-width="1.2" opacity=".75"/></g>
+    </defs>`;
+    (document.body || document.documentElement).appendChild(s);
+    shared = s.querySelector('defs'); return shared;
+  }
+  function grad(stops, o = {}) {
+    const id = nid('g'); const d = defs();
+    const g = el(o.r ? 'radialGradient' : 'linearGradient', o.r ? { id, cx: o.cx ?? .5, cy: o.cy ?? .5, r: o.rr ?? .6 } : { id, x1: o.x1 ?? 0, y1: o.y1 ?? 0, x2: o.x2 ?? 0, y2: o.y2 ?? 1 }, d);
+    stops.forEach(([p, c, a]) => el('stop', { offset: p, 'stop-color': c, 'stop-opacity': a }, g));
+    return `url(#${id})`;
+  }
+  const sprite = (name, x, y, s, p) => el('use', { href: '#' + name, transform: `translate(${f1(x)} ${f1(y)}) scale(${s})` }, p);
+
+  /* --- 잎: 윤곽 + 공간 군집화 잎맥 --- */
+  const cache = {};
+  function leafData(o) {
+    const key = JSON.stringify(o); if (cache[key]) return cache[key];
+    const R = mk(o.seed || 7), L = o.L, W = o.W, p = o.p ?? .72, q = o.q ?? .85, bend = o.bend ?? 0;
+    const hw = (t) => t <= 0 || t >= 1 ? 0 : W * Math.pow(Math.sin(Math.PI * Math.pow(t, p)), q);
+    const yb = (x) => bend * x * x / L;
+    const tooth = (t, s) => { let k = 1; if (o.teeth) { const n = o.nt || 22, f = (t * n) % 1; k += o.teeth * (f < .75 ? f / .75 : (1 - f) / .25) * Math.sin(Math.PI * t); } if (o.ruffle) k += o.ruffle * Math.sin(t * 27 + s) * Math.sin(Math.PI * t); return k; };
+    const N = o.n || 90, top = [], bot = [];
+    for (let i = 0; i <= N; i++) { const t = i / N, x = t * L, w = hw(t); top.push([x, -w * tooth(t, 1) + yb(x)]); bot.push([x, w * tooth(t, 4) + yb(x)]); }
+    const pd = (a) => a.map((v, i) => (i ? 'L' : 'M') + f1(v[0]) + ' ' + f1(v[1])).join('');
+    const back = bot.slice().reverse();
+    const outline = pd(top) + pd(back).replace(/^M/, 'L') + 'Z';
+    const lower = pd(top.map((v) => [v[0], yb(v[0])])) + pd(back).replace(/^M/, 'L') + 'Z';
+    /* 잎맥 */
+    const D = o.D || L / 42, di = o.di || L / 7, dk = o.dk || D * 1.5;
+    const at = []; let tries = 0;
+    while (at.length < (o.nA || 240) && tries++ < 8000) { const t = R(); const y = (R() * 2 - 1) * W; if (Math.abs(y) < hw(t) * .95) at.push([t * L, y]); }
+    const nodes = [];
+    const nMid = Math.round(L / D);
+    for (let i = 0; i <= nMid; i++) nodes.push({ x: i * D * .985, y: 0, p: i ? i - 1 : -1, k: 'm' });
+    /* 곁맥: 가운데 잎맥에서 가장자리로 휘어 나가는 굵은 맥 */
+    const nSec = o.sec ?? 8;
+    for (let i = 0; i < nSec; i++) [-1, 1].forEach((sd) => {
+      const t0 = .045 + .74 * (i + (sd > 0 ? .28 : 0)) / nSec, t1 = Math.min(.97, t0 + .2 + .06 * (1 - t0)), x0 = t0 * L, xe = t1 * L, ye = sd * hw(t1) * .93;
+      const cx = x0 + (xe - x0) * .32, cy = ye * .68, n = Math.max(5, Math.round(Math.hypot(xe - x0, ye) / D));
+      let par = Math.round(x0 / (D * .985)); par = Math.min(par, nMid);
+      for (let k = 1; k <= n; k++) { const u = k / n, x = (1 - u) * (1 - u) * x0 + 2 * u * (1 - u) * cx + u * u * xe, y = 2 * u * (1 - u) * cy + u * u * ye; nodes.push({ x, y, p: par, k: 's', u }); par = nodes.length - 1; }
+    });
+    let alive = at;
+    for (let it = 0; it < 60 && alive.length; it++) {
+      const pull = new Map();
+      for (const a of alive) { let best = -1, bd = di * di; for (let i = 0; i < nodes.length; i++) { const dx = a[0] - nodes[i].x, dy = a[1] - nodes[i].y, d = dx * dx + dy * dy; if (d < bd) { bd = d; best = i; } } if (best >= 0) { const v = pull.get(best) || [0, 0]; const dx = a[0] - nodes[best].x, dy = a[1] - nodes[best].y, m = Math.hypot(dx, dy) || 1; v[0] += dx / m; v[1] += dy / m; pull.set(best, v); } }
+      if (!pull.size) break;
+      const start = nodes.length;
+      pull.forEach((v, i) => { const n = nodes[i]; const dx = v[0], dy = v[1]; const m = Math.hypot(dx, dy) || 1; nodes.push({ x: n.x + D * dx / m, y: n.y + D * dy / m, p: i, k: 't' }); });
+      alive = alive.filter((a) => { for (let i = start; i < nodes.length; i++) { const dx = a[0] - nodes[i].x, dy = a[1] - nodes[i].y; if (dx * dx + dy * dy < dk * dk) return false; } return true; });
+    }
+    /* 굵기: 가운데 잎맥 > 곁맥 > 잔맥. 끝으로 갈수록 가늘게 */
+    const V = o.vw || L / 80, bk = [V, V * .78, V * .58, V * .42, V * .34, V * .24, V * .1], ds = bk.map(() => []);
+    for (let i = 1; i < nodes.length; i++) {
+      const n = nodes[i]; if (n.p < 0) continue; const b = nodes[n.p];
+      const k = n.k === 'm' ? Math.min(3, Math.floor(n.x / L * 4)) : n.k === 's' ? (n.u < .55 ? 4 : 5) : 6;
+      ds[k].push(`M${f1(b.x)} ${f1(b.y + yb(b.x))}L${f1(n.x)} ${f1(n.y + yb(n.x))}`);
+    }
+    const res = { outline, lower, L, W, yb, hw, veins: ds.map((a, i) => ({ d: a.join(''), w: Math.round(bk[i] * 100) / 100 })) };
+    cache[key] = res; return res;
+  }
+  /* pal: {a,b,v,e,p} 앞쪽 색, 끝쪽 색, 잎맥, 테두리, 잎자루. layers: 윤곽과 같은 덧칠 층 이름들 */
+  function drawLeaf(parent, data, pal, o = {}) {
+    const g = el('g', { transform: o.tf }, parent);
+    if (o.pet) el('path', { d: `M${-o.pet} ${o.petY || 0}Q${-o.pet * .4} 2 2 0`, fill: 'none', stroke: pal.p || pal.e, 'stroke-width': o.petW || data.L / 45, 'stroke-linecap': 'round' }, g);
+    const fill = grad([[0, pal.a], [1, pal.b]], { x1: 0, x2: 1, y1: .1, y2: .5 });
+    const base = el('path', { d: data.outline, fill, stroke: pal.e, 'stroke-width': o.edge ?? .9, 'stroke-linejoin': 'round' }, g);
+    const lo = el('path', { d: data.lower, fill: pal.s || '#0b3a14', opacity: o.shade ?? .13 }, g);
+    const layers = {}; (o.layers || []).forEach((n) => { layers[n] = el('path', { d: data.outline, fill: 'none', opacity: 0 }, g); });
+    const veins = el('g', { fill: 'none', stroke: pal.v, 'stroke-linecap': 'round', opacity: o.veinOp ?? .85 }, g);
+    data.veins.forEach((v) => { if (v.d) el('path', { d: v.d, 'stroke-width': v.w }, veins); });
+    return { g, base, lo, layers, veins };
+  }
+  const PAL = {
+    sun: { a: '#3f8f35', b: '#5fb044', v: '#b8e08a', e: '#28692b', p: '#4c9a3a', s: '#0b3a14' },
+    sunBack: { a: '#2f7a2e', b: '#4b9b3b', v: '#94cc72', e: '#215a25', p: '#3f8a33', s: '#0b3a14' },
+    pep: { a: '#2f8a38', b: '#55ac45', v: '#a8dc86', e: '#1f6329', p: '#5aa244', s: '#0b3a14' },
+    let: { a: '#79bd47', b: '#a9d962', v: '#def2b4', e: '#5d9c36', p: '#c7e59a', s: '#245c1c' },
+  };
+
+  /* --- 굵기가 변하는 줄기·뿌리 --- */
+  function taper(pts, w0, w1) {
+    const A = [], B = [], n = pts.length;
+    pts.forEach((p, i) => { const a = pts[Math.max(0, i - 1)], b = pts[Math.min(n - 1, i + 1)], dx = b[0] - a[0], dy = b[1] - a[1], m = Math.hypot(dx, dy) || 1, w = lerp(w0, w1, i / (n - 1)) / 2; A.push([p[0] - dy / m * w, p[1] + dx / m * w]); B.push([p[0] + dy / m * w, p[1] - dx / m * w]); });
+    const smooth = (a) => { let d = ''; a.forEach((p, i) => { if (!i) return; const q = a[i - 1], mx = (p[0] + q[0]) / 2, my = (p[1] + q[1]) / 2; d += `Q${f1(q[0])} ${f1(q[1])} ${f1(mx)} ${f1(my)}`; }); const e = a[a.length - 1]; return d + `L${f1(e[0])} ${f1(e[1])}`; };
+    return `M${f1(A[0][0])} ${f1(A[0][1])}` + smooth(A) + `L${f1(B[n - 1][0])} ${f1(B[n - 1][1])}` + smooth(B.slice().reverse()) + 'Z';
+  }
+  function polyAt(pts, t) {
+    if (!pts._l) { let s = 0; pts._l = [0]; for (let i = 1; i < pts.length; i++) { s += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]); pts._l.push(s); } pts._s = s; }
+    const d = t * pts._s; let i = 1; while (i < pts.length - 1 && pts._l[i] < d) i++;
+    const u = (d - pts._l[i - 1]) / ((pts._l[i] - pts._l[i - 1]) || 1);
+    return [lerp(pts[i - 1][0], pts[i][0], u), lerp(pts[i - 1][1], pts[i][1], u)];
+  }
+
+  /* --- 입자 흐름: 길을 따라 움직이는 입자 묶음 --- */
+  function flock(parent) {
+    const g = el('g', null, parent); let list = [];
+    const place = (p) => {
+      const t = clamp(p.t), tt = p.ez ? p.ez(t) : t, c = polyAt(p.pts, tt);
+      const w = p.wob ? Math.sin(t * 9 + p.ph) * p.wob * Math.sin(Math.PI * t) : 0;
+      const a = (p.fi && t < p.fi ? t / p.fi : 1) * (p.fo && t > 1 - p.fo ? (1 - t) / p.fo : 1);
+      p.u.setAttribute('transform', `translate(${f1(c[0] + w)} ${f1(c[1] + w * .6)}) rotate(${f1(p.rot + p.t * p.spin)}) scale(${p.s})`);
+      p.u.setAttribute('opacity', Math.round(a * 20) / 20);
+    };
+    return {
+      g,
+      add(name, pts, o = {}) {
+        const u = el('use', { href: '#' + name }, g);
+        const p = { u, pts, t: 0, dur: o.dur || 3, s: o.s || 1, wob: o.wob || 0, ph: Math.random() * 6.28, rot: o.rot ?? (Math.random() * 360), spin: o.spin ?? 40, fi: o.fi ?? .12, fo: o.fo ?? 0, stay: o.stay || 0, cb: o.cb, ez: o.ez };
+        list.push(p); place(p); return p;
+      },
+      step(dt) {
+        const cbs = [];
+        list = list.filter((p) => {
+          p.t += dt / p.dur;
+          if (p.t >= 1 && !p.done) { p.done = true; if (p.cb) cbs.push(p); }
+          if (p.t >= 1 + p.stay) { p.u.remove(); return false; }
+          place(p); return true;
+        });
+        cbs.forEach((p) => p.cb(p));
+      },
+      clear() { list.forEach((p) => p.u.remove()); list = []; },
+      get n() { return list.length; },
+    };
+  }
+
+  /* --- 실험대 --- */
+  function bench(g, y = 690) {
+    el('rect', { x: -600, y: -700, width: 2200, height: y + 700, fill: '#fff' }, g);
+    el('rect', { x: -600, y, width: 2200, height: 900, fill: grad([[0, '#e9eef3'], [.2, '#f3f6f9'], [1, '#fbfcfd']]) }, g);
+    el('line', { x1: -600, x2: 1600, y1: y, y2: y, stroke: '#cfd9e3', 'stroke-width': 1.2 }, g);
+  }
+  const shadow = (g, cx, cy, rx, ry, op = .28) => el('ellipse', { cx, cy, rx, ry, fill: grad([[0, '#2a3a4a', op], [.6, '#2a3a4a', op * .4], [1, '#2a3a4a', 0]], { r: 1, rr: .5 }) }, g);
+
+  return { el, mk, lerp, clamp, ease, f1, nid, tween, loop, stage, defs, grad, sprite, leafData, drawLeaf, PAL, taper, polyAt, flock, bench, shadow, REDUCE };
+})();
+</script>
+<script>
+window.SW_CHECKS = [['ok1', '빈칸'], ['ok2', '기관계'], ['ok3', 'O X'], ['ok4', '글쓰기']];
+window.SW = {
+  $: (s, r = document) => r.querySelector(s),
+  $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
+  shuffle: (a) => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; },
+  fb: (id, ok, html) => { const f = document.querySelector(id); f.className = 'fb show ' + (ok ? 'ok' : 'no'); f.innerHTML = html; },
+  done: {},
+};
+(() => {
+  const { $, $$ } = window.SW;
+  const TABS = ['빈칸', '기관계', 'O X', '글쓰기'];
+  window.SW.renderTabs = () => {
+    $('#tabs').innerHTML = TABS.map((t, i) => `<button type="button" class="tab${window.SW.done[i + 1] ? ' done' : ''}" data-s="${i + 1}"><span class="n">${i + 1}</span>${t}</button>`).join('');
+    $$('#tabs .tab').forEach((b) => b.addEventListener('click', () => document.getElementById('s' + b.dataset.s).scrollIntoView({ behavior: 'smooth', block: 'start' })));
+  };
+  window.SW.finish = (n) => { window.SW.done[n] = true; window.SW.renderTabs(); };
+  window.SW.renderTabs();
+})();
+</script>
+<script>
+/* ===== 블록 1: 빈칸 ===== */
+(() => {
+  'use strict';
+  try {
+    const { $, $$, shuffle, fb, finish } = window.SW;
+    const TXT = ["세포에서 영양소를 분해하여 에너지를 얻는 과정을 ", 0, "(이)라고 한다. ", 1, "은(는) 영양소를 흡수하고, ", 2, "은(는) 산소를 받아들이며, ", 3, "은(는) 이들을 조직세포에 전달한다."];
+    const ANS = ["세포호흡", "소화계", "호흡계", "순환계"];
+    const BANK = shuffle(ANS.concat(["배설계", "광합성"]));
+    let pick = ANS.map(() => null), cur = 0;
+    function render() {
+      $('#fill').innerHTML = TXT.map((x) => (typeof x === 'number' ? `<button type="button" class="bk${x === cur ? ' cur' : ''}" data-i="${x}">${pick[x] || ''}</button>` : x)).join('');
+      $('#bank').innerHTML = BANK.map((w) => `<button type="button" ${pick.includes(w) ? 'disabled' : ''}>${w}</button>`).join('');
+      $$('#fill .bk').forEach((b) => b.addEventListener('click', () => { const i = +b.dataset.i; pick[i] = null; cur = i; render(); }));
+      $$('#bank button').forEach((b) => b.addEventListener('click', () => { pick[cur] = b.textContent; const n = pick.indexOf(null); cur = n < 0 ? cur : n; render(); }));
+      $('#chk1').disabled = pick.includes(null);
+    }
+    $('#re1').addEventListener('click', () => { pick = ANS.map(() => null); cur = 0; $('#fb1').className = 'fb'; render(); });
+    $('#chk1').addEventListener('click', () => {
+      let w = 0; $$('#fill .bk').forEach((b) => { const i = +b.dataset.i, ok = pick[i] === ANS[i]; b.classList.remove('cur'); b.classList.add(ok ? 'good' : 'bad'); if (!ok) w++; });
+      if (!w) { fb('#fb1', true, '모두 맞았어요! 기관계가 함께 일해 세포호흡이 잘 일어나요.'); finish(1); }
+      else fb('#fb1', false, `빨간 빈칸 ${w}개를 다시 생각해 봐요. 빈칸을 누르면 비워져요.`);
+    });
+    render();
+    window.SW.ok1 = true;
+  } catch (err) { window.SW_err('빈칸', err); }
+})();
+</script>
+<script>
+/* ===== 블록 2: 기관계 ===== */
+(() => {
+  'use strict';
+  try {
+    const { $, $$, fb, finish } = window.SW;
+    const G = [{"n": "소화계", "a": "영양소 흡수", "c": "#fdf3e7"}, {"n": "호흡계", "a": "산소 받아들이기", "c": "#fdeeee"}, {"n": "순환계", "a": "물질 전달", "c": "#f1ebfa"}, {"n": "배설계", "a": "노폐물 내보내기", "c": "#f3f6e4"}];
+    const OPT = ["영양소 흡수", "산소 받아들이기", "물질 전달", "노폐물 내보내기"];
+    const val = G.map(() => null);
+    $('#gm').innerHTML = G.map((g, i) => `<div class="gcard" data-i="${i}" style="background:${g.c}"><p class="gh"><b>${g.n}</b></p><div class="opt">${OPT.map((t) => `<button type="button" aria-pressed="false">${t}</button>`).join('')}</div></div>`).join('');
+    $$('#gm .gcard').forEach((c) => { const i = +c.dataset.i; $$('button', c).forEach((b) => b.addEventListener('click', () => { val[i] = b.textContent; c.classList.remove('good', 'bad'); $$('button', c).forEach((o) => o.setAttribute('aria-pressed', String(o === b))); $('#chk2').disabled = val.includes(null); })); });
+    $('#chk2').addEventListener('click', () => {
+      let w = 0; $$('#gm .gcard').forEach((c) => { const i = +c.dataset.i, ok = G[i].a === val[i]; c.classList.toggle('good', ok); c.classList.toggle('bad', !ok); if (!ok) w++; });
+      if (!w) { fb('#fb2', true, '맞아요! 네 기관계가 각자 맡은 일을 해요.'); finish(2); }
+      else fb('#fb2', false, `빨간 칸 ${w}개를 다시 골라요. 기관계 지도를 떠올려요.`);
+    });
+    window.SW.ok2 = true;
+  } catch (err) { window.SW_err('기관계', err); }
+})();
+</script>
+<script>
+/* ===== 블록 3: O X ===== */
+(() => {
+  'use strict';
+  try {
+    const { $, $$, shuffle, fb, finish } = window.SW;
+    const OX = [['o', 'O'], ['x', 'X']];
+    const items = [["세포호흡에서 에너지가 방출된다.", 'o', OX],["세포호흡으로 얻은 에너지는 체온 유지에도 쓰인다.", 'o', OX],["조직세포에서 노폐물은 만들어지지 않는다.", 'x', OX],["순환계가 멈춰도 세포는 산소를 받을 수 있다.", 'x', OX],["배설계는 노폐물을 걸러 오줌으로 내보낸다.", 'o', OX],["한 기관계만 일을 잘하면 세포호흡이 잘 일어난다.", 'x', OX]];
+    const list = shuffle(items.slice()), pick = list.map(() => null);
+    $('#sort3').innerHTML = list.map((it, i) => `<div class="si" data-i="${i}"><p>${it[0]}</p><div class="two">${it[2].map(([v, t]) => `<button type="button" data-v="${v}" aria-pressed="false">${t}</button>`).join('')}</div></div>`).join('');
+    $$('#sort3 .si').forEach((row) => { const i = +row.dataset.i; $$('button', row).forEach((b) => b.addEventListener('click', () => { pick[i] = b.dataset.v; row.classList.remove('good', 'bad'); $$('button', row).forEach((o) => o.setAttribute('aria-pressed', String(o === b))); $('#chk3').disabled = pick.includes(null); })); });
+    $('#chk3').addEventListener('click', () => {
+      let w = 0; $$('#sort3 .si').forEach((row) => { const i = +row.dataset.i, ok = pick[i] === list[i][1]; row.classList.toggle('good', ok); row.classList.toggle('bad', !ok); if (!ok) w++; });
+      if (!w) { fb('#fb3', true, '모두 맞았어요! 우리 몸은 한 팀처럼 일해요.'); finish(3); }
+      else fb('#fb3', false, `빨간 문장 ${w}개를 다시 읽어 봐요. 기관계를 꺼 본 결과를 떠올려요.`);
+    });
+    window.SW.ok3 = true;
+  } catch (err) { window.SW_err('O X', err); }
+})();
+</script>
+<script>
+/* ===== 블록 4: 글쓰기 (저장하지 않고 복사·인쇄만) ===== */
+(() => {
+  'use strict';
+  try {
+    const { $, $$, finish } = window.SW;
+    const PROMPTS = [{"t": "기관계의 협력", "s": "스스로 평가", "q": "컬링 경기에서 선수들이 협력하는 것처럼 우리 몸의 기관계가 원활히 상호작용해야 하는 까닭을 설명해 보세요.", "kw": ["세포호흡", "에너지", "산소", "영양소"], "st": ["세포가 에너지를 얻으려면", "한 기관계가"]}, {"t": "숨이 가빠지는 까닭", "s": "친구에게 설명", "q": "격렬한 운동을 할 때 숨이 가빠지는 까닭은 무엇일까요?", "kw": ["에너지", "산소", "세포호흡", "이산화 탄소"], "st": ["운동을 하면", "그래서 숨이"]}, {"t": "한 기관계가 멈추면", "s": "탐구", "q": "역할놀이에서 하나의 기관계가 역할을 제대로 하지 못하면 어떤 일이 일어날지 설명해 보세요.", "kw": ["기관계", "에너지", "세포", "전달"], "st": ["만약 호흡계가", "세포는"]}];
+    const SELF = [["통합", "#0e63b3", "세포호흡을 소화, 순환, 호흡, 배설과 관련지어 설명할 수 있다."], ["표현", "#5a6b7e", "기관계의 상호작용을 창의적으로 표현할 수 있다."], ["흥미", "#34495e", "기관계가 유기적으로 작동하는 인체에 흥미를 가질 수 있다."]];
+    const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); return true; } catch (e) { return false; } } };
+    let pi = 0; const txt = $('#txt');
+    function renderPrompt() {
+      $('#prompts').innerHTML = PROMPTS.map((p, i) => `<button type="button" class="pr${i === pi ? ' sel' : ''}" data-i="${i}"><b>${p.t}</b><span>${p.s}</span></button>`).join('');
+      $$('#prompts .pr').forEach((b) => b.addEventListener('click', () => { pi = +b.dataset.i; renderPrompt(); }));
+      const p = PROMPTS[pi];
+      $('#wqText').textContent = p.q;
+      $('#starters').innerHTML = p.st.map((s) => `<button type="button">${s}</button>`).join('');
+      $$('#starters button').forEach((b) => b.addEventListener('click', () => { const add = (txt.value && !/[\s\n]$/.test(txt.value) ? ' ' : '') + b.textContent + ' '; txt.value += add; txt.focus(); onInput(); }));
+      txt.value = store.get('body-systems-write-' + pi) || '';
+      onInput();
+    }
+    function onInput() {
+      const v = txt.value, p = PROMPTS[pi];
+      const ok = store.set('body-systems-write-' + pi, v);
+      $('#saved').textContent = v ? (ok ? '이 기기에 임시 저장됨' : '') : '';
+      const n = v.replace(/\s/g, '').length, hit = p.kw.filter((k) => v.includes(k)).length;
+      $('#cnt').textContent = `${n}자 · 목표 80자 이상`;
+      $('#kw').innerHTML = p.kw.map((k) => `<span class="${v.includes(k) ? 'on' : ''}">${k}</span>`).join('');
+      if (n >= 80 && hit >= 3) finish(4);
+    }
+    txt.addEventListener('input', onInput);
+    $('#self').innerHTML = SELF.map(([c, col, t]) => `<label><input type="checkbox"><span class="cat" style="background:${col}">${c}</span>${t}</label>`).join('');
+    $('#copyBtn').addEventListener('click', async () => {
+      const out = `[${PROMPTS[pi].t}]\n${PROMPTS[pi].q}\n\n${txt.value}`;
+      try { await navigator.clipboard.writeText(out); $('#copyBtn').textContent = '복사했어요!'; }
+      catch (e) { txt.select(); try { document.execCommand('copy'); $('#copyBtn').textContent = '복사했어요!'; } catch (e2) { $('#copyBtn').textContent = '길게 눌러 직접 복사해 주세요'; } }
+      setTimeout(() => ($('#copyBtn').textContent = '글 복사하기'), 2200);
+    });
+    $('#printBtn').addEventListener('click', () => window.print());
+    renderPrompt();
+    window.SW.ok4 = true;
+  } catch (err) { window.SW_err('글쓰기', err); }
+})();
+</script>
+</body>
+</html>
