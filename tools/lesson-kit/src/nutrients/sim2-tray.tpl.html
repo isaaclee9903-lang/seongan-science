@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>음식물에는 어떤 영양소가 들어 있을까 – 골고루 식판</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+/*@@LOCAL:_css_ps.css@@*/
+/*@@LOCAL:_css_sim.css@@*/
+/*@@LOCAL:_css_pf.css@@*/
+.mn{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}.mn button{min-height:62px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:13px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;padding:2px;line-height:1.15}.mn button .scene{width:62px;height:42px;background:transparent}.mn button[aria-pressed="true"]{border-color:#0e63b3;background:#e9f3fd}
+.bars{display:grid;grid-template-columns:62px 1fr;gap:4px 8px;align-items:center;font-size:13px;font-weight:800;margin-top:8px}.bars .b{height:13px;border-radius:7px;background:#e6edf3;overflow:hidden}.bars .b i{display:block;height:100%;background:#0e63b3;border-radius:7px;transition:width .35s}.bars .lack{color:#b23a30}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top"><div class="ttl"><span class="eyebrow">시뮬레이션</span><h1>골고루 식판 만들기</h1>
+    <p class="sub">식판 다섯 칸에 음식을 담아요. 영양소가 골고루 들어 있나요?</p></div></header>
+  <div class="stage">
+    <section class="card viewer">
+      <div class="scene grow" id="fig" role="img" aria-label="다섯 칸 식판. 고른 음식이 칸에 담기고 영양소 막대가 달라진다."></div>
+      <div class="vctl"><span class="hint">막대는 숫자 없이 어림으로 정한 모형이에요</span><span class="sp"></span><button class="vb" type="button" id="bBad">좋아하는 것만 담기</button><button class="vb" type="button" id="bReset">식판 비우기</button></div>
+    </section>
+    <section class="card pad">
+      <div class="seglbl" id="cn"></div>
+      <div class="mn" id="mn"></div>
+      <div class="bars" id="bars"></div>
+      <div class="fbk" id="res"><b class="t" id="resT">결과</b><span id="resM"></span></div>
+    </section>
+  </div>
+</div>
+<script>
+/*@@LOCAL:_ps.js@@*/
+</script>
+<script>
+/*@@LOCAL:_nt.js@@*/
+</script>
+<script>
+(() => {
+  'use strict';
+  try {
+    const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+    const q = new URLSearchParams(location.search);
+    const T = NT.tray($('#fig')), { MENU, NUTR } = NT; let cur = [];
+    $('#mn').innerHTML = MENU.map((m, i) => `<button type="button" data-i="${i}" aria-pressed="false"><div class="scene"></div>${m.n}</button>`).join('');
+    $$('#mn button').forEach((b) => { const m = MENU[+b.dataset.i]; NT.foodIn($('.scene', b), m.k); b.addEventListener('click', () => { const i = cur.indexOf(m); if (i >= 0) cur.splice(i, 1); else if (cur.length < 5) cur.push(m); else return say('식판이 가득 찼어요', '담긴 음식을 다시 눌러 빼고 바꿔요.'); paint(); }); });
+    const say = (t, m, c = '') => { $('#res').className = 'fbk ' + c; $('#resT').textContent = t; $('#resM').innerHTML = m; };
+    $('#bars').innerHTML = NUTR.map((n, i) => `<span data-n="${i}">${n}</span><div class="b"><i data-b="${i}" style="width:0"></i></div>`).join('');
+    function paint() {
+      for (let i = 0; i < 5; i++) T.put(i, cur[i] || null);
+      $$('#mn button').forEach((b) => b.setAttribute('aria-pressed', String(cur.includes(MENU[+b.dataset.i]))));
+      $('#cn').textContent = `음식을 눌러 담아요 (${cur.length}/5)`;
+      const sum = NUTR.map((_, i) => cur.reduce((a, m) => a + m.v[i], 0));
+      sum.forEach((s, i) => { $(`[data-b="${i}"]`).style.width = Math.min(100, s / 10 * 100) + '%'; $(`[data-n="${i}"]`).classList.toggle('lack', cur.length === 5 && s < 3); });
+      if (cur.length < 5) return say('결과', cur.length ? `${5 - cur.length}칸이 남았어요.` : '먼저 음식을 다섯 가지 골라요.');
+      const lack = NUTR.filter((_, i) => sum[i] < 3);
+      if (lack.length) say('부족한 영양소가 있어요', `<b>${lack.join(', ')}</b>이(가) 적어요. 음식물마다 영양소의 종류와 양이 달라요. 무엇을 바꾸면 좋을까요?`);
+      else say('골고루 담았어요', '여섯 가지 영양소를 모두 얻을 수 있어요. 음식물마다 영양소의 종류와 양이 다르므로 <b>골고루 섭취</b>해야 해요.', 'ok');
+    }
+    const set = (names) => { cur = names.map((k) => MENU.find((m) => m.k === k)); paint(); };
+    $('#bBad').addEventListener('click', () => set(['rice', 'bread', 'meat', 'egg', 'fish']));
+    $('#bReset').addEventListener('click', () => { cur = []; paint(); });
+    paint();
+    if (q.get('set') === 'good') set(['rice', 'egg', 'veg', 'fruit', 'milk']);
+    if (q.get('set') === 'bad') set(['rice', 'bread', 'meat', 'egg', 'fish']);
+    window.SM = window.SM || {}; window.SM.okUI = true;
+  } catch (err) { window.SM_err && window.SM_err('골고루 식판', err); }
+})();
+</script>
+</body>
+</html>
