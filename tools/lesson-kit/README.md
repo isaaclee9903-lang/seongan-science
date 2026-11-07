@@ -73,6 +73,7 @@ python tools/lesson-kit/shot.py URL out.png 1280 800 "#선택자" 3 "#버튼1,wa
 - 마찰 전기(Ⅶ-1 전기): `tools/lesson-kit/src/friction-electricity/_chg.js`(CHG: 원자 구조 atom, 털과 풍선 rub(끌어서 문지르기·전자 이동·떼어 놓으면 털이 끌림), 숟가락 실험실 spoon(장갑으로 문지르기·㉯/장갑 가까이·회전), 매단 두 공 pend, 전하 기호 plus/minus). (−)는 파란 동그라미, (+)는 짙은 회색 테두리. 다음 전기 수업(정전기 유도 등)도 재사용한다.
 - 광합성(Ⅴ 식물과 에너지): `tools/lesson-kit/src/photosynthesis/_ps.js`(PS: 잎 leafData·drawLeaf(가운데 잎맥·곁맥·잔맥, 잎맥은 공간 군집화 방법을 새로 구현), 입자 모형 mCO2·mH2O·mO2·mGlu, 길 따라 움직이는 입자 flock, 무대+HTML 이름표 stage), `_ps_journey.js`(해바라기→잎→식물세포→엽록체 확대 journey), `_ps_starch.js`(잎 가리기·물중탕·페트리 접시 starchLab, 그림 Ⅴ-1 starchFig), `_ps_gas.js`(센서 측정 gasLab). 식물세포 그림 `_cell.js`는 SwissBioPics(CC BY 4.0)를 `_cell_prep.py`로 줄이고 색을 입힌 것. 다음 Ⅴ 수업도 재사용한다.
 - 광합성의 환경요인(Ⅴ 식물과 에너지): `tools/lesson-kit/src/photosynthesis-factors/_pf.js`(PF: 그림 Ⅴ-3 곡선 F·rate, 비스듬히 본 스마트팜 온실 farm(상추 초록·붉은·시든 3종, LED등·난방관·입자 흐름, grow), 읽기용 곡선 one, 작은 곡선 mini, 밀폐 장치+손으로 그리는 그래프 실험실 lab). 상추 기호 `PF.lettuce`는 다른 Ⅴ 수업에 다시 쓸 수 있다.
+- 소화(Ⅵ 동물과 에너지): `tools/lesson-kit/src/digestion/_dg.js`(DG: 시험관 saliva, 소화계+영양소 돋보기 journey, 융털 villus, 주름 비교 fold).
 - 영양소(Ⅵ 동물과 에너지): `tools/lesson-kit/src/nutrients/_nt.js`(NT: 24홈판+시험관 bench, 음식 그림 food·foodIn, 식판 tray).
 - 광합성산물(Ⅴ 식물과 에너지): `tools/lesson-kit/src/photosynthate-use/_sg.js`(SG: 감자 식물 단면 plant(엽록체 돋보기·체관·설탕 운반), 작물 8가지 crop·cropIn, 네 칸 창고 shelf).
 - 호흡(Ⅴ 식물과 에너지): `tools/lesson-kit/src/plant-respiration/_rs.js`(RS: 토마토 낮밤 tomato(뿌리 단면·기체·에너지 별), 호흡 입자 eq, 잎 순환 cycle, 밀폐 장치 낮밤 그래프 room, 겹잎 compound).

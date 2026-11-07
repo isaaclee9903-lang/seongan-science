@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>우리가 먹은 음식의 소화 – 스스로 정리하기</title>
+<!--@@PART:errbox_sum.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sum.css@@*/
+/*@@LOCAL:_css_ps.css@@*/
+  :root{--violet:#0e63b3}
+  .pr.sel{border-color:#0e63b3;background:#eef5fc}
+  .wq{background:#eef5fc;color:#123a63}
+  .starters button{border-color:#9fbbd8;color:#0b3f73}
+  .si .two button{min-width:92px;word-break:keep-all;line-height:1.3;padding:4px 10px}
+  .si .two button[aria-pressed="true"]{border-color:#0e63b3;background:#e4f0fb;color:#0b3f73}
+  .prompts{grid-template-columns:repeat(3,1fr)}
+  @media (max-width:860px){.prompts{grid-template-columns:1fr}}
+  .fill{font-size:18px;font-weight:700;line-height:2.5;word-break:keep-all;margin:6px 0 10px}
+  .fill .bk{display:inline-flex;align-items:center;justify-content:center;min-width:120px;min-height:44px;padding:0 12px;margin:0 4px;border:0;border-bottom:2.5px solid #8b9aab;background:#f4f7fa;border-radius:8px 8px 0 0;font:inherit;font-weight:800;cursor:pointer;line-height:1.2;vertical-align:middle;color:#0b3f73}
+  .fill .bk.cur{background:#e4f0fb;border-color:#0e63b3}
+  .fill .bk.good{background:#e8f7ef;border-color:#1f9d5c;color:#11703f}
+  .fill .bk.bad{background:#fff4f2;border-color:#d9534f;color:#9b3a32}
+  .bank{display:flex;flex-wrap:wrap;gap:8px}
+  .bank button{min-height:46px;padding:0 16px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15.5px;cursor:pointer}
+  .bank button:disabled{opacity:.35;cursor:default}
+  /* 그래프 고르기 */
+  .gmatch{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin:8px 0}
+  .gh{margin:0 0 6px;font-weight:700;font-size:15.5px}.gcard .opt{grid-template-columns:1fr 1fr}
+  .gcard{border:1px solid #dbe4ed;border-radius:14px;padding:10px;background:#fff}
+  .gcard .opt{display:grid;gap:4px;margin-top:6px}
+  .gcard .opt button{min-height:44px;border-radius:10px;border:2px solid #d4dee8;background:#fff;font-weight:700;font-size:14px;cursor:pointer;word-break:keep-all;line-height:1.2;padding:2px 6px}
+  .gcard .opt button[aria-pressed="true"]{border-color:#0e63b3;background:#e4f0fb;color:#0b3f73}
+  .gcard.good{border-color:#1f9d5c}.gcard.bad{border-color:#d9534f}
+  @media (max-width:700px){.gmatch{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <span class="eyebrow">우리가 먹은 음식의 소화 · 스스로 정리하기</span>
+    <h1>소화 정리하기</h1>
+    <p class="sub">빈칸을 채우고, 소화효소와 장소를 고르고, O X로 확인한 뒤, 내 말로 설명해 봐요.</p>
+  </header>
+  <nav class="tabs" id="tabs"></nav>
+
+  <section class="card" id="s1">
+    <h2><span class="no">1</span>빈칸 채우기</h2>
+    <p class="goal">빈칸을 누른 뒤 아래 낱말을 눌러 채워요.</p>
+    <div class="fill" id="fill"></div>
+    <div class="bank" id="bank"></div>
+    <div class="acts"><button type="button" class="btn ghost" id="re1">다시 고르기</button><button type="button" class="btn primary" id="chk1" disabled>확인하기</button></div>
+    <div class="fb" id="fb1"></div>
+  </section>
+
+  <section class="card" id="s2">
+    <h2><span class="no">2</span>소화효소가 일하는 곳 고르기</h2>
+    <p class="goal">소화효소마다 어디에서 무엇을 분해하는지 골라요.</p>
+    <div class="gmatch" id="gm"></div>
+    <div class="acts"><button type="button" class="btn primary" id="chk2" disabled>확인하기</button></div>
+    <div class="fb" id="fb2"></div>
+  </section>
+
+  <section class="card" id="s3">
+    <h2><span class="no">3</span>맞으면 O, 틀리면 X</h2>
+    <p class="goal">문장을 읽고 O, X를 골라요.</p>
+    <div class="sort" id="sort3"></div>
+    <div class="acts"><button type="button" class="btn primary" id="chk3" disabled>확인하기</button></div>
+    <div class="fb" id="fb3"></div>
+  </section>
+
+  <section class="card" id="s4">
+    <h2><span class="no">4</span>내 말로 설명하기</h2>
+    <p class="goal">주제를 하나 골라 친구에게 설명하듯 써 봐요. 핵심어를 넣으면 초록색으로 바뀌어요.</p>
+    <div class="prompts" id="prompts"></div>
+    <div class="wq" id="wqText"></div>
+    <div class="starters" id="starters"></div>
+    <textarea id="txt" placeholder="여기에 써 보세요."></textarea>
+    <div class="wmeta"><span id="cnt">0자 · 목표 80자 이상</span><span id="saved"></span></div>
+    <div class="kw" id="kw"></div>
+    <div class="self" id="self"></div>
+    <div class="acts">
+      <button class="btn green" id="copyBtn" type="button">글 복사하기</button>
+      <button class="btn ghost" id="printBtn" type="button">인쇄 / PDF로 저장</button>
+    </div>
+    <p class="note" style="margin-top:10px">※ 글은 이 기기의 브라우저에만 임시로 저장되고 어디에도 보내지 않아요. 다 쓰면 '글 복사하기'로 복사해서 선생님이 안내한 곳에 붙여 넣으세요.</p>
+  </section>
+  <p class="credit" style="margin:20px 0 4px;text-align:center;font-size:13px;font-weight:700;color:#8495a8;letter-spacing:.02em">우리가 먹은 음식의 소화 · 스스로 정리하기</p>
+</div>
+
+<script>
+/*@@LOCAL:_ps.js@@*/
+</script>
+<script>
+window.SW_CHECKS = [['ok1', '빈칸'], ['ok2', '효소'], ['ok3', 'O X'], ['ok4', '글쓰기']];
+window.SW = {
+  $: (s, r = document) => r.querySelector(s),
+  $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
+  shuffle: (a) => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; },
+  fb: (id, ok, html) => { const f = document.querySelector(id); f.className = 'fb show ' + (ok ? 'ok' : 'no'); f.innerHTML = html; },
+  done: {},
+};
+(() => {
+  const { $, $$ } = window.SW;
+  const TABS = ['빈칸', '효소', 'O X', '글쓰기'];
+  window.SW.renderTabs = () => {
+    $('#tabs').innerHTML = TABS.map((t, i) => `<button type="button" class="tab${window.SW.done[i + 1] ? ' done' : ''}" data-s="${i + 1}"><span class="n">${i + 1}</span>${t}</button>`).join('');
+    $$('#tabs .tab').forEach((b) => b.addEventListener('click', () => document.getElementById('s' + b.dataset.s).scrollIntoView({ behavior: 'smooth', block: 'start' })));
+  };
+  window.SW.finish = (n) => { window.SW.done[n] = true; window.SW.renderTabs(); };
+  window.SW.renderTabs();
+})();
+</script>
+<script>
+/* ===== 블록 1: 빈칸 ===== */
+(() => {
+  'use strict';
+  try {
+    const { $, $$, shuffle, fb, finish } = window.SW;
+    const TXT = ['영양소를 작게 분해하는 과정을 ', 0, '(이)라고 한다. 탄수화물은 ', 1, '(으)로, 단백질은 ', 2, '(으)로, 지방은 지방산과 모노글리세리드로 최종 분해되어 ', 3, '에서 흡수된다.'];
+    const ANS = ['소화', '포도당', '아미노산', '작은창자'];
+    const BANK = shuffle(ANS.concat(['큰창자', '엿당']));
+    let pick = ANS.map(() => null), cur = 0;
+    function render() {
+      $('#fill').innerHTML = TXT.map((x) => (typeof x === 'number' ? `<button type="button" class="bk${x === cur ? ' cur' : ''}" data-i="${x}">${pick[x] || ''}</button>` : x)).join('');
+      $('#bank').innerHTML = BANK.map((w) => `<button type="button" ${pick.includes(w) ? 'disabled' : ''}>${w}</button>`).join('');
+      $$('#fill .bk').forEach((b) => b.addEventListener('click', () => { const i = +b.dataset.i; pick[i] = null; cur = i; render(); }));
+      $$('#bank button').forEach((b) => b.addEventListener('click', () => { pick[cur] = b.textContent; const n = pick.indexOf(null); cur = n < 0 ? cur : n; render(); }));
+      $('#chk1').disabled = pick.includes(null);
+    }
+    $('#re1').addEventListener('click', () => { pick = ANS.map(() => null); cur = 0; $('#fb1').className = 'fb'; render(); });
+    $('#chk1').addEventListener('click', () => {
+      let w = 0; $$('#fill .bk').forEach((b) => { const i = +b.dataset.i, ok = pick[i] === ANS[i]; b.classList.remove('cur'); b.classList.add(ok ? 'good' : 'bad'); if (!ok) w++; });
+      if (!w) { fb('#fb1', true, '모두 맞았어요! 소화는 입에서 시작해 작은창자에서 끝나고, 영양소도 작은창자에서 흡수돼요.'); finish(1); }
+      else fb('#fb1', false, `빨간 빈칸 ${w}개를 다시 생각해 봐요. 빈칸을 누르면 비워져요.`);
+    });
+    render();
+    window.SW.ok1 = true;
+  } catch (err) { window.SW_err('빈칸', err); }
+})();
+</script>
+<script>
+/* ===== 블록 2: 효소 ===== */
+(() => {
+  'use strict';
+  try {
+    const { $, $$, fb, finish } = window.SW;
+    const G = [{ n: '아밀레이스', a: '입, 작은창자', c: '#fdf3e7' }, { n: '펩신', a: '위', c: '#fdeeee' }, { n: '트립신', a: '작은창자', c: '#f1ebfa' }, { n: '쓸개즙', a: '소화효소 없음', c: '#f3f6e4' }];
+    const OPT = ['입, 작은창자', '위', '작은창자', '소화효소 없음'];
+    const val = G.map(() => null);
+    $('#gm').innerHTML = G.map((g, i) => `<div class="gcard" data-i="${i}" style="background:${g.c}"><p class="gh"><b>${g.n}</b></p><div class="opt">${OPT.map((t) => `<button type="button" aria-pressed="false">${t}</button>`).join('')}</div></div>`).join('');
+    $$('#gm .gcard').forEach((c) => { const i = +c.dataset.i; $$('button', c).forEach((b) => b.addEventListener('click', () => { val[i] = b.textContent; c.classList.remove('good', 'bad'); $$('button', c).forEach((o) => o.setAttribute('aria-pressed', String(o === b))); $('#chk2').disabled = val.includes(null); })); });
+    $('#chk2').addEventListener('click', () => {
+      let w = 0; $$('#gm .gcard').forEach((c) => { const i = +c.dataset.i, ok = G[i].a === val[i]; c.classList.toggle('good', ok); c.classList.toggle('bad', !ok); if (!ok) w++; });
+      if (!w) { fb('#fb2', true, '맞아요! 아밀레이스는 침과 이자액에, 펩신은 위액에, 트립신은 이자액에 들어 있어요. 쓸개즙에는 소화효소가 없어요.'); finish(2); }
+      else fb('#fb2', false, `빨간 칸 ${w}개를 다시 골라요. 소화의 여정 표를 떠올려요.`);
+    });
+    window.SW.ok2 = true;
+  } catch (err) { window.SW_err('효소', err); }
+})();
+</script>
+<script>
+/* ===== 블록 3: O X ===== */
+(() => {
+  'use strict';
+  try {
+    const { $, $$, shuffle, fb, finish } = window.SW;
+    const OX = [['o', 'O'], ['x', 'X']];
+    const items = [
+      ['각각의 소화효소는 한 종류의 영양소만 분해한다.', 'o', OX],
+      ['소화효소는 체온 범위의 온도에서 가장 활발하게 작용한다.', 'o', OX],
+      ['작은창자 안쪽 벽에는 소화효소가 없다.', 'x', OX],
+      ['쓸개즙은 간에서 만들어져 쓸개에 저장되었다가 분비된다.', 'o', OX],
+      ['큰창자에서 소화가 완전히 끝난다.', 'x', OX],
+      ['포도당은 융털의 암죽관으로 흡수된다.', 'x', OX],
+    ];
+    const list = shuffle(items.slice()), pick = list.map(() => null);
+    $('#sort3').innerHTML = list.map((it, i) => `<div class="si" data-i="${i}"><p>${it[0]}</p><div class="two">${it[2].map(([v, t]) => `<button type="button" data-v="${v}" aria-pressed="false">${t}</button>`).join('')}</div></div>`).join('');
+    $$('#sort3 .si').forEach((row) => { const i = +row.dataset.i; $$('button', row).forEach((b) => b.addEventListener('click', () => { pick[i] = b.dataset.v; row.classList.remove('good', 'bad'); $$('button', row).forEach((o) => o.setAttribute('aria-pressed', String(o === b))); $('#chk3').disabled = pick.includes(null); })); });
+    $('#chk3').addEventListener('click', () => {
+      let w = 0; $$('#sort3 .si').forEach((row) => { const i = +row.dataset.i, ok = pick[i] === list[i][1]; row.classList.toggle('good', ok); row.classList.toggle('bad', !ok); if (!ok) w++; });
+      if (!w) { fb('#fb3', true, '모두 맞았어요! 소화는 <b>작은창자</b>에서 끝나고, 포도당은 <b>모세혈관</b>으로 흡수돼요.'); finish(3); }
+      else fb('#fb3', false, `빨간 문장 ${w}개를 다시 읽어 봐요. 소화의 여정을 떠올려요.`);
+    });
+    window.SW.ok3 = true;
+  } catch (err) { window.SW_err('O X', err); }
+})();
+</script>
+<script>
+/* ===== 블록 4: 글쓰기 (저장하지 않고 복사·인쇄만) ===== */
+(() => {
+  'use strict';
+  try {
+    const { $, $$, finish } = window.SW;
+    const PROMPTS = [
+      { t: '빵의 여행', s: '스스로 평가', q: '빵이 입안으로 들어와서 항문으로 나가기까지 일어나는 영양소의 소화 및 흡수 과정을 설명해 보세요.', kw: ['아밀레이스', '작은창자', '포도당', '흡수'], st: ['빵이 입에 들어오면', '작은창자에서는'] },
+      { t: '침의 소화 작용', s: '탐구', q: '실험 결과로 알게 된 침의 소화 작용을 설명해 보세요.', kw: ['녹말', '아밀레이스', '엿당', '청람색'], st: ['침을 넣은 시험관은', '증류수를 넣은 시험관은'] },
+      { t: '소화가 필요한 까닭', s: '내 말로', q: '음식물을 왜 소화해야 할까요? 세포막을 넣어 설명해 보세요.', kw: ['세포막', '작게', '분해', '흡수'], st: ['크기가 큰 영양소는', '그래서'] },
+    ];
+    const SELF = [['구조', '#0e63b3', '소화계의 구조와 기능을 설명할 수 있다.'], ['과정', '#5a6b7e', '소화 과정을 소화효소의 작용과 관련지어 설명할 수 있다.'], ['흥미', '#34495e', '소화계의 기능에 흥미를 가질 수 있다.']];
+    const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); return true; } catch (e) { return false; } } };
+    let pi = 0; const txt = $('#txt');
+    function renderPrompt() {
+      $('#prompts').innerHTML = PROMPTS.map((p, i) => `<button type="button" class="pr${i === pi ? ' sel' : ''}" data-i="${i}"><b>${p.t}</b><span>${p.s}</span></button>`).join('');
+      $$('#prompts .pr').forEach((b) => b.addEventListener('click', () => { pi = +b.dataset.i; renderPrompt(); }));
+      const p = PROMPTS[pi];
+      $('#wqText').textContent = p.q;
+      $('#starters').innerHTML = p.st.map((s) => `<button type="button">${s}</button>`).join('');
+      $$('#starters button').forEach((b) => b.addEventListener('click', () => { const add = (txt.value && !/[\s\n]$/.test(txt.value) ? ' ' : '') + b.textContent + ' '; txt.value += add; txt.focus(); onInput(); }));
+      txt.value = store.get('dg-write-' + pi) || '';
+      onInput();
+    }
+    function onInput() {
+      const v = txt.value, p = PROMPTS[pi];
+      const ok = store.set('dg-write-' + pi, v);
+      $('#saved').textContent = v ? (ok ? '이 기기에 임시 저장됨' : '') : '';
+      const n = v.replace(/\s/g, '').length, hit = p.kw.filter((k) => v.includes(k)).length;
+      $('#cnt').textContent = `${n}자 · 목표 80자 이상`;
+      $('#kw').innerHTML = p.kw.map((k) => `<span class="${v.includes(k) ? 'on' : ''}">${k}</span>`).join('');
+      if (n >= 80 && hit >= 3) finish(4);
+    }
+    txt.addEventListener('input', onInput);
+    $('#self').innerHTML = SELF.map(([c, col, t]) => `<label><input type="checkbox"><span class="cat" style="background:${col}">${c}</span>${t}</label>`).join('');
+    $('#copyBtn').addEventListener('click', async () => {
+      const out = `[${PROMPTS[pi].t}]\n${PROMPTS[pi].q}\n\n${txt.value}`;
+      try { await navigator.clipboard.writeText(out); $('#copyBtn').textContent = '복사했어요!'; }
+      catch (e) { txt.select(); try { document.execCommand('copy'); $('#copyBtn').textContent = '복사했어요!'; } catch (e2) { $('#copyBtn').textContent = '길게 눌러 직접 복사해 주세요'; } }
+      setTimeout(() => ($('#copyBtn').textContent = '글 복사하기'), 2200);
+    });
+    $('#printBtn').addEventListener('click', () => window.print());
+    renderPrompt();
+    window.SW.ok4 = true;
+  } catch (err) { window.SW_err('글쓰기', err); }
+})();
+</script>
+</body>
+</html>
