@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>식물은 어떻게 양분을 만들까 – 기체 측정 실험실</title>
+<script>
+/* 문제 알림: 코드에 오류가 나면 화면 아래에 빨간 상자로 알려 줘요 (선생님 확인용) */
+(function () {
+  function box() {
+    var b = document.getElementById('smErr');
+    if (!b && document.body) {
+      b = document.createElement('div'); b.id = 'smErr';
+      b.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;background:#fdecea;color:#8a1f17;border:2px solid #d9534f;border-radius:12px;padding:10px 14px;font:600 14px/1.5 sans-serif;white-space:pre-wrap';
+      document.body.appendChild(b);
+    }
+    return b;
+  }
+  window.SM_err = function (where, err) {
+    var msg = '[' + where + '] ' + (err && err.message ? err.message : String(err));
+    var show = function () { var b = box(); if (b) b.textContent += (b.textContent ? '\n' : '') + msg; };
+    if (document.body) show(); else document.addEventListener('DOMContentLoaded', show);
+  };
+  window.addEventListener('error', function (e) { window.SM_err('스크립트', { message: e.message + ' (줄 ' + e.lineno + ')' }); });
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      var S = window.SM || {};
+      if (!S.okUI) window.SM_err('실행 안 됨', { message: '안내·버튼 코드가 실행되지 않았어요. 파일이 끝(</html>)까지 들어 있는지 확인해 주세요.' });
+      if (document.getElementById('fail3d') && !S.ok3d) { var f = document.getElementById('fail3d'); if (f) f.classList.add('show'); window.SM_err('3D 그림', { message: '3D 그림을 불러오지 못했어요. 인터넷 연결(cdn.jsdelivr.net)을 확인하고 새로고침해 주세요.' }); }
+    }, 9000);
+  });
+})();
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+
+  :root{--bg:#edf3f8;--card:#fff;--ink:#14263b;--ink2:#34495e;--muted:#5a6b7e;--line:#dde6ee;--accent:#0e63b3;--accent-soft:#e3effb;
+    --fab:#4b3fb5;--fab-soft:#ecebfb;--ok:#1f9d5c;--no:#d9534f;
+    --shadow:0 1px 2px rgba(20,38,59,.06),0 8px 24px rgba(20,38,59,.07);--ease:cubic-bezier(.2,.8,.2,1)}
+  *{box-sizing:border-box}html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:"Pretendard",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  button{font:inherit;color:inherit}
+  .app{max-width:1320px;margin:0 auto;padding:14px 16px 28px;display:flex;flex-direction:column;gap:12px}
+  .eyebrow{display:inline-flex;font-size:13px;font-weight:700;color:var(--fab);background:var(--fab-soft);padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(21px,2.4vw,28px);margin:6px 0 2px;letter-spacing:-.02em;word-break:keep-all}
+  .sub{margin:0;color:var(--muted);font-size:15px;word-break:keep-all}
+  .card{background:var(--card);border-radius:20px;box-shadow:var(--shadow);border:1px solid rgba(20,38,59,.04)}
+  .pad{padding:14px 16px}
+  .stage{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(330px,1fr);gap:14px;align-items:start}
+  .viewer{position:sticky;top:10px}
+  .flow{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px}
+  .fs{min-height:54px;border:0;border-radius:12px;background:#eef3f8;font-weight:800;font-size:13px;color:var(--muted);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.2;word-break:keep-all;padding:4px}
+  .fs b{font-size:15px}
+  .fs[aria-selected="true"]{background:var(--fab);color:#fff}
+  .fs.seen:not([aria-selected="true"]){background:#e5f5ec;color:#11703f}
+  .stepname{display:flex;align-items:center;gap:10px;margin:2px 0 6px}
+  .stepname .no{flex:none;width:40px;height:40px;border-radius:12px;background:var(--fab);color:#fff;display:grid;place-items:center;font-weight:900;font-size:19px}
+  .stepname h2{margin:0;font-size:21px;letter-spacing:-.01em;word-break:keep-all}
+  .stepname small{display:block;font-size:13px;color:var(--muted);font-weight:700}
+  .what{font-size:16px;line-height:1.75;color:var(--ink2);margin:0 0 10px;word-break:keep-all}
+  .phase{display:grid;gap:6px;margin:8px 0}
+  .ph{display:grid;grid-template-columns:28px 1fr;gap:8px;align-items:start;padding:7px 10px;border-radius:12px;background:#f7fafc;font-size:15px;line-height:1.55;color:var(--muted);word-break:keep-all;transition:background .3s,color .3s}
+  .ph i{font-style:normal;width:26px;height:26px;border-radius:8px;background:#dfe6ee;display:grid;place-items:center;font-weight:900;font-size:13px;color:#607285}
+  .ph.on{background:var(--fab-soft);color:var(--ink)}.ph.on i{background:var(--fab);color:#fff}
+  .ph.done{color:var(--ink2)}.ph.done i{background:#b9b2ee;color:#fff}
+  .box{border-radius:14px;padding:10px 12px;margin-top:8px;font-size:14.5px;line-height:1.65;word-break:keep-all}
+  .box b.t{display:block;font-size:13px;margin-bottom:2px}
+  .an{background:#fff8e6;border:1px solid #f3dc9a;color:#5b4300}
+  .fact{background:#eef6ff;border:1px solid #cfe2f6;color:#1d3f66}
+  .lnk{background:#ecf8f1;border:1px solid #c6e8d4;color:#0f5a36}
+  .src{display:block;font-size:12px;color:var(--muted);margin-top:3px}
+  .acts{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 0}
+  .btn{min-height:50px;border:0;border-radius:14px;padding:0 16px;font-weight:800;font-size:15.5px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;justify-content:center;word-break:keep-all}
+  .btn:active{transform:scale(.97)}
+  .btn.primary{background:var(--fab);color:#fff}.btn.ghost{background:#eef3f8;color:var(--ink2)}
+  .btn[aria-pressed="true"]{background:#14263b;color:#fff}
+  .btn:disabled{opacity:.4;cursor:default;transform:none}
+  .prog{height:6px;border-radius:3px;background:#e6edf4;margin-top:10px;overflow:hidden}
+  .prog i{display:block;height:100%;width:0;background:linear-gradient(90deg,#8a7ff0,var(--fab))}
+  .credit{text-align:center;font-size:13px;font-weight:700;color:#8495a8;letter-spacing:.02em;margin:6px 0 0}
+  /* ===== 3D 화면 공통 ===== */
+  :root{--Bc:#14a5d0;--Ic:#2fae4a;--Fc:#f0522a;--N:#d8433b;--S:#2f62c9;--P:#7d5ad6}
+  .viewer{position:relative;overflow:hidden;padding:0}
+  .gl-host{position:relative;width:100%;height:min(74vh,700px);min-height:380px;background:linear-gradient(#f6f9fc,#d6e3ef);touch-action:none}
+  .gl-host canvas.gl{display:block;width:100%;height:100%;outline:none}
+  .lbls{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+  .lb{position:absolute;left:0;top:0;white-space:nowrap;font-weight:800;font-size:14px;padding:3px 9px;border-radius:9px;background:rgba(255,255,255,.88);color:#34495e;box-shadow:0 2px 8px rgba(20,38,59,.14);will-change:transform}
+  .lb.small{font-size:12px;font-weight:700;color:#5a6b7e;background:rgba(255,255,255,.72);box-shadow:none}
+  .lb.B{background:var(--Bc);color:#fff}.lb.I{background:var(--Ic);color:#fff}.lb.F{background:var(--Fc);color:#fff;font-size:15px}
+  .lb.P{background:var(--P);color:#fff}
+  .lb.dim{opacity:.35}
+  .vt{position:absolute;display:flex;gap:6px;flex-wrap:wrap;z-index:3}
+  .vt.tl{left:10px;top:10px;max-width:calc(100% - 20px)}
+  .vt.tr{right:10px;top:10px;justify-content:flex-end}
+  .vt.bl{left:10px;bottom:10px;align-items:center}
+  .vb{min-height:44px;padding:0 12px;border-radius:12px;border:1px solid rgba(20,38,59,.12);background:rgba(255,255,255,.9);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);font-weight:800;font-size:14px;color:#34495e;cursor:pointer;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 10px rgba(20,38,59,.08)}
+  .vb:active{transform:scale(.96)}
+  .vb .dot{width:12px;height:12px;border-radius:50%;flex:none}
+  .vb[aria-pressed="false"]{opacity:.62}
+  .vb[aria-pressed="false"] .dot{background:#c2ccd6!important}
+  .vb.sel{background:#14263b;color:#fff;border-color:#14263b}
+  .hint{font-size:12.5px;font-weight:700;color:#5a6b7e;background:rgba(255,255,255,.78);border-radius:10px;padding:6px 10px;word-break:keep-all}
+  .inset{position:absolute;z-index:2;border-radius:18px;border:2px solid rgba(255,255,255,.95);box-shadow:0 10px 30px rgba(20,38,59,.22),inset 0 0 0 1px rgba(20,38,59,.08);pointer-events:none;display:none}
+  .inset.on{display:block}
+  .inset .it{position:absolute;left:8px;top:8px;font-size:12.5px;font-weight:900;color:#14263b;background:rgba(255,255,255,.9);border-radius:8px;padding:3px 8px}
+  .inset .ic{position:absolute;left:6px;right:6px;bottom:6px;display:flex;flex-wrap:wrap;gap:4px;justify-content:center}
+  .inset .ic span{font-size:11.5px;font-weight:800;color:#fff;border-radius:7px;padding:2px 7px;white-space:nowrap}
+  .fail3d{position:absolute;inset:0;display:none;place-items:center;text-align:center;padding:24px;font-size:16px;font-weight:700;color:#7a2a22;line-height:1.7;word-break:keep-all;background:#fff4f2}
+  .fail3d.show{display:grid}
+  .model{font-size:13px;color:var(--muted);text-align:right;margin:0;word-break:keep-all}
+  @media (max-width:900px){.gl-host{height:min(56vh,620px)}}
+  .zoombadge{position:absolute;right:10px;top:62px;z-index:3;font-size:13px;font-weight:800;color:#fff;background:rgba(75,63,181,.9);border-radius:10px;padding:6px 10px;display:none;word-break:keep-all;max-width:60%}
+  .zoombadge.on{display:block}
+  @media (max-width:900px){.stage{grid-template-columns:1fr}.viewer{position:relative;top:0}}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+  /* ===== 광합성 수업 공통 ===== */
+  :root{--fab:#0e63b3;--fab-soft:#e4f0fb}
+  .eyebrow{color:#0e63b3;background:#e4f0fb}
+  .prog i{background:#0e63b3}
+  .ph.done i{background:#8db8e3}
+  [hidden]{display:none!important}
+  .fbk{border-radius:14px;padding:12px 14px;margin-top:10px;font-size:15px;line-height:1.65;word-break:keep-all;background:#f6f9fc;border:1px solid #dbe4ed;color:var(--ink2)}
+  .fbk.ok{background:#e9f3fd;border-color:#bcd7f2;color:#0b3f73}
+  .fbk.no{background:#fff4f2;border-color:#f3c2bb;color:#5e2a25}
+  .fbk b.t{display:block;font-size:13.5px;margin-bottom:2px}
+  .scene{position:relative;width:100%;overflow:hidden;touch-action:manipulation;user-select:none;-webkit-user-select:none;background:#fff}
+  .psv{position:absolute;inset:0;width:100%;height:100%;display:block;overflow:visible}
+  .olay{position:absolute;inset:0;pointer-events:none}
+  .ol{position:absolute;transform:translate(-50%,-50%);white-space:nowrap;font-weight:800;font-size:clamp(12px,1.35vw,15.5px);line-height:1.3;letter-spacing:-.01em;color:#14263b;transition:opacity .25s}
+  .ol.la{transform:translate(-100%,-50%)}.ol.ra{transform:translate(0,-50%)}
+  .ol.bg{background:rgba(255,255,255,.9);padding:2px 8px;border-radius:7px}
+  .ol.lt{color:#fff;text-shadow:0 1px 3px rgba(10,30,20,.55)}
+  .ol.m{font-weight:700;color:#5a6b7e}
+  .ol.big{font-size:clamp(14px,1.7vw,18px)}
+  .ol small{font-weight:700;color:#5a6b7e;font-size:.88em}
+  .ol[data-off="1"]{opacity:0}
+  .psv .tap{cursor:pointer}
+  .steps{display:grid;gap:5px;margin:0 0 10px}
+  .steps .ph{padding:6px 10px;font-size:14.5px;line-height:1.5}
+  .ctl{display:grid;gap:8px}
+  .ctl .btn{width:100%}
+  .ctl .two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .btn.done,.btn:disabled{background:#eef3f8;color:#8b9aab;cursor:default}
+  .pred{display:grid;gap:6px}
+  .pred button,.qa3 button{min-height:46px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:14.5px;cursor:pointer;word-break:keep-all;line-height:1.35;padding:4px 10px;text-align:left}
+  .pred button[aria-pressed="true"],.qa3 button[aria-pressed="true"]{border-color:var(--fab);background:#e9f3fd;color:#0b3f73}
+  .pred button:disabled{cursor:default}
+  .seglbl{font-size:13px;font-weight:800;color:var(--muted);margin:2px 0}
+  .qa{margin-bottom:12px}
+  .qa p{margin:0 0 6px;font-weight:800;font-size:15px;line-height:1.5;word-break:keep-all}
+  .qa3{display:grid;gap:6px}
+  .qa3 button.good{border-color:var(--ok);background:#e8f7ef;color:#11703f}
+  .qa3 button.bad{border-color:#e7a29b;background:#fff4f2;color:#9b3a32}
+  .eqn{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:4px 8px;padding:10px 8px;border-radius:14px;background:#f6f9fc;border:1px solid #dbe4ed;font-weight:800;font-size:15px;word-break:keep-all}
+  .eqn span{transition:color .3s,opacity .3s}.eqn .off{color:#a7b3c0}
+  .eqn .ar{display:inline-flex;flex-direction:column;align-items:center;font-size:12px;line-height:1.1;color:#5a6b7e}
+  .eqn .ar i{font-style:normal;font-size:17px;color:#14263b}
+  .tog{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+  .tog button{min-height:64px;border-radius:14px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:14.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:#5a6b7e;word-break:keep-all;line-height:1.25;padding:4px}
+  .tog button svg{width:38px;height:22px;display:block;overflow:visible}
+  .tog button[aria-pressed="true"]{border-color:var(--fab);background:#e9f3fd;color:#0b3f73}
+  .lvls{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:6px;flex:1 1 320px}
+  .lvls button{min-height:46px;border-radius:12px;border:1px solid #d4dee8;background:#fff;color:#34495e;font-weight:800;font-size:14.5px;cursor:pointer;word-break:keep-all;line-height:1.2;padding:2px 4px}
+  .lvls button[aria-pressed="true"]{background:#14263b;color:#fff;border-color:#14263b}
+  .ptxt{font-size:15px;line-height:1.65;color:var(--ink2);margin:0 0 10px;word-break:keep-all}
+  .ptxt b{color:#0b3f73}
+  .whylist{display:grid;gap:6px;margin:0;padding:0;list-style:none}
+  .whylist li{display:grid;grid-template-columns:26px 1fr;gap:8px;font-size:14.5px;line-height:1.55;color:var(--ink2);word-break:keep-all;padding:7px 10px;border-radius:12px;background:#f7fafc}
+  .whylist li i{font-style:normal;width:24px;height:24px;border-radius:8px;background:#0e63b3;color:#fff;display:grid;place-items:center;font-weight:900;font-size:13px}
+  .whylist b{color:#0b3f73}
+  /* ===== 한 화면 배치 (2026-10-15: 태블릿 한 화면 안에서 실험과 결과가 끝나도록) ===== */
+  .app{padding:10px 16px 12px;gap:10px}
+  header.top{display:flex;align-items:center;justify-content:space-between;gap:10px 16px;flex-wrap:wrap}
+  header.top .ttl{min-width:0}
+  header.top .ttl .eyebrow{margin-right:6px;vertical-align:4px}
+  header.top h1{display:inline;font-size:clamp(20px,2.1vw,25px);margin:0}
+  header.top .sub{margin-top:3px;font-size:14.5px}
+  .stage{align-items:stretch}
+  .stage > .viewer{position:relative;top:0;display:flex;flex-direction:column;justify-content:center}
+  .ptabs{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;background:#eef3f8;border-radius:14px;padding:4px;margin-bottom:12px}
+  .ptabs button{min-height:44px;border:0;border-radius:11px;background:transparent;font-weight:800;font-size:14.5px;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
+  .ptabs button[aria-selected="true"]{background:#fff;color:var(--fab);box-shadow:0 1px 3px rgba(20,38,59,.14)}
+  .ptabs button small{font-size:12px;font-weight:800;color:#0b3f73;background:#dcebfa;border-radius:8px;padding:1px 6px}
+  .ptabs.big{min-width:min(100%,380px)}
+  .ptabs.big button{min-height:48px;font-size:15.5px}
+  .pane[hidden]{display:none!important}
+  .mnote{font-size:12.5px;color:var(--muted);line-height:1.6;margin:10px 0 0;word-break:keep-all}
+  .viewer{background:#fff}
+  .vctl{display:flex;flex-wrap:wrap;gap:8px;padding:10px 12px;background:#f3f6f9;border-top:1px solid var(--line);align-items:center}
+  .vctl .vb{box-shadow:none}
+  .vctl .vb[aria-pressed="true"]{background:#14263b;color:#fff;border-color:#14263b;opacity:1}
+  .vctl .vb[aria-pressed="false"]{opacity:1}
+  .vctl .sp{flex:1}
+  .lbl{font-size:13px;font-weight:900;color:var(--fab);margin:12px 0 6px;word-break:keep-all}
+  .lbl:first-child,.pane > .lbl:first-child{margin-top:0}
+  .what{font-size:15.5px;line-height:1.7;color:var(--ink2);margin:0 0 8px;word-break:keep-all}
+  .ph.on{background:#eef5fc}.ph.on i{background:var(--fab)}
+  .viewer > .scene.grow{flex:1 1 auto;min-height:300px;aspect-ratio:auto!important}
+  /* 화면 높이를 꽉 채우기: 그림 칸이 남는 높이를 차지 */
+  html,body{height:100%}
+  .app{height:100vh;height:100dvh;max-height:1400px}
+  .stage{flex:1 1 auto;min-height:0}
+  .stage > .card.pad{overflow:auto}
+  @media (max-width:900px){.stage{grid-template-rows:minmax(0,1fr) auto}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="ttl">
+      <span class="eyebrow">탐구</span><h1>이산화 탄소와 산소 측정 실험실</h1>
+      <p class="sub">밀폐 장치 속 상추에 빛을 비추며 두 기체의 농도가 어떻게 변하는지 10분 동안 측정해요.</p>
+    </div>
+  </header>
+  <div class="stage">
+    <section class="card viewer">
+      <div class="scene grow" id="lab" role="img" aria-label="투명 밀폐 장치 안에 상추 잎이 있고 뚜껑에 산소, 온도, 이산화 탄소 센서가 꽂혀 있다. LED등으로 빛을 비추면 스마트 기기의 그래프에서 이산화 탄소 농도는 시간이 지날수록 감소하고 산소 농도는 증가하며 온도는 거의 일정하다."></div>
+      <div class="vctl">
+        <span class="hint" id="hint">LED등을 직접 보지 않도록 주의해요</span>
+        <span class="sp"></span>
+        <button class="vb" type="button" id="bReset">처음부터</button>
+      </div>
+    </section>
+    <section class="card pad">
+      <div class="ptabs" role="tablist" id="pt">
+        <button type="button" role="tab" data-p="lab" aria-selected="true">실험하기</button>
+        <button type="button" role="tab" data-p="rec" aria-selected="false">정리하기</button>
+        <button type="button" role="tab" data-p="why" aria-selected="false">왜 그럴까?</button>
+      </div>
+      <div class="pane" data-p="lab">
+        <div class="steps" id="steps">
+          <div class="ph" data-s="0"><i>1</i><span>잎을 펼쳐 넣고 공기가 새지 않게 뚜껑을 닫아요.</span></div>
+          <div class="ph" data-s="1"><i>2</i><span>센서를 설치하고 프로그램과 연결해요.</span></div>
+          <div class="ph" data-s="2"><i>3</i><span>LED등으로 빛을 비추며 농도를 10분 동안 측정해요.</span></div>
+          <div class="ph" data-s="3"><i>4</i><span>결과를 공유하고 다른 모둠과 비교해요.</span></div>
+        </div>
+        <div class="ctl" id="ctl"></div>
+        <div class="fbk" id="res"><b class="t" id="resT">결과</b><span id="resM"></span></div>
+        <p class="mnote">농도 숫자 없이 변화의 모양만 그린 모형이에요. 두 기체의 세로 눈금은 서로 달라요. 시간은 줄여서 보여 줘요.</p>
+      </div>
+      <div class="pane" data-p="rec" hidden>
+        <div id="qs"></div>
+        <div class="fbk" id="recRes" hidden></div>
+      </div>
+      <div class="pane" data-p="why" hidden>
+        <ol class="whylist">
+          <li><i>1</i><span>빛을 받은 상추 잎은 광합성을 해요. 이때 밀폐 장치 속 <b>이산화 탄소를 흡수</b>해요. 그래서 이산화 탄소 농도가 <b>감소</b>해요.</span></li>
+          <li><i>2</i><span>광합성 결과 <b>산소가 생산</b>되어 잎 밖으로 나와요. 그래서 산소 농도가 <b>증가</b>해요.</span></li>
+          <li><i>3</i><span>뚜껑을 닫아 공기가 새지 않으므로, 농도 변화는 <b>잎 때문</b>이라고 볼 수 있어요.</span></li>
+          <li><i>4</i><span>LED등을 쓰면 빛을 비출 때 <b>온도를 일정하게</b> 할 수 있어요.</span></li>
+        </ol>
+        <p class="mnote">ppm은 농도를 나타내는 단위로, 1 ppm은 백만분의 1이라는 뜻이에요.</p>
+      </div>
+    </section>
+  </div>
+</div>
+<script>
+/* ===== 광합성 수업 공통 그림 도구 PS =====
+   잎맥: Runions 등(2005)의 공간 군집화(space colonization) 방법을 이 수업에 맞게 새로 구현(코드 복사 아님).
+   해바라기 꽃판: 보겔의 잎차례 공식(황금각 137.5도). 모두 SVG로 그리고 글씨는 HTML 이름표로 올린다. */
+window.PS = (() => {
+  'use strict';
+  const NS = 'http://www.w3.org/2000/svg';
+  const REDUCE = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const el = (t, a, p) => { const e = document.createElementNS(NS, t); if (a) for (const k in a) if (a[k] != null) e.setAttribute(k, a[k]); if (p) p.appendChild(e); return e; };
+  const mk = (seed) => () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
+  const ease = (t) => t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+  const f1 = (n) => Math.round(n * 10) / 10;
+  let uid = 0;
+  const nid = (s = 'p') => `ps${s}${++uid}`;
+
+  /* --- 시간 --- */
+  function tween(ms, fn, done, ez = ease) {
+    if (REDUCE || ms <= 0) { fn(1); done && done(); return () => {}; }
+    let t0 = null, stop = false;
+    const step = (now) => { if (stop) return; if (t0 == null) t0 = now; const t = clamp((now - t0) / ms); fn(ez(t)); if (t < 1) requestAnimationFrame(step); else done && done(); };
+    requestAnimationFrame(step);
+    return () => { stop = true; };
+  }
+  function loop(fn) {
+    let last = null, stop = false;
+    const step = (now) => { if (stop) return; if (last == null) last = now; const dt = Math.min(.05, (now - last) / 1000); last = now; fn(dt, now / 1000); requestAnimationFrame(step); };
+    requestAnimationFrame(step);
+    return () => { stop = true; };
+  }
+
+  /* --- 무대: SVG + HTML 이름표 --- */
+  function stage(host, vb = [0, 0, 1000, 800]) {
+    host.innerHTML = '';
+    const svg = el('svg', { viewBox: vb.join(' '), preserveAspectRatio: 'xMidYMid meet', class: 'psv', 'aria-hidden': 'true' }, host);
+    const ol = document.createElement('div'); ol.className = 'olay'; host.appendChild(ol);
+    const labels = [];
+    const place = () => {
+      const m = svg.getScreenCTM(); if (!m) return; const b = host.getBoundingClientRect();
+      labels.forEach((l) => { l.e.style.left = (m.a * l.x + m.c * l.y + m.e - b.left) + 'px'; l.e.style.top = (m.b * l.x + m.d * l.y + m.f - b.top) + 'px'; });
+    };
+    const label = (x, y, html, cls = '') => {
+      const e = document.createElement('div'); e.className = 'ol ' + cls; e.innerHTML = html; ol.appendChild(e);
+      const l = { e, x, y, set(h) { e.innerHTML = h; return l; }, show(v) { e.dataset.off = v ? '0' : '1'; return l; }, move(a, c) { l.x = a; l.y = c; place(); return l; } };
+      labels.push(l); place(); return l;
+    };
+    if (window.ResizeObserver) new ResizeObserver(place).observe(host);
+    window.addEventListener('resize', place);
+    return { svg, ol, label, place, labels };
+  }
+
+  /* --- 공통 정의: 입자 모형, 재질 --- */
+  let shared = null;
+  function defs() {
+    if (shared) return shared;
+    const s = document.createElementNS(NS, 'svg'); s.setAttribute('style', 'position:absolute;width:0;height:0;overflow:hidden'); s.setAttribute('aria-hidden', 'true');
+    s.innerHTML = `<defs>
+      <radialGradient id="psO" cx=".36" cy=".32" r=".8"><stop offset="0" stop-color="#ff9a8a"/><stop offset=".55" stop-color="#e5533f"/><stop offset="1" stop-color="#b5301f"/></radialGradient>
+      <radialGradient id="psC" cx=".36" cy=".32" r=".8"><stop offset="0" stop-color="#77808a"/><stop offset=".6" stop-color="#3b424a"/><stop offset="1" stop-color="#1f252b"/></radialGradient>
+      <radialGradient id="psH" cx=".36" cy=".32" r=".85"><stop offset="0" stop-color="#ffffff"/><stop offset=".7" stop-color="#e7eef6"/><stop offset="1" stop-color="#b7c6d6"/></radialGradient>
+      <linearGradient id="psGlu" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd76a"/><stop offset="1" stop-color="#e8a21c"/></linearGradient>
+      <g id="mCO2"><circle cx="-15" cy="0" r="8.5" fill="url(#psO)" stroke="#8a2416" stroke-width=".7"/><circle cx="15" cy="0" r="8.5" fill="url(#psO)" stroke="#8a2416" stroke-width=".7"/><circle r="10" fill="url(#psC)" stroke="#14181c" stroke-width=".7"/></g>
+      <g id="mH2O"><circle cx="-10" cy="8" r="6" fill="url(#psH)" stroke="#7f92a6" stroke-width=".7"/><circle cx="10" cy="8" r="6" fill="url(#psH)" stroke="#7f92a6" stroke-width=".7"/><circle r="10.5" fill="url(#psO)" stroke="#8a2416" stroke-width=".7"/></g>
+      <g id="mO2"><circle cx="-7.5" cy="0" r="9" fill="url(#psO)" stroke="#8a2416" stroke-width=".7"/><circle cx="7.5" cy="0" r="9" fill="url(#psO)" stroke="#8a2416" stroke-width=".7"/></g>
+      <g id="mGlu"><path d="M12 0 6 10.4H-6L-12 0-6-10.4H6Z" fill="url(#psGlu)" stroke="#a66d0a" stroke-width="1.2" stroke-linejoin="round"/><path d="M6.5 0 3.2 5.6H-3.2L-6.5 0-3.2-5.6H3.2Z" fill="none" stroke="#fff3c4" stroke-width="1.2" opacity=".75"/></g>
+    </defs>`;
+    (document.body || document.documentElement).appendChild(s);
+    shared = s.querySelector('defs'); return shared;
+  }
+  function grad(stops, o = {}) {
+    const id = nid('g'); const d = defs();
+    const g = el(o.r ? 'radialGradient' : 'linearGradient', o.r ? { id, cx: o.cx ?? .5, cy: o.cy ?? .5, r: o.rr ?? .6 } : { id, x1: o.x1 ?? 0, y1: o.y1 ?? 0, x2: o.x2 ?? 0, y2: o.y2 ?? 1 }, d);
+    stops.forEach(([p, c, a]) => el('stop', { offset: p, 'stop-color': c, 'stop-opacity': a }, g));
+    return `url(#${id})`;
+  }
+  const sprite = (name, x, y, s, p) => el('use', { href: '#' + name, transform: `translate(${f1(x)} ${f1(y)}) scale(${s})` }, p);
+
+  /* --- 잎: 윤곽 + 공간 군집화 잎맥 --- */
+  const cache = {};
+  function leafData(o) {
+    const key = JSON.stringify(o); if (cache[key]) return cache[key];
+    const R = mk(o.seed || 7), L = o.L, W = o.W, p = o.p ?? .72, q = o.q ?? .85, bend = o.bend ?? 0;
+    const hw = (t) => t <= 0 || t >= 1 ? 0 : W * Math.pow(Math.sin(Math.PI * Math.pow(t, p)), q);
+    const yb = (x) => bend * x * x / L;
+    const tooth = (t, s) => { let k = 1; if (o.teeth) { const n = o.nt || 22, f = (t * n) % 1; k += o.teeth * (f < .75 ? f / .75 : (1 - f) / .25) * Math.sin(Math.PI * t); } if (o.ruffle) k += o.ruffle * Math.sin(t * 27 + s) * Math.sin(Math.PI * t); return k; };
+    const N = o.n || 90, top = [], bot = [];
+    for (let i = 0; i <= N; i++) { const t = i / N, x = t * L, w = hw(t); top.push([x, -w * tooth(t, 1) + yb(x)]); bot.push([x, w * tooth(t, 4) + yb(x)]); }
+    const pd = (a) => a.map((v, i) => (i ? 'L' : 'M') + f1(v[0]) + ' ' + f1(v[1])).join('');
+    const back = bot.slice().reverse();
+    const outline = pd(top) + pd(back).replace(/^M/, 'L') + 'Z';
+    const lower = pd(top.map((v) => [v[0], yb(v[0])])) + pd(back).replace(/^M/, 'L') + 'Z';
+    /* 잎맥 */
+    const D = o.D || L / 42, di = o.di || L / 7, dk = o.dk || D * 1.5;
+    const at = []; let tries = 0;
+    while (at.length < (o.nA || 240) && tries++ < 8000) { const t = R(); const y = (R() * 2 - 1) * W; if (Math.abs(y) < hw(t) * .95) at.push([t * L, y]); }
+    const nodes = [];
+    const nMid = Math.round(L / D);
+    for (let i = 0; i <= nMid; i++) nodes.push({ x: i * D * .985, y: 0, p: i ? i - 1 : -1, k: 'm' });
+    /* 곁맥: 가운데 잎맥에서 가장자리로 휘어 나가는 굵은 맥 */
+    const nSec = o.sec ?? 8;
+    for (let i = 0; i < nSec; i++) [-1, 1].forEach((sd) => {
+      const t0 = .045 + .74 * (i + (sd > 0 ? .28 : 0)) / nSec, t1 = Math.min(.97, t0 + .2 + .06 * (1 - t0)), x0 = t0 * L, xe = t1 * L, ye = sd * hw(t1) * .93;
+      const cx = x0 + (xe - x0) * .32, cy = ye * .68, n = Math.max(5, Math.round(Math.hypot(xe - x0, ye) / D));
+      let par = Math.round(x0 / (D * .985)); par = Math.min(par, nMid);
+      for (let k = 1; k <= n; k++) { const u = k / n, x = (1 - u) * (1 - u) * x0 + 2 * u * (1 - u) * cx + u * u * xe, y = 2 * u * (1 - u) * cy + u * u * ye; nodes.push({ x, y, p: par, k: 's', u }); par = nodes.length - 1; }
+    });
+    let alive = at;
+    for (let it = 0; it < 60 && alive.length; it++) {
+      const pull = new Map();
+      for (const a of alive) { let best = -1, bd = di * di; for (let i = 0; i < nodes.length; i++) { const dx = a[0] - nodes[i].x, dy = a[1] - nodes[i].y, d = dx * dx + dy * dy; if (d < bd) { bd = d; best = i; } } if (best >= 0) { const v = pull.get(best) || [0, 0]; const dx = a[0] - nodes[best].x, dy = a[1] - nodes[best].y, m = Math.hypot(dx, dy) || 1; v[0] += dx / m; v[1] += dy / m; pull.set(best, v); } }
+      if (!pull.size) break;
+      const start = nodes.length;
+      pull.forEach((v, i) => { const n = nodes[i]; const dx = v[0], dy = v[1]; const m = Math.hypot(dx, dy) || 1; nodes.push({ x: n.x + D * dx / m, y: n.y + D * dy / m, p: i, k: 't' }); });
+      alive = alive.filter((a) => { for (let i = start; i < nodes.length; i++) { const dx = a[0] - nodes[i].x, dy = a[1] - nodes[i].y; if (dx * dx + dy * dy < dk * dk) return false; } return true; });
+    }
+    /* 굵기: 가운데 잎맥 > 곁맥 > 잔맥. 끝으로 갈수록 가늘게 */
+    const V = o.vw || L / 80, bk = [V, V * .78, V * .58, V * .42, V * .34, V * .24, V * .1], ds = bk.map(() => []);
+    for (let i = 1; i < nodes.length; i++) {
+      const n = nodes[i]; if (n.p < 0) continue; const b = nodes[n.p];
+      const k = n.k === 'm' ? Math.min(3, Math.floor(n.x / L * 4)) : n.k === 's' ? (n.u < .55 ? 4 : 5) : 6;
+      ds[k].push(`M${f1(b.x)} ${f1(b.y + yb(b.x))}L${f1(n.x)} ${f1(n.y + yb(n.x))}`);
+    }
+    const res = { outline, lower, L, W, yb, hw, veins: ds.map((a, i) => ({ d: a.join(''), w: Math.round(bk[i] * 100) / 100 })) };
+    cache[key] = res; return res;
+  }
+  /* pal: {a,b,v,e,p} 앞쪽 색, 끝쪽 색, 잎맥, 테두리, 잎자루. layers: 윤곽과 같은 덧칠 층 이름들 */
+  function drawLeaf(parent, data, pal, o = {}) {
+    const g = el('g', { transform: o.tf }, parent);
+    if (o.pet) el('path', { d: `M${-o.pet} ${o.petY || 0}Q${-o.pet * .4} 2 2 0`, fill: 'none', stroke: pal.p || pal.e, 'stroke-width': o.petW || data.L / 45, 'stroke-linecap': 'round' }, g);
+    const fill = grad([[0, pal.a], [1, pal.b]], { x1: 0, x2: 1, y1: .1, y2: .5 });
+    const base = el('path', { d: data.outline, fill, stroke: pal.e, 'stroke-width': o.edge ?? .9, 'stroke-linejoin': 'round' }, g);
+    const lo = el('path', { d: data.lower, fill: pal.s || '#0b3a14', opacity: o.shade ?? .13 }, g);
+    const layers = {}; (o.layers || []).forEach((n) => { layers[n] = el('path', { d: data.outline, fill: 'none', opacity: 0 }, g); });
+    const veins = el('g', { fill: 'none', stroke: pal.v, 'stroke-linecap': 'round', opacity: o.veinOp ?? .85 }, g);
+    data.veins.forEach((v) => { if (v.d) el('path', { d: v.d, 'stroke-width': v.w }, veins); });
+    return { g, base, lo, layers, veins };
+  }
+  const PAL = {
+    sun: { a: '#3f8f35', b: '#5fb044', v: '#b8e08a', e: '#28692b', p: '#4c9a3a', s: '#0b3a14' },
+    sunBack: { a: '#2f7a2e', b: '#4b9b3b', v: '#94cc72', e: '#215a25', p: '#3f8a33', s: '#0b3a14' },
+    pep: { a: '#2f8a38', b: '#55ac45', v: '#a8dc86', e: '#1f6329', p: '#5aa244', s: '#0b3a14' },
+    let: { a: '#79bd47', b: '#a9d962', v: '#def2b4', e: '#5d9c36', p: '#c7e59a', s: '#245c1c' },
+  };
+
+  /* --- 굵기가 변하는 줄기·뿌리 --- */
+  function taper(pts, w0, w1) {
+    const A = [], B = [], n = pts.length;
+    pts.forEach((p, i) => { const a = pts[Math.max(0, i - 1)], b = pts[Math.min(n - 1, i + 1)], dx = b[0] - a[0], dy = b[1] - a[1], m = Math.hypot(dx, dy) || 1, w = lerp(w0, w1, i / (n - 1)) / 2; A.push([p[0] - dy / m * w, p[1] + dx / m * w]); B.push([p[0] + dy / m * w, p[1] - dx / m * w]); });
+    const smooth = (a) => { let d = ''; a.forEach((p, i) => { if (!i) return; const q = a[i - 1], mx = (p[0] + q[0]) / 2, my = (p[1] + q[1]) / 2; d += `Q${f1(q[0])} ${f1(q[1])} ${f1(mx)} ${f1(my)}`; }); const e = a[a.length - 1]; return d + `L${f1(e[0])} ${f1(e[1])}`; };
+    return `M${f1(A[0][0])} ${f1(A[0][1])}` + smooth(A) + `L${f1(B[n - 1][0])} ${f1(B[n - 1][1])}` + smooth(B.slice().reverse()) + 'Z';
+  }
+  function polyAt(pts, t) {
+    if (!pts._l) { let s = 0; pts._l = [0]; for (let i = 1; i < pts.length; i++) { s += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]); pts._l.push(s); } pts._s = s; }
+    const d = t * pts._s; let i = 1; while (i < pts.length - 1 && pts._l[i] < d) i++;
+    const u = (d - pts._l[i - 1]) / ((pts._l[i] - pts._l[i - 1]) || 1);
+    return [lerp(pts[i - 1][0], pts[i][0], u), lerp(pts[i - 1][1], pts[i][1], u)];
+  }
+
+  /* --- 입자 흐름: 길을 따라 움직이는 입자 묶음 --- */
+  function flock(parent) {
+    const g = el('g', null, parent); let list = [];
+    const place = (p) => {
+      const t = clamp(p.t), tt = p.ez ? p.ez(t) : t, c = polyAt(p.pts, tt);
+      const w = p.wob ? Math.sin(t * 9 + p.ph) * p.wob * Math.sin(Math.PI * t) : 0;
+      const a = (p.fi && t < p.fi ? t / p.fi : 1) * (p.fo && t > 1 - p.fo ? (1 - t) / p.fo : 1);
+      p.u.setAttribute('transform', `translate(${f1(c[0] + w)} ${f1(c[1] + w * .6)}) rotate(${f1(p.rot + p.t * p.spin)}) scale(${p.s})`);
+      p.u.setAttribute('opacity', Math.round(a * 20) / 20);
+    };
+    return {
+      g,
+      add(name, pts, o = {}) {
+        const u = el('use', { href: '#' + name }, g);
+        const p = { u, pts, t: 0, dur: o.dur || 3, s: o.s || 1, wob: o.wob || 0, ph: Math.random() * 6.28, rot: o.rot ?? (Math.random() * 360), spin: o.spin ?? 40, fi: o.fi ?? .12, fo: o.fo ?? 0, stay: o.stay || 0, cb: o.cb, ez: o.ez };
+        list.push(p); place(p); return p;
+      },
+      step(dt) {
+        const cbs = [];
+        list = list.filter((p) => {
+          p.t += dt / p.dur;
+          if (p.t >= 1 && !p.done) { p.done = true; if (p.cb) cbs.push(p); }
+          if (p.t >= 1 + p.stay) { p.u.remove(); return false; }
+          place(p); return true;
+        });
+        cbs.forEach((p) => p.cb(p));
+      },
+      clear() { list.forEach((p) => p.u.remove()); list = []; },
+      get n() { return list.length; },
+    };
+  }
+
+  /* --- 실험대 --- */
+  function bench(g, y = 690) {
+    el('rect', { x: -600, y: -700, width: 2200, height: y + 700, fill: '#fff' }, g);
+    el('rect', { x: -600, y, width: 2200, height: 900, fill: grad([[0, '#e9eef3'], [.2, '#f3f6f9'], [1, '#fbfcfd']]) }, g);
+    el('line', { x1: -600, x2: 1600, y1: y, y2: y, stroke: '#cfd9e3', 'stroke-width': 1.2 }, g);
+  }
+  const shadow = (g, cx, cy, rx, ry, op = .28) => el('ellipse', { cx, cy, rx, ry, fill: grad([[0, '#2a3a4a', op], [.6, '#2a3a4a', op * .4], [1, '#2a3a4a', 0]], { r: 1, rr: .5 }) }, g);
+
+  return { el, mk, lerp, clamp, ease, f1, nid, tween, loop, stage, defs, grad, sprite, leafData, drawLeaf, PAL, taper, polyAt, flock, bench, shadow, REDUCE };
+})();
+</script>
+<script>
+/* ===== 탐구 2: 광합성에 필요한 물질과 생산된 물질 (교과서 172쪽, 디지털 ON) =====
+   농도 숫자는 교과서 그림에서 읽을 수 없어 눈금 없는 모형으로 그린다. 두 기체의 세로 눈금은 서로 다르다. */
+(() => {
+  'use strict';
+  const { el, grad, leafData, drawLeaf, PAL, flock, tween, loop, mk, lerp, stage, clamp, bench, shadow, sprite } = PS;
+  const CO2C = '#39424c', O2C = '#d9472f';
+  PS.gasLab = function (host, o = {}) {
+    const ST = stage(host, [0, 118, 1000, 660]), root = el('g', null, ST.svg);
+    let fast = false; const T = (m) => (fast ? 0 : m);
+    bench(root, 720);
+    shadow(root, 760, 726, 230, 18, .25); shadow(root, 250, 722, 260, 18, .26); shadow(root, 500, 726, 60, 10, .3);
+    /* 태블릿 */
+    const SX = 34, SY = 268, SW = 430, SH = 322;
+    const tb = el('g', null, root);
+    el('path', { d: `M${SX + SW / 2 - 60} ${SY + SH + 14}L${SX + SW / 2 - 96} 722H${SX + SW / 2 + 96}L${SX + SW / 2 + 60} ${SY + SH + 14}Z`, fill: grad([[0, '#cdd6de'], [1, '#a9b6c2']]), stroke: '#94a3b0' }, tb);
+    el('rect', { x: SX - 14, y: SY - 14, width: SW + 28, height: SH + 28, rx: 20, fill: '#20262c', stroke: '#0f1316', 'stroke-width': 1.2 }, tb);
+    el('rect', { x: SX, y: SY, width: SW, height: SH, rx: 5, fill: '#fff' }, tb);
+    const gx = SX + 44, gy = SY + 40, gw = SW - 66, gh = SH - 84;
+    const grid = el('g', { stroke: '#e3eaf0', 'stroke-width': 1 }, tb);
+    for (let i = 0; i <= 5; i++) { const x = gx + gw * i / 5; el('line', { x1: x, x2: x, y1: gy, y2: gy + gh }, grid); }
+    for (let i = 0; i <= 4; i++) { const y = gy + gh * i / 4; el('line', { x1: gx, x2: gx + gw, y1: y, y2: y }, grid); }
+    el('path', { d: `M${gx} ${gy}V${gy + gh}H${gx + gw}`, fill: 'none', stroke: '#5a6b7e', 'stroke-width': 1.6 }, tb);
+    for (let i = 0; i <= 5; i++) ST.label(gx + gw * i / 5, gy + gh + 15, String(i * 2), 'm').e.style.fontSize = '12px';
+    const yl = ST.label(SX + 18, gy + gh / 2, '농도', 'm'); yl.e.style.fontSize = '12.5px'; yl.e.style.writingMode = 'vertical-rl';
+    const xl = ST.label(gx + gw / 2, gy + gh + 34, '시간(분)', 'm'); xl.e.style.fontSize = '12.5px';
+    const others = el('g', { fill: 'none', 'stroke-width': 1.6, opacity: 0, style: 'transition:opacity .5s' }, tb);
+    const tempL = el('path', { fill: 'none', stroke: '#a5b1bd', 'stroke-width': 1.8, 'stroke-dasharray': '6 5' }, tb);
+    const co2L = el('path', { fill: 'none', stroke: CO2C, 'stroke-width': 3, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }, tb);
+    const o2L = el('path', { fill: 'none', stroke: O2C, 'stroke-width': 3, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }, tb);
+    const dotC = el('circle', { r: 5, fill: CO2C, opacity: 0 }, tb), dotO = el('circle', { r: 5, fill: O2C, opacity: 0 }, tb);
+    const status = ST.label(SX + SW / 2, SY + 19, '센서를 기다리는 중', 'm'); status.e.style.fontSize = '13px';
+    const lC = ST.label(0, 0, '이산화 탄소', '').show(false), lO = ST.label(0, 0, '산소', '').show(false), lTm = ST.label(0, 0, '온도', 'm').show(false);
+    lC.e.style.color = CO2C; lO.e.style.color = O2C; lC.e.style.fontSize = lO.e.style.fontSize = '13.5px'; lTm.e.style.fontSize = '12.5px';
+    const px = (f) => gx + gw * f, py = (v) => gy + gh * (1 - v);
+    const R = mk(31), nC = [], nO = [];
+    const N = 60; for (let i = 0; i <= N; i++) { nC.push((R() - .5) * .022); nO.push((R() - .5) * .022); }
+    const shape = (f) => (1 - Math.exp(-1.9 * f)) / (1 - Math.exp(-1.9));
+    const co2v = (f, i, k = 1) => .9 - .72 * k * shape(f) + (nC[i] || 0);
+    const o2v = (f, i, k = 1) => .14 + .68 * k * shape(f) + (nO[i] || 0);
+    const lineD = (fn, n) => { let d = ''; for (let i = 0; i <= n; i++) { const f = i / N; d += (i ? 'L' : 'M') + PS.f1(px(f)) + ' ' + PS.f1(py(fn(f, i))); } return d; };
+    /* 다른 모둠 */
+    [[.92, 1.06, 77], [1.1, .88, 91]].forEach(([k1, k2, s]) => {
+      const Q = mk(s), a = [], b = []; for (let i = 0; i <= N; i++) { a.push((Q() - .5) * .024); b.push((Q() - .5) * .024); }
+      el('path', { d: lineD((f, i) => .9 - .72 * k1 * shape(f) + a[i] + .015, N), stroke: CO2C, opacity: .32 }, others);
+      el('path', { d: lineD((f, i) => .14 + .68 * k2 * shape(f) + b[i], N), stroke: O2C, opacity: .36 }, others);
+    });
+    /* LED 등 */
+    const ledG = el('g', null, root), LX = 520;
+    const cone = el('path', { d: `M${LX + 18} 250L905 330V700L${LX + 18} 640Z`, fill: grad([[0, '#fff2a8', .62], [1, '#fff2a8', .06]], { x2: 1, y2: 0 }), opacity: 0, style: 'transition:opacity .5s' }, ledG);
+    el('path', { d: `M${LX - 44} 722L${LX - 30} 680H${LX + 30}L${LX + 44} 722Z`, fill: grad([[0, '#7a8894'], [1, '#55616c']]), stroke: '#47525c' }, ledG);
+    el('rect', { x: LX - 17, y: 226, width: 34, height: 456, rx: 8, fill: grad([[0, '#8b98a4'], [.5, '#a9b5bf'], [1, '#70808d']], { x2: 1, y2: 0 }), stroke: '#5e6b76' }, ledG);
+    const strip = el('rect', { x: LX + 6, y: 242, width: 8, height: 424, rx: 4, fill: '#c8d2da' }, ledG);
+    /* 투명 밀폐 장치 */
+    const BX = 590, BY = 322, BW = 350, BH = 394;
+    el('path', { d: `M${BX} ${BY}L${BX + 14} ${BY + BH - 12}Q${BX + 15} ${BY + BH} ${BX + 28} ${BY + BH}H${BX + BW - 28}Q${BX + BW - 15} ${BY + BH} ${BX + BW - 14} ${BY + BH - 12}L${BX + BW} ${BY}Z`, fill: 'rgba(226,238,245,.34)', stroke: '#8ba0b2', 'stroke-width': 2 }, root);
+    /* 상추 */
+    const LEAFS = [[742, 706, -112, .8, 5], [788, 706, -68, .8, 7], [765, 706, -92, .92, 2], [722, 708, -142, .62, 9], [808, 708, -38, .62, 13], [765, 708, -84, .6, 15]];
+    LEAFS.forEach(([x, y, r, s, seed]) => drawLeaf(root, leafData({ L: 196, W: 84, p: .52, q: .78, seed, sec: 6, ruffle: .1, teeth: .03, nt: 30, nA: 60, vw: 5, D: 6, di: 30 }), PAL.let, { tf: `translate(${x} ${y}) rotate(${r}) scale(${s})`, edge: 1.1, shade: .1, veinOp: .9 }));
+    const mol = el('g', null, root);
+    /* 뚜껑 + 센서 */
+    const lid = el('g', null, root);
+    el('rect', { x: BX - 12, y: BY - 22, width: BW + 24, height: 18, rx: 6, fill: grad([[0, '#f6f8fa'], [1, '#d3dce4']]), stroke: '#a4b2bf' }, lid);
+    el('rect', { x: BX - 8, y: BY - 5, width: BW + 16, height: 7, rx: 3, fill: '#c9483a' }, lid);
+    const sens = el('g', null, lid), SP = [[BX + 72, '산소 센서'], [BX + 175, '온도 센서'], [BX + 278, '이산화 탄소 센서']];
+    const sensG = SP.map(([x, n], i) => {
+      const s = el('g', null, sens);
+      el('rect', { x: x - 4, y: BY - 22, width: 8, height: 60, fill: '#67737e' }, s);
+      el('rect', { x: x - 27, y: BY - 118, width: 54, height: 90, rx: 8, fill: grad([[0, '#2aa2d6'], [1, '#157eb0']], { x2: 1, y2: 0 }), stroke: '#0f6a95' }, s);
+      el('rect', { x: x - 20, y: BY - 110, width: 40, height: 22, rx: 3, fill: '#16242e' }, s);
+      el('rect', { x: x - 15, y: BY - 104, width: 30, height: 4, fill: '#7fe0a5', opacity: .75 }, s);
+      el('rect', { x: x - 15, y: BY - 97, width: 18, height: 3, fill: '#7fe0a5', opacity: .5 }, s);
+      el('circle', { cx: x, cy: BY - 58, r: 6.5, fill: '#e9f2f7', stroke: '#0f6a95' }, s);
+      el('rect', { x: x - 16, y: BY - 28, width: 32, height: 8, rx: 3, fill: '#20313e' }, s);
+      return s;
+    });
+    const sl = SP.map(([x, n]) => { const l = ST.label(x, BY - 136, n.replace(' 센서', ''), 'm'); l.e.style.fontSize = '12.5px'; return l.show(false); });
+    const lLED = ST.label(LX, 206, 'LED등', 'm'), lBox = ST.label(BX + BW / 2, 750, '투명 밀폐 장치와 상추', 'm'), lTab = ST.label(SX + SW / 2, 750, '스마트 기기', 'm');
+    /* 뚜껑·센서 처음 위치 */
+    const setLid = (t) => lid.setAttribute('transform', `translate(0 ${(1 - t) * -210})`);
+    const setSens = (t) => sensG.forEach((s, i) => { s.setAttribute('transform', `translate(0 ${(1 - t) * -160})`); s.setAttribute('opacity', t); });
+    setLid(0); setSens(0);
+    /* 기체 입자 */
+    const parts = []; const Rm = Math.random;
+    const LF = [[760, 610], [715, 630], [810, 630], [765, 570]];
+    const spawn = (kind, x, y) => { const u = el('use', { href: kind === 'c' ? '#mCO2' : '#mO2' }, mol), a = Rm() * 6.28, p = { u, kind, x, y, vx: Math.cos(a) * 26, vy: Math.sin(a) * 26, rot: Rm() * 360, seek: null }; parts.push(p); return p; };
+    const inBox = () => [BX + 34 + Rm() * (BW - 68), BY + 22 + Rm() * 200];
+    for (let i = 0; i < 15; i++) { const b = inBox(); spawn('c', b[0], b[1]); }
+    for (let i = 0; i < 6; i++) { const b = inBox(); spawn('o', b[0], b[1]); }
+    let f = 0, running = false, sealed = false, onP = null, done = null;
+    const cnt = (k) => parts.filter((p) => p.kind === k && !p.seek).length;
+    const stepMol = (dt) => {
+      parts.forEach((p) => {
+        if (p.seek) { const dx = p.seek[0] - p.x, dy = p.seek[1] - p.y, m = Math.hypot(dx, dy) || 1; p.x += dx / m * 120 * dt; p.y += dy / m * 120 * dt; if (m < 8) p.gone = true; }
+        else { p.vx += (Rm() - .5) * 30 * dt * 10; p.vy += (Rm() - .5) * 30 * dt * 10; const sp = Math.hypot(p.vx, p.vy) || 1; p.vx = p.vx / sp * 26; p.vy = p.vy / sp * 26; p.x += p.vx * dt; p.y += p.vy * dt;
+          if (p.x < BX + 30) p.vx = Math.abs(p.vx); if (p.x > BX + BW - 30) p.vx = -Math.abs(p.vx); if (p.y < BY + 20) p.vy = Math.abs(p.vy); if (p.y > BY + 215) p.vy = -Math.abs(p.vy); }
+        p.rot += 30 * dt; p.u.setAttribute('transform', `translate(${PS.f1(p.x)} ${PS.f1(p.y)}) rotate(${PS.f1(p.rot)}) scale(.82)`);
+      });
+      for (let i = parts.length - 1; i >= 0; i--) if (parts[i].gone) { parts[i].u.remove(); parts.splice(i, 1); }
+    };
+    const syncCount = () => {
+      const wantC = Math.round(lerp(15, 3, shape(f))), wantO = Math.round(lerp(6, 19, shape(f)));
+      if (cnt('c') > wantC) { const c = parts.find((p) => p.kind === 'c' && !p.seek); if (c) c.seek = LF[Math.floor(Rm() * LF.length)]; }
+      if (cnt('o') < wantO) { const l = LF[Math.floor(Rm() * LF.length)]; const p = spawn('o', l[0], l[1]); p.vy = -26; }
+    };
+    const draw = () => {
+      const n = Math.round(f * N), c = (g, i) => co2v(g, i), oo = (g, i) => o2v(g, i);
+      co2L.setAttribute('d', lineD(c, n)); o2L.setAttribute('d', lineD(oo, n)); tempL.setAttribute('d', `M${px(0)} ${py(.5)}L${px(n / N)} ${py(.5)}`);
+      if (n > 0) {
+        const xx = px(n / N), yc = py(co2v(n / N, n)), yo = py(o2v(n / N, n));
+        dotC.setAttribute('cx', xx); dotC.setAttribute('cy', yc); dotC.setAttribute('opacity', 1); dotO.setAttribute('cx', xx); dotO.setAttribute('cy', yo); dotO.setAttribute('opacity', 1);
+        lC.move(gx + 92, gy + 12).show(true); lO.move(gx + 30, py(.14) + 15).show(true); lTm.move(gx + gw - 18, py(.5) - 11).show(true);
+      }
+      const sec = Math.round(f * 600), mm = Math.floor(sec / 60), ss = sec % 60;
+      status.set(`측정 시간 ${mm}분 ${String(ss).padStart(2, '0')}초 · 10초마다 측정`);
+    };
+    const DUR = 15;
+    const lp = loop((dt) => {
+      if (sealed || parts.length) stepMol(dt);
+      if (running) {
+        f = Math.min(1, f + dt / DUR); syncCount(); draw(); onP && onP(f);
+        if (f >= 1) { running = false; status.set('측정 끝 · 10분 동안 기록했어요'); done && done(); }
+      }
+    });
+    const api = {
+      close(cb) { tween(T(800), setLid, () => { sealed = true; cb && cb(); }); },
+      connect(cb) { tween(T(750), setSens, () => { sl.forEach((l) => l.show(true)); status.set('센서 3개 연결됨'); cb && cb(); }); },
+      light(v) { cone.setAttribute('opacity', v ? 1 : 0); strip.setAttribute('fill', v ? '#fff6c0' : '#c8d2da'); },
+      run(cb, p) { api.light(true); onP = p; done = cb; running = true; },
+      others(v) { others.setAttribute('opacity', v ? 1 : 0); },
+      jump(step, ff = 1) {
+        fast = true; if (step >= 1) { setLid(1); sealed = true; } if (step >= 2) { setSens(1); sl.forEach((l) => l.show(true)); status.set('센서 3개 연결됨'); }
+        if (step >= 3) { api.light(true); f = ff; const wc = Math.round(lerp(15, 3, shape(f))), wo = Math.round(lerp(6, 19, shape(f))); while (cnt('c') > wc) { const i = parts.findIndex((p) => p.kind === 'c'); parts[i].u.remove(); parts.splice(i, 1); } while (cnt('o') < wo) { const b = inBox(); spawn('o', b[0], b[1]); } draw(); if (ff >= 1) status.set('측정 끝 · 10분 동안 기록했어요'); }
+        fast = false;
+      },
+      get f() { return f; },
+    };
+    return api;
+  };
+})();
+</script>
+<script>
+(() => {
+  'use strict';
+  try {
+    const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+    const q = new URLSearchParams(location.search);
+    let L = PS.gasLab($('#lab')), step = 0, pred = null, busy = false, oth = false;
+    const say = (t, m, cls = '') => { $('#res').className = 'fbk ' + cls; $('#resT').textContent = t; $('#resM').innerHTML = m; };
+    const PRED = [['a', '이산화 탄소 감소, 산소 증가'], ['b', '이산화 탄소 증가, 산소 감소'], ['c', '두 기체 모두 그대로']];
+    const act = (fn) => { if (busy) return; busy = true; render(); fn(() => { busy = false; step++; render(); }); };
+    function render() {
+      const s = step, c = $('#ctl');
+      $$('#steps .ph').forEach((e) => { const n = +e.dataset.s, cur = Math.min(s, 3); e.classList.toggle('on', n === cur); e.classList.toggle('done', n < cur); });
+      const btn = (t, fn, dis) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'btn primary'; b.textContent = t; b.disabled = busy || !!dis; b.addEventListener('click', fn); return b; };
+      c.innerHTML = '';
+      if (s === 0) { c.append(btn('뚜껑 닫기', () => act((d) => L.close(d)))); say('결과', '먼저 뚜껑을 닫아 공기가 새지 않게 해요.'); }
+      if (s === 1) { c.append(btn('센서 연결하기', () => act((d) => L.connect(d)))); say('결과', '뚜껑을 닫았어요. 입자 모형은 이산화 탄소와 산소만 그렸어요.'); }
+      if (s === 2) {
+        if (!busy) {
+          const w = document.createElement('div'); w.innerHTML = `<div class="seglbl">빛을 비추면 농도가 어떻게 변할까요?</div><div class="pred">${PRED.map(([k, t]) => `<button type="button" data-k="${k}" aria-pressed="${pred === k}">${t}</button>`).join('')}</div>`;
+          c.append(w); $$('button', w).forEach((b) => b.addEventListener('click', () => { pred = b.dataset.k; render(); }));
+        }
+        c.append(btn(busy ? '측정하는 중' : 'LED등 켜고 측정 시작', () => act((d) => L.run(d)), !pred));
+        if (!busy) say('결과', pred ? '예측을 골랐어요. 측정을 시작해요.' : '센서를 연결했어요. 먼저 예측을 골라요.');
+        else say('측정 중', '입자와 그래프를 함께 봐요. 이산화 탄소는 잎으로 들어가고, 산소는 잎에서 나와요.');
+      }
+      if (s >= 3) {
+        c.append(btn(oth ? '다른 모둠 결과 숨기기' : '다른 모둠 결과 겹쳐 보기', () => { oth = !oth; L.others(oth); render(); }));
+        const ok = pred === 'a';
+        if (oth) say('다른 모둠과 비교', '조금씩 다르지만 <b>이산화 탄소는 감소, 산소는 증가</b>하는 모습은 같아요.', 'ok');
+        else say(ok ? '예측이 맞았어요' : '예측과 달라요', '이산화 탄소 농도는 <b>감소</b>하고 산소 농도는 <b>증가</b>했어요. 온도는 거의 일정했어요.', ok ? 'ok' : '');
+      }
+    }
+    $('#bReset').addEventListener('click', () => { L = PS.gasLab($('#lab')); step = 0; pred = null; busy = false; oth = false; render(); });
+    const J = +(q.get('step') || 0);
+    if (J) { L.jump(J, +(q.get('f') || 1)); step = J; pred = 'a'; }
+    if (q.get('oth')) { oth = true; L.others(true); }
+    render();
+    const tab = (p) => { $$('#pt button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.p === p))); $$('.pane').forEach((e) => { e.hidden = e.dataset.p !== p; }); };
+    $$('#pt button').forEach((b) => b.addEventListener('click', () => tab(b.dataset.p)));
+    if (q.get('tab')) tab(q.get('tab'));
+    const QS = [
+      { q: '시간이 지남에 따라 이산화 탄소 농도는?', o: ['감소한다', '증가한다', '변하지 않는다'], a: 0, ok: '빛을 받은 잎이 이산화 탄소를 흡수해 광합성을 하므로 <b>감소</b>해요.' },
+      { q: '시간이 지남에 따라 산소 농도는?', o: ['증가한다', '감소한다', '변하지 않는다'], a: 0, ok: '광합성 결과 산소가 생산되므로 <b>증가</b>해요.' },
+      { q: '광합성에 필요한 물질과 생산된 물질을 바르게 짝 지은 것은?', o: ['필요: 이산화 탄소 / 생산: 산소', '필요: 산소 / 생산: 이산화 탄소', '필요: 온도 / 생산: 산소'], a: 0, ok: '이 실험으로 광합성에 <b>이산화 탄소가 필요</b>하고 광합성 결과 <b>산소가 생산</b>됨을 알 수 있어요.' },
+    ];
+    $('#qs').innerHTML = QS.map((x, i) => `<div class="qa" data-i="${i}"><p>${x.q}</p><div class="qa3">${x.o.map((t, k) => `<button type="button" data-k="${k}">${t}</button>`).join('')}</div></div>`).join('');
+    $$('#qs .qa').forEach((row) => { const x = QS[+row.dataset.i]; $$('button', row).forEach((b) => b.addEventListener('click', () => {
+      const good = +b.dataset.k === x.a; $$('button', row).forEach((o) => o.classList.remove('good', 'bad')); b.classList.add(good ? 'good' : 'bad');
+      const r = $('#recRes'); r.hidden = false; r.className = 'fbk ' + (good ? 'ok' : 'no'); r.innerHTML = good ? x.ok : '다시 골라 봐요. 그래프가 어느 쪽으로 변했는지 떠올려요.';
+    })); });
+    window.SM = window.SM || {}; window.SM.okUI = true;
+  } catch (err) { window.SM_err && window.SM_err('기체 측정 실험실', err); }
+})();
+</script>
+</body>
+</html>
