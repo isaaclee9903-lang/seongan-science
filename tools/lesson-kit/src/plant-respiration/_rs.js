@@ -295,5 +295,5 @@ window.RS = (() => {
     });
     return api;
   }
-  return { tomato, eq, cycle, room, symbols };
+  return { tomato, eq, cycle, room, symbols, compound, tomatoFruit, TOM, TOM2 };
 })();
