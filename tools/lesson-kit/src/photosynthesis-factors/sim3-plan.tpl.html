@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>광합성은 어떤 조건에서 잘 일어날까 – 탐구 계획서</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+/*@@LOCAL:_css_ps.css@@*/
+/*@@LOCAL:_css_sim.css@@*/
+/*@@LOCAL:_css_pf.css@@*/
+  .stage{grid-template-columns:minmax(0,1.1fr) minmax(360px,1fr)}
+  @media (max-width:900px){.stage{grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) minmax(0,auto)}.helper{max-height:560px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="ttl">
+      <span class="eyebrow">탐구</span><h1>탐구 계획서 설계하기</h1>
+      <p class="sub">환경요인 하나를 골라 실험을 설계해요. 칸은 교과서 부록 330쪽과 같아요. 직접 고쳐 써도 돼요.</p>
+    </div>
+  </header>
+  <div class="stage">
+    <section class="card paper" id="paper">
+      <h2>탐구 계획서 <small>이 기기에만 임시로 남아요. 복사하거나 인쇄해서 공유해요</small></h2>
+      <div class="pgrid" id="grid">
+        <div class="k">탐구 주제</div><div class="v"><textarea id="fTopic" rows="1" placeholder="환경요인을 고르면 채워져요"></textarea></div>
+        <div class="k">가설</div><div class="v"><textarea id="fHyp" rows="1"></textarea></div>
+        <div class="k">탐구 수행 기간</div><div class="v"><textarea id="fPeriod" rows="1" placeholder="선생님과 정한 기간을 적어요"></textarea></div>
+        <div class="k">준비물</div><div class="v"><textarea id="fMat" rows="2"></textarea></div>
+        <div class="k sub">다르게 해야 할 조건</div><div class="v"><textarea id="fA" rows="1"></textarea></div>
+        <div class="k sub">일정하게 유지해야 할 조건</div><div class="v"><textarea id="fB" rows="1"></textarea></div>
+        <div class="k">측정할 것</div><div class="v"><textarea id="fM" rows="1"></textarea></div>
+        <div class="k">탐구 과정</div><div class="v tall"><textarea id="fP"></textarea></div>
+        <div class="k last">안전 사항</div><div class="v last"><textarea id="fS" rows="2"></textarea></div>
+      </div>
+    </section>
+    <section class="card pad helper" id="helper">
+      <div class="stepper" role="tablist" id="stp"></div>
+      <div id="body"></div>
+      <div class="fbk" id="res" hidden></div>
+      <div class="navb"><button class="btn ghost" type="button" id="prev">이전</button><button class="btn primary" type="button" id="next">다음</button></div>
+      <div class="pfoot" id="foot" hidden><button class="btn ghost" type="button" id="copy">계획서 복사하기</button><button class="btn ghost" type="button" id="print">인쇄하기</button></div>
+    </section>
+  </div>
+</div>
+<script>
+(() => {
+  'use strict';
+  try {
+    const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+    const q = new URLSearchParams(location.search);
+    const K = {
+      light: { n: '빛의 세기', p: '빛의 세기가', up: '강해지면', rest: ['이산화 탄소 농도', '온도'], chg: '빛의 세기를 약한 단계에서 강한 단계로 바꾼다.' },
+      co2: { n: '이산화 탄소 농도', p: '이산화 탄소 농도가', up: '높아지면', rest: ['빛의 세기', '온도'], chg: '이산화 탄소 농도를 낮은 단계에서 높은 단계로 바꾼다.' },
+      temp: { n: '온도', p: '온도가', up: '높아지면', rest: ['빛의 세기', '이산화 탄소 농도'], chg: '온도를 낮은 단계에서 높은 단계로 바꾼다.' },
+    };
+    const VARS = ['빛의 세기', '이산화 탄소 농도', '온도', '잎의 크기', '식물의 종류', '측정 시간'];
+    const MEAS = [['이산화 탄소 농도 변화', 1], ['산소 농도 변화', 1], ['잎의 개수', 0], ['식물의 키', 0]];
+    const MATS = [['상추 잎', 1], ['투명 밀폐 장치', 1], ['이산화 탄소 센서', 1], ['산소 센서', 1], ['온도 센서', 1], ['LED등', 1], ['스마트 기기', 1], ['아이오딘-아이오딘화 칼륨 용액', 0], ['에탄올', 0]];
+    const SAFE = [['LED등을 직접 보지 않는다.', 1], ['유리 기구는 깨지지 않게 조심해서 다룬다.', 1], ['전기 기구는 젖은 손으로 만지지 않는다.', 1]];
+    const STEPS = ['요인', '가설', '변인', '측정', '준비물', '과정', '안전', '평가'];
+    const st = { k: null, hyp: null, vs: {}, meas: new Set(), mats: new Set(), order: [], safe: new Set(), peer: new Set(), good: '', fix: '' };
+    let cur = 0;
+    const keys = ['fTopic', 'fHyp', 'fPeriod', 'fMat', 'fA', 'fB', 'fM', 'fP', 'fS'];
+    const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
+    keys.forEach((k) => { const v = store.get('pf-plan-' + k); if (v && !q.get('step') && !q.get('demo')) $('#' + k).value = v; $('#' + k).addEventListener('input', (e) => store.set('pf-plan-' + k, e.target.value)); });
+    const put = (id, v) => { const t = $('#' + id); t.value = v; store.set('pf-plan-' + id, v); };
+    const say = (m, c = '') => { const r = $('#res'); r.hidden = !m; r.className = 'fbk ' + c; r.innerHTML = m; };
+    const procList = () => { const k = K[st.k] || K.light; return ['같은 크기의 상추 잎을 투명 밀폐 장치에 넣고 뚜껑을 닫는다.', '센서를 설치하고 스마트 기기와 연결한다.', `${k.rest.join('와(과) ')}을(를) 일정하게 맞춘다.`, k.chg, '단계마다 같은 시간 동안 농도 변화를 측정해 기록한다.', '결과를 그래프로 나타내고 가설과 비교한다.']; };
+    function fillVars() {
+      const a = VARS.filter((v) => st.vs[v] === 'a'), b = VARS.filter((v) => st.vs[v] === 'b');
+      put('fA', a.join(', ')); put('fB', b.join(', '));
+    }
+    const hyps = (k) => { const m = K[k]; return [`${m.p} ${m.up} 광합성량이 증가할 것이다.`, `${m.p} ${m.up} 광합성량이 증가하다가 일정해질 것이다.`, `${m.p} ${m.up} 광합성량이 감소할 것이다.`, `${m.p} ${m.up}도 광합성량은 변하지 않을 것이다.`]; };
+    function render() {
+      $('#stp').innerHTML = STEPS.map((t, i) => `<button type="button" role="tab" data-i="${i}" aria-selected="${i === cur}" class="${doneAt(i) ? 'done' : ''}">${t}</button>`).join('');
+      $$('#stp button').forEach((b) => b.addEventListener('click', () => { cur = +b.dataset.i; render(); }));
+      const B = $('#body'); say('');
+      $('#prev').disabled = cur === 0; $('#next').textContent = cur === STEPS.length - 1 ? '처음으로' : '다음';
+      $('#foot').hidden = cur !== STEPS.length - 1;
+      const need = '<div class="ask">먼저 첫 칸에서 환경요인을 골라요.</div>';
+      if (cur === 0) {
+        B.innerHTML = `<div class="ask">어떤 환경요인을 탐구할까요?</div><p>스마트팜은 빛, 이산화 탄소, 온도 같은 환경요인을 조절해요. 하나만 골라요.</p><div class="opts">${Object.entries(K).map(([k, v]) => `<button type="button" data-k="${k}" aria-pressed="${st.k === k}">${v.n}</button>`).join('')}</div>`;
+        $$('.opts button', B).forEach((b) => b.addEventListener('click', () => { st.k = b.dataset.k; st.hyp = null; st.vs = {}; st.order = []; put('fTopic', `${K[st.k].n}에 따른 광합성량 변화`); put('fHyp', ''); put('fA', ''); put('fB', ''); put('fP', ''); render(); }));
+        if (st.k) say(`주제를 채웠어요. 왼쪽 칸에서 고쳐 써도 돼요.`, 'ok');
+      } else if (!st.k) { B.innerHTML = need; }
+      else if (cur === 1) {
+        B.innerHTML = `<div class="ask">결과를 어떻게 예상하나요?</div><p>가설은 탐구 문제의 답을 미리 생각해 본 것이에요. 실험으로 맞는지 확인할 수 있게 써요.</p><div class="opts">${hyps(st.k).map((t) => `<button type="button" aria-pressed="${st.hyp === t}">${t}</button>`).join('')}</div>`;
+        $$('.opts button', B).forEach((b) => b.addEventListener('click', () => { st.hyp = b.textContent; put('fHyp', st.hyp); render(); }));
+        if (st.hyp) say('어느 가설이든 괜찮아요. 맞는지는 실험 결과로 확인해요.', 'ok');
+      } else if (cur === 2) {
+        B.innerHTML = `<div class="ask">변인을 나눠요</div><p>변인은 실험에 관계된 모든 요인이에요. 줄마다 하나씩 골라요.</p><div class="vsort">${VARS.map((v) => `<div class="row" data-v="${v}"><span>${v}</span><button type="button" data-t="a" aria-pressed="${st.vs[v] === 'a'}">다르게</button><button type="button" data-t="b" aria-pressed="${st.vs[v] === 'b'}">일정하게</button></div>`).join('')}</div>`;
+        $$('.vsort .row', B).forEach((r) => $$('button', r).forEach((b) => b.addEventListener('click', () => { st.vs[r.dataset.v] = b.dataset.t; fillVars(); render(); })));
+        const all = VARS.every((v) => st.vs[v]);
+        if (all) {
+          const a = VARS.filter((v) => st.vs[v] === 'a');
+          if (a.length === 1 && a[0] === K[st.k].n) say(`좋아요. <b>${K[st.k].n}</b>만 다르게 해야 결과가 달라진 까닭을 ${K[st.k].n} 때문이라고 말할 수 있어요.`, 'ok');
+          else if (a.length > 1) say(`다르게 할 조건이 ${a.length}개예요. 그러면 무엇 때문에 달라졌는지 알 수 없어요. <b>${K[st.k].n}</b> 하나만 다르게 해요.`, 'no');
+          else say(`이 탐구에서 알아볼 것은 <b>${K[st.k].n}</b>이에요. 이것을 다르게 해요.`, 'no');
+        }
+      } else if (cur === 3) {
+        B.innerHTML = `<div class="ask">무엇을 측정하면 광합성량을 알 수 있을까요?</div><p>앞 시간 탐구를 떠올려요. 광합성에 쓰이는 기체와 생기는 기체를 재면 돼요.</p><div class="opts g2">${MEAS.map(([t]) => `<button type="button" aria-pressed="${st.meas.has(t)}">${t}</button>`).join('')}</div>`;
+        $$('.opts button', B).forEach((b) => b.addEventListener('click', () => { const t = b.textContent; st.meas.has(t) ? st.meas.delete(t) : st.meas.add(t); put('fM', [...st.meas].join(', ')); render(); }));
+        const bad = MEAS.filter(([t, ok]) => !ok && st.meas.has(t)).length, good = MEAS.filter(([t, ok]) => ok && st.meas.has(t)).length;
+        if (bad) say('잎의 개수나 식물의 키는 측정하는 짧은 시간 동안 거의 변하지 않아요.', 'no'); else if (good) say('이산화 탄소가 줄어드는 정도와 산소가 늘어나는 정도로 광합성량을 비교할 수 있어요.', 'ok');
+      } else if (cur === 4) {
+        B.innerHTML = `<div class="ask">준비물을 골라요</div><p>앞 시간에 쓴 기구로 설계해요. 이 탐구에 필요한 것만 골라요.</p><div class="opts g2">${MATS.map(([t]) => `<button type="button" aria-pressed="${st.mats.has(t)}">${t}</button>`).join('')}</div>`;
+        $$('.opts button', B).forEach((b) => b.addEventListener('click', () => { const t = b.textContent; st.mats.has(t) ? st.mats.delete(t) : st.mats.add(t); put('fMat', [...st.mats].join(', ')); render(); }));
+        if (MATS.some(([t, ok]) => !ok && st.mats.has(t))) say('아이오딘-아이오딘화 칼륨 용액과 에탄올은 녹말을 확인할 때 쓰는 것이에요. 기체를 측정하는 이 탐구에는 필요 없어요.', 'no');
+      } else if (cur === 5) {
+        const P = procList(); const shuffled = [3, 0, 5, 2, 4, 1].map((i) => P[i]);
+        B.innerHTML = `<div class="ask">탐구 과정을 차례대로 눌러요</div><div class="order">${shuffled.map((t) => { const i = st.order.indexOf(t); return `<button type="button" class="${i >= 0 ? 'picked' : ''}"><i>${i >= 0 ? i + 1 : ''}</i><span>${t}</span></button>`; }).join('')}</div>`;
+        $$('.order button', B).forEach((b) => b.addEventListener('click', () => { const t = b.querySelector('span').textContent, i = st.order.indexOf(t); if (i >= 0) st.order.splice(i); else st.order.push(t); put('fP', st.order.map((x, j) => `${j + 1}. ${x}`).join('\n')); render(); }));
+        if (st.order.length === P.length) { const ok = st.order.every((t, i) => t === P[i]); say(ok ? '따라 하기 쉬운 순서예요. 필요하면 왼쪽 칸에서 더 자세히 고쳐 써요.' : '실험을 준비한 뒤에 조건을 바꾸고 측정해요. 번호를 눌러 다시 정해 봐요.', ok ? 'ok' : 'no'); }
+      } else if (cur === 6) {
+        B.innerHTML = `<div class="ask">안전 사항을 확인해요</div><p>지킬 것을 눌러 계획서에 넣어요.</p><div class="opts">${SAFE.map(([t]) => `<button type="button" aria-pressed="${st.safe.has(t)}">${t}</button>`).join('')}</div>`;
+        $$('.opts button', B).forEach((b) => b.addEventListener('click', () => { const t = b.textContent; st.safe.has(t) ? st.safe.delete(t) : st.safe.add(t); put('fS', [...st.safe].join(' ')); render(); }));
+      } else {
+        const PEER = ['가설을 실험으로 확인할 수 있는가?', '다르게 해야 할 조건이 하나인가?', '일정하게 유지해야 할 조건을 모두 적었는가?', '측정할 것이 분명한가?', '다른 모둠이 과정만 읽고 따라 할 수 있는가?'];
+        B.innerHTML = `<div class="ask">다른 모둠의 계획서를 평가해요</div><div class="peer">${PEER.map((t, i) => `<label><input type="checkbox" data-i="${i}" ${st.peer.has(i) ? 'checked' : ''}><span>${t}</span></label>`).join('')}</div><textarea class="fbtxt" id="gd" placeholder="잘한 점" rows="2"></textarea><textarea class="fbtxt" id="fx" placeholder="개선할 점. 우리 모둠 계획서도 보완해요" rows="2"></textarea>`;
+        $('#gd').value = st.good; $('#fx').value = st.fix;
+        $('#gd').addEventListener('input', (e) => { st.good = e.target.value; }); $('#fx').addEventListener('input', (e) => { st.fix = e.target.value; });
+        $$('.peer input', B).forEach((c) => c.addEventListener('change', () => { c.checked ? st.peer.add(+c.dataset.i) : st.peer.delete(+c.dataset.i); }));
+      }
+    }
+    const doneAt = (i) => ({ 0: !!st.k, 1: !!st.hyp, 2: VARS.every((v) => st.vs[v]), 3: st.meas.size > 0, 4: st.mats.size > 0, 5: st.order.length === 6, 6: st.safe.size > 0, 7: st.peer.size > 0 }[i]);
+    $('#prev').addEventListener('click', () => { if (cur > 0) { cur--; render(); } });
+    $('#next').addEventListener('click', () => { cur = cur === STEPS.length - 1 ? 0 : cur + 1; render(); });
+    const planText = () => { const L = [['탐구 주제', 'fTopic'], ['가설', 'fHyp'], ['탐구 수행 기간', 'fPeriod'], ['준비물', 'fMat'], ['다르게 해야 할 조건', 'fA'], ['일정하게 유지해야 할 조건', 'fB'], ['측정할 것', 'fM'], ['탐구 과정', 'fP'], ['안전 사항', 'fS']]; let s = L.map(([n, id]) => `[${n}]\n${$('#' + id).value}`).join('\n\n'); if (st.good || st.fix) s += `\n\n[잘한 점]\n${st.good}\n\n[개선할 점]\n${st.fix}`; return s; };
+    $('#copy').addEventListener('click', async () => { const b = $('#copy'); try { await navigator.clipboard.writeText(planText()); b.textContent = '복사했어요'; } catch (e) { b.textContent = '복사가 안 돼요. 칸을 길게 눌러 복사해요'; } setTimeout(() => { b.textContent = '계획서 복사하기'; }, 2200); });
+    $('#print').addEventListener('click', () => window.print());
+    if (q.get('demo') || q.get('step')) {
+      st.k = q.get('k') || 'temp'; put('fTopic', `${K[st.k].n}에 따른 광합성량 변화`);
+      st.hyp = hyps(st.k)[0]; put('fHyp', st.hyp);
+      VARS.forEach((v) => { st.vs[v] = v === K[st.k].n ? 'a' : 'b'; }); fillVars();
+      MEAS.filter((m) => m[1]).forEach(([t]) => st.meas.add(t)); put('fM', [...st.meas].join(', '));
+      MATS.filter((m) => m[1]).forEach(([t]) => st.mats.add(t)); put('fMat', [...st.mats].join(', '));
+      if (q.get('demo')) { st.order = procList(); put('fP', st.order.map((x, j) => `${j + 1}. ${x}`).join('\n')); SAFE.forEach(([t]) => st.safe.add(t)); put('fS', [...st.safe].join(' ')); cur = 7; }
+      else cur = +q.get('step');
+    }
+    render();
+    window.SM = window.SM || {}; window.SM.okUI = true;
+  } catch (err) { window.SM_err && window.SM_err('탐구 계획서', err); }
+})();
+</script>
+</body>
+</html>

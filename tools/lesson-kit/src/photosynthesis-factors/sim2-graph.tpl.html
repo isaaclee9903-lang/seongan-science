@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>광합성은 어떤 조건에서 잘 일어날까 – 그래프 실험실</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+/*@@LOCAL:_css_ps.css@@*/
+/*@@LOCAL:_css_sim.css@@*/
+/*@@LOCAL:_css_pf.css@@*/
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="ttl">
+      <span class="eyebrow">시뮬레이션</span><h1>그래프 실험실</h1>
+      <p class="sub">환경요인 하나만 바꾸며 광합성량을 측정해 교과서 그림 Ⅴ-3의 그래프를 직접 그려요.</p>
+    </div>
+    <div class="ptabs big" role="tablist" id="kt">
+      <button type="button" role="tab" data-k="light" aria-selected="true">빛의 세기</button>
+      <button type="button" role="tab" data-k="co2" aria-selected="false">이산화 탄소 농도</button>
+      <button type="button" role="tab" data-k="temp" aria-selected="false">온도</button>
+    </div>
+  </header>
+  <div class="stage">
+    <section class="card viewer">
+      <div class="scene grow" id="lab" role="img" aria-label="왼쪽에 LED등과 상추가 든 투명 밀폐 장치, 오른쪽에 스마트 기기 화면의 그래프가 있다. 조건을 바꾸며 측정하면 광합성량 점이 찍히고 곡선이 그려진다."></div>
+      <div class="vctl">
+        <span class="hint" id="hint">눈금 숫자 없이 모양만 그린 모형이에요</span>
+        <span class="sp"></span>
+        <button class="vb" type="button" id="bReset">처음부터</button>
+      </div>
+    </section>
+    <section class="card pad">
+      <div class="ptabs" role="tablist" id="pt">
+        <button type="button" role="tab" data-p="lab" aria-selected="true">실험하기</button>
+        <button type="button" role="tab" data-p="rec" aria-selected="false">정리하기</button>
+        <button type="button" role="tab" data-p="why" aria-selected="false">왜 그럴까?</button>
+      </div>
+      <div class="pane" data-p="lab">
+        <dl class="vars">
+          <dt>다르게 해야 할 조건</dt><dd class="on" id="vA"></dd>
+          <dt>일정하게 유지해야 할 조건</dt><dd id="vB"></dd>
+          <dt>측정할 것</dt><dd>광합성량</dd>
+        </dl>
+        <div class="steps" id="steps">
+          <div class="ph" data-s="0"><i>1</i><span>어떤 모양일지 그래프 칸에 손가락으로 그려요.</span></div>
+          <div class="ph" data-s="1"><i>2</i><span>조건을 바꾸며 일곱 번 측정해요.</span></div>
+          <div class="ph" data-s="2"><i>3</i><span>내 예측과 측정 결과를 비교해요.</span></div>
+        </div>
+        <div class="ctl" id="ctl"></div>
+        <div class="fbk" id="res"><b class="t" id="resT">결과</b><span id="resM"></span></div>
+      </div>
+      <div class="pane" data-p="rec" hidden>
+        <div id="qs"></div>
+        <div class="fbk" id="recRes" hidden></div>
+      </div>
+      <div class="pane" data-p="why" hidden>
+        <ol class="whylist" id="whyL"></ol>
+        <p class="mnote">일정해지는 까닭과 높은 온도에서 줄어드는 까닭은 중학교 교과서에서 다루지 않아요. 곡선의 모양을 읽는 것이 목표예요.</p>
+      </div>
+    </section>
+  </div>
+</div>
+<script>
+/*@@LOCAL:_ps.js@@*/
+</script>
+<script>
+/*@@LOCAL:_pf.js@@*/
+</script>
+<script>
+(() => {
+  'use strict';
+  try {
+    const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+    const q = new URLSearchParams(location.search);
+    const WHY = {
+      light: ['광합성에는 <b>빛</b>이 필요해요. 빛의 세기가 증가할수록 광합성량이 <b>증가</b>해요.', '일정 수준 이상이 되면 빛을 더 강하게 해도 광합성량은 더 이상 증가하지 않고 <b>일정</b>해져요.', '이 실험에서는 이산화 탄소 농도와 온도를 <b>일정하게 유지</b>했어요. 그래야 달라진 까닭이 빛의 세기 때문이라고 말할 수 있어요.'],
+      co2: ['광합성의 원료인 <b>이산화 탄소</b>가 많아질수록 광합성량이 <b>증가</b>해요.', '일정 수준 이상이 되면 이산화 탄소가 더 많아져도 광합성량은 <b>일정</b>해져요.', '이 실험에서는 빛의 세기와 온도를 <b>일정하게 유지</b>했어요.'],
+      temp: ['온도가 높아질수록 광합성량이 <b>증가</b>해요.', '하지만 일정 온도보다 높아지면 광합성량은 오히려 <b>급격히 감소</b>해요. 빛이나 이산화 탄소 그래프와 끝 모양이 달라요.', '이 실험에서는 빛의 세기와 이산화 탄소 농도를 <b>일정하게 유지</b>했어요.'],
+    };
+    let kind = PF.META[q.get('k')] ? q.get('k') : 'light', L, stp = 0, n = 0, busy = false;
+    const doneK = {};
+    const say = (t, m, c = '') => { $('#res').className = 'fbk ' + c; $('#resT').textContent = t; $('#resM').innerHTML = m; };
+    const END = {
+      light: '빛의 세기가 증가할수록 광합성량이 <b>증가</b>하다가 일정 수준 이상이 되면 <b>일정</b>해져요.',
+      co2: '이산화 탄소 농도가 증가할수록 광합성량이 <b>증가</b>하다가 일정 수준 이상이 되면 <b>일정</b>해져요.',
+      temp: '온도가 높아질수록 광합성량이 <b>증가</b>하다가 일정 온도 이상에서는 <b>급격히 감소</b>해요.',
+    };
+    function start(k) {
+      kind = k; stp = 0; n = 0; busy = false;
+      L = PF.lab($('#lab'), k);
+      $$('#kt button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.k === k)));
+      $('#vA').textContent = L.M.name; $('#vB').textContent = L.M.others;
+      $('#whyL').innerHTML = WHY[k].map((t, i) => `<li><i>${i + 1}</i><span>${t}</span></li>`).join('');
+      L.setX(L.M.xs[0]); L.sketchMode(true, () => render());
+      render();
+    }
+    function btn(t, fn, dis, cls = 'primary') { const b = document.createElement('button'); b.type = 'button'; b.className = 'btn ' + cls; b.textContent = t; b.disabled = busy || !!dis; b.addEventListener('click', fn); return b; }
+    function render() {
+      const c = $('#ctl'), M = L.M, xs = M.xs;
+      $$('#steps .ph').forEach((e) => { const i = +e.dataset.s; e.classList.toggle('on', i === stp); e.classList.toggle('done', i < stp); });
+      c.innerHTML = '';
+      if (stp === 0) {
+        const w = document.createElement('div'); w.className = 'two';
+        w.append(btn('다시 그리기', () => { L.clearSketch(); render(); }, !L.drawn, 'ghost'));
+        w.append(btn('측정 시작하기', () => { stp = 1; L.sketchMode(false); render(); }, !L.drawn));
+        c.append(w);
+        say('예측', L.drawn ? '예측 곡선을 그렸어요. 이제 측정해 봐요.' : `<b>${M.name}</b>를 바꾸면 광합성량이 어떻게 변할까요? 왼쪽 아래에서 오른쪽으로 그려요.`);
+      }
+      if (stp === 1) {
+        const w = document.createElement('div'); w.className = 'slx';
+        w.innerHTML = `<label for="sx">${M.name}</label><input type="range" id="sx" min="0" max="${xs.length - 1}" step="1" value="${n}" style="--v:${n / (xs.length - 1) * 100}%" disabled>`;
+        c.append(w);
+        const tk = document.createElement('div'); tk.className = 'sl'; tk.style.display = 'block'; tk.innerHTML = `<div class="ticks" style="margin:-8px 0 0"><span>${M.low}</span><span>${M.high}</span></div>`; c.append(tk);
+        c.append(btn(busy ? '측정하는 중' : `측정하기 (${n + 1}번째)`, measure));
+        if (!busy) say('측정', n ? `${n}번 측정했어요. 점이 어떻게 이어지는지 봐요.` : '버튼을 누르면 지금 조건에서 광합성량을 측정해요. 조건은 측정할 때마다 한 단계씩 올라가요.');
+      }
+      if (stp === 2) {
+        const next = { light: 'co2', co2: 'temp', temp: 'light' }[kind], w = document.createElement('div');
+        c.append(btn(`다음 환경요인: ${PF.META[next].name}`, () => start(next)));
+        say('측정 끝', `${END[kind]} 점선은 내가 그린 예측이에요.`, 'ok');
+      }
+    }
+    function measure() {
+      busy = true; render(); say('측정 중', '잎으로 들어가는 이산화 탄소와 나오는 산소를 봐요.');
+      L.measure(() => {
+        n++; busy = false;
+        if (n >= L.M.xs.length) { doneK[kind] = true; L.curve(); stp = 2; render(); return; }
+        L.setX(L.M.xs[n]); render();
+      });
+    }
+    $$('#kt button').forEach((b) => b.addEventListener('click', () => { if (busy) return; start(b.dataset.k); }));
+    $('#bReset').addEventListener('click', () => { if (busy) return; start(kind); });
+    start(kind);
+    if (q.get('st')) { stp = 1; L.sketchMode(false); render(); }
+    if (q.get('all')) { L.sketchMode(false); L.M.xs.forEach((v) => L.dot(v)); L.curveNow(); n = L.M.xs.length; stp = 2; render(); }
+    const tab = (p) => { $$('#pt button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.p === p))); $$('.pane').forEach((e) => { e.hidden = e.dataset.p !== p; }); };
+    $$('#pt button').forEach((b) => b.addEventListener('click', () => tab(b.dataset.p)));
+    if (q.get('tab')) tab(q.get('tab'));
+    const QS = [
+      { q: '빛의 세기가 증가할수록 광합성량은?', o: ['증가하다가 일정 수준 이상이 되면 일정해진다', '계속 증가한다', '증가하다가 급격히 감소한다'], a: 0, ok: '일정 수준 이상이 되면 더 이상 증가하지 않고 <b>일정</b>해져요.' },
+      { q: '끝 부분의 모양이 다른 그래프는?', o: ['온도와 광합성', '빛의 세기와 광합성', '이산화 탄소 농도와 광합성'], a: 0, ok: '온도가 일정 온도보다 높아지면 광합성량이 오히려 <b>급격히 감소</b>해요.' },
+      { q: '온도의 영향을 알아볼 때 일정하게 유지해야 할 조건은?', o: ['빛의 세기, 이산화 탄소 농도', '온도, 빛의 세기', '온도만'], a: 0, ok: '온도만 다르게 하고 <b>빛의 세기와 이산화 탄소 농도</b>는 일정하게 유지해요.' },
+    ];
+    $('#qs').innerHTML = QS.map((x, i) => `<div class="qa" data-i="${i}"><p>${x.q}</p><div class="qa3">${x.o.map((t, k) => `<button type="button" data-k="${k}">${t}</button>`).join('')}</div></div>`).join('');
+    $$('#qs .qa').forEach((row) => { const x = QS[+row.dataset.i]; $$('button', row).forEach((b) => b.addEventListener('click', () => {
+      const good = +b.dataset.k === x.a; $$('button', row).forEach((o) => o.classList.remove('good', 'bad')); b.classList.add(good ? 'good' : 'bad');
+      const r = $('#recRes'); r.hidden = false; r.className = 'fbk ' + (good ? 'ok' : 'no'); r.innerHTML = good ? x.ok : '다시 골라 봐요. 측정해서 그린 곡선을 떠올려요.';
+    })); });
+    window.SM = window.SM || {}; window.SM.okUI = true;
+  } catch (err) { window.SM_err && window.SM_err('그래프 실험실', err); }
+})();
+</script>
+</body>
+</html>
