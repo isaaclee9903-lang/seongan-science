@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>이온의 이동 – 이온 이동 실험실</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+/*@@LOCAL:_css_ps.css@@*/
+/*@@LOCAL:_css_sim.css@@*/
+/*@@LOCAL:_css_pf.css@@*/
+
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top"><div class="ttl"><span class="eyebrow">탐구</span><h1>이온 이동 실험실</h1>
+    <p class="sub">페트리 접시에 전류를 흘리고 색깔 있는 이온이 어느 극으로 가는지 관찰해요.</p></div></header>
+  <div class="stage">
+    <section class="card viewer"><div class="scene grow" id="fig" role="img" aria-label="전원 장치에 연결된 페트리 접시. 양 끝의 금속판 사이 가운데에 떨어뜨린 용액의 파란색은 (−)극으로, 보라색은 (+)극으로 움직인다."></div><div class="vctl"><span class="hint">전선이나 금속판은 맨손으로 만지지 않아요. 빠르기는 정한 모형이에요</span><span class="sp"></span><button class="vb" type="button" id="bReset">처음부터</button></div></section>
+    <section class="card pad"><div class="ptabs" role="tablist" id="pt">
+        <button type="button" role="tab" data-p="lab" aria-selected="true">실험하기</button>
+        <button type="button" role="tab" data-p="rec" aria-selected="false">정리하기</button>
+        <button type="button" role="tab" data-p="why" aria-selected="false">왜 그럴까?</button>
+      </div><div class="pane" data-p="lab"><div class="seg3" id="kk"><button type="button" data-k="cu" aria-pressed="true">황산 구리(Ⅱ)</button><button type="button" data-k="mn" aria-pressed="false">과망가니즈산 칼륨</button></div><div class="steps" id="steps" style="margin-top:8px"><div class="ph" data-s="0"><i>1</i><span>질산 칼륨 수용액을 넣어요.</span></div><div class="ph" data-s="1"><i>2</i><span>전원 장치를 켜 전류를 흘려요.</span></div><div class="ph" data-s="2"><i>3</i><span>색이 어느 쪽으로 갈지 예측하고 떨어뜨려요.</span></div></div><div class="pred" id="pr"></div><div class="ctl" id="ctl" style="margin-top:8px"></div><div class="fbk" id="res"><b class="t" id="resT">결과</b><span id="resM"></span></div></div>
+      <div class="pane" data-p="rec" hidden><div id="qs"></div><div class="fbk" id="recRes" hidden></div></div>
+      <div class="pane" data-p="why" hidden><ol class="whylist"><li><i>1</i><span>이온은 전하를 띠고 있어요. 그래서 전류를 흘려 주면 움직여요.</span></li><li><i>2</i><span><b>양이온</b>은 (−)극 쪽으로, <b>음이온</b>은 (+)극 쪽으로 이동해요.</span></li><li><i>3</i><span>파란색 성분은 (−)극으로 가므로 양이온인 <b>구리 이온(Cu²⁺)</b>이에요.</span></li><li><i>4</i><span>보라색 성분은 (+)극으로 가므로 음이온인 <b>과망가니즈산 이온(MnO₄⁻)</b>이에요.</span></li></ol></div></section>
+  </div>
+</div>
+<script>
+/*@@LOCAL:_ps.js@@*/
+</script>
+<script>
+/*@@LOCAL:_pt.js@@*/
+</script>
+<script>
+(() => {
+  'use strict';
+  try {
+    const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+    const q = new URLSearchParams(location.search);
+    const say = (t, m, c = '') => { $('#res').className = 'fbk ' + c; $('#resT').textContent = t; $('#resM').innerHTML = m; };
+    let P = PT.petri($('#fig')), st = 0, kind = q.get('k') || 'cu', pred = null, busy = false;
+    const D = PT.DIP;
+    const btn = (t, fn, d) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'btn primary'; b.textContent = t; b.disabled = !!d; b.addEventListener('click', fn); return b; };
+    function render() {
+      $$('#steps .ph').forEach((e) => { const i = +e.dataset.s; e.classList.toggle('on', i === st); e.classList.toggle('done', i < st); });
+      const c = $('#ctl'), pr = $('#pr'); c.innerHTML = ''; pr.innerHTML = '';
+      if (st === 0) c.append(btn('질산 칼륨 수용액 넣기', () => { P.fill(); st = 1; say('넣었어요', '수용액을 넣었어요. 이제 전류를 흘려요.'); render(); }));
+      if (st === 1) c.append(btn('전원 켜기', () => { P.power(true); st = 2; say('전류가 흘러요', '이제 가운데에 용액을 떨어뜨리면 색이 어느 쪽으로 갈까요?'); render(); }));
+      if (st === 2) { pr.innerHTML = `<button type="button" data-v="-1" aria-pressed="${pred === -1}">(−)극 쪽으로</button><button type="button" data-v="1" aria-pressed="${pred === 1}">(+)극 쪽으로</button>`; $$('button', pr).forEach((b) => b.addEventListener('click', () => { pred = +b.dataset.v; render(); })); c.append(btn(`${D[kind].n} 떨어뜨리기`, () => { busy = true; P.drop(() => { busy = false; st = 3; const ok = pred === D[kind].dir; say(ok ? '예측이 맞았어요' : '예측과 달라요', `${kind === 'cu' ? '파란색' : '보라색'} 성분이 <b>${D[kind].dir < 0 ? '(−)극' : '(+)극'}</b> 쪽으로 움직여요. ${kind === 'cu' ? '양이온인 구리 이온이에요.' : '음이온인 과망가니즈산 이온이에요.'}`, 'ok'); render(); }); }, !pred)); }
+      if (st === 3) c.append(btn(kind === 'cu' ? '과망가니즈산 칼륨으로 다시 하기' : '황산 구리(Ⅱ)로 다시 하기', () => setK(kind === 'cu' ? 'mn' : 'cu')));
+    }
+    function setK(k) { kind = k; P = PT.petri($('#fig')); P.kind(k); st = 0; pred = null; $$('#kk button').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.k === k))); say('결과', '먼저 접시에 질산 칼륨 수용액을 넣어요.'); render(); }
+    $$('#kk button').forEach((b) => b.addEventListener('click', () => setK(b.dataset.k)));
+    $('#bReset').addEventListener('click', () => setK(kind));
+    setK(kind);
+    if (q.get('all')) { P.jump(); st = 3; pred = D[kind].dir; say('예측이 맞았어요', `${kind === 'cu' ? '파란색' : '보라색'} 성분이 <b>${D[kind].dir < 0 ? '(−)극' : '(+)극'}</b> 쪽으로 움직여요.`, 'ok'); render(); }
+    const tab = (p) => { $$('#pt button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.p === p))); $$('.pane').forEach((e) => { e.hidden = e.dataset.p !== p; }); };
+    $$('#pt button').forEach((b) => b.addEventListener('click', () => tab(b.dataset.p)));
+    if (q.get('tab')) tab(q.get('tab'));
+    const QS = [
+      { q: '황산 구리(Ⅱ) 수용액의 파란색이 가는 쪽은?', o: ['(−)극', '(+)극', '움직이지 않는다'], a: 0, ok: '파란색을 띤 구리 이온은 양이온이라 <b>(−)극</b>으로 가요.' },
+      { q: '과망가니즈산 이온은 어떤 전하를 띨까요?', o: ['(−)전하', '(+)전하', '전하가 없다'], a: 0, ok: '(+)극으로 이동하므로 <b>(−)전하</b>를 띠어요.' },
+      { q: '이온이 전류를 따라 움직이는 까닭은?', o: ['전하를 띠고 있어서', '무거워서', '색깔이 있어서'], a: 0, ok: '이온이 <b>전하를 띠고</b> 있기 때문이에요.' },
+    ];
+    $('#qs').innerHTML = QS.map((x, i) => `<div class="qa" data-i="${i}"><p>${x.q}</p><div class="qa3">${x.o.map((t, k) => `<button type="button" data-k="${k}">${t}</button>`).join('')}</div></div>`).join('');
+    $$('#qs .qa').forEach((row) => { const x = QS[+row.dataset.i]; $$('button', row).forEach((b) => b.addEventListener('click', () => {
+      const good = +b.dataset.k === x.a; $$('button', row).forEach((o) => o.classList.remove('good', 'bad')); b.classList.add(good ? 'good' : 'bad');
+      const r = $('#recRes'); r.hidden = false; r.className = 'fbk ' + (good ? 'ok' : 'no'); r.innerHTML = good ? x.ok : '다시 골라 봐요. 그림을 떠올려요.';
+    })); });
+    window.SM = window.SM || {}; window.SM.okUI = true;
+  } catch (err) { window.SM_err && window.SM_err('이온 이동 실험실', err); }
+})();
+</script>
+</body>
+</html>
