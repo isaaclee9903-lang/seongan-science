@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>식물은 어떻게 양분을 만들까 – 양분 확인 실험실</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+/*@@LOCAL:_css_ps.css@@*/
+/*@@LOCAL:_css_sim.css@@*/
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="ttl">
+      <span class="eyebrow">탐구</span><h1>광합성으로 만들어진 양분 확인 실험실</h1>
+      <p class="sub">잎 한 개만 빛을 가린 뒤 아이오딘-아이오딘화 칼륨 용액을 떨어뜨려 색깔 변화를 비교해요.</p>
+    </div>
+  </header>
+  <div class="stage">
+    <section class="card viewer">
+      <div class="scene grow" id="lab" role="img" aria-label="고추 모종의 잎 한 개를 검은색 종이로 감싸 햇빛을 비춘다. 가린 잎과 가리지 않은 잎을 에탄올에 넣고 물중탕하면 잎의 초록색이 빠진다. 페트리 접시에 놓고 아이오딘-아이오딘화 칼륨 용액을 떨어뜨리면 빛을 받은 잎만 청람색으로 변한다."></div>
+      <div class="vctl">
+        <span class="hint" id="hint">에탄올과 용액이 피부나 옷에 묻지 않게 주의해요</span>
+        <span class="sp"></span>
+        <button class="vb" type="button" id="bReset">처음부터</button>
+      </div>
+    </section>
+    <section class="card pad">
+      <div class="ptabs" role="tablist" id="pt">
+        <button type="button" role="tab" data-p="lab" aria-selected="true">실험하기</button>
+        <button type="button" role="tab" data-p="rec" aria-selected="false">정리하기</button>
+        <button type="button" role="tab" data-p="why" aria-selected="false">왜 그럴까?</button>
+      </div>
+      <div class="pane" data-p="lab">
+        <div class="steps" id="steps">
+          <div class="ph" data-s="0"><i>1</i><span>햇빛이 잘 비치는 곳에서 잎 한 개만 검은색 종이로 감싸요.</span></div>
+          <div class="ph" data-s="1"><i>2</i><span>가린 잎과 가리지 않은 잎을 떼어 에탄올에 넣고 물중탕해요.</span></div>
+          <div class="ph" data-s="2"><i>3</i><span>잎을 헹궈 페트리 접시에 놓고 용액을 떨어뜨려요.</span></div>
+          <div class="ph" data-s="3"><i>4</i><span>잎 속을 들여다보고 까닭을 찾아요.</span></div>
+        </div>
+        <div class="ctl" id="ctl"></div>
+        <div class="fbk" id="res"><b class="t" id="resT">결과</b><span id="resM"></span></div>
+      </div>
+      <div class="pane" data-p="rec" hidden>
+        <div id="qs"></div>
+        <div class="fbk" id="recRes" hidden></div>
+      </div>
+      <div class="pane" data-p="why" hidden>
+        <ol class="whylist">
+          <li><i>1</i><span><b>검은색 종이로 가린 잎</b>은 빛을 받지 못해 광합성이 일어나지 않아요.</span></li>
+          <li><i>2</i><span><b>빛을 받은 잎</b>에서는 광합성이 일어나 포도당이 만들어져요. 포도당은 여러 분자가 연결되어 <b>녹말</b>이 되어 엽록체에 저장돼요.</span></li>
+          <li><i>3</i><span>아이오딘-아이오딘화 칼륨 용액은 <b>녹말과 만나면 청람색</b>으로 변해요. 그래서 빛을 받은 잎만 청람색이 돼요.</span></li>
+          <li><i>4</i><span>잎의 초록색을 에탄올로 빼 두면 색깔 변화가 잘 보여요.</span></li>
+        </ol>
+        <p class="mnote">색이 변하는 빠르기와 잎 속 모습은 이해를 돕기 위한 모형이에요.</p>
+      </div>
+    </section>
+  </div>
+</div>
+<script>
+/*@@LOCAL:_ps.js@@*/
+</script>
+<script>
+/*@@LOCAL:_ps_starch.js@@*/
+</script>
+<script>
+(() => {
+  'use strict';
+  try {
+    const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+    const q = new URLSearchParams(location.search);
+    let L = PS.starchLab($('#lab')), step = 0, pred = null, dA = false, dB = false, busy = false;
+    const say = (t, m, cls = '') => { $('#res').className = 'fbk ' + cls; $('#resT').textContent = t; $('#resM').innerHTML = m; };
+    const hint = (t) => { $('#hint').textContent = t; };
+    const PRED = [['a', '가린 잎만 청람색'], ['b', '가리지 않은 잎만 청람색'], ['c', '두 잎 모두 청람색']];
+    const act = (fn) => { if (busy) return; busy = true; render(); fn(() => { busy = false; step++; render(); }); };
+    function render() {
+      const s = step, c = $('#ctl');
+      const ph = s <= 1 ? 0 : s <= 3 ? 1 : s <= 5 ? 2 : 3;
+      $$('#steps .ph').forEach((e) => { const n = +e.dataset.s; e.classList.toggle('on', n === ph); e.classList.toggle('done', n < ph); });
+      const btn = (t, fn, dis) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'btn primary'; b.textContent = t; b.disabled = busy || !!dis; b.addEventListener('click', fn); return b; };
+      c.innerHTML = '';
+      if (s === 0) { c.append(btn('잎 한 개 검은색 종이로 감싸기', () => act((d) => L.wrap(d)))); say('결과', '먼저 잎 한 개를 검은색 종이로 감싸요.'); }
+      if (s === 1) {
+        const w = document.createElement('div'); w.innerHTML = `<div class="seglbl">용액을 떨어뜨리면 어느 잎이 청람색으로 변할까요?</div><div class="pred">${PRED.map(([k, t]) => `<button type="button" data-k="${k}" aria-pressed="${pred === k}">${t}</button>`).join('')}</div>`;
+        c.append(w); $$('button', w).forEach((b) => b.addEventListener('click', () => { pred = b.dataset.k; render(); }));
+        c.append(btn('햇빛 충분히 비추기', () => act((d) => L.sunny(d)), !pred));
+        say('결과', pred ? '예측을 골랐어요. 이제 햇빛을 비춰요.' : '잎 한 개를 가렸어요. 먼저 예측을 골라요.');
+      }
+      if (s === 2) { c.append(btn('잎을 떼어 에탄올에 넣기', () => act((d) => L.pick(d)))); say('결과', '햇빛을 충분히 비췄어요. 겉으로 보기에는 잎이 그대로예요.'); hint('잎자루 길이를 다르게 떼면 쉽게 구분할 수 있어요'); }
+      if (s === 3) { c.append(btn('물중탕하기', () => act((d) => L.bath(d)))); say('결과', '가린 잎은 잎자루가 짧고, 가리지 않은 잎은 잎자루가 길어요.'); hint('물이나 에탄올이 끓어 넘치지 않게 주의해요'); }
+      if (s === 4) { c.append(btn('잎을 헹궈 페트리 접시에 놓기', () => act((d) => L.rinse(d)))); say('결과', '잎의 초록색이 빠지고 에탄올이 초록색으로 변했어요.', 'ok'); }
+      if (s === 5) {
+        const w = document.createElement('div'); w.className = 'two';
+        const go = (k) => { if (busy) return; busy = true; render(); L.drop(k, () => { busy = false; if (k === 'A') dA = true; else dB = true; if (dA && dB) step = 6; render(); }); };
+        w.append(btn('빛을 받지 못한 잎에 떨어뜨리기', () => go('A'), dA), btn('빛을 받은 잎에 떨어뜨리기', () => go('B'), dB));
+        c.append(w);
+        if (!dA && !dB) say('결과', '두 잎에 용액을 하나씩 떨어뜨려요.');
+        else if (dB && !dA) say('결과', '<b>빛을 받은 잎</b>이 청람색으로 변했어요. 다른 잎은 어떨까요?');
+        else if (dA && !dB) say('결과', '<b>빛을 받지 못한 잎</b>은 용액의 색만 묻고 청람색이 되지 않았어요. 다른 잎은 어떨까요?');
+        hint('용액이 피부나 옷에 묻지 않게 주의해요');
+      }
+      if (s === 6) { c.append(btn('잎 속 들여다보기', () => act((d) => L.lens(d)))); const ok = pred === 'b'; say(ok ? '예측이 맞았어요' : '예측과 달라요', '<b>빛을 받은 잎만</b> 청람색으로 변했어요. 왜 그럴까요?', ok ? 'ok' : ''); }
+      if (s >= 7) { c.append(btn('다 봤어요', () => {}, true)); say('결론', '빛을 받은 잎에서만 광합성이 일어나 <b>녹말</b>이 만들어졌어요. <b>정리하기</b>에서 까닭을 답해 봐요.', 'ok'); }
+    }
+    $('#bReset').addEventListener('click', () => { L = PS.starchLab($('#lab')); step = 0; pred = null; dA = dB = busy = false; hint('에탄올과 용액이 피부나 옷에 묻지 않게 주의해요'); render(); });
+    const J = +(q.get('step') || 0);
+    if (J) { L.jump(J >= 7 ? 7 : J >= 6 ? 6 : J); step = J; pred = 'b'; if (J >= 6) dA = dB = true; }
+    render();
+    const tab = (p) => { $$('#pt button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.p === p))); $$('.pane').forEach((e) => { e.hidden = e.dataset.p !== p; }); };
+    $$('#pt button').forEach((b) => b.addEventListener('click', () => tab(b.dataset.p)));
+    if (q.get('tab')) tab(q.get('tab'));
+    const QS = [
+      { q: '잎을 에탄올에 넣고 물중탕하는 까닭은?', o: ['잎의 초록색을 빼서 색깔 변화가 잘 보이게 하려고', '잎에 녹말을 더 만들려고', '잎을 더 초록색으로 만들려고'], a: 0, ok: '초록색을 빼면 청람색으로 변하는지 잘 보여요. 에탄올은 불이 붙기 쉬워 직접 가열하지 않고 <b>물중탕</b>해요.' },
+      { q: '빛을 받은 잎만 청람색으로 변한 까닭은?', o: ['빛을 받은 잎에서만 광합성이 일어나 녹말이 만들어져서', '검은색 종이에서 색이 묻어서', '빛을 받은 잎에 용액이 더 많이 떨어져서'], a: 0, ok: '용액은 <b>녹말</b>과 만나면 청람색으로 변해요. 녹말은 <b>빛을 받은 잎</b>에서 광합성으로 만들어졌어요.' },
+      { q: '다른 모둠의 결과가 우리와 다르다면 어떤 문제가 있었을까요?', o: ['햇빛을 충분히 비추지 않았거나 종이가 빛을 다 가리지 못했을 수 있어요', '잎의 크기가 조금 달랐기 때문이에요', '페트리 접시 색이 달랐기 때문이에요'], a: 0, ok: '과정을 하나씩 되짚어 봐요. 빛을 충분히 받았는지, 빛을 제대로 가렸는지가 결과에 영향을 줘요.' },
+    ];
+    $('#qs').innerHTML = QS.map((x, i) => `<div class="qa" data-i="${i}"><p>${x.q}</p><div class="qa3">${x.o.map((t, k) => `<button type="button" data-k="${k}">${t}</button>`).join('')}</div></div>`).join('');
+    $$('#qs .qa').forEach((row) => { const x = QS[+row.dataset.i]; $$('button', row).forEach((b) => b.addEventListener('click', () => {
+      const good = +b.dataset.k === x.a; $$('button', row).forEach((o) => o.classList.remove('good', 'bad')); b.classList.add(good ? 'good' : 'bad');
+      const r = $('#recRes'); r.hidden = false; r.className = 'fbk ' + (good ? 'ok' : 'no'); r.innerHTML = good ? x.ok : '다시 골라 봐요. 실험 결과와 잎 속 그림을 떠올려요.';
+    })); });
+    window.SM = window.SM || {}; window.SM.okUI = true;
+  } catch (err) { window.SM_err && window.SM_err('양분 확인 실험실', err); }
+})();
+</script>
+</body>
+</html>
