@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>별까지의 거리 · 수업 발표</title>
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../../favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="../../apple-touch-icon.png">
+<script>
+/* 문제 알림: 코드에 오류가 나면 화면 아래에 빨간 상자로 알려 줘요 (선생님 확인용) */
+(function () {
+  function box() {
+    var b = document.getElementById('sgErr');
+    if (!b && document.body) {
+      b = document.createElement('div'); b.id = 'sgErr';
+      b.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;background:#fdecea;color:#8a1f17;border:2px solid #d9534f;border-radius:12px;padding:10px 14px;font:600 14px/1.5 sans-serif;white-space:pre-wrap';
+      document.body.appendChild(b);
+    }
+    return b;
+  }
+  window.SG_err = function (where, err) {
+    var msg = '[' + where + '] ' + (err && err.message ? err.message : String(err));
+    var show = function () { var b = box(); if (b) b.textContent += (b.textContent ? '\n' : '') + msg; };
+    if (document.body) show(); else document.addEventListener('DOMContentLoaded', show);
+  };
+  window.addEventListener('error', function (e) { window.SG_err('스크립트', { message: e.message + ' (줄 ' + e.lineno + ')' }); });
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      if (!(window.SG || {}).okUI) window.SG_err('실행 안 됨', { message: '발표 넘기기 코드가 실행되지 않았어요. 파일이 끝(</html>)까지 들어 있는지 확인해 주세요.' });
+    }, 6000);
+  });
+})();
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+  /* 1rem = 화면(16:9) 너비의 1/120. 1920 너비에서 16px */
+  :root{--paper:#fff;--ink:#14263b;--ink2:#34495e;--muted:#5a6b7e;--line:#dde6ee;--accent:#0e63b3;--accent-soft:#e3effb;--ease:cubic-bezier(.2,.8,.2,1)}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;overflow:hidden;background:#cfd8e1;color:var(--ink);
+    font-family:"Pretendard",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;-webkit-font-smoothing:antialiased}
+  button{font:inherit;color:inherit}
+  body{display:grid;place-items:center}
+  .deck{position:relative;width:var(--dw,100vw);height:var(--dh,56.25vw);background:var(--paper);overflow:hidden}
+
+  /* 그림 칸: 장마다 자리(왼쪽 큰 칸 / 표지 오른쪽)가 바뀌어요. 라스 수업의 그림을 그대로 불러와요 */
+  .stage{position:absolute;left:0;top:0;bottom:4.6rem;width:58%;background:#f6f9fc;overflow:hidden}
+  .deck[data-layout="cover"] .stage{left:40%;width:60%}
+  .deck[data-layout="text"] .stage{display:none}
+  .deck[data-layout="wide"] .stage{width:100%;bottom:auto;height:40%;background:#fff;border-bottom:1px solid var(--line)}
+  .fig{position:absolute;inset:0;display:none}
+  .fig.on{display:block}
+  .fig iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block;pointer-events:none}
+  .fig.vid{background:#0b1220}
+  .fig.vid .frame{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);aspect-ratio:16/9;background:#000}
+  .fig.vid .frame iframe{pointer-events:auto}
+  .model{position:absolute;right:1rem;bottom:.8rem;z-index:3;font-size:.95rem;color:#5a6b7e;background:rgba(255,255,255,.82);border-radius:.5rem;padding:.2rem .6rem;pointer-events:none;display:none}
+  .model.on{display:block}
+
+  /* 장 */
+  .slide{position:absolute;top:0;bottom:4.6rem;right:0;width:42%;padding:3.4rem 3.4rem 2.2rem 3.2rem;display:none;flex-direction:column;gap:1.4rem;word-break:keep-all;overflow:hidden}
+  .slide.on{display:flex}
+  .deck[data-layout="text"] .slide{width:100%;padding:4.4rem 8rem}
+  .deck[data-layout="cover"] .slide{left:0;right:auto;width:40%;padding:4.4rem 3.4rem 4rem 4.4rem}
+  .deck[data-layout="wide"] .slide{width:100%;top:40%;padding:2.4rem 8rem 1.6rem;gap:1rem}
+  .slide h2{margin:0;font-size:3rem;line-height:1.3;letter-spacing:-.02em;font-weight:800}
+  .slide p,.slide li{margin:0;font-size:2.1rem;line-height:1.6;color:var(--ink2)}
+  .slide p b,.slide li b{color:var(--ink)}
+  .slide .lead{font-size:2.3rem;color:var(--ink);font-weight:600}
+  .slide .note{font-size:1.65rem;color:var(--muted)}
+  .slide ol,.slide ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:.9rem}
+  .slide ol{counter-reset:k}
+  .slide ol li{counter-increment:k;position:relative;padding-left:3rem}
+  .slide ol li::before{content:counter(k);position:absolute;left:0;top:.35em;width:2.1rem;height:2.1rem;border-radius:50%;background:#e6edf4;color:var(--muted);font-size:1.3rem;font-weight:800;display:grid;place-items:center}
+  .slide ol li.now::before{background:var(--accent);color:#fff}
+  .slide ol li.now{color:var(--ink);font-weight:600}
+  .slide ol.sm li{font-size:1.85rem}
+  .slide ul li{position:relative;padding-left:1.6rem}
+  .slide ul li::before{content:"";position:absolute;left:0;top:.75em;width:.55rem;height:.55rem;border-radius:50%;background:#9fb0c2}
+  .q{font-size:1.5rem;font-weight:800;color:var(--accent);margin:0}
+  .slide .ask{font-size:2.3rem;font-weight:700;color:var(--ink)}
+
+  /* 표지 */
+  .cover{justify-content:flex-end}
+  .cover .tag{font-size:1.7rem;font-weight:700;color:var(--muted)}
+  .cover h1{margin:0;font-size:4.2rem;line-height:1.25;letter-spacing:-.03em;font-weight:800}
+  .cover .who{font-size:2rem;font-weight:700;color:var(--ink2);margin-top:-.2rem}
+
+  /* 영상 장 */
+  .vmeta{font-size:1.5rem;font-weight:700;color:var(--muted);margin:0}
+  .vmeta a{color:var(--accent);text-decoration:none;border-bottom:1px solid rgba(14,99,179,.35);margin-left:.6rem}
+
+  /* 고르기(예측) */
+  .pick{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem}
+  .pick div{border:2px solid #d6dfe8;border-radius:1rem;padding:1rem 1.3rem;font-size:1.95rem;font-weight:700;line-height:1.4;color:var(--ink)}
+  .pick div b{color:var(--accent)}
+
+  /* 기록표 */
+  table.tbl{border-collapse:collapse;width:100%;font-size:1.85rem}
+  .tbl th,.tbl td{border-bottom:1px solid var(--line);padding:.7rem .8rem;text-align:left;vertical-align:middle}
+  .tbl th{font-size:1.4rem;color:var(--muted);font-weight:700}
+  .tbl td:first-child{color:var(--ink);font-weight:700}
+  .tbl tr.now td{background:#f3f8fd}
+  .tbl tr.now td:first-child{box-shadow:inset .3rem 0 0 var(--accent)}
+
+  /* 정리 두 칸 */
+  .two{display:grid;grid-template-columns:1.25fr 1fr;gap:4rem;align-items:start}
+  .two h3{margin:0 0 1rem;font-size:1.6rem;color:var(--muted);font-weight:800}
+  .two ul li{font-size:1.95rem}
+  .quiz p{font-size:1.9rem}
+  .quiz p+p{margin-top:.5rem}
+  .quiz .qq{margin-top:1.6rem}
+
+  /* 단계 등장: 넘길 때마다 하나씩. 자리는 미리 잡아 두어 글이 밀리지 않아요 */
+  [data-s]{visibility:hidden}
+  [data-s].in{visibility:visible;animation:up .45s var(--ease)}
+  @keyframes up{from{transform:translateY(.8rem)}to{transform:none}}
+
+  /* 빈칸: 눌러야 열려요 */
+  .bk{display:inline-flex;align-items:baseline;gap:.4rem;min-width:5.5em;justify-content:center;margin:0 .15em;padding:0 .4em;border:0;border-bottom:.22rem solid var(--accent);background:var(--accent-soft);border-radius:.4rem .4rem 0 0;cursor:pointer;font-weight:800;color:var(--accent);line-height:1.35;vertical-align:baseline}
+  .bk .no{font-size:.95em;font-weight:700;color:var(--accent)}
+  .bk .ans{display:none}
+  .bk.open{background:transparent}
+  .bk.open .no{display:none}
+  .bk.open .ans{display:inline}
+  .tbl .bk{min-width:4em}
+
+  /* 아래 막대 */
+  .bar{position:absolute;left:0;right:0;bottom:0;height:4.6rem;display:flex;align-items:center;gap:1rem;padding:0 1.4rem;border-top:1px solid var(--line);background:#fff;z-index:5}
+  .bar .where{font-size:1.35rem;font-weight:700;color:var(--muted);min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .bar .where b{color:var(--ink);margin-right:.6rem}
+  .dots{display:flex;gap:.45rem;margin-left:.4rem}
+  .dots i{width:.75rem;height:.75rem;border-radius:50%;background:#d3dde7}
+  .dots i.on{background:var(--accent)}
+  .sp{flex:1}
+  .bb{min-height:3.2rem;min-width:3.2rem;padding:0 1.1rem;border:1px solid #d6dfe8;border-radius:.8rem;background:#fff;font-size:1.3rem;font-weight:700;color:var(--ink2);cursor:pointer}
+  .bb:active{transform:scale(.97)}
+  .bb.go{background:var(--accent);border-color:var(--accent);color:#fff;min-width:7rem}
+  .bb:disabled{opacity:.35;cursor:default}
+
+  /* 목차 */
+  .toc{position:absolute;inset:0 0 4.6rem 0;background:rgba(255,255,255,.97);z-index:6;display:none;padding:2.6rem 4rem;overflow:auto}
+  .toc.on{display:block}
+  .toc h3{margin:0 0 1rem;font-size:2.2rem}
+  .toc .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.1rem 2rem}
+  .toc .grp{grid-column:1/-1;font-size:1.3rem;font-weight:800;color:var(--muted);margin-top:.9rem;border-bottom:1px solid var(--line);padding-bottom:.3rem}
+  .toc button{display:flex;gap:.8rem;align-items:baseline;text-align:left;border:0;background:none;padding:.5rem .4rem;font-size:1.45rem;font-weight:600;color:var(--ink);cursor:pointer;border-radius:.5rem}
+  .toc button b{min-width:2.2rem;color:var(--muted)}
+  .toc button:hover{background:#f2f6fa}
+  .toc button.cur{color:var(--accent)}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="deck" id="deck" data-layout="cover">
+  <!-- 그림 칸: 라스 수업(lessons/parallax)의 그림을 발표 그림 페이지(fig-*.html)로 불러와요. 처음 쓸 때 불러와요 -->
+  <div class="stage" id="stage">
+    <div class="fig" data-f="room" data-src="fig-reading.html?fig=room"></div>
+    <div class="fig" data-f="ab" data-src="fig-reading.html?fig=ab"></div>
+    <div class="fig" data-f="ap" data-src="fig-reading.html?fig=ap"></div>
+    <div class="fig" data-f="zeta" data-src="fig-reading.html?fig=zeta"></div>
+    <div class="fig" data-f="board" data-src="fig-board.html?fig=board"></div>
+    <div class="fig" data-f="orbit" data-src="fig-orbit.html?fig=orbit"></div>
+    <div class="fig" data-f="gaia" data-src="fig-orbit.html?fig=gaia"></div>
+    <div class="fig vid" data-f="video"><div class="frame" id="vframe"></div></div>
+    <span class="model" id="model"></span>
+  </div>
+
+  <!-- ===== 장 내용: 글만 고치려면 여기를 고치면 돼요. data-s="1"은 '다음'을 한 번 누르면 나타나요.
+       빈칸은 <span class="bk" data-a="정답"></span> (번호는 저절로 붙어요). 그림은 아래 블록 1의 SCENES에서 장 순서대로 정해요 ===== -->
+
+  <!-- 1 -->
+  <section class="slide cover" data-title="오늘의 질문" data-group="들어가기">
+    <span class="tag">중2 과학 Ⅷ. 별과 우주 · 1. 별</span>
+    <h1>별까지의 거리는 어떻게 알 수 있을까?</h1>
+    <p class="who">이삭 선생님</p>
+    <p class="lead" data-s="1">별은 너무 멀어서 자로 잴 수도, 직접 가 볼 수도 없음.</p>
+  </section>
+
+  <!-- 2 -->
+  <section class="slide" data-title="영상 ① 1광년" data-group="들어가기">
+    <p class="q">영상 ①</p>
+    <h2>1광년은 얼마나 먼 거리일까?</h2>
+    <p class="vmeta">인터스텔라 · 1분 57초 · NASA 영상<a href="https://www.youtube.com/watch?v=z13bXH9_Ud0" target="_blank" rel="noopener">유튜브에서 열기</a></p>
+    <p class="lead">볼 것: 빛이 1년 동안 가는 거리가 얼마나 먼지.</p>
+    <p data-s="1">빛으로도 별까지 가려면 몇 년, 몇백 년이 걸림.</p>
+    <p data-s="2" class="ask">이렇게 먼 별까지의 거리를 사람들은 어떻게 알아냈을까?</p>
+  </section>
+
+  <!-- 3 -->
+  <section class="slide" data-title="영상 ② 가이아" data-group="들어가기">
+    <p class="q">영상 ②</p>
+    <h2>은하수 지도는 어떻게 만들어졌을까?</h2>
+    <p class="vmeta">우주몽 · 5분 26초 · 유럽 우주국(ESA) 영상, 한국어 자막<a href="https://www.youtube.com/watch?v=fzBC5h_lztM" target="_blank" rel="noopener">유튜브에서 열기</a></p>
+    <p class="lead">2013년 발사된 <b>가이아 우주 망원경</b>: 아주 많은 별의 위치를 관측함.</p>
+    <p data-s="1" class="ask">별의 위치만 재는데 어떻게 별까지의 거리를 알 수 있을까?</p>
+    <p data-s="2" class="note">오늘 수업 끝의 해 보기에서 가이아를 다시 만남.</p>
+  </section>
+
+  <!-- 4 -->
+  <section class="slide" data-title="영상 ③ 손가락 실험" data-group="들어가기">
+    <p class="q">영상 ③</p>
+    <h2>지구의 특별한 시력검사</h2>
+    <p class="vmeta">방구석천문대 · 앞부분 1분만 봄<a href="https://www.youtube.com/watch?v=cO7woBkjU_E" target="_blank" rel="noopener">유튜브에서 열기</a></p>
+    <ol class="sm">
+      <li data-s="1">팔을 앞으로 쭉 뻗고 엄지손가락을 세움.</li>
+      <li data-s="2">왼쪽 눈과 오른쪽 눈을 번갈아 감음.</li>
+      <li data-s="3">엄지손가락이 뒤쪽 배경에 대해 <b>왔다 갔다</b> 하는 것처럼 보임.</li>
+    </ol>
+    <p data-s="4" class="note">두 눈의 위치가 다르기 때문. 다 같이 해 보기.</p>
+  </section>
+
+  <!-- 5 -->
+  <section class="slide" data-title="칠판 앞 선생님" data-group="시차">
+    <h2>앉은 자리마다 가려지는 글씨가 다름</h2>
+    <p class="lead">칠판 앞에 선생님이 서 계시면 앉은 자리에 따라 가려지는 칠판 글씨가 다름.</p>
+    <p data-s="1">왼쪽 자리 → 칠판의 <span class="bk" data-a="오른쪽"></span> 글씨가 가려짐.</p>
+    <p data-s="2">오른쪽 자리 → 칠판의 <span class="bk" data-a="왼쪽"></span> 글씨가 가려짐.</p>
+    <p data-s="3" class="note">선생님 = 물체, 칠판 = 멀리 있는 배경.</p>
+  </section>
+
+  <!-- 6 -->
+  <section class="slide" data-title="시차란?" data-group="시차">
+    <h2>시차</h2>
+    <p class="lead">하나의 물체를 서로 다른 위치에서 보면 관측자의 위치에 따라 물체가 보이는 <span class="bk" data-a="방향"></span>이 달라짐.</p>
+    <p data-s="1">물체는 멀리 있는 배경에 대해 서로 다른 곳에 있는 것처럼 보임.</p>
+    <p data-s="2" class="lead">관측자의 위치에 따라 물체가 보이는 방향이 달라지는 정도 = <b>시차</b></p>
+    <p data-s="3">시차의 크기 = 두 관측 지점과 물체가 이루는 <span class="bk" data-a="각도"></span></p>
+  </section>
+
+  <!-- 7 -->
+  <section class="slide" data-title="엄지손가락을 가까이" data-group="시차">
+    <h2>엄지손가락을 얼굴 가까이 가져오면?</h2>
+    <p class="lead">다시 두 눈을 번갈아 감아 보기. 손을 들어 고르기.</p>
+    <div class="pick"><div><b>(가)</b> 더 크게 움직여 보임</div><div><b>(나)</b> 더 작게 움직여 보임</div></div>
+    <p data-s="1" class="lead">물체가 가까우면 엄지손가락이 <span class="bk" data-a="(가) 더 크게"></span> 움직여 보임.</p>
+    <p data-s="2" class="ask">거리와 시차는 어떤 관계일까? 시차 측정 판으로 알아보기.</p>
+  </section>
+
+  <!-- 8 -->
+  <section class="slide" data-title="탐구 순서" data-group="시차 측정 판 탐구">
+    <h2>탐구: 물체까지의 거리와 시차</h2>
+    <ol class="sm">
+      <li data-s="1">시차 측정 판에 별 모형 (가), (나)를 붙임.</li>
+      <li data-s="2">아래쪽 구멍 두 개를 뜯어 내고 위아래를 접어 세움.</li>
+      <li data-s="3">눈높이로 들고 양쪽 구멍으로 번갈아 관찰, 보이는 위치를 표시함.</li>
+      <li data-s="4">자를 대고 구멍과 표시한 위치를 선으로 이음.</li>
+      <li data-s="5">각도기로 별 모형 (가)와 (나)의 시차를 잼.</li>
+    </ol>
+  </section>
+
+  <!-- 9 -->
+  <section class="slide" data-title="(가) 왼쪽 구멍" data-group="시차 측정 판 탐구">
+    <p class="q">별 모형 (가)</p>
+    <h2>왼쪽 구멍으로 보기</h2>
+    <p class="lead">별 모형 (가) 바로 뒤에 겹쳐 보이는 눈금 번호는?</p>
+    <p data-s="1" class="lead">→ <span class="bk" data-a="⑩"></span> 앞에 보임.</p>
+    <p data-s="1" class="note">아래 그림: 위에서 본 판에 표시함.</p>
+  </section>
+
+  <!-- 10 -->
+  <section class="slide" data-title="(가) 오른쪽 구멍" data-group="시차 측정 판 탐구">
+    <p class="q">별 모형 (가)</p>
+    <h2>오른쪽 구멍으로 보기</h2>
+    <p class="lead">같은 별 모형인데 오른쪽 구멍으로 보면?</p>
+    <p data-s="1" class="lead">→ <span class="bk" data-a="②"></span> 앞에 보임.</p>
+    <p data-s="2">두 구멍으로 번갈아 보면 별 모형 (가)가 배경 눈금에 대해 <b>왔다 갔다</b> 함.</p>
+  </section>
+
+  <!-- 11 -->
+  <section class="slide" data-title="(가) 선 잇고 시차 재기" data-group="시차 측정 판 탐구">
+    <p class="q">별 모형 (가)</p>
+    <h2>선을 잇고 시차 재기</h2>
+    <ol class="sm">
+      <li data-s="1">왼쪽 구멍 ↔ ⑩, 오른쪽 구멍 ↔ ②를 자로 이음.</li>
+      <li data-s="2">두 선이 별 모형에서 만나 각을 이룸.</li>
+      <li data-s="3">각도기로 잰 (가)의 시차: <span class="bk" data-a="44°"></span></li>
+    </ol>
+    <p data-s="3" class="note">가상 모형의 측정값. 실제 측정 판과 조금 다를 수 있음.</p>
+  </section>
+
+  <!-- 12 -->
+  <section class="slide" data-title="(나)도 같은 방법으로" data-group="시차 측정 판 탐구">
+    <p class="q">별 모형 (나)</p>
+    <h2>(나)도 같은 방법으로</h2>
+    <ol class="sm">
+      <li data-s="1">왼쪽 구멍으로 보면 <span class="bk" data-a="⑦"></span> 앞에 보임.</li>
+      <li data-s="2">오른쪽 구멍으로 보면 <span class="bk" data-a="⑤"></span> 앞에 보임.</li>
+      <li data-s="3">선을 잇고 각도기로 잰 (나)의 시차: <span class="bk" data-a="23°"></span></li>
+    </ol>
+  </section>
+
+  <!-- 13 -->
+  <section class="slide" data-title="기록표" data-group="시차 측정 판 탐구">
+    <h2>기록표: 시차 비교</h2>
+    <table class="tbl">
+      <thead><tr><th>별 모형</th><th>왼쪽 구멍</th><th>오른쪽 구멍</th><th>시차</th></tr></thead>
+      <tbody>
+        <tr data-row="1"><td>(가)</td><td>⑩</td><td>②</td><td>44°</td></tr>
+        <tr data-row="2"><td>(나)</td><td>⑦</td><td>⑤</td><td>23°</td></tr>
+      </tbody>
+    </table>
+    <p data-s="3" class="lead">시차가 더 큰 것: <span class="bk" data-a="(가)"></span></p>
+    <p data-s="4">관측 지점에서 (가)는 <span class="bk" data-a="가까이"></span>, (나)는 멀리 있음.</p>
+  </section>
+
+  <!-- 14 -->
+  <section class="slide" data-title="거리와 시차의 관계" data-group="시차 측정 판 탐구">
+    <h2>정리: 거리와 시차</h2>
+    <p class="lead">관측 지점 A, B에서 물체를 바라본 두 선이 물체에서 만나 이루는 각 = 시차.</p>
+    <p data-s="1">물체가 멀어지면 두 선이 거의 나란해짐.</p>
+    <p data-s="2" class="lead">시차는 관측자와 물체 사이의 거리가 멀수록 <span class="bk" data-a="작아짐"></span>.</p>
+    <p data-s="3">→ 시차를 재면 물체까지의 거리를 <span class="bk" data-a="비교"></span>할 수 있음.</p>
+  </section>
+
+  <!-- 15 -->
+  <section class="slide" data-title="별을 볼 때도 시차가?" data-group="연주 시차">
+    <h2>별을 관측할 때도 시차가 생길까?</h2>
+    <p class="lead">지구는 태양 둘레를 <span class="bk" data-a="공전"></span>함.</p>
+    <p data-s="1">지구의 위치가 계속 변함 → 관측하는 위치가 바뀜.</p>
+    <p data-s="2" class="lead">그래서 별이 보이는 <b>방향</b>도 달라짐.</p>
+  </section>
+
+  <!-- 16 -->
+  <section class="slide" data-title="A와 반년 뒤 B" data-group="연주 시차">
+    <h2>지구가 A일 때와 B일 때</h2>
+    <p class="lead">지구가 A에 있을 때 별 X는 X₁에 있는 것처럼 보임.</p>
+    <p data-s="1" class="lead"><span class="bk" data-a="반년(6개월)"></span> 뒤 지구가 B로 오면 별 X는 X₂에 있는 것처럼 보임.</p>
+    <p data-s="2">망원경으로 찍은 A, B 사진을 번갈아 보면 별 X가 멀리 있는 별들에 대해 움직여 보임.</p>
+  </section>
+
+  <!-- 17 -->
+  <section class="slide" data-title="연주 시차" data-group="연주 시차">
+    <h2>연주 시차</h2>
+    <p class="lead">별 X의 시차 = ∠AXB</p>
+    <p data-s="1" class="lead">시차의 <span class="bk" data-a="½"></span>을 <b>연주 시차</b>라고 함.</p>
+    <p data-s="2">지구가 공전 궤도의 양 끝(6개월 간격)에서 별을 볼 때 생기는 시차의 ½.</p>
+    <p data-s="2" class="note">교과서 그림 Ⅷ-2. 잘 보이도록 각을 아주 크게 과장함.</p>
+  </section>
+
+  <!-- 18 -->
+  <section class="slide" data-title="별 X와 별 Y" data-group="연주 시차">
+    <h2>별 X와 별 Y 비교</h2>
+    <p class="lead">별 Y는 별 X보다 멀리 있음. 연주 시차가 더 큰 별은?</p>
+    <div class="pick"><div><b>(가)</b> 가까운 별 X</div><div><b>(나)</b> 먼 별 Y</div></div>
+    <p data-s="1" class="lead">지구와 가까이 있는 별일수록 연주 시차가 <span class="bk" data-a="큼"></span>.</p>
+    <p data-s="2">→ 연주 시차를 이용하여 별까지의 거리를 <span class="bk" data-a="비교"></span>할 수 있음.</p>
+  </section>
+
+  <!-- 19 -->
+  <section class="slide" data-title="공전하지 않는다면?" data-group="연주 시차">
+    <h2>지구가 공전하지 않는다면?</h2>
+    <p class="ask">별의 연주 시차는 어떻게 될까?</p>
+    <p data-s="1">6개월 뒤에도 같은 곳에서 별을 봄 → 별이 보이는 방향이 바뀌지 않음.</p>
+    <p data-s="2" class="lead">연주 시차가 <span class="bk" data-a="나타나지 않음"></span>.</p>
+    <p data-s="3">거꾸로, 연주 시차가 관측된다는 것은 지구가 <span class="bk" data-a="공전"></span>한다는 증거.</p>
+  </section>
+
+  <!-- 20 -->
+  <section class="slide" data-title="각도의 단위 ″" data-group="단위">
+    <h2>연주 시차는 매우 작음</h2>
+    <p class="lead">태양을 제외한 별은 지구로부터 매우 멀리 떨어져 있음 → 연주 시차가 매우 작게 나타남.</p>
+    <p data-s="1">1°를 60으로 나눈 것 하나 = 1′(분)</p>
+    <p data-s="2">1′을 60으로 나눈 것 하나 = 1″(초)</p>
+    <p data-s="3" class="lead">연주 시차의 단위: <span class="bk" data-a="″(초)"></span><br>1° = 60′ = <span class="bk" data-a="3600"></span>″</p>
+  </section>
+
+  <!-- 21 -->
+  <section class="slide" data-title="거리의 단위 pc, 광년" data-group="단위">
+    <h2>별까지의 거리 단위</h2>
+    <p class="lead">별은 너무 멀어서 km로 나타내면 숫자가 지나치게 커짐.</p>
+    <ul>
+      <li data-s="1">연주 시차가 1″인 별까지의 거리 = 1 <span class="bk" data-a="pc(파섹)"></span></li>
+      <li data-s="2">빛이 <span class="bk" data-a="1년"></span> 동안 갈 수 있는 거리 = 1 광년</li>
+      <li data-s="3">1 pc ≈ <span class="bk" data-a="3.26"></span> 광년</li>
+      <li data-s="4">연주 시차가 1″보다 작은 별은 1 pc보다 멀리 있음.</li>
+    </ul>
+    <p data-s="4" class="note">영상 ①에서 본 광년.</p>
+  </section>
+
+  <!-- 22 -->
+  <section class="slide" data-title="측정의 한계" data-group="단위">
+    <h2>아주 멀리 있는 별은?</h2>
+    <p class="lead">별 X를 멀리 옮겨 보기.</p>
+    <p data-s="1">X₁과 X₂ 사이가 가까워짐 → 연주 시차가 작아짐.</p>
+    <p data-s="2" class="lead">지구로부터 <span class="bk" data-a="100 pc"></span> 이상 떨어진 별은 연주 시차가 너무 작아 연주 시차로 거리를 알기 어려움.</p>
+  </section>
+
+  <!-- 23 -->
+  <section class="slide" data-title="가이아 우주 망원경" data-group="해 보기">
+    <p class="q">해 보기</p>
+    <h2>가이아 우주 망원경</h2>
+    <p class="lead">2013년 발사. 별의 위치와 움직임, 특징을 알아내는 임무.</p>
+    <p data-s="1">지구와 함께 움직이며 별의 위치를 관측함.</p>
+    <p data-s="2">(가), (나): <b>6개월 간격</b>으로 측정한 별 A, B의 위치.</p>
+    <p data-s="2" class="note">영상 ②의 그 망원경. 사진은 위치 변화를 크게 과장한 가상 사진.</p>
+  </section>
+
+  <!-- 24 -->
+  <section class="slide" data-title="더 멀리 있는 별은?" data-group="해 보기">
+    <p class="q">해 보기</p>
+    <h2>연주 시차로 거리 비교하기</h2>
+    <p class="ask">1. 두 별 A와 B의 위치가 변한 까닭은?</p>
+    <p data-s="1">→ 지구가 <span class="bk" data-a="공전"></span>하여 관측하는 위치가 바뀌었기 때문.</p>
+    <p data-s="2" class="ask">2. 지구에서 더 멀리 떨어져 있는 별은?</p>
+    <p data-s="3">→ <span class="bk" data-a="별 @@FAR@@"></span>. 위치가 조금 변함 → 연주 시차가 작음 → 더 멀리 있음.</p>
+  </section>
+
+  <!-- 25 -->
+  <section class="slide" data-title="오늘 정리" data-group="정리">
+    <h2>오늘 정리</h2>
+    <div class="two">
+      <ul>
+        <li>관측자의 위치에 따라 물체가 보이는 방향이 달라지는 정도 = <span class="bk" data-a="시차"></span>. 거리가 멀수록 시차가 <span class="bk" data-a="작아짐"></span>.</li>
+        <li>6개월 간격으로 별을 관측해 생긴 시차의 ½ = <span class="bk" data-a="연주 시차"></span>.</li>
+        <li>지구와 가까이 있는 별일수록 연주 시차가 <span class="bk" data-a="큼"></span>.</li>
+        <li>연주 시차의 단위 ″(초). 연주 시차 1″인 별까지의 거리 = 1 pc ≈ 3.26 광년.</li>
+        <li><span class="bk" data-a="100 pc"></span> 이상 떨어진 별은 연주 시차로 거리를 알기 어려움.</li>
+      </ul>
+      <div class="quiz">
+        <h3>확인 문제</h3>
+        <p data-s="1"><b>1.</b> 세 별의 연주 시차가 0.1″, 0.5″, 0.02″. 가장 멀리 있는 별은?</p>
+        <p data-s="1">→ <span class="bk" data-a="0.02″인 별"></span></p>
+        <p data-s="2" class="qq"><b>2.</b> 연주 시차의 단위로 °(도) 대신 ″(초)를 쓰는 까닭은?</p>
+        <p data-s="2">→ 별이 매우 멀어 연주 시차가 매우 <span class="bk" data-a="작기"></span> 때문.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="toc" id="toc"><h3>목차</h3><div class="grid" id="tocGrid"></div></div>
+
+  <div class="bar">
+    <span class="where" id="where"></span>
+    <span class="dots" id="dots"></span>
+    <span class="sp"></span>
+    <button class="bb" id="bOpen" type="button">이 장 빈칸 열기</button>
+    <button class="bb" id="bToc" type="button">목차</button>
+    <button class="bb" id="bFull" type="button">전체 화면</button>
+    <button class="bb" id="bPrev" type="button" aria-label="이전">이전</button>
+    <button class="bb go" id="bNext" type="button" aria-label="다음">다음</button>
+  </div>
+</div>
+
+<script>
+/* ===== 블록 1: 장마다 그림 상태 ===== */
+window.SG = window.SG || {};
+(() => {
+  'use strict';
+  try {
+    const S = window.SG;
+    /* 장마다: fig = 그림(room 칠판 앞 · ab 시차와 거리 · board 시차 측정 판 · orbit 연주 시차 관측소 · ap 그림 Ⅷ-2 · zeta 각도 단위 · gaia 가이아 사진 · video 영상),
+       layout = 'cover' 표지 / 기본 왼쪽 그림·오른쪽 글 / 'text' 글만, s = 처음 상태, steps[i] = '다음'을 i+1번 눌렀을 때 바뀌는 것(앞 단계에 쌓여요).
+       board: target (가)'ga' (나)'na', eye 'L'|'R'|'B'(번갈아), marks 표시한 구멍, line 선 잇기, proto 각도기
+       orbit: at 'A'|'B'|'play'(공전), snapB B 사진, showY 별 Y, stop 공전 멈춤, d 별 X 거리(0~100), scope 망원경 창, blink 사진 번갈아
+       video: yt = { id, start, end } */
+    const MODEL = { board: '개념 이해를 위한 모형. 실제 측정 판과 크기, 각도가 조금 다를 수 있음', orbit: '잘 보이도록 각도와 크기를 크게 과장한 모형', ap: '잘 보이도록 각을 아주 크게 과장함', gaia: '위치 변화를 크게 과장한 가상 사진' };
+    const GA1 = { target: 'ga', eye: 'L' };
+    S.SCENES = [
+      /* 1 표지 */ { layout: 'cover', fig: 'orbit', s: { at: 'play', showY: true }, steps: [{}] },
+      /* 2 영상 ① */ { fig: 'video', yt: { id: 'z13bXH9_Ud0' }, steps: [{}, {}] },
+      /* 3 영상 ② */ { fig: 'video', yt: { id: 'fzBC5h_lztM' }, steps: [{}, {}] },
+      /* 4 영상 ③ */ { fig: 'video', yt: { id: 'cO7woBkjU_E', end: 60 }, steps: [{}, {}, {}, {}] },
+      /* 5 칠판 */ { fig: 'room', s: { seat: 0 }, steps: [{ seat: -1 }, { seat: 1 }, { seat: 0 }] },
+      /* 6 시차 */ { fig: 'ab', s: { v: 20 }, steps: [{}, {}, {}] },
+      /* 7 가까이 */ { fig: 'ab', s: { v: 70 }, steps: [{ v: 0 }, {}] },
+      /* 8 탐구 순서 */ { fig: 'board', s: GA1, steps: [{}, {}, { eye: 'B' }, { eye: 'L', marks: { ga: 'LR' }, line: { ga: true } }, { proto: { ga: true } }] },
+      /* 9 (가) 왼쪽 */ { fig: 'board', s: GA1, steps: [{ marks: { ga: 'L' } }] },
+      /* 10 (가) 오른쪽 */ { fig: 'board', s: { target: 'ga', eye: 'R', marks: { ga: 'L' } }, steps: [{ marks: { ga: 'LR' } }, { eye: 'B' }] },
+      /* 11 (가) 선·각 */ { fig: 'board', s: { target: 'ga', eye: 'L', marks: { ga: 'LR' } }, steps: [{ line: { ga: true } }, {}, { proto: { ga: true } }] },
+      /* 12 (나) */ { fig: 'board', s: { target: 'na', eye: 'L', marks: { ga: 'LR' }, line: { ga: true }, proto: { ga: true } }, steps: [
+        { marks: { ga: 'LR', na: 'L' } }, { eye: 'R', marks: { ga: 'LR', na: 'LR' } }, { line: { ga: true, na: true }, proto: { ga: true, na: true } }] },
+      /* 13 기록표 */ { fig: 'board', s: { target: 'ga', eye: 'B', marks: { ga: 'LR', na: 'LR' }, line: { ga: true, na: true }, proto: { ga: true, na: true } }, steps: [{ target: 'ga' }, { target: 'na' }, {}, {}] },
+      /* 14 거리와 시차 */ { fig: 'ab', s: { v: 10 }, steps: [{ v: 100 }, {}, { v: 30 }] },
+      /* 15 공전 */ { fig: 'orbit', s: { at: 'A' }, steps: [{ at: 'play' }, {}] },
+      /* 16 A와 B */ { fig: 'orbit', s: { at: 'A', scope: true }, steps: [{ at: 'B', snapB: true }, { blink: true }] },
+      /* 17 연주 시차 */ { fig: 'ap', s: {}, steps: [{}, {}] },
+      /* 18 X와 Y */ { fig: 'orbit', s: { at: 'B', snapB: true, showY: true }, steps: [{}, {}] },
+      /* 19 공전 멈춤 */ { fig: 'orbit', s: { at: 'A', scope: true }, steps: [{ stop: true }, {}, {}] },
+      /* 20 ″ */ { layout: 'wide', fig: 'zeta', s: { z: 0 }, steps: [{ z: 1 }, { z: 2 }, {}] },
+      /* 21 pc, 광년 */ { layout: 'text', fig: 'zeta', s: {}, steps: [{}, {}, {}, {}] },
+      /* 22 한계 */ { fig: 'orbit', s: { at: 'B', snapB: true, d: 0 }, steps: [{ d: 100 }, {}] },
+      /* 23 가이아 */ { fig: 'gaia', s: {}, steps: [{}, {}] },
+      /* 24 비교 */ { fig: 'gaia', s: {}, steps: [{}, { blink: true }, {}] },
+      /* 25 정리 */ { layout: 'text', fig: 'zeta', s: {}, steps: [{}, {}] },
+    ];
+    // k번째 단계까지 차례로 쌓은 상태 (뒤로 가도 같은 화면이 나와요)
+    S.stateAt = (n, k) => {
+      const d = S.SCENES[n] || {};
+      let s = Object.assign({}, d.s || {});
+      for (let i = 0; i < k; i++) s = Object.assign(s, (d.steps || [])[i] || {});
+      return { s, fig: d.fig, yt: d.yt, model: MODEL[d.fig] || '' };
+    };
+    S.okScenes = true;
+  } catch (err) { window.SG_err('장면 상태', err); }
+})();
+</script>
+
+<script>
+/* ===== 블록 2: 그림 칸 (라스 그림 페이지 불러오기 · 유튜브 영상) ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SG, figs = {};
+    document.querySelectorAll('.fig[data-f]').forEach((el) => (figs[el.dataset.f] = el));
+    let cur = null, curState = null, curVid = '';
+    // 그림 페이지는 처음 쓸 때 불러와요. 다 불러오면 지금 상태를 다시 줘요
+    function frameOf(f) {
+      const el = figs[f];
+      if (!el || !el.dataset.src) return null;
+      let fr = el.querySelector('iframe');
+      if (!fr) {
+        fr = document.createElement('iframe'); fr.title = '수업 그림'; fr.setAttribute('tabindex', '-1');
+        fr.src = el.dataset.src + (/[?&]raf=timer/.test(location.search) ? '&raf=timer' : ''); el.appendChild(fr);
+      }
+      return fr;
+    }
+    function push(f) {
+      const fr = frameOf(f);
+      try { const D = fr && fr.contentWindow && fr.contentWindow.DECKFIG; if (D && D.ok && D.f === f && f === cur) D.set(curState); } catch (e) { window.SG_err('그림 상태', e); }
+    }
+    addEventListener('message', (e) => { if (e.data && e.data.type === 'deckfig-ready') push(e.data.fig); });
+    function video(yt) {
+      const box = document.getElementById('vframe'), key = yt ? JSON.stringify(yt) : '';
+      if (key === curVid) return;
+      curVid = key; box.innerHTML = '';
+      if (!yt) return;
+      const q = new URLSearchParams({ rel: '0', playsinline: '1', modestbranding: '1' });
+      if (yt.start) q.set('start', yt.start); if (yt.end) q.set('end', yt.end);
+      const fr = document.createElement('iframe');
+      fr.src = 'https://www.youtube-nocookie.com/embed/' + yt.id + '?' + q.toString();
+      fr.title = '유튜브 영상'; fr.allow = 'autoplay; encrypted-media; picture-in-picture; fullscreen'; fr.allowFullscreen = true;
+      fr.referrerPolicy = 'strict-origin-when-cross-origin';
+      box.appendChild(fr);
+    }
+    S.apply = (n, k) => {
+      const { s, fig, yt, model } = S.stateAt(n, k);
+      cur = fig; curState = s;
+      Object.keys(figs).forEach((f) => figs[f].classList.toggle('on', f === fig));
+      video(fig === 'video' ? yt : null);   // 다른 장으로 넘어가면 영상을 멈춰요
+      const m = document.getElementById('model'); m.textContent = model; m.classList.toggle('on', !!model);
+      if (fig !== 'video') push(fig);
+    };
+    // 영상을 누른 뒤에도 키보드(리모컨)로 넘길 수 있게 초점을 발표로 되돌려요
+    addEventListener('blur', () => setTimeout(() => { const a = document.activeElement; if (a && a.tagName === 'IFRAME') { a.blur(); window.focus(); } }, 300));
+    S.okFig = true;
+  } catch (err) { window.SG_err('그림 칸', err); }
+})();
+</script>
+
+<script>
+/* ===== 블록 3: 넘기기 · 빈칸 · 목차 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SG;
+    const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+    const deck = $('#deck'), slides = $$('.slide');
+    const TOTAL = slides.length;
+
+    // 빈칸 번호 매기기 (처음부터 끝까지 이어서) ① ~ ㊿
+    const CIRC = [];
+    for (let c = 0x2460; c <= 0x2473; c++) CIRC.push(String.fromCharCode(c));
+    for (let c = 0x3251; c <= 0x325f; c++) CIRC.push(String.fromCharCode(c));
+    for (let c = 0x32b1; c <= 0x32bf; c++) CIRC.push(String.fromCharCode(c));
+    $$('.bk').forEach((b, i) => {
+      b.setAttribute('role', 'button'); b.tabIndex = 0;
+      b.innerHTML = `<span class="no">${CIRC[i] || i + 1}</span><span class="ans">${b.dataset.a}</span>`;
+      b.setAttribute('aria-label', `빈칸 ${i + 1}, 눌러서 열기`);
+      const t = (e) => { e.stopPropagation(); b.classList.toggle('open'); if (e.type === 'click') b.blur(); };
+      b.addEventListener('click', t);
+      b.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); t(e); } });
+    });
+
+    let n = 0, k = 0;
+    const steps = (i) => ((S.SCENES || [])[i] || {}).steps || [];
+    const maxK = (i) => Math.max(steps(i).length, ...$$('[data-s]', slides[i]).map((e) => +e.dataset.s));
+
+    function render() {
+      const sl = slides[n], d = (S.SCENES || [])[n] || {};
+      slides.forEach((s, i) => s.classList.toggle('on', i === n));
+      deck.dataset.layout = d.layout || 'split';
+      $$('[data-s]', sl).forEach((e) => { const on = +e.dataset.s <= k; if (on && !e.classList.contains('in')) e.classList.add('in'); if (!on) e.classList.remove('in'); });
+      // 지금 단계에서 나온 목록 줄, 기록표 줄을 강조
+      $$('ol li', sl).forEach((li) => li.classList.toggle('now', +li.dataset.s === k));
+      $$('tr[data-row]', sl).forEach((tr) => tr.classList.toggle('now', +tr.dataset.row === k));
+      $('#where').innerHTML = `<b>${n + 1} / ${TOTAL}</b>${sl.dataset.group} · ${sl.dataset.title}`;
+      const m = maxK(n);
+      $('#dots').innerHTML = m ? Array.from({ length: m + 1 }, (_, i) => `<i class="${i <= k ? 'on' : ''}"></i>`).join('') : '';
+      $('#bPrev').disabled = n === 0 && k === 0;
+      $('#bNext').disabled = n === slides.length - 1 && k === m;
+      $('#bOpen').disabled = !$$('.bk', sl).length;
+      try { S.apply && S.apply(n, k); } catch (e) { window.SG_err('장면 바꾸기', e); }
+      try { history.replaceState(null, '', location.pathname + location.search + '#' + (n + 1)); } catch (e) {}
+    }
+    function next() { if (k < maxK(n)) k++; else if (n < slides.length - 1) { n++; k = 0; } render(); }
+    function prev() { if (k > 0) k--; else if (n > 0) { n--; k = maxK(n); } render(); }
+    function goto(i) { n = Math.max(0, Math.min(slides.length - 1, i)); k = 0; $('#toc').classList.remove('on'); render(); }
+    S.goto = goto; S.next = next; S.prev = prev; S.render = render;
+
+    $('#bNext').addEventListener('click', next);
+    $('#bPrev').addEventListener('click', prev);
+    // 지금 보이는 빈칸만 열고 닫아요
+    $('#bOpen').addEventListener('click', () => { const b = $$('.bk', slides[n]).filter((x) => { const p = x.closest('[data-s]'); return !p || p.classList.contains('in'); }); const all = b.every((x) => x.classList.contains('open')); b.forEach((x) => x.classList.toggle('open', !all)); });
+    $('#bFull').addEventListener('click', () => { try { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen(); } catch (e) {} });
+    document.addEventListener('fullscreenchange', () => { $('#bFull').textContent = document.fullscreenElement ? '전체 화면 끝내기' : '전체 화면'; });
+
+    // 목차
+    let html = '', g = '';
+    slides.forEach((s, i) => {
+      if (s.dataset.group !== g) { g = s.dataset.group; html += `<div class="grp">${g}</div>`; }
+      html += `<button type="button" data-i="${i}"><b>${i + 1}</b>${s.dataset.title}</button>`;
+    });
+    $('#tocGrid').innerHTML = html;
+    $$('#tocGrid button').forEach((b) => b.addEventListener('click', () => goto(+b.dataset.i)));
+    $('#bToc').addEventListener('click', () => { $$('#tocGrid button').forEach((b) => b.classList.toggle('cur', +b.dataset.i === n)); $('#toc').classList.toggle('on'); });
+
+    // 키보드와 발표용 리모컨: → ↓ 스페이스 PageDown = 다음, ← ↑ PageUp = 이전
+    document.addEventListener('keydown', (e) => {
+      if (e.target.closest && e.target.closest('.bk') && (e.key === 'Enter' || e.key === ' ')) return; // 빈칸 위에서 Enter·스페이스는 빈칸 열기
+      if (e.target.closest && e.target.closest('a')) return;
+      if (['ArrowRight', 'ArrowDown', 'PageDown', ' ', 'Enter'].includes(e.key)) { e.preventDefault(); next(); }
+      else if (['ArrowLeft', 'ArrowUp', 'PageUp', 'Backspace'].includes(e.key)) { e.preventDefault(); prev(); }
+      else if (e.key === 'Home') goto(0);
+      else if (e.key === 'Escape') $('#toc').classList.remove('on');
+    });
+
+    // 16:9 화면을 창에 맞추고, 글자 크기 기준(1rem)을 화면 너비에 맞춰요
+    function fit() {
+      const W = innerWidth, H = innerHeight, w = Math.min(W, H * 16 / 9), h = w * 9 / 16;
+      document.documentElement.style.setProperty('--dw', w + 'px'); document.documentElement.style.setProperty('--dh', h + 'px');
+      document.documentElement.style.fontSize = (w / 120) + 'px';
+    }
+    addEventListener('resize', fit); fit();
+
+    const start = parseInt((location.hash || '').slice(1), 10);
+    if (start > 0) n = Math.min(slides.length - 1, start - 1);
+    render();
+    S.okUI = true;
+  } catch (err) { window.SG_err('발표 넘기기', err); }
+})();
+</script>
+</body>
+</html>
