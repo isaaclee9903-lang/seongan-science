@@ -608,11 +608,20 @@ window.SG = window.SG || {}; window.MT = window.MT || {};
     $$('#tocGrid button').forEach((b) => b.addEventListener('click', () => goto(+b.dataset.i)));
     $('#bToc').addEventListener('click', () => { $$('#tocGrid button').forEach((b) => b.classList.toggle('cur', +b.dataset.i === n)); $('#toc').classList.toggle('on'); });
 
-    // 키보드와 발표용 리모컨: → ↓ 스페이스 PageDown = 다음, ← ↑ PageUp = 이전
+    // ↓ = 이 장에서 보이는 빈칸을 앞에서부터 하나 열기, ↑ = 마지막으로 연 빈칸 하나 닫기 (2026-11-08 선생님 요청)
+    // 열 빈칸이 없으면 ↓는 다음, 닫을 빈칸이 없으면 ↑는 이전으로 넘어가요
+    const shownBlanks = () => $$('.bk', slides[n]).filter((x) => { const p = x.closest('[data-s]'); return !p || p.classList.contains('in'); });
+    function openOne() { const b = shownBlanks().find((x) => !x.classList.contains('open')); if (b) b.classList.add('open'); return !!b; }
+    function closeOne() { const b = shownBlanks().filter((x) => x.classList.contains('open')).pop(); if (b) b.classList.remove('open'); return !!b; }
+    S.openOne = openOne; S.closeOne = closeOne;
+
+    // 키보드와 발표용 리모컨: → 스페이스 PageDown = 다음, ← PageUp = 이전, ↓ 빈칸 하나 열기, ↑ 빈칸 하나 닫기
     document.addEventListener('keydown', (e) => {
       if (e.target.closest && e.target.closest('.bk') && (e.key === 'Enter' || e.key === ' ')) return; // 빈칸 위에서 Enter·스페이스는 빈칸 열기
-      if (['ArrowRight', 'ArrowDown', 'PageDown', ' ', 'Enter'].includes(e.key)) { e.preventDefault(); next(); }
-      else if (['ArrowLeft', 'ArrowUp', 'PageUp', 'Backspace'].includes(e.key)) { e.preventDefault(); prev(); }
+      if (e.key === 'ArrowDown') { e.preventDefault(); if (!openOne()) next(); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); if (!closeOne()) prev(); }
+      else if (['ArrowRight', 'PageDown', ' ', 'Enter'].includes(e.key)) { e.preventDefault(); next(); }
+      else if (['ArrowLeft', 'PageUp', 'Backspace'].includes(e.key)) { e.preventDefault(); prev(); }
       else if (e.key === 'Home') goto(0);
       else if (e.key === 'Escape') $('#toc').classList.remove('on');
     });
