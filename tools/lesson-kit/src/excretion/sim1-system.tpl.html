@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>오줌이 만들어지는 과정 – 배설계 3D</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+/*@@LOCAL:_css_ps.css@@*/
+/*@@LOCAL:_css_sim.css@@*/
+/*@@LOCAL:_css_pf.css@@*/
+/*@@LOCAL:_css_ex.css@@*/
+.viewer{position:relative}
+.viewer > .scene[hidden]{display:none!important}
+.route{display:grid;gap:4px;margin:6px 0 8px}
+.route .r{display:grid;grid-template-columns:26px 1fr;gap:8px;align-items:center;border-radius:12px;padding:6px 10px;background:#f5f8fb;font-size:14.5px;font-weight:800;color:#8a99a8;word-break:keep-all;transition:background .25s}
+.route .r i{font-style:normal;width:24px;height:24px;border-radius:8px;background:#c9d5e1;color:#fff;display:grid;place-items:center;font-weight:900;font-size:13px}
+.route .r small{font-weight:700;color:#8a99a8;font-size:12.5px;margin-left:4px}
+.route .r.on{background:#e3effb;color:#0b3f73}.route .r.on i{background:#0e63b3}.route .r.on small{color:#34495e}
+.route .r.done{color:#34495e}.route .r.done i{background:#7fa6cc}
+.fact2{font-size:14.5px;line-height:1.6;color:var(--ink2);word-break:keep-all;margin:8px 0 0;padding:8px 12px;border-left:3px solid #0e63b3;background:#f7fafc;border-radius:0 10px 10px 0}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top"><div class="ttl"><span class="eyebrow">시뮬레이션</span><h1>배설계 3D</h1>
+    <p class="sub">실제 사람 자료로 만든 배설계에서 혈액과 오줌이 지나는 길을 따라가고, 콩팥을 잘라 네프론까지 들어가요.</p></div>
+    <div class="ptabs big" role="tablist" id="at"><button type="button" role="tab" data-a="sys" aria-selected="true">배설계</button><button type="button" role="tab" data-a="cut" aria-selected="false">콩팥 속</button><button type="button" role="tab" data-a="neph" aria-selected="false">네프론</button></div></header>
+  <div class="stage">
+    <section class="card viewer">
+      <div class="scene grow gl-host" id="fig" style="height:auto;background:#fff" role="img" aria-label="콩팥, 오줌관, 방광, 요도와 콩팥동맥, 콩팥정맥, 대동맥, 대정맥, 심장, 뼈의 3D 모형"></div>
+      <div class="scene grow gl-host" id="fig2" style="height:auto;background:#fff" hidden role="img" aria-label="네프론 3D 모형. 토리를 보먼주머니가 둘러싸고, 세뇨관을 모세혈관이 감고 있다."></div>
+      <div class="vctl" id="vc1"><div class="seg3" id="vw" style="flex:1"><button type="button" data-v="front" aria-pressed="true">앞에서 보기</button><button type="button" data-v="back" aria-pressed="false">등 쪽에서 보기</button></div></div>
+      <div class="vctl" id="vc3" hidden><div class="seg3" id="nv" style="flex:1"><button type="button" data-v="all" aria-pressed="true">네프론 전체</button><button type="button" data-v="glo" aria-pressed="false">토리 크게 보기</button></div></div>
+    </section>
+    <section class="card pad">
+      <div class="pane" data-a="sys">
+        <p class="lbl">무엇을 따라갈까요?</p>
+        <div class="two"><button class="btn primary" type="button" id="tB">혈액 따라가기</button><button class="btn primary" type="button" id="tU">오줌 따라가기</button></div>
+        <div class="route" id="rt"></div>
+        <div class="fbk" id="res"><b class="t" id="resT">처음</b><span id="resM"></span></div>
+        <p class="fact2" id="fk">콩팥은 <b>주먹만 한 크기</b>로 <b>등 쪽 허리 좌우에 각 1개씩</b> 있어요. 등 쪽에서 보기를 눌러 갈비뼈 아래에 숨은 콩팥을 찾아봐요.</p>
+      </div>
+      <div class="pane" data-a="cut" hidden>
+        <p class="lbl">왼쪽 콩팥을 세로로 잘라 봐요</p>
+        <div class="two"><button class="btn primary" type="button" id="kc" aria-pressed="false">콩팥 자르기</button><button class="btn" type="button" id="kf">혈액과 오줌 흐르게 하기</button></div>
+        <div class="fbk" id="cres"><b class="t" id="cresT">콩팥 속</b><span id="cresM"></span></div>
+        <ol class="whylist" style="margin-top:8px">
+          <li><i>1</i><span>심장에서 나온 혈액은 <b>콩팥동맥</b>을 통해 콩팥으로 들어가요.</span></li>
+          <li><i>2</i><span>콩팥에는 오줌을 만드는 기본 단위인 <b>네프론</b>이 아주 많이 있어요. 네프론에서 혈액 속의 노폐물이 걸러져 오줌이 만들어져요.</span></li>
+          <li><i>3</i><span>오줌은 <b>콩팥깔때기</b>에 모인 다음 <b>오줌관</b>을 거쳐 방광으로 가요. 걸러진 깨끗한 혈액은 <b>콩팥정맥</b>을 통해 다시 심장으로 향해요.</span></li></ol>
+        <div class="two" style="margin-top:8px"><button class="btn" type="button" id="goN">네프론 보러 가기</button></div>
+      </div>
+      <div class="pane" data-a="neph" hidden>
+        <div class="ptabs" role="tablist" id="pt"><button type="button" role="tab" data-p="lab" aria-selected="true">구조 보기</button><button type="button" role="tab" data-p="why" aria-selected="false">세 과정</button></div>
+        <div class="pp" data-p="lab">
+          <div class="nlist" id="nl">
+            <button type="button" data-l="glo" aria-pressed="false"><b>토리</b><span>모세혈관이 실처럼 뭉친 부분</span></button>
+            <button type="button" data-l="bow" aria-pressed="false"><b>보먼주머니</b><span>토리를 둘러싸는 주머니 모양의 구조</span></button>
+            <button type="button" data-l="tub" aria-pressed="false"><b>세뇨관</b><span>보먼주머니와 연결된 가늘고 긴 관</span></button>
+            <button type="button" data-l="cap" aria-pressed="false"><b>모세혈관</b><span>세뇨관을 둘러싸고 있어요</span></button>
+          </div>
+          <p class="fact2">네프론 = <b>토리 + 보먼주머니 + 세뇨관</b>. 세뇨관은 콩팥깔때기로 이어지는 관에 연결돼요.</p>
+          <div class="seg3" id="nr" style="margin-top:8px"><button type="button" data-r="1" aria-pressed="true">흐르게 하기</button><button type="button" data-r="0" aria-pressed="false">멈추기</button></div>
+        </div>
+        <div class="pp" data-p="why" hidden><ol class="whylist">
+          <li><i>1</i><span><b>여과</b>: 토리 → 보먼주머니. 크기가 작은 물질이 물과 함께 빠져나가요. 혈구, 단백질은 여과되지 않아요.</span></li>
+          <li><i>2</i><span><b>재흡수</b>: 세뇨관 → 모세혈관. 포도당·아미노산은 모두, 물·무기염류는 대부분 돌아가요.</span></li>
+          <li><i>3</i><span><b>분비</b>: 모세혈관 → 세뇨관. 여과되지 못한 노폐물이 나가요.</span></li></ol>
+          <div class="legend" style="border:0;background:none;padding:6px 0" id="nlg"></div>
+          <a class="btn primary" style="margin-top:6px;display:flex;align-items:center;justify-content:center;text-decoration:none" id="goF" href="sim2-filter.html">오줌 생성 실험실에서 하나씩 켜 보기</a>
+          <p class="mnote">네프론의 굵기, 감긴 모양, 알갱이의 크기와 수는 잘 보이게 정한 모형이에요. 실제 네프론은 맨눈으로 볼 수 없을 만큼 작아요.</p></div>
+      </div>
+      <p class="mnote">모형 자료: BodyParts3D(콩팥·오줌관·방광·혈관·간·심장·뼈, © The Database Center for Life Science, CC BY 4.0), HuBMAP CCF 3D Reference Object Library(콩팥 속, CC BY 4.0). 요도는 방광 바로 아래만 나타냈어요. 알갱이는 잘 보이게 정한 모형이에요.</p>
+    </section>
+  </div>
+</div>
+<script>
+/*@@LOCAL:_uf.js@@*/
+</script>
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+/*@@PART:c3.js@@*/
+/*@@LOCAL:_ex3.js@@*/
+(async () => {
+  'use strict';
+  try {
+    const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+    const q = new URLSearchParams(location.search);
+    const W = await EX3.body($('#fig'), { view: 'front' }); window.__W = W;
+    W.flow({ blood: true, urine: true, urea: false });
+    /* 보는 방향마다 이름표 자리 [가로 x, y, 세로 x, y] */
+    const POS = {
+      front: { hrt: [.74, .07, .8, .06], ao: [.26, .2, .2, .2], ivc: [.26, .3, .2, .3], kid: [.76, .4, .82, .4], ra: [.26, .44, .24, .44], rv: [.26, .56, .24, .55], ure: [.76, .6, .82, .6], blad: [.76, .78, .82, .78], ureth: [.76, .92, .82, .92] },
+      back: { kid: [.76, .36, .82, .36], kidR: [.24, .36, .18, .36], rib: [.76, .14, .82, .14], spine: [.76, .62, .82, .62] },
+      cut: { kra: [.2, .3, .16, .26], krv: [.2, .44, .16, .42], kpel: [.2, .62, .16, .6], kure: [.2, .82, .16, .82] },
+    };
+    const LABS = { front: ['hrt', 'ao', 'ivc', 'kid', 'ra', 'rv', 'ure', 'blad', 'ureth'], back: ['kid', 'kidR', 'rib', 'spine'], cut: ['kra', 'krv', 'kpel', 'kure'] };
+    const labs = (k) => { W.place(POS[k]); W.showLabs(LABS[k]); };
+    const setV = (v) => { W.setView(v, .9); labs(v); $$('#vw button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === v))); };
+    $$('#vw button').forEach((b) => b.addEventListener('click', () => { if (W.cutOn) return; setV(b.dataset.v); }));
+    labs('front');
+    const say = (t, m, c = '') => { $('#res').className = 'fbk ' + c; $('#resT').textContent = t; $('#resM').innerHTML = m; };
+    say('처음', '혈액과 오줌이 흐르고 있어요. <b>혈액 따라가기</b>나 <b>오줌 따라가기</b>를 눌러 한 알갱이를 따라가 봐요. 손가락으로 돌려 볼 수도 있어요.');
+    /* 따라가기 */
+    const ROUTE = {
+      blood: [['심장', '에서 나온 혈액'], ['대동맥', ''], ['콩팥동맥', '콩팥으로 들어가요'], ['콩팥', '네프론에서 노폐물이 걸러져요'], ['콩팥정맥', '깨끗해진 혈액이 나가요'], ['대정맥', ''], ['다시 심장으로', '']],
+      urine: [['콩팥깔때기', '오줌이 모여요'], ['오줌관', '콩팥과 방광을 연결해요'], ['방광', '오줌을 모아 두어요'], ['요도', '몸 밖으로 나가요']],
+    };
+    const drawRoute = (k, n) => { $('#rt').innerHTML = ROUTE[k].map((r, i) => `<div class="r ${i < n ? 'done' : ''} ${i === n ? 'on' : ''}"><i>${i + 1}</i><span>${r[0]}<small>${r[1]}</small></span></div>`).join(''); };
+    const MAP = { blood: [[0, 1, 2, 3], [3, 4, 5, 6]], urine: [[0, 1, 2, 3]] };
+    let touring = null;
+    const tour = (k) => {
+      if (W.cutOn) return; touring = k; setV('front'); drawRoute(k, 0); $('#tB').disabled = $('#tU').disabled = true;
+      W.flow({ blood: k === 'blood', urine: k === 'urine' });
+      say(k === 'blood' ? '혈액 따라가기' : '오줌 따라가기', k === 'blood' ? '파란 고리 속 적혈구를 따라가요. 혈액은 <b>콩팥동맥</b>으로 들어가 <b>콩팥정맥</b>으로 나와요.' : '노란 오줌 알갱이를 따라가요. 오줌은 <b>오줌관 → 방광 → 요도</b>로 이동해요.');
+      W.tour(k, (kk, leg, wi) => {
+        if (leg < 0) { touring = null; $('#tB').disabled = $('#tU').disabled = false; drawRoute(kk, 99); W.flow({ blood: true, urine: true }); say(kk === 'blood' ? '혈액이 한 바퀴 돌았어요' : '오줌이 몸 밖으로 나갔어요', kk === 'blood' ? '심장 → 대동맥 → <b>콩팥동맥</b> → 콩팥 → <b>콩팥정맥</b> → 대정맥 → 심장. 콩팥에서 노폐물이 걸러져 콩팥정맥의 혈액은 깨끗해져요.' : '콩팥 → 콩팥깔때기 → <b>오줌관</b> → <b>방광</b> → <b>요도</b> → 몸 밖. 방광은 오줌을 모아 두었다가 내보내요.', 'ok'); return; }
+        drawRoute(kk, MAP[kk][leg][wi]);
+      });
+    };
+    $('#tB').addEventListener('click', () => tour('blood')); $('#tU').addEventListener('click', () => tour('urine'));
+    drawRoute('blood', -1);
+    /* 콩팥 속 */
+    var fl = true;
+    const csay = (t, m) => { $('#cresT').textContent = t; $('#cresM').innerHTML = m; };
+    const cut = (on) => { W.stopTour(); W.cut(on); $('#kc').setAttribute('aria-pressed', String(on)); $('#kc').textContent = on ? '다시 붙이기' : '콩팥 자르기'; if (on) { W.setView('cut', 1); labs('cut'); W.show({ liver: false }); fl = false; W.flow({ blood: false, urine: false }); $('#kf').textContent = '혈액과 오줌 흐르게 하기'; csay('잘랐어요', '안쪽의 노란 부분이 <b>콩팥깔때기</b>예요. 붉은 줄무늬 부분에 <b>네프론</b>이 아주 많이 모여 있어요. 손가락으로 돌려 봐요.'); } else { W.setView('kid', 1); W.showLabs(['kid', 'ra', 'rv', 'ure']); W.place({ kid: [.78, .3], ra: [.24, .38], rv: [.24, .56], ure: [.24, .8] }); csay('콩팥 겉모습', '<b>콩팥 자르기</b>를 눌러 속을 봐요.'); } };
+    $('#kc').addEventListener('click', () => cut(!W.cutOn));
+    $('#kf').addEventListener('click', () => { fl = !fl; W.flow({ blood: fl, urine: fl }); $('#kf').textContent = fl ? '흐름 멈추기' : '혈액과 오줌 흐르게 하기'; });
+    $('#kf').textContent = '흐름 멈추기';
+    /* 네프론 */
+    let N = null;
+    const nephOn = async () => { if (N) return; N = EX3.nephron($('#fig2'), {}); window.__N = N; $('#nlg').innerHTML = ['rbc', 'pro', 'glu', 'wat', 'ure'].map((k) => `<span>${UF.icon(k, 18)}${UF.K[k].n}</span>`).join(''); };
+    $$('#nl button').forEach((b) => b.addEventListener('click', () => { const on = b.getAttribute('aria-pressed') !== 'true'; $$('#nl button').forEach((x) => x.setAttribute('aria-pressed', String(x === b && on))); if (!N) return; N.showLabs(on ? [b.dataset.l] : ['glo', 'bow', 'tub', 'cap', 'cd']); N.setView(on && (b.dataset.l === 'glo' || b.dataset.l === 'bow') ? 'glo' : 'all', .9); $$('#nv button').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.v === (on && (b.dataset.l === 'glo' || b.dataset.l === 'bow') ? 'glo' : 'all')))); }));
+    $$('#nv button').forEach((b) => b.addEventListener('click', () => { if (!N) return; N.setView(b.dataset.v, .9); $$('#nv button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); }));
+    $$('#nr button').forEach((b) => b.addEventListener('click', () => { if (!N) return; N.run = b.dataset.r === '1'; $$('#nr button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); }));
+    /* 탭 */
+    const ptab = (p) => { $$('#pt button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.p === p))); $$('.pp').forEach((e) => { e.hidden = e.dataset.p !== p; }); };
+    $$('#pt button').forEach((b) => b.addEventListener('click', () => ptab(b.dataset.p)));
+    const act = (a) => {
+      $$('#at button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.a === a))); $$('.pane').forEach((e) => { e.hidden = e.dataset.a !== a; });
+      $('#fig').hidden = a === 'neph'; $('#fig2').hidden = a !== 'neph'; $('#vc1').hidden = a !== 'sys'; $('#vc3').hidden = a !== 'neph';
+      if (a === 'neph') nephOn();
+      if (a === 'cut') { cut(false); }
+      if (a === 'sys') { if (W.cutOn) W.cut(false); $('#kc').setAttribute('aria-pressed', 'false'); $('#kc').textContent = '콩팥 자르기'; setV('front'); W.flow({ blood: true, urine: true }); }
+    };
+    $$('#at button').forEach((b) => b.addEventListener('click', () => act(b.dataset.a)));
+    $('#goN').addEventListener('click', () => act('neph'));
+    /* 화면 검사용 */
+    if (q.get('a')) act(q.get('a'));
+    if (q.get('v')) setV(q.get('v'));
+    if (q.get('cut')) cut(true);
+    if (q.get('tour')) tour(q.get('tour'));
+    if (q.get('tab')) ptab(q.get('tab'));
+    window.SM = window.SM || {}; window.SM.okUI = true; window.__ready = true;
+  } catch (err) { window.SM_err && window.SM_err('배설계 3D', err); console.error(err); }
+})();
+</script>
+</body>
+</html>
