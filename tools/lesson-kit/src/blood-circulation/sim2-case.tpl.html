@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>혈액의 순환 경로 – 정맥 주사와 다리 저림</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+/*@@LOCAL:_css_ps.css@@*/
+/*@@LOCAL:_css_sim.css@@*/
+/*@@LOCAL:_css_pf.css@@*/
+.steps{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}.steps span{font-size:13.5px;font-weight:800;padding:6px 9px;border-radius:9px;background:#eef3f8;color:#5a6b7e;word-break:keep-all}.steps span.done{background:#dcebfa;color:#0b3f73}.steps span.on{background:#0e63b3;color:#fff}
+.gauge{margin-top:10px}.gauge .gt{font-size:13.5px;font-weight:800;color:#34495e;margin-bottom:5px;display:flex;justify-content:space-between}.gauge .tr{height:16px;border-radius:9px;background:#eef3f8;overflow:hidden}.gauge .tr i{display:block;height:100%;width:100%;background:#0e63b3;border-radius:9px}
+.acts{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:8px;margin-top:10px}.acts .btn{width:100%}
+.seg3 button.bad{border-color:#d9534f;background:#fff4f2;color:#9b3a32}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top"><div class="ttl"><span class="eyebrow">시뮬레이션</span><h1>정맥 주사와 다리 저림</h1>
+    <p class="sub">교과서 스스로 평가의 두 질문을 혈관 모형으로 직접 확인해요.</p></div>
+    <div class="ptabs big" id="act" role="tablist"><button type="button" role="tab" data-a="iv" aria-selected="true">정맥 주사</button><button type="button" role="tab" data-a="knee" aria-selected="false">다리 저림</button></div></header>
+  <div class="stage">
+    <section class="card viewer"><div class="scene grow gl-host" id="fig" style="height:auto;background:#fff" role="img" aria-label="사람 혈관 3D 모형. 정맥 주사액이 흐르는 길과 무릎을 굽혔을 때 눌리는 혈관을 보여 준다."></div><div class="vctl"><span class="hint" id="hint"></span></div></section>
+    <section class="card pad">
+      <div class="pane" data-p="iv">
+        <p class="ptxt" style="margin:0 0 6px;font-weight:800">팔의 정맥에 영양분을 넣었어요. 심장에서 가장 먼저 들어가는 방은 어디일까요?</p>
+        <div class="seg3" id="pv"><button type="button" data-v="ra" aria-pressed="false">우심방</button><button type="button" data-v="la" aria-pressed="false">좌심방</button><button type="button" data-v="lv" aria-pressed="false">좌심실</button></div>
+        <button class="btn primary" type="button" id="ivGo" style="width:100%;margin-top:10px" disabled>먼저 하나를 골라요</button>
+        <div class="seglbl" style="margin-top:10px">영양분이 지나는 곳</div><div class="steps" id="ivS"></div>
+        <div class="fbk" id="ivR"><b class="t">결과</b><span>예상을 고른 뒤 주사를 놓아요.</span></div>
+        <p class="mnote">노란 알갱이는 영양분을 나타낸 모형이에요. 알갱이 수와 빠르기는 정했어요. 모형 자료: BodyParts3D(© The Database Center for Life Science, CC BY 4.0), 폐 HuBMAP CCF(CC BY 4.0).</p>
+      </div>
+      <div class="pane" data-p="knee" hidden>
+        <p class="ptxt" style="margin:0 0 6px;font-weight:800">오랫동안 무릎을 꿇고 앉으면 종아리의 세포에는 무슨 일이 생길까요?</p>
+        <div class="seg3" id="kp" style="grid-auto-flow:row"><button type="button" data-v="less" aria-pressed="false">산소와 영양소를 적게 받는다</button><button type="button" data-v="more" aria-pressed="false">산소와 영양소를 많이 받는다</button><button type="button" data-v="same" aria-pressed="false">아무 변화가 없다</button></div>
+        <div class="acts"><button class="btn primary" type="button" id="kGo" disabled>먼저 하나를 골라요</button><button class="btn ghost" type="button" id="kUp" disabled>일어나기</button></div>
+        <div class="gauge"><div class="gt"><span>종아리 세포가 받는 산소와 영양소</span><span id="gV">충분해요</span></div><div class="tr"><i id="gB"></i></div></div>
+        <div class="fbk" id="kR"><b class="t">결과</b><span>예상을 고른 뒤 무릎을 꿇어요.</span></div>
+        <p class="mnote">뼈와 혈관만 보이게 한 모형이에요. 굽히는 각도, 눌리는 정도, 혈액의 빠르기는 차이가 잘 보이게 정했어요.</p>
+      </div>
+    </section>
+  </div>
+</div>
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+/*@@PART:c3.js@@*/
+/*@@LOCAL:_cv3.js@@*/
+/*@@LOCAL:_bc3.js@@*/
+(async () => {
+  'use strict';
+  try {
+    const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+    const q = new URLSearchParams(location.search);
+    const W = await BC3.world($('#fig')); window.__W = W;
+    W.hero(false);
+    const say = (id, t, m, c = '') => { const e = $(id); e.className = 'fbk ' + c; e.innerHTML = `<b class="t">${t}</b><span>${m}</span>`; };
+    /* ===== 정맥 주사 ===== */
+    const STEPS = ['주사', '대정맥', '우심방', '우심실', '폐동맥', '폐', '폐정맥', '좌심방', '좌심실', '대동맥', '온몸'];
+    const drawSteps = (i) => { $('#ivS').innerHTML = STEPS.map((s, k) => `<span class="${k === i ? 'on' : k < i ? 'done' : ''}">${k === 0 ? '팔의 정맥' : s}</span>`).join(''); };
+    drawSteps(-1);
+    let pick = null, ran = false;
+    const MSG = { ra: '우심방으로 가장 먼저 들어가요. 예상이 맞았어요.', la: '좌심방이 아니라 우심방으로 먼저 들어가요. 정맥의 혈액은 대정맥을 거쳐 우심방으로 돌아오기 때문이에요.', lv: '좌심실이 아니라 우심방으로 먼저 들어가요. 좌심실은 폐를 지난 다음에 도착해요.' };
+    $$('#pv button').forEach((b) => b.addEventListener('click', () => { if (ran) return; pick = b.dataset.v; $$('#pv button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); const g = $('#ivGo'); g.disabled = false; g.textContent = '팔의 정맥에 주사 놓기'; }));
+    const armIV = () => { W.stopIV(); W.flows(true); W.flowTint(.72); W.heartView('all'); W.setCam('arm', ran ? 1 : 0); W.showLabs(['ivp', 'hrt', 'lng']); $('#hint').textContent = '손가락으로 돌려 볼 수 있어요'; };
+    W.lab.add('ivp', '주사 놓는 곳', W.P.iv[2], .24, .84, 'b', { px: .24, py: .84 });
+    W.onMark((i, name) => {
+      drawSteps(i);
+      if (name === '우심방') say('#ivR', '우심방', MSG[pick], pick === 'ra' ? 'ok' : 'no');
+      if (name === '폐') say('#ivR', '폐', '폐를 거쳐요. 주사액이 든 혈액도 허파순환을 지나요.', 'ok');
+      if (name === '좌심실') { W.setCam('all', 1.6); W.showLabs(['hrt', 'lng', 'hd', 'am', 'lg']); }
+      if (name === '온몸') { say('#ivR', '온몸에 퍼졌어요', '정맥으로 들어간 영양분은 <b>심장으로 돌아와 → 폐를 거쳐 → 다시 심장에서 대동맥으로 나가</b> 온몸의 세포까지 운반돼요. 그래서 팔에 놓아도 온몸에 공급할 수 있어요.', 'ok'); $('#ivGo').disabled = false; $('#ivGo').textContent = '다시 주사 놓기'; }
+    });
+    $('#ivGo').addEventListener('click', () => { ran = true; $('#ivGo').disabled = true; $('#ivGo').textContent = '영양분이 이동하고 있어요'; drawSteps(0); armIV(); W.startIV(); say('#ivR', '주사', '영양분이 팔의 정맥으로 들어갔어요. 어디로 가는지 따라가 봐요.'); });
+    /* ===== 다리 저림 ===== */
+    let kp = null, gv = 1;
+    const G = () => { const v = 1 - W.kneelV * .78; if (Math.abs(v - gv) > .004) { gv = v; $('#gB').style.width = (v * 100).toFixed(0) + '%'; $('#gV').textContent = v > .8 ? '충분해요' : v > .4 ? '줄어들어요' : '부족해요'; } };
+    W.st.onFrame(G);
+    $$('#kp button').forEach((b) => b.addEventListener('click', () => { kp = b.dataset.v; $$('#kp button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); const g = $('#kGo'); if (W.kneelV === 0) { g.disabled = false; g.textContent = '무릎 꿇고 앉기'; } }));
+    const legIn = () => { W.flowTint(0); W.stopIV(); W.flows(true); W.setLeg(true); W.setCam('legSt', 0); W.showLabs(['hip', 'kne', 'cal']); $('#hint').textContent = '붉은색은 동맥, 파란색은 정맥이에요. 무릎 뒤쪽 혈관을 봐요'; };
+    $('#kGo').addEventListener('click', () => {
+      $('#kGo').disabled = true; $('#kGo').textContent = '앉는 중이에요'; W.setCam('legKn', 1.8);
+      W.kneel(1, () => { $('#kUp').disabled = false; $('#kGo').textContent = '앉아 있어요'; say('#kR', '다리가 저려요', (kp === 'less' ? '예상이 맞았어요. ' : '') + '무릎 뒤쪽 혈관이 눌려 혈액이 잘 흐르지 못해요. 그러면 종아리의 세포에 <b>산소와 영양소가 잘 공급되지 못하고</b> 이산화 탄소와 노폐물도 잘 나가지 못해요.', 'ok'); });
+    });
+    $('#kUp').addEventListener('click', () => {
+      $('#kUp').disabled = true; W.setCam('legSt', 1.8);
+      W.kneel(0, () => { $('#kGo').disabled = false; $('#kGo').textContent = '무릎 꿇고 앉기'; say('#kR', '다시 흘러요', '일어서면 눌렸던 혈관이 펴져 혈액이 다시 잘 흘러요. 온몸의 세포는 혈액 순환으로 쉬지 않고 물질을 받아야 해요.', 'ok'); });
+    });
+    /* ===== 활동 바꾸기 ===== */
+    const setA = (a) => {
+      $$('#act button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.a === a))); $$('.pane').forEach((e) => { e.hidden = e.dataset.p !== a; });
+      if (a === 'iv') { W.kneel(0); W.setLeg(false); W.hero(false); W.focus('all'); armIV(); } else legIn();
+    };
+    $$('#act button').forEach((b) => b.addEventListener('click', () => setA(b.dataset.a)));
+    setA(q.get('a') || 'iv');
+    window.SM = window.SM || {}; window.SM.okUI = true; window.__ready = true;
+  } catch (err) { window.SM_err && window.SM_err('정맥 주사와 다리 저림', err); console.error(err); }
+})();
+</script>
+</body>
+</html>

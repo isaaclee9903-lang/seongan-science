@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>혈액의 순환 경로 – 단어 미로</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+/*@@LOCAL:_css_ps.css@@*/
+/*@@LOCAL:_css_sim.css@@*/
+/*@@LOCAL:_css_pf.css@@*/
+.viewer{display:flex;flex-direction:column}
+.bwrap{flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center;padding:10px 12px;position:relative;container-type:size}
+.board{--s:min(100cqh,100cqw);width:var(--s);height:var(--s);display:grid;grid-template-columns:repeat(7,1fr);grid-template-rows:repeat(7,1fr);border:3px solid #b9d0e6;border-radius:16px;overflow:hidden;background:#fff}
+.board .cl{border:0;border-right:1px solid #d9e5ef;border-bottom:1px solid #d9e5ef;background:#fff;font-weight:800;font-size:clamp(13px,1.45vw,17px);cursor:pointer;word-break:keep-all;line-height:1.2;color:#14263b;padding:2px;min-width:0;position:relative}
+.board .cl:nth-child(7n){border-right:0}.board .cl:nth-last-child(-n+7){border-bottom:0}
+.board .cl.on{background:#dcebfa;color:#0b3f73}.board .cl.cur{background:#0e63b3;color:#fff}.board .cl.bad{background:#fff4f2;color:#9b3a32}
+.board .cl.empty{color:#c3cfdb}.board .cl.tip{box-shadow:inset 0 0 0 2px #0e63b3}
+.board .cl small{position:absolute;left:0;right:0;top:3px;font-size:11px;font-weight:800;color:#0e63b3}.board .cl.cur small{color:#fff}
+.chain{display:flex;flex-wrap:wrap;gap:4px}.chain span{font-size:13px;font-weight:800;padding:5px 8px;border-radius:8px;background:#eef3f8;color:#5a6b7e;word-break:keep-all}.chain span.done{background:#dcebfa;color:#0b3f73}.chain span.on{background:#0e63b3;color:#fff}
+.mapbox{margin-top:10px;display:grid;grid-template-columns:minmax(130px,235px) minmax(0,1fr);gap:12px;align-items:start}.mapbox .scene{height:auto;aspect-ratio:auto;background:#fff}
+.rowb{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:8px;margin-top:8px}.rowb .btn{width:100%;min-height:46px;font-size:14.5px}
+@media (max-width:900px){#mp2{display:none}}
+@media print{body *{visibility:hidden}.board,.board *{visibility:visible}.board{position:fixed;left:6%;top:8%;width:88vw;height:88vw}.board .cl.on,.board .cl.cur{background:#fff;color:#14263b}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top"><div class="ttl"><span class="eyebrow">해 보기</span><h1>혈액 순환 단어 미로</h1>
+    <p class="sub">교과서 부록 332쪽 놀이판과 같은 7칸 미로예요. 혈액이 지나는 차례대로 옆 칸을 눌러 끝까지 가요.</p></div></header>
+  <div class="stage">
+    <section class="card viewer"><div class="bwrap"><div class="board" id="mz" role="grid" aria-label="혈관과 심장 낱말이 적힌 일곱 칸 미로. 왼쪽 위가 시작, 오른쪽 아래가 끝이다."></div></div><div class="vctl"><span class="hint" id="hint">왼쪽 위 칸이 시작, 오른쪽 아래 칸이 끝이에요</span></div></section>
+    <section class="card pad"><div class="ptabs" role="tablist" id="pt"><button type="button" role="tab" data-p="lab" aria-selected="true">미로 풀기</button><button type="button" role="tab" data-p="mk" aria-selected="false">내 미로 만들기</button><button type="button" role="tab" data-p="why" aria-selected="false">짝과 말하기</button></div>
+      <div class="pane" data-p="lab">
+        <div class="seg3" id="st"><button type="button" data-v="우심실" aria-pressed="true">우심실부터</button><button type="button" data-v="대동맥" aria-pressed="false">대동맥부터</button></div>
+        <div class="mapbox"><div class="scene" id="mp" role="img" aria-label="혈액 순환 지도. 지금 칸의 위치가 표시된다."></div>
+        <div><div class="seglbl">지금까지 온 길</div><div class="chain" id="pth"></div><div class="fbk" id="res"><b class="t" id="resT">결과</b><span id="resM"></span></div></div></div>
+        <div class="rowb"><button class="btn ghost" type="button" id="bReset">처음부터</button><button class="btn ghost" type="button" id="bNew">다른 미로 풀기</button></div>
+      </div>
+      <div class="pane" data-p="mk" hidden>
+        <ol class="whylist" id="mkS"><li><i>1</i><span>시작 낱말을 고른 뒤, 시작 칸에서 끝 칸까지 옆 칸을 눌러 길을 만들어요. 낱말은 차례대로 들어가요.</span></li><li><i>2</i><span>끝 칸에 닿으면 <b>나머지 칸 채우기</b>를 눌러요. 길이 하나만 생기도록 다른 낱말이 들어가요.</span></li><li><i>3</i><span>짝에게 기기를 건네거나 인쇄해서 바꾸어 풀어요.</span></li></ol>
+        <div class="seg3" id="mst" style="margin-top:8px"><button type="button" data-v="우심실" aria-pressed="true">우심실부터</button><button type="button" data-v="대동맥" aria-pressed="false">대동맥부터</button></div>
+        <div class="rowb"><button class="btn ghost" type="button" id="mBack">한 칸 지우기</button><button class="btn primary" type="button" id="mFill" disabled>나머지 칸 채우기</button></div>
+        <div class="rowb"><button class="btn primary" type="button" id="mPlay" disabled>이 미로 풀어 보기</button><button class="btn ghost" type="button" id="mPrint" disabled>인쇄하기</button></div>
+        <div class="fbk" id="mR">시작 칸의 옆 칸부터 눌러 길을 만들어요.</div>
+      </div>
+      <div class="pane" data-p="why" hidden><p class="ptxt">놀이판을 보며 한 명은 허파순환을, 다른 한 명은 온몸순환을 말해 봐요.</p><ol class="whylist"><li><i>1</i><span><b>허파순환</b>은 우심실을 시작으로: 우심실 → 폐동맥 → 폐의 모세혈관 → 폐정맥 → 좌심방</span></li><li><i>2</i><span><b>온몸순환</b>은 좌심실을 시작으로: 좌심실 → 대동맥 → 온몸의 모세혈관 → 대정맥 → 우심방</span></li><li><i>3</i><span>좌심방에서 좌심실로, 우심방에서 우심실로 내려가면 두 순환이 이어져요.</span></li></ol><div class="scene" id="mp2" role="img" aria-label="혈액 순환 지도" style="height:auto;aspect-ratio:auto;width:min(210px,100%);margin:10px auto 0;background:#fff"></div><p class="mnote">교과서 해 보기 1~5번 활동이에요. 놀이판 칸에는 간단히 ‘폐’와 ‘온몸’이라고 썼어요.</p></div>
+    </section>
+  </div>
+</div>
+<script>
+/*@@LOCAL:_bc.js@@*/
+</script>
+<script>
+(() => {
+  'use strict';
+  try {
+    const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+    const q = new URLSearchParams(location.search);
+    const N = 7, ORD = ['우심실', '폐동맥', '폐', '폐정맥', '좌심방', '좌심실', '대동맥', '온몸', '대정맥', '우심방'];
+    const next = (w) => ORD[(ORD.indexOf(w) + 1) % ORD.length];
+    const MK = { 우심실: 'rv', 폐동맥: 'pa', 폐: 'lc', 폐정맥: 'pv', 좌심방: 'la', 좌심실: 'lv', 대동맥: 'ao', 온몸: 'bc', 대정맥: 'vc', 우심방: 'ra' };
+    const say = (t, m, c = '') => { $('#res').className = 'fbk ' + c; $('#resT').textContent = t; $('#resM').innerHTML = m; };
+    const MAP = BC.eight($('#mp'), { mini: true });
+    BC.eight($('#mp2'), { mini: true });
+    const rnd = (n) => Math.floor(Math.random() * n), key = (c, r) => c + ',' + r, adj = (a, b) => Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]) === 1;
+    const wordsFor = (start, len) => { const o = []; let w = start; for (let i = 0; i < len; i++) { o.push(w); w = next(w); } return o; };
+    /* 길이 하나뿐인지: 길 위 칸의 옆 칸 중 다음 낱말이 정답 칸뿐이어야 한다 */
+    const fill = (path, words) => {
+      const g = {}; path.forEach(([c, r], i) => { g[key(c, r)] = words[i]; });
+      for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
+        if (g[key(c, r)]) continue;
+        const ban = new Set(); path.forEach(([pc, pr], i) => { if (adj([pc, pr], [c, r])) ban.add(next(words[i])); });
+        const ok = ORD.filter((w) => !ban.has(w)); g[key(c, r)] = ok[rnd(ok.length)];
+      }
+      return g;
+    };
+    const pathOk = (path, words) => { for (let i = 0; i < path.length; i++) for (let j = 0; j < path.length; j++) { if (j === i + 1 || !adj(path[i], path[j])) continue; if (words[j] === next(words[i])) return false; } return true; };
+    /* 시작에서 끝까지 구불구불한 길 찾기 */
+    const walk = (minL) => { for (let t = 0; t < 4000; t++) { const p = [[0, 0]], seen = new Set(['0,0']); let cur = [0, 0]; while (true) { if (cur[0] === N - 1 && cur[1] === N - 1) break; const opts = [[1, 0], [-1, 0], [0, 1], [0, -1]].map(([a, b]) => [cur[0] + a, cur[1] + b]).filter(([a, b]) => a >= 0 && b >= 0 && a < N && b < N && !seen.has(key(a, b))); if (!opts.length) break; cur = opts[rnd(opts.length)]; seen.add(key(cur[0], cur[1])); p.push(cur); } if (cur[0] === N - 1 && cur[1] === N - 1 && p.length >= minL && p.length <= minL + 8) return p; } return null; };
+    let P = [], W = [], G = {}, idx = 0, mode = 'solve', startW = '우심실';
+    const draw = () => {
+      $('#mz').innerHTML = Array.from({ length: N * N }, (_, i) => { const c = i % N, r = Math.floor(i / N), w = G[key(c, r)] || ''; const tag = i === 0 ? '<small>시작</small>' : i === N * N - 1 ? '<small>끝</small>' : ''; return `<button type="button" class="cl${w ? '' : ' empty'}" data-k="${key(c, r)}">${tag}${w}</button>`; }).join('');
+      paint();
+    };
+    const cell = (k) => $(`[data-k="${k}"]`);
+    const paint = () => {
+      $$('#mz .cl').forEach((b) => b.classList.remove('on', 'cur', 'tip'));
+      P.slice(0, idx + 1).forEach(([c, r], i) => { const e = cell(key(c, r)); if (e) e.classList.add(i === idx ? 'cur' : 'on'); });
+      const a = W.slice(0, idx + 1); $('#pth').innerHTML = (a.length > 9 ? '<span>…</span>' : '') + a.slice(-9).map((w, i, x) => `<span class="${i === x.length - 1 ? 'on' : 'done'}">${w}</span>`).join('');
+      if (W[idx]) MAP.mark(MK[W[idx]]);
+    };
+    const newBoard = (s = startW) => { startW = s; for (let t = 0; t < 200; t++) { const p = walk(15), w = p && wordsFor(s, p.length); if (p && pathOk(p, w)) { P = p; W = w; G = fill(P, W); break; } } idx = 0; mode = 'solve'; draw(); say('결과', `<b>${s}</b>에서 혈액은 어디로 갈까요? 옆 칸에서 찾아 눌러요.`); };
+    const solved = () => { idx = P.length - 1; paint(); say('미로를 풀었어요', '혈액은 허파순환과 온몸순환을 <b>반복</b>해요. 놀이판에서 두 순환을 찾아 짝에게 말해 봐요.', 'ok'); };
+    $('#mz').addEventListener('click', (e) => {
+      const b = e.target.closest('.cl'); if (!b) return; const [c, r] = b.dataset.k.split(',').map(Number);
+      if (mode === 'make') return makeTap(c, r, b);
+      if (idx >= P.length - 1) return;
+      const c0 = P[idx];
+      if (!adj(c0, [c, r])) { say('옆 칸을 눌러요', '지금 칸의 위, 아래, 왼쪽, 오른쪽 칸으로만 갈 수 있어요.', 'no'); return; }
+      const nxt = P[idx + 1];
+      if (c === nxt[0] && r === nxt[1]) {
+        idx++; paint(); const w = W[idx], pw = W[idx - 1];
+        if (idx === P.length - 1) solved();
+        else if (w === '좌심방') say('허파순환을 지났어요', '우심실 → 폐동맥 → 폐 → 폐정맥 → <b>좌심방</b>', 'ok');
+        else if (w === '우심방') say('온몸순환을 지났어요', '좌심실 → 대동맥 → 온몸 → 대정맥 → <b>우심방</b>', 'ok');
+        else say(w, `${pw} 다음은 <b>${w}</b>예요. 다음 칸을 찾아요.`);
+      } else { b.classList.add('bad'); setTimeout(() => b.classList.remove('bad'), 500); const hint = { 우심실: '우심실에서 나간 혈액은 폐로 가는 혈관을 지나요.', 폐동맥: '폐동맥은 어디로 이어질까요?', 폐: '폐를 나온 혈액은 어떤 혈관을 지날까요?', 폐정맥: '폐정맥은 심장의 어느 방으로 들어갈까요?', 좌심방: '좌심방의 혈액은 아래 방으로 내려가요.', 좌심실: '좌심실에서 온몸으로 나가는 혈관을 찾아요.', 대동맥: '대동맥은 어디로 이어질까요?', 온몸: '온몸을 지난 혈액은 어떤 혈관으로 돌아올까요?', 대정맥: '대정맥은 심장의 어느 방으로 들어갈까요?', 우심방: '우심방의 혈액은 아래 방으로 내려가요.' }[W[idx]]; say('여기는 아니에요', hint, 'no'); }
+    });
+    $('#bReset').addEventListener('click', () => { idx = 0; paint(); say('결과', `<b>${W[0]}</b>에서 혈액은 어디로 갈까요? 옆 칸에서 찾아 눌러요.`); });
+    $('#bNew').addEventListener('click', () => newBoard());
+    $$('#st button').forEach((b) => b.addEventListener('click', () => { $$('#st button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); newBoard(b.dataset.v); }));
+    /* ===== 내 미로 만들기 ===== */
+    let mkP = [[0, 0]], mkS = '우심실', mkDone = false;
+    const mkDraw = () => { const w = wordsFor(mkS, mkP.length); G = {}; mkP.forEach(([c, r], i) => { G[key(c, r)] = w[i]; }); P = mkP; W = w; idx = mkP.length - 1; draw(); const end = mkP[mkP.length - 1], at = end[0] === N - 1 && end[1] === N - 1; $('#mFill').disabled = !at; $('#mPlay').disabled = true; $('#mPrint').disabled = true; if (at) $('#mR').innerHTML = '끝 칸에 닿았어요. <b>나머지 칸 채우기</b>를 눌러요.'; else $('#mR').innerHTML = `지금 칸은 <b>${w[w.length - 1]}</b>이에요. 옆 칸을 눌러 <b>${next(w[w.length - 1])}</b>을(를) 놓아요.`; };
+    const makeTap = (c, r) => { if (mkDone) { $('#mR').innerHTML = '미로를 다 만들었어요. 풀어 보거나 인쇄해요.'; return; } const end = mkP[mkP.length - 1]; if (end[0] === N - 1 && end[1] === N - 1) return; if (!adj(end, [c, r])) { $('#mR').innerHTML = '지금 칸의 옆 칸만 누를 수 있어요.'; return; } if (mkP.some((p) => p[0] === c && p[1] === r)) { $('#mR').innerHTML = '이미 지나간 칸이에요. 다른 칸을 눌러요.'; return; } mkP = mkP.concat([[c, r]]); mkDraw(); };
+    $('#mBack').addEventListener('click', () => { mkDone = false; if (mkP.length > 1) mkP = mkP.slice(0, -1); mkDraw(); });
+    $$('#mst button').forEach((b) => b.addEventListener('click', () => { $$('#mst button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); mkS = b.dataset.v; mkP = [[0, 0]]; mkDone = false; mkDraw(); }));
+    $('#mFill').addEventListener('click', () => { const w = wordsFor(mkS, mkP.length); if (!pathOk(mkP, w)) { $('#mR').innerHTML = '내 길 안에 지름길이 생겼어요. <b>한 칸 지우기</b>로 길을 조금 바꿔요.'; return; } G = fill(mkP, w); mkDone = true; idx = mkP.length - 1; draw(); $$('#mz .cl').forEach((b) => b.classList.remove('on', 'cur')); $('#mPlay').disabled = false; $('#mPrint').disabled = false; $('#mR').innerHTML = '미로가 완성됐어요. 짝에게 건네거나 인쇄해요.'; });
+    $('#mPlay').addEventListener('click', () => { mode = 'solve'; idx = 0; tab('lab'); paint(); say('짝의 미로', `<b>${W[0]}</b>에서 혈액은 어디로 갈까요? 옆 칸에서 찾아 눌러요.`); });
+    $('#mPrint').addEventListener('click', () => { idx = -1; paint(); window.print(); });
+    const tab = (p) => { $$('#pt button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.p === p))); $$('.pane').forEach((e) => { e.hidden = e.dataset.p !== p; }); };
+    $$('#pt button').forEach((b) => b.addEventListener('click', () => {
+      const p = b.dataset.p; tab(p);
+      if (p === 'mk' && mode !== 'make') { mode = 'make'; mkP = [[0, 0]]; mkDone = false; mkDraw(); }
+      if (p === 'lab' && mode === 'make') newBoard();
+    }));
+    newBoard(q.get('s') || '우심실');
+    if (q.get('all')) solved();
+    if (q.get('tab')) { tab(q.get('tab')); if (q.get('tab') === 'mk') { mode = 'make'; mkDraw(); } }
+    window.SM = window.SM || {}; window.SM.okUI = true; window.__ready = true;
+  } catch (err) { window.SM_err && window.SM_err('단어 미로', err); }
+})();
+</script>
+</body>
+</html>
