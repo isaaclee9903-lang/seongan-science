@@ -14,6 +14,11 @@ import sys
 from playwright.sync_api import sync_playwright
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
+PAGE_H_MM = 297 - 15 - 17   # _ws.css @page 위·아래 여백을 뺀 판면 높이
+# .page 묶음이 있으면 쪽마다 내용 높이(mm)를 잰다. 남음이 크면 빈 곳, 넘침이면 다음 쪽으로 밀림
+FILL_JS = """() => { const mm = 96 / 25.4; return [...document.querySelectorAll('.page')].map(p => {
+  const a = p.firstElementChild.getBoundingClientRect().top, b = p.lastElementChild.getBoundingClientRect().bottom;
+  return (b - a) / mm; }); }"""
 
 
 def render(name: str, png_dir: str | None):
@@ -28,6 +33,9 @@ def render(name: str, png_dir: str | None):
             page.goto(src.as_uri() + query, wait_until="networkidle")
             page.evaluate("document.fonts.ready")
             page.wait_for_timeout(300)
+            fills = page.evaluate(FILL_JS)
+            if fills:
+                print(f"[{label}] 쪽마다 찬 높이(판면 {PAGE_H_MM}mm): " + ", ".join(f"{i + 1}쪽 {h:.0f}mm" + (" 넘침" if h > PAGE_H_MM else f" (남음 {PAGE_H_MM - h:.0f})") for i, h in enumerate(fills)))
             out = src.parent / f"{name}-{label}.pdf"
             page.pdf(path=str(out), prefer_css_page_size=True, print_background=True)
             outs.append(out)
