@@ -15,6 +15,7 @@
 - `docs/수업웹자료_표준개발절차.md` — 전체 제작 절차(2장).
 - `tools/lesson-kit/README.md` — 제작 도구 사용법과 수업별로 다시 쓸 수 있는 그리기 도구 목록.
 - `.claude/skills/lesson-web/` — 새 수업 페이지를 만드는 절차 스킬.
+- `worksheets/` — A4 흑백 종이 학습지(차시당 최대 4쪽, 교사판은 `?teacher=1`). 만드는 절차는 `.claude/skills/worksheet/` 스킬, 틀 설명은 `worksheets/README.md`.
 - `presentations/<수업이름>/index.html` — 선생님이 교실 큰 화면에서 넘기는 수업 발표(16:9, 단계별 등장, 눌러서 여는 빈칸, 화면 글은 개조식 "~함·~됨", 표지에 '이삭 선생님'). 학생 허브에는 넣지 않는다. **RAS 수업을 먼저 만들고 그 내용·3D를 가져와 만든다** → `.claude/skills/lesson-deck/`, 틀은 `tools/lesson-deck/motor-force/`. 첫 예: `presentations/motor-force/`(2026-11-03, 25장).
 
 ## 배포
