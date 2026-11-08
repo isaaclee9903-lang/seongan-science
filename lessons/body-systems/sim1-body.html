@@ -1,0 +1,1465 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>기관계의 상호작용 – 기관계 3D</title>
+<script>
+/* 문제 알림: 코드에 오류가 나면 화면 아래에 빨간 상자로 알려 줘요 (선생님 확인용) */
+(function () {
+  function box() {
+    var b = document.getElementById('smErr');
+    if (!b && document.body) {
+      b = document.createElement('div'); b.id = 'smErr';
+      b.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;background:#fdecea;color:#8a1f17;border:2px solid #d9534f;border-radius:12px;padding:10px 14px;font:600 14px/1.5 sans-serif;white-space:pre-wrap';
+      document.body.appendChild(b);
+    }
+    return b;
+  }
+  window.SM_err = function (where, err) {
+    var msg = '[' + where + '] ' + (err && err.message ? err.message : String(err));
+    var show = function () { var b = box(); if (b) b.textContent += (b.textContent ? '\n' : '') + msg; };
+    if (document.body) show(); else document.addEventListener('DOMContentLoaded', show);
+  };
+  window.addEventListener('error', function (e) { window.SM_err('스크립트', { message: e.message + ' (줄 ' + e.lineno + ')' }); });
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      var S = window.SM || {};
+      if (!S.okUI) window.SM_err('실행 안 됨', { message: '안내·버튼 코드가 실행되지 않았어요. 파일이 끝(</html>)까지 들어 있는지 확인해 주세요.' });
+      if (document.getElementById('fail3d') && !S.ok3d) { var f = document.getElementById('fail3d'); if (f) f.classList.add('show'); window.SM_err('3D 그림', { message: '3D 그림을 불러오지 못했어요. 인터넷 연결(cdn.jsdelivr.net)을 확인하고 새로고침해 주세요.' }); }
+    }, 9000);
+  });
+})();
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+
+  :root{--bg:#edf3f8;--card:#fff;--ink:#14263b;--ink2:#34495e;--muted:#5a6b7e;--line:#dde6ee;--accent:#0e63b3;--accent-soft:#e3effb;
+    --fab:#4b3fb5;--fab-soft:#ecebfb;--ok:#1f9d5c;--no:#d9534f;
+    --shadow:0 1px 2px rgba(20,38,59,.06),0 8px 24px rgba(20,38,59,.07);--ease:cubic-bezier(.2,.8,.2,1)}
+  *{box-sizing:border-box}html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:"Pretendard",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  button{font:inherit;color:inherit}
+  .app{max-width:1320px;margin:0 auto;padding:14px 16px 28px;display:flex;flex-direction:column;gap:12px}
+  .eyebrow{display:inline-flex;font-size:13px;font-weight:700;color:var(--fab);background:var(--fab-soft);padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(21px,2.4vw,28px);margin:6px 0 2px;letter-spacing:-.02em;word-break:keep-all}
+  .sub{margin:0;color:var(--muted);font-size:15px;word-break:keep-all}
+  .card{background:var(--card);border-radius:20px;box-shadow:var(--shadow);border:1px solid rgba(20,38,59,.04)}
+  .pad{padding:14px 16px}
+  .stage{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(330px,1fr);gap:14px;align-items:start}
+  .viewer{position:sticky;top:10px}
+  .flow{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px}
+  .fs{min-height:54px;border:0;border-radius:12px;background:#eef3f8;font-weight:800;font-size:13px;color:var(--muted);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.2;word-break:keep-all;padding:4px}
+  .fs b{font-size:15px}
+  .fs[aria-selected="true"]{background:var(--fab);color:#fff}
+  .fs.seen:not([aria-selected="true"]){background:#e5f5ec;color:#11703f}
+  .stepname{display:flex;align-items:center;gap:10px;margin:2px 0 6px}
+  .stepname .no{flex:none;width:40px;height:40px;border-radius:12px;background:var(--fab);color:#fff;display:grid;place-items:center;font-weight:900;font-size:19px}
+  .stepname h2{margin:0;font-size:21px;letter-spacing:-.01em;word-break:keep-all}
+  .stepname small{display:block;font-size:13px;color:var(--muted);font-weight:700}
+  .what{font-size:16px;line-height:1.75;color:var(--ink2);margin:0 0 10px;word-break:keep-all}
+  .phase{display:grid;gap:6px;margin:8px 0}
+  .ph{display:grid;grid-template-columns:28px 1fr;gap:8px;align-items:start;padding:7px 10px;border-radius:12px;background:#f7fafc;font-size:15px;line-height:1.55;color:var(--muted);word-break:keep-all;transition:background .3s,color .3s}
+  .ph i{font-style:normal;width:26px;height:26px;border-radius:8px;background:#dfe6ee;display:grid;place-items:center;font-weight:900;font-size:13px;color:#607285}
+  .ph.on{background:var(--fab-soft);color:var(--ink)}.ph.on i{background:var(--fab);color:#fff}
+  .ph.done{color:var(--ink2)}.ph.done i{background:#b9b2ee;color:#fff}
+  .box{border-radius:14px;padding:10px 12px;margin-top:8px;font-size:14.5px;line-height:1.65;word-break:keep-all}
+  .box b.t{display:block;font-size:13px;margin-bottom:2px}
+  .an{background:#fff8e6;border:1px solid #f3dc9a;color:#5b4300}
+  .fact{background:#eef6ff;border:1px solid #cfe2f6;color:#1d3f66}
+  .lnk{background:#ecf8f1;border:1px solid #c6e8d4;color:#0f5a36}
+  .src{display:block;font-size:12px;color:var(--muted);margin-top:3px}
+  .acts{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 0}
+  .btn{min-height:50px;border:0;border-radius:14px;padding:0 16px;font-weight:800;font-size:15.5px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;justify-content:center;word-break:keep-all}
+  .btn:active{transform:scale(.97)}
+  .btn.primary{background:var(--fab);color:#fff}.btn.ghost{background:#eef3f8;color:var(--ink2)}
+  .btn[aria-pressed="true"]{background:#14263b;color:#fff}
+  .btn:disabled{opacity:.4;cursor:default;transform:none}
+  .prog{height:6px;border-radius:3px;background:#e6edf4;margin-top:10px;overflow:hidden}
+  .prog i{display:block;height:100%;width:0;background:linear-gradient(90deg,#8a7ff0,var(--fab))}
+  .credit{text-align:center;font-size:13px;font-weight:700;color:#8495a8;letter-spacing:.02em;margin:6px 0 0}
+  /* ===== 3D 화면 공통 ===== */
+  :root{--Bc:#14a5d0;--Ic:#2fae4a;--Fc:#f0522a;--N:#d8433b;--S:#2f62c9;--P:#7d5ad6}
+  .viewer{position:relative;overflow:hidden;padding:0}
+  .gl-host{position:relative;width:100%;height:min(74vh,700px);min-height:380px;background:linear-gradient(#f6f9fc,#d6e3ef);touch-action:none}
+  .gl-host canvas.gl{display:block;width:100%;height:100%;outline:none}
+  .lbls{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+  .lb{position:absolute;left:0;top:0;white-space:nowrap;font-weight:800;font-size:14px;padding:3px 9px;border-radius:9px;background:rgba(255,255,255,.88);color:#34495e;box-shadow:0 2px 8px rgba(20,38,59,.14);will-change:transform}
+  .lb.small{font-size:12px;font-weight:700;color:#5a6b7e;background:rgba(255,255,255,.72);box-shadow:none}
+  .lb.B{background:var(--Bc);color:#fff}.lb.I{background:var(--Ic);color:#fff}.lb.F{background:var(--Fc);color:#fff;font-size:15px}
+  .lb.P{background:var(--P);color:#fff}
+  .lb.dim{opacity:.35}
+  .vt{position:absolute;display:flex;gap:6px;flex-wrap:wrap;z-index:3}
+  .vt.tl{left:10px;top:10px;max-width:calc(100% - 20px)}
+  .vt.tr{right:10px;top:10px;justify-content:flex-end}
+  .vt.bl{left:10px;bottom:10px;align-items:center}
+  .vb{min-height:44px;padding:0 12px;border-radius:12px;border:1px solid rgba(20,38,59,.12);background:rgba(255,255,255,.9);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);font-weight:800;font-size:14px;color:#34495e;cursor:pointer;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 10px rgba(20,38,59,.08)}
+  .vb:active{transform:scale(.96)}
+  .vb .dot{width:12px;height:12px;border-radius:50%;flex:none}
+  .vb[aria-pressed="false"]{opacity:.62}
+  .vb[aria-pressed="false"] .dot{background:#c2ccd6!important}
+  .vb.sel{background:#14263b;color:#fff;border-color:#14263b}
+  .hint{font-size:12.5px;font-weight:700;color:#5a6b7e;background:rgba(255,255,255,.78);border-radius:10px;padding:6px 10px;word-break:keep-all}
+  .inset{position:absolute;z-index:2;border-radius:18px;border:2px solid rgba(255,255,255,.95);box-shadow:0 10px 30px rgba(20,38,59,.22),inset 0 0 0 1px rgba(20,38,59,.08);pointer-events:none;display:none}
+  .inset.on{display:block}
+  .inset .it{position:absolute;left:8px;top:8px;font-size:12.5px;font-weight:900;color:#14263b;background:rgba(255,255,255,.9);border-radius:8px;padding:3px 8px}
+  .inset .ic{position:absolute;left:6px;right:6px;bottom:6px;display:flex;flex-wrap:wrap;gap:4px;justify-content:center}
+  .inset .ic span{font-size:11.5px;font-weight:800;color:#fff;border-radius:7px;padding:2px 7px;white-space:nowrap}
+  .fail3d{position:absolute;inset:0;display:none;place-items:center;text-align:center;padding:24px;font-size:16px;font-weight:700;color:#7a2a22;line-height:1.7;word-break:keep-all;background:#fff4f2}
+  .fail3d.show{display:grid}
+  .model{font-size:13px;color:var(--muted);text-align:right;margin:0;word-break:keep-all}
+  @media (max-width:900px){.gl-host{height:min(56vh,620px)}}
+  .zoombadge{position:absolute;right:10px;top:62px;z-index:3;font-size:13px;font-weight:800;color:#fff;background:rgba(75,63,181,.9);border-radius:10px;padding:6px 10px;display:none;word-break:keep-all;max-width:60%}
+  .zoombadge.on{display:block}
+  @media (max-width:900px){.stage{grid-template-columns:1fr}.viewer{position:relative;top:0}}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+  /* ===== 광합성 수업 공통 ===== */
+  :root{--fab:#0e63b3;--fab-soft:#e4f0fb}
+  .eyebrow{color:#0e63b3;background:#e4f0fb}
+  .prog i{background:#0e63b3}
+  .ph.done i{background:#8db8e3}
+  [hidden]{display:none!important}
+  .fbk{border-radius:14px;padding:12px 14px;margin-top:10px;font-size:15px;line-height:1.65;word-break:keep-all;background:#f6f9fc;border:1px solid #dbe4ed;color:var(--ink2)}
+  .fbk.ok{background:#e9f3fd;border-color:#bcd7f2;color:#0b3f73}
+  .fbk.no{background:#fff4f2;border-color:#f3c2bb;color:#5e2a25}
+  .fbk b.t{display:block;font-size:13.5px;margin-bottom:2px}
+  .scene{position:relative;width:100%;overflow:hidden;touch-action:manipulation;user-select:none;-webkit-user-select:none;background:#fff}
+  .psv{position:absolute;inset:0;width:100%;height:100%;display:block;overflow:visible}
+  .olay{position:absolute;inset:0;pointer-events:none}
+  .ol{position:absolute;transform:translate(-50%,-50%);white-space:nowrap;font-weight:800;font-size:clamp(12px,1.35vw,15.5px);line-height:1.3;letter-spacing:-.01em;color:#14263b;transition:opacity .25s}
+  .ol.la{transform:translate(-100%,-50%)}.ol.ra{transform:translate(0,-50%)}
+  .ol.bg{background:rgba(255,255,255,.9);padding:2px 8px;border-radius:7px}
+  .ol.lt{color:#fff;text-shadow:0 1px 3px rgba(10,30,20,.55)}
+  .ol.m{font-weight:700;color:#5a6b7e}
+  .ol.big{font-size:clamp(14px,1.7vw,18px)}
+  .ol small{font-weight:700;color:#5a6b7e;font-size:.88em}
+  .ol[data-off="1"]{opacity:0}
+  .psv .tap{cursor:pointer}
+  .steps{display:grid;gap:5px;margin:0 0 10px}
+  .steps .ph{padding:6px 10px;font-size:14.5px;line-height:1.5}
+  .ctl{display:grid;gap:8px}
+  .ctl .btn{width:100%}
+  .ctl .two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .btn.done,.btn:disabled{background:#eef3f8;color:#8b9aab;cursor:default}
+  .pred{display:grid;gap:6px}
+  .pred button,.qa3 button{min-height:46px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:14.5px;cursor:pointer;word-break:keep-all;line-height:1.35;padding:4px 10px;text-align:left}
+  .pred button[aria-pressed="true"],.qa3 button[aria-pressed="true"]{border-color:var(--fab);background:#e9f3fd;color:#0b3f73}
+  .pred button:disabled{cursor:default}
+  .seglbl{font-size:13px;font-weight:800;color:var(--muted);margin:2px 0}
+  .qa{margin-bottom:12px}
+  .qa p{margin:0 0 6px;font-weight:800;font-size:15px;line-height:1.5;word-break:keep-all}
+  .qa3{display:grid;gap:6px}
+  .qa3 button.good{border-color:var(--ok);background:#e8f7ef;color:#11703f}
+  .qa3 button.bad{border-color:#e7a29b;background:#fff4f2;color:#9b3a32}
+  .eqn{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:4px 8px;padding:10px 8px;border-radius:14px;background:#f6f9fc;border:1px solid #dbe4ed;font-weight:800;font-size:15px;word-break:keep-all}
+  .eqn span{transition:color .3s,opacity .3s}.eqn .off{color:#a7b3c0}
+  .eqn .ar{display:inline-flex;flex-direction:column;align-items:center;font-size:12px;line-height:1.1;color:#5a6b7e}
+  .eqn .ar i{font-style:normal;font-size:17px;color:#14263b}
+  .tog{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+  .tog button{min-height:64px;border-radius:14px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:14.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:#5a6b7e;word-break:keep-all;line-height:1.25;padding:4px}
+  .tog button svg{width:38px;height:22px;display:block;overflow:visible}
+  .tog button[aria-pressed="true"]{border-color:var(--fab);background:#e9f3fd;color:#0b3f73}
+  .lvls{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:6px;flex:1 1 320px}
+  .lvls button{min-height:46px;border-radius:12px;border:1px solid #d4dee8;background:#fff;color:#34495e;font-weight:800;font-size:14.5px;cursor:pointer;word-break:keep-all;line-height:1.2;padding:2px 4px}
+  .lvls button[aria-pressed="true"]{background:#14263b;color:#fff;border-color:#14263b}
+  .ptxt{font-size:15px;line-height:1.65;color:var(--ink2);margin:0 0 10px;word-break:keep-all}
+  .ptxt b{color:#0b3f73}
+  .whylist{display:grid;gap:6px;margin:0;padding:0;list-style:none}
+  .whylist li{display:grid;grid-template-columns:26px 1fr;gap:8px;font-size:14.5px;line-height:1.55;color:var(--ink2);word-break:keep-all;padding:7px 10px;border-radius:12px;background:#f7fafc}
+  .whylist li i{font-style:normal;width:24px;height:24px;border-radius:8px;background:#0e63b3;color:#fff;display:grid;place-items:center;font-weight:900;font-size:13px}
+  .whylist b{color:#0b3f73}
+  /* ===== 한 화면 배치 (2026-10-15: 태블릿 한 화면 안에서 실험과 결과가 끝나도록) ===== */
+  .app{padding:10px 16px 12px;gap:10px}
+  header.top{display:flex;align-items:center;justify-content:space-between;gap:10px 16px;flex-wrap:wrap}
+  header.top .ttl{min-width:0}
+  header.top .ttl .eyebrow{margin-right:6px;vertical-align:4px}
+  header.top h1{display:inline;font-size:clamp(20px,2.1vw,25px);margin:0}
+  header.top .sub{margin-top:3px;font-size:14.5px}
+  .stage{align-items:stretch}
+  .stage > .viewer{position:relative;top:0;display:flex;flex-direction:column;justify-content:center}
+  .ptabs{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;background:#eef3f8;border-radius:14px;padding:4px;margin-bottom:12px}
+  .ptabs button{min-height:44px;border:0;border-radius:11px;background:transparent;font-weight:800;font-size:14.5px;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
+  .ptabs button[aria-selected="true"]{background:#fff;color:var(--fab);box-shadow:0 1px 3px rgba(20,38,59,.14)}
+  .ptabs button small{font-size:12px;font-weight:800;color:#0b3f73;background:#dcebfa;border-radius:8px;padding:1px 6px}
+  .ptabs.big{min-width:min(100%,380px)}
+  .ptabs.big button{min-height:48px;font-size:15.5px}
+  .pane[hidden]{display:none!important}
+  .mnote{font-size:12.5px;color:var(--muted);line-height:1.6;margin:10px 0 0;word-break:keep-all}
+  .viewer{background:#fff}
+  .vctl{display:flex;flex-wrap:wrap;gap:8px;padding:10px 12px;background:#f3f6f9;border-top:1px solid var(--line);align-items:center}
+  .vctl .vb{box-shadow:none}
+  .vctl .vb[aria-pressed="true"]{background:#14263b;color:#fff;border-color:#14263b;opacity:1}
+  .vctl .vb[aria-pressed="false"]{opacity:1}
+  .vctl .sp{flex:1}
+  .lbl{font-size:13px;font-weight:900;color:var(--fab);margin:12px 0 6px;word-break:keep-all}
+  .lbl:first-child,.pane > .lbl:first-child{margin-top:0}
+  .what{font-size:15.5px;line-height:1.7;color:var(--ink2);margin:0 0 8px;word-break:keep-all}
+  .ph.on{background:#eef5fc}.ph.on i{background:var(--fab)}
+  .viewer > .scene.grow{flex:1 1 auto;min-height:300px;aspect-ratio:auto!important}
+  /* 화면 높이를 꽉 채우기: 그림 칸이 남는 높이를 차지 */
+  html,body{height:100%}
+  .app{height:100vh;height:100dvh;max-height:1400px}
+  .stage{flex:1 1 auto;min-height:0}
+  .stage > .card.pad{overflow:auto}
+  @media (max-width:900px){.stage{grid-template-rows:minmax(0,1fr) auto}}
+  /* ===== 환경요인 수업 전용 ===== */
+  .mlabel{font-weight:800;font-size:14.5px;color:#14263b;white-space:nowrap}
+  .meter{flex:1 1 auto;height:18px;border-radius:9px;background:#dfe7ee;overflow:hidden;min-width:120px}
+  .meter i{display:block;height:100%;background:#0e63b3;border-radius:9px;width:0;transition:width .45s cubic-bezier(.2,.8,.2,1)}
+  .presets{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:4px 0 8px}
+  .presets button{min-height:44px;border-radius:12px;border:1px solid #d4dee8;background:#fff;color:#34495e;font-weight:800;font-size:14px;cursor:pointer;word-break:keep-all;line-height:1.25;padding:2px 8px}
+  .presets button:active{background:#eef3f8}
+  .sl{display:grid;grid-template-columns:118px 1fr;column-gap:10px;align-items:center;margin-top:2px}
+  .sl label{font-weight:800;font-size:14px;word-break:keep-all;line-height:1.25;color:#14263b}
+  .sl .ticks{grid-column:2;display:flex;justify-content:space-between;font-size:12px;font-weight:700;color:#5a6b7e;margin-top:-6px}
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:36px;background:transparent;margin:0;cursor:pointer;touch-action:pan-y}
+  input[type=range]::-webkit-slider-runnable-track{height:8px;border-radius:4px;background:linear-gradient(90deg,#0e63b3 var(--v,50%),#dbe4ed var(--v,50%))}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:34px;height:34px;margin-top:-13px;border-radius:50%;background:#fff;border:2px solid #0e63b3;box-shadow:0 2px 5px rgba(20,38,59,.22)}
+  input[type=range]::-moz-range-track{height:8px;border-radius:4px;background:#dbe4ed}
+  input[type=range]::-moz-range-progress{height:8px;border-radius:4px;background:#0e63b3}
+  input[type=range]::-moz-range-thumb{width:30px;height:30px;border-radius:50%;background:#fff;border:2px solid #0e63b3}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .two button{min-height:44px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:14.5px;cursor:pointer;word-break:keep-all;line-height:1.25;padding:2px 8px}
+  .two button[aria-pressed="true"]{border-color:#0e63b3;background:#e9f3fd;color:#0b3f73}
+  .rt{width:100%;border-collapse:collapse;font-size:14.5px}
+  .rt th{font-size:12.5px;color:#5a6b7e;text-align:left;padding:4px 6px;border-bottom:1px solid #dde6ee;word-break:keep-all}
+  .rt td{padding:8px 6px;border-bottom:1px solid #eef2f6;font-weight:700;color:#34495e}
+  .rt .none td{font-weight:600;color:#5a6b7e;text-align:center;padding:18px 6px}
+  .mini{display:block;height:10px;border-radius:5px;background:#e3eaf0;overflow:hidden;min-width:70px}
+  .mini i{display:block;height:100%;background:#0e63b3}
+  .vars{display:grid;grid-template-columns:auto 1fr;gap:3px 10px;font-size:14px;line-height:1.45;margin:0 0 8px;padding:8px 10px;border-radius:12px;background:#f6f9fc;border:1px solid #dbe4ed;word-break:keep-all}
+  .vars dt{font-weight:700;color:#5a6b7e}
+  .vars dd{margin:0;font-weight:800;color:#14263b}
+  .vars dd.on{color:#0e63b3}
+  .seg3{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:6px}.seg3 button{min-height:46px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:14.5px;cursor:pointer;word-break:keep-all;line-height:1.2;padding:2px 6px}.seg3 button[aria-pressed="true"]{border-color:#0e63b3;background:#e9f3fd;color:#0b3f73}.seg3 button:disabled{opacity:.55;cursor:default}
+  /* 탐구 계획서 */
+  .paper{display:flex;flex-direction:column;min-height:0;padding:12px 14px;overflow:auto}
+  .paper h2{margin:0 0 8px;font-size:18px;display:flex;align-items:baseline;gap:8px}
+  .paper h2 small{font-size:12.5px;color:#5a6b7e;font-weight:700}
+  .pgrid{display:grid;grid-template-columns:116px 1fr;grid-template-rows:repeat(7,auto) minmax(148px,1fr) auto;border:1px solid #b9c8d6;border-radius:10px;overflow:hidden;flex:1 1 auto;min-height:0}
+  .pgrid > .k{background:#e8f1fa;font-weight:800;font-size:13.5px;line-height:1.3;color:#14263b;padding:6px 8px;display:flex;align-items:center;border-bottom:1px solid #c9d7e4;word-break:keep-all}
+  .pgrid > .k.sub{padding-left:14px;font-size:12.5px;font-weight:700;background:#f1f6fb}
+  .pgrid > .v{border-bottom:1px solid #dbe4ed;border-left:1px solid #c9d7e4;display:flex;min-height:0}
+  .pgrid > .k.last,.pgrid > .v.last{border-bottom:0}
+  .pgrid textarea{flex:1;border:0;background:#fff;resize:none;font:inherit;font-size:14px;line-height:1.5;color:#14263b;padding:5px 8px;min-height:34px;word-break:keep-all;width:100%;outline-offset:-2px}
+  .pgrid textarea:focus{background:#f7fbff}
+  .pgrid textarea::placeholder{color:#a3afbb;font-weight:500}
+  .pgrid .tall textarea{min-height:148px}
+  .stepper{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:3px;margin:0 0 10px}
+  .stepper button{min-height:44px;border:0;border-radius:10px;background:#eef3f8;font-weight:800;font-size:13px;color:#5a6b7e;cursor:pointer;line-height:1.15;word-break:keep-all;padding:2px}
+  .stepper button[aria-selected="true"]{background:#0e63b3;color:#fff}
+  .stepper button.done:not([aria-selected="true"]){background:#dcebfa;color:#0b3f73}
+  .ask{font-size:16px;font-weight:800;line-height:1.45;margin:0 0 4px;word-break:keep-all}
+  .ask + p{font-size:14px;color:#34495e;line-height:1.55;margin:0 0 8px;word-break:keep-all}
+  .opts{display:grid;gap:6px}
+  .opts button{min-height:46px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:700;font-size:14.5px;cursor:pointer;word-break:keep-all;line-height:1.35;padding:4px 10px;text-align:left;color:#14263b}
+  .opts button[aria-pressed="true"]{border-color:#0e63b3;background:#e9f3fd;color:#0b3f73}
+  .opts.g2{grid-template-columns:1fr 1fr}
+  .vsort{display:grid;gap:6px}
+  .vsort .row{display:grid;grid-template-columns:1fr 92px 92px;gap:4px;align-items:center;font-weight:800;font-size:14px;word-break:keep-all;line-height:1.25}
+  .vsort .row button{min-height:44px;border-radius:10px;border:2px solid #d4dee8;background:#fff;font-weight:700;font-size:12.5px;cursor:pointer;line-height:1.15;padding:2px;word-break:keep-all}
+  .vsort .row button[aria-pressed="true"]{border-color:#0e63b3;background:#e9f3fd;color:#0b3f73}
+  .order{display:grid;gap:5px}
+  .order button{display:grid;grid-template-columns:28px 1fr;gap:8px;align-items:center;min-height:44px;border-radius:11px;border:2px solid #d4dee8;background:#fff;font-weight:700;font-size:13.5px;line-height:1.3;cursor:pointer;text-align:left;padding:3px 8px;word-break:keep-all;color:#14263b}
+  .order button i{font-style:normal;width:24px;height:24px;border-radius:7px;background:#eef3f8;display:grid;place-items:center;font-weight:900;font-size:13px;color:#5a6b7e}
+  .order button.picked{border-color:#0e63b3;background:#e9f3fd}.order button.picked i{background:#0e63b3;color:#fff}
+  .navb{display:grid;grid-template-columns:1fr 1.4fr;gap:6px;margin-top:10px}
+  .navb .btn{width:100%;min-height:46px}
+  .pfoot{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+  .pfoot .btn{min-height:44px;font-size:14px;padding:0 8px}
+  .peer{display:grid;gap:3px;margin:0 0 6px}
+  .peer label{display:grid;grid-template-columns:30px 1fr;align-items:center;font-size:14px;font-weight:700;line-height:1.35;min-height:38px;word-break:keep-all;cursor:pointer}
+  .peer input{width:22px;height:22px;accent-color:#0e63b3}
+  .fbtxt{width:100%;border:1px solid #cdd9e4;border-radius:10px;font:inherit;font-size:14px;line-height:1.45;padding:6px 9px;resize:none;margin-top:4px;min-height:52px}
+  .slx{display:grid;grid-template-columns:auto 1fr;align-items:center;gap:10px;margin-top:4px}
+  .slx label{font-weight:800;font-size:14px;word-break:keep-all}
+  @media print{
+    body{background:#fff}
+    .stage{display:block}
+    .helper,header.top,.pfoot{display:none!important}
+    .paper{box-shadow:none;border:0;overflow:visible}
+    .app{height:auto;max-height:none}
+    .pgrid textarea{min-height:48px}
+  }
+  @media (max-width:900px){
+    .sl{grid-template-columns:140px 1fr}
+  }
+  /* ===== 기관계의 상호작용 수업 전용 ===== */
+  .legend{display:flex;flex-wrap:wrap;gap:4px 14px;padding:8px 12px;background:#f3f6f9;border-top:1px solid var(--line);font-size:13.5px;font-weight:800;color:#34495e;justify-content:center}
+  .legend span{display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+  .uic{flex:none;vertical-align:middle}
+  .procs{display:grid;gap:6px}
+  .procs button{display:grid;grid-template-columns:28px 64px 1fr;align-items:center;gap:8px;min-height:52px;border-radius:14px;border:2px solid #d4dee8;background:#fff;cursor:pointer;text-align:left;padding:4px 12px;color:#14263b;font-family:inherit}
+  .procs button i{font-style:normal;width:26px;height:26px;border-radius:8px;background:#c9d5e1;color:#fff;display:grid;place-items:center;font-weight:900;font-size:13.5px}
+  .procs button b{font-size:17px;font-weight:900}
+  .procs button span{font-size:13.5px;font-weight:700;color:#5a6b7e;word-break:keep-all}
+  .procs button[aria-pressed="true"]{border-color:#0e63b3;background:#e9f3fd}
+  .procs button[aria-pressed="true"] i{background:#0e63b3}
+  .procs button:disabled{opacity:.45;cursor:default}
+  .mt{width:100%;border-collapse:collapse;table-layout:fixed;font-size:14px}
+  .mt th,.mt td{border-bottom:1px solid #e3eaf0;padding:5px 2px;text-align:center;word-break:keep-all;line-height:1.25}
+  .mt thead th{font-size:11.5px;color:#5a6b7e;font-weight:800}
+  .mt thead th small{display:block;margin-top:1px}
+  .mt tbody th{font-size:12.5px;text-align:left;color:#34495e;width:30%}
+  .mt td{font-weight:900;color:#a7b4c2;font-size:16px}
+  .mt td.y{color:#0e63b3}
+  .qa > p{font-size:15.5px;line-height:1.6;font-weight:700;margin:0 0 8px;word-break:keep-all}
+  .qa .opts{display:grid;gap:5px}.qa .opts button{min-height:46px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:700;font-size:14px;cursor:pointer;text-align:left;padding:4px 10px;line-height:1.35;word-break:keep-all;color:#14263b;font-family:inherit}
+  .qa .opts button.good{border-color:#0e63b3;background:#e9f3fd;color:#0b3f73}.qa .opts button.bad{border-color:#c0392b;background:#fbecea}
+  .tq{width:100%;border-collapse:collapse;font-size:13.5px;table-layout:fixed;margin-bottom:6px}.tq td,.tq th{border-bottom:1px solid #e3eaf0;padding:5px 4px;text-align:center;word-break:keep-all}.tq th{font-size:12.5px;color:#5a6b7e}
+  header.top .ptabs.big{margin:0;min-width:min(100%,380px)}
+  .nlist{display:grid;gap:6px}
+  .nlist button{display:grid;grid-template-columns:96px 1fr;align-items:center;gap:8px;min-height:48px;border-radius:14px;border:2px solid #d4dee8;background:#fff;cursor:pointer;text-align:left;padding:4px 12px;color:#14263b;font-family:inherit}
+  .nlist button b{font-size:16px;font-weight:900}.nlist button span{font-size:13.5px;font-weight:700;color:#5a6b7e;word-break:keep-all;line-height:1.35}
+  .nlist button[aria-pressed="true"]{border-color:#0e63b3;background:#e9f3fd}
+  .route{display:grid;gap:4px;margin:6px 0 8px}
+  .route .r{display:grid;grid-template-columns:24px 1fr;gap:7px;align-items:center;border-radius:11px;padding:3px 8px;line-height:1.3;background:#f5f8fb;font-size:14.5px;font-weight:800;color:#8a99a8;word-break:keep-all;transition:background .25s}
+  .route .r i{font-style:normal;width:24px;height:24px;border-radius:8px;background:#c9d5e1;color:#fff;display:grid;place-items:center;font-weight:900;font-size:13px}
+  .route .r small{font-weight:700;color:#8a99a8;font-size:12px;margin-left:4px}
+  .route .r.on{background:#e3effb;color:#0b3f73}.route .r.on i{background:#0e63b3}.route .r.on small{color:#34495e}
+  .route .r.done{color:#34495e}.route .r.done i{background:#7fa6cc}
+  .route.cols{grid-template-columns:1fr 1fr}
+  .fact2{font-size:14.5px;line-height:1.6;color:var(--ink2);word-break:keep-all;margin:8px 0 0;padding:8px 12px;border-left:3px solid #0e63b3;background:#f7fafc;border-radius:0 10px 10px 0}
+  .bsi{flex:none;vertical-align:middle}
+  .subs{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .subs button{display:flex;align-items:center;gap:8px;min-height:50px;border-radius:14px;border:2px solid #d4dee8;background:#fff;cursor:pointer;padding:4px 12px;font-weight:900;font-size:16px;color:#14263b;font-family:inherit;text-align:left}
+  .subs button[aria-pressed="true"]{border-color:#0e63b3;background:#e9f3fd}
+  .subs button:disabled{opacity:.45;cursor:default}
+  .cellbox{position:absolute;left:10px;bottom:74px;width:min(38%,330px);aspect-ratio:420/300;border-radius:14px;overflow:hidden;border:1px solid #dde6ee;background:#fbf5f2;z-index:5;box-shadow:0 2px 10px rgba(20,38,59,.08)}
+  .cellsvg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:4}
+  .mon{display:grid;gap:6px;margin:6px 0 8px}
+  .mon .row{display:grid;grid-template-columns:86px 1fr;gap:8px;align-items:center;font-size:14px;font-weight:800;color:#34495e}
+  .mon canvas{width:100%;height:46px;background:#f7fafc;border:1px solid #e3eaf0;border-radius:10px;display:block}
+  .tg4{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .tg4 button{min-height:52px;border-radius:14px;border:2px solid #d4dee8;background:#fff;cursor:pointer;font-weight:900;font-size:15.5px;color:#14263b;font-family:inherit;line-height:1.25}
+  .tg4 button small{display:block;font-size:12.5px;font-weight:700;color:#5a6b7e}
+  .tg4 button[aria-pressed="true"]{border-color:#c0392b;background:#fbecea}
+  .tg4 button[aria-pressed="true"] small{color:#a2382c}
+  .lgd{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:13.5px;font-weight:800;color:#34495e;margin:6px 0 0}
+  .lgd span{display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+  .sent{font-size:17px;line-height:2.05;color:#14263b;word-break:keep-all;margin:10px 0 4px;padding:10px 14px;border-radius:14px;background:#f7fafc;border:1px solid #e3eaf0}
+  .sent .sn{display:block;font-size:14px;color:#0b3f73;line-height:1.4;margin-bottom:2px}
+  .sent .bl{display:inline-flex;align-items:center;justify-content:center;min-width:92px;min-height:40px;margin:0 3px;padding:0 10px;border-radius:10px;border:2px dashed #9fb4c8;background:#fff;font:800 16px Pretendard,sans-serif;color:#0b3f73;cursor:pointer;vertical-align:middle}
+  .sent .bl.f{border-style:solid;border-color:#c6dbf0;background:#eef5fc}
+  .sent .bl.on{border-color:#0e63b3;box-shadow:0 0 0 2px #cfe2f6}
+  .sent .bl.bad{border-color:#c0392b;background:#fbecea;color:#a2382c}
+  .hint2{font-size:13px;color:#5a6b7e;margin:4px 0 6px;word-break:keep-all}
+  .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .chips button{min-height:44px;padding:0 16px;border-radius:12px;border:1px solid #c9d6e3;background:#fff;font:800 16px Pretendard,sans-serif;color:#14263b;cursor:pointer}
+  .arr{display:grid;gap:6px}
+  .arow{display:grid;grid-template-columns:34px 1fr;gap:8px;align-items:center;padding:6px 8px;border-radius:14px;background:#f7fafc;border:2px solid transparent}
+  .arow.on{border-color:#cfe2f6;background:#f0f6fd}
+  .arow > b{font-size:20px;color:#0e63b3;text-align:center}
+  .opts4{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+  .opts4 button{min-height:46px;border-radius:11px;border:2px solid #d4dee8;background:#fff;font:800 14.5px Pretendard,sans-serif;color:#14263b;cursor:pointer;word-break:keep-all;line-height:1.2;padding:2px 4px}
+  .opts4 button.good{border-color:#0e63b3;background:#e9f3fd;color:#0b3f73}
+  .opts4 button.bad{border-color:#c0392b;background:#fbecea}
+  .cellwide{width:min(100%,360px);aspect-ratio:420/300;margin-left:auto!important;margin-right:auto!important;border-radius:14px;overflow:hidden;border:1px solid #dde6ee;background:#fbf5f2;margin:4px 0 8px}
+  .eq{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px 8px;font-weight:900;font-size:17px;padding:8px;border-radius:12px;background:#f7fafc;border:1px solid #e3eaf0}
+  .eq span{display:inline-flex;align-items:center;gap:4px}
+  .eq .en{color:#a3520c}
+  .eq b{color:#5a6b7e}
+.viewer{position:relative}
+header.top .ptabs.big{min-width:min(100%,560px)}
+.nlist button{grid-template-columns:78px 1fr}
+.nlist .all{grid-template-columns:1fr;text-align:center;justify-items:center}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top"><div class="ttl"><span class="eyebrow">시뮬레이션</span><h1>기관계 3D</h1>
+    <p class="sub">실제 사람 자료로 만든 한 몸에서 네 기관계가 조직세포에 산소와 영양소를 보내고, 이산화 탄소와 노폐물을 내보내는 길을 살펴봐요.</p></div>
+    <div class="ptabs big" role="tablist" id="at"><button type="button" role="tab" data-a="sys" aria-selected="true">네 기관계</button><button type="button" role="tab" data-a="path" aria-selected="false">물질 따라가기</button><button type="button" role="tab" data-a="run" aria-selected="false">운동할 때</button><button type="button" role="tab" data-a="off" aria-selected="false">하나가 멈추면</button></div></header>
+  <div class="stage">
+    <section class="card viewer">
+      <div class="scene grow gl-host" id="fig" style="height:auto;background:#fff" role="img" aria-label="머리뼈부터 넓적다리까지의 3D 모형. 식도·위·간·작은창자·큰창자, 숨관·폐·가로막, 심장과 혈관, 콩팥·오줌관·방광이 함께 보인다. 산소·이산화 탄소·영양소·노폐물 알갱이가 흐른다."></div>
+      <div class="cellbox" id="cb" role="img" aria-label="조직세포 확대 그림. 모세혈관에서 산소와 영양소가 조직세포로 들어가고, 세포호흡으로 에너지가 나오며, 이산화 탄소와 노폐물이 모세혈관으로 나온다."></div>
+      <svg class="cellsvg" id="cl"><line id="cln" stroke="#14263b" stroke-width="1" stroke-dasharray="3 3"/></svg>
+      <div class="vctl"><div class="lgd" id="lg" style="flex:1;margin:0"></div><button class="btn" type="button" id="rv" style="min-height:44px">처음 보기</button></div>
+    </section>
+    <section class="card pad">
+      <div class="pane" data-a="sys">
+        <p class="lbl">기관계를 눌러 몸속에서 찾아봐요</p>
+        <div class="nlist" id="sl">
+          <button type="button" data-s="dig" aria-pressed="false"><b>소화계</b><span>음식물 속의 영양소를 세포가 흡수할 수 있게 작게 분해하고, 흡수해요</span></button>
+          <button type="button" data-s="res" aria-pressed="false"><b>호흡계</b><span>공기 중의 산소를 받아들이고 몸속의 이산화 탄소를 몸 밖으로 내보내요</span></button>
+          <button type="button" data-s="cir" aria-pressed="false"><b>순환계</b><span>산소와 영양소를 조직세포에 전달하고, 이산화 탄소와 노폐물을 호흡 기관과 배설 기관으로 전달해요</span></button>
+          <button type="button" data-s="exc" aria-pressed="false"><b>배설계</b><span>혈액 속의 노폐물을 걸러 오줌으로 만들어 몸 밖으로 내보내요</span></button>
+        </div>
+        <div class="fbk" id="res" style="margin-top:8px"><b class="t" id="resT">처음</b><span id="resM"></span></div>
+      </div>
+      <div class="pane" data-a="path" hidden>
+        <p class="lbl">어떤 물질을 따라갈까요?</p>
+        <div class="subs" id="sb"></div>
+        <div class="route" id="rt"></div>
+        <div class="fbk" id="pres"><b class="t" id="presT">따라가기</b><span id="presM"></span></div>
+      </div>
+      <div class="pane" data-a="run" hidden>
+        <div class="ptabs" role="tablist" id="rtab"><button type="button" role="tab" data-p="do" aria-selected="true">해 보기</button><button type="button" role="tab" data-p="why" aria-selected="false">왜 그럴까?</button></div>
+        <div class="pp" data-p="do">
+          <div class="seg3" id="rn"><button type="button" data-v="1" aria-pressed="true">쉴 때</button><button type="button" data-v="2" aria-pressed="false">격렬한 운동</button></div>
+          <div class="mon"><div class="row"><span>숨쉬기</span><canvas id="mB"></canvas></div><div class="row"><span>심장 박동</span><canvas id="mH"></canvas></div></div>
+          <div class="fbk" id="rres"><b class="t" id="rresT">쉴 때</b><span id="rresM"></span></div>
+          <p class="mnote">눈금이 없는 모형이에요. 숨쉬기와 심장 박동이 빨라지는 정도는 사람과 운동에 따라 달라요.</p>
+        </div>
+        <div class="pp" data-p="why" hidden><ol class="whylist">
+          <li><i>1</i><span>격렬한 운동을 하면 근육의 조직세포가 <b>에너지</b>를 더 많이 써요.</span></li>
+          <li><i>2</i><span>에너지를 더 얻으려면 <b>세포호흡</b>이 더 많이 일어나야 해요. 그래서 산소와 영양소가 더 많이 필요해요.</span></li>
+          <li><i>3</i><span><b>호흡계</b>는 숨을 빠르게 쉬어 산소를 더 많이 받아들이고, 세포호흡으로 더 많이 생긴 이산화 탄소를 내보내요.</span></li>
+          <li><i>4</i><span><b>순환계</b>는 심장이 빠르게 뛰어 산소와 영양소를 조직세포에 더 빨리 전달해요. 숨이 가빠지는 것은 기관계가 함께 일하기 때문이에요.</span></li></ol></div>
+      </div>
+      <div class="pane" data-a="off" hidden>
+        <p class="lbl">한 기관계가 제대로 일하지 못하면 어떻게 될까요?</p>
+        <div class="tg4" id="og">
+          <button type="button" data-s="dig" aria-pressed="false">소화계<small>멈추기</small></button>
+          <button type="button" data-s="res" aria-pressed="false">호흡계<small>멈추기</small></button>
+          <button type="button" data-s="cir" aria-pressed="false">순환계<small>멈추기</small></button>
+          <button type="button" data-s="exc" aria-pressed="false">배설계<small>멈추기</small></button>
+        </div>
+        <div class="fbk" id="ores" style="margin-top:8px"><b class="t" id="oresT">모두 일하는 중</b><span id="oresM"></span></div>
+        <p class="mnote">개념 이해를 위한 모형이에요. 실제 몸에서 기관계가 이렇게 한순간에 멈추지는 않아요.</p>
+      </div>
+      <p class="mnote">모형 자료: BodyParts3D(뼈·소화계·심장과 혈관·숨관·배설계·근육, © The Database Center for Life Science, CC BY 4.0), HuBMAP CCF 3D Reference Object Library(폐, CC BY 4.0). 조직세포는 온몸에 있으며 넓적다리 근육을 예로 보였어요. 알갱이는 잘 보이게 정한 모형이에요.</p>
+    </section>
+  </div>
+</div>
+<script>
+/* ===== 기관계의 상호작용 2D 도구 BSC =====
+   cells: 넓적다리 근육 속 조직세포 확대(모세혈관에서 산소·영양소가 들어가고 이산화 탄소·노폐물이 나온다, 세포호흡 때 에너지)
+   resp:  그림 Ⅵ-18 형식(영양소 + 산소 → 세포 → 이산화 탄소 + 물, 에너지 → 근육 운동·체온 유지·몸이 자람·두뇌 활동·소리 내기)
+   map:   교과서 221쪽 해 보기 그림 형식(폐·심장·위·작은창자·콩팥·간·조직세포를 8자 순환 고리로 잇고 ㉠~㉣ 화살표)
+   icon:  물질 기호(교과서 그림과 같은 모양: 산소 붉은 공, 이산화 탄소 푸른 공, 영양소 보라 육각형, 노폐물 노란 네모)
+   알갱이의 수·크기·빠르기는 잘 보이게 정한 모형이다. */
+const BSC = (() => {
+  'use strict';
+  const REDUCE = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const rnd = (a, b) => a + Math.random() * (b - a);
+  const hex = (c) => { const p = parseInt(c.slice(1), 16); return [p >> 16, (p >> 8) & 255, p & 255]; };
+  const mix = (a, b, t) => { const A = hex(a), B = hex(b); return `rgb(${A.map((x, i) => Math.round(x + (B[i] - x) * t)).join(',')})`; };
+  const INK = '#14263b', BLUE = '#0e63b3';
+  const K = {
+    o2: { n: '산소', c: '#d8392b', r: 7 },
+    co2: { n: '이산화 탄소', c: '#2f7fd0', r: 7 },
+    nut: { n: '영양소', c: '#7d55c7', r: 9 },
+    was: { n: '노폐물', c: '#e3ad18', r: 7.5 },
+    wat: { n: '물', c: '#5fb0e8', r: 7.5 },
+  };
+
+  function surface(host, LW, LH) {
+    const cv = document.createElement('canvas'); cv.style.cssText = 'display:block;width:100%;height:100%;touch-action:pan-y'; host.appendChild(cv);
+    const g = cv.getContext('2d'); const S = { cv, g, k: 1, ox: 0, oy: 0, W: 1, H: 1, LW, LH };
+    const fit = () => { const r = host.getBoundingClientRect(), d = Math.min(2, window.devicePixelRatio || 1); S.W = Math.max(1, r.width); S.H = Math.max(1, r.height); cv.width = S.W * d; cv.height = S.H * d; S.k = Math.min(S.W / S.LW, S.H / S.LH); S.ox = (S.W - S.LW * S.k) / 2; S.oy = (S.H - S.LH * S.k) / 2; S.d = d; };
+    S.begin = () => { g.setTransform(S.d, 0, 0, S.d, 0, 0); g.clearRect(0, 0, S.W, S.H); g.setTransform(S.d * S.k, 0, 0, S.d * S.k, S.d * S.ox, S.d * S.oy); };
+    S.toL = (x, y) => [(x - S.ox) / S.k, (y - S.oy) / S.k];
+    try { new ResizeObserver(fit).observe(host); } catch (e) { addEventListener('resize', fit); } fit();
+    return S;
+  }
+  function loop(host, fn) {
+    let last = performance.now(), on = true;
+    const vis = () => { const r = host.getBoundingClientRect(); if (document.hidden || r.bottom < 0 || r.top > (window.innerHeight || 800) || r.width < 2) return false; try { const f = window.frameElement; if (f && f.hasAttribute('data-page') && !f.classList.contains('on')) return false; } catch (e) {} return true; };
+    const tick = (now) => { requestAnimationFrame(tick); const dt = Math.min(.05, (now - last) / 1000); last = now; if (!on || !vis()) return; fn(window.__bakeDt !== undefined ? window.__bakeDt : dt); };
+    requestAnimationFrame(tick); return { stop() { on = false; }, start() { on = true; } };
+  }
+  const rr = (g, x, y, w, h, r) => { g.beginPath(); if (g.roundRect) g.roundRect(x, y, w, h, r); else g.rect(x, y, w, h); };
+  const label = (g, t, x, y, o = {}) => {
+    g.font = `${o.w || 800} ${o.s || 17}px Pretendard, sans-serif`; g.textAlign = o.a || 'center'; g.textBaseline = 'middle';
+    if (o.bg !== false) { const w = g.measureText(t).width + 14, h = (o.s || 17) + 9, X = o.a === 'left' ? x - 7 : o.a === 'right' ? x - w + 7 : x - w / 2; g.fillStyle = o.bg || 'rgba(255,255,255,.93)'; rr(g, X, y - h / 2, w, h, 7); g.fill(); if (o.line) { g.strokeStyle = o.line; g.lineWidth = 1.2; g.stroke(); } }
+    g.fillStyle = o.c || INK; g.fillText(t, x, y);
+  };
+  const lead = (g, x1, y1, x2, y2) => { g.strokeStyle = 'rgba(20,38,59,.7)'; g.lineWidth = 1; g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.stroke(); };
+  const ballG = (g, x, y, r, c, hi = .42) => { const gr = g.createRadialGradient(x - r * .35, y - r * .4, r * .1, x, y, r); gr.addColorStop(0, mix(c, '#ffffff', hi)); gr.addColorStop(1, c); return gr; };
+  const poly = (g, x, y, r, n, rot) => { g.beginPath(); for (let i = 0; i < n; i++) { const a = rot + i / n * Math.PI * 2 - Math.PI / 2; g[i ? 'lineTo' : 'moveTo'](x + Math.cos(a) * r, y + Math.sin(a) * r); } g.closePath(); };
+  function shape(g, k, x, y, s = 1, rot = 0, alpha = 1) {
+    const d = K[k], r = d.r * s, c = d.c; g.globalAlpha = alpha; g.fillStyle = ballG(g, x, y, r * 1.1, c); g.strokeStyle = mix(c, '#000000', .32); g.lineWidth = 1;
+    if (k === 'nut') { poly(g, x, y, r, 6, rot); g.fill(); g.stroke(); }
+    else if (k === 'was') { g.save(); g.translate(x, y); g.rotate(rot * .25); g.beginPath(); g.rect(-r * .82, -r * .82, r * 1.64, r * 1.64); g.fill(); g.stroke(); g.restore(); }
+    else if (k === 'wat') { g.beginPath(); g.moveTo(x, y - r * 1.25); g.bezierCurveTo(x + r * .9, y - r * .2, x + r * .95, y + r * .9, x, y + r * .95); g.bezierCurveTo(x - r * .95, y + r * .9, x - r * .9, y - r * .2, x, y - r * 1.25); g.fill(); g.stroke(); }
+    else { g.beginPath(); g.arc(x, y, r, 0, 6.2832); g.fill(); g.stroke(); }
+    g.globalAlpha = 1;
+  }
+  function icon(k, size = 22) {
+    const d = K[k], c = d.c, s = mix(c, '#000000', .32), id = 'bg' + k + Math.random().toString(36).slice(2, 6);
+    const grad = `<defs><radialGradient id="${id}" cx="35%" cy="32%" r="70%"><stop offset="0" stop-color="${mix(c, '#ffffff', .42)}"/><stop offset="1" stop-color="${c}"/></radialGradient></defs>`;
+    let body = '';
+    if (k === 'nut') { const p = []; for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2 - Math.PI / 2; p.push((12 + Math.cos(a) * 9).toFixed(1) + ',' + (12 + Math.sin(a) * 9).toFixed(1)); } body = `<polygon points="${p.join(' ')}" fill="url(#${id})" stroke="${s}"/>`; }
+    else if (k === 'was') body = `<rect x="5.5" y="5.5" width="13" height="13" rx="1.5" fill="url(#${id})" stroke="${s}"/>`;
+    else if (k === 'wat') body = `<path d="M12 3 C18 10 19 15 12 20 C5 15 6 10 12 3Z" fill="url(#${id})" stroke="${s}"/>`;
+    else body = `<circle cx="12" cy="12" r="7" fill="url(#${id})" stroke="${s}"/>`;
+    return `<svg class="bsi" width="${size}" height="${size}" viewBox="0 0 24 24" aria-hidden="true">${grad}${body}</svg>`;
+  }
+  /* 길 (점 목록) */
+  class Line {
+    constructor(pts) { this.p = pts; this.c = [0]; for (let i = 1; i < pts.length; i++) this.c.push(this.c[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1])); this.len = this.c[this.c.length - 1] || 1; }
+    at(u) { const s = Math.max(0, Math.min(1, u)) * this.len, c = this.c; let a = 0, b = c.length - 1; while (b - a > 1) { const m = (a + b) >> 1; if (c[m] <= s) a = m; else b = m; } const t = (s - c[a]) / Math.max(1e-6, c[b] - c[a]); return [this.p[a][0] + (this.p[b][0] - this.p[a][0]) * t, this.p[a][1] + (this.p[b][1] - this.p[a][1]) * t]; }
+  }
+  /* 부드러운 곡선 (캐트멀롬) */
+  const curve = (pts, n = 10, closed = false) => {
+    const P = closed ? [pts[pts.length - 1], ...pts, pts[0], pts[1]] : [pts[0], ...pts, pts[pts.length - 1]], out = [];
+    for (let i = 1; i < P.length - 2; i++) for (let k = 0; k < n; k++) { const t = k / n, [p0, p1, p2, p3] = [P[i - 1], P[i], P[i + 1], P[i + 2]], t2 = t * t, t3 = t2 * t; out.push([0, 1].map((j) => .5 * (2 * p1[j] + (-p0[j] + p2[j]) * t + (2 * p0[j] - 5 * p1[j] + 4 * p2[j] - p3[j]) * t2 + (-p0[j] + 3 * p1[j] - 3 * p2[j] + p3[j]) * t3))); }
+    out.push(closed ? out[0].slice() : pts[pts.length - 1].slice()); return out;
+  };
+  const stroke = (g, pts, w, c, cap = 'round') => { g.lineCap = cap; g.lineJoin = 'round'; g.lineWidth = w; g.strokeStyle = c; g.beginPath(); pts.forEach((p, i) => g[i ? 'lineTo' : 'moveTo'](p[0], p[1])); g.stroke(); };
+  /* 관(속이 보이는 굵은 관): 바깥 선 → 속 → 위쪽 밝은 띠 */
+  const tube = (g, pts, w, fill, edge) => { stroke(g, pts, w + 3, edge); stroke(g, pts, w, fill); g.globalAlpha = .35; g.save(); g.translate(-w * .14, -w * .14); stroke(g, pts, w * .3, '#ffffff'); g.restore(); g.globalAlpha = 1; };
+
+  /* ---------- 조직세포 하나 (세포막·세포질·핵) ---------- */
+  function cellShape(g, cx, cy, rx, ry, seed, glow = 0) {
+    let s = seed; const R = () => { s = (s * 16807) % 2147483647; return s / 2147483647; };
+    const N = 9, pts = []; for (let i = 0; i < N; i++) { const a = i / N * Math.PI * 2 + R() * .3; pts.push([cx + Math.cos(a) * rx * (.9 + R() * .14), cy + Math.sin(a) * ry * (.9 + R() * .14)]); }
+    const c = curve(pts, 8, true);
+    const gr = g.createRadialGradient(cx - rx * .3, cy - ry * .35, 2, cx, cy, Math.max(rx, ry) * 1.1); gr.addColorStop(0, mix('#f7dcd6', '#ffe9b8', glow)); gr.addColorStop(1, mix('#e9b4ab', '#f2c784', glow));
+    g.fillStyle = gr; g.beginPath(); c.forEach((p, i) => g[i ? 'lineTo' : 'moveTo'](p[0], p[1])); g.closePath(); g.fill(); g.strokeStyle = '#b97c74'; g.lineWidth = 2; g.stroke();
+    /* 핵 */
+    const nx = cx + rx * .12, ny = cy - ry * .05; const ng = g.createRadialGradient(nx - 4, ny - 4, 1, nx, ny, rx * .32); ng.addColorStop(0, '#b693c4'); ng.addColorStop(1, '#7b5a8f');
+    g.fillStyle = ng; g.beginPath(); g.ellipse(nx, ny, rx * .3, ry * .27, .3, 0, 6.2832); g.fill(); g.strokeStyle = '#5d4270'; g.lineWidth = 1; g.stroke();
+    g.fillStyle = 'rgba(80,50,90,.55)'; g.beginPath(); g.arc(nx + 3, ny - 2, 3.4, 0, 6.2832); g.fill();
+    /* 세포질 속 작은 알갱이 */
+    g.fillStyle = 'rgba(150,80,70,.28)'; for (let i = 0; i < 14; i++) { const a = R() * 6.28, d = .45 + R() * .4; g.beginPath(); g.ellipse(cx + Math.cos(a) * rx * d, cy + Math.sin(a) * ry * d, 3.2, 1.8, a, 0, 6.2832); g.fill(); }
+    return c;
+  }
+  /* 에너지 표시: 교과서처럼 톱니 모양 폭발 (번지는 빛은 쓰지 않음) */
+  function burst(g, x, y, r, a = 1, txt) {
+    if (a <= 0) return; g.globalAlpha = Math.min(1, a); g.beginPath(); const n = 12;
+    for (let i = 0; i < n * 2; i++) { const ang = i / (n * 2) * Math.PI * 2, rad = i % 2 ? r * .58 : r; g[i ? 'lineTo' : 'moveTo'](x + Math.cos(ang) * rad, y + Math.sin(ang) * rad); }
+    g.closePath(); const gr = g.createRadialGradient(x, y, 1, x, y, r); gr.addColorStop(0, '#fff2a8'); gr.addColorStop(.6, '#f9c23c'); gr.addColorStop(1, '#ee8a1c'); g.fillStyle = gr; g.fill(); g.strokeStyle = '#c4610f'; g.lineWidth = 1.2; g.stroke();
+    if (txt) { g.font = `900 ${Math.round(r * .42)}px Pretendard, sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = '#7a3500'; g.fillText(txt, x, y + 1); }
+    g.globalAlpha = 1;
+  }
+
+  /* ===================== 조직세포 확대 ===================== */
+  function cells(host, opt = {}) {
+    const LW = 420, LH = 300, S = surface(host, LW, LH), g = S.g;
+    const st = { o2: true, nut: true, co2Out: true, wasOut: true, flow: true, act: 1 };
+    /* 모세혈관: 왼쪽(동맥 쪽)에서 오른쪽(정맥 쪽)으로 */
+    const CAP = curve([[-20, 84], [80, 70], [190, 86], [300, 70], [440, 84]], 12);
+    const capL = new Line(CAP);
+    const CELL = [[90, 196, 70, 58, 11], [214, 214, 66, 62, 23], [336, 194, 70, 58, 37]];
+    const P = [], rbc = Array.from({ length: 16 }, (_, i) => ({ u: i / 16, r: rnd(0, 6) }));
+    let energy = 1, waste = 0, co2 = 0, fl = [0, 0, 0], t = 0, acc = 0;
+    const emit = () => {
+      const ci = Math.floor(Math.random() * 3), c = CELL[ci], into = [c[0] + rnd(-25, 25), c[1] + rnd(-18, 18)];
+      if (st.o2 && Math.random() < .55) { const u = rnd(.12, .8), s = capL.at(u); P.push({ k: 'o2', a: s, b: into, t: 0, d: rnd(1.3, 1.8), ci, cap: u }); }
+      if (st.nut && Math.random() < .45) { const u = rnd(.12, .8), s = capL.at(u); P.push({ k: 'nut', a: s, b: into, t: 0, d: rnd(1.5, 2), ci, cap: u }); }
+    };
+    loop(host, (dt) => {
+      t += dt; const sp = st.flow ? 1 : 0, A = st.act;
+      /* 들어오는 양 */
+      acc += dt * 1.6 * A * sp; while (acc > 1) { acc -= 1; emit(); }
+      rbc.forEach((r) => { r.u = (r.u + dt * .09 * A * sp) % 1; });
+      const ok = st.o2 && st.nut && st.flow;
+      energy += ((ok ? 1 : .12) - energy) * Math.min(1, dt * .8);
+      waste += ((st.wasOut && st.flow ? 0 : 1) - waste) * Math.min(1, dt * .25);
+      co2 += ((st.co2Out && st.flow ? 0 : 1) - co2) * Math.min(1, dt * .25);
+      for (let i = P.length - 1; i >= 0; i--) {
+        const p = P[i]; p.t += dt * sp / p.d;
+        if (p.t >= 1) {
+          if (p.k === 'o2' || p.k === 'nut') {
+            fl[p.ci] = Math.max(fl[p.ci], p.k === 'o2' ? .5 : .5); fl[p.ci] += .5;
+            if (p.k === 'o2') { const c = CELL[p.ci]; /* 세포호흡: 이산화 탄소와 노폐물이 나간다 */ P.push({ k: 'co2', a: p.b, b: capL.at(Math.min(.95, p.cap + rnd(.05, .2))), t: 0, d: rnd(1.3, 1.8), out: true, ci: p.ci }); if (Math.random() < .55) P.push({ k: 'was', a: [c[0] + rnd(-20, 20), c[1] + rnd(-15, 15)], b: capL.at(Math.min(.95, p.cap + rnd(.05, .2))), t: 0, d: rnd(1.6, 2.2), out: true, ci: p.ci }); }
+          } else if (p.out) { p.k2 = p.k; p.out = false; p.cu = Math.max(.05, Math.min(.95, (p.b[0] + 20) / 460)); p.t = 0; p.d = 9; p.inCap = true; }
+          if (p.k === 'o2' || p.k === 'nut' || (p.inCap && p.cu > .99)) { P.splice(i, 1); continue; }
+        }
+        if (p.inCap) { p.cu += dt * .09 * A * sp; /* 막히면(배설계·호흡계·순환계 멈춤) 세포 주변에 남는다 */ if ((p.k === 'was' && !st.wasOut) || (p.k === 'co2' && !st.co2Out)) p.cu = Math.min(p.cu, .97); if (p.cu > .99) { P.splice(i, 1); continue; } }
+      }
+      fl = fl.map((f) => Math.max(0, f - dt * 1.4));
+      if (P.length > 160) P.splice(0, P.length - 160);
+      /* ---- 그리기 ---- */
+      S.begin();
+      g.fillStyle = '#fbf5f2'; rr(g, 0, 0, LW, LH, 14); g.fill();
+      /* 세포 사이 공간 */
+      g.fillStyle = '#f6ebe5'; g.fillRect(0, 108, LW, LH - 108);
+      CELL.forEach((c, i) => { cellShape(g, c[0], c[1], c[2], c[3], c[4], Math.min(1, fl[i]) * energy * .9); });
+      /* 모세혈관 벽과 혈액 */
+      tube(g, CAP, 36, '#f4c6bd', '#c97a6e');
+      const cg = g.createLinearGradient(0, 0, LW, 0); cg.addColorStop(0, 'rgba(210,58,44,.32)'); cg.addColorStop(1, 'rgba(80,90,170,.3)'); stroke(g, CAP, 30, cg);
+      rbc.forEach((r) => { const [x, y] = capL.at(r.u); g.save(); g.translate(x, y + Math.sin(r.r + r.u * 20) * 4); g.rotate(r.r + r.u * 6); g.scale(1, .55); g.fillStyle = ballG(g, 0, 0, 9, mix('#d23a2c', '#8e3046', r.u)); g.beginPath(); g.arc(0, 0, 8, 0, 6.2832); g.fill(); g.restore(); });
+      /* 알갱이 */
+      P.forEach((p) => {
+        let x, y; if (p.inCap) { [x, y] = capL.at(p.cu); y += Math.sin(p.cu * 30) * 3; } else { const e = p.t * p.t * (3 - 2 * p.t); x = p.a[0] + (p.b[0] - p.a[0]) * e; y = p.a[1] + (p.b[1] - p.a[1]) * e + Math.sin(p.t * 9) * 2; }
+        shape(g, p.k, x, y, .82, p.t * 3, p.k === 'o2' || p.k === 'nut' ? Math.min(1, (1 - p.t) * 4) : 1);
+      });
+      /* 쌓인 노폐물·이산화 탄소 (나가지 못할 때) */
+      if (waste > .05 || co2 > .05) { let s = 5; const R = () => { s = (s * 16807) % 2147483647; return s / 2147483647; }; for (let i = 0; i < 26; i++) { const x = 20 + R() * 380, y = 120 + R() * 170, k = i % 2 ? 'was' : 'co2', a = k === 'was' ? waste : co2; if (R() < a) shape(g, k, x, y, .7, i, Math.min(1, a * 1.2)); } }
+      /* 에너지 */
+      CELL.forEach((c, i) => { if (fl[i] > .05 && energy > .3) burst(g, c[0] - 18, c[1] + 14, 15 + fl[i] * 6, Math.min(1, fl[i]) * energy, ''); });
+      label(g, '모세혈관', 360, 34, { s: 14 });
+      label(g, '조직세포', 214, 284, { s: 14 });
+      if (opt.title !== false) label(g, '조직세포 확대', 14, 18, { s: 13, a: 'left', c: '#5a6b7e', bg: 'rgba(255,255,255,.0)' });
+    });
+    const api = {}; Object.defineProperties(api, Object.getOwnPropertyDescriptors({ set(o) { Object.assign(st, o); }, get energy() { return energy; }, get waste() { return waste; } }));
+    return api;
+  }
+
+  /* ===================== 그림 Ⅵ-18 형식 ===================== */
+  /* 쓰임 그림: 사람 대신 쓰임을 보여 주는 물건을 그린다 */
+  const USE = [
+    { k: 'mus', t: '근육 운동', s: '근육 운동에 이용해요' },
+    { k: 'tmp', t: '체온 유지', s: '체온을 유지하는 데 이용해요' },
+    { k: 'grow', t: '몸이 자람', s: '몸이 자라는 데 이용해요' },
+    { k: 'brain', t: '두뇌 활동', s: '두뇌 활동에 이용해요' },
+    { k: 'voice', t: '소리 내기', s: '소리를 내는 데 이용해요' },
+  ];
+  function useArt(g, k, x, y, s, t) {
+    g.save(); g.translate(x, y); g.scale(s, s);
+    const sh = (w = 38, h = 7, yy = 34) => { g.fillStyle = 'rgba(20,38,59,.1)'; g.beginPath(); g.ellipse(0, yy, w, h, 0, 0, 6.2832); g.fill(); };
+    if (k === 'mus') {
+      /* 줄넘기 줄과 손잡이 (줄이 돈다) */
+      sh(40, 6, 38); const a = t * 5; const yy = Math.cos(a) * 26, zz = Math.sin(a);
+      g.strokeStyle = '#3b6fa8'; g.lineWidth = 3; g.beginPath(); g.moveTo(-30, 0); g.bezierCurveTo(-26, yy * 1.2, 26, yy * 1.2, 30, 0); g.stroke();
+      [-1, 1].forEach((d) => { g.save(); g.translate(d * 33, 4); g.rotate(d * .25); const hg = g.createLinearGradient(-5, 0, 5, 0); hg.addColorStop(0, '#f2a33a'); hg.addColorStop(1, '#c4741c'); g.fillStyle = hg; rr(g, -5, -4, 10, 26, 4); g.fill(); g.restore(); });
+      void zz;
+    } else if (k === 'tmp') {
+      /* 체온계: 유리관과 붉은 액체 */
+      sh(16, 4, 40); const lv = .62 + Math.sin(t * 1.5) * .02;
+      g.fillStyle = '#eef3f7'; rr(g, -7, -38, 14, 66, 7); g.fill(); g.strokeStyle = '#9fb1c2'; g.lineWidth = 1.4; g.stroke();
+      g.fillStyle = ballG(g, 0, 30, 11, '#d8392b'); g.beginPath(); g.arc(0, 30, 10, 0, 6.2832); g.fill(); g.strokeStyle = '#9b2a1f'; g.stroke();
+      g.fillStyle = '#d8392b'; g.fillRect(-2.6, 30 - 62 * lv, 5.2, 62 * lv);
+      g.strokeStyle = '#8a9bad'; g.lineWidth = 1; for (let i = 0; i < 6; i++) { g.beginPath(); g.moveTo(7, -28 + i * 9); g.lineTo(12, -28 + i * 9); g.stroke(); }
+      g.fillStyle = 'rgba(255,255,255,.7)'; g.fillRect(-5, -34, 2, 56);
+    } else if (k === 'grow') {
+      /* 키 재는 자와 위로 자라는 표시 */
+      sh(30, 5, 40); const wg = g.createLinearGradient(-10, 0, 10, 0); wg.addColorStop(0, '#e8c48c'); wg.addColorStop(1, '#c99a5a'); g.fillStyle = wg; rr(g, -11, -42, 22, 80, 3); g.fill(); g.strokeStyle = '#9b7238'; g.lineWidth = 1.2; g.stroke();
+      g.strokeStyle = '#6f4e22'; for (let i = 0; i < 15; i++) { g.beginPath(); g.moveTo(-11, -38 + i * 5.2); g.lineTo(i % 5 ? -5 : 1, -38 + i * 5.2); g.stroke(); }
+      const h = -12 - (Math.sin(t * .9) * .5 + .5) * 18; g.fillStyle = BLUE; g.fillRect(14, h, 16, 3); g.beginPath(); g.moveTo(22, h - 12); g.lineTo(28, h - 4); g.lineTo(16, h - 4); g.closePath(); g.fill();
+    } else if (k === 'brain') {
+      /* 책상 위 책과 연필 */
+      sh(40, 6, 30); g.fillStyle = '#f6f0e4'; g.beginPath(); g.moveTo(-36, 18); g.lineTo(-2, 24); g.lineTo(-2, -6); g.lineTo(-34, -12); g.closePath(); g.fill(); g.strokeStyle = '#a99a7c'; g.lineWidth = 1.2; g.stroke();
+      g.fillStyle = '#fbf7ee'; g.beginPath(); g.moveTo(36, 18); g.lineTo(2, 24); g.lineTo(2, -6); g.lineTo(34, -12); g.closePath(); g.fill(); g.stroke();
+      g.fillStyle = '#3b6fa8'; g.fillRect(-2.5, -7, 5, 32);
+      g.strokeStyle = '#b8ad95'; g.lineWidth = 1; for (let i = 0; i < 4; i++) { g.beginPath(); g.moveTo(-30, -4 + i * 6); g.lineTo(-8, 0 + i * 6); g.stroke(); g.beginPath(); g.moveTo(8, 0 + i * 6); g.lineTo(28, -4 + i * 6); g.stroke(); }
+      g.save(); g.translate(20 + Math.sin(t * 3) * 3, -8); g.rotate(-.7); g.fillStyle = '#f2b93a'; g.fillRect(-3, -22, 6, 26); g.fillStyle = '#e8c89e'; g.beginPath(); g.moveTo(-3, 4); g.lineTo(3, 4); g.lineTo(0, 11); g.closePath(); g.fill(); g.fillStyle = '#e07a8a'; g.fillRect(-3, -26, 6, 5); g.restore();
+    } else if (k === 'voice') {
+      /* 마이크와 소리 물결 */
+      sh(18, 4, 40); g.fillStyle = '#4a5866'; rr(g, -3, 4, 6, 30, 2); g.fill();
+      g.fillStyle = ballG(g, 0, -12, 15, '#8996a3', .5); g.beginPath(); g.ellipse(0, -12, 12, 16, 0, 0, 6.2832); g.fill(); g.strokeStyle = '#5a6672'; g.lineWidth = 1.2; g.stroke();
+      g.strokeStyle = 'rgba(40,50,60,.35)'; for (let i = -2; i <= 2; i++) { g.beginPath(); g.moveTo(-11, -12 + i * 5); g.lineTo(11, -12 + i * 5); g.stroke(); }
+      g.strokeStyle = BLUE; g.lineWidth = 2.2; for (let i = 0; i < 3; i++) { const ph = (t * .9 + i / 3) % 1; g.globalAlpha = 1 - ph; g.beginPath(); g.arc(4, -12, 20 + ph * 22, -.6, .6); g.stroke(); } g.globalAlpha = 1;
+    }
+    g.restore();
+  }
+  function resp(host, opt = {}) {
+    const uses = opt.uses !== false;
+    const LW = 1000, LH = uses ? 680 : 420, S = surface(host, LW, LH), g = S.g;
+    const CX = 500, CY = uses ? 540 : 250, EY = CY - 178;
+    const P = []; let t = 0, acc = 0, fl = 0;
+    /* 들어오는 길: 영양소(왼쪽 위), 산소(왼쪽 아래) / 나가는 길: 물(오른쪽 위), 이산화 탄소(오른쪽 아래) */
+    const INL = { nut: [[CX - 360, CY - 50], [CX - 210, CY - 34], [CX - 70, CY - 8]], o2: [[CX - 360, CY + 76], [CX - 210, CY + 52], [CX - 70, CY + 12]] };
+    const OUTL = { wat: [[CX + 70, CY - 8], [CX + 210, CY - 36], [CX + 360, CY - 52]], co2: [[CX + 70, CY + 12], [CX + 210, CY + 52], [CX + 360, CY + 78]] };
+    const L = {}; Object.entries(Object.assign({}, INL, OUTL)).forEach(([k, p]) => { L[k] = new Line(curve(p, 10)); });
+    const CARD = [[108, 250], [302, 158], [500, 118], [698, 158], [892, 250]];
+    loop(host, (dt) => {
+      t += dt; acc += dt * 1.3;
+      while (acc > 1) { acc -= 1; P.push({ k: 'nut', u: 0 }, { k: 'o2', u: 0 }); }
+      for (let i = P.length - 1; i >= 0; i--) { const p = P[i]; p.u += dt * .45; if (p.u >= 1) { P.splice(i, 1); if (p.k === 'o2') { fl = 1; P.push({ k: 'wat', u: 0 }, { k: 'co2', u: 0 }); } } }
+      fl = Math.max(0, fl - dt * .9);
+      S.begin(); g.fillStyle = '#ffffff'; g.fillRect(0, 0, LW, LH);
+      if (uses) {
+        USE.forEach((u, i) => {
+          const [x, y] = CARD[i];
+          g.strokeStyle = 'rgba(238,138,28,.45)'; g.lineWidth = 2; g.setLineDash([4, 7]); g.lineDashOffset = -t * 22; g.beginPath(); g.moveTo(CX, EY); g.lineTo(x, y + 62); g.stroke(); g.setLineDash([]);
+          g.fillStyle = '#f7f9fb'; rr(g, x - 88, y - 78, 176, 142, 16); g.fill(); g.strokeStyle = '#dde6ee'; g.lineWidth = 1.2; g.stroke();
+          useArt(g, u.k, x, y - 18, 1.12, t);
+          label(g, u.t, x, y + 44, { s: 19, bg: false });
+        });
+      }
+      cellShape(g, CX, CY, 96, 74, 31, fl * .8);
+      label(g, '세포', CX - 6, CY + 48, { s: 17, bg: 'rgba(255,255,255,.78)' });
+      Object.values(L).forEach((l) => { g.strokeStyle = 'rgba(20,38,59,.12)'; g.lineWidth = 2; g.beginPath(); l.p.forEach((q, i) => g[i ? 'lineTo' : 'moveTo'](q[0], q[1])); g.stroke(); });
+      P.forEach((p) => { const [x, y] = L[p.k].at(p.u), a = p.k === 'nut' || p.k === 'o2' ? Math.min(1, (1 - p.u) * 5) : Math.min(1, p.u * 5); shape(g, p.k, x, y, 1.6, p.u * 4, a); });
+      shape(g, 'nut', INL.nut[0][0], INL.nut[0][1], 2.4, .2); label(g, '영양소', INL.nut[0][0], INL.nut[0][1] + 38, { s: 18 });
+      shape(g, 'o2', INL.o2[0][0], INL.o2[0][1], 2.2); label(g, '산소', INL.o2[0][0], INL.o2[0][1] + 36, { s: 18 });
+      shape(g, 'wat', OUTL.wat[2][0], OUTL.wat[2][1], 2.2); label(g, '물', OUTL.wat[2][0], OUTL.wat[2][1] + 38, { s: 18 });
+      shape(g, 'co2', OUTL.co2[2][0], OUTL.co2[2][1], 2.2); label(g, '이산화 탄소', OUTL.co2[2][0], OUTL.co2[2][1] + 36, { s: 18 });
+      const bs = 52 + Math.sin(t * 3) * 2 + fl * 8; g.strokeStyle = '#ee8a1c'; g.lineWidth = 3; g.beginPath(); g.moveTo(CX, CY - 78); g.lineTo(CX, CY - 104); g.stroke(); g.fillStyle = '#ee8a1c'; g.beginPath(); g.moveTo(CX - 8, CY - 102); g.lineTo(CX + 8, CY - 102); g.lineTo(CX, CY - 116); g.closePath(); g.fill();
+      burst(g, CX, EY, bs, 1, '에너지');
+    });
+    return {};
+  }
+
+  /* ===================== 해 보기 그림 (교과서 221쪽 형식) ===================== */
+  function map(host, opt = {}) {
+    const LW = 900, LH = 1000, S = surface(host, LW, LH), g = S.g;
+    const state = { hi: null, arrows: opt.arrows !== false, reveal: { a: true, b: true, c: true, d: true }, flow: true, roles: false, tag: {}, labels: opt.labels !== false, sel: null, speed: 1 };
+    /* --- 몸 속 자리 --- */
+    const HEART = [450, 470];
+    /* 위 고리(폐 쪽): 심장 → 왼쪽 위 → ㉠(왼쪽 폐) → 가운데 → ㉡(오른쪽 폐) → 심장 */
+    const UP = curve([HEART, [392, 452], [342, 410], [322, 350], [336, 300], [392, 282], [450, 300], [508, 282], [564, 300], [578, 350], [558, 410], [508, 452], HEART], 10);
+    /* 아래 고리(온몸 쪽): 심장 → 오른쪽 아래 → 조직세포 → 간 → 왼쪽 위 → 심장 */
+    const DN = curve([HEART, [520, 498], [568, 560], [574, 660], [572, 760], [556, 846], [500, 892], [420, 896], [352, 862], [326, 790], [326, 690], [330, 590], [354, 512], [404, 486], HEART], 10);
+    const up = new Line(UP), dn = new Line(DN);
+    const uAt = (L, x, y) => { let b = 0, d = 1e9; L.p.forEach((q, i) => { const e = Math.hypot(q[0] - x, q[1] - y); if (e < d) { d = e; b = i; } }); return L.c[b] / L.len; };
+    /* ㉠~㉣ 자리 */
+    const AR = {
+      a: { n: '㉠', at: [322, 352], dir: [0, -1], u: uAt(up, 322, 352), L: up, k: 'co2', from: 'blood', to: [300, 300] },
+      b: { n: '㉡', at: [578, 352], dir: [0, 1], u: uAt(up, 578, 352), L: up, k: 'o2', from: 'lung', to: [600, 300] },
+      c: { n: '㉢', at: [326, 650], dir: [-1, 0], u: uAt(dn, 326, 650), L: dn, k: 'was', from: 'blood', to: [244, 650] },
+      d: { n: '㉣', at: [574, 600], dir: [-1, 0], u: uAt(dn, 574, 600), L: dn, k: 'nut', from: 'gut', to: [650, 600] },
+    };
+    const uCell = uAt(dn, 528, 872), uLiv = uAt(dn, 380, 884);
+    /* 공기·음식물 길 */
+    const AIR = curve([[430, 18], [430, 70], [432, 150], [440, 218], [450, 236]], 8);
+    const BRL = curve([[450, 236], [410, 262], [372, 300], [350, 330]], 8), BRR = curve([[450, 236], [492, 262], [528, 300], [550, 330]], 8);
+    const FOODL = curve([[470, 18], [470, 80], [478, 170], [520, 240], [600, 300], [640, 360], [648, 410]], 8);
+    const STOM = [[648, 410], [672, 438], [686, 470], [676, 500], [646, 512], [622, 506]];
+    const SI = curve([[622, 506], [662, 526], [692, 548], [668, 572], [630, 580], [650, 606], [690, 620], [672, 646], [630, 652], [652, 680], [696, 694], [706, 730]], 8);
+    const LI = curve([[706, 730], [726, 780], [732, 860], [716, 930], [700, 990]], 8);
+    const KID = [[230, 620, -1], [278, 640, 1]];
+    const URE = curve([[246, 664], [236, 740], [206, 820], [186, 868]], 8);
+    const air = new Line(AIR.concat(BRR.slice(1))), airOut = new Line(BRL.slice().reverse().concat(AIR.slice(0, -1).reverse())), food = new Line(FOODL.concat(curve(STOM, 6).slice(1), SI.slice(1)));
+    const uAbs = (() => { const L = food; let b = 0, d = 1e9; L.p.forEach((q, i) => { const e = Math.hypot(q[0] - 650, q[1] - 600); if (e < d) { d = e; b = i; } }); return L.c[b] / L.len; })();
+    const urine = new Line(curve([[246, 652], [236, 740], [206, 820], [186, 868], [180, 900], [180, 990]], 8));
+    /* --- 알갱이 --- */
+    const P = [];
+    const seed = () => {
+      for (let i = 0; i < 70; i++) { const loop = Math.random() < .45 ? 'up' : 'dn'; P.push(mkBlood(loop, Math.random())); }
+    };
+    /* 혈액 속 알갱이: 고리 위치에 따라 무엇을 싣는지 정한다 */
+    function mkBlood(loop, u) { return { where: loop, u, k: null, j: rnd(-8, 8), r: rnd(0, 6) }; }
+    const blood = [], free = [];
+    /* 혈액 고리에 실린 물질 (교과서 그림처럼: 위 고리 왼쪽은 이산화 탄소, 오른쪽은 산소, 아래 고리 오른쪽은 산소·영양소, 왼쪽은 이산화 탄소·노폐물) */
+    for (let i = 0; i < 36; i++) blood.push({ L: 'up', u: i / 36, j: rnd(-7, 7), r: rnd(0, 6) });
+    for (let i = 0; i < 70; i++) blood.push({ L: 'dn', u: i / 70, j: rnd(-7, 7), r: rnd(0, 6) });
+    blood.forEach((b, i) => { b.slot = i % 4; });
+    const cargo = (b) => {
+      const u = b.u;
+      if (b.L === 'up') { if (b.slot > 2) return null; return u < AR.a.u ? 'co2' : u < AR.b.u ? null : 'o2'; }
+      /* 아래 고리 */
+      if (u < uCell) { if (b.slot < 2) return 'o2'; if (b.slot === 2 && u > AR.d.u) return 'nut'; if (b.slot === 3) return u > AR.d.u ? 'nut' : 'o2'; return null; }
+      if (b.slot < 2) return 'co2';
+      if (b.slot === 2) return u < AR.c.u ? 'was' : 'co2';
+      return u < AR.c.u ? 'was' : null;
+    };
+    let t = 0, acc = 0;
+    loop(host, (dt) => {
+      t += dt; const F = state.flow ? state.speed : 0;
+      blood.forEach((b) => { const len = b.L === 'up' ? up.len : dn.len; b.u = (b.u + dt * 42 * F / len) % 1; });
+      acc += dt * F; while (acc > .45) { acc -= .45; free.push({ L: air, k: 'o2', u: 0, sp: 70 }); free.push({ L: airOut, k: 'co2', u: 0, sp: 70 }); free.push({ L: food, k: 'nut', u: 0, sp: 55, stop: uAbs }); free.push({ L: urine, k: 'was', u: 0, sp: 40 }); }
+      for (let i = free.length - 1; i >= 0; i--) { const f = free[i]; f.u += dt * f.sp * F / f.L.len; if (f.u >= (f.stop || 1)) free.splice(i, 1); }
+      draw();
+    });
+    const dim = (sys) => state.hi && state.hi !== sys ? .22 : 1;
+    function lungShape(cx, side) {
+      const s = side, X = (d) => cx + s * d; /* s: 바깥쪽 방향 */
+      g.beginPath(); g.moveTo(X(-6), 234);
+      g.bezierCurveTo(X(24), 230, X(54), 276, X(60), 330); g.bezierCurveTo(X(64), 372, X(58), 404, X(40), 412);
+      g.bezierCurveTo(X(14), 420, X(-24), 418, X(-44), 404); g.bezierCurveTo(X(-36), 380, X(-46), 350, X(-40), 318);
+      g.bezierCurveTo(X(-34), 280, X(-30), 244, X(-6), 234); g.closePath();
+    }
+    function draw() {
+      S.begin(); g.fillStyle = '#ffffff'; g.fillRect(0, 0, LW, LH);
+      /* 소화계: 식도·위·작은창자·큰창자 */
+      g.globalAlpha = dim('dig');
+      tube(g, LI, 30, '#e6b98e', '#b9875c');
+      tube(g, FOODL, 16, '#f0d58c', '#c9a659');
+      { const st = curve(STOM, 8); g.fillStyle = (() => { const gr = g.createLinearGradient(620, 410, 690, 512); gr.addColorStop(0, '#f2b8a2'); gr.addColorStop(1, '#d98d74'); return gr; })(); g.beginPath(); g.moveTo(640, 396); g.bezierCurveTo(700, 400, 716, 476, 690, 512); g.bezierCurveTo(664, 540, 610, 530, 604, 506); g.bezierCurveTo(640, 504, 660, 470, 636, 420); g.closePath(); g.fill(); g.strokeStyle = '#b06a54'; g.lineWidth = 2; g.stroke(); void st; }
+      tube(g, SI, 22, '#f3c9a8', '#c98e66');
+      g.globalAlpha = 1;
+      /* 간 */
+      g.globalAlpha = state.hi ? .25 : 1;
+      { g.beginPath(); g.moveTo(270, 860); g.bezierCurveTo(290, 820, 380, 818, 430, 840); g.bezierCurveTo(470, 858, 452, 900, 410, 914); g.bezierCurveTo(350, 932, 286, 920, 270, 900); g.closePath(); const gr = g.createLinearGradient(270, 820, 440, 920); gr.addColorStop(0, '#a3523e'); gr.addColorStop(1, '#7a3326'); g.fillStyle = gr; g.fill(); g.strokeStyle = '#5c2419'; g.lineWidth = 1.6; g.stroke(); g.globalAlpha *= .25; g.strokeStyle = '#ffffff'; g.lineWidth = 3; g.beginPath(); g.moveTo(296, 852); g.quadraticCurveTo(350, 832, 410, 842); g.stroke(); }
+      g.globalAlpha = 1;
+      /* 배설계: 콩팥·오줌관·방광 */
+      g.globalAlpha = dim('exc');
+      tube(g, URE, 9, '#f0d68a', '#c9a64e');
+      KID.forEach(([x, y, s]) => { g.save(); g.translate(x, y); g.scale(s, 1); g.beginPath(); g.moveTo(0, -46); g.bezierCurveTo(34, -48, 40, 38, 4, 46); g.bezierCurveTo(-22, 48, -30, 30, -16, 14); g.bezierCurveTo(-8, 4, -10, -6, -18, -16); g.bezierCurveTo(-30, -34, -22, -46, 0, -46); g.closePath(); const gr = g.createLinearGradient(-20, -40, 30, 40); gr.addColorStop(0, '#b65a50'); gr.addColorStop(1, '#8a3a34'); g.fillStyle = gr; g.fill(); g.strokeStyle = '#5e2522'; g.lineWidth = 1.6; g.stroke(); g.restore(); });
+      { g.beginPath(); g.ellipse(180, 888, 30, 22, 0, 0, 6.2832); const gr = g.createRadialGradient(172, 880, 3, 180, 888, 32); gr.addColorStop(0, '#f6e2b3'); gr.addColorStop(1, '#e2bd78'); g.fillStyle = gr; g.fill(); g.strokeStyle = '#b58f45'; g.lineWidth = 1.6; g.stroke(); }
+      g.globalAlpha = 1;
+      /* 호흡계: 숨관·폐 */
+      g.globalAlpha = dim('res');
+      [[368, -1], [532, 1]].forEach(([cx, s]) => { lungShape(cx, s); const gr = g.createLinearGradient(cx - 60, 240, cx + 60, 410); gr.addColorStop(0, '#f2b8ba'); gr.addColorStop(1, '#d98189'); g.fillStyle = gr; g.fill(); g.strokeStyle = '#b25b66'; g.lineWidth = 1.8; g.stroke(); });
+      tube(g, AIR, 18, '#cfe2f1', '#86a9c8'); tube(g, BRL, 12, '#cfe2f1', '#86a9c8'); tube(g, BRR, 12, '#cfe2f1', '#86a9c8');
+      g.strokeStyle = 'rgba(134,169,200,.6)'; g.lineWidth = 1.2; for (let y = 60; y < 220; y += 12) { g.beginPath(); g.moveTo(421, y); g.lineTo(441, y + 1); g.stroke(); }
+      g.globalAlpha = 1;
+      /* 순환계: 혈액 고리와 심장 */
+      g.globalAlpha = dim('cir');
+      tube(g, DN, 40, '#fbe1d8', '#e2a493'); tube(g, UP, 34, '#fbe1d8', '#e2a493');
+      /* 흐르는 방향 (얇은 화살표 두 개) */
+      [[dn, .18], [dn, .7], [up, .2], [up, .78]].forEach(([L, u]) => { const [x1, y1] = L.at(u), [x2, y2] = L.at(u + .02), a = Math.atan2(y2 - y1, x2 - x1); g.save(); g.translate(x1, y1); g.rotate(a); g.fillStyle = 'rgba(178,74,58,.55)'; g.beginPath(); g.moveTo(8, 0); g.lineTo(-6, -7); g.lineTo(-6, 7); g.closePath(); g.fill(); g.restore(); });
+      /* 심장 */
+      { const b = 1 + (state.flow ? Math.max(0, Math.sin(t * 7)) * .04 : 0); g.save(); g.translate(HEART[0], HEART[1] + 6); g.scale(b, b); g.beginPath(); g.moveTo(0, 46); g.bezierCurveTo(-44, 18, -64, -12, -46, -36); g.bezierCurveTo(-30, -56, -6, -48, 0, -30); g.bezierCurveTo(6, -48, 30, -56, 46, -36); g.bezierCurveTo(64, -12, 44, 18, 0, 46); g.closePath(); const gr = g.createLinearGradient(-40, -50, 40, 40); gr.addColorStop(0, '#e2604f'); gr.addColorStop(1, '#a8322a'); g.fillStyle = gr; g.fill(); g.strokeStyle = '#7d211b'; g.lineWidth = 1.8; g.stroke(); g.restore(); }
+      g.globalAlpha = 1;
+      /* 조직세포 */
+      g.globalAlpha = state.hi && state.hi !== 'cell' ? .35 : 1;
+      { const C = [[506, 900], [540, 884], [530, 920], [566, 904], [500, 936], [556, 940]]; C.forEach(([x, y], i) => { poly(g, x, y, 19, 6, 0); const gr = g.createRadialGradient(x - 5, y - 6, 2, x, y, 20); gr.addColorStop(0, '#fbe3c2'); gr.addColorStop(1, '#efbb7c'); g.fillStyle = gr; g.fill(); g.strokeStyle = '#c6863a'; g.lineWidth = 1.4; g.stroke(); g.fillStyle = '#b8743a'; g.beginPath(); g.arc(x + 2, y, 4.5, 0, 6.2832); g.fill(); void i; }); }
+      g.globalAlpha = 1;
+      /* 혈액 속 물질 */
+      blood.forEach((b) => { const L = b.L === 'up' ? up : dn, k = cargo(b); if (!k) return; const sys = 'cir'; g.globalAlpha = dim(sys); const [x, y] = L.at(b.u), a = L.at(Math.min(1, b.u + .003)), n = Math.atan2(a[1] - y, a[0] - x) + Math.PI / 2; shape(g, k, x + Math.cos(n) * b.j * 1.6, y + Math.sin(n) * b.j * 1.6, .8, b.r + b.u * 8); });
+      g.globalAlpha = 1;
+      /* 공기·음식물·오줌 속 물질 */
+      free.forEach((f) => { const [x, y] = f.L.at(f.u), sys = f.k === 'nut' ? 'dig' : f.k === 'was' ? 'exc' : 'res'; g.globalAlpha = dim(sys); shape(g, f.k, x, y, .85, f.u * 10); });
+      g.globalAlpha = 1;
+      /* 화살표 ㉠~㉣ */
+      if (state.arrows) Object.entries(AR).forEach(([k, a]) => {
+        const on = state.sel === k; const [x, y] = a.at, [dx, dy] = a.dir, ang = Math.atan2(dy, dx);
+        g.save(); g.translate(x + dx * 2, y + dy * 2); g.rotate(ang); g.scale(1.22, 1.22);
+        g.beginPath(); g.moveTo(34, 0); g.lineTo(10, -20); g.lineTo(10, -9); g.lineTo(-22, -9); g.lineTo(-22, 9); g.lineTo(10, 9); g.lineTo(10, 20); g.closePath();
+        g.fillStyle = on ? BLUE : '#ffffff'; g.fill(); g.strokeStyle = BLUE; g.lineWidth = 2.4; g.stroke(); g.restore();
+        const lx = x + (dx ? 0 : (k === 'a' ? -46 : 46)), ly = y + (dx ? -42 : 0);
+        g.beginPath(); g.arc(lx, ly, 20, 0, 6.2832); g.fillStyle = on ? BLUE : '#ffffff'; g.fill(); g.strokeStyle = BLUE; g.lineWidth = 2; g.stroke();
+        g.font = '900 23px Pretendard, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = on ? '#ffffff' : BLUE; g.fillText(a.n, lx, ly + 1);
+        /* 답을 맞힌 화살표: 물질이 화살표 방향으로 이동 */
+        if (state.reveal[k]) { for (let i = 0; i < 3; i++) { const ph = ((t * .9 + i / 3) % 1); g.globalAlpha = Math.min(1, (1 - ph) * 3, ph * 6); shape(g, a.k, x - dx * 26 + dx * 60 * ph, y - dy * 26 + dy * 60 * ph, .95, ph * 5); } g.globalAlpha = 1; }
+      });
+      /* 이름표 */
+      if (state.labels) {
+        label(g, '폐', 372, 384, { s: 26 }); label(g, '폐', 528, 384, { s: 26 }); label(g, '심장', HEART[0], HEART[1] + 4, { s: 26, bg: 'rgba(255,255,255,.82)' });
+        label(g, '위', 730, 446, { s: 26 }); label(g, '작은창자', 784, 640, { s: 26 }); lead(g, 726, 640, 704, 640);
+        label(g, '콩팥', 150, 600, { s: 26 }); label(g, '간', 300, 952, { s: 26 }); if (!state.roles) { label(g, '조직세포', 640, 966, { s: 26 }); lead(g, 594, 956, 566, 940); }
+        label(g, '방광', 110, 888, { s: 25 }); label(g, '큰창자', 800, 860, { s: 25 });
+        label(g, '산소', 372, 30, { s: 25, c: '#b5281d' }); label(g, '이산화 탄소', 340, 70, { s: 25, c: '#1d63a8' }); label(g, '음식물', 540, 44, { s: 25, c: '#5b3a9c' });
+      }
+      /* 역할놀이: 모둠원이 맡는 자리 */
+      if (state.roles) {
+        const RP = [['소화계', 770, 520], ['순환계', 650, 780], ['순환계', 250, 470], ['호흡계', 300, 170], ['배설계', 130, 770], ['조직세포', 690, 900]];
+        RP.forEach(([n, x, y], i) => { const tg = state.tag[i] || ''; g.beginPath(); g.arc(x, y - 36, 22, 0, 6.2832); g.fillStyle = BLUE; g.fill(); g.font = '900 22px Pretendard, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = '#fff'; g.fillText(String(i + 1), x, y - 35); label(g, n + (tg ? ' · ' + tg : ''), x, y, { s: 22, line: '#c6dbf0' }); });
+      }
+    }
+    seed(); void P; void uLiv;
+    const api = {};
+    Object.defineProperties(api, Object.getOwnPropertyDescriptors({
+      set hi(v) { state.hi = v; }, get hi() { return state.hi; },
+      set sel(v) { state.sel = v; }, set arrows(v) { state.arrows = v; }, set roles(v) { state.roles = v; }, set flow(v) { state.flow = v; }, set labels(v) { state.labels = v; }, set speed(v) { state.speed = v; },
+      reveal(k, v = true) { state.reveal[k] = v; }, hideAll() { state.reveal = {}; },
+      tag(i, v) { state.tag[i] = v; },
+      AR,
+    }));
+    return api;
+  }
+  return { cells, resp, map, icon, shape, K, surface, loop, label, burst, cellShape, USE };
+})();
+window.BSC = BSC;
+</script>
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+/* ===== 공통 3D 도구 (three.js) =====
+   전자는 파란 알갱이(−), 전자를 잃은 쪽은 빨간 (+) 표시. 크기·개수·빠르기는 개념 이해를 위한 모형이에요(숫자 없음). */
+const C3 = (() => {
+  const REDUCE = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const V = (x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z);
+  const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+  const clamp01 = (t) => Math.max(0, Math.min(1, t));
+
+  // 탭 껍데기에서 보이지 않는 탭이면 그리지 않아요(태블릿 배터리 아끼기)
+  function visibleNow() {
+    if (document.hidden) return false;
+    try { const f = window.frameElement; if (f && f.hasAttribute('data-page') && !f.classList.contains('on')) return false; } catch (e) {}
+    return true;
+  }
+
+  function canvasTex(w, h, draw) {
+    const c = document.createElement('canvas'); c.width = w; c.height = h;
+    draw(c.getContext('2d'), w, h);
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
+    t.userData.canvas = c; return t;
+  }
+  function gradientBg(top, bottom) {
+    return canvasTex(4, 256, (g, w, h) => { const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, top); gr.addColorStop(1, bottom); g.fillStyle = gr; g.fillRect(0, 0, w, h); });
+  }
+  // 나뭇결 책상
+  function woodTex() {
+    const t = canvasTex(1024, 512, (g, w, h) => {
+      const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#c99a6b'); gr.addColorStop(1, '#b8875a'); g.fillStyle = gr; g.fillRect(0, 0, w, h);
+      for (let i = 0; i < 160; i++) {
+        const y = Math.random() * h, a = 0.04 + Math.random() * 0.08; g.strokeStyle = `rgba(${90 + Math.random() * 40},${55 + Math.random() * 25},30,${a})`;
+        g.lineWidth = 1 + Math.random() * 3; g.beginPath(); g.moveTo(0, y);
+        for (let x = 0; x <= w; x += 32) g.lineTo(x, y + Math.sin(x / 90 + i) * 4 + Math.sin(x / 23) * 1.2);
+        g.stroke();
+      }
+    });
+    t.wrapS = t.wrapT = THREE.RepeatWrapping; return t;
+  }
+  // 바닥에 드리우는 부드러운 그림자
+  function blobTex() {
+    return canvasTex(256, 256, (g, w, h) => { const r = g.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2); r.addColorStop(0, 'rgba(20,38,59,.32)'); r.addColorStop(1, 'rgba(20,38,59,0)'); g.fillStyle = r; g.fillRect(0, 0, w, h); });
+  }
+
+  /* 무대: 렌더러·카메라·조명·손가락 조작 */
+  function makeStage(host, opt = {}) {
+    let hold = !!opt.hold; // true면 준비(prepare)가 끝날 때까지 그리지 않아요
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = opt.exposure || 1.05;
+    renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.domElement.className = 'gl';
+    host.appendChild(renderer.domElement);
+    const scene = new THREE.Scene();
+    scene.background = gradientBg(opt.top || '#f6f9fc', opt.bottom || '#d6e3ef');
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    scene.environment = pmrem.fromScene(new RoomEnvironment(renderer), 0.04).texture;
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x8a9bb0, 0.55));
+    const sun = new THREE.DirectionalLight(0xffffff, 1.6);
+    sun.position.set(opt.sunX || 5, 11, opt.sunZ || 7); sun.castShadow = true;
+    sun.shadow.mapSize.set(1024, 1024); sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.02;
+    const sc = sun.shadow.camera; sc.left = -9; sc.right = 9; sc.top = 9; sc.bottom = -9; sc.near = 1; sc.far = 40;
+    scene.add(sun);
+    const camera = new THREE.PerspectiveCamera(opt.fov || 34, 1, 0.1, 200);
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true; controls.dampingFactor = 0.09; controls.enablePan = false;
+    controls.rotateSpeed = 0.85; controls.zoomSpeed = 0.9;
+    if (opt.scroll) { controls.enableZoom = false; renderer.domElement.style.touchAction = 'pan-y'; host.style.touchAction = 'pan-y'; }
+    controls.minDistance = opt.minD || 3; controls.maxDistance = opt.maxD || 24; controls.maxPolarAngle = Math.PI * 0.86;
+
+    const overlay = document.createElement('div'); overlay.className = 'lbls'; host.appendChild(overlay);
+    let W = 1, H = 1;
+    function resize() {
+      const r = host.getBoundingClientRect(); W = Math.max(1, r.width); H = Math.max(1, r.height);
+      renderer.setSize(W, H, false); camera.aspect = W / H;
+      if (opt.fitWidth) { // 세로 화면에서 장면이 잘리지 않도록 화각을 넓혀요
+        const base = opt.fov || 34; camera.fov = camera.aspect < 1.15 ? Math.min(62, base * (1.15 / camera.aspect) * 0.92) : base;
+      }
+      camera.updateProjectionMatrix();
+    }
+    try { let rq = 0; new ResizeObserver(() => { cancelAnimationFrame(rq); rq = requestAnimationFrame(resize); }).observe(host); } catch (e) { addEventListener('resize', resize); }
+    resize();
+
+    // 이름표(HTML)를 3D 위치에 붙이기
+    const labels = [];
+    function label(html, cls, at) {
+      const el = document.createElement('div'); el.className = 'lb ' + (cls || ''); el.innerHTML = html; overlay.appendChild(el);
+      const L = { el, at, show: true, set(h) { if (el.innerHTML !== h) el.innerHTML = h; } };
+      labels.push(L); return L;
+    }
+    const tmp = V();
+    function placeLabels() {
+      labels.forEach((L) => {
+        if (!L.show) { L.el.style.display = 'none'; return; }
+        const p = typeof L.at === 'function' ? L.at() : L.at;
+        if (!p) { L.el.style.display = 'none'; return; }
+        tmp.copy(p).project(camera);
+        if (tmp.z > 1 || tmp.z < -1) { L.el.style.display = 'none'; return; }
+        const px = ((tmp.x + 1) / 2) * W, py = ((1 - tmp.y) / 2) * H;
+        L.el.style.display = '';
+        L.el.style.transform = `translate(${px}px,${py}px) translate(-50%,-50%)`;
+      });
+    }
+
+    // 카메라 이동
+    let fly = null;
+    controls.addEventListener('start', () => { fly = null; });
+    function flyTo(pos, target, dur = 1.1) {
+      if (REDUCE || dur <= 0) { camera.position.copy(pos); controls.target.copy(target); controls.update(); return; }
+      fly = { p0: camera.position.clone(), t0: controls.target.clone(), p1: pos.clone(), t1: target.clone(), k: 0, dur };
+    }
+
+    const fns = [];
+    let last = performance.now(), running = true;
+    function tick(now) {
+      requestAnimationFrame(tick);
+      if (!running || hold || !visibleNow()) { last = now; return; }
+      if (opt.scroll) { const hr = host.getBoundingClientRect(); if (hr.bottom < -50 || hr.top > (window.innerHeight || 800) + 50) { last = now; return; } } // 화면 밖이면 쉬기
+      const dt = Math.min(0.05, Math.max(0, (now - last) / 1000)); last = now;
+      if (fly) {
+        fly.k = Math.min(1, fly.k + dt / fly.dur); const e = ease(fly.k);
+        camera.position.lerpVectors(fly.p0, fly.p1, e); controls.target.lerpVectors(fly.t0, fly.t1, e);
+        if (fly.k >= 1) fly = null;
+      }
+      for (let i = 0; i < fns.length; i++) { try { fns[i](dt, now / 1000); } catch (err) { console.error(err); } }
+      controls.update();
+      renderer.render(scene, camera);
+      placeLabels();
+    }
+    requestAnimationFrame(tick);
+
+    /* 자동 구도: 물체(또는 여러 물체)가 화면에 꼭 들어오도록 카메라 거리를 찾아요.
+       dir: 카메라가 놓일 방향(물체 중심에서), margin: 가장자리 여백(1.1 = 10%), dur: 이동 시간(초)
+       화면 비율이 바뀌면(가로↔세로) 사용자가 돌리기 전까지 다시 맞춰요. */
+    let lastFit = null, userMoved = false;
+    controls.addEventListener('start', () => { userMoved = true; });
+    const _box = new THREE.Box3(), _v = V(), _c = V();
+    function fitPose(objs, o = {}) {
+      _box.makeEmpty(); (Array.isArray(objs) ? objs : [objs]).forEach((ob) => { ob.updateMatrixWorld(true); _box.expandByObject(ob); });
+      if (o.extra) o.extra.forEach((p) => _box.expandByPoint(p));
+      const ctr = o.target ? o.target.clone() : _box.getCenter(V());
+      const dir = (o.dir ? o.dir.clone() : camera.position.clone().sub(controls.target)).normalize();
+      const pts = []; for (let i = 0; i < 8; i++) pts.push(V(i & 1 ? _box.max.x : _box.min.x, i & 2 ? _box.max.y : _box.min.y, i & 4 ? _box.max.z : _box.min.z));
+      const lim = 1 / (o.margin || 1.1), cam = camera.clone();
+      const ok = (d) => { cam.position.copy(ctr).addScaledVector(dir, d); cam.lookAt(ctr); cam.updateMatrixWorld(); cam.updateProjectionMatrix(); return pts.every((p) => { _c.copy(p).project(cam); return Math.abs(_c.x) <= lim && Math.abs(_c.y) <= lim && _c.z < 1; }); };
+      let lo = 0.5, hi = 200; for (let k = 0; k < 28; k++) { const mid = (lo + hi) / 2; if (ok(mid)) hi = mid; else lo = mid; }
+      return { p: ctr.clone().addScaledVector(dir, hi), t: ctr };
+    }
+    function fit(objs, o = {}) {
+      lastFit = { objs, o: Object.assign({}, o, { dir: o.dir || camera.position.clone().sub(controls.target) }) }; userMoved = false;
+      const f = fitPose(objs, lastFit.o); flyTo(f.p, f.t, o.dur === undefined ? 0 : o.dur); return f;
+    }
+    try { let fr = 0; new ResizeObserver(() => { cancelAnimationFrame(fr); fr = requestAnimationFrame(() => { if (lastFit && !userMoved) { const f = fitPose(lastFit.objs, lastFit.o); flyTo(f.p, f.t, 0); } }); }).observe(host); } catch (e) {}
+
+    return { host, renderer, scene, camera, controls, sun, overlay, label, flyTo, fit, fitPose, onFrame: (f) => fns.push(f), size: () => ({ W, H }), resize, stop: () => { running = false; }, release: () => { hold = false; } };
+  }
+
+  // 관 모양 전선(곡선)
+  function tube(points, r, mat, seg = 80) {
+    const curve = new THREE.CatmullRomCurve3(points, false, 'centripetal');
+    const m = new THREE.Mesh(new THREE.TubeGeometry(curve, seg, r, 10, false), mat); m.castShadow = true; m.curve = curve; return m;
+  }
+
+  // 길을 따라 움직이는 알갱이(전자). 전선에는 전자가 이미 꽉 차 있으므로, 멈춰 있어도 알갱이는 보여요.
+  // setPath(점 배열), update(dt, 빠르기) — 빠르기가 음수면 반대로 움직여요
+  function makeDots(count, color, size = 1) {
+    const geo = new THREE.SphereGeometry(0.06 * size, 14, 10);
+    const mat = new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.55, roughness: 0.3 });
+    const mesh = new THREE.InstancedMesh(geo, mat, count); mesh.frustumCulled = false;
+    let pts = [], cum = [], total = 1, off = 0; const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), p = V(), sc = V(1, 1, 1);
+    function setPath(P) {
+      pts = P; cum = [0];
+      for (let i = 1; i < P.length; i++) cum.push(cum[i - 1] + P[i].distanceTo(P[i - 1]));
+      total = cum[cum.length - 1] || 1;
+    }
+    function at(s, out) {
+      s = ((s % total) + total) % total;
+      let i = 1; while (i < cum.length - 1 && cum[i] < s) i++;
+      const a = pts[i - 1], b = pts[i], seg = cum[i] - cum[i - 1] || 1, k = (s - cum[i - 1]) / seg;
+      out.lerpVectors(a, b, k);
+    }
+    function update(dt, speed) {
+      if (pts.length < 2) { mesh.visible = false; return; }
+      off += dt * speed;
+      const gap = total / count;
+      for (let k = 0; k < count; k++) { at(off + k * gap, p); m4.compose(p, q, sc); mesh.setMatrixAt(k, m4); }
+      mesh.instanceMatrix.needsUpdate = true;
+    }
+    return { mesh, setPath, update, mat };
+  }
+
+  // 책상
+  function addTable(scene, w, d, y = 0) {
+    const tex = woodTex(); tex.repeat.set(w / 10, d / 10);
+    const mat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.55, metalness: 0 });
+    const t = new THREE.Mesh(new RoundedBoxGeometry(w, 0.4, d, 3, 0.12), mat); t.position.y = y - 0.2; t.receiveShadow = true; scene.add(t);
+    return t;
+  }
+  const mesh = (geo, mat, x = 0, y = 0, z = 0) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true; return m; };
+
+  /* ===== 빨리 뜨게 하기 (2026-10-12) =====
+     - lazy(host, fn): 그림 자리가 화면에 가까워지면 fn을 한 번 불러요(iframe 안에서도 되도록 위치를 직접 계산해요).
+     - prepare(st): 재질(셰이더)을 화면을 멈추지 않고 미리 번역한 뒤 그리기 시작해요. 그동안은 미리 찍은 사진(data-poster)을 보여 줘요.
+     - BAKE: 주소에 ?bake=… 이 있으면 영상·사진을 만드는 중이에요(tools/lesson-kit/bake.py). */
+  const BAKE = new URLSearchParams(location.search).get('bake') || '';
+  (function css() {
+    const s = document.createElement('style');
+    s.textContent = '.gl-host>.poster{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1;pointer-events:none}' +
+      '.gl-host.ready>.poster,.gl-host.ready>.prep{display:none}.gl-host.wait>canvas.gl,.gl-host.wait>.lbls{visibility:hidden}' +
+      '.gl-host>.prep{position:absolute;right:10px;bottom:10px;z-index:2;font:800 12.5px Pretendard,sans-serif;color:#33464a;background:rgba(255,255,255,.88);border-radius:9px;padding:5px 10px;pointer-events:none}' +
+      '.gl-host>video.figvid{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}';
+    (document.head || document.documentElement).appendChild(s);
+  })();
+  function posterOn(host) {
+    host.classList.add('wait');
+    const src = host.dataset.poster;
+    if (src && !BAKE && !host.querySelector('.poster')) { const im = document.createElement('img'); im.className = 'poster'; im.alt = ''; im.src = src; host.prepend(im); }
+    if (!BAKE && !host.querySelector('.prep')) { const t = document.createElement('span'); t.className = 'prep'; t.textContent = '3D 준비 중…'; host.appendChild(t); }
+  }
+  function lazy(host, fn, margin = 500) {
+    if (!host) return;
+    posterOn(host);
+    let done = false;
+    const near = () => { const r = host.getBoundingClientRect(), h = window.innerHeight || 800; return r.bottom > -margin && r.top < h + margin && r.width > 0; };
+    const go = () => { if (done || !near()) return; done = true; removeEventListener('scroll', go); removeEventListener('resize', go); clearInterval(iv); try { fn(); } catch (err) { console.error(err); throw err; } };
+    addEventListener('scroll', go, { passive: true }); addEventListener('resize', go);
+    const iv = setInterval(go, 400);
+    if (BAKE) { done = true; clearInterval(iv); if (BAKE === 'all' || BAKE === host.id) fn(); return; }
+    setTimeout(go, 0);
+  }
+  // 재질을 화면을 멈추지 않고 번역해요. 투명한 물체(유리·석영 등)가 있으면 뒤쪽을 따로 그릴 때 쓰는 재질 변형도 미리 준비해요
+  async function compileAll(r, scene, camera) {
+    if (!r.compileAsync) return;
+    await r.compileAsync(scene, camera);
+    let tr = false; scene.traverse((o) => { if (o.material && [].concat(o.material).some((m) => m.transmission > 0)) tr = true; });
+    if (tr) { const rt = new THREE.WebGLRenderTarget(4, 4, { type: THREE.HalfFloatType }), tm = r.toneMapping; r.toneMapping = THREE.NoToneMapping; r.setRenderTarget(rt); try { await r.compileAsync(scene, camera); } finally { r.setRenderTarget(null); r.toneMapping = tm; rt.dispose(); } }
+  }
+  async function prepare(st) {
+    const host = st.host; posterOn(host);
+    try { if (!BAKE) await compileAll(st.renderer, st.scene, st.camera); } catch (e) { console.warn(e); }
+    st.release(); host.classList.remove('wait'); host.classList.add('ready');
+    return st;
+  }
+  /* 보기만 하는 그림: 미리 만든 영상으로 바꿔요 (bake 중에는 3D로 그려요) */
+  function video(host, build) {
+    if (!host) return;
+    if (BAKE === host.id) { build(); return; }
+    const v = document.createElement('video');
+    v.className = 'figvid'; v.muted = true; v.loop = true; v.autoplay = true; v.playsInline = true; v.setAttribute('playsinline', ''); v.setAttribute('muted', '');
+    v.preload = 'metadata'; if (host.dataset.poster) v.poster = host.dataset.poster; v.src = host.dataset.video;
+    host.appendChild(v); host.classList.add('ready');
+    // 화면에 보일 때만 재생해요
+    const chk = () => { const r = host.getBoundingClientRect(), on = r.bottom > 0 && r.top < (window.innerHeight || 800) && !document.hidden; if (on && v.paused) v.play().catch(() => {}); else if (!on && !v.paused) v.pause(); };
+    addEventListener('scroll', chk, { passive: true }); setInterval(chk, 700); chk();
+  }
+  return { BAKE, lazy, prepare, compileAll, video, REDUCE, V, ease, clamp01, makeStage, canvasTex, gradientBg, blobTex, tube, makeDots, addTable, visibleNow, mesh };
+})();
+/* ===== 기관계 한 몸 3D 도구 BS3 =====
+   뼈·소화계·순환계·숨관·배설계·넓적다리 근육: BodyParts3D 4.0(CC BY 4.0), 폐 표면: HuBMAP CCF(CC BY 4.0). media/ATTRIBUTION.txt
+   BS3.body: 한 몸 속 네 기관계, 산소·이산화 탄소·영양소·노폐물 알갱이가 실제 길(코·입 → 폐·작은창자 → 심장 → 조직세포 → 폐·콩팥)로 흐른다.
+   기관계 강조 sys, 따라가기 tour, 운동 정도 activity(숨·심장 박동 빨라짐), 기관계 멈추기 off.
+   알갱이의 크기·수·빠르기는 잘 보이게 정한 모형이다. 조직세포는 온몸에 있으며 넓적다리 근육을 예로 보인다. C3와 같은 모듈 안에 넣는다. */
+const BS3 = (() => {
+  'use strict';
+  const V = (x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z);
+  const REDUCE = C3.REDUCE;
+  const rnd = (a, b) => a + Math.random() * (b - a);
+  const COL = {
+    bone: '#e6dcc6', mus: '#b9594b', eso: '#dd9a86', sto: '#df9d86', si: '#e7b39a', li: '#d29a78', liver: '#8f3e2e', gall: '#7f9441', pan: '#e2bd88',
+    tra: '#a9c8e2', bro: '#9dbfdc', lung: '#e4979c', dia: '#c46c5c', heart: '#bf4d40', art: '#cf3b2f', vei: '#4d6fb3', kid: '#a9473e', ure: '#e8cf93', blad: '#e8c8a0',
+    o2: '#d8392b', co2: '#2f7fd0', nut: '#7d55c7', was: '#e3ad18',
+  };
+  /* 기관계마다 묶음 */
+  const SYS = { dig: ['eso', 'sto', 'si', 'li', 'liver', 'gall', 'pan'], res: ['tra', 'bro', 'lungL', 'lungR', 'dia'], cir: ['heart', 'art', 'vei', 'pa', 'pv'], exc: ['kid', 'ure', 'blad', 'ureth'] };
+  const SYSN = { dig: '소화계', res: '호흡계', cir: '순환계', exc: '배설계' };
+  /* 길의 구간이 어느 기관계에 속하는지 (따라가기 이름표와 멈추기에 쓴다) */
+  const OWN = (route, name) => {
+    if (/^(코|숨관|숨관가지|폐\(허파꽈리\)|입·코 밖으로)$/.test(name)) return 'res';
+    if (route === 'co2' && name === '폐') return 'res';
+    if (/^(입|식도|위|작은창자)$/.test(name)) return 'dig';
+    if (/^(콩팥|오줌관|방광|요도)$/.test(name)) return 'exc';
+    if (name === '조직세포') return 'cell';
+    return 'cir';
+  };
+
+  let dataP = null;
+  function data() {
+    if (dataP) return dataP;
+    dataP = Promise.all([fetch('media/bs.json').then((r) => r.json()), fetch('media/bs.bin').then((r) => r.arrayBuffer())]).then(([m, b]) => {
+      const n = m.counts[0], pos = new Int16Array(b, 0, n * 3), nor = new Int16Array(b, n * 6, n * 3), idx = new Uint32Array(b, m.iOff, m.counts[1]);
+      const pa = new THREE.BufferAttribute(pos, 3, true), na = new THREE.BufferAttribute(nor, 3, true);
+      const geo = (ranges) => { let c = 0; ranges.forEach((r) => { c += r[1]; }); const ix = new Uint32Array(c); let o = 0; ranges.forEach((r) => { ix.set(idx.subarray(r[0], r[0] + r[1]), o); o += r[1]; }); const G = new THREE.BufferGeometry(); G.setAttribute('position', pa); G.setAttribute('normal', na); G.setIndex(new THREE.BufferAttribute(ix, 1)); return G; };
+      return { m, geo };
+    });
+    return dataP;
+  }
+
+  /* 이름표: 3D 위치에서 칸 비율 (x,y)의 글자까지 얇은 선 (배설 수업 EX3와 같은 모양) */
+  (function css() { const c = document.createElement('style'); c.textContent = '.bsl{position:absolute;left:0;top:0;z-index:4;font:700 clamp(13px,1.2vw,15.5px)/1.2 Pretendard,sans-serif;color:#14263b;white-space:nowrap;pointer-events:none;background:rgba(255,255,255,.9);padding:2px 7px;border-radius:6px}.bsl.b{font-weight:800;font-size:clamp(14px,1.4vw,17px)}.bsl small{display:block;font-size:.76em;font-weight:700;color:#5a6b7e;margin-top:1px}.bsl.cap3{font-size:clamp(13px,1.2vw,15px);font-weight:800;color:#0b3f73;background:rgba(255,255,255,.95);border:1px solid #d6e5f5}'; document.head.appendChild(c); })();
+  function labels(st) {
+    const host = st.host, ov = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    ov.setAttribute('style', 'position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:3'); host.appendChild(ov);
+    const L = {}, p = V();
+    st.onFrame(() => {
+      const { W, H } = st.size();
+      Object.values(L).forEach((a) => {
+        const on = a.show; a.e.style.display = on ? '' : 'none'; a.ln.style.display = on && a.at ? '' : 'none'; if (!on) return;
+        const port = H > W * 1.02, xx = port && a.px !== undefined ? a.px : a.x, yy = port && a.py !== undefined ? a.py : a.y;
+        const ax = xx < .5 ? '-100%' : '0', tx = xx * W, ty = yy * H; a.e.style.transform = `translate(${tx}px,${ty}px) translate(${a.c ? '-50%' : ax},-50%)`;
+        if (!a.at) return; p.copy(typeof a.at === 'function' ? a.at() : a.at).project(st.camera);
+        a.ln.setAttribute('x1', (p.x + 1) / 2 * W); a.ln.setAttribute('y1', (1 - p.y) / 2 * H); a.ln.setAttribute('x2', tx + (a.c ? 0 : xx < .5 ? 4 : -4)); a.ln.setAttribute('y2', ty + (a.c ? (yy < .5 ? 12 : -12) : 0));
+      });
+    });
+    const add = (k, t, at, x, y, cls = '', extra = {}) => { const e = document.createElement('div'); e.className = 'bsl ' + cls; e.innerHTML = t; host.appendChild(e); const ln = document.createElementNS('http://www.w3.org/2000/svg', 'line'); ln.setAttribute('stroke', '#14263b'); ln.setAttribute('stroke-width', '1'); ov.appendChild(ln); L[k] = Object.assign({ e, ln, at, x, y, show: false }, extra); return L[k]; };
+    const only = (keys) => { Object.entries(L).forEach(([k, a]) => { a.show = keys.includes(k); }); };
+    const place = (P) => { Object.entries(P).forEach(([k, a]) => { const l = L[k]; if (!l) return; [l.x, l.y] = a; l.px = a[2] !== undefined ? a[2] : a[0]; l.py = a[3] !== undefined ? a[3] : a[1]; }); };
+    return { add, only, place, L, ov };
+  }
+
+  class Path {
+    constructor(pts) { this.p = pts; this.c = new Float32Array(pts.length); for (let i = 1; i < pts.length; i++) this.c[i] = this.c[i - 1] + pts[i].distanceTo(pts[i - 1]); this.len = this.c[pts.length - 1] || 1; }
+    at(u, out = V()) { const s = Math.max(0, Math.min(1, u)) * this.len, c = this.c; let a = 0, b = c.length - 1; while (b - a > 1) { const m = (a + b) >> 1; if (c[m] <= s) a = m; else b = m; } const t = (s - c[a]) / Math.max(1e-6, c[b] - c[a]); return out.lerpVectors(this.p[a], this.p[b], t); }
+  }
+
+  function baseStage(host, opt) {
+    const st = C3.makeStage(host, { fov: opt.fov || 28, minD: opt.minD || 6, maxD: opt.maxD || 220, hold: !!opt.hold, scroll: !!opt.scroll, exposure: .95, sunX: 6, sunZ: 9 });
+    st.scene.environmentIntensity = .55; st.scene.traverse((o) => { if (o.isHemisphereLight) o.intensity = .45; });
+    st.scene.background = new THREE.Color('#ffffff');
+    st.camera.far = 900; st.camera.updateProjectionMatrix();
+    st.sun.position.set(12, 22, 26); st.sun.castShadow = false;
+    const fill = new THREE.DirectionalLight(0xffffff, .55); fill.position.set(-16, 6, 12); st.scene.add(fill);
+    const back = new THREE.DirectionalLight(0xfff2ea, .4); back.position.set(0, 10, -22); st.scene.add(back);
+    const clk = { dt: 0, last: 0, t: 0 };
+    st.onFrame((d) => { if (window.__bakeT !== undefined) { const n = window.__bakeT; clk.dt = Math.max(0, n - clk.last); clk.last = n; } else clk.dt = Math.min(.05, d); clk.t += clk.dt; });
+    const spinRig = { on: false };
+    st.onFrame(() => { if (!spinRig.on) return; const T = window.__bakeT || 0, a = spinRig.a0 + T / spinRig.T * Math.PI * 2 * spinRig.turn; const t = st.controls.target; st.camera.position.set(t.x + Math.sin(a) * spinRig.d, t.y + spinRig.dy, t.z + Math.cos(a) * spinRig.d); [st.sun, fill, back].forEach((o) => { if (!o.userData.p0) o.userData.p0 = o.position.clone(); o.position.copy(o.userData.p0).applyAxisAngle(V(0, 1, 0), a - spinRig.a0); }); });
+    const spin = (T, turn = 1, a0) => { const t = st.controls.target, dx = st.camera.position.x - t.x, dz = st.camera.position.z - t.z; spinRig.on = true; spinRig.T = T; spinRig.turn = turn; spinRig.a0 = a0 === undefined ? Math.atan2(dx, dz) : a0; spinRig.d = Math.hypot(dx, dz); spinRig.dy = st.camera.position.y - t.y; };
+    return { st, clk, spin };
+  }
+  const mat = (c, o = {}) => new THREE.MeshStandardMaterial(Object.assign({ color: c, roughness: .72, metalness: 0 }, o));
+
+  async function body(host, opt = {}) {
+    const D = await data(), M = D.m, G = M.groups;
+    const { st, clk, spin } = baseStage(host, opt);
+    const K = M.K, root = new THREE.Group(); st.scene.add(root);
+    const parts = {}, base = {};
+    const stat = (k, m, ro = 0) => { const me = new THREE.Mesh(D.geo([G[k]]), m); me.scale.setScalar(K); me.frustumCulled = false; me.renderOrder = ro; root.add(me); parts[k] = me; base[k] = { op: m.opacity, tr: m.transparent, dw: m.depthWrite }; return me; };
+    const boneM = mat(COL.bone, { roughness: .9 });
+    ['skull', 'spine', 'hip', 'femur'].forEach((k) => stat(k, boneM.clone()));
+    stat('rib', mat(COL.bone, { roughness: .9, transparent: true, opacity: .5, depthWrite: false }), 9);
+    stat('musR', mat(COL.mus, { roughness: .8, transparent: true, opacity: .42, depthWrite: false }), 5); stat('musL', mat(COL.mus, { roughness: .8, transparent: true, opacity: .3, depthWrite: false }), 5);
+    stat('eso', mat(COL.eso, { roughness: .55 })); stat('sto', mat(COL.sto, { roughness: .55 })); stat('si', mat(COL.si, { roughness: .6 })); stat('li', mat(COL.li, { roughness: .6 }));
+    stat('liver', mat(COL.liver, { roughness: .5, transparent: true, opacity: .82 }), 7); stat('gall', mat(COL.gall, { roughness: .5 })); stat('pan', mat(COL.pan, { roughness: .6 }));
+    stat('tra', mat(COL.tra, { roughness: .6 })); stat('bro', mat(COL.bro, { roughness: .6 }));
+    stat('dia', mat(COL.dia, { roughness: .8, transparent: true, opacity: .28, depthWrite: false, side: THREE.DoubleSide }), 6);
+    stat('heart', mat(COL.heart, { roughness: .55 }));
+    stat('art', mat(COL.art, { roughness: .5 })); stat('vei', mat(COL.vei, { roughness: .5 })); stat('pa', mat(COL.vei, { roughness: .5 })); stat('pv', mat(COL.art, { roughness: .5 }));
+    stat('kid', mat(COL.kid, { roughness: .55 })); stat('ure', mat(COL.ure, { roughness: .6 })); stat('blad', mat(COL.blad, { roughness: .6 })); stat('ureth', mat(COL.ure, { roughness: .6 }));
+    /* 폐: 반투명. 숨 쉴 때 커지고 작아지도록 가운데 기준 무리 */
+    const lungG = {};
+    ['L', 'R'].forEach((s) => { const me = new THREE.Mesh(D.geo([G['lung' + s]]), mat(COL.lung, { roughness: .78, transparent: true, opacity: .55, depthWrite: false, side: THREE.FrontSide })); me.frustumCulled = false; me.geometry.computeBoundingBox(); const bb = me.geometry.boundingBox, c = V((bb.min.x + bb.max.x) / 2 * K, bb.max.y * K, (bb.min.z + bb.max.z) / 2 * K); const g = new THREE.Group(); g.position.copy(c); me.scale.setScalar(K); me.position.copy(c).multiplyScalar(-1); me.renderOrder = 8; g.add(me); root.add(g); lungG[s] = g; parts['lung' + s] = me; base['lung' + s] = { op: .55, tr: true, dw: false }; });
+    /* 심장은 가운데 기준으로 뛰게 */
+    { const me = parts.heart; me.geometry.computeBoundingBox(); const bb = me.geometry.boundingBox, c = V((bb.min.x + bb.max.x) / 2 * K, (bb.min.y + bb.max.y) / 2 * K, (bb.min.z + bb.max.z) / 2 * K); const g = new THREE.Group(); g.position.copy(c); root.remove(me); me.position.copy(c).multiplyScalar(-1); g.add(me); root.add(g); parts.heartG = g; }
+    const diaY0 = parts.dia.position.y;
+
+    /* ----- 길과 알갱이 ----- */
+    const R = M.routes, MK = M.marks;
+    const PA = {}; Object.keys(R).forEach((k) => { PA[k] = new Path(R[k].map((q) => V(...q))); });
+    /* 길의 구간 [시작 u, 끝 u, 이름, 기관계] */
+    const SEG = {}; Object.entries(MK).forEach(([k, m]) => { SEG[k] = m.map(([u, n], i) => [u, i < m.length - 1 ? m[i + 1][0] : 1, n, OWN(k, n)]); });
+    const segAt = (k, u) => { const s = SEG[k]; for (let i = s.length - 1; i >= 0; i--) if (u >= s[i][0]) return i; return 0; };
+    const SH = {
+      o2: (() => { const g = new THREE.SphereGeometry(.24, 14, 10); return g; })(),
+      co2: new THREE.SphereGeometry(.24, 14, 10),
+      nut: (() => { const g = new THREE.CylinderGeometry(.3, .3, .16, 6); g.rotateX(Math.PI / 2); return g; })(),
+      was: new THREE.BoxGeometry(.32, .32, .32),
+    };
+    const NN = { o2: 44, co2: 44, nut: 40, was: 32 };
+    const IM = {}, PT = {};
+    Object.keys(NN).forEach((k, i) => {
+      IM[k] = new THREE.InstancedMesh(SH[k], mat(COL[k], { roughness: .42, depthTest: false, transparent: true }), NN[k]); IM[k].renderOrder = 100 + i; IM[k].frustumCulled = false; root.add(IM[k]);
+      PT[k] = Array.from({ length: NN[k] }, (_, j) => ({ u: j / NN[k], sp: rnd(.85, 1.15), j: V(rnd(-1, 1), rnd(-1, 1), rnd(-1, 1)).normalize().multiplyScalar(rnd(0, .22)), r: V(rnd(0, 6), rnd(0, 6), 0), live: 1 }));
+    });
+    const flow = { o2: true, co2: true, nut: true, was: true };
+    const off = { dig: false, res: false, cir: false, exc: false };
+    let act = 1, actTo = 1, speedMul = 1, psz = 1;
+    /* 멈춘 기관계를 지나는 구간: 그 앞에서 기다린다 */
+    const blockedU = (k) => { const s = SEG[k]; for (const x of s) if (off[x[3]] || (x[3] === 'cell' && false)) return x[0]; return 2; };
+    const dum = new THREE.Object3D(), tp = V();
+    let arrive = { o2: 0, nut: 0 };
+    const stepFlow = (k, dt) => {
+      const P = PA[k], arr = PT[k], im = IM[k], on = flow[k], stopAt = blockedU(k);
+      arr.forEach((a, i) => {
+        if (on) {
+          const nu = a.u + dt * 2.6 * act * speedMul * a.sp / P.len;
+          if (a.u < stopAt && nu >= stopAt - .004) a.u = Math.max(a.u, stopAt - .004 - (i % 7) * .0025); else if (a.u >= stopAt) { /* 멈춘 곳 안: 그대로 */ } else a.u = nu;
+          if (a.u >= 1) { a.u -= 1; if (k === 'o2' || k === 'nut') arrive[k] += 1; }
+        }
+        P.at(a.u, tp).add(a.j);
+        const fade = Math.min(1, a.u / .02, (1 - a.u) / .02);
+        dum.position.copy(tp); a.r.x += dt * 1.4; dum.rotation.set(a.r.x, a.r.y, 0);
+        dum.scale.setScalar(on ? Math.max(0, fade) * psz : 0); dum.updateMatrix(); im.setMatrixAt(i, dum.matrix);
+      });
+      im.instanceMatrix.needsUpdate = true;
+    };
+
+    /* ----- 따라가기 ----- */
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(.85, .09, 8, 40), new THREE.MeshBasicMaterial({ color: '#0e63b3', depthTest: false, transparent: true }));
+    const MKG = new THREE.Group(); MKG.add(ring); MKG.visible = false; ring.renderOrder = 201; root.add(MKG);
+    const markIn = {}; Object.keys(SH).forEach((k) => { const m = new THREE.Mesh(SH[k], mat(COL[k], { depthTest: false, transparent: true })); m.scale.setScalar(2); m.renderOrder = 202; m.visible = false; MKG.add(m); markIn[k] = m; });
+    let tour = null, onTour = null;
+
+    /* ----- 이름표 ----- */
+    const lab = labels(st);
+    const PTS = {}; Object.entries(M.pts).forEach(([k, q]) => { PTS[k] = V(...q); });
+    const onRoute = (k, name, f = .5) => { const s = SEG[k].find((x) => x[2] === name); return () => PA[k].at(s ? s[0] + (s[1] - s[0]) * f : .5, V()); };
+    lab.add('eso', '식도', onRoute('nut', '식도', .55), .74, .26, 'b');
+    lab.add('sto', '위', onRoute('nut', '위', .4), .78, .44, 'b');
+    lab.add('liv', '간', () => PTS.liv.clone().add(V(-.6, .3, 1.2)), .22, .45, 'b');
+    lab.add('si', '작은창자<small>영양소를 흡수해요</small>', () => PTS.abs.clone(), .78, .58, 'b');
+    lab.add('li', '큰창자', () => V(-3.8, -3.6, 1.2), .22, .6, 'b');
+    lab.add('nose', '코', () => PTS.nose.clone(), .26, .07, 'b');
+    lab.add('tra', '숨관', onRoute('o2', '숨관', .5), .74, .2, 'b');
+    lab.add('bro', '숨관가지', onRoute('o2', '숨관가지', .6), .22, .28, 'b');
+    lab.add('lung', '폐<small>산소를 받아들여요</small>', () => PTS.lungL.clone().add(V(.6, 1.2, 0)), .78, .32, 'b');
+    lab.add('dia', '가로막', () => V(4.4, 3.4, 1.6), .78, .44);
+    lab.add('hrt', '심장', () => PTS.heart.clone(), .78, .3, 'b');
+    lab.add('ao', '대동맥', onRoute('sys', '대동맥', .55), .78, .48, 'b');
+    lab.add('ivc', '대정맥', onRoute('sys', '대정맥', .5), .22, .5, 'b');
+    lab.add('pa', '폐동맥', onRoute('pulL', '폐동맥', .7), .78, .22);
+    lab.add('pv', '폐정맥', onRoute('pul', '폐정맥', .4), .22, .3);
+    lab.add('kid', '콩팥<small>혈액 속 노폐물을 걸러요</small>', () => PTS.kL.clone().add(V(.5, 0, 0)), .78, .56, 'b');
+    lab.add('ure', '오줌관', onRoute('was', '오줌관', .5), .78, .68, 'b');
+    lab.add('blad', '방광', () => PTS.bc.clone().add(V(.6, .3, .6)), .78, .78, 'b');
+    lab.add('cell', '조직세포<small>넓적다리 근육의 예</small>', () => PTS.cells.clone(), .22, .84, 'b');
+    lab.add('tour', '', () => MKG.position, .5, .05, 'cap3', { c: true });
+    const LABS = { all: ['eso', 'sto', 'liv', 'si', 'nose', 'lung', 'hrt', 'kid', 'blad', 'cell'], dig: ['eso', 'sto', 'liv', 'si', 'li'], res: ['nose', 'tra', 'bro', 'lung', 'dia'], cir: ['hrt', 'ao', 'ivc', 'pa', 'pv', 'cell'], exc: ['kid', 'ure', 'blad'] };
+
+    /* ----- 시점 ----- */
+    const box = (x0, x1, y0, y1, z0 = -5, z1 = 5) => { const m = new THREE.Mesh(new THREE.BoxGeometry(x1 - x0, y1 - y0, z1 - z0)); m.position.set((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2); m.visible = false; st.scene.add(m); return m; };
+    const VIEW = { all: box(-6.4, 6.4, -20.6, 22.8), trunk: box(-6.4, 6.4, -12, 14.5), dig: box(-5.6, 5.6, -12, 16.5), res: box(-6.2, 6.2, 2, 18.5), cir: box(-6.4, 6.4, -20.6, 13), exc: box(-4.6, 4.6, -12.5, 3.5), cells: box(-5.5, 1.5, -20.6, -11), card: box(-6.6, 6.6, -7, 11.5), sysv: box(-6.4, 6.4, -13, 17.5), chest: box(-6.6, 6.6, -1.5, 12.5) };
+    const DIR = { all: V(0, .03, 1), trunk: V(.06, .04, 1), dig: V(.12, .05, 1), res: V(.08, .04, 1), cir: V(.1, .04, 1), exc: V(.1, .04, 1), cells: V(-.2, .05, 1), card: V(.4, .1, 1), sysv: V(.12, .05, 1), chest: V(.1, .04, 1) };
+    let curView = 'all';
+    const PSZ = { sysv: .85, chest: .6, all: 1, trunk: .8, dig: .7, res: .62, cir: .85, exc: .7, cells: .8, card: .85 };
+    const setView = (k, dur = 0) => { curView = k; psz = PSZ[k] || 1; st.fit([VIEW[k]], { dir: DIR[k], margin: 1.02, dur: window.__bakeT !== undefined ? 0 : dur, target: VIEW[k].position.clone() }); };
+    setView(opt.view || 'all');
+
+    /* ----- 강조 ----- */
+    let hiSys = null;
+    const setOp = (k, op) => { const m = parts[k].material, b = base[k]; const o = Math.min(b.op !== undefined ? b.op : 1, op); m.transparent = b.tr || o < 1; m.opacity = o; m.depthWrite = o >= 1 ? b.dw !== false : false; m.needsUpdate = true; };
+    const highlight = (s) => {
+      hiSys = s;
+      Object.keys(parts).forEach((k) => { if (k === 'heartG') return; const sys = Object.keys(SYS).find((x) => SYS[x].includes(k)); let op = 1; if (s) { if (!sys) op = /^mus/.test(k) ? .15 : .35; else if (sys !== s) op = .12; } if (off[sys]) op = Math.min(op, .18); setOp(k, op); });
+    };
+    highlight(null);
+
+    /* ----- 매 장면 ----- */
+    let breathT = 0, beatT = 0;
+    st.onFrame(() => {
+      const dt = clk.dt;
+      act += (actTo - act) * Math.min(1, dt * 1.2);
+      /* 숨: 들숨에 폐가 커지고 가로막이 내려간다. 운동하면 빨라지고 깊어진다 */
+      if (!off.res) breathT += dt * (.25 + (act - 1) * .32);
+      const b = (1 - Math.cos(breathT * Math.PI * 2)) / 2, deep = .06 + (act - 1) * .085;
+      ['L', 'R'].forEach((s) => { lungG[s].scale.set(1 + b * deep * .6, 1 + b * deep * 1.1, 1 + b * deep * .8); });
+      parts.dia.position.y = diaY0 - b * deep * 6;
+      /* 심장 박동 */
+      if (!off.cir) beatT += dt * (1.1 + (act - 1) * 1.1);
+      const ph = beatT % 1, beat = ph < .12 ? Math.sin(ph / .12 * Math.PI) : 0; parts.heartG.scale.setScalar(1 - beat * .05);
+      Object.keys(PT).forEach((k) => stepFlow(k, dt));
+      /* 따라가기 */
+      if (tour) {
+        tour.t += dt * (REDUCE ? 3 : 1) * (tour.fast || 1);
+        const P = PA[tour.k], u = Math.min(1, tour.t / tour.dur); P.at(u, MKG.position); MKG.visible = true; ring.lookAt(st.camera.position);
+        Object.entries(markIn).forEach(([k, m]) => { m.visible = k === tour.k; m.rotation.x += dt * 1.5; });
+        const si = segAt(tour.k, u), name = SEG[tour.k][si][2];
+        if (si !== tour.si) { tour.si = si; lab.L.tour.e.textContent = name; onTour && onTour(tour.k, si, name, SEG[tour.k][si][3]); }
+        if (u >= 1) { const k = tour.k; tour = null; MKG.visible = false; lab.L.tour.show = false; onTour && onTour(k, -1, '', ''); }
+      }
+    });
+
+    const api = {};
+    Object.defineProperties(api, Object.getOwnPropertyDescriptors({
+      st, parts, lab, VIEW, COL, PA, SEG, SYS, SYSN, LABS, PTS,
+      get view() { return curView; }, get touring() { return !!tour; }, get act() { return act; }, get breath() { return (1 - Math.cos(breathT * Math.PI * 2)) / 2; }, get beat() { return beatT; },
+      get arrive() { return arrive; },
+      setView, spin, highlight,
+      /* 이름표 아래 작은 설명 감추기 (전체 보기에서 겹치지 않게) */
+      short(v) { Object.values(lab.L).forEach((a) => { const sm = a.e.querySelector('small'); if (sm) sm.style.display = v ? 'none' : ''; }); },
+      showLabs: (k) => lab.only(k.concat(tour ? ['tour'] : [])), place: (P) => lab.place(P),
+      flow(o) { Object.assign(flow, o); },
+      activity(v) { actTo = v; },
+      set speed(v) { speedMul = v; },
+      stop(o) { Object.assign(off, o); highlight(hiSys); },
+      get off() { return Object.assign({}, off); },
+      tour(k, cb, fast) { const P = PA[k]; tour = { k, t: 0, dur: P.len / (k === 'nut' ? 4.2 : 3.4), si: -1, fast }; onTour = cb || onTour; lab.L.tour.show = true; },
+      stopTour() { tour = null; MKG.visible = false; lab.L.tour.show = false; },
+      /* 조직세포 자리를 화면 좌표로 (2D 확대 그림의 선을 잇는 데 쓴다) */
+      screenOf(v) { const p = v.clone().project(st.camera), { W, H } = st.size(); return [(p.x + 1) / 2 * W, (1 - p.y) / 2 * H]; },
+    }));
+    return api;
+  }
+  return { body, data, labels, Path, COL, SYSN };
+})();
+window.BS3 = BS3;
+(async () => {
+  'use strict';
+  try {
+    const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+    const q = new URLSearchParams(location.search);
+    const W = await BS3.body($('#fig'), { view: 'all' }); window.__W = W;
+    const CB = BSC.cells($('#cb'), {}); window.__CB = CB;
+    $('#lg').innerHTML = ['o2', 'co2', 'nut', 'was'].map((k) => `<span>${BSC.icon(k, 18)}${BSC.K[k].n}</span>`).join('');
+    /* 조직세포 확대 그림과 3D 조직세포를 잇는 선 */
+    const ln = $('#cln');
+    W.st.onFrame(() => { const [x, y] = W.screenOf(W.PTS.cells), b = $('#cb'), fr = $('#fig').getBoundingClientRect(), r = b.getBoundingClientRect(), vr = $('#cl').getBoundingClientRect(); const ox = fr.left - vr.left, oy = fr.top - vr.top; ln.setAttribute('x1', ox + x); ln.setAttribute('y1', oy + y); ln.setAttribute('x2', r.right - vr.left - 4); ln.setAttribute('y2', r.top - vr.top + 18); ln.style.display = b.hidden ? 'none' : ''; });
+    /* 보는 기관계마다 이름표 자리 [가로 x, y, 세로 x, y] */
+    const POS = {
+      all: { eso: [.7, .19, .74, .26], lung: [.72, .26, .76, .31], sto: [.72, .33, .76, .37], kid: [.72, .41, .76, .44], si: [.72, .49, .76, .51], blad: [.72, .57, .76, .6], nose: [.3, .12, .26, .12], hrt: [.28, .27, .24, .3], liv: [.28, .36, .24, .39] },
+      dig: { eso: [.74, .22, .78, .22], sto: [.76, .4, .8, .4], liv: [.24, .4, .2, .4], si: [.76, .58, .8, .58], li: [.24, .6, .2, .6] },
+      res: { nose: [.26, .14, .2, .14], tra: [.74, .26, .8, .26], bro: [.24, .46, .2, .46], lung: [.76, .5, .8, .5], dia: [.76, .82, .8, .82] },
+      cir: { hrt: [.74, .2, .8, .2], ao: [.76, .38, .8, .38], ivc: [.24, .4, .2, .4], pa: [.74, .1, .8, .1], pv: [.24, .2, .2, .2] },
+      exc: { kid: [.76, .3, .8, .3], ure: [.76, .56, .8, .56], blad: [.76, .8, .8, .8] },
+    };
+    const labs = (k) => { W.place(POS[k]); W.showLabs(W.LABS[k].filter((x) => x !== 'cell')); W.short(k === 'all'); };
+    const sayIn = (id) => (t, m, c = '') => { $('#' + id).className = 'fbk ' + c; $('#' + id + 'T').textContent = t; $('#' + id + 'M').innerHTML = m; };
+    const say = sayIn('res'), psay = sayIn('pres'), rsay = sayIn('rres'), osay = sayIn('ores');
+    const VIEWN = { dig: 'dig', res: 'res', cir: 'cir', exc: 'exc' };
+    const TXT = {
+      dig: ['소화계', '입으로 들어온 음식물은 <b>식도 → 위 → 작은창자</b>를 지나며 작게 분해되고, <b>작은창자</b>에서 영양소가 흡수돼요. 보라색 육각형이 영양소예요.'],
+      res: ['호흡계', '코로 들어온 공기는 <b>숨관 → 숨관가지 → 폐</b>로 가요. 폐에서 붉은 공(산소)이 혈액으로 들어가고, 푸른 공(이산화 탄소)이 몸 밖으로 나가요.'],
+      cir: ['순환계', '<b>심장</b>에서 나온 혈액이 혈관을 따라 온몸을 돌아요. 폐에서 들어온 산소와 작은창자에서 흡수한 영양소를 <b>조직세포</b>에 전달하고, 이산화 탄소와 노폐물을 받아 와요.'],
+      exc: ['배설계', '혈액이 <b>콩팥</b>을 지나면 노폐물이 걸러져 오줌이 돼요. 오줌은 <b>오줌관 → 방광 → 요도</b>로 나가요. 노란 네모가 노폐물이에요.'],
+    };
+    let curSys = null;
+    const sys = (s) => {
+      curSys = s; W.stopTour(); W.highlight(s); $$('#sl button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.s === s)));
+      if (!s) { $('#cb').hidden = false; W.setView('all', .9); labs('all'); W.flow({ o2: true, co2: true, nut: true, was: true }); say('네 기관계가 함께 일해요', '붉은 공은 <b>산소</b>, 푸른 공은 <b>이산화 탄소</b>, 보라색 육각형은 <b>영양소</b>, 노란 네모는 <b>노폐물</b>이에요. 기관계를 하나씩 눌러 찾아봐요. 손가락으로 돌려 볼 수도 있어요.'); return; }
+      W.setView(VIEWN[s], .9); labs(s); $('#cb').hidden = true;
+      W.flow({ o2: s === 'res' || s === 'cir', co2: s === 'res' || s === 'cir', nut: s === 'dig' || s === 'cir', was: s === 'exc' || s === 'cir' });
+      say(TXT[s][0], TXT[s][1], 'ok');
+    };
+    $$('#sl button').forEach((b) => b.addEventListener('click', () => sys(b.getAttribute('aria-pressed') === 'true' ? null : b.dataset.s)));
+    $('#rv').addEventListener('click', () => { W.setView(curAct === 'sys' && curSys ? VIEWN[curSys] : 'all', .9); });
+
+    /* ----- 물질 따라가기 ----- */
+    const SUB = { o2: '산소', co2: '이산화 탄소', nut: '영양소', was: '노폐물' };
+    $('#sb').innerHTML = Object.entries(SUB).map(([k, n]) => `<button type="button" data-k="${k}" aria-pressed="false">${BSC.icon(k, 24)}${n}</button>`).join('');
+    const SMALL = { '폐(허파꽈리)': '혈액으로', '조직세포': '세포호흡', '입·코 밖으로': '날숨', '작은창자': '흡수', '콩팥': '걸러져 오줌으로', '요도': '몸 밖으로' };
+    const SYSOF = { res: '호흡계', dig: '소화계', cir: '순환계', exc: '배설계', cell: '조직세포' };
+    let steps = [], stepOf = [];
+    const build = (k) => { steps = []; stepOf = []; W.SEG[k].forEach((s, i) => { const n = s[2], last = steps[steps.length - 1]; if (!last || last.n !== n) steps.push({ n, s: s[3] }); stepOf[i] = steps.length - 1; }); };
+    const drawRoute = (n) => { $('#rt').className = 'route' + (steps.length > 8 ? ' cols' : ''); $('#rt').innerHTML = steps.map((r, i) => `<div class="r ${i < n ? 'done' : ''} ${i === n ? 'on' : ''}"><i>${i + 1}</i><span>${r.n}<small>${SYSOF[r.s]}${SMALL[r.n] ? ' · ' + SMALL[r.n] : ''}</small></span></div>`).join(''); };
+    const END = {
+      o2: '호흡계가 받아들인 산소를 순환계가 조직세포까지 전달해요. 조직세포는 산소를 이용해 영양소를 분해하여 <b>에너지</b>를 얻어요.',
+      co2: '조직세포에서 생긴 이산화 탄소를 순환계가 폐로 전달하고, <b>호흡계</b>가 날숨으로 몸 밖으로 내보내요.',
+      nut: '소화계가 작게 분해하여 흡수한 영양소를 순환계가 조직세포까지 전달해요. 흡수된 영양소는 혈액을 통해 심장을 거쳐 온몸의 세포로 가요.',
+      was: '조직세포에서 생긴 노폐물을 순환계가 콩팥으로 전달하고, <b>배설계</b>가 오줌으로 만들어 몸 밖으로 내보내요.',
+    };
+    let touringK = null;
+    const tour = (k) => {
+      touringK = k; build(k); drawRoute(0); $$('#sb button').forEach((b) => { b.setAttribute('aria-pressed', String(b.dataset.k === k)); b.disabled = true; });
+      W.highlight(null); W.setView('all', .8); W.place(POS.all); W.showLabs([]); W.flow({ o2: k === 'o2', co2: k === 'co2', nut: k === 'nut', was: k === 'was' });
+      psay(SUB[k] + ' 따라가기', '파란 고리 속 ' + SUB[k] + '을(를) 따라가요. 지금 지나는 곳이 오른쪽 목록에 표시돼요.');
+      W.tour(k, (kk, si) => {
+        if (si < 0) { touringK = null; $$('#sb button').forEach((b) => { b.disabled = false; }); drawRoute(99); W.flow({ o2: true, co2: true, nut: true, was: true }); psay(SUB[kk] + '이(가) 도착했어요', steps.map((s) => s.n).join(' → ') + '<br>' + END[kk], 'ok'); return; }
+        drawRoute(stepOf[si]);
+      });
+    };
+    $$('#sb button').forEach((b) => b.addEventListener('click', () => tour(b.dataset.k)));
+
+    /* ----- 운동할 때 ----- */
+    const mon = (cv, fn) => { const g = cv.getContext('2d'), buf = []; return (dt) => { const r = cv.getBoundingClientRect(), d = Math.min(2, devicePixelRatio || 1); if (cv.width !== Math.round(r.width * d)) { cv.width = Math.round(r.width * d); cv.height = Math.round(r.height * d); } buf.push(fn()); const n = Math.round(r.width / 1.5); while (buf.length > n) buf.shift(); g.setTransform(d, 0, 0, d, 0, 0); g.clearRect(0, 0, r.width, r.height); g.strokeStyle = '#0e63b3'; g.lineWidth = 2; g.beginPath(); buf.forEach((v, i) => { const x = r.width - (buf.length - 1 - i) * 1.5, y = r.height - 6 - v * (r.height - 12); g[i ? 'lineTo' : 'moveTo'](x, y); }); g.stroke(); }; };
+    const mB = mon($('#mB'), () => W.breath), mH = mon($('#mH'), () => { const ph = W.beat % 1; return ph < .12 ? Math.sin(ph / .12 * Math.PI) : 0; });
+    W.st.onFrame((dt) => { if (curAct === 'run') { mB(dt); mH(dt); } });
+    const run = (v) => {
+      $$('#rn button').forEach((b) => b.setAttribute('aria-pressed', String(+b.dataset.v === v))); W.activity(v); CB.set({ act: v });
+      if (v > 1) rsay('격렬한 운동', '숨이 <b>빨라지고 깊어져요</b>. 심장도 <b>빠르게</b> 뛰어요. 근육의 조직세포에 산소와 영양소가 더 많이 전달되어 세포호흡이 더 많이 일어나요.', 'ok');
+      else rsay('쉴 때', '숨쉬기와 심장 박동이 느긋해요. <b>격렬한 운동</b>을 눌러 무엇이 달라지는지 봐요.');
+    };
+    $$('#rn button').forEach((b) => b.addEventListener('click', () => run(+b.dataset.v)));
+    const ptab = (p) => { $$('#rtab button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.p === p))); $$('[data-a="run"] .pp').forEach((e) => { e.hidden = e.dataset.p !== p; }); };
+    $$('#rtab button').forEach((b) => b.addEventListener('click', () => ptab(b.dataset.p)));
+
+    /* ----- 하나가 멈추면 ----- */
+    const off = { dig: false, res: false, cir: false, exc: false };
+    const OFFT = {
+      dig: '영양소를 흡수하지 못해 조직세포에 <b>영양소</b>가 전달되지 않아요. 산소가 있어도 세포호흡이 잘 일어나지 않아 <b>에너지</b>를 얻기 어려워요.',
+      res: '산소를 받아들이지 못해 조직세포에 <b>산소</b>가 전달되지 않아요. 세포호흡이 잘 일어나지 않고, 이산화 탄소도 몸 밖으로 나가지 못해요.',
+      cir: '혈액이 돌지 못해 산소와 영양소가 조직세포까지 <b>전달되지 않아요</b>. 이산화 탄소와 노폐물도 내보내지 못해요. 그래서 심장이 멈춘 사람에게는 가슴 압박으로 혈액이 돌게 해요.',
+      exc: '혈액 속의 노폐물을 걸러 내지 못해 노폐물이 몸에 <b>쌓여요</b>. 세포 주변에 노란 네모가 쌓이는 것을 봐요.',
+    };
+    const applyOff = () => {
+      W.stop(off); $$('#og button').forEach((b) => { const o = off[b.dataset.s]; b.setAttribute('aria-pressed', String(o)); b.querySelector('small').textContent = o ? '다시 일하기' : '멈추기'; });
+      CB.set({ o2: !off.res, nut: !off.dig, co2Out: !off.res, wasOut: !off.exc, flow: !off.cir });
+      const ks = Object.keys(off).filter((k) => off[k]);
+      if (!ks.length) osay('모두 일하는 중', '네 기관계가 모두 일하면 조직세포가 산소와 영양소를 받아 세포호흡으로 에너지를 얻어요. 기관계 하나를 멈춰 봐요.');
+      else osay(ks.map((k) => W.SYSN[k]).join(', ') + ' 멈춤', ks.map((k) => OFFT[k]).join('<br>') + '<br>기관계가 원활히 상호작용해야 세포호흡이 잘 일어나요.', 'no');
+    };
+    $$('#og button').forEach((b) => b.addEventListener('click', () => { off[b.dataset.s] = !off[b.dataset.s]; applyOff(); }));
+
+    /* ----- 활동 탭 ----- */
+    let curAct = 'sys';
+    const act = (a) => {
+      curAct = a; $('#cb').hidden = false; $$('#at button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.a === a))); $$('.pane').forEach((e) => { e.hidden = e.dataset.a !== a; });
+      W.stopTour(); touringK = null; $$('#sb button').forEach((b) => { b.disabled = false; b.setAttribute('aria-pressed', 'false'); });
+      if (a !== 'off') { Object.keys(off).forEach((k) => { off[k] = false; }); applyOff(); }
+      if (a !== 'run') run(1);
+      if (a === 'sys') sys(null);
+      if (a === 'path') { W.highlight(null); W.setView('all', .8); labs('all'); W.flow({ o2: true, co2: true, nut: true, was: true }); build('o2'); drawRoute(-1); psay('따라가기', '물질을 하나 골라 몸속 길을 따라가 봐요. 어느 기관계를 지나는지 목록에 나와요.'); }
+      if (a === 'run') { W.highlight(null); W.setView('trunk', .8); W.place({ lung: [.76, .22, .8, .22], hrt: [.24, .32, .2, .32], dia: [.76, .44, .8, .44] }); W.showLabs(['lung', 'hrt', 'dia']); W.flow({ o2: true, co2: true, nut: true, was: true }); }
+      if (a === 'off') { W.highlight(null); W.setView('all', .8); labs('all'); W.flow({ o2: true, co2: true, nut: true, was: true }); }
+    };
+    $$('#at button').forEach((b) => b.addEventListener('click', () => act(b.dataset.a)));
+    act('sys');
+    /* 화면 검사용 */
+    if (q.get('a')) act(q.get('a'));
+    if (q.get('s')) sys(q.get('s'));
+    if (q.get('tour')) { act('path'); tour(q.get('tour')); if (q.get('fast')) W.tour(q.get('tour'), null, +q.get('fast')); }
+    if (q.get('run')) { act('run'); run(+q.get('run')); }
+    if (q.get('tab')) ptab(q.get('tab'));
+    if (q.get('off')) { act('off'); q.get('off').split(',').forEach((k) => { off[k] = true; }); applyOff(); }
+    window.SM = window.SM || {}; window.SM.okUI = true; window.__ready = true;
+  } catch (err) { window.SM_err && window.SM_err('기관계 3D', err); console.error(err); }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>기관계의 상호작용 – 기관계 3D</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+/*@@LOCAL:_css_ps.css@@*/
+/*@@LOCAL:_css_sim.css@@*/
+/*@@LOCAL:_css_pf.css@@*/
+/*@@LOCAL:_css_bs.css@@*/
+.viewer{position:relative}
+header.top .ptabs.big{min-width:min(100%,560px)}
+.nlist button{grid-template-columns:78px 1fr}
+.nlist .all{grid-template-columns:1fr;text-align:center;justify-items:center}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top"><div class="ttl"><span class="eyebrow">시뮬레이션</span><h1>기관계 3D</h1>
+    <p class="sub">실제 사람 자료로 만든 한 몸에서 네 기관계가 조직세포에 산소와 영양소를 보내고, 이산화 탄소와 노폐물을 내보내는 길을 살펴봐요.</p></div>
+    <div class="ptabs big" role="tablist" id="at"><button type="button" role="tab" data-a="sys" aria-selected="true">네 기관계</button><button type="button" role="tab" data-a="path" aria-selected="false">물질 따라가기</button><button type="button" role="tab" data-a="run" aria-selected="false">운동할 때</button><button type="button" role="tab" data-a="off" aria-selected="false">하나가 멈추면</button></div></header>
+  <div class="stage">
+    <section class="card viewer">
+      <div class="scene grow gl-host" id="fig" style="height:auto;background:#fff" role="img" aria-label="머리뼈부터 넓적다리까지의 3D 모형. 식도·위·간·작은창자·큰창자, 숨관·폐·가로막, 심장과 혈관, 콩팥·오줌관·방광이 함께 보인다. 산소·이산화 탄소·영양소·노폐물 알갱이가 흐른다."></div>
+      <div class="cellbox" id="cb" role="img" aria-label="조직세포 확대 그림. 모세혈관에서 산소와 영양소가 조직세포로 들어가고, 세포호흡으로 에너지가 나오며, 이산화 탄소와 노폐물이 모세혈관으로 나온다."></div>
+      <svg class="cellsvg" id="cl"><line id="cln" stroke="#14263b" stroke-width="1" stroke-dasharray="3 3"/></svg>
+      <div class="vctl"><div class="lgd" id="lg" style="flex:1;margin:0"></div><button class="btn" type="button" id="rv" style="min-height:44px">처음 보기</button></div>
+    </section>
+    <section class="card pad">
+      <div class="pane" data-a="sys">
+        <p class="lbl">기관계를 눌러 몸속에서 찾아봐요</p>
+        <div class="nlist" id="sl">
+          <button type="button" data-s="dig" aria-pressed="false"><b>소화계</b><span>음식물 속의 영양소를 세포가 흡수할 수 있게 작게 분해하고, 흡수해요</span></button>
+          <button type="button" data-s="res" aria-pressed="false"><b>호흡계</b><span>공기 중의 산소를 받아들이고 몸속의 이산화 탄소를 몸 밖으로 내보내요</span></button>
+          <button type="button" data-s="cir" aria-pressed="false"><b>순환계</b><span>산소와 영양소를 조직세포에 전달하고, 이산화 탄소와 노폐물을 호흡 기관과 배설 기관으로 전달해요</span></button>
+          <button type="button" data-s="exc" aria-pressed="false"><b>배설계</b><span>혈액 속의 노폐물을 걸러 오줌으로 만들어 몸 밖으로 내보내요</span></button>
+        </div>
+        <div class="fbk" id="res" style="margin-top:8px"><b class="t" id="resT">처음</b><span id="resM"></span></div>
+      </div>
+      <div class="pane" data-a="path" hidden>
+        <p class="lbl">어떤 물질을 따라갈까요?</p>
+        <div class="subs" id="sb"></div>
+        <div class="route" id="rt"></div>
+        <div class="fbk" id="pres"><b class="t" id="presT">따라가기</b><span id="presM"></span></div>
+      </div>
+      <div class="pane" data-a="run" hidden>
+        <div class="ptabs" role="tablist" id="rtab"><button type="button" role="tab" data-p="do" aria-selected="true">해 보기</button><button type="button" role="tab" data-p="why" aria-selected="false">왜 그럴까?</button></div>
+        <div class="pp" data-p="do">
+          <div class="seg3" id="rn"><button type="button" data-v="1" aria-pressed="true">쉴 때</button><button type="button" data-v="2" aria-pressed="false">격렬한 운동</button></div>
+          <div class="mon"><div class="row"><span>숨쉬기</span><canvas id="mB"></canvas></div><div class="row"><span>심장 박동</span><canvas id="mH"></canvas></div></div>
+          <div class="fbk" id="rres"><b class="t" id="rresT">쉴 때</b><span id="rresM"></span></div>
+          <p class="mnote">눈금이 없는 모형이에요. 숨쉬기와 심장 박동이 빨라지는 정도는 사람과 운동에 따라 달라요.</p>
+        </div>
+        <div class="pp" data-p="why" hidden><ol class="whylist">
+          <li><i>1</i><span>격렬한 운동을 하면 근육의 조직세포가 <b>에너지</b>를 더 많이 써요.</span></li>
+          <li><i>2</i><span>에너지를 더 얻으려면 <b>세포호흡</b>이 더 많이 일어나야 해요. 그래서 산소와 영양소가 더 많이 필요해요.</span></li>
+          <li><i>3</i><span><b>호흡계</b>는 숨을 빠르게 쉬어 산소를 더 많이 받아들이고, 세포호흡으로 더 많이 생긴 이산화 탄소를 내보내요.</span></li>
+          <li><i>4</i><span><b>순환계</b>는 심장이 빠르게 뛰어 산소와 영양소를 조직세포에 더 빨리 전달해요. 숨이 가빠지는 것은 기관계가 함께 일하기 때문이에요.</span></li></ol></div>
+      </div>
+      <div class="pane" data-a="off" hidden>
+        <p class="lbl">한 기관계가 제대로 일하지 못하면 어떻게 될까요?</p>
+        <div class="tg4" id="og">
+          <button type="button" data-s="dig" aria-pressed="false">소화계<small>멈추기</small></button>
+          <button type="button" data-s="res" aria-pressed="false">호흡계<small>멈추기</small></button>
+          <button type="button" data-s="cir" aria-pressed="false">순환계<small>멈추기</small></button>
+          <button type="button" data-s="exc" aria-pressed="false">배설계<small>멈추기</small></button>
+        </div>
+        <div class="fbk" id="ores" style="margin-top:8px"><b class="t" id="oresT">모두 일하는 중</b><span id="oresM"></span></div>
+        <p class="mnote">개념 이해를 위한 모형이에요. 실제 몸에서 기관계가 이렇게 한순간에 멈추지는 않아요.</p>
+      </div>
+      <p class="mnote">모형 자료: BodyParts3D(뼈·소화계·심장과 혈관·숨관·배설계·근육, © The Database Center for Life Science, CC BY 4.0), HuBMAP CCF 3D Reference Object Library(폐, CC BY 4.0). 조직세포는 온몸에 있으며 넓적다리 근육을 예로 보였어요. 알갱이는 잘 보이게 정한 모형이에요.</p>
+    </section>
+  </div>
+</div>
+<script>
+/*@@LOCAL:_bsc.js@@*/
+</script>
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+/*@@PART:c3.js@@*/
+/*@@LOCAL:_bs3.js@@*/
+(async () => {
+  'use strict';
+  try {
+    const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+    const q = new URLSearchParams(location.search);
+    const W = await BS3.body($('#fig'), { view: 'all' }); window.__W = W;
+    const CB = BSC.cells($('#cb'), {}); window.__CB = CB;
+    $('#lg').innerHTML = ['o2', 'co2', 'nut', 'was'].map((k) => `<span>${BSC.icon(k, 18)}${BSC.K[k].n}</span>`).join('');
+    /* 조직세포 확대 그림과 3D 조직세포를 잇는 선 */
+    const ln = $('#cln');
+    W.st.onFrame(() => { const [x, y] = W.screenOf(W.PTS.cells), b = $('#cb'), fr = $('#fig').getBoundingClientRect(), r = b.getBoundingClientRect(), vr = $('#cl').getBoundingClientRect(); const ox = fr.left - vr.left, oy = fr.top - vr.top; ln.setAttribute('x1', ox + x); ln.setAttribute('y1', oy + y); ln.setAttribute('x2', r.right - vr.left - 4); ln.setAttribute('y2', r.top - vr.top + 18); ln.style.display = b.hidden ? 'none' : ''; });
+    /* 보는 기관계마다 이름표 자리 [가로 x, y, 세로 x, y] */
+    const POS = {
+      all: { eso: [.7, .19, .74, .26], lung: [.72, .26, .76, .31], sto: [.72, .33, .76, .37], kid: [.72, .41, .76, .44], si: [.72, .49, .76, .51], blad: [.72, .57, .76, .6], nose: [.3, .12, .26, .12], hrt: [.28, .27, .24, .3], liv: [.28, .36, .24, .39] },
+      dig: { eso: [.74, .22, .78, .22], sto: [.76, .4, .8, .4], liv: [.24, .4, .2, .4], si: [.76, .58, .8, .58], li: [.24, .6, .2, .6] },
+      res: { nose: [.26, .14, .2, .14], tra: [.74, .26, .8, .26], bro: [.24, .46, .2, .46], lung: [.76, .5, .8, .5], dia: [.76, .82, .8, .82] },
+      cir: { hrt: [.74, .2, .8, .2], ao: [.76, .38, .8, .38], ivc: [.24, .4, .2, .4], pa: [.74, .1, .8, .1], pv: [.24, .2, .2, .2] },
+      exc: { kid: [.76, .3, .8, .3], ure: [.76, .56, .8, .56], blad: [.76, .8, .8, .8] },
+    };
+    const labs = (k) => { W.place(POS[k]); W.showLabs(W.LABS[k].filter((x) => x !== 'cell')); W.short(k === 'all'); };
+    const sayIn = (id) => (t, m, c = '') => { $('#' + id).className = 'fbk ' + c; $('#' + id + 'T').textContent = t; $('#' + id + 'M').innerHTML = m; };
+    const say = sayIn('res'), psay = sayIn('pres'), rsay = sayIn('rres'), osay = sayIn('ores');
+    const VIEWN = { dig: 'dig', res: 'res', cir: 'cir', exc: 'exc' };
+    const TXT = {
+      dig: ['소화계', '입으로 들어온 음식물은 <b>식도 → 위 → 작은창자</b>를 지나며 작게 분해되고, <b>작은창자</b>에서 영양소가 흡수돼요. 보라색 육각형이 영양소예요.'],
+      res: ['호흡계', '코로 들어온 공기는 <b>숨관 → 숨관가지 → 폐</b>로 가요. 폐에서 붉은 공(산소)이 혈액으로 들어가고, 푸른 공(이산화 탄소)이 몸 밖으로 나가요.'],
+      cir: ['순환계', '<b>심장</b>에서 나온 혈액이 혈관을 따라 온몸을 돌아요. 폐에서 들어온 산소와 작은창자에서 흡수한 영양소를 <b>조직세포</b>에 전달하고, 이산화 탄소와 노폐물을 받아 와요.'],
+      exc: ['배설계', '혈액이 <b>콩팥</b>을 지나면 노폐물이 걸러져 오줌이 돼요. 오줌은 <b>오줌관 → 방광 → 요도</b>로 나가요. 노란 네모가 노폐물이에요.'],
+    };
+    let curSys = null;
+    const sys = (s) => {
+      curSys = s; W.stopTour(); W.highlight(s); $$('#sl button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.s === s)));
+      if (!s) { $('#cb').hidden = false; W.setView('all', .9); labs('all'); W.flow({ o2: true, co2: true, nut: true, was: true }); say('네 기관계가 함께 일해요', '붉은 공은 <b>산소</b>, 푸른 공은 <b>이산화 탄소</b>, 보라색 육각형은 <b>영양소</b>, 노란 네모는 <b>노폐물</b>이에요. 기관계를 하나씩 눌러 찾아봐요. 손가락으로 돌려 볼 수도 있어요.'); return; }
+      W.setView(VIEWN[s], .9); labs(s); $('#cb').hidden = true;
+      W.flow({ o2: s === 'res' || s === 'cir', co2: s === 'res' || s === 'cir', nut: s === 'dig' || s === 'cir', was: s === 'exc' || s === 'cir' });
+      say(TXT[s][0], TXT[s][1], 'ok');
+    };
+    $$('#sl button').forEach((b) => b.addEventListener('click', () => sys(b.getAttribute('aria-pressed') === 'true' ? null : b.dataset.s)));
+    $('#rv').addEventListener('click', () => { W.setView(curAct === 'sys' && curSys ? VIEWN[curSys] : 'all', .9); });
+
+    /* ----- 물질 따라가기 ----- */
+    const SUB = { o2: '산소', co2: '이산화 탄소', nut: '영양소', was: '노폐물' };
+    $('#sb').innerHTML = Object.entries(SUB).map(([k, n]) => `<button type="button" data-k="${k}" aria-pressed="false">${BSC.icon(k, 24)}${n}</button>`).join('');
+    const SMALL = { '폐(허파꽈리)': '혈액으로', '조직세포': '세포호흡', '입·코 밖으로': '날숨', '작은창자': '흡수', '콩팥': '걸러져 오줌으로', '요도': '몸 밖으로' };
+    const SYSOF = { res: '호흡계', dig: '소화계', cir: '순환계', exc: '배설계', cell: '조직세포' };
+    let steps = [], stepOf = [];
+    const build = (k) => { steps = []; stepOf = []; W.SEG[k].forEach((s, i) => { const n = s[2], last = steps[steps.length - 1]; if (!last || last.n !== n) steps.push({ n, s: s[3] }); stepOf[i] = steps.length - 1; }); };
+    const drawRoute = (n) => { $('#rt').className = 'route' + (steps.length > 8 ? ' cols' : ''); $('#rt').innerHTML = steps.map((r, i) => `<div class="r ${i < n ? 'done' : ''} ${i === n ? 'on' : ''}"><i>${i + 1}</i><span>${r.n}<small>${SYSOF[r.s]}${SMALL[r.n] ? ' · ' + SMALL[r.n] : ''}</small></span></div>`).join(''); };
+    const END = {
+      o2: '호흡계가 받아들인 산소를 순환계가 조직세포까지 전달해요. 조직세포는 산소를 이용해 영양소를 분해하여 <b>에너지</b>를 얻어요.',
+      co2: '조직세포에서 생긴 이산화 탄소를 순환계가 폐로 전달하고, <b>호흡계</b>가 날숨으로 몸 밖으로 내보내요.',
+      nut: '소화계가 작게 분해하여 흡수한 영양소를 순환계가 조직세포까지 전달해요. 흡수된 영양소는 혈액을 통해 심장을 거쳐 온몸의 세포로 가요.',
+      was: '조직세포에서 생긴 노폐물을 순환계가 콩팥으로 전달하고, <b>배설계</b>가 오줌으로 만들어 몸 밖으로 내보내요.',
+    };
+    let touringK = null;
+    const tour = (k) => {
+      touringK = k; build(k); drawRoute(0); $$('#sb button').forEach((b) => { b.setAttribute('aria-pressed', String(b.dataset.k === k)); b.disabled = true; });
+      W.highlight(null); W.setView('all', .8); W.place(POS.all); W.showLabs([]); W.flow({ o2: k === 'o2', co2: k === 'co2', nut: k === 'nut', was: k === 'was' });
+      psay(SUB[k] + ' 따라가기', '파란 고리 속 ' + SUB[k] + '을(를) 따라가요. 지금 지나는 곳이 오른쪽 목록에 표시돼요.');
+      W.tour(k, (kk, si) => {
+        if (si < 0) { touringK = null; $$('#sb button').forEach((b) => { b.disabled = false; }); drawRoute(99); W.flow({ o2: true, co2: true, nut: true, was: true }); psay(SUB[kk] + '이(가) 도착했어요', steps.map((s) => s.n).join(' → ') + '<br>' + END[kk], 'ok'); return; }
+        drawRoute(stepOf[si]);
+      });
+    };
+    $$('#sb button').forEach((b) => b.addEventListener('click', () => tour(b.dataset.k)));
+
+    /* ----- 운동할 때 ----- */
+    const mon = (cv, fn) => { const g = cv.getContext('2d'), buf = []; return (dt) => { const r = cv.getBoundingClientRect(), d = Math.min(2, devicePixelRatio || 1); if (cv.width !== Math.round(r.width * d)) { cv.width = Math.round(r.width * d); cv.height = Math.round(r.height * d); } buf.push(fn()); const n = Math.round(r.width / 1.5); while (buf.length > n) buf.shift(); g.setTransform(d, 0, 0, d, 0, 0); g.clearRect(0, 0, r.width, r.height); g.strokeStyle = '#0e63b3'; g.lineWidth = 2; g.beginPath(); buf.forEach((v, i) => { const x = r.width - (buf.length - 1 - i) * 1.5, y = r.height - 6 - v * (r.height - 12); g[i ? 'lineTo' : 'moveTo'](x, y); }); g.stroke(); }; };
+    const mB = mon($('#mB'), () => W.breath), mH = mon($('#mH'), () => { const ph = W.beat % 1; return ph < .12 ? Math.sin(ph / .12 * Math.PI) : 0; });
+    W.st.onFrame((dt) => { if (curAct === 'run') { mB(dt); mH(dt); } });
+    const run = (v) => {
+      $$('#rn button').forEach((b) => b.setAttribute('aria-pressed', String(+b.dataset.v === v))); W.activity(v); CB.set({ act: v });
+      if (v > 1) rsay('격렬한 운동', '숨이 <b>빨라지고 깊어져요</b>. 심장도 <b>빠르게</b> 뛰어요. 근육의 조직세포에 산소와 영양소가 더 많이 전달되어 세포호흡이 더 많이 일어나요.', 'ok');
+      else rsay('쉴 때', '숨쉬기와 심장 박동이 느긋해요. <b>격렬한 운동</b>을 눌러 무엇이 달라지는지 봐요.');
+    };
+    $$('#rn button').forEach((b) => b.addEventListener('click', () => run(+b.dataset.v)));
+    const ptab = (p) => { $$('#rtab button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.p === p))); $$('[data-a="run"] .pp').forEach((e) => { e.hidden = e.dataset.p !== p; }); };
+    $$('#rtab button').forEach((b) => b.addEventListener('click', () => ptab(b.dataset.p)));
+
+    /* ----- 하나가 멈추면 ----- */
+    const off = { dig: false, res: false, cir: false, exc: false };
+    const OFFT = {
+      dig: '영양소를 흡수하지 못해 조직세포에 <b>영양소</b>가 전달되지 않아요. 산소가 있어도 세포호흡이 잘 일어나지 않아 <b>에너지</b>를 얻기 어려워요.',
+      res: '산소를 받아들이지 못해 조직세포에 <b>산소</b>가 전달되지 않아요. 세포호흡이 잘 일어나지 않고, 이산화 탄소도 몸 밖으로 나가지 못해요.',
+      cir: '혈액이 돌지 못해 산소와 영양소가 조직세포까지 <b>전달되지 않아요</b>. 이산화 탄소와 노폐물도 내보내지 못해요. 그래서 심장이 멈춘 사람에게는 가슴 압박으로 혈액이 돌게 해요.',
+      exc: '혈액 속의 노폐물을 걸러 내지 못해 노폐물이 몸에 <b>쌓여요</b>. 세포 주변에 노란 네모가 쌓이는 것을 봐요.',
+    };
+    const applyOff = () => {
+      W.stop(off); $$('#og button').forEach((b) => { const o = off[b.dataset.s]; b.setAttribute('aria-pressed', String(o)); b.querySelector('small').textContent = o ? '다시 일하기' : '멈추기'; });
+      CB.set({ o2: !off.res, nut: !off.dig, co2Out: !off.res, wasOut: !off.exc, flow: !off.cir });
+      const ks = Object.keys(off).filter((k) => off[k]);
+      if (!ks.length) osay('모두 일하는 중', '네 기관계가 모두 일하면 조직세포가 산소와 영양소를 받아 세포호흡으로 에너지를 얻어요. 기관계 하나를 멈춰 봐요.');
+      else osay(ks.map((k) => W.SYSN[k]).join(', ') + ' 멈춤', ks.map((k) => OFFT[k]).join('<br>') + '<br>기관계가 원활히 상호작용해야 세포호흡이 잘 일어나요.', 'no');
+    };
+    $$('#og button').forEach((b) => b.addEventListener('click', () => { off[b.dataset.s] = !off[b.dataset.s]; applyOff(); }));
+
+    /* ----- 활동 탭 ----- */
+    let curAct = 'sys';
+    const act = (a) => {
+      curAct = a; $('#cb').hidden = false; $$('#at button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.a === a))); $$('.pane').forEach((e) => { e.hidden = e.dataset.a !== a; });
+      W.stopTour(); touringK = null; $$('#sb button').forEach((b) => { b.disabled = false; b.setAttribute('aria-pressed', 'false'); });
+      if (a !== 'off') { Object.keys(off).forEach((k) => { off[k] = false; }); applyOff(); }
+      if (a !== 'run') run(1);
+      if (a === 'sys') sys(null);
+      if (a === 'path') { W.highlight(null); W.setView('all', .8); labs('all'); W.flow({ o2: true, co2: true, nut: true, was: true }); build('o2'); drawRoute(-1); psay('따라가기', '물질을 하나 골라 몸속 길을 따라가 봐요. 어느 기관계를 지나는지 목록에 나와요.'); }
+      if (a === 'run') { W.highlight(null); W.setView('trunk', .8); W.place({ lung: [.76, .22, .8, .22], hrt: [.24, .32, .2, .32], dia: [.76, .44, .8, .44] }); W.showLabs(['lung', 'hrt', 'dia']); W.flow({ o2: true, co2: true, nut: true, was: true }); }
+      if (a === 'off') { W.highlight(null); W.setView('all', .8); labs('all'); W.flow({ o2: true, co2: true, nut: true, was: true }); }
+    };
+    $$('#at button').forEach((b) => b.addEventListener('click', () => act(b.dataset.a)));
+    act('sys');
+    /* 화면 검사용 */
+    if (q.get('a')) act(q.get('a'));
+    if (q.get('s')) sys(q.get('s'));
+    if (q.get('tour')) { act('path'); tour(q.get('tour')); if (q.get('fast')) W.tour(q.get('tour'), null, +q.get('fast')); }
+    if (q.get('run')) { act('run'); run(+q.get('run')); }
+    if (q.get('tab')) ptab(q.get('tab'));
+    if (q.get('off')) { act('off'); q.get('off').split(',').forEach((k) => { off[k] = true; }); applyOff(); }
+    window.SM = window.SM || {}; window.SM.okUI = true; window.__ready = true;
+  } catch (err) { window.SM_err && window.SM_err('기관계 3D', err); console.error(err); }
+})();
+</script>
+</body>
+</html>
