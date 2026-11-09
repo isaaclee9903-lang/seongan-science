@@ -25,7 +25,11 @@ RAS 수업(`lessons/`)과 수업 발표(`presentations/`)를 바탕으로 만드
 - 빈칸은 `<span class="bl" style="--w:16mm"><i>정답</i></span>`, 객관식 정답은 `<li class="ok">`, 서술형 예시 답안은 `<div class="lines" style="--n:3"><div class="ex">…</div></div>`.
 - 보고 전에 PDF를 쪽 그림으로 뽑아 확대해서 이름표 겹침·쪽 넘침을 본다.
 
+## 단원 속지와 한 권 묶기 (2026-11-09)
+- 속지: `divider/index.html` 하나에 `UNITS` 자료만 더한다. `?d=8` 대단원, `?d=8-1` 중단원. 짜임·그림 원칙은 스킬(`.claude/skills/worksheet/SKILL.md` 6½장)
+- 한 권: `python tools/worksheet/make_book.py 8` → 속지 PDF + `Ⅷ-별과우주-학생.pdf`·`-교사.pdf`(책갈피 포함). 학습지를 고쳤으면 `--remake`
+
 ## 아직 정하지 않은 것
-- 책 묶기(목차·홀수 쪽 시작·쪽 번호 이어 붙이기), 컬러본
+- 책 묶기 중 홀수 쪽 시작·쪽 번호 이어 붙이기, 컬러본
 - 학교 복사기에서 회색 10%·20%와 0.3pt 선이 남는지 (시험 복사 필요)
 - 교사판 PDF를 공개 저장소에 둘지 (지금은 PDF를 올리지 않음)
