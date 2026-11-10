@@ -70,10 +70,11 @@ table.plan td.day{width:27mm;text-align:center;font:500 9pt/1 var(--sans);color:
 table.plan td.chk{width:30mm;text-align:center;font:500 11pt/1 var(--sans);letter-spacing:3.2mm;padding-left:4.5mm}
 .plan-note{font:500 8pt/1.45 var(--sans);color:var(--sub);margin-top:1.5mm}
 /* 앞표지·뒷표지 (?d=front, ?d=back) — 두 대단원을 한 권으로 묶을 때 */
-.cv-title{padding:16mm 0 6mm;border-bottom:1.5pt solid var(--rule)}
+.cv-title{padding:8mm 0 5mm;border-bottom:1.5pt solid var(--rule)}
 .cv-title .k{font:700 10pt/1 var(--sans);letter-spacing:.3em;color:var(--sub)}
 .cv-title h1{margin:4mm 0 0;font:800 46pt/1.02 var(--sans);letter-spacing:-.045em}
-.cv-units{display:grid;grid-template-columns:1fr 1fr;gap:0 8mm;padding:5mm 0 0}
+.cv-units{display:grid;grid-template-columns:1fr 1fr;gap:0 8mm;padding:4.5mm 0 2mm}
+.cv-fig{margin:6mm 0}
 .cv-units div{display:grid;grid-template-columns:auto 1fr;gap:0 4mm;align-items:center}
 .cv-units .no{font:800 30pt/1 var(--sans);letter-spacing:-.04em;grid-row:span 2}
 .cv-units b{font:700 15pt/1.2 var(--sans);letter-spacing:-.03em}
@@ -94,7 +95,7 @@ table.plan td.chk{width:30mm;text-align:center;font:500 11pt/1 var(--sans);lette
 <!-- ===== 단원 자료 (새 대단원은 여기에 한 묶음 추가. ws = worksheets/ 아래 차시 폴더 이름, 한 권 묶기에 씀) ===== -->
 <script>
 var UNITS = {
-  'front': { kind:'cover', term:'2026학년도 2학기', title:'2학년 과학 학습지', units:['7','8'], fig:'drones', figH:168 },
+  'front': { kind:'cover', term:'2026학년도 2학기', title:'2학년 과학 학습지', units:['7','8'], fig:'tiles' },
   'back': { kind:'back' },
   '7': { kind:'unit', no:'Ⅶ', title:'전기와 자기',
     q:'전기와 자기 현상은 어떻게 이용될까?',
@@ -206,6 +207,39 @@ try{
     return s;
   };
 
+
+  /* 앞표지: 기하학 칸 격자 (검정·회색 20%·흰색, 칸마다 단순한 도형 하나) */
+  FIG.tiles = function(){
+    var S=40, C={w:'#fff',g:'#cfcfcf',k:'#111'};
+    // [바탕, 도형, 도형 색, 방향(0~3: 왼위·오른위·오른아래·왼아래 / 위·오른·아래·왼)]
+    var L=[
+      [['k','qc','w',2],['w','ring','k'],['g','hc','k',2],['w','dots','k'],['k','circle','w']],
+      [['w','arcs','k',0],['k','dot','w'],['w','tri','g',1],['g','circle','k'],['w','qc','k',0]],
+      [['g','lines','k'],['w','hc','k',0],['k','arcs','w',2],['w','big','g'],['k','dots','w']],
+      [['w','big','k'],['g','qc','w',3],['w','lines','g'],['k','hc','g',3],['w','ring','k']],
+      [['w','dots','k'],['k','qc','g',1],['w','hc','k',1],['g','ring','k'],['k','tri','w',3]]];
+    var s='<svg viewBox="0 0 '+(S*5)+' '+(S*L.length)+'" aria-label="기하학 무늬" style="overflow:hidden">';
+    function corner(d){ return [[0,0],[S,0],[S,S],[0,S]][d]; }
+    L.forEach(function(row,j){ row.forEach(function(c,i){
+      var x=i*S,y=j*S,bg=C[c[0]],fg=C[c[2]],d=c[3]||0,g='';
+      g+='<rect x="-.4" y="-.4" width="'+(S+.8)+'" height="'+(S+.8)+'" fill="'+bg+'"/>';
+      if(c[1]==='qc'){ var o=corner(d); g+='<path d="M'+o+'L'+(o[0]?o[0]-S:S)+' '+o[1]+'A'+S+' '+S+' 0 0 '+(d%2?0:1)+' '+o[0]+' '+(o[1]?o[1]-S:S)+'Z" fill="'+fg+'"/>'; }
+      if(c[1]==='hc'){ var h=S/2, P=[[h,0,0,1],[S,h,1,0],[h,S,0,-1],[0,h,-1,0]][d];
+        g+='<circle cx="'+P[0]+'" cy="'+P[1]+'" r="'+h+'" fill="'+fg+'"/>'; }
+      if(c[1]==='ring'){ [17,12,7].forEach(function(r){ g+='<circle cx="20" cy="20" r="'+r+'" fill="none" stroke="'+fg+'" stroke-width="1.6"/>'; }); g+='<circle cx="20" cy="20" r="2.4" fill="'+fg+'"/>'; }
+      if(c[1]==='arcs'){ var o=corner(d); [12,22,32].forEach(function(r){ var sx=o[0]?S-r:r, ey=o[1]?S-r:r;
+        g+='<path d="M'+sx+' '+o[1]+'A'+r+' '+r+' 0 0 '+(d===0||d===2?1:0)+' '+o[0]+' '+ey+'" fill="none" stroke="'+fg+'" stroke-width="1.8"/>'; }); g+='<circle cx="'+o[0]+'" cy="'+o[1]+'" r="5" fill="'+fg+'"/>'; }
+      if(c[1]==='dot') g+='<circle cx="20" cy="20" r="5" fill="'+fg+'"/>';
+      if(c[1]==='circle') g+='<circle cx="20" cy="20" r="13" fill="'+fg+'"/>';
+      if(c[1]==='big') g+='<circle cx="20" cy="20" r="20" fill="'+fg+'"/>';
+      if(c[1]==='dots'){ for(var a=0;a<3;a++) for(var b=0;b<3;b++) g+='<circle cx="'+(10+a*10)+'" cy="'+(10+b*10)+'" r="'+((a+b)%2?1.6:2.6)+'" fill="'+fg+'"/>'; }
+      if(c[1]==='lines'){ for(var k=1;k<8;k++) g+='<line x1="'+(k*5)+'" y1="0" x2="'+(k*5)+'" y2="'+S+'" stroke="'+fg+'" stroke-width="1.7"/>'; }
+      if(c[1]==='tri'){ var o=corner(d), q=corner((d+1)%4), r2=corner((d+3)%4); g+='<path d="M'+o+'L'+q+'L'+r2+'Z" fill="'+fg+'"/>'; }
+      s+='<g transform="translate('+x+' '+y+')"><clipPath id="t'+i+j+'"><rect x="-.3" y="-.3" width="'+(S+.6)+'" height="'+(S+.6)+'"/></clipPath><g clip-path="url(#t'+i+j+')">'+g+'</g></g>';
+    }); });
+    s+='<rect x=".3" y=".3" width="'+(S*5-.6)+'" height="'+(S*L.length-.6)+'" fill="none" stroke="#111" stroke-width=".6"/>';
+    return s+'</svg>';
+  };
   /* 중단원 1: 별자리 입체 모형 (판 위에 거리만큼 자른 빨대, 끝에 별) */
   FIG.model = function(){
     var W=175,H=124,s='';
@@ -470,7 +504,7 @@ try{
     h+='<div class="cv-title"><h1>'+esc(c.title)+'</h1></div>';
     h+='<div class="cv-units">'+c.units.map(function(k){ var u=UNITS[k];
       return '<div><span class="no">'+u.no+'</span><b>'+esc(u.title)+'</b><span>'+u.parts.map(function(pk){return UNITS[pk].n+'. '+esc(UNITS[pk].title);}).join(' · ')+'</span></div>'; }).join('')+'</div>';
-    h+='<figure class="dv-fig">'+(FIG[c.fig]?FIG[c.fig]({H:c.figH||112}):'')+'</figure>';
+    h+='<figure class="dv-fig cv-fig">'+(FIG[c.fig]?FIG[c.fig]({H:c.figH||112}):'')+'</figure>';
     h+='<div class="cv-foot"><div class="cv-name">2학년 <i style="width:12mm"></i>반 <i style="width:12mm"></i>번 &nbsp;이름 <i style="width:38mm"></i></div>'+SCHOOL+'</div>';
     return h+'</section>'; }
   function backPage(){ return '<section class="dv bk">'+SCHOOL+'</section>'; }
