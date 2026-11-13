@@ -56,15 +56,11 @@ const CR3 = (() => {
     potato(G) {
       const skin = std({ map: speckle('#cf9a52', ['rgba(120,80,40,.35)', 'rgba(150,100,55,.3)'], 3, 1800, ['rgba(175,125,70,.4)', 'rgba(232,196,140,.45)']), roughness: .85 });
       const pf = (t) => Math.sqrt(Math.max(0, 1 - (2 * t - 1) ** 2)) * .66;
-      [[-1.05, .6, -.35, .95, .3, 3], [.55, .62, -.75, 1, -.4, 7], [-.45, .58, .75, .88, 1.1, 11]].forEach(([x, y, z, s, ry, sd]) => { const m = mesh(lump(sd, .95, pf, .04, 6), skin); m.position.set(x, y * s, z); m.scale.setScalar(s); m.rotation.set(0, ry, .1); G.add(m); });
-      // 반으로 자른 감자
-      const flesh = std({ map: tex(256, 256, (g, w, h) => { const gr = g.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2); gr.addColorStop(0, '#fbf2d2'); gr.addColorStop(.82, '#f6e6b8'); gr.addColorStop(.9, '#efd9a0'); gr.addColorStop(.97, '#e9d29a'); gr.addColorStop(1, '#b98c55'); g.fillStyle = gr; g.fillRect(0, 0, w, h); g.strokeStyle = 'rgba(214,186,118,.55)'; g.lineWidth = 3; g.beginPath(); g.ellipse(w / 2, h / 2, w * .4, h * .4, 0, 0, 6.3); g.stroke(); }), roughness: .55 });
-      const half = new THREE.Group(); const hs = mesh(cutLump(.85, pf), skin); half.add(hs); const cap = mesh(planarUV(capShape(.85, pf)), flesh); cap.rotation.x = 0; half.add(cap);
-      half.rotation.set(-1.1, 0, .35); half.position.set(1.15, .42, .6); G.add(half);
+      [[-1.05, .6, -.35, .95, .3, 3], [.55, .62, -.75, 1, -.4, 7], [-.45, .58, .75, .88, 1.1, 11]].forEach(([x, y, z, s, ry, sd]) => { const m = mesh(lump(sd, .95, () => .64, .045, 6), skin); m.position.set(x, y * s, z); m.scale.setScalar(s); m.rotation.set(0, ry, .1); G.add(m); });
     },
     sweet(G) {
       const skin = std({ map: speckle('#9a3a49', ['rgba(70,20,30,.4)', 'rgba(190,100,110,.3)'], 9, 1600, ['rgba(120,40,55,.5)', 'rgba(185,90,100,.35)']), roughness: .7 });
-      const pf = (t) => Math.pow(Math.sin(Math.PI * Math.pow(t, .9)), 1.1) * .48;
+      const pf = (t) => Math.pow(Math.sin(Math.PI * Math.pow(t, .9)), .45) * .48;
       [[-.2, .5, -.6, 1.25, .25, 4], [.4, .48, .1, 1.1, -.2, 8]].forEach(([x, y, z, s, ry, sd]) => { const m = mesh(lump(sd, 1.25, pf, .03), skin); m.position.set(x, y, z); m.scale.setScalar(s * .9); m.rotation.set(.05, ry, .06); G.add(m);
         // 가는 뿌리
         const tail = new THREE.CatmullRomCurve3([V(1.2, 0, 0), V(1.5, -.05, .05), V(1.8, .02, .1)]); const tm = mesh(new THREE.TubeGeometry(tail, 10, .025, 6), skin); m.add(tm); });
@@ -73,10 +69,10 @@ const CR3 = (() => {
       [[1.25, .1, .9, -.35], [.7, .1, 1.15, .25]].forEach(([x, y, z, rz]) => { const s = new THREE.Group(); const side = mesh(new THREE.CylinderGeometry(.42, .42, .16, 48, 1, true), skin); s.add(side); [.08, -.08].forEach((yy) => { const c = mesh(new THREE.CircleGeometry(.42, 48), flesh); c.rotation.x = yy > 0 ? -Math.PI / 2 : Math.PI / 2; c.position.y = yy; s.add(c); }); s.position.set(x, y + .08, z); s.rotation.set(.12, 0, rz * .3); G.add(s); });
     },
     beet(G) {
-      const pts = []; for (let i = 0; i <= 40; i++) { const t = i / 40, r = .68 * Math.pow(Math.sin(Math.PI * Math.min(1, .5 + t * .62)), .7) * Math.pow(1 - t, .55) + .01; pts.push(new THREE.Vector2(r, -t * 2)); }
+      const pts = []; for (let i = 0; i <= 40; i++) { const t = i / 40, r = .82 * Math.pow(Math.sin(Math.PI * Math.min(1, .5 + t * .6)), .6) * Math.pow(1 - t, .5) + .01; pts.push(new THREE.Vector2(r, -t * 1.8)); }
       const rg = new THREE.LatheGeometry(pts.reverse(), 48); const p = rg.attributes.position; for (let i = 0; i < p.count; i++) { const y = p.getY(i), a = Math.atan2(p.getZ(i), p.getX(i)); const k = 1 + .04 * Math.sin(y * 9 + a * 3) + .03 * Math.sin(a * 5); p.setX(i, p.getX(i) * k); p.setZ(i, p.getZ(i) * k); } rg.computeVertexNormals();
       const skin = std({ map: tex(256, 256, (g, w, h) => { g.fillStyle = '#efe4c9'; g.fillRect(0, 0, w, h); const R = rnd(4); for (let i = 0; i < 40; i++) { g.strokeStyle = `rgba(160,135,90,${.2 + R() * .3})`; g.lineWidth = 1 + R(); g.beginPath(); const y = R() * h; g.moveTo(0, y); g.bezierCurveTo(w * .3, y + 6, w * .6, y - 6, w, y + 3); g.stroke(); } for (let i = 0; i < 500; i++) { g.fillStyle = 'rgba(140,115,75,.3)'; g.fillRect(R() * w, R() * h, 1.5, 1.5); } }), roughness: .85 });
-      const root = mesh(rg, skin); root.position.y = 2.05; G.add(root);
+      const root = mesh(rg, skin); root.position.y = 1.85; G.add(root); const cap = mesh(new THREE.SphereGeometry(.83, 48, 16, 0, Math.PI * 2, 0, Math.PI / 2), skin); cap.scale.y = .32; cap.position.y = 1.85; G.add(cap); const crown = mesh(new THREE.SphereGeometry(.3, 24, 12), std({ color: '#b9c98a', roughness: .8 })); crown.scale.y = .4; crown.position.y = 2.1; G.add(crown);
       const tail = mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([V(0, .06, 0), V(.06, -.4, .05), V(.02, -.8, .1)]), 12, .03, 6), skin); G.add(tail);
       // 잎자루와 잎
       const pet = std({ color: '#cfe0a6', roughness: .7 }), lf = std({ map: leafTex('#3f8b32', '#4e9c3c', '#9ccc6a'), side: THREE.DoubleSide, roughness: .75 });
@@ -84,7 +80,7 @@ const CR3 = (() => {
       for (let i = 0; i < 9; i++) { const a = i / 9 * 6.28 + R() * .3, tilt = .35 + R() * .35, L = .9 + R() * .5; const g = new THREE.Group(); g.position.set(0, 2.05, 0); g.rotation.set(0, a, 0);
         const c = new THREE.CatmullRomCurve3([V(0, 0, 0), V(Math.sin(tilt) * L * .4, L * .5, 0), V(Math.sin(tilt) * L * .8, L * .85, 0)]); g.add(mesh(new THREE.TubeGeometry(c, 10, .035, 6), pet));
         const l = mesh(leafGeo(1.5, .5, .3), lf); l.position.copy(c.getPoint(1)); l.rotation.set(R() * .6 - .3, 0, Math.PI / 2 - tilt - .5); g.add(l); G.add(g); }
-      G.rotation.z = -1.2; G.position.set(-.4, .68, 0);
+      G.rotation.z = -.95; G.position.set(-.4, .8, 0);
     },
     cane(G) {
       const node = std({ color: '#8b7438', roughness: .6 }), inside = std({ map: tex(128, 128, (g, w, h) => { g.fillStyle = '#efe6b8'; g.fillRect(0, 0, w, h); const R = rnd(7); for (let i = 0; i < 160; i++) { g.fillStyle = 'rgba(190,175,110,.6)'; g.beginPath(); g.arc(R() * w, R() * h, 1.6, 0, 6.3); g.fill(); } }), roughness: .9 });
@@ -168,6 +164,7 @@ const CR3 = (() => {
   return { shoot, KINDS: Object.keys(B) };
 })();
 window.__crops = {};
-for (const k of CR3.KINDS) { const u = CR3.shoot(k); window.__crops[k] = u; const im = document.createElement('img'); im.src = u; im.title = k; document.getElementById('g').appendChild(im); }
+const ONLY = new URLSearchParams(location.search).get('only');
+for (const k of CR3.KINDS.filter((x) => !ONLY || x === ONLY)) { const u = CR3.shoot(k, 1000, 750); window.__crops[k] = u; const im = document.createElement('img'); im.src = u; im.title = k; document.getElementById('g').appendChild(im); }
 window.__done = true;
 </script></body></html>

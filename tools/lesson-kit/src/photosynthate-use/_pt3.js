@@ -240,10 +240,10 @@ const PT3 = (() => {
 
     // 새순(생장): 큰 줄기 끝 옆에서 돋아나는 어린 겹잎
     const tipG = new THREE.Group(); plantG.add(tipG);
-    const tipAt = stems[0].curve.getPointAt(.74);
+    const tipAt = stems[0].curve.getPointAt(1).clone().add(V(.05, .1, .05));
     const tipLeaf = compound(V(0, .5, 0), V(.3, 0, 1), .8, .72, tipG, []);
     tipG.add(tubeR([V(0, 0, 0), V(0, .25, 0), V(-.05, .55, .05)], .028, .014, M.stem, 10, 8)); tipG.children.forEach((c) => { if (c.isMesh && c.material === M.petiole) c.material = M.tipP; }); void tipLeaf;
-    tipG.position.copy(tipAt); tipG.rotation.set(0, -.3, -.75); tipG.scale.setScalar(.001);
+    tipG.position.copy(tipAt); tipG.rotation.set(.1, -.3, -.22); tipG.scale.setScalar(.001);
 
     // 작은잎(한꺼번에)
     const allLeaflets = []; leaves.forEach((lf) => lf.leaflets.forEach((x) => allLeaflets.push(x)));
@@ -356,7 +356,7 @@ const PT3 = (() => {
 
     /* 저장: 감자가 커져요 */
     let storeOn = false;
-    arrive.tuber.push(() => { if (storeOn) tubers.forEach((T) => { T.k = Math.min(1, T.k + .0035); }); });
+    arrive.tuber.push(() => { if (storeOn) tubers.forEach((T) => { T.k = Math.min(1, T.k + .012); }); });
 
     /* 잘라 본 감자: 가장 큰 감자 하나를 반으로 */
     const cutT = tubers[2];
@@ -392,7 +392,7 @@ const PT3 = (() => {
     lab('stolon', '기는줄기', () => stolons[0].pts[6].clone().add(V(0, .2, .1)), 'small');
     lab('flower', '꽃', flowersAt[0].clone().add(V(0, .45, 0)), 'small');
     lab('phl', '체관', () => stems[0].curve.getPointAt(.4).clone().add(V(-.35, 0, .1)));
-    lab('tip', '새순', () => tipAt.clone().add(V(.8, .9, .3)));
+    lab('tip', '새순', () => tipAt.clone().add(V(.5, .8, .3)));
     lab('energy', '에너지', () => roots[2].pts[10].clone().add(V(.2, .2, .3)));
     lab('starch', '녹말로 저장', () => cutT.m.position.clone().add(V(0, cutT.m.scale.y + .22, .3)));
     const showLabs = (ks) => Object.keys(LB).forEach((k) => { LB[k].show = ks.includes(k); });
@@ -404,7 +404,7 @@ const PT3 = (() => {
       under: { p: V(.3, -.8, 7.4), t: V(0, -1.45, 0) },
       root: { p: V(-.4, -1.4, 4.4), t: V(-.1, -2.0, 0) },
       tuber: () => { const c = tubers[2].m.position; return { p: c.clone().add(V(-.9, 1.2, 5.0)), t: c.clone().add(V(-.6, .15, 0)) }; },
-      top: () => { const c = tipAt.clone(); return { p: c.clone().add(V(1.6, .9, 4.2)), t: c.clone().add(V(.4, .3, 0)) }; },
+      top: () => { const c = tipAt.clone(); return { p: c.clone().add(V(1.4, .6, 4.4)), t: c.clone().add(V(.2, .2, 0)) }; },
     };
     let curView = 'all';
     function view(k, dur = 1.1) {
@@ -423,7 +423,7 @@ const PT3 = (() => {
       respCool -= dt;
       for (let i = stars.length - 1; i >= 0; i--) { const s = stars[i]; s.t += dt / 1.1; if (s.t >= 1) { scene.remove(s.sp); s.sp.material.dispose(); stars.splice(i, 1); continue; } const k = Math.sin(s.t * Math.PI); s.sp.scale.setScalar(s.s * (.4 + k * .8)); s.sp.material.opacity = k; s.sp.position.y = s.y0 + s.t * .35; }
       tubers.forEach((T) => { const cur = T.m.scale.x / T.s0.x; const nk = cur + (T.k - cur) * Math.min(1, dt * 3); T.m.scale.copy(T.s0).multiplyScalar(nk); });
-      if (cutOn) { cutG.position.copy(cutT.m.position); cutG.rotation.set(-.2, -.85, .1); cutG.scale.copy(cutT.m.scale); cutG.children[1].scale.set(.985, .985, 1); }
+      if (cutOn) { cutG.position.copy(cutT.m.position).add(V(0, 0, .5)); cutG.rotation.set(-.15, -.42, .1); cutG.scale.copy(cutT.m.scale); cutG.children[1].scale.set(.985, .985, 1); }
       if (tGrow >= 0) { growK = Math.min(1, growK + dt / tGrow); tipG.scale.setScalar(Math.max(.001, ease(growK))); if (growK >= 1) tGrow = -1; }
       // 잎이 바람에 살짝
       plantG.rotation.z = REDUCE ? 0 : Math.sin(time * .7) * .006;

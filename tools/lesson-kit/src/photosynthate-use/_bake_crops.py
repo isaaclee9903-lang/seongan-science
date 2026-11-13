@@ -14,7 +14,15 @@ async def main():
         await pg.wait_for_function('window.__done === true', timeout=120000)
         d = await pg.evaluate('window.__crops')
         for k, u in d.items():
-            (out / f'crop-{k}.png').write_bytes(base64.b64decode(u.split(',')[1])); print('wrote', k)
+            from PIL import Image; import io
+            im = Image.open(io.BytesIO(base64.b64decode(u.split(',')[1]))).convert('RGBA'); a = im.getchannel('A').point(lambda v: 255 if v > 8 else 0); bb = a.getbbox()
+            w, h = bb[2] - bb[0], bb[3] - bb[1]; W, H = int(max(w, h * 4 / 3) * 1.1), int(max(h, w * 3 / 4) * 1.1); c = Image.new('RGBA', (W, H)); c.paste(im.crop(bb), ((W - w) // 2, (H - h) // 2))
+            c.resize((480, 360), Image.LANCZOS).save(out / f'crop-{k}.png', optimize=True); print('wrote', k)
         await pg.screenshot(path=str(out.parent / '_crops_preview.png'))
+        # 감자 식물 3D 사진: 모형 만들기 판, 읽기 머리 그림, 수업 카드
+        for m, path, q in [('board', out / 'board.jpg', 88), ('hero', out / 'hero.jpg', 86), ('card', out.parent / 'card.jpg', 85)]:
+            await pg.goto(f'{BASE}/lessons/photosynthate-use/_board.html?m={m}', wait_until='load')
+            await pg.wait_for_function('window.__done === true', timeout=120000); await pg.wait_for_timeout(2500)
+            await pg.locator('#fig').screenshot(path=str(path), type='jpeg', quality=q); print('wrote', path.name)
         await br.close()
 asyncio.run(main())
