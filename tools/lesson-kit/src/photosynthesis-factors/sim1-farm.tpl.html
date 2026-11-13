@@ -23,8 +23,12 @@
   </header>
   <div class="stage">
     <section class="card viewer">
-      <div class="scene grow" id="farm" role="img" aria-label="스마트팜 온실 안의 초록 상추와 붉은 상추. LED등, 센서, 제어함이 있다. 조건을 바꾸면 빛의 밝기, 이산화 탄소 입자 수, 잎으로 드나드는 입자의 양이 달라진다."></div>
+      <div class="vstack">
+        <div class="scene" id="farm" role="img" aria-label="스마트팜 온실 안의 초록 상추와 붉은 상추. LED등, 센서, 제어함이 있다. 조건을 바꾸면 빛의 밝기, 이산화 탄소 입자 수, 잎으로 드나드는 입자의 양이 달라진다."></div>
+        <div class="scene" id="leafv" hidden role="img" aria-label="상추 잎을 잘라 확대한 그림. 위에서 빛이 내려와 엽록체에 닿고, 잎 아래 기공으로 이산화 탄소가 들어가며 산소가 나온다."></div>
+      </div>
       <div class="vctl">
+        <div class="vseg" role="group" aria-label="보기"><button class="vb" type="button" id="vFarm" aria-pressed="true">온실</button><button class="vb" type="button" id="vLeaf" aria-pressed="false">잎 속 확대</button></div>
         <span class="mlabel">광합성량</span>
         <span class="meter" role="img" aria-label="지금 조건의 광합성량"><i id="meter"></i></span>
         <button class="vb" type="button" id="bReset">처음부터</button>
@@ -59,6 +63,7 @@
           <li><i>3</i><span>온도가 높아질수록 광합성량이 증가하지만, 일정 온도보다 높아지면 오히려 <b>급격히 감소</b>해요.</span></li>
           <li><i>4</i><span>한 가지 요인만 적당해서는 잘 일어나지 않아요. <b>모든 환경요인이 알맞게</b> 유지될 때 광합성이 활발해요.</span></li>
           <li><i>5</i><span>광합성이 활발하면 양분이 많이 만들어져요. 그래서 스마트팜은 환경요인을 조절해 <b>생산량</b>을 늘려요.</span></li>
+          <li><i>6</i><span><b>잎 속 확대</b>를 눌러 봐요. 빛은 잎 위에서 들어오고, 이산화 탄소는 <b>기공</b>으로 들어와 둘 다 <b>엽록체</b>에서 쓰여요.</span></li>
         </ol>
         <p class="mnote">눈금 숫자 없이 변화의 모양만 보여 주는 모형이에요. 자라는 시간은 줄였어요.</p>
       </div>
@@ -72,6 +77,9 @@
 /*@@LOCAL:_pf.js@@*/
 </script>
 <script>
+/*@@LOCAL:_pfx.js@@*/
+</script>
+<script>
 (() => {
   'use strict';
   try {
@@ -79,6 +87,9 @@
     const q = new URLSearchParams(location.search);
     const S = { L: +(q.get('L') ?? .6), C: +(q.get('C') ?? .6), T: +(q.get('T') ?? .55) };
     const farm = PF.farm($('#farm'), S);
+    let leaf = null;
+    const view = (k) => { $('#farm').hidden = k !== 'farm'; $('#leafv').hidden = k !== 'leaf'; $('#vFarm').setAttribute('aria-pressed', String(k === 'farm')); $('#vLeaf').setAttribute('aria-pressed', String(k === 'leaf')); if (k === 'leaf' && !leaf) { leaf = PFX.leaf($('#leafv'), S); } if (leaf) leaf.set(S.L, S.C, S.T); };
+    $('#vFarm').addEventListener('click', () => view('farm')); $('#vLeaf').addEventListener('click', () => view('leaf'));
     const sl = { L: $('#sL'), C: $('#sC'), T: $('#sT') };
     let pred = null, busy = false, rec = [], grown = false;
     const PRE = [
@@ -90,7 +101,7 @@
     $('#pre').innerHTML = PRE.map((p, i) => `<button type="button" data-i="${i}">${p.t}</button>`).join('');
     const say = (t, m, c = '') => { $('#res').className = 'fbk ' + c; $('#resT').textContent = t; $('#resM').innerHTML = m; };
     const sync = () => {
-      const r = farm.set(S.L, S.C, S.T);
+      const r = farm.set(S.L, S.C, S.T); if (leaf) leaf.set(S.L, S.C, S.T);
       $('#meter').style.width = (r * 100).toFixed(0) + '%';
       Object.keys(sl).forEach((k) => { sl[k].value = Math.round(S[k] * 100); sl[k].style.setProperty('--v', sl[k].value + '%'); });
     };
@@ -116,7 +127,7 @@
       if (rec.length >= 3) { const m = $('#recM'); m.hidden = false; m.className = 'fbk ok'; m.innerHTML = '기록을 비교해 봐요. 자란 정도가 가장 큰 줄은 <b>세 조건이 모두 알맞은</b> 줄이에요.'; }
     };
     $('#bGo').addEventListener('click', () => {
-      if (busy || !pred) return; busy = true; armed(); $('#bGo').textContent = '자라는 중'; say('자라는 중', '잎으로 들어가는 이산화 탄소와 나오는 산소의 양을 봐요.');
+      if (busy || !pred) return; busy = true; armed(); $('#bGo').textContent = '자라는 중'; say('자라는 중', '잎으로 들어가는 이산화 탄소와 나오는 산소의 양을 봐요. <b>잎 속 확대</b>로 잎 안도 볼 수 있어요.');
       farm.grow(() => {
         busy = false; grown = true; pred === null; $('#bGo').textContent = '상추 키우기';
         const r = farm.rate, [t, m, c] = verdict(), good = r >= .8, okP = (pred === 'y') === good;
@@ -131,6 +142,7 @@
     const tab = (p) => { $$('#pt button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.p === p))); $$('.pane').forEach((e) => { e.hidden = e.dataset.p !== p; }); };
     $$('#pt button').forEach((b) => b.addEventListener('click', () => tab(b.dataset.p)));
     if (q.get('tab')) tab(q.get('tab'));
+    if (q.get('view') === 'leaf') view('leaf');
     window.SM = window.SM || {}; window.SM.okUI = true;
   } catch (err) { window.SM_err && window.SM_err('스마트팜 조절실', err); }
 })();
