@@ -1,0 +1,157 @@
+/* ===== 그림 Ⅴ-5 작물 8가지 3D (CR3) =====
+   교과서 사진을 쓰지 않고 이 수업을 위해 새로 만든 모형이에요. _crops.html에서 사진(PNG)으로 찍어
+   lessons/photosynthate-use/media/crop-<이름>.png로 저장해 다른 페이지는 사진만 불러요(태블릿에서 가볍게). */
+const CR3 = (() => {
+  const V = (x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z);
+  const rnd = (s) => () => { s |= 0; s = s + 0x6D2B79F5 | 0; let t = Math.imul(s ^ s >>> 15, 1 | s); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  const tex = (w, h, f) => { const c = document.createElement('canvas'); c.width = w; c.height = h; f(c.getContext('2d'), w, h); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t; };
+  const std = (o) => new THREE.MeshStandardMaterial(Object.assign({ roughness: .8 }, o));
+  const mesh = (g, m) => { const x = new THREE.Mesh(g, m); x.castShadow = true; x.receiveShadow = true; return x; };
+  const n3 = (x, y, z, s) => Math.sin(x * 3.1 + s) * Math.sin(y * 2.7 + s * 1.7) * Math.sin(z * 3.3 + s * .7) + .5 * Math.sin(x * 6.3 + y * 5.1 + s) * Math.sin(z * 5.7 - s);
+  function speckle(base, dots, seed, n = 1400, blot) {
+    return tex(512, 256, (g, w, h) => { g.fillStyle = base; g.fillRect(0, 0, w, h); const R = rnd(seed);
+      if (blot) for (let i = 0; i < 60; i++) { const x = R() * w, y = R() * h, r = 10 + R() * 40, gr = g.createRadialGradient(x, y, 0, x, y, r); gr.addColorStop(0, blot[i % blot.length]); gr.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = gr; g.fillRect(x - r, y - r, 2 * r, 2 * r); }
+      for (let i = 0; i < n; i++) { g.fillStyle = dots[i % dots.length]; g.beginPath(); g.ellipse(R() * w, R() * h, .6 + R() * 1.6, .5 + R() * 1, R() * 3, 0, 6.3); g.fill(); } });
+  }
+  // 덩이(감자·고구마): 길이 방향 x, 굵기 프로필 prof(t)
+  function lump(seed, len, prof, amp = .04, eyes = 0) {
+    const g = new THREE.SphereGeometry(1, 64, 40); g.rotateZ(Math.PI / 2); const p = g.attributes.position, R = rnd(seed), v = V();
+    const E = []; for (let i = 0; i < eyes; i++) { const a = R() * 6.28, b = Math.acos(R() * 2 - 1); E.push(V(Math.cos(b), Math.sin(b) * Math.cos(a), Math.sin(b) * Math.sin(a))); }
+    for (let i = 0; i < p.count; i++) {
+      v.set(p.getX(i), p.getY(i), p.getZ(i)); const t = (v.x + 1) / 2, r = prof(t);
+      let k = 1 + amp * n3(v.x, v.y, v.z, seed) + amp * .4 * n3(v.x * 2.3, v.y * 2.1, v.z * 2.2, seed + 3);
+      E.forEach((e) => { const d = v.distanceTo(e); if (d < .15) k -= .05 * Math.cos(d / .15 * Math.PI / 2) ** 2; });
+      p.setXYZ(i, v.x * len * (1 + amp * .5 * n3(v.y, v.z, v.x, seed)), v.y * r * k, v.z * r * k);
+    }
+    g.computeVertexNormals(); return g;
+  }
+  function cutLump(len, prof, side = 1) { // 반을 자른 덩이 + 자른 면
+    const g = new THREE.SphereGeometry(1, 64, 40, 0, Math.PI); g.rotateZ(Math.PI / 2); const p = g.attributes.position, v = V();
+    for (let i = 0; i < p.count; i++) { v.set(p.getX(i), p.getY(i), p.getZ(i)); const r = prof((v.x + 1) / 2); p.setXYZ(i, v.x * len, v.y * r, v.z * r); }
+    g.computeVertexNormals(); return g;
+  }
+  function capShape(len, prof) { const s = new THREE.Shape(); for (let i = 0; i <= 80; i++) { const a = i / 80 * Math.PI * 2, x = Math.cos(a), t = (x + 1) / 2, r = prof(t); const px = x * len, py = Math.sin(a) * r; i ? s.lineTo(px, py) : s.moveTo(px, py); } return new THREE.ShapeGeometry(s, 2); }
+  function planarUV(g) { g.computeBoundingBox(); const b = g.boundingBox, p = g.attributes.position, uv = []; for (let i = 0; i < p.count; i++) uv.push((p.getX(i) - b.min.x) / (b.max.x - b.min.x), (p.getY(i) - b.min.y) / (b.max.y - b.min.y)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); return g; }
+  function leafGeo(L = 1, W = .3, bend = .25) {
+    const N = 14, M = 4, pos = [], uv = [], idx = [];
+    for (let i = 0; i <= N; i++) { const t = i / N, w = W * Math.sin(Math.PI * Math.pow(t, .7)) * (1 - .3 * t); for (let j = -M; j <= M; j++) { const s = j / M; pos.push(t * L, -bend * t * t * L + .15 * s * s * w, s * w); uv.push(t, (s + 1) / 2); } }
+    const row = 2 * M + 1; for (let i = 0; i < N; i++) for (let j = 0; j < row - 1; j++) { const a = i * row + j, b = a + row; idx.push(a, b, a + 1, a + 1, b, b + 1); }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx); g.computeVertexNormals(); return g;
+  }
+  const leafTex = (a, b, vein) => tex(256, 128, (g, w, h) => { const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, a); gr.addColorStop(.5, b); gr.addColorStop(1, a); g.fillStyle = gr; g.fillRect(0, 0, w, h); g.strokeStyle = vein; g.lineWidth = 3; g.beginPath(); g.moveTo(0, h / 2); g.lineTo(w, h / 2); g.stroke(); g.lineWidth = 1.2; for (let x = 10; x < w; x += 22) [-1, 1].forEach((s) => { g.beginPath(); g.moveTo(x, h / 2); g.quadraticCurveTo(x + 14, h / 2 + s * 20, x + 30, h / 2 + s * 48); g.stroke(); }); });
+
+  const B = {
+    potato(G) {
+      const skin = std({ map: speckle('#cf9a52', ['rgba(120,80,40,.35)', 'rgba(150,100,55,.3)'], 3, 1800, ['rgba(175,125,70,.4)', 'rgba(232,196,140,.45)']), roughness: .85 });
+      const pf = (t) => Math.sqrt(Math.max(0, 1 - (2 * t - 1) ** 2)) * .66;
+      [[-1.05, .6, -.35, .95, .3, 3], [.55, .62, -.75, 1, -.4, 7], [-.45, .58, .75, .88, 1.1, 11]].forEach(([x, y, z, s, ry, sd]) => { const m = mesh(lump(sd, .95, pf, .04, 6), skin); m.position.set(x, y * s, z); m.scale.setScalar(s); m.rotation.set(0, ry, .1); G.add(m); });
+      // 반으로 자른 감자
+      const flesh = std({ map: tex(256, 256, (g, w, h) => { const gr = g.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2); gr.addColorStop(0, '#fbf2d2'); gr.addColorStop(.82, '#f6e6b8'); gr.addColorStop(.9, '#efd9a0'); gr.addColorStop(.97, '#e9d29a'); gr.addColorStop(1, '#b98c55'); g.fillStyle = gr; g.fillRect(0, 0, w, h); g.strokeStyle = 'rgba(214,186,118,.55)'; g.lineWidth = 3; g.beginPath(); g.ellipse(w / 2, h / 2, w * .4, h * .4, 0, 0, 6.3); g.stroke(); }), roughness: .55 });
+      const half = new THREE.Group(); const hs = mesh(cutLump(.85, pf), skin); half.add(hs); const cap = mesh(planarUV(capShape(.85, pf)), flesh); cap.rotation.x = 0; half.add(cap);
+      half.rotation.set(-1.1, 0, .35); half.position.set(1.15, .42, .6); G.add(half);
+    },
+    sweet(G) {
+      const skin = std({ map: speckle('#9a3a49', ['rgba(70,20,30,.4)', 'rgba(190,100,110,.3)'], 9, 1600, ['rgba(120,40,55,.5)', 'rgba(185,90,100,.35)']), roughness: .7 });
+      const pf = (t) => Math.pow(Math.sin(Math.PI * Math.pow(t, .9)), 1.1) * .48;
+      [[-.2, .5, -.6, 1.25, .25, 4], [.4, .48, .1, 1.1, -.2, 8]].forEach(([x, y, z, s, ry, sd]) => { const m = mesh(lump(sd, 1.25, pf, .03), skin); m.position.set(x, y, z); m.scale.setScalar(s * .9); m.rotation.set(.05, ry, .06); G.add(m);
+        // 가는 뿌리
+        const tail = new THREE.CatmullRomCurve3([V(1.2, 0, 0), V(1.5, -.05, .05), V(1.8, .02, .1)]); const tm = mesh(new THREE.TubeGeometry(tail, 10, .025, 6), skin); m.add(tm); });
+      // 둥글게 썬 조각(노란 속)
+      const flesh = std({ map: tex(256, 256, (g, w, h) => { const gr = g.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2); gr.addColorStop(0, '#fbe2a0'); gr.addColorStop(.8, '#f6d27c'); gr.addColorStop(.92, '#f1c666'); gr.addColorStop(.97, '#e8b95a'); gr.addColorStop(1, '#8e3343'); g.fillStyle = gr; g.fillRect(0, 0, w, h); const R = rnd(2); for (let i = 0; i < 200; i++) { g.fillStyle = 'rgba(255,240,200,.5)'; g.fillRect(R() * w, R() * h, 2, 2); } }), roughness: .5 });
+      [[1.25, .1, .9, -.35], [.7, .1, 1.15, .25]].forEach(([x, y, z, rz]) => { const s = new THREE.Group(); const side = mesh(new THREE.CylinderGeometry(.42, .42, .16, 48, 1, true), skin); s.add(side); [.08, -.08].forEach((yy) => { const c = mesh(new THREE.CircleGeometry(.42, 48), flesh); c.rotation.x = yy > 0 ? -Math.PI / 2 : Math.PI / 2; c.position.y = yy; s.add(c); }); s.position.set(x, y + .08, z); s.rotation.set(.12, 0, rz * .3); G.add(s); });
+    },
+    beet(G) {
+      const pts = []; for (let i = 0; i <= 40; i++) { const t = i / 40, r = .68 * Math.pow(Math.sin(Math.PI * Math.min(1, .5 + t * .62)), .7) * Math.pow(1 - t, .55) + .01; pts.push(new THREE.Vector2(r, -t * 2)); }
+      const rg = new THREE.LatheGeometry(pts.reverse(), 48); const p = rg.attributes.position; for (let i = 0; i < p.count; i++) { const y = p.getY(i), a = Math.atan2(p.getZ(i), p.getX(i)); const k = 1 + .04 * Math.sin(y * 9 + a * 3) + .03 * Math.sin(a * 5); p.setX(i, p.getX(i) * k); p.setZ(i, p.getZ(i) * k); } rg.computeVertexNormals();
+      const skin = std({ map: tex(256, 256, (g, w, h) => { g.fillStyle = '#efe4c9'; g.fillRect(0, 0, w, h); const R = rnd(4); for (let i = 0; i < 40; i++) { g.strokeStyle = `rgba(160,135,90,${.2 + R() * .3})`; g.lineWidth = 1 + R(); g.beginPath(); const y = R() * h; g.moveTo(0, y); g.bezierCurveTo(w * .3, y + 6, w * .6, y - 6, w, y + 3); g.stroke(); } for (let i = 0; i < 500; i++) { g.fillStyle = 'rgba(140,115,75,.3)'; g.fillRect(R() * w, R() * h, 1.5, 1.5); } }), roughness: .85 });
+      const root = mesh(rg, skin); root.position.y = 2.05; G.add(root);
+      const tail = mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([V(0, .06, 0), V(.06, -.4, .05), V(.02, -.8, .1)]), 12, .03, 6), skin); G.add(tail);
+      // 잎자루와 잎
+      const pet = std({ color: '#cfe0a6', roughness: .7 }), lf = std({ map: leafTex('#3f8b32', '#4e9c3c', '#9ccc6a'), side: THREE.DoubleSide, roughness: .75 });
+      const R = rnd(6);
+      for (let i = 0; i < 9; i++) { const a = i / 9 * 6.28 + R() * .3, tilt = .35 + R() * .35, L = .9 + R() * .5; const g = new THREE.Group(); g.position.set(0, 2.05, 0); g.rotation.set(0, a, 0);
+        const c = new THREE.CatmullRomCurve3([V(0, 0, 0), V(Math.sin(tilt) * L * .4, L * .5, 0), V(Math.sin(tilt) * L * .8, L * .85, 0)]); g.add(mesh(new THREE.TubeGeometry(c, 10, .035, 6), pet));
+        const l = mesh(leafGeo(1.5, .5, .3), lf); l.position.copy(c.getPoint(1)); l.rotation.set(R() * .6 - .3, 0, Math.PI / 2 - tilt - .5); g.add(l); G.add(g); }
+      G.rotation.z = -1.2; G.position.set(-.4, .68, 0);
+    },
+    cane(G) {
+      const node = std({ color: '#8b7438', roughness: .6 }), inside = std({ map: tex(128, 128, (g, w, h) => { g.fillStyle = '#efe6b8'; g.fillRect(0, 0, w, h); const R = rnd(7); for (let i = 0; i < 160; i++) { g.fillStyle = 'rgba(190,175,110,.6)'; g.beginPath(); g.arc(R() * w, R() * h, 1.6, 0, 6.3); g.fill(); } }), roughness: .9 });
+      const stalk = (col1, col2, seed) => tex(64, 256, (g, w, h) => { const gr = g.createLinearGradient(0, 0, w, 0); gr.addColorStop(0, col2); gr.addColorStop(.45, col1); gr.addColorStop(1, col2); g.fillStyle = gr; g.fillRect(0, 0, w, h); const R = rnd(seed); for (let i = 0; i < 30; i++) { g.strokeStyle = 'rgba(80,60,20,.18)'; g.beginPath(); const x = R() * w; g.moveTo(x, 0); g.lineTo(x + R() * 4, h); g.stroke(); } });
+      const kinds = [[stalk('#d9c46e', '#a5913f', 1)], [stalk('#7b4a33', '#4f2c1d', 2)], [stalk('#cdbd66', '#9b8a3a', 3)], [stalk('#d6c470', '#a28f40', 4)]];
+      [[-.9, .3, -.35, 0, -.05], [-.15, .58, .1, 1, .06], [.55, .28, .45, 2, -.1], [.2, .3, -.6, 3, .12]].forEach(([x, y, z, k, rz], i) => {
+        const g = new THREE.Group(), L = 2.6 - i * .2, r = .25;
+        const m = std({ map: kinds[k][0], roughness: .55 });
+        g.add(mesh(new THREE.CylinderGeometry(r, r, L, 28), m));
+        [-.35, .05, .42].forEach((f) => { const ring = mesh(new THREE.TorusGeometry(r * 1.01, .028, 8, 28), node); ring.rotation.x = Math.PI / 2; ring.position.y = f * L; g.add(ring); const bud = mesh(new THREE.SphereGeometry(.05, 10, 8), node); bud.position.set(r * .95, f * L + .06, 0); bud.rotation.y = i; g.add(bud); });
+        [L / 2, -L / 2].forEach((yy) => { const c = mesh(new THREE.CircleGeometry(r * .98, 28), inside); c.rotation.x = yy > 0 ? -Math.PI / 2 : Math.PI / 2; c.position.y = yy; g.add(c); });
+        g.rotation.set(0, 0, Math.PI / 2 + rz); g.rotation.y = .2 * (i - 1.5); g.position.set(x * .3, y, z); G.add(g);
+      });
+      const lf = std({ map: leafTex('#4c9a3a', '#61b04a', '#b6dc8a'), side: THREE.DoubleSide, roughness: .7 }); const l = mesh(leafGeo(2.2, .16, .2), lf); l.position.set(.9, .62, .1); l.rotation.set(.3, .4, .25); G.add(l);
+    },
+    corn(G) {
+      const ear = new THREE.Group(), L = 2.4;
+      const prof = (t) => .42 * Math.pow(Math.sin(Math.PI * (.12 + .82 * t)), .5) * (1 - .25 * t);
+      const kern = new THREE.SphereGeometry(1, 10, 8); const km = std({ color: '#f0a81e', roughness: .45 });
+      const rows = 14, per = 30, n = rows * per; const im = new THREE.InstancedMesh(kern, km, n); im.castShadow = true;
+      const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), c = new THREE.Color(), R = rnd(5); let k = 0;
+      for (let i = 0; i < per; i++) for (let j = 0; j < rows; j++) { const t = (i + .5) / per, a = j / rows * 6.28 + (i % 2) * .22, r = prof(t); const x = -L / 2 + t * L; q.setFromAxisAngle(V(1, 0, 0), a); const p = V(x, Math.cos(a) * r * .92, Math.sin(a) * r * .92); m4.compose(p, q, V(.06 * (r / .42 + .3) * .8, .085, .07)); im.setMatrixAt(k, m4); im.setColorAt(k, c.setHSL(.115 + (R() - .5) * .02, .85, .55 + (R() - .5) * .08)); k++; }
+      ear.add(im); ear.add(mesh(new THREE.CylinderGeometry(.08, .1, .5, 12).rotateZ(Math.PI / 2).translate(-L / 2 - .2, 0, 0), std({ color: '#b9a96a' })));
+      // 껍질(벗겨진 잎)
+      const husk = std({ map: leafTex('#7fb04c', '#9cc664', '#cfe39e'), side: THREE.DoubleSide, roughness: .75 });
+      [[.6, 2.3], [-.4, 2.1], [2.3, 2.4], [3.2, 2.2]].forEach(([a, len]) => { const h = mesh(leafGeo(len, .42, -.12), husk); h.position.set(-L / 2 - .1, 0, 0); h.rotation.set(a, Math.PI, -.35); G.add(h); });
+      G.add(ear); ear.rotation.set(.1, .15, .18); ear.position.y = .55; G.position.x = .3;
+    },
+    grape(G) {
+      const berry = new THREE.SphereGeometry(.2, 24, 16); const mats = ['#9fbf3c', '#b2cc4c', '#8fb032'].map((c) => std({ color: c, roughness: .35, metalness: 0 }));
+      const R = rnd(8), stemM = std({ color: '#8b7a3c', roughness: .7 });
+      const pts = []; for (let i = 0; i < 70; i++) { const y = -R() * 1.9, w = .75 * (1 + y / 2.3) + .1, a = R() * 6.28, r = Math.sqrt(R()) * w; pts.push(V(Math.cos(a) * r, y, Math.sin(a) * r * .8 + .1)); }
+      pts.forEach((p, i) => { const b = mesh(berry, mats[i % 3]); b.position.copy(p); b.scale.set(1, 1.08, 1); G.add(b); });
+      G.add(mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([V(0, .45, 0), V(.05, .1, 0), V(0, -1.4, 0)]), 12, .035, 6), stemM));
+      const lf = std({ map: leafTex('#4f9a38', '#5eab45', '#a4d27a'), side: THREE.DoubleSide, roughness: .7 }); const l = mesh(leafGeo(1.1, .55, .1), lf); l.position.set(.05, .35, -.1); l.rotation.set(.4, .5, .5); G.add(l);
+      const one = mesh(berry, mats[1]); one.position.set(1.2, -2.0, .6); G.add(one); const two = mesh(berry, mats[0]); two.position.set(1.5, -2.05, .3); G.add(two);
+      G.rotation.z = .25; G.position.y = 2.1;
+    },
+    sesame(G) {
+      const wood = std({ map: tex(256, 64, (g, w, h) => { g.fillStyle = '#c99a62'; g.fillRect(0, 0, w, h); const R = rnd(3); for (let i = 0; i < 40; i++) { g.strokeStyle = `rgba(120,80,40,${.15 + R() * .2})`; g.beginPath(); const y = R() * h; g.moveTo(0, y); g.bezierCurveTo(w * .3, y + 3, w * .6, y - 3, w, y); g.stroke(); } }), roughness: .6 });
+      const spoon = (x, z, ry, seedCol, seed) => {
+        const s = new THREE.Group();
+        const bowl = new THREE.SphereGeometry(.55, 32, 16, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2.4); bowl.scale(1.3, .5, 1); const bm = mesh(bowl, Object.assign(wood.clone(), { side: THREE.DoubleSide })); bm.position.y = .32; s.add(bm);
+        const handle = mesh(new THREE.BoxGeometry(1.9, .08, .2), wood); handle.position.set(1.55, .34, 0); handle.rotation.z = .12; s.add(handle);
+        const seedG = new THREE.SphereGeometry(1, 8, 6), n = 240, im = new THREE.InstancedMesh(seedG, std({ color: seedCol, roughness: .5 }), n); const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), R = rnd(seed);
+        for (let i = 0; i < n; i++) { const a = R() * 6.28, r = Math.sqrt(R()) * .62, h = .28 * (1 - r / .8) + R() * .06; q.setFromEuler(new THREE.Euler(R() * 3, R() * 3, R() * 3)); m4.compose(V(Math.cos(a) * r * 1.2, .3 + h, Math.sin(a) * r * .85), q, V(.045, .016, .028)); im.setMatrixAt(i, m4); } im.castShadow = true; s.add(im);
+        const sp = new THREE.InstancedMesh(seedG, im.material, 30); for (let i = 0; i < 30; i++) { const a = R() * 6.28, r = .9 + R() * .9; q.setFromEuler(new THREE.Euler(0, R() * 3, Math.PI / 2 * .1)); m4.compose(V(Math.cos(a) * r - .3, .02, Math.sin(a) * r * .6 + .5), q, V(.045, .016, .028)); sp.setMatrixAt(i, m4); } s.add(sp);
+        s.position.set(x, 0, z); s.rotation.y = ry; G.add(s);
+      };
+      spoon(-.9, -.3, .5, '#26221f', 4); spoon(.4, .45, .1, '#efe1c0', 7);
+    },
+    pea(G) {
+      const pod = std({ map: leafTex('#4e9a33', '#5fae40', '#86c45c'), side: THREE.DoubleSide, roughness: .6 });
+      const pea = std({ color: '#6fb236', roughness: .45 });
+      const mk = (open, x, z, ry, sd) => {
+        const g = new THREE.Group(), L = 1.6;
+        const sh = new THREE.SphereGeometry(1, 40, 20, 0, Math.PI * 2, 0, open ? Math.PI / 2 : Math.PI); sh.scale(L, .34, .32); const s = mesh(sh, pod); if (open) s.rotation.x = Math.PI; g.add(s);
+        if (open) { const s2 = mesh(sh.clone(), pod); s2.rotation.x = Math.PI - 1.15; s2.position.set(0, .08, .42); g.add(s2); }
+        for (let i = 0; i < 6; i++) { const t = -1 + (i + .5) / 6 * 2, r = .24 * Math.sqrt(1 - t * t * .7); const b = mesh(new THREE.SphereGeometry(r, 20, 14), pea); b.position.set(t * L * .82, .02, 0); if (open) g.add(b); }
+        const tip = mesh(new THREE.ConeGeometry(.05, .3, 8).rotateZ(Math.PI / 2), pod); tip.position.x = L + .1; g.add(tip);
+        g.position.set(x, .38, z); g.rotation.y = ry; G.add(g);
+      };
+      mk(false, -.3, -.7, .25, 1); mk(true, .2, .4, -.15, 2);
+    },
+  };
+
+  /* 찍기: 투명 바탕, 바닥 그림자만 */
+  function shoot(k, W = 640, H = 480) {
+    const r = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true }); r.setSize(W, H); r.setPixelRatio(1); r.outputColorSpace = THREE.SRGBColorSpace; r.toneMapping = THREE.ACESFilmicToneMapping; r.toneMappingExposure = .9; r.shadowMap.enabled = true; r.shadowMap.type = THREE.PCFSoftShadowMap; r.setClearColor(0x000000, 0);
+    const sc = new THREE.Scene(); const pm = new THREE.PMREMGenerator(r); sc.environment = pm.fromScene(new RoomEnvironment(r), .04).texture; sc.environmentIntensity = .6;
+    sc.add(new THREE.HemisphereLight(0xffffff, 0x8f9db0, .35)); const sun = new THREE.DirectionalLight(0xfff4e2, 1.5); sun.position.set(-3, 7, 5); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); const c = sun.shadow.camera; c.left = c.bottom = -4; c.right = c.top = 4; sun.shadow.radius = 6; sun.shadow.bias = -.0005; sc.add(sun);
+    const G = new THREE.Group(); sc.add(G); B[k](G);
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(20, 20), new THREE.ShadowMaterial({ opacity: .22 })); floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; sc.add(floor);
+    const box = new THREE.Box3().setFromObject(G), ctr = box.getCenter(V()), size = box.getSize(V());
+    const cam = new THREE.PerspectiveCamera(28, W / H, .1, 100); const dir = V(0, .62, 1).normalize();
+    let lo = .5, hi = 60; const pts = []; for (let i = 0; i < 8; i++) pts.push(V(i & 1 ? box.max.x : box.min.x, i & 2 ? box.max.y : box.min.y, i & 4 ? box.max.z : box.min.z));
+    for (let it = 0; it < 30; it++) { const d = (lo + hi) / 2; cam.position.copy(ctr).addScaledVector(dir, d); cam.lookAt(ctr); cam.updateMatrixWorld(); cam.updateProjectionMatrix(); const ok = pts.every((p) => { const q = p.clone().project(cam); return Math.abs(q.x) < .94 && Math.abs(q.y) < .92; }); if (ok) hi = d; else lo = d; }
+    cam.position.copy(ctr).addScaledVector(dir, hi); cam.lookAt(ctr); void size;
+    r.render(sc, cam); const url = r.domElement.toDataURL('image/png'); r.dispose(); return url;
+  }
+  return { shoot, KINDS: Object.keys(B) };
+})();
