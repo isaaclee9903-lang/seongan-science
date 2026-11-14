@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>원자의 구조 – 양성자수와 주기율표</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+/*@@LOCAL:_css_at.css@@*/
+/*@@LOCAL:_css_sim.css@@*/
+  /* ===== 이 페이지 전용 ===== */
+  .stage{grid-template-columns:minmax(0,1.35fr) minmax(330px,1fr)}
+  .tbox{flex:1 1 auto;display:flex;flex-direction:column;justify-content:center;gap:14px;padding:16px 18px 12px}
+  .tfoot{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+  .tfoot p{margin:0;font-size:13.5px;color:var(--muted);line-height:1.6;word-break:keep-all;flex:1;min-width:180px}
+  .tfoot p b{color:var(--ink)}
+  #atomv{aspect-ratio:600/370;margin:-4px 0 0}
+  .zline{text-align:center;font-size:16px;font-weight:700;color:var(--ink2);margin:2px 0 8px;word-break:keep-all}
+  .zline b{color:#0e63b3;font-size:1.15em}
+  .stepper{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;margin-bottom:6px}
+  .stepper .btn{min-height:46px;padding:0 12px;font-size:14.5px}
+  .stepper input{width:100%;accent-color:#0e63b3;height:34px}
+  .qnow{font-size:16px;font-weight:800;line-height:1.55;color:var(--ink);background:#f4f8fc;border:1px solid #d6e5f5;border-radius:14px;padding:12px 14px;margin:0 0 10px;word-break:keep-all}
+  .qnow small{display:block;font-size:13px;color:var(--muted);font-weight:800;margin-bottom:2px}
+  .qdots{display:flex;gap:6px;margin:0 0 10px}
+  .qdots i{flex:1;height:6px;border-radius:3px;background:#e2e9f0}
+  .qdots i.ok{background:#0e63b3}.qdots i.now{background:#8db8e3}
+  .ph b.k{color:#0e63b3}
+  @media (max-width:900px){.stage{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr)}.tbox{justify-content:flex-start;padding-top:12px}.ptab .pt-c{min-height:64px}#atomv{aspect-ratio:600/250}body[data-p="quiz"] #atomv{aspect-ratio:600/190}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="ttl">
+      <span class="eyebrow">시뮬레이션 ②</span><h1>양성자수와 주기율표</h1>
+      <p class="sub">양성자를 하나씩 더하며 원자가 어떻게 바뀌는지 보고, 원자 번호 순으로 배열한 주기율표에서 원소를 찾아봐요.</p>
+    </div>
+  </header>
+
+  <div class="stage">
+    <section class="card viewer">
+      <div class="tbox">
+        <div id="ptab" aria-label="주기율표 1~20번"></div>
+        <div class="tfoot">
+          <div id="ftab" aria-hidden="true"></div>
+          <p>실제 주기율표는 <b>가로줄 7개</b>(주기)와 <b>세로줄 18개</b>(족)로 나누어져 있어요. 위 표는 그중 1~20번이에요.</p>
+        </div>
+      </div>
+      <div class="vctl">
+        <button class="vb" type="button" id="mPer" aria-pressed="false">고른 원소의 주기</button>
+        <button class="vb" type="button" id="mGrp" aria-pressed="false">고른 원소의 족</button>
+        <span class="sp"></span>
+        <span class="hint" id="hint">칸을 누르면 그 원자의 모형이 나와요</span>
+      </div>
+    </section>
+
+    <section class="card pad">
+      <div class="ptabs" role="tablist" id="pt">
+        <button type="button" role="tab" data-p="lab" aria-selected="true">살펴보기</button>
+        <button type="button" role="tab" data-p="quiz" aria-selected="false">찾기 도전</button>
+        <button type="button" role="tab" data-p="why" aria-selected="false">왜 그럴까?</button>
+      </div>
+      <div id="figbox">
+        <div class="scene" id="atomv" role="img" aria-label="고른 원자를 간단히 나타낸 원자 모형. 원자핵에 양성자수에 따른 전하량이 쓰여 있고, 주위에 같은 수의 전자가 움직인다."></div>
+        <p class="zline" id="zline"></p>
+      </div>
+      <div class="pane" data-p="lab">
+        <div class="stepper">
+          <button class="btn ghost" type="button" id="zDn">양성자 빼기</button>
+          <input type="range" id="zR" min="1" max="20" step="1" value="1" aria-label="양성자수">
+          <button class="btn primary" type="button" id="zUp">양성자 더하기</button>
+        </div>
+        <div class="fbk" id="res"><b class="t" id="resT">결과</b><span id="resM"></span></div>
+      </div>
+      <div class="pane" data-p="quiz" hidden>
+        <div class="qdots" id="qdots"></div>
+        <div class="qnow" id="qnow"></div>
+        <div class="fbk" id="res2"><b class="t" id="res2T">결과</b><span id="res2M">주기율표에서 알맞은 칸을 눌러요.</span></div>
+        <button class="btn ghost" type="button" id="qNext" style="width:100%;margin-top:10px" hidden>다음 문제</button>
+      </div>
+      <div class="pane" data-p="why" hidden>
+        <div class="phase">
+          <div class="ph on"><i>1</i><span><b class="k">원자 번호</b>는 각 원자의 양성자수를 숫자로 나타낸 것이에요. 산소 원자는 양성자가 8개라서 원자 번호가 8이에요.</span></div>
+          <div class="ph on"><i>2</i><span>원자의 종류마다 양성자수가 달라서, 원자 번호로 원자의 종류를 구별할 수 있어요. 양성자 하나가 더해지면 다른 원자가 돼요.</span></div>
+          <div class="ph on"><i>3</i><span>원소를 원자 번호 순으로 배열한 표가 <b class="k">주기율표</b>예요. 가로줄을 <b class="k">주기</b>, 세로줄을 <b class="k">족</b>이라고 해요.</span></div>
+          <div class="ph on"><i>4</i><span>원자는 양성자수와 전자 수가 같아요. 그래서 원자 번호가 8인 산소 원자에는 전자도 8개 있어요.</span></div>
+        </div>
+      </div>
+      <p class="mnote">원자 모형의 크기와 전자의 위치·움직임은 보기 좋게 정한 모형이에요.</p>
+    </section>
+  </div>
+</div>
+<script>
+window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
+  reduce: !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches), Q: new URLSearchParams(location.search) };
+</script>
+<script>
+/*@@LOCAL:_at_core.js@@*/
+</script>
+<script>
+/*@@LOCAL:_at_atom.js@@*/
+</script>
+<script>
+/*@@LOCAL:_at_lab.js@@*/
+</script>
+<script>
+/*@@LOCAL:_at_read.js@@*/
+</script>
+<script>
+/* ===== 블록 1: 살펴보기 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S, Q = S.Q;
+    const E = (z) => AT.EL20[z - 1];
+    const A = AT.single($('#atomv'), { W: 600, H: 370, R: 165, Y: 182, p: 1 });
+    let quiz = false, mark = null;
+    const T = AT.table($('#ptab'), { onPick: (z) => (quiz ? window.QZ.pick(z) : set(z)) });
+    AT.fullTable($('#ftab'));
+    function msg(t, m) { $('#resT').textContent = t; $('#resM').innerHTML = m; }
+    let cur = 1, prev = null;
+    function set(z) {
+      z = Math.max(1, Math.min(20, z)); prev = cur; cur = z; const e = E(z);
+      A.set(z); T.select(z); $('#zR').value = z;
+      $('#zline').innerHTML = `원자 번호 <b>${z}</b> = 양성자수 <b>${z}</b> → <b>${e[2]}(${e[1]})</b>`;
+      $('#zDn').disabled = z <= 1; $('#zUp').disabled = z >= 20;
+      const p = E(prev);
+      if (prev !== z && Math.abs(prev - z) === 1) msg(`결과 · ${p[2]} → ${e[2]}`, `양성자를 하나 ${z > prev ? '더하니' : '빼니'} 양성자수가 ${prev}에서 <b>${z}</b>가 되어 <b>${e[2]}</b> 원자로 바뀌었어요. 전자도 ${z}개가 돼요.`);
+      else msg(`결과 · ${e[2]}(${e[1]})`, `${e[2]} 원자는 양성자 <b>${z}개</b>, 전자 <b>${z}개</b>예요. 원자핵의 전하량은 <b>+${z}</b>이에요. 주기율표의 <b>${e[3]}주기 ${e[4]}족</b>에 있어요.`);
+      applyMark();
+    }
+    function applyMark() {
+      const e = E(cur);
+      T.mark(mark, mark === 'period' ? e[3] : e[4]);
+      $('#mPer').setAttribute('aria-pressed', String(mark === 'period')); $('#mGrp').setAttribute('aria-pressed', String(mark === 'group'));
+      if (mark) $('#hint').innerHTML = mark === 'period' ? `${E(cur)[2]}는 <b>${e[3]}주기</b>(가로줄)에 있어요` : `${E(cur)[2]}는 <b>${e[4]}족</b>(세로줄)에 있어요`;
+      else $('#hint').textContent = '칸을 누르면 그 원자의 모형이 나와요';
+    }
+    $('#mPer').addEventListener('click', () => { mark = mark === 'period' ? null : 'period'; applyMark(); });
+    $('#mGrp').addEventListener('click', () => { mark = mark === 'group' ? null : 'group'; applyMark(); });
+    $('#zUp').addEventListener('click', () => set(cur + 1));
+    $('#zDn').addEventListener('click', () => set(cur - 1));
+    $('#zR').addEventListener('input', (ev) => set(+ev.target.value));
+    window.TB = { T, set, show(z) { const e = E(z); A.set(z); $('#zline').innerHTML = `원자 번호 <b>${z}</b> = 양성자수 <b>${z}</b> → <b>${e[2]}(${e[1]})</b>`; }, setQuiz(on) { quiz = on; if (on) { mark = null; T.select(0); applyMark(); $('#zline').innerHTML = '알맞은 칸을 누르면 그 원자의 모형이 나와요'; } else set(cur); } };
+    set(+Q.get('z') || 1);
+    if (Q.get('mark')) { mark = Q.get('mark'); applyMark(); }
+    window.SM.okUI = true;
+  } catch (err) { window.SM_err('살펴보기', err); }
+})();
+</script>
+<script>
+/* ===== 블록 2: 찾기 도전 · 탭 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S, Q = S.Q;
+    const QZ = [
+      { q: '양성자수가 11인 원자를 찾아 눌러요.', a: 11, why: '원자 번호는 양성자수를 숫자로 나타낸 것이에요. 원자 번호 11은 <b>나트륨(Na)</b>이에요.' },
+      { q: '전자가 10개인 원자를 찾아 눌러요.', a: 10, why: '원자는 양성자수와 전자 수가 같아요. 전자가 10개면 양성자도 10개, 원자 번호 10인 <b>네온(Ne)</b>이에요.' },
+      { q: '3주기 17족에 있는 원소를 찾아 눌러요.', a: 17, why: '가로줄 3번째(3주기)와 세로줄 17족이 만나는 칸은 <b>염소(Cl)</b>예요.' },
+      { q: '원자핵의 전하량이 +6인 원자를 찾아 눌러요.', a: 6, why: '원자핵의 전하량 +6은 양성자가 6개라는 뜻이에요. 원자 번호 6인 <b>탄소(C)</b>예요.' },
+      { q: '산소(O)보다 양성자가 하나 더 많은 원자를 찾아 눌러요.', a: 9, why: '산소의 원자 번호는 8이에요. 양성자가 하나 더 많으면 원자 번호 9인 <b>플루오린(F)</b>이에요.' },
+    ];
+    let i = 0, ok = 0, locked = false;
+    function msg(t, m, c = '') { $('#res2').className = 'fbk ' + c; $('#res2T').textContent = t; $('#res2M').innerHTML = m; }
+    function render() {
+      $('#qdots').innerHTML = QZ.map((_, k) => `<i class="${k < i ? 'ok' : k === i ? 'now' : ''}"></i>`).join('');
+      if (i >= QZ.length) { $('#qnow').innerHTML = `<small>찾기 도전 끝</small>다섯 문제를 모두 풀었어요.`; msg('결과 · 모두 찾았어요', `처음에 바로 맞힌 문제는 <b>${ok}개</b>예요. 원자 번호 = 양성자수 = 전자 수, 이 관계로 주기율표의 원소를 찾을 수 있어요.`, 'ok'); $('#qNext').hidden = false; $('#qNext').textContent = '처음부터 다시'; return; }
+      $('#qnow').innerHTML = `<small>문제 ${i + 1} / ${QZ.length}</small>${QZ[i].q}`;
+      $('#qNext').hidden = true; locked = false; window.TB.T.cells.forEach((c) => c.classList.remove('good', 'bad'));
+    }
+    let tries = 0;
+    window.QZ = {
+      pick(z) {
+        if (locked || i >= QZ.length) return;
+        const cell = window.TB.T.cells[z - 1];
+        if (z === QZ[i].a) { window.TB.show(z); cell.classList.add('good'); if (!tries) ok++; tries = 0; locked = true; msg('결과 · 맞았어요', QZ[i].why, 'ok'); $('#qNext').hidden = false; $('#qNext').textContent = i === QZ.length - 1 ? '결과 보기' : '다음 문제'; }
+        else { cell.classList.add('bad'); tries++; msg('다시 찾아봐요', `누른 칸은 ${AT.EL20[z - 1][2]}(원자 번호 ${z})예요. ${i === 2 ? '주기는 가로줄, 족은 세로줄이에요.' : '원자 번호는 양성자수와 같아요.'}`, 'no'); }
+      },
+    };
+    $('#qNext').addEventListener('click', () => { if (i >= QZ.length) { i = 0; ok = 0; } else i++; render(); msg('결과', '주기율표에서 알맞은 칸을 눌러요.'); });
+    function show(p) {
+      $$('#pt button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.p === p))); $$('.pane').forEach((e) => (e.hidden = e.dataset.p !== p));
+      $('#figbox').hidden = p === 'why'; document.body.dataset.p = p;
+      window.TB.setQuiz(p === 'quiz'); if (p === 'quiz') render(); else window.TB.T.cells.forEach((c) => c.classList.remove('good', 'bad'));
+      $('#mPer').disabled = $('#mGrp').disabled = p === 'quiz';
+      if (p === 'quiz') $('#hint').textContent = '문제를 읽고 알맞은 칸을 눌러요';
+    }
+    $$('#pt button').forEach((b) => b.addEventListener('click', () => show(b.dataset.p)));
+    show(['quiz', 'why'].includes(Q.get('tab')) ? Q.get('tab') : 'lab');
+    if (Q.get('tab') === 'quiz' && Q.get('qa')) window.QZ.pick(+Q.get('qa'));
+  } catch (err) { window.SM_err('찾기 도전', err); }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>원자의 구조 – 원자 모형 실험실</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+/*@@LOCAL:_css_at.css@@*/
+/*@@LOCAL:_css_sim.css@@*/
+  /* ===== 이 페이지 전용 ===== */
+  #lab{aspect-ratio:1000/760;cursor:pointer}
+  .pick3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:0 0 10px}
+  .pick3 button{min-height:54px;border-radius:12px;border:2px solid #d4dee8;background:#fff;cursor:pointer;line-height:1.3;padding:4px 6px;color:var(--ink)}
+  .pick3 button b{display:block;font-size:15.5px;font-weight:900}
+  .pick3 button span{font-size:12.5px;font-weight:700;color:var(--muted)}
+  .pick3 button[aria-pressed="true"]{border-color:var(--fab);background:#e9f3fd}
+  .pick3 button.done b::after{content:' ✓';color:var(--fab)}
+  .steps{display:grid;gap:5px;margin:0 0 10px}
+  .steps .ph{padding:6px 10px;font-size:14.5px;line-height:1.5}
+  .steps .ph.done{color:var(--ink2)}.steps .ph.done i{background:#8db8e3;color:#fff}
+  .seglbl{font-size:13px;font-weight:800;color:var(--muted);margin:0 0 5px}
+  .chips{display:grid;grid-template-columns:repeat(8,1fr);gap:5px;margin-bottom:8px}
+  .chips.c3{grid-template-columns:repeat(3,1fr)}
+  .chips button{min-height:46px;border-radius:11px;border:2px solid #d4dee8;background:#fff;font-weight:900;font-size:16px;cursor:pointer;color:var(--ink)}
+  .chips button[aria-pressed="true"]{border-color:var(--fab);background:#e9f3fd;color:#0b3f73}
+  .chips button.bad{border-color:#e7a29b;background:#fff4f2;color:#9b3a32}
+  .crow{display:grid;grid-template-columns:62px 1fr;gap:8px;align-items:center}
+  .crow > b{font-size:14px}
+  .ctl .btn{width:100%}
+  .rec{width:100%;border-collapse:collapse;font-size:14.5px;margin:0 0 12px}
+  .rec th,.rec td{border:1px solid var(--line);padding:7px 6px;text-align:center;word-break:keep-all}
+  .rec thead th{background:#f2f6fa;font-weight:800}
+  .rec tbody th{background:#f8fafc;font-weight:800;text-align:left}
+  .rec td{font-weight:800;color:#0b3f73;min-width:56px}
+  .rec td.em{color:#b2bdc8;font-weight:700}
+  .qa p{margin:0 0 6px;font-weight:800;font-size:15px;line-height:1.5;word-break:keep-all}
+  .qa3{display:grid;gap:6px}
+  .qa3 button{text-align:left;min-height:46px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:14.5px;cursor:pointer;word-break:keep-all;line-height:1.35;padding:4px 10px}
+  .qa3 button.good{border-color:var(--ok);background:#e8f7ef;color:#11703f}
+  .qa3 button.bad{border-color:#e7a29b;background:#fff4f2;color:#9b3a32}
+  .ph b.k{color:#0e63b3}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="ttl">
+      <span class="eyebrow">해 보기</span><h1>원자 모형 실험실</h1>
+      <p class="sub">원자를 이루는 전자 수를 보고 원자핵의 전하량을 정한 뒤, 전자 붙임딱지를 붙여 원자 모형을 완성해요.</p>
+    </div>
+  </header>
+
+  <div class="stage">
+    <section class="card viewer">
+      <div class="scene grow" id="lab" role="img" aria-label="하늘색 공 모양의 원자 가운데에 빨간 원자핵이 있다. 원자 안을 누르면 그 자리에 전자 붙임딱지가 붙고, 붙인 전자를 다시 누르면 떨어진다. 아래 줄에는 양성자와 전자가 짝지어 놓여 총전하량을 비교한다."></div>
+      <div class="vctl">
+        <span class="hint" id="hint">먼저 오른쪽에서 원자를 골라요</span>
+        <span class="sp"></span>
+        <button class="vb" type="button" id="bClear">전자 모두 떼기</button>
+      </div>
+    </section>
+
+    <section class="card pad">
+      <div class="ptabs" role="tablist" id="pt">
+        <button type="button" role="tab" data-p="lab" aria-selected="true">실험하기</button>
+        <button type="button" role="tab" data-p="rec" aria-selected="false">기록표</button>
+        <button type="button" role="tab" data-p="why" aria-selected="false">왜 그럴까?</button>
+      </div>
+      <div class="pane" data-p="lab">
+        <div class="pick3" id="atoms"></div>
+        <div class="steps" id="steps">
+          <div class="ph" data-s="1"><i>1</i><span id="s1t">전자 수를 보고 양성자수를 골라요.</span></div>
+          <div class="ph" data-s="2"><i>2</i><span>원자 안을 눌러 전자 붙임딱지를 붙여요.</span></div>
+          <div class="ph" data-s="3"><i>3</i><span>양성자와 전자의 총전하량을 골라요.</span></div>
+        </div>
+        <div class="ctl" id="ctl"></div>
+        <div class="fbk" id="res"><b class="t" id="resT">결과</b><span id="resM">리튬, 탄소, 산소 중에서 원자를 하나 골라요.</span></div>
+      </div>
+      <div class="pane" data-p="rec" hidden>
+        <table class="rec" id="rec"></table>
+        <div class="qa"><p>원자의 종류에 따라 양성자수는 어떻게 될까?</p><div class="qa3" id="qA"></div></div>
+        <div class="fbk" id="res2"><b class="t" id="res2T">결과</b><span id="res2M">세 원자를 완성하면 기록표가 채워져요. 질문은 먼저 골라 봐도 돼요.</span></div>
+      </div>
+      <div class="pane" data-p="why" hidden>
+        <div class="phase">
+          <div class="ph on"><i>1</i><span>원자 모형은 원자의 중심에 <b>원자핵</b>을 표시하고, 그 주위에 <b>전자</b>를 배치해요. 간단히 나타낼 때는 원자핵에 양성자수에 따른 전하량을 써요.</span></div>
+          <div class="ph on"><i>2</i><span>한 원자를 이루는 <b>양성자의 수와 전자의 수는 같아요</b>. 그래서 전자 수를 보면 양성자수를 알 수 있어요.</span></div>
+          <div class="ph on"><i>3</i><span>양성자 총전하량 = (+1) × (양성자의 수), 전자 총전하량 = (−1) × (전자의 수). 두 전하량은 크기가 같고 부호가 반대라서 원자는 <b class="k">전기적으로 중성</b>이에요.</span></div>
+          <div class="ph on"><i>4</i><span>리튬 3, 탄소 6, 산소 8처럼 원자의 종류마다 양성자수가 달라요. <b class="k">원자의 종류는 원자핵의 양성자수에 의해 결정</b>돼요.</span></div>
+        </div>
+      </div>
+      <p class="mnote">전자는 누른 자리에 붙임딱지처럼 붙어요. 원자의 크기와 전자의 위치는 정한 모형이에요.</p>
+    </section>
+  </div>
+</div>
+<script>
+window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
+  reduce: !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches), Q: new URLSearchParams(location.search) };
+</script>
+<script>
+/*@@LOCAL:_at_core.js@@*/
+</script>
+<script>
+/*@@LOCAL:_at_atom.js@@*/
+</script>
+<script>
+/*@@LOCAL:_at_lab.js@@*/
+</script>
+<script>
+/* ===== 블록 1: 실험하기 · 기록표 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S, Q = S.Q;
+    const ATOMS = [{ id: 'Li', name: '리튬', e: 3 }, { id: 'C', name: '탄소', e: 6 }, { id: 'O', name: '산소', e: 8 }];
+    const L = AT.lab($('#lab'));
+    const st = { a: null, step: 0, pq: null, eq: null, done: {} };
+    const BTN = (id, t, cls = 'ghost', dis = false) => `<button class="btn ${cls}" type="button" id="${id}"${dis ? ' disabled' : ''}>${t}</button>`;
+    function msg(t, m, cls = '') { $('#res').className = 'fbk ' + cls; $('#resT').textContent = t; $('#resM').innerHTML = m; }
+    const A = () => ATOMS.find((x) => x.id === st.a);
+    function renderAtoms() {
+      $('#atoms').innerHTML = ATOMS.map((a) => `<button type="button" data-a="${a.id}" aria-pressed="${st.a === a.id}" class="${st.done[a.id] ? 'done' : ''}"><b>${a.name}(${a.id})</b><span>전자 수 ${a.e}</span></button>`).join('');
+      $$('#atoms button').forEach((b) => b.addEventListener('click', () => choose(b.dataset.a)));
+    }
+    function choose(id) {
+      st.a = id; st.step = 1; st.pq = st.eq = null; const a = A();
+      L.setAtom(a.name);
+      $('#s1t').innerHTML = `${a.name} 원자의 전자 수는 <b>${a.e}</b>예요. 양성자수를 골라요.`;
+      msg('결과', `${a.name} 원자에는 전자가 ${a.e}개 있어요. 원자핵의 양성자수는 몇 개일까요?`);
+      render();
+    }
+    function render() {
+      renderAtoms();
+      $$('#steps .ph').forEach((p) => { const s = +p.dataset.s; p.classList.toggle('on', s === st.step); p.classList.toggle('done', s < st.step || st.step === 4); });
+      const c = $('#ctl'), a = A();
+      if (!a) c.innerHTML = '';
+      else if (st.step === 1) {
+        c.innerHTML = `<div class="seglbl">양성자수</div><div class="chips" id="pc">${[1, 2, 3, 4, 5, 6, 7, 8].map((n) => `<button type="button" data-n="${n}">${n}</button>`).join('')}</div>`;
+        $$('#pc button').forEach((b) => b.addEventListener('click', () => {
+          const n = +b.dataset.n;
+          if (n === a.e) { L.setP(n); st.step = 2; msg('결과 · 원자핵에 +' + n + '을 썼어요', `양성자 ${n}개의 전하량은 <b>+${n}</b>이에요. 이제 하늘색 원자 안을 눌러 전자 붙임딱지를 <b>${n}개</b> 붙여요.`, 'ok'); render(); }
+          else { b.classList.add('bad'); msg('다시 골라요', `한 원자를 이루는 양성자의 수와 전자의 수는 <b>같아요</b>. 전자 수를 다시 봐요.`, 'no'); }
+        }));
+      } else if (st.step === 2) {
+        c.innerHTML = `<div class="seglbl">붙인 전자 ${L.st.es.length} / ${a.e}</div>`;
+      } else if (st.step >= 3) {
+        const P = [`+${a.e}`, `−${a.e}`, '+1'], E = [`−${a.e}`, `+${a.e}`, '−1'];
+        c.innerHTML = `<div class="crow"><b>양성자</b><div class="chips c3" id="cq1">${P.map((v, i) => `<button type="button" data-i="${i}" aria-pressed="${st.pq === i}">${v}</button>`).join('')}</div></div>
+          <div class="crow"><b>전자</b><div class="chips c3" id="cq2">${E.map((v, i) => `<button type="button" data-i="${i}" aria-pressed="${st.eq === i}">${v}</button>`).join('')}</div></div>
+          ${st.step === 4 ? `<div class="seglbl" style="margin-top:4px">다른 원자를 골라 계속해요</div>` : ''}`;
+        const pickq = (k, i) => {
+          st[k] = i; render();
+          if (st.pq == null || st.eq == null) return;
+          if (st.pq === 0 && st.eq === 0) {
+            st.step = 4; st.done[a.id] = true; table();
+            msg('결과 · 전기적으로 중성이에요', `양성자 총전하량 (+1) × (${a.e}) = <b>+${a.e}</b>, 전자 총전하량 (−1) × (${a.e}) = <b>−${a.e}</b>. 크기가 같고 부호가 반대라서 ${a.name} 원자는 <b>전기적으로 중성</b>이에요.`, 'ok'); render();
+            if (Object.keys(st.done).length === 3) msg('결과 · 세 원자를 모두 완성했어요', `리튬 3, 탄소 6, 산소 8. 원자의 종류마다 <b>양성자수가 달라요</b>. <b>기록표</b> 탭에서 정리해요.`, 'ok');
+          } else msg('다시 골라요', '총전하량 = (전하) × (입자의 수)예요. 양성자는 (+1), 전자는 (−1)을 곱해요.', 'no');
+        };
+        $$('#cq1 button').forEach((b) => b.addEventListener('click', () => pickq('pq', +b.dataset.i)));
+        $$('#cq2 button').forEach((b) => b.addEventListener('click', () => pickq('eq', +b.dataset.i)));
+      }
+      $('#hint').textContent = !a ? '먼저 오른쪽에서 원자를 골라요' : st.step === 1 ? '양성자수를 고르면 원자핵에 전하량이 써져요' : st.step === 2 ? '원자 안을 누르면 전자가 붙고, 전자를 누르면 떨어져요' : '아래 줄에서 양성자와 전자가 하나씩 짝을 이뤄요';
+    }
+    L.onChange = (s) => {
+      const a = A(); if (!a || st.step !== 2) return;
+      if (s.es.length === a.e) { st.step = 3; msg('결과 · 전자를 모두 붙였어요', `전자 ${a.e}개를 붙였어요. 아래 줄을 보면 양성자와 전자가 하나씩 <b>짝</b>을 이뤄요. 각각의 총전하량을 골라요.`, 'ok'); }
+      else msg('결과', `전자를 ${s.es.length}개 붙였어요. <b>${a.e - s.es.length}개</b> 더 붙여요.`);
+      render();
+    };
+    L.onBlock = (r) => {
+      if (r === 'p') msg('먼저 할 일', A() ? '양성자수를 먼저 골라 원자핵의 전하량을 정해요.' : '오른쪽에서 원자를 먼저 골라요.');
+      if (r === 'core') msg('결과', '원자핵 위에는 붙이지 않아요. 원자핵 <b>주위</b>를 눌러요.');
+      if (r === 'full') msg('더 붙일 수 없어요', `원자에서는 전자 수와 양성자수가 <b>같아요</b>. 이 원자의 양성자는 ${L.st.p}개예요.`, 'no');
+    };
+    $('#bClear').addEventListener('click', () => { L.clear(); if (st.step >= 2 && A()) { st.step = 2; st.pq = st.eq = null; render(); } });
+    // 기록표
+    function table() {
+      const cell = (a, f) => (st.done[a.id] ? `<td>${f(a)}</td>` : '<td class="em">?</td>');
+      $('#rec').innerHTML = `<thead><tr><th>원자</th>${ATOMS.map((a) => `<th>${a.name}(${a.id})</th>`).join('')}</tr></thead><tbody>
+        <tr><th>전자 수</th>${ATOMS.map((a) => `<td>${a.e}</td>`).join('')}</tr>
+        <tr><th>양성자수</th>${ATOMS.map((a) => cell(a, (x) => x.e)).join('')}</tr>
+        <tr><th>총전하량 · 양성자</th>${ATOMS.map((a) => cell(a, (x) => '+' + x.e)).join('')}</tr>
+        <tr><th>총전하량 · 전자</th>${ATOMS.map((a) => cell(a, (x) => '−' + x.e)).join('')}</tr></tbody>`;
+    }
+    table();
+    const QA = [['a', '원자의 종류마다 양성자수가 다르다. 양성자수가 원자의 종류를 정한다.', true], ['b', '원자의 종류와 관계없이 양성자수는 모두 같다.', false], ['c', '양성자수는 같고 전자 수만 원자마다 다르다.', false]];
+    $('#qA').innerHTML = QA.map(([v, t]) => `<button type="button" data-v="${v}">${t}</button>`).join('');
+    $$('#qA button').forEach((b) => b.addEventListener('click', () => {
+      $$('#qA button').forEach((x) => x.classList.remove('good', 'bad')); const ok = QA.find((x) => x[0] === b.dataset.v)[2]; b.classList.add(ok ? 'good' : 'bad');
+      const m2 = (t, m, c) => { $('#res2').className = 'fbk ' + c; $('#res2T').textContent = t; $('#res2M').innerHTML = m; };
+      if (ok) m2('결과 · 맞았어요', '리튬 3, 탄소 6, 산소 8처럼 원자의 종류마다 양성자수가 달라요. 원자핵의 양성자수가 달라지면 원자의 종류가 바뀌어요.', 'ok');
+      else m2('다시 생각해 봐요', '기록표에서 세 원자의 양성자수를 비교해 봐요.', 'no');
+    }));
+    function show(p) { $$('#pt button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.p === p))); $$('.pane').forEach((e) => (e.hidden = e.dataset.p !== p)); }
+    $$('#pt button').forEach((b) => b.addEventListener('click', () => show(b.dataset.p)));
+    // 검사용 주소: ?a=Li&at=p|e|q|done, ?all=1, ?tab=rec|why
+    const qa = Q.get('a'), at = Q.get('at');
+    if (Q.get('all') === '1') { ATOMS.forEach((a) => (st.done[a.id] = true)); table(); }
+    if (qa && ATOMS.find((x) => x.id === qa)) {
+      choose(qa); const a = A();
+      if (at && at !== 'pick') { L.setP(a.e); st.step = 2; }
+      if (at === 'half') { L.fill(Math.ceil(a.e / 2)); }
+      if (at === 'q' || at === 'done') { L.fill(); }
+      if (at === 'done') { $('#cq1 [data-i="0"]').click(); $('#cq2 [data-i="0"]').click(); }
+    }
+    render();
+    show(['rec', 'why'].includes(Q.get('tab')) ? Q.get('tab') : 'lab');
+    window.SM.okUI = true;
+  } catch (err) { window.SM_err('실험하기', err); }
+})();
+</script>
+</body>
+</html>
