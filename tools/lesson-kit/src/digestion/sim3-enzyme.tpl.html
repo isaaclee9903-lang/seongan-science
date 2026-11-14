@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>우리가 먹은 음식의 소화 – 소화효소 실험실</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+/*@@LOCAL:_css_ps.css@@*/
+/*@@LOCAL:_css_sim.css@@*/
+/*@@LOCAL:_css_pf.css@@*/
+/*@@LOCAL:_css_dg.css@@*/
+.slab{position:absolute;left:0;top:0;font:700 clamp(12px,1.15vw,14.5px)/1.25 Pretendard,sans-serif;color:#14263b;background:rgba(255,255,255,.9);padding:2px 8px;border-radius:6px;white-space:nowrap;text-align:center;pointer-events:none}
+.slab.b{font-weight:800;font-size:clamp(13px,1.3vw,16px)}
+.slab.s{font-size:clamp(11.5px,1.05vw,13px);color:#34495e}
+.places{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.places button{min-height:46px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font:800 15px Pretendard,sans-serif;color:#14263b;cursor:pointer}
+.places button[aria-pressed="true"]{border-color:#0e63b3;background:#e9f3fd;color:#0b3f73}
+.places button:disabled{opacity:.4;cursor:default}
+.juices{display:grid;gap:6px;margin:8px 0}
+.juices button{display:grid;grid-template-columns:14px 1fr;gap:10px;align-items:center;min-height:48px;border-radius:12px;border:2px solid #d4dee8;background:#fff;cursor:pointer;text-align:left;padding:4px 12px;font-family:inherit;color:#14263b}
+.juices button i{width:14px;height:14px;border-radius:50%}
+.juices button b{font-size:15px;font-weight:900}.juices button span{display:block;font-size:12.5px;font-weight:700;color:#5a6b7e;word-break:keep-all}
+.juices button[aria-pressed="true"]{border-color:#0e63b3;background:#e9f3fd}
+.juices button:disabled{opacity:.45;cursor:default}
+.nt{width:100%;border-collapse:collapse;table-layout:fixed;font-size:13px}
+.nt th{text-align:left;font-size:13px;color:#34495e;width:20%;padding:4px 0}
+.nt td{padding:3px 2px;text-align:center;font-weight:800;color:#a7b4c2;word-break:keep-all;line-height:1.25;border-radius:8px}
+.nt td.on{color:#0b3f73;background:#e3effb}
+.nt td.done{color:#34495e}
+.legend svg{vertical-align:middle}
+.qa > p{font-size:15.5px;line-height:1.6;font-weight:700;margin:0 0 8px;word-break:keep-all}
+.qa3{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:12px}.qa3 button{min-height:46px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:700;font-size:14px;cursor:pointer;padding:4px 8px;line-height:1.3;word-break:keep-all;color:#14263b;font-family:inherit}
+.qa3 button.good{border-color:#0e63b3;background:#e9f3fd;color:#0b3f73}.qa3 button.bad{border-color:#c0392b;background:#fbecea}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top"><div class="ttl"><span class="eyebrow">시뮬레이션</span><h1>소화효소 실험실</h1>
+    <p class="sub">빵 한 입을 입 → 위 → 작은창자로 옮기며 소화액을 넣어 봐요. 어떤 소화효소가 어떤 영양소를 분해할까요?</p></div></header>
+  <div class="stage">
+    <section class="card viewer">
+      <div class="scene grow" id="fig" style="background:#fff" role="img" aria-label="소화관 속을 크게 본 그림. 녹말 사슬, 단백질 사슬, 지방 덩어리, 세균과 소화효소가 움직인다."></div>
+      <div class="legend" id="lg"></div>
+    </section>
+    <section class="card pad">
+      <div class="ptabs" role="tablist" id="pt">
+        <button type="button" role="tab" data-p="lab" aria-selected="true">실험하기</button>
+        <button type="button" role="tab" data-p="sum" aria-selected="false">정리하기</button>
+      </div>
+      <div class="pane" data-p="lab">
+        <div class="places" id="pl"><button type="button" data-p="mouth" aria-pressed="true">입</button><button type="button" data-p="sto" aria-pressed="false">위</button><button type="button" data-p="si" aria-pressed="false">작은창자</button></div>
+        <div class="juices" id="jz"></div>
+        <table class="nt" id="nt"></table>
+        <div class="fbk" id="res" style="margin-top:8px"><b class="t" id="resT">처음</b><span id="resM"></span></div>
+      </div>
+      <div class="pane" data-p="sum" hidden>
+        <p class="lbl">그림 Ⅵ-7 · 소화효소가 분해하는 영양소를 골라요</p>
+        <div id="qs"></div><div class="fbk" id="sres" hidden></div>
+      </div>
+      <button class="vb" type="button" id="bReset" style="margin-top:8px;width:100%">처음부터</button>
+    </section>
+  </div>
+</div>
+<script>
+/*@@LOCAL:_enz.js@@*/
+</script>
+<script>
+(() => {
+  'use strict';
+  try {
+    const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+    const q = new URLSearchParams(location.search);
+    let X = ENZ.lab($('#fig'));
+    const used = {};
+    const say = (t, m, c = '') => { $('#res').className = 'fbk ' + c; $('#resT').textContent = t; $('#resM').innerHTML = m; };
+    /* 범례 */
+    const pac = (c) => `<svg width="18" height="18" viewBox="0 0 20 20"><path d="M10 10 L18.5 6 A9 9 0 1 0 18.5 14 Z" fill="${c}" stroke="rgba(20,38,59,.35)"/></svg>`;
+    const hx = (c) => `<svg width="16" height="16" viewBox="0 0 20 20"><polygon points="10,1 18,5.5 18,14.5 10,19 2,14.5 2,5.5" fill="${c}" stroke="#4f5bb0"/></svg>`;
+    $('#lg').innerHTML = `<span>${hx('#8e9de0')}녹말</span><span><svg width="26" height="14" viewBox="0 0 26 14"><circle cx="6" cy="7" r="5" fill="#e05a52"/><circle cx="19" cy="7" r="5" fill="#4a86d0"/></svg>단백질</span><span><svg width="18" height="18" viewBox="0 0 20 20"><rect x="3" y="3" width="14" height="5" rx="2" fill="#f3e3b0" stroke="#b8954a"/><rect x="5" y="8" width="3" height="10" fill="#f2c94c"/><rect x="12" y="8" width="3" height="10" fill="#f2c94c"/></svg>지방</span>` + Object.values(ENZ.E).map(([n, c]) => `<span>${pac(c)}${n}</span>`).join('');
+    /* 장소별 소화액 */
+    const JU = {
+      mouth: [['chew', '#b8793a', '이와 혀로 씹기', '음식물을 잘게 부숴 침과 잘 섞이게 해요'], ['saliva', '#8fc3e6', '침 분비하기', '침샘에서 나와요 · 아밀레이스']],
+      sto: [['gastric', '#d3b0e4', '위액 분비하기', '위샘에서 나와요 · 펩신, 염산']],
+      si: [['bileJ', '#86b04c', '쓸개즙 분비하기', '간에서 만들어져 쓸개에 저장 · 소화효소 없음'], ['pancreas', '#f0c84a', '이자액 분비하기', '아밀레이스, 트립신, 라이페이스'], ['wallE', '#3f7fc4', '작은창자 안쪽 벽의 소화효소', '탄수화물 소화효소, 단백질 소화효소']],
+    };
+    const MSG = {
+      chew: ['씹었어요', '이와 혀가 빵을 잘게 부수고 섞었어요. 이제 빵 속 <b>녹말·단백질·지방</b>이 보여요. 아직 크기가 커서 세포막을 통과할 수 없어요. <b>침 분비하기</b>를 눌러요.'],
+      saliva: ['입에서의 소화', '침 속 <b>아밀레이스</b>(초록)가 <b>녹말</b>을 <b>엿당</b>(육각형 2개)으로 분해해요. 단백질과 지방은 그대로예요. 각 소화효소는 한 종류의 영양소만 분해해요. 다 보았으면 <b>위</b>로 옮겨요.'],
+      gastric: ['위에서의 소화', '위액의 <b>펩신</b>(분홍)이 <b>단백질</b>을 <b>작은 크기의 단백질</b>로 분해해요. <b>염산</b>은 펩신의 작용을 돕고, 음식물에 섞인 <b>세균</b>(초록 막대)을 죽여요. 다 보았으면 <b>작은창자</b>로 옮겨요.'],
+      bileJ: ['쓸개즙', '<b>쓸개즙</b>에는 소화효소가 없지만 <b>지방 덩어리를 작은 알갱이</b>로 만들어 지방의 소화를 도와요.'],
+      pancreas: ['이자액', '이자액에는 녹말을 분해하는 <b>아밀레이스</b>, 단백질을 분해하는 <b>트립신</b>(보라), 지방을 분해하는 <b>라이페이스</b>(주황)가 모두 들어 있어요. 라이페이스는 지방을 <b>지방산과 모노글리세리드</b>로 분해해요.'],
+      wallE: ['작은창자 안쪽 벽의 소화효소', '<b>탄수화물 소화효소</b>(청록)가 엿당을 <b>포도당</b>으로, <b>단백질 소화효소</b>(파랑)가 작은 단백질을 <b>아미노산</b>으로 분해해요.'],
+    };
+    const order = ['mouth', 'sto', 'si'];
+    const drawJ = () => {
+      const p = X.place; $$('#pl button').forEach((b) => { b.setAttribute('aria-pressed', String(b.dataset.p === p)); b.disabled = order.indexOf(b.dataset.p) < order.indexOf(p) || (b.dataset.p !== 'mouth' && !X.chewed); });
+      $('#jz').innerHTML = JU[p].map(([k, c, t, sub]) => `<button type="button" data-k="${k}" aria-pressed="${!!used[k]}" ${used[k] || (k !== 'chew' && p === 'mouth' && !X.chewed) || (k === 'chew' && X.chewed) ? 'disabled' : ''}><i style="background:${c}"></i><span><b>${t}</b><span>${sub}</span></span></button>`).join('');
+      $$('#jz button').forEach((b) => b.addEventListener('click', () => { const k = b.dataset.k; used[k] = true; X[k](); say(...MSG[k]); drawJ(); }));
+    };
+    $$('#pl button').forEach((b) => b.addEventListener('click', () => {
+      const p = b.dataset.p; if (p === X.place) return; X.go(p); drawJ();
+      if (p === 'sto') say('위로 왔어요', '음식물이 식도를 거쳐 <b>위</b>로 왔어요. 위는 근육으로 이루어진 주머니예요. <b>위액 분비하기</b>를 눌러요.');
+      if (p === 'si') say('작은창자로 왔어요', '작은창자의 시작 부분인 <b>샘창자</b>예요. 위쪽 관으로 쓸개즙과 이자액이 들어와요. 세 가지를 모두 넣어 영양소를 <b>완전히</b> 분해해 봐요.');
+    }));
+    /* 영양소 표 (그림 Ⅵ-7) */
+    const ROWS = [['탄수화물', ['녹말', '엿당', '포도당'], (c) => [c.S, c.S2, c.S1]], ['단백질', ['단백질', '작은 단백질', '아미노산'], (c) => [c.P, c.P3, c.P1]], ['지방', ['지방 덩어리', '작은 알갱이', '지방산, 모노글리세리드'], (c) => [c.F, c.Fs, c.FA]]];
+    let doneMsg = false;
+    const drawT = () => {
+      const c = X.count();
+      $('#nt').innerHTML = ROWS.map(([n, st, f]) => { const v = f(c), tot = v.reduce((a, b) => a + b, 0) || 1; const cur = v[2] / tot > .9 ? 2 : v[0] > 0 ? 0 : 1; return `<tr><th>${n}</th>${st.map((x, i) => `<td class="${i === cur ? 'on' : i < cur ? 'done' : ''}">${x}</td>`).join('')}</tr>`; }).join('');
+      const all = ROWS.every(([, , f]) => { const v = f(c), tot = v.reduce((a, b) => a + b, 0); return tot && v[2] / tot > .97; });
+      if (all && !doneMsg && X.place === 'si') { doneMsg = true; say('소화가 완전히 끝났어요', '탄수화물은 <b>포도당</b>, 단백질은 <b>아미노산</b>, 지방은 <b>지방산과 모노글리세리드</b>로 최종 분해되었어요. 이제 세포막을 통과할 만큼 작아서 작은창자에서 흡수될 수 있어요. <b>융털과 흡수</b>에서 이어서 봐요.', 'ok'); }
+    };
+    setInterval(drawT, 400);
+    const reset = () => { X = ENZ.lab($('#fig')); Object.keys(used).forEach((k) => delete used[k]); doneMsg = false; drawJ(); drawT(); say('처음', '입에 빵 한 입이 들어왔어요. <b>이와 혀로 씹기</b>부터 눌러요.'); };
+    $('#bReset').addEventListener('click', reset);
+    reset();
+    /* 정리하기 */
+    const QS = [['아밀레이스', 0], ['펩신', 1], ['트립신', 1], ['라이페이스', 2], ['탄수화물 소화효소', 0], ['단백질 소화효소', 1]];
+    $('#qs').innerHTML = QS.map(([n], i) => `<div class="qa" data-i="${i}"><p>${n}은(는) 무엇을 분해할까요?</p><div class="qa3">${['탄수화물', '단백질', '지방'].map((t, k) => `<button type="button" data-k="${k}">${t}</button>`).join('')}</div></div>`).join('');
+    const EXP = ['침과 이자액에 들어 있어요. 녹말을 엿당으로 분해해요.', '위액에 들어 있어요. 단백질을 작은 크기의 단백질로 분해해요.', '이자액에 들어 있어요. 단백질을 분해해요.', '이자액에 들어 있어요. 지방을 지방산과 모노글리세리드로 분해해요.', '작은창자 안쪽 벽에 있어요. 탄수화물을 포도당으로 분해해요.', '작은창자 안쪽 벽에 있어요. 단백질을 아미노산으로 분해해요.'];
+    $$('#qs .qa').forEach((row) => { const i = +row.dataset.i; $$('button', row).forEach((b) => b.addEventListener('click', () => {
+      const good = +b.dataset.k === QS[i][1]; $$('button', row).forEach((o) => o.classList.remove('good', 'bad')); b.classList.add(good ? 'good' : 'bad');
+      const r = $('#sres'); r.hidden = false; r.className = 'fbk ' + (good ? 'ok' : 'no'); r.innerHTML = good ? `<b>${QS[i][0]}</b>: ${EXP[i]}` : '다시 골라 봐요. 각 소화효소는 한 종류의 영양소만 분해해요.';
+    })); });
+    const tab = (p) => { $$('#pt button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.p === p))); $$('.pane').forEach((e) => { e.hidden = e.dataset.p !== p; }); };
+    $$('#pt button').forEach((b) => b.addEventListener('click', () => tab(b.dataset.p)));
+    /* 화면 검사용: ?run=mouth|sto|si 까지 진행 */
+    const run = q.get('run');
+    if (run) {
+      used.chew = true; X.chew(); used.saliva = true; X.saliva(); X.ff(8);
+      if (run !== 'mouth') { X.go('sto'); used.gastric = true; X.gastric(); X.ff(8); say(...MSG.gastric); } else say(...MSG.saliva);
+      if (run === 'si') { X.go('si'); used.bileJ = used.pancreas = used.wallE = true; X.bileJ(); X.pancreas(); X.wallE(); X.ff(+(q.get('ff') || 4)); say(...MSG.pancreas); }
+      drawJ(); drawT();
+    }
+    if (q.get('tab')) tab(q.get('tab'));
+    window.SM = window.SM || {}; window.SM.okUI = true; window.__ready = true;
+  } catch (err) { window.SM_err && window.SM_err('소화효소 실험실', err); console.error(err); }
+})();
+</script>
+</body>
+</html>

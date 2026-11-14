@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>우리가 먹은 음식의 소화 – 소화계 3D</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+/*@@LOCAL:_css_ps.css@@*/
+/*@@LOCAL:_css_sim.css@@*/
+/*@@LOCAL:_css_pf.css@@*/
+/*@@LOCAL:_css_dg.css@@*/
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top"><div class="ttl"><span class="eyebrow">시뮬레이션</span><h1>소화계 3D</h1>
+    <p class="sub">실제 사람 자료로 만든 소화계에서 음식물이 지나가는 길을 따라가고, 소화액이 어디에서 나오는지 찾아봐요.</p></div>
+    <div class="ptabs big" role="tablist" id="at"><button type="button" role="tab" data-a="sys" aria-selected="true">음식물이 지나가는 길</button><button type="button" role="tab" data-a="gland" aria-selected="false">간·쓸개·이자</button></div></header>
+  <div class="stage">
+    <section class="card viewer">
+      <div class="scene grow gl-host" id="fig" style="height:auto;background:#fff" role="img" aria-label="입, 식도, 위, 작은창자, 큰창자, 항문과 침샘, 간, 쓸개, 이자의 3D 모형"></div>
+      <div class="vctl" id="vc1"><div class="seg3" id="vw" style="flex:1"><button type="button" data-v="front" aria-pressed="true">몸 전체</button><button type="button" data-v="mouth" aria-pressed="false">입 가까이</button><button type="button" data-v="gland" aria-pressed="false">간·쓸개·이자 가까이</button></div></div>
+    </section>
+    <section class="card pad">
+      <div class="pane" data-a="sys">
+        <p class="lbl">소화계 = 소화관 + 소화샘</p>
+        <div class="nlist" id="grp">
+          <button type="button" data-g="tube" aria-pressed="false"><b>소화관</b><span>음식물이 지나가는 길: 입, 식도, 위, 작은창자, 큰창자</span></button>
+          <button type="button" data-g="gland" aria-pressed="false"><b>소화샘</b><span>소화액을 분비하는 곳: 침샘, 간, 쓸개, 이자</span></button>
+        </div>
+        <button class="btn primary" type="button" id="tF" style="margin-top:10px;width:100%">음식물 따라가기</button>
+        <div class="route" id="rt"></div>
+        <div class="fbk" id="res"><b class="t" id="resT">처음</b><span id="resM"></span></div>
+      </div>
+      <div class="pane" data-a="gland" hidden>
+        <p class="lbl">소화액이 샘창자로 들어오는 길</p>
+        <div class="nlist" id="jl">
+          <button type="button" data-j="bile" aria-pressed="false"><b>쓸개즙</b><span>간에서 만들어져 쓸개에 저장되었다가 샘창자로</span></button>
+          <button type="button" data-j="panc" aria-pressed="false"><b>이자액</b><span>이자에서 샘창자로</span></button>
+        </div>
+        <div class="fbk" id="gres" style="margin-top:10px"><b class="t" id="gresT">간·쓸개·이자</b><span id="gresM"></span></div>
+        <p class="fact2"><b>작은창자</b>는 소화관 중에서 가장 길어요. 작은창자의 시작 부분을 <b>샘창자</b>라고 하며, 쓸개와 이자가 연결되어 있어 쓸개즙과 이자액이 샘창자로 분비돼요.</p>
+      </div>
+      <p class="mnote">모형 자료: BodyParts3D(소화관·침샘·쓸개·이자·뼈, © The Database Center for Life Science, CC BY 4.0), HuBMAP CCF 3D Reference Object Library(간, CC BY 4.0). 인두와 큰창자 끝 일부는 이어지게 새로 그렸어요. 알갱이는 잘 보이게 정한 모형이에요.</p>
+    </section>
+  </div>
+</div>
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+/*@@PART:c3.js@@*/
+/*@@LOCAL:_dg3.js@@*/
+(async () => {
+  'use strict';
+  try {
+    const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+    const q = new URLSearchParams(location.search);
+    const W = await DG3.body($('#fig'), { view: 'front' }); window.__W = W;
+    W.flow({ food: true });
+    /* 보는 방향마다 이름표 자리 [가로 x, y, 세로 x, y] */
+    const POS = {
+      front: { mouth: [.28, .06, .2, .05], saliv: [.72, .06, .8, .05], teeth: [.72, .13, .8, .1], eso: [.28, .22, .2, .2], liver: [.24, .4, .16, .4], gall: [.24, .5, .16, .48], duo: [.24, .58, .16, .56], li: [.24, .72, .16, .7], sto: [.76, .38, .84, .38], pan: [.76, .48, .84, .47], si: [.76, .64, .84, .64], anus: [.76, .9, .84, .9] },
+      mouth: { mouth: [.24, .3, .16, .3], teeth: [.24, .48, .16, .46], saliv: [.76, .56, .84, .56], eso: [.76, .82, .84, .82] },
+      gland: { liver: [.2, .18, .14, .14], gall: [.2, .5, .14, .5], duo: [.2, .72, .14, .74], pan: [.8, .62, .86, .62], sto: [.8, .2, .86, .2] },
+    };
+    const LABS = { front: Object.keys(POS.front), mouth: Object.keys(POS.mouth), gland: Object.keys(POS.gland) };
+    const TUBE = ['mouth', 'teeth', 'eso', 'sto', 'duo', 'si', 'li', 'anus'], GL = ['saliv', 'liver', 'gall', 'pan'];
+    let grp = null;
+    const labs = (k) => { W.place(POS[k]); let ks = LABS[k]; if (grp && k === 'front') ks = ks.filter((x) => (grp === 'tube' ? TUBE : GL).includes(x)); W.showLabs(ks); };
+    let cur = 'front';
+    const look = (v) => {
+      cur = v; W.setView(v, .9); labs(v); $$('#vw button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === v)));
+      W.flow({ scale: v === 'mouth' ? .6 : v === 'gland' ? .7 : 1 }); W.juice({ scale: v === 'front' ? 1.4 : 1 });
+      if (v === 'gland') { W.focus(['liver', 'gall', 'bile', 'pan', 'pduct', 'duo', 'si']); W.setOp('liver', .5); W.setOp('si', .35); }
+      else if (v === 'mouth') { W.focus(null); W.setOp('skull', .25); W.setOp('jaw', .35); }
+      else { setGroup(grp); W.setOp('skull', 1); W.setOp('jaw', 1); }
+    };
+    $$('#vw button').forEach((b) => b.addEventListener('click', () => look(b.dataset.v)));
+    const say = (t, m, c = '') => { $('#res').className = 'fbk ' + c; $('#resT').textContent = t; $('#resM').innerHTML = m; };
+    say('처음', '음식물이 입에서 항문까지 이어진 소화관을 따라 흐르고 있어요. <b>음식물 따라가기</b>를 눌러 한 덩어리를 따라가 봐요. 손가락으로 돌려 볼 수도 있어요.');
+    /* 소화관 · 소화샘 */
+    const setGroup = (g) => {
+      grp = g; $$('#grp button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.g === g)));
+      if (!g) W.focus(null); else if (g === 'tube') W.focus(DG3 && W.TUBE); else W.focus(W.GLAND);
+      if (cur === 'front') labs('front');
+    };
+    $$('#grp button').forEach((b) => b.addEventListener('click', () => {
+      const g = grp === b.dataset.g ? null : b.dataset.g; if (cur !== 'front') look('front'); setGroup(g);
+      if (g === 'tube') say('소화관', '음식물이 지나가는 <b>입, 식도, 위, 작은창자, 큰창자</b> 등이 소화관이에요. 입에서 항문까지 한 줄로 이어져 있어요.');
+      else if (g === 'gland') say('소화샘', '소화관에 연결되어 소화액을 분비하는 <b>침샘, 간, 쓸개, 이자</b> 등이 소화샘이에요. 음식물은 소화샘을 지나가지 않아요.');
+      else say('소화계', '소화계는 <b>소화관</b>과 <b>소화샘</b>으로 구성돼요.');
+    }));
+    /* 따라가기 */
+    const ROUTE = [['입', '이와 혀가 잘게 부수고 침과 섞어요'], ['식도', '음식물이 위로 내려가요'], ['위', '근육 주머니, 위샘에서 위액이 나와요'], ['작은창자', '탄수화물·단백질·지방이 완전히 분해되어 흡수돼요'], ['큰창자', '남은 물이 흡수돼요'], ['항문', '찌꺼기가 몸 밖으로 나가요']];
+    const MSG = [
+      '이와 혀가 음식물을 씹어 잘게 부수고, <b>침샘</b>에서 나온 침(하늘색)과 잘 섞어요.',
+      '삼킨 음식물이 <b>식도</b>를 거쳐 위로 이동해요.',
+      '<b>위</b>는 근육으로 이루어진 주머니예요. 안쪽 벽의 위샘에서 <b>위액</b>(연보라)이 분비돼요.',
+      '<b>샘창자</b>에서 쓸개즙(초록)과 이자액(노랑)이 섞여요. 작은창자에서 탄수화물, 단백질, 지방이 <b>완전히 분해되어 흡수</b>돼요.',
+      '흡수되지 않은 찌꺼기가 <b>큰창자</b>를 지나는 동안 물이 흡수돼요.',
+      '마지막으로 <b>항문</b>을 통해 몸 밖으로 배출돼요.'];
+    const drawRoute = (n) => { $('#rt').innerHTML = ROUTE.map((r, i) => `<div class="r ${i < n ? 'done' : ''} ${i === n ? 'on' : ''}"><i>${i + 1}</i><span>${r[0]}<small>${r[1]}</small></span></div>`).join(''); };
+    drawRoute(-1);
+    const tour = () => {
+      if (W.touring) return; if (cur !== 'front') look('front'); setGroup(null);
+      $('#tF').disabled = true; W.flow({ food: false }); drawRoute(0);
+      W.tour((wi, name) => {
+        if (wi < 0) { $('#tF').disabled = false; W.flow({ food: true }); W.juice({ spit: false, gastric: false, bile: false, panc: false }); drawRoute(99); say('음식물이 몸 밖으로 나갔어요', '입 → 식도 → 위 → 작은창자 → 큰창자 → 항문. 음식물은 <b>소화관</b>만 지나가고, 소화샘에서 나온 소화액이 소화관으로 들어와 섞여요.', 'ok'); return; }
+        const k = ROUTE.findIndex((r) => r[0] === name); drawRoute(k); say(name, MSG[k]);
+      });
+    };
+    $('#tF').addEventListener('click', tour);
+    /* 간·쓸개·이자 */
+    const gsay = (t, m) => { $('#gresT').textContent = t; $('#gresM').innerHTML = m; };
+    const J = { bile: false, panc: false };
+    const setJ = () => { $$('#jl button').forEach((b) => b.setAttribute('aria-pressed', String(J[b.dataset.j]))); W.juice({ bile: J.bile, panc: J.panc }); };
+    $$('#jl button').forEach((b) => b.addEventListener('click', () => {
+      const k = b.dataset.j; J[k] = !J[k]; setJ();
+      if (k === 'bile' && J.bile) gsay('쓸개즙', '초록 알갱이가 <b>간</b>에서 나와 <b>쓸개</b>에 모였다가, 쓸개에서 관을 따라 <b>샘창자</b>로 들어가요. 쓸개즙은 간에서 만들어져 쓸개에 저장되었다가 분비돼요.');
+      else if (k === 'panc' && J.panc) gsay('이자액', '노란 알갱이가 위 뒤쪽에 있는 <b>이자</b>에서 나와 관을 따라 <b>샘창자</b>로 들어가요.');
+      else gsay('간·쓸개·이자', '쓸개즙이나 이자액을 눌러 흐르는 길을 봐요.');
+    }));
+    gsay('간·쓸개·이자', '간을 반쯤 비치게 했어요. <b>쓸개즙</b>이나 <b>이자액</b>을 눌러 소화액이 어디로 가는지 봐요.');
+    /* 활동 탭 */
+    const act = (a) => {
+      $$('#at button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.a === a))); $$('.pane').forEach((e) => { e.hidden = e.dataset.a !== a; });
+      W.stopTour(); $('#tF').disabled = false; W.juice({ spit: false, gastric: false });
+      if (a === 'gland') { look('gland'); W.flow({ food: false }); J.bile = J.panc = true; setJ(); }
+      else { J.bile = J.panc = false; setJ(); look('front'); W.flow({ food: true }); }
+    };
+    $$('#at button').forEach((b) => b.addEventListener('click', () => act(b.dataset.a)));
+    labs('front');
+    /* 화면 검사용 */
+    if (q.get('a')) act(q.get('a'));
+    if (q.get('v')) look(q.get('v'));
+    if (q.get('g')) $(`#grp button[data-g="${q.get('g')}"]`).click();
+    if (q.get('tour')) { tour(); if (q.get('t')) W.tourRate = +q.get('t'); }
+    window.SM = window.SM || {}; window.SM.okUI = true; window.__ready = true;
+  } catch (err) { window.SM_err && window.SM_err('소화계 3D', err); console.error(err); }
+})();
+</script>
+</body>
+</html>

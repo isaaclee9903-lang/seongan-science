@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>우리가 먹은 음식의 소화 – 소화효소 실험실</title>
+<script>
+/* 문제 알림: 코드에 오류가 나면 화면 아래에 빨간 상자로 알려 줘요 (선생님 확인용) */
+(function () {
+  function box() {
+    var b = document.getElementById('smErr');
+    if (!b && document.body) {
+      b = document.createElement('div'); b.id = 'smErr';
+      b.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;background:#fdecea;color:#8a1f17;border:2px solid #d9534f;border-radius:12px;padding:10px 14px;font:600 14px/1.5 sans-serif;white-space:pre-wrap';
+      document.body.appendChild(b);
+    }
+    return b;
+  }
+  window.SM_err = function (where, err) {
+    var msg = '[' + where + '] ' + (err && err.message ? err.message : String(err));
+    var show = function () { var b = box(); if (b) b.textContent += (b.textContent ? '\n' : '') + msg; };
+    if (document.body) show(); else document.addEventListener('DOMContentLoaded', show);
+  };
+  window.addEventListener('error', function (e) { window.SM_err('스크립트', { message: e.message + ' (줄 ' + e.lineno + ')' }); });
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      var S = window.SM || {};
+      if (!S.okUI) window.SM_err('실행 안 됨', { message: '안내·버튼 코드가 실행되지 않았어요. 파일이 끝(</html>)까지 들어 있는지 확인해 주세요.' });
+      if (document.getElementById('fail3d') && !S.ok3d) { var f = document.getElementById('fail3d'); if (f) f.classList.add('show'); window.SM_err('3D 그림', { message: '3D 그림을 불러오지 못했어요. 인터넷 연결(cdn.jsdelivr.net)을 확인하고 새로고침해 주세요.' }); }
+    }, 9000);
+  });
+})();
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+
+  :root{--bg:#edf3f8;--card:#fff;--ink:#14263b;--ink2:#34495e;--muted:#5a6b7e;--line:#dde6ee;--accent:#0e63b3;--accent-soft:#e3effb;
+    --fab:#4b3fb5;--fab-soft:#ecebfb;--ok:#1f9d5c;--no:#d9534f;
+    --shadow:0 1px 2px rgba(20,38,59,.06),0 8px 24px rgba(20,38,59,.07);--ease:cubic-bezier(.2,.8,.2,1)}
+  *{box-sizing:border-box}html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:"Pretendard",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  button{font:inherit;color:inherit}
+  .app{max-width:1320px;margin:0 auto;padding:14px 16px 28px;display:flex;flex-direction:column;gap:12px}
+  .eyebrow{display:inline-flex;font-size:13px;font-weight:700;color:var(--fab);background:var(--fab-soft);padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(21px,2.4vw,28px);margin:6px 0 2px;letter-spacing:-.02em;word-break:keep-all}
+  .sub{margin:0;color:var(--muted);font-size:15px;word-break:keep-all}
+  .card{background:var(--card);border-radius:20px;box-shadow:var(--shadow);border:1px solid rgba(20,38,59,.04)}
+  .pad{padding:14px 16px}
+  .stage{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(330px,1fr);gap:14px;align-items:start}
+  .viewer{position:sticky;top:10px}
+  .flow{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px}
+  .fs{min-height:54px;border:0;border-radius:12px;background:#eef3f8;font-weight:800;font-size:13px;color:var(--muted);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.2;word-break:keep-all;padding:4px}
+  .fs b{font-size:15px}
+  .fs[aria-selected="true"]{background:var(--fab);color:#fff}
+  .fs.seen:not([aria-selected="true"]){background:#e5f5ec;color:#11703f}
+  .stepname{display:flex;align-items:center;gap:10px;margin:2px 0 6px}
+  .stepname .no{flex:none;width:40px;height:40px;border-radius:12px;background:var(--fab);color:#fff;display:grid;place-items:center;font-weight:900;font-size:19px}
+  .stepname h2{margin:0;font-size:21px;letter-spacing:-.01em;word-break:keep-all}
+  .stepname small{display:block;font-size:13px;color:var(--muted);font-weight:700}
+  .what{font-size:16px;line-height:1.75;color:var(--ink2);margin:0 0 10px;word-break:keep-all}
+  .phase{display:grid;gap:6px;margin:8px 0}
+  .ph{display:grid;grid-template-columns:28px 1fr;gap:8px;align-items:start;padding:7px 10px;border-radius:12px;background:#f7fafc;font-size:15px;line-height:1.55;color:var(--muted);word-break:keep-all;transition:background .3s,color .3s}
+  .ph i{font-style:normal;width:26px;height:26px;border-radius:8px;background:#dfe6ee;display:grid;place-items:center;font-weight:900;font-size:13px;color:#607285}
+  .ph.on{background:var(--fab-soft);color:var(--ink)}.ph.on i{background:var(--fab);color:#fff}
+  .ph.done{color:var(--ink2)}.ph.done i{background:#b9b2ee;color:#fff}
+  .box{border-radius:14px;padding:10px 12px;margin-top:8px;font-size:14.5px;line-height:1.65;word-break:keep-all}
+  .box b.t{display:block;font-size:13px;margin-bottom:2px}
+  .an{background:#fff8e6;border:1px solid #f3dc9a;color:#5b4300}
+  .fact{background:#eef6ff;border:1px solid #cfe2f6;color:#1d3f66}
+  .lnk{background:#ecf8f1;border:1px solid #c6e8d4;color:#0f5a36}
+  .src{display:block;font-size:12px;color:var(--muted);margin-top:3px}
+  .acts{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 0}
+  .btn{min-height:50px;border:0;border-radius:14px;padding:0 16px;font-weight:800;font-size:15.5px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;justify-content:center;word-break:keep-all}
+  .btn:active{transform:scale(.97)}
+  .btn.primary{background:var(--fab);color:#fff}.btn.ghost{background:#eef3f8;color:var(--ink2)}
+  .btn[aria-pressed="true"]{background:#14263b;color:#fff}
+  .btn:disabled{opacity:.4;cursor:default;transform:none}
+  .prog{height:6px;border-radius:3px;background:#e6edf4;margin-top:10px;overflow:hidden}
+  .prog i{display:block;height:100%;width:0;background:linear-gradient(90deg,#8a7ff0,var(--fab))}
+  .credit{text-align:center;font-size:13px;font-weight:700;color:#8495a8;letter-spacing:.02em;margin:6px 0 0}
+  /* ===== 3D 화면 공통 ===== */
+  :root{--Bc:#14a5d0;--Ic:#2fae4a;--Fc:#f0522a;--N:#d8433b;--S:#2f62c9;--P:#7d5ad6}
+  .viewer{position:relative;overflow:hidden;padding:0}
+  .gl-host{position:relative;width:100%;height:min(74vh,700px);min-height:380px;background:linear-gradient(#f6f9fc,#d6e3ef);touch-action:none}
+  .gl-host canvas.gl{display:block;width:100%;height:100%;outline:none}
+  .lbls{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+  .lb{position:absolute;left:0;top:0;white-space:nowrap;font-weight:800;font-size:14px;padding:3px 9px;border-radius:9px;background:rgba(255,255,255,.88);color:#34495e;box-shadow:0 2px 8px rgba(20,38,59,.14);will-change:transform}
+  .lb.small{font-size:12px;font-weight:700;color:#5a6b7e;background:rgba(255,255,255,.72);box-shadow:none}
+  .lb.B{background:var(--Bc);color:#fff}.lb.I{background:var(--Ic);color:#fff}.lb.F{background:var(--Fc);color:#fff;font-size:15px}
+  .lb.P{background:var(--P);color:#fff}
+  .lb.dim{opacity:.35}
+  .vt{position:absolute;display:flex;gap:6px;flex-wrap:wrap;z-index:3}
+  .vt.tl{left:10px;top:10px;max-width:calc(100% - 20px)}
+  .vt.tr{right:10px;top:10px;justify-content:flex-end}
+  .vt.bl{left:10px;bottom:10px;align-items:center}
+  .vb{min-height:44px;padding:0 12px;border-radius:12px;border:1px solid rgba(20,38,59,.12);background:rgba(255,255,255,.9);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);font-weight:800;font-size:14px;color:#34495e;cursor:pointer;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 10px rgba(20,38,59,.08)}
+  .vb:active{transform:scale(.96)}
+  .vb .dot{width:12px;height:12px;border-radius:50%;flex:none}
+  .vb[aria-pressed="false"]{opacity:.62}
+  .vb[aria-pressed="false"] .dot{background:#c2ccd6!important}
+  .vb.sel{background:#14263b;color:#fff;border-color:#14263b}
+  .hint{font-size:12.5px;font-weight:700;color:#5a6b7e;background:rgba(255,255,255,.78);border-radius:10px;padding:6px 10px;word-break:keep-all}
+  .inset{position:absolute;z-index:2;border-radius:18px;border:2px solid rgba(255,255,255,.95);box-shadow:0 10px 30px rgba(20,38,59,.22),inset 0 0 0 1px rgba(20,38,59,.08);pointer-events:none;display:none}
+  .inset.on{display:block}
+  .inset .it{position:absolute;left:8px;top:8px;font-size:12.5px;font-weight:900;color:#14263b;background:rgba(255,255,255,.9);border-radius:8px;padding:3px 8px}
+  .inset .ic{position:absolute;left:6px;right:6px;bottom:6px;display:flex;flex-wrap:wrap;gap:4px;justify-content:center}
+  .inset .ic span{font-size:11.5px;font-weight:800;color:#fff;border-radius:7px;padding:2px 7px;white-space:nowrap}
+  .fail3d{position:absolute;inset:0;display:none;place-items:center;text-align:center;padding:24px;font-size:16px;font-weight:700;color:#7a2a22;line-height:1.7;word-break:keep-all;background:#fff4f2}
+  .fail3d.show{display:grid}
+  .model{font-size:13px;color:var(--muted);text-align:right;margin:0;word-break:keep-all}
+  @media (max-width:900px){.gl-host{height:min(56vh,620px)}}
+  .zoombadge{position:absolute;right:10px;top:62px;z-index:3;font-size:13px;font-weight:800;color:#fff;background:rgba(75,63,181,.9);border-radius:10px;padding:6px 10px;display:none;word-break:keep-all;max-width:60%}
+  .zoombadge.on{display:block}
+  @media (max-width:900px){.stage{grid-template-columns:1fr}.viewer{position:relative;top:0}}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+  /* ===== 광합성 수업 공통 ===== */
+  :root{--fab:#0e63b3;--fab-soft:#e4f0fb}
+  .eyebrow{color:#0e63b3;background:#e4f0fb}
+  .prog i{background:#0e63b3}
+  .ph.done i{background:#8db8e3}
+  [hidden]{display:none!important}
+  .fbk{border-radius:14px;padding:12px 14px;margin-top:10px;font-size:15px;line-height:1.65;word-break:keep-all;background:#f6f9fc;border:1px solid #dbe4ed;color:var(--ink2)}
+  .fbk.ok{background:#e9f3fd;border-color:#bcd7f2;color:#0b3f73}
+  .fbk.no{background:#fff4f2;border-color:#f3c2bb;color:#5e2a25}
+  .fbk b.t{display:block;font-size:13.5px;margin-bottom:2px}
+  .scene{position:relative;width:100%;overflow:hidden;touch-action:manipulation;user-select:none;-webkit-user-select:none;background:#fff}
+  .psv{position:absolute;inset:0;width:100%;height:100%;display:block;overflow:visible}
+  .olay{position:absolute;inset:0;pointer-events:none}
+  .ol{position:absolute;transform:translate(-50%,-50%);white-space:nowrap;font-weight:800;font-size:clamp(12px,1.35vw,15.5px);line-height:1.3;letter-spacing:-.01em;color:#14263b;transition:opacity .25s}
+  .ol.la{transform:translate(-100%,-50%)}.ol.ra{transform:translate(0,-50%)}
+  .ol.bg{background:rgba(255,255,255,.9);padding:2px 8px;border-radius:7px}
+  .ol.lt{color:#fff;text-shadow:0 1px 3px rgba(10,30,20,.55)}
+  .ol.m{font-weight:700;color:#5a6b7e}
+  .ol.big{font-size:clamp(14px,1.7vw,18px)}
+  .ol small{font-weight:700;color:#5a6b7e;font-size:.88em}
+  .ol[data-off="1"]{opacity:0}
+  .psv .tap{cursor:pointer}
+  .steps{display:grid;gap:5px;margin:0 0 10px}
+  .steps .ph{padding:6px 10px;font-size:14.5px;line-height:1.5}
+  .ctl{display:grid;gap:8px}
+  .ctl .btn{width:100%}
+  .ctl .two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .btn.done,.btn:disabled{background:#eef3f8;color:#8b9aab;cursor:default}
+  .pred{display:grid;gap:6px}
+  .pred button,.qa3 button{min-height:46px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:14.5px;cursor:pointer;word-break:keep-all;line-height:1.35;padding:4px 10px;text-align:left}
+  .pred button[aria-pressed="true"],.qa3 button[aria-pressed="true"]{border-color:var(--fab);background:#e9f3fd;color:#0b3f73}
+  .pred button:disabled{cursor:default}
+  .seglbl{font-size:13px;font-weight:800;color:var(--muted);margin:2px 0}
+  .qa{margin-bottom:12px}
+  .qa p{margin:0 0 6px;font-weight:800;font-size:15px;line-height:1.5;word-break:keep-all}
+  .qa3{display:grid;gap:6px}
+  .qa3 button.good{border-color:var(--ok);background:#e8f7ef;color:#11703f}
+  .qa3 button.bad{border-color:#e7a29b;background:#fff4f2;color:#9b3a32}
+  .eqn{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:4px 8px;padding:10px 8px;border-radius:14px;background:#f6f9fc;border:1px solid #dbe4ed;font-weight:800;font-size:15px;word-break:keep-all}
+  .eqn span{transition:color .3s,opacity .3s}.eqn .off{color:#a7b3c0}
+  .eqn .ar{display:inline-flex;flex-direction:column;align-items:center;font-size:12px;line-height:1.1;color:#5a6b7e}
+  .eqn .ar i{font-style:normal;font-size:17px;color:#14263b}
+  .tog{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+  .tog button{min-height:64px;border-radius:14px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:14.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:#5a6b7e;word-break:keep-all;line-height:1.25;padding:4px}
+  .tog button svg{width:38px;height:22px;display:block;overflow:visible}
+  .tog button[aria-pressed="true"]{border-color:var(--fab);background:#e9f3fd;color:#0b3f73}
+  .lvls{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:6px;flex:1 1 320px}
+  .lvls button{min-height:46px;border-radius:12px;border:1px solid #d4dee8;background:#fff;color:#34495e;font-weight:800;font-size:14.5px;cursor:pointer;word-break:keep-all;line-height:1.2;padding:2px 4px}
+  .lvls button[aria-pressed="true"]{background:#14263b;color:#fff;border-color:#14263b}
+  .ptxt{font-size:15px;line-height:1.65;color:var(--ink2);margin:0 0 10px;word-break:keep-all}
+  .ptxt b{color:#0b3f73}
+  .whylist{display:grid;gap:6px;margin:0;padding:0;list-style:none}
+  .whylist li{display:grid;grid-template-columns:26px 1fr;gap:8px;font-size:14.5px;line-height:1.55;color:var(--ink2);word-break:keep-all;padding:7px 10px;border-radius:12px;background:#f7fafc}
+  .whylist li i{font-style:normal;width:24px;height:24px;border-radius:8px;background:#0e63b3;color:#fff;display:grid;place-items:center;font-weight:900;font-size:13px}
+  .whylist b{color:#0b3f73}
+  /* ===== 한 화면 배치 (2026-10-15: 태블릿 한 화면 안에서 실험과 결과가 끝나도록) ===== */
+  .app{padding:10px 16px 12px;gap:10px}
+  header.top{display:flex;align-items:center;justify-content:space-between;gap:10px 16px;flex-wrap:wrap}
+  header.top .ttl{min-width:0}
+  header.top .ttl .eyebrow{margin-right:6px;vertical-align:4px}
+  header.top h1{display:inline;font-size:clamp(20px,2.1vw,25px);margin:0}
+  header.top .sub{margin-top:3px;font-size:14.5px}
+  .stage{align-items:stretch}
+  .stage > .viewer{position:relative;top:0;display:flex;flex-direction:column;justify-content:center}
+  .ptabs{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;background:#eef3f8;border-radius:14px;padding:4px;margin-bottom:12px}
+  .ptabs button{min-height:44px;border:0;border-radius:11px;background:transparent;font-weight:800;font-size:14.5px;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
+  .ptabs button[aria-selected="true"]{background:#fff;color:var(--fab);box-shadow:0 1px 3px rgba(20,38,59,.14)}
+  .ptabs button small{font-size:12px;font-weight:800;color:#0b3f73;background:#dcebfa;border-radius:8px;padding:1px 6px}
+  .ptabs.big{min-width:min(100%,380px)}
+  .ptabs.big button{min-height:48px;font-size:15.5px}
+  .pane[hidden]{display:none!important}
+  .mnote{font-size:12.5px;color:var(--muted);line-height:1.6;margin:10px 0 0;word-break:keep-all}
+  .viewer{background:#fff}
+  .vctl{display:flex;flex-wrap:wrap;gap:8px;padding:10px 12px;background:#f3f6f9;border-top:1px solid var(--line);align-items:center}
+  .vctl .vb{box-shadow:none}
+  .vctl .vb[aria-pressed="true"]{background:#14263b;color:#fff;border-color:#14263b;opacity:1}
+  .vctl .vb[aria-pressed="false"]{opacity:1}
+  .vctl .sp{flex:1}
+  .lbl{font-size:13px;font-weight:900;color:var(--fab);margin:12px 0 6px;word-break:keep-all}
+  .lbl:first-child,.pane > .lbl:first-child{margin-top:0}
+  .what{font-size:15.5px;line-height:1.7;color:var(--ink2);margin:0 0 8px;word-break:keep-all}
+  .ph.on{background:#eef5fc}.ph.on i{background:var(--fab)}
+  .viewer > .scene.grow{flex:1 1 auto;min-height:300px;aspect-ratio:auto!important}
+  /* 화면 높이를 꽉 채우기: 그림 칸이 남는 높이를 차지 */
+  html,body{height:100%}
+  .app{height:100vh;height:100dvh;max-height:1400px}
+  .stage{flex:1 1 auto;min-height:0}
+  .stage > .card.pad{overflow:auto}
+  @media (max-width:900px){.stage{grid-template-rows:minmax(0,1fr) auto}}
+  /* ===== 환경요인 수업 전용 ===== */
+  .mlabel{font-weight:800;font-size:14.5px;color:#14263b;white-space:nowrap}
+  .meter{flex:1 1 auto;height:18px;border-radius:9px;background:#dfe7ee;overflow:hidden;min-width:120px}
+  .meter i{display:block;height:100%;background:#0e63b3;border-radius:9px;width:0;transition:width .45s cubic-bezier(.2,.8,.2,1)}
+  .presets{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:4px 0 8px}
+  .presets button{min-height:44px;border-radius:12px;border:1px solid #d4dee8;background:#fff;color:#34495e;font-weight:800;font-size:14px;cursor:pointer;word-break:keep-all;line-height:1.25;padding:2px 8px}
+  .presets button:active{background:#eef3f8}
+  .sl{display:grid;grid-template-columns:118px 1fr;column-gap:10px;align-items:center;margin-top:2px}
+  .sl label{font-weight:800;font-size:14px;word-break:keep-all;line-height:1.25;color:#14263b}
+  .sl .ticks{grid-column:2;display:flex;justify-content:space-between;font-size:12px;font-weight:700;color:#5a6b7e;margin-top:-6px}
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:36px;background:transparent;margin:0;cursor:pointer;touch-action:pan-y}
+  input[type=range]::-webkit-slider-runnable-track{height:8px;border-radius:4px;background:linear-gradient(90deg,#0e63b3 var(--v,50%),#dbe4ed var(--v,50%))}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:34px;height:34px;margin-top:-13px;border-radius:50%;background:#fff;border:2px solid #0e63b3;box-shadow:0 2px 5px rgba(20,38,59,.22)}
+  input[type=range]::-moz-range-track{height:8px;border-radius:4px;background:#dbe4ed}
+  input[type=range]::-moz-range-progress{height:8px;border-radius:4px;background:#0e63b3}
+  input[type=range]::-moz-range-thumb{width:30px;height:30px;border-radius:50%;background:#fff;border:2px solid #0e63b3}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .two button{min-height:44px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:14.5px;cursor:pointer;word-break:keep-all;line-height:1.25;padding:2px 8px}
+  .two button[aria-pressed="true"]{border-color:#0e63b3;background:#e9f3fd;color:#0b3f73}
+  .rt{width:100%;border-collapse:collapse;font-size:14.5px}
+  .rt th{font-size:12.5px;color:#5a6b7e;text-align:left;padding:4px 6px;border-bottom:1px solid #dde6ee;word-break:keep-all}
+  .rt td{padding:8px 6px;border-bottom:1px solid #eef2f6;font-weight:700;color:#34495e}
+  .rt .none td{font-weight:600;color:#5a6b7e;text-align:center;padding:18px 6px}
+  .mini{display:block;height:10px;border-radius:5px;background:#e3eaf0;overflow:hidden;min-width:70px}
+  .mini i{display:block;height:100%;background:#0e63b3}
+  .vars{display:grid;grid-template-columns:auto 1fr;gap:3px 10px;font-size:14px;line-height:1.45;margin:0 0 8px;padding:8px 10px;border-radius:12px;background:#f6f9fc;border:1px solid #dbe4ed;word-break:keep-all}
+  .vars dt{font-weight:700;color:#5a6b7e}
+  .vars dd{margin:0;font-weight:800;color:#14263b}
+  .vars dd.on{color:#0e63b3}
+  .seg3{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:6px}.seg3 button{min-height:46px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:14.5px;cursor:pointer;word-break:keep-all;line-height:1.2;padding:2px 6px}.seg3 button[aria-pressed="true"]{border-color:#0e63b3;background:#e9f3fd;color:#0b3f73}.seg3 button:disabled{opacity:.55;cursor:default}
+  /* 탐구 계획서 */
+  .paper{display:flex;flex-direction:column;min-height:0;padding:12px 14px;overflow:auto}
+  .paper h2{margin:0 0 8px;font-size:18px;display:flex;align-items:baseline;gap:8px}
+  .paper h2 small{font-size:12.5px;color:#5a6b7e;font-weight:700}
+  .pgrid{display:grid;grid-template-columns:116px 1fr;grid-template-rows:repeat(7,auto) minmax(148px,1fr) auto;border:1px solid #b9c8d6;border-radius:10px;overflow:hidden;flex:1 1 auto;min-height:0}
+  .pgrid > .k{background:#e8f1fa;font-weight:800;font-size:13.5px;line-height:1.3;color:#14263b;padding:6px 8px;display:flex;align-items:center;border-bottom:1px solid #c9d7e4;word-break:keep-all}
+  .pgrid > .k.sub{padding-left:14px;font-size:12.5px;font-weight:700;background:#f1f6fb}
+  .pgrid > .v{border-bottom:1px solid #dbe4ed;border-left:1px solid #c9d7e4;display:flex;min-height:0}
+  .pgrid > .k.last,.pgrid > .v.last{border-bottom:0}
+  .pgrid textarea{flex:1;border:0;background:#fff;resize:none;font:inherit;font-size:14px;line-height:1.5;color:#14263b;padding:5px 8px;min-height:34px;word-break:keep-all;width:100%;outline-offset:-2px}
+  .pgrid textarea:focus{background:#f7fbff}
+  .pgrid textarea::placeholder{color:#a3afbb;font-weight:500}
+  .pgrid .tall textarea{min-height:148px}
+  .stepper{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:3px;margin:0 0 10px}
+  .stepper button{min-height:44px;border:0;border-radius:10px;background:#eef3f8;font-weight:800;font-size:13px;color:#5a6b7e;cursor:pointer;line-height:1.15;word-break:keep-all;padding:2px}
+  .stepper button[aria-selected="true"]{background:#0e63b3;color:#fff}
+  .stepper button.done:not([aria-selected="true"]){background:#dcebfa;color:#0b3f73}
+  .ask{font-size:16px;font-weight:800;line-height:1.45;margin:0 0 4px;word-break:keep-all}
+  .ask + p{font-size:14px;color:#34495e;line-height:1.55;margin:0 0 8px;word-break:keep-all}
+  .opts{display:grid;gap:6px}
+  .opts button{min-height:46px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:700;font-size:14.5px;cursor:pointer;word-break:keep-all;line-height:1.35;padding:4px 10px;text-align:left;color:#14263b}
+  .opts button[aria-pressed="true"]{border-color:#0e63b3;background:#e9f3fd;color:#0b3f73}
+  .opts.g2{grid-template-columns:1fr 1fr}
+  .vsort{display:grid;gap:6px}
+  .vsort .row{display:grid;grid-template-columns:1fr 92px 92px;gap:4px;align-items:center;font-weight:800;font-size:14px;word-break:keep-all;line-height:1.25}
+  .vsort .row button{min-height:44px;border-radius:10px;border:2px solid #d4dee8;background:#fff;font-weight:700;font-size:12.5px;cursor:pointer;line-height:1.15;padding:2px;word-break:keep-all}
+  .vsort .row button[aria-pressed="true"]{border-color:#0e63b3;background:#e9f3fd;color:#0b3f73}
+  .order{display:grid;gap:5px}
+  .order button{display:grid;grid-template-columns:28px 1fr;gap:8px;align-items:center;min-height:44px;border-radius:11px;border:2px solid #d4dee8;background:#fff;font-weight:700;font-size:13.5px;line-height:1.3;cursor:pointer;text-align:left;padding:3px 8px;word-break:keep-all;color:#14263b}
+  .order button i{font-style:normal;width:24px;height:24px;border-radius:7px;background:#eef3f8;display:grid;place-items:center;font-weight:900;font-size:13px;color:#5a6b7e}
+  .order button.picked{border-color:#0e63b3;background:#e9f3fd}.order button.picked i{background:#0e63b3;color:#fff}
+  .navb{display:grid;grid-template-columns:1fr 1.4fr;gap:6px;margin-top:10px}
+  .navb .btn{width:100%;min-height:46px}
+  .pfoot{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+  .pfoot .btn{min-height:44px;font-size:14px;padding:0 8px}
+  .peer{display:grid;gap:3px;margin:0 0 6px}
+  .peer label{display:grid;grid-template-columns:30px 1fr;align-items:center;font-size:14px;font-weight:700;line-height:1.35;min-height:38px;word-break:keep-all;cursor:pointer}
+  .peer input{width:22px;height:22px;accent-color:#0e63b3}
+  .fbtxt{width:100%;border:1px solid #cdd9e4;border-radius:10px;font:inherit;font-size:14px;line-height:1.45;padding:6px 9px;resize:none;margin-top:4px;min-height:52px}
+  .slx{display:grid;grid-template-columns:auto 1fr;align-items:center;gap:10px;margin-top:4px}
+  .slx label{font-weight:800;font-size:14px;word-break:keep-all}
+  @media print{
+    body{background:#fff}
+    .stage{display:block}
+    .helper,header.top,.pfoot{display:none!important}
+    .paper{box-shadow:none;border:0;overflow:visible}
+    .app{height:auto;max-height:none}
+    .pgrid textarea{min-height:48px}
+  }
+  @media (max-width:900px){
+    .sl{grid-template-columns:140px 1fr}
+  }
+  /* ===== 소화 수업 전용 ===== */
+  .legend{display:flex;flex-wrap:wrap;gap:4px 14px;padding:8px 12px;background:#f3f6f9;border-top:1px solid var(--line);font-size:13.5px;font-weight:800;color:#34495e;justify-content:center}
+  .legend span{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+  .legend i{display:inline-block;width:12px;height:12px;border-radius:50%}
+  header.top .ptabs.big{margin:0;min-width:min(100%,420px)}
+  .route{display:grid;gap:4px;margin:6px 0 8px}
+  .route .r{display:grid;grid-template-columns:26px 1fr;gap:8px;align-items:center;border-radius:12px;padding:6px 10px;background:#f5f8fb;font-size:14.5px;font-weight:800;color:#8a99a8;word-break:keep-all;transition:background .25s}
+  .route .r i{font-style:normal;width:24px;height:24px;border-radius:8px;background:#c9d5e1;color:#fff;display:grid;place-items:center;font-weight:900;font-size:13px}
+  .route .r small{font-weight:700;color:#8a99a8;font-size:12.5px;margin-left:6px}
+  .route .r.on{background:#e3effb;color:#0b3f73}.route .r.on i{background:#0e63b3}.route .r.on small{color:#34495e}
+  .route .r.done{color:#34495e}.route .r.done i{background:#7fa6cc}
+  .fact2{font-size:14.5px;line-height:1.6;color:var(--ink2);word-break:keep-all;margin:8px 0 0;padding:8px 12px;border-left:3px solid #0e63b3;background:#f7fafc;border-radius:0 10px 10px 0}
+  .nlist{display:grid;gap:6px}
+  .nlist button{display:grid;grid-template-columns:92px 1fr;align-items:center;gap:8px;min-height:48px;border-radius:14px;border:2px solid #d4dee8;background:#fff;cursor:pointer;text-align:left;padding:4px 12px;color:#14263b;font-family:inherit}
+  .nlist button b{font-size:16px;font-weight:900}.nlist button span{font-size:13.5px;font-weight:700;color:#5a6b7e;word-break:keep-all;line-height:1.35}
+  .nlist button[aria-pressed="true"]{border-color:#0e63b3;background:#e9f3fd}
+  .viewer{position:relative}
+  .viewer > .scene[hidden]{display:none!important}
+.slab{position:absolute;left:0;top:0;font:700 clamp(12px,1.15vw,14.5px)/1.25 Pretendard,sans-serif;color:#14263b;background:rgba(255,255,255,.9);padding:2px 8px;border-radius:6px;white-space:nowrap;text-align:center;pointer-events:none}
+.slab.b{font-weight:800;font-size:clamp(13px,1.3vw,16px)}
+.slab.s{font-size:clamp(11.5px,1.05vw,13px);color:#34495e}
+.places{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.places button{min-height:46px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font:800 15px Pretendard,sans-serif;color:#14263b;cursor:pointer}
+.places button[aria-pressed="true"]{border-color:#0e63b3;background:#e9f3fd;color:#0b3f73}
+.places button:disabled{opacity:.4;cursor:default}
+.juices{display:grid;gap:6px;margin:8px 0}
+.juices button{display:grid;grid-template-columns:14px 1fr;gap:10px;align-items:center;min-height:48px;border-radius:12px;border:2px solid #d4dee8;background:#fff;cursor:pointer;text-align:left;padding:4px 12px;font-family:inherit;color:#14263b}
+.juices button i{width:14px;height:14px;border-radius:50%}
+.juices button b{font-size:15px;font-weight:900}.juices button span{display:block;font-size:12.5px;font-weight:700;color:#5a6b7e;word-break:keep-all}
+.juices button[aria-pressed="true"]{border-color:#0e63b3;background:#e9f3fd}
+.juices button:disabled{opacity:.45;cursor:default}
+.nt{width:100%;border-collapse:collapse;table-layout:fixed;font-size:13px}
+.nt th{text-align:left;font-size:13px;color:#34495e;width:20%;padding:4px 0}
+.nt td{padding:3px 2px;text-align:center;font-weight:800;color:#a7b4c2;word-break:keep-all;line-height:1.25;border-radius:8px}
+.nt td.on{color:#0b3f73;background:#e3effb}
+.nt td.done{color:#34495e}
+.legend svg{vertical-align:middle}
+.qa > p{font-size:15.5px;line-height:1.6;font-weight:700;margin:0 0 8px;word-break:keep-all}
+.qa3{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:12px}.qa3 button{min-height:46px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:700;font-size:14px;cursor:pointer;padding:4px 8px;line-height:1.3;word-break:keep-all;color:#14263b;font-family:inherit}
+.qa3 button.good{border-color:#0e63b3;background:#e9f3fd;color:#0b3f73}.qa3 button.bad{border-color:#c0392b;background:#fbecea}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top"><div class="ttl"><span class="eyebrow">시뮬레이션</span><h1>소화효소 실험실</h1>
+    <p class="sub">빵 한 입을 입 → 위 → 작은창자로 옮기며 소화액을 넣어 봐요. 어떤 소화효소가 어떤 영양소를 분해할까요?</p></div></header>
+  <div class="stage">
+    <section class="card viewer">
+      <div class="scene grow" id="fig" style="background:#fff" role="img" aria-label="소화관 속을 크게 본 그림. 녹말 사슬, 단백질 사슬, 지방 덩어리, 세균과 소화효소가 움직인다."></div>
+      <div class="legend" id="lg"></div>
+    </section>
+    <section class="card pad">
+      <div class="ptabs" role="tablist" id="pt">
+        <button type="button" role="tab" data-p="lab" aria-selected="true">실험하기</button>
+        <button type="button" role="tab" data-p="sum" aria-selected="false">정리하기</button>
+      </div>
+      <div class="pane" data-p="lab">
+        <div class="places" id="pl"><button type="button" data-p="mouth" aria-pressed="true">입</button><button type="button" data-p="sto" aria-pressed="false">위</button><button type="button" data-p="si" aria-pressed="false">작은창자</button></div>
+        <div class="juices" id="jz"></div>
+        <table class="nt" id="nt"></table>
+        <div class="fbk" id="res" style="margin-top:8px"><b class="t" id="resT">처음</b><span id="resM"></span></div>
+      </div>
+      <div class="pane" data-p="sum" hidden>
+        <p class="lbl">그림 Ⅵ-7 · 소화효소가 분해하는 영양소를 골라요</p>
+        <div id="qs"></div><div class="fbk" id="sres" hidden></div>
+      </div>
+      <button class="vb" type="button" id="bReset" style="margin-top:8px;width:100%">처음부터</button>
+    </section>
+  </div>
+</div>
+<script>
+/* ===== 소화효소 실험실 ENZ (교과서 199쪽 그림 Ⅵ-4, 201쪽 그림 Ⅵ-7, 2D 캔버스) =====
+   빵 한 입을 입 → 위 → 작은창자로 옮기며 소화액을 넣는다. 소화관 속을 크게 본 그림이다.
+   녹말(육각형 사슬) → 아밀레이스 → 엿당(육각형 2개) → 탄수화물 소화효소 → 포도당
+   단백질(색 구슬 사슬) → 펩신·트립신 → 작게 분해된 단백질 → 단백질 소화효소 → 아미노산
+   지방(빗 모양이 뭉친 덩어리) → 쓸개즙: 작은 알갱이 → 라이페이스 → 지방산 + 모노글리세리드
+   염산은 세균(막대 모양)을 죽인다. 각 소화효소는 한 종류의 영양소만 분해한다.
+   입자의 수·크기·빠르기는 잘 보이게 정한 모형이다. */
+const ENZ = (() => {
+  'use strict';
+  const REDUCE = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const VW = 1000, VH = 760, TOP = 180, BOT = 580, LX = 40, RX = 960;
+  const rnd = (a, b) => a + Math.random() * (b - a), cl = (x) => Math.max(0, Math.min(1, x));
+  const E = { amy: ['아밀레이스', '#4f9f62'], pep: ['펩신', '#dc6a8c'], try: ['트립신', '#9467c2'], lip: ['라이페이스', '#e0912f'], carb: ['탄수화물 소화효소', '#2f9faa'], prot: ['단백질 소화효소', '#3f7fc4'] };
+  const BEAD = ['#e05a52', '#4caf6a', '#4a86d0', '#f2c444', '#a26ad0', '#ef8fb6'];
+  const PLACE = {
+    mouth: { name: '입', bg: '#fdf5f2' },
+    sto: { name: '위', bg: '#fcf2f5' },
+    si: { name: '작은창자', bg: '#fdf7f0' },
+  };
+
+  function lab(host) {
+    host.innerHTML = ''; host.style.position = 'relative';
+    const cv = document.createElement('canvas'); cv.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;display:block'; host.appendChild(cv);
+    const g = cv.getContext('2d');
+    const tags = document.createElement('div'); tags.style.cssText = 'position:absolute;inset:0;pointer-events:none'; host.appendChild(tags);
+    let W = 0, H = 0, s = 1, ox = 0, oy = 0, dpr = 1;
+    const resize = () => { const r = host.getBoundingClientRect(); W = r.width; H = r.height; dpr = Math.min(2, window.devicePixelRatio || 1); cv.width = W * dpr; cv.height = H * dpr; s = Math.min(W / VW, H / VH); ox = (W - VW * s) / 2; oy = (H - VH * s) / 2; };
+    try { new ResizeObserver(resize).observe(host); } catch (e) { addEventListener('resize', resize); }
+    resize();
+    const T = {};
+    const tag = (k, html, x, y, al = 'c', cls = '') => { const e = document.createElement('div'); e.className = 'slab ' + cls; e.innerHTML = html; tags.appendChild(e); T[k] = { e, x, y, al, show: false }; return T[k]; };
+    const placeTags = () => { Object.values(T).forEach((t) => { t.e.style.display = t.show ? '' : 'none'; t.e.style.transform = `translate(${ox + t.x * s}px,${oy + t.y * s}px) translate(${t.al === 'l' ? '0' : t.al === 'r' ? '-100%' : '-50%'},-50%)`; }); };
+    tag('place', '', 500, 34, 'c', 'b');
+    tag('duct', '쓸개즙·이자액이 들어오는 곳', 330, 120, 'l', 's');
+    tag('wall', '', 500, 728, 'c', 's');
+
+    /* ----- 상태 ----- */
+    let place = 'mouth', chewed = false, chew = 0, slide = 0, acid = false, bile = false;
+    const items = [], enz = [], drops = [];
+    let seed = 5; const R = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+    const inLumen = () => ({ x: rnd(LX + 80, RX - 80), y: rnd(TOP + 40, BOT - 40) });
+    const reset = () => {
+      items.length = enz.length = drops.length = 0; chewed = false; chew = 0; acid = false; bile = false; place = 'mouth';
+      for (let k = 0; k < 6; k++) { const p = inLumen(); items.push({ t: 'S', n: 10, x: p.x, y: p.y, a: rnd(0, 6.28), w: rnd(0, 6) }); }
+      for (let k = 0; k < 5; k++) { const p = inLumen(); items.push({ t: 'P', b: Array.from({ length: 10 }, () => BEAD[Math.floor(R() * BEAD.length)]), x: p.x, y: p.y, a: rnd(0, 6.28), w: rnd(0, 6) }); }
+      items.push({ t: 'F', k: 9, x: 640, y: 380, a: 0, w: 0 });
+      for (let k = 0; k < 6; k++) { const p = inLumen(); items.push({ t: 'B', x: p.x, y: p.y, a: rnd(0, 6.28), w: rnd(0, 6), life: 1 }); }
+    };
+    reset();
+
+    /* ----- 소화효소 ----- */
+    const addEnz = (kind, n, from) => { for (let k = 0; k < n; k++) { const p = from(); enz.push({ k: kind, x: p.x, y: p.y, vx: rnd(-20, 20), vy: rnd(-20, 20), busy: 0, tgt: null, a: rnd(0, 6.28), life: 1 }); } };
+    const addDrops = (col, n, from, to) => { for (let k = 0; k < n; k++) { const p = from(); drops.push({ x: p.x, y: p.y, tx: to ? to().x : p.x + rnd(-60, 60), ty: to ? to().y : p.y + rnd(30, 120), c: col, t: -k * .03, d: rnd(.9, 1.4) }); } };
+    const ductPt = () => ({ x: 200 + rnd(-10, 10), y: 128 });
+    const wallPt = () => ({ x: rnd(LX + 60, RX - 60), y: R() < .5 ? TOP + 6 : BOT - 6 });
+    const want = (e) => {
+      /* 이 효소가 분해하는 대상 */
+      if (e.k === 'amy') return (it) => it.t === 'S' && it.n > 2;
+      if (e.k === 'carb') return (it) => it.t === 'S' && it.n === 2;
+      if (e.k === 'pep' || e.k === 'try') return (it) => it.t === 'P' && it.b.length > 4;
+      if (e.k === 'prot') return (it) => it.t === 'P' && it.b.length <= 4 && it.b.length > 1;
+      if (e.k === 'lip') return (it) => it.t === 'F' && it.k > 0;
+      return () => false;
+    };
+    const cut = (e, it) => {
+      if (e.k === 'amy') { it.n -= 2; items.push({ t: 'S', n: 2, x: it.x + Math.cos(it.a) * 40, y: it.y + Math.sin(it.a) * 40, a: it.a + rnd(-1, 1), w: rnd(0, 6), vx: Math.cos(it.a) * 30, vy: Math.sin(it.a) * 30 }); }
+      else if (e.k === 'carb') { it.n = 1; items.push({ t: 'S', n: 1, x: it.x + 12, y: it.y + 6, a: it.a, w: rnd(0, 6), vx: rnd(-30, 30), vy: rnd(-30, 30) }); }
+      else if (e.k === 'pep' || e.k === 'try') { const piece = it.b.splice(it.b.length - 3, 3); items.push({ t: 'P', b: piece, x: it.x + Math.cos(it.a) * 40, y: it.y + Math.sin(it.a) * 40, a: it.a + rnd(-1, 1), w: rnd(0, 6), vx: rnd(-30, 30), vy: rnd(-30, 30) }); }
+      else if (e.k === 'prot') { const b = it.b.pop(); items.push({ t: 'P', b: [b], x: it.x + rnd(-14, 14), y: it.y + rnd(-14, 14), a: 0, w: rnd(0, 6), vx: rnd(-35, 35), vy: rnd(-35, 35) }); }
+      else if (e.k === 'lip') { it.k -= 1; items.push({ t: 'M', x: it.x + rnd(-20, 20), y: it.y + rnd(-20, 20), a: rnd(0, 6.28), w: rnd(0, 6), vx: rnd(-30, 30), vy: rnd(-30, 30) }); for (let j = 0; j < 2; j++) items.push({ t: 'A', x: it.x + rnd(-24, 24), y: it.y + rnd(-24, 24), a: rnd(0, 6.28), w: rnd(0, 6), vx: rnd(-35, 35), vy: rnd(-35, 35) }); }
+    };
+    const near = (e) => { const f = want(e); let best = null, bd = 1e9; items.forEach((it) => { if (!f(it) || it.lock) return; const d = Math.hypot(it.x - e.x, it.y - e.y); if (d < bd) { bd = d; best = it; } }); return best; };
+
+    /* ----- 쓸개즙: 지방 덩어리를 작은 알갱이로 ----- */
+    const splitFat = () => { const big = items.filter((it) => it.t === 'F' && it.k > 3); big.forEach((it) => { let k = it.k; it.k = 3; k -= 3; while (k > 0) { const n = Math.min(3, k); k -= n; items.push({ t: 'F', k: n, x: it.x + rnd(-110, 110), y: it.y + rnd(-90, 90), a: 0, w: rnd(0, 6), vx: rnd(-40, 40), vy: rnd(-40, 40) }); } }); bile = true; };
+
+    /* ----- 움직임 ----- */
+    const step = (dt) => {
+      const run = chewed && slide <= 0;
+      items.forEach((it) => {
+        it.w += dt * .7; it.vx = (it.vx || 0) * (1 - dt * 1.5) + Math.sin(it.w * 1.3 + it.y * .01) * 9 * dt; it.vy = (it.vy || 0) * (1 - dt * 1.5) + Math.cos(it.w * 1.1 + it.x * .01) * 9 * dt;
+        if (run) { it.x += it.vx * dt * 3; it.y += it.vy * dt * 3; it.a += Math.sin(it.w) * dt * .15; }
+        const m = it.t === 'F' ? 30 + it.k * 4 : it.t === 'S' || it.t === 'P' ? 10 + (it.n || it.b.length) * 5 : 14;
+        it.x = Math.max(LX + m, Math.min(RX - m, it.x)); it.y = Math.max(TOP + m * .6 + 8, Math.min(BOT - m * .6 - 8, it.y));
+        if (it.t === 'B' && acid) it.life = Math.max(0, it.life - dt * .5);
+      });
+      for (let i = items.length - 1; i >= 0; i--) { const it = items[i]; if ((it.t === 'B' && it.life <= 0) || (it.t === 'F' && it.k <= 0) || (it.t === 'S' && it.n <= 0)) items.splice(i, 1); }
+      if (!run) return;
+      enz.forEach((e) => {
+        if (e.leave) { e.life -= dt * 1.2; return; }
+        if (e.busy > 0) { e.busy -= dt; if (e.busy <= 0 && e.tgt) { if (e.tgt.t === 'F' || e.tgt.t === 'S' || e.tgt.t === 'P') cut(e, e.tgt); e.tgt.lock = false; e.tgt = null; e.x += rnd(-20, 20); e.y += rnd(-20, 20); } return; }
+        const it = near(e);
+        if (!it) { e.a += dt; e.vx += (Math.sin(e.a) * 30 - e.vx) * dt; e.vy += (Math.cos(e.a * .8) * 30 - e.vy) * dt; e.x += e.vx * dt; e.y += e.vy * dt; }
+        else { const dx = it.x - e.x, dy = it.y - e.y, d = Math.hypot(dx, dy) || 1, sp = 120; e.x += dx / d * sp * dt; e.y += dy / d * sp * dt; const reach = it.t === 'F' ? 22 + it.k * 4 : 20; if (d < reach) { e.busy = it.t === 'F' && it.k > 3 ? 2.6 : .45; e.tgt = it; it.lock = true; } }
+        e.x = Math.max(LX + 14, Math.min(RX - 14, e.x)); e.y = Math.max(TOP + 14, Math.min(BOT - 14, e.y));
+      });
+      for (let i = enz.length - 1; i >= 0; i--) if (enz[i].life <= 0) enz.splice(i, 1);
+    };
+
+    /* ----- 그리기 ----- */
+    function wall(top) {
+      /* 소화관 벽: 위는 아래로, 아래는 위로 향한 면 */
+      const y0 = top ? 0 : BOT, y1 = top ? TOP : VH, dir = top ? 1 : -1, edge = top ? TOP : BOT;
+      if (place === 'mouth') {
+        const gr = g.createLinearGradient(0, y0, 0, y1); gr.addColorStop(top ? 0 : 1, top ? '#d98b88' : '#c96a68'); gr.addColorStop(top ? 1 : 0, top ? '#efb1aa' : '#e79a92');
+        g.fillStyle = gr; g.fillRect(0, y0, VW, y1 - y0);
+        /* 이 */
+        for (let x = 70; x < VW - 40; x += 62) { const h = 34 + 6 * Math.sin(x); const tg = g.createLinearGradient(x, 0, x + 52, 0); tg.addColorStop(0, '#e9e4d8'); tg.addColorStop(.5, '#fbf9f3'); tg.addColorStop(1, '#ddd6c6'); g.fillStyle = tg; g.beginPath(); g.roundRect(x, top ? edge - h : edge, 52, h, top ? [4, 4, 14, 14] : [14, 14, 4, 4]); g.fill(); g.strokeStyle = 'rgba(150,140,120,.35)'; g.lineWidth = 1; g.stroke(); }
+        if (!top) { g.fillStyle = 'rgba(255,255,255,.25)'; for (let k = 0; k < 90; k++) { g.beginPath(); g.arc((k * 97) % VW, BOT + 60 + (k * 37) % 110, 2, 0, 7); g.fill(); } }
+        return;
+      }
+      if (place === 'sto') {
+        const gr = g.createLinearGradient(0, y0, 0, y1); gr.addColorStop(top ? 0 : 1, '#c46d5e'); gr.addColorStop(top ? 1 : 0, '#e7a091');
+        g.fillStyle = gr; g.fillRect(0, y0, VW, y1 - y0);
+        /* 근육 결 */
+        g.strokeStyle = 'rgba(140,60,50,.25)'; g.lineWidth = 2; for (let k = 0; k < 4; k++) { const yy = top ? 18 + k * 14 : VH - 18 - k * 14; g.beginPath(); for (let x = 0; x <= VW; x += 20) g.lineTo(x, yy + Math.sin(x * .02 + k) * 3); g.stroke(); }
+        /* 주름과 위샘 */
+        g.fillStyle = '#f0b3a3'; g.beginPath(); g.moveTo(0, edge); for (let x = 0; x <= VW; x += 10) g.lineTo(x, edge - dir * (12 + 12 * Math.sin(x * .035) + 5 * Math.sin(x * .11))); g.lineTo(VW, edge); g.closePath(); g.fill();
+        g.fillStyle = 'rgba(160,70,60,.35)'; for (let x = 40; x < VW; x += 46) { g.beginPath(); g.ellipse(x, edge - dir * 22, 4, 9, 0, 0, 7); g.fill(); }
+        return;
+      }
+      /* 작은창자: 주름 위의 융털 */
+      const gr = g.createLinearGradient(0, y0, 0, y1); gr.addColorStop(top ? 0 : 1, '#d9926e'); gr.addColorStop(top ? 1 : 0, '#f1c09f');
+      g.fillStyle = gr; g.fillRect(0, y0, VW, y1 - y0);
+      for (let x = 10; x < VW; x += 24) { const h = 30 + 8 * Math.sin(x * .05); const vg = g.createLinearGradient(x - 9, 0, x + 9, 0); vg.addColorStop(0, '#e6a988'); vg.addColorStop(.5, '#f7d2b9'); vg.addColorStop(1, '#df9f7f'); g.fillStyle = vg; g.beginPath(); g.moveTo(x - 9, edge + dir * 4); g.lineTo(x - 9, edge - dir * (h - 9)); g.arc(x, edge - dir * (h - 9), 9, top ? Math.PI : 0, top ? 0 : Math.PI, !top); g.lineTo(x + 9, edge + dir * 4); g.closePath(); g.fill(); }
+      if (top) { /* 샘창자로 들어오는 관 */ const dg = g.createLinearGradient(170, 0, 230, 0); dg.addColorStop(0, '#a7c46a'); dg.addColorStop(.5, '#d6e3a3'); dg.addColorStop(1, '#a7c46a'); g.fillStyle = dg; g.beginPath(); g.moveTo(180, 0); g.lineTo(220, 0); g.lineTo(214, TOP - 4); g.lineTo(186, TOP - 4); g.closePath(); g.fill(); g.fillStyle = '#6d8a3c'; g.beginPath(); g.ellipse(200, TOP - 3, 15, 5, 0, 0, 7); g.fill(); }
+    }
+    function hexa(x, y, r, f, sk) { g.beginPath(); for (let a = 0; a < 6; a++) { const t = a * Math.PI / 3 + Math.PI / 6; g.lineTo(x + Math.cos(t) * r, y + Math.sin(t) * r); } g.closePath(); g.fillStyle = f; g.fill(); g.strokeStyle = sk; g.lineWidth = 1.2; g.stroke(); }
+    function bead(x, y, r, c) { const gr = g.createRadialGradient(x - r * .35, y - r * .35, r * .2, x, y, r); gr.addColorStop(0, '#ffffff'); gr.addColorStop(.25, c); gr.addColorStop(1, c); g.fillStyle = gr; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill(); g.strokeStyle = 'rgba(20,38,59,.25)'; g.lineWidth = 1; g.stroke(); }
+    function comb(x, y, a, sticks, sc = 1) { g.save(); g.translate(x, y); g.rotate(a); g.scale(sc, sc); g.fillStyle = '#f3e3b0'; g.strokeStyle = '#b8954a'; g.lineWidth = 1.2; g.beginPath(); g.roundRect(-12, -4, 24, 8, 3); g.fill(); g.stroke(); g.fillStyle = '#f2c94c'; for (let k = 0; k < sticks; k++) { const xx = -8 + k * 8; g.beginPath(); g.roundRect(xx - 2.2, 3, 4.4, 20, 2); g.fill(); g.stroke(); } g.restore(); }
+    function stick(x, y, a) { g.save(); g.translate(x, y); g.rotate(a); g.fillStyle = '#f2c94c'; g.strokeStyle = '#b8954a'; g.lineWidth = 1.2; g.beginPath(); g.roundRect(-2.4, -11, 4.8, 22, 2); g.fill(); g.stroke(); g.fillStyle = '#d9a52d'; g.beginPath(); g.arc(0, -11, 3, 0, 7); g.fill(); g.restore(); }
+    function drawItem(it) {
+      const ux = Math.cos(it.a), uy = Math.sin(it.a);
+      if (it.t === 'S') {
+        const n = it.n, r = 9;
+        for (let j = 0; j < n; j++) { const off = (j - (n - 1) / 2) * 15, wv = n > 2 ? Math.sin(j * .8 + it.w) * 6 : 0; hexa(it.x + ux * off - uy * wv, it.y + uy * off + ux * wv, r, n > 2 ? '#8e9de0' : n === 2 ? '#a9b8ee' : '#c3cdf5', n > 2 ? '#4f5bb0' : '#6c7bc8'); }
+      } else if (it.t === 'P') {
+        const n = it.b.length, pts = it.b.map((c, j) => { const off = (j - (n - 1) / 2) * 15, wv = n > 1 ? Math.sin(j * 1.1 + it.w) * 8 : 0; return [it.x + ux * off - uy * wv, it.y + uy * off + ux * wv]; });
+        g.strokeStyle = '#7a8796'; g.lineWidth = 2; g.beginPath(); pts.forEach((p) => g.lineTo(p[0], p[1])); g.stroke();
+        pts.forEach((p, j) => bead(p[0], p[1], 7.5, it.b[j]));
+      } else if (it.t === 'F') {
+        const k = it.k, rr = 18 + k * 7;
+        const gr = g.createRadialGradient(it.x - rr * .3, it.y - rr * .3, rr * .2, it.x, it.y, rr); gr.addColorStop(0, 'rgba(255,240,180,.95)'); gr.addColorStop(1, 'rgba(240,205,110,.85)');
+        g.fillStyle = gr; g.beginPath(); g.ellipse(it.x, it.y, rr, rr * .82, 0, 0, 7); g.fill(); g.strokeStyle = 'rgba(184,149,74,.6)'; g.lineWidth = 1.2; g.stroke();
+        for (let j = 0; j < k; j++) { const t = j / Math.max(1, k) * 6.28 + it.w * .2, rad = k > 1 ? rr * .48 : 0; comb(it.x + Math.cos(t) * rad, it.y + Math.sin(t) * rad * .8 - 6, t * .5, 3, .85); }
+      } else if (it.t === 'M') { comb(it.x, it.y, it.a, 1, 1); }
+      else if (it.t === 'A') { stick(it.x, it.y, it.a); }
+      else if (it.t === 'B') {
+        g.save(); g.globalAlpha = it.life; g.translate(it.x, it.y); g.rotate(it.a); const sc = .6 + .4 * it.life; g.scale(sc, sc);
+        g.fillStyle = '#7fb069'; g.strokeStyle = '#4d7a3c'; g.lineWidth = 1.2; g.beginPath(); g.roundRect(-14, -6, 28, 12, 6); g.fill(); g.stroke();
+        g.strokeStyle = 'rgba(77,122,60,.6)'; g.beginPath(); g.moveTo(14, 0); g.quadraticCurveTo(22, 6, 28, 0); g.stroke(); g.restore();
+      }
+    }
+    function drawEnz(e) {
+      const [, c] = E[e.k], r = 13, op = e.busy > 0 ? .5 : .85;
+      g.save(); g.globalAlpha = Math.max(0, e.life);
+      const gr = g.createRadialGradient(e.x - r * .35, e.y - r * .35, r * .2, e.x, e.y, r * 1.1); gr.addColorStop(0, '#ffffff'); gr.addColorStop(.3, c); gr.addColorStop(1, c);
+      g.fillStyle = gr; g.beginPath(); g.arc(e.x, e.y, r, op, Math.PI * 2 - op); g.lineTo(e.x + r * .15, e.y); g.closePath(); g.fill(); g.strokeStyle = 'rgba(20,38,59,.35)'; g.lineWidth = 1; g.stroke();
+      g.restore();
+    }
+    function drawChunk(k) {
+      /* 씹기 전 빵 조각: 겉은 갈색, 속은 연한 노란색, 씹으면 작게 부서진다 */
+      const pieces = k <= 0 ? [[500, 380, 150]] : Array.from({ length: 9 }, (_, i) => [500 + Math.cos(i * 2.4) * k * 230, 380 + Math.sin(i * 2.4) * k * 120, 150 / Math.sqrt(1 + k * 8)]);
+      pieces.forEach(([x, y, r], i) => {
+        g.save(); g.globalAlpha = 1 - cl((k - .6) / .4);
+        g.fillStyle = '#b8793a'; g.beginPath(); g.roundRect(x - r, y - r * .7, r * 2, r * 1.4, r * .35); g.fill();
+        g.fillStyle = '#f2dca6'; g.beginPath(); g.roundRect(x - r * .86, y - r * .56, r * 1.72, r * 1.12, r * .28); g.fill();
+        g.fillStyle = 'rgba(200,160,90,.5)'; for (let j = 0; j < 14; j++) { g.beginPath(); g.ellipse(x + Math.sin(j * 7 + i) * r * .6, y + Math.cos(j * 5 + i) * r * .4, 3 + (j % 3), 2, j, 0, 7); g.fill(); }
+        g.restore();
+      });
+    }
+    let last = performance.now();
+    function frame(now) {
+      const dt = Math.min(.05, (now - last) / 1000) * (REDUCE ? 3 : 1); last = now;
+      if (chew > 0 && chew < 1) chew = Math.min(1, chew + dt * .8);
+      if (slide > 0) slide = Math.max(0, slide - dt * 1.4);
+      step(dt);
+      drops.forEach((d) => { d.t += dt / d.d; }); for (let i = drops.length - 1; i >= 0; i--) if (drops[i].t > 1.2) drops.splice(i, 1);
+      g.setTransform(dpr, 0, 0, dpr, 0, 0); g.fillStyle = '#ffffff'; g.fillRect(0, 0, W, H);
+      g.setTransform(dpr * s, 0, 0, dpr * s, dpr * ox, dpr * oy);
+      g.save(); g.beginPath(); g.roundRect(0, 0, VW, VH, 18); g.clip();
+      g.fillStyle = PLACE[place].bg; g.fillRect(0, 0, VW, VH);
+      const sx = slide > 0 ? (1 - Math.pow(1 - slide, 2)) * -VW * .0 : 0; void sx;
+      wall(true); wall(false);
+      /* 안쪽 그늘 */
+      const sh = g.createLinearGradient(0, TOP, 0, TOP + 40); sh.addColorStop(0, 'rgba(120,60,50,.12)'); sh.addColorStop(1, 'rgba(120,60,50,0)'); g.fillStyle = sh; g.fillRect(0, TOP, VW, 40);
+      const sh2 = g.createLinearGradient(0, BOT, 0, BOT - 40); sh2.addColorStop(0, 'rgba(120,60,50,.12)'); sh2.addColorStop(1, 'rgba(120,60,50,0)'); g.fillStyle = sh2; g.fillRect(0, BOT - 40, VW, 40);
+      const off = slide > 0 ? -Math.sin(slide * Math.PI) * 30 : 0;
+      g.save(); g.translate(off, 0);
+      if (!chewed || chew < 1) drawChunk(chew);
+      if (chewed) { g.save(); g.globalAlpha = cl(chew * 1.5 - .4); items.forEach(drawItem); enz.forEach(drawEnz); g.restore(); }
+      drops.forEach((d) => { if (d.t < 0) return; const t = cl(d.t), x = d.x + (d.tx - d.x) * t, y = d.y + (d.ty - d.y) * t; g.globalAlpha = 1 - cl((d.t - .8) / .4); g.fillStyle = d.c; g.beginPath(); g.ellipse(x, y, 5, 6.5, 0, 0, 7); g.fill(); g.globalAlpha = 1; });
+      g.restore();
+      if (slide > 0) { g.fillStyle = `rgba(255,255,255,${Math.sin(slide * Math.PI) * .85})`; g.fillRect(0, 0, VW, VH); }
+      g.restore();
+      T.place.e.textContent = PLACE[place].name + ' 속을 크게 본 모습'; T.place.show = true;
+      T.duct.show = place === 'si';
+      T.wall.e.textContent = place === 'mouth' ? '이와 혀' : place === 'sto' ? '위의 안쪽 벽(주름, 위샘)' : '작은창자의 안쪽 벽'; T.wall.show = true;
+      placeTags();
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+
+    /* ----- 집계 (교과서 그림 Ⅵ-7 표) ----- */
+    const count = () => {
+      const c = { S: 0, S2: 0, S1: 0, P: 0, P3: 0, P1: 0, F: 0, Fs: 0, FA: 0, B: 0 };
+      items.forEach((it) => {
+        if (it.t === 'S') { if (it.n > 2) c.S += it.n; else if (it.n === 2) c.S2 += 2; else c.S1 += 1; }
+        if (it.t === 'P') { if (it.b.length > 4) c.P += it.b.length; else if (it.b.length > 1) c.P3 += it.b.length; else c.P1 += 1; }
+        if (it.t === 'F') { if (it.k > 3) c.F += it.k; else c.Fs += it.k; }
+        if (it.t === 'M') c.FA += 1; if (it.t === 'B') c.B += 1;
+      });
+      return c;
+    };
+    const api = {
+      get place() { return place; }, get chewed() { return chewed; }, get bile() { return bile; }, E, count,
+      chew() { chewed = true; chew = .001; },
+      go(p) { place = p; slide = 1; enz.forEach((e) => { e.leave = true; }); },
+      saliva() { addDrops('#8fc3e6', 30, () => ({ x: rnd(80, 920), y: TOP - 10 }), null); addEnz('amy', 5, () => ({ x: rnd(100, 900), y: TOP + 20 })); },
+      gastric() { acid = true; addDrops('#d3b0e4', 36, wallPt, null); addEnz('pep', 5, wallPt); },
+      bileJ() { addDrops('#86b04c', 30, ductPt, () => ({ x: rnd(180, 700), y: rnd(TOP + 40, BOT - 40) })); setTimeout(splitFat, 900); },
+      pancreas() { addDrops('#f0c84a', 30, ductPt, () => ({ x: rnd(180, 700), y: rnd(TOP + 40, BOT - 40) })); addEnz('amy', 3, ductPt); addEnz('try', 3, ductPt); addEnz('lip', 3, ductPt); },
+      wallE() { addEnz('carb', 4, wallPt); addEnz('prot', 4, wallPt); },
+      reset() { reset(); },
+      /* 화면 검사용: 시간을 앞당긴다 */
+      ff(sec) { chew = 1; slide = 0; if (enz.some((e) => e.k === 'lip' && !e.leave) && !bile) splitFat(); for (let t = 0; t < sec; t += .05) { step(.05); } },
+    };
+    return api;
+  }
+  return { lab, E };
+})();
+window.ENZ = ENZ;
+</script>
+<script>
+(() => {
+  'use strict';
+  try {
+    const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+    const q = new URLSearchParams(location.search);
+    let X = ENZ.lab($('#fig'));
+    const used = {};
+    const say = (t, m, c = '') => { $('#res').className = 'fbk ' + c; $('#resT').textContent = t; $('#resM').innerHTML = m; };
+    /* 범례 */
+    const pac = (c) => `<svg width="18" height="18" viewBox="0 0 20 20"><path d="M10 10 L18.5 6 A9 9 0 1 0 18.5 14 Z" fill="${c}" stroke="rgba(20,38,59,.35)"/></svg>`;
+    const hx = (c) => `<svg width="16" height="16" viewBox="0 0 20 20"><polygon points="10,1 18,5.5 18,14.5 10,19 2,14.5 2,5.5" fill="${c}" stroke="#4f5bb0"/></svg>`;
+    $('#lg').innerHTML = `<span>${hx('#8e9de0')}녹말</span><span><svg width="26" height="14" viewBox="0 0 26 14"><circle cx="6" cy="7" r="5" fill="#e05a52"/><circle cx="19" cy="7" r="5" fill="#4a86d0"/></svg>단백질</span><span><svg width="18" height="18" viewBox="0 0 20 20"><rect x="3" y="3" width="14" height="5" rx="2" fill="#f3e3b0" stroke="#b8954a"/><rect x="5" y="8" width="3" height="10" fill="#f2c94c"/><rect x="12" y="8" width="3" height="10" fill="#f2c94c"/></svg>지방</span>` + Object.values(ENZ.E).map(([n, c]) => `<span>${pac(c)}${n}</span>`).join('');
+    /* 장소별 소화액 */
+    const JU = {
+      mouth: [['chew', '#b8793a', '이와 혀로 씹기', '음식물을 잘게 부숴 침과 잘 섞이게 해요'], ['saliva', '#8fc3e6', '침 분비하기', '침샘에서 나와요 · 아밀레이스']],
+      sto: [['gastric', '#d3b0e4', '위액 분비하기', '위샘에서 나와요 · 펩신, 염산']],
+      si: [['bileJ', '#86b04c', '쓸개즙 분비하기', '간에서 만들어져 쓸개에 저장 · 소화효소 없음'], ['pancreas', '#f0c84a', '이자액 분비하기', '아밀레이스, 트립신, 라이페이스'], ['wallE', '#3f7fc4', '작은창자 안쪽 벽의 소화효소', '탄수화물 소화효소, 단백질 소화효소']],
+    };
+    const MSG = {
+      chew: ['씹었어요', '이와 혀가 빵을 잘게 부수고 섞었어요. 이제 빵 속 <b>녹말·단백질·지방</b>이 보여요. 아직 크기가 커서 세포막을 통과할 수 없어요. <b>침 분비하기</b>를 눌러요.'],
+      saliva: ['입에서의 소화', '침 속 <b>아밀레이스</b>(초록)가 <b>녹말</b>을 <b>엿당</b>(육각형 2개)으로 분해해요. 단백질과 지방은 그대로예요. 각 소화효소는 한 종류의 영양소만 분해해요. 다 보았으면 <b>위</b>로 옮겨요.'],
+      gastric: ['위에서의 소화', '위액의 <b>펩신</b>(분홍)이 <b>단백질</b>을 <b>작은 크기의 단백질</b>로 분해해요. <b>염산</b>은 펩신의 작용을 돕고, 음식물에 섞인 <b>세균</b>(초록 막대)을 죽여요. 다 보았으면 <b>작은창자</b>로 옮겨요.'],
+      bileJ: ['쓸개즙', '<b>쓸개즙</b>에는 소화효소가 없지만 <b>지방 덩어리를 작은 알갱이</b>로 만들어 지방의 소화를 도와요.'],
+      pancreas: ['이자액', '이자액에는 녹말을 분해하는 <b>아밀레이스</b>, 단백질을 분해하는 <b>트립신</b>(보라), 지방을 분해하는 <b>라이페이스</b>(주황)가 모두 들어 있어요. 라이페이스는 지방을 <b>지방산과 모노글리세리드</b>로 분해해요.'],
+      wallE: ['작은창자 안쪽 벽의 소화효소', '<b>탄수화물 소화효소</b>(청록)가 엿당을 <b>포도당</b>으로, <b>단백질 소화효소</b>(파랑)가 작은 단백질을 <b>아미노산</b>으로 분해해요.'],
+    };
+    const order = ['mouth', 'sto', 'si'];
+    const drawJ = () => {
+      const p = X.place; $$('#pl button').forEach((b) => { b.setAttribute('aria-pressed', String(b.dataset.p === p)); b.disabled = order.indexOf(b.dataset.p) < order.indexOf(p) || (b.dataset.p !== 'mouth' && !X.chewed); });
+      $('#jz').innerHTML = JU[p].map(([k, c, t, sub]) => `<button type="button" data-k="${k}" aria-pressed="${!!used[k]}" ${used[k] || (k !== 'chew' && p === 'mouth' && !X.chewed) || (k === 'chew' && X.chewed) ? 'disabled' : ''}><i style="background:${c}"></i><span><b>${t}</b><span>${sub}</span></span></button>`).join('');
+      $$('#jz button').forEach((b) => b.addEventListener('click', () => { const k = b.dataset.k; used[k] = true; X[k](); say(...MSG[k]); drawJ(); }));
+    };
+    $$('#pl button').forEach((b) => b.addEventListener('click', () => {
+      const p = b.dataset.p; if (p === X.place) return; X.go(p); drawJ();
+      if (p === 'sto') say('위로 왔어요', '음식물이 식도를 거쳐 <b>위</b>로 왔어요. 위는 근육으로 이루어진 주머니예요. <b>위액 분비하기</b>를 눌러요.');
+      if (p === 'si') say('작은창자로 왔어요', '작은창자의 시작 부분인 <b>샘창자</b>예요. 위쪽 관으로 쓸개즙과 이자액이 들어와요. 세 가지를 모두 넣어 영양소를 <b>완전히</b> 분해해 봐요.');
+    }));
+    /* 영양소 표 (그림 Ⅵ-7) */
+    const ROWS = [['탄수화물', ['녹말', '엿당', '포도당'], (c) => [c.S, c.S2, c.S1]], ['단백질', ['단백질', '작은 단백질', '아미노산'], (c) => [c.P, c.P3, c.P1]], ['지방', ['지방 덩어리', '작은 알갱이', '지방산, 모노글리세리드'], (c) => [c.F, c.Fs, c.FA]]];
+    let doneMsg = false;
+    const drawT = () => {
+      const c = X.count();
+      $('#nt').innerHTML = ROWS.map(([n, st, f]) => { const v = f(c), tot = v.reduce((a, b) => a + b, 0) || 1; const cur = v[2] / tot > .9 ? 2 : v[0] > 0 ? 0 : 1; return `<tr><th>${n}</th>${st.map((x, i) => `<td class="${i === cur ? 'on' : i < cur ? 'done' : ''}">${x}</td>`).join('')}</tr>`; }).join('');
+      const all = ROWS.every(([, , f]) => { const v = f(c), tot = v.reduce((a, b) => a + b, 0); return tot && v[2] / tot > .97; });
+      if (all && !doneMsg && X.place === 'si') { doneMsg = true; say('소화가 완전히 끝났어요', '탄수화물은 <b>포도당</b>, 단백질은 <b>아미노산</b>, 지방은 <b>지방산과 모노글리세리드</b>로 최종 분해되었어요. 이제 세포막을 통과할 만큼 작아서 작은창자에서 흡수될 수 있어요. <b>융털과 흡수</b>에서 이어서 봐요.', 'ok'); }
+    };
+    setInterval(drawT, 400);
+    const reset = () => { X = ENZ.lab($('#fig')); Object.keys(used).forEach((k) => delete used[k]); doneMsg = false; drawJ(); drawT(); say('처음', '입에 빵 한 입이 들어왔어요. <b>이와 혀로 씹기</b>부터 눌러요.'); };
+    $('#bReset').addEventListener('click', reset);
+    reset();
+    /* 정리하기 */
+    const QS = [['아밀레이스', 0], ['펩신', 1], ['트립신', 1], ['라이페이스', 2], ['탄수화물 소화효소', 0], ['단백질 소화효소', 1]];
+    $('#qs').innerHTML = QS.map(([n], i) => `<div class="qa" data-i="${i}"><p>${n}은(는) 무엇을 분해할까요?</p><div class="qa3">${['탄수화물', '단백질', '지방'].map((t, k) => `<button type="button" data-k="${k}">${t}</button>`).join('')}</div></div>`).join('');
+    const EXP = ['침과 이자액에 들어 있어요. 녹말을 엿당으로 분해해요.', '위액에 들어 있어요. 단백질을 작은 크기의 단백질로 분해해요.', '이자액에 들어 있어요. 단백질을 분해해요.', '이자액에 들어 있어요. 지방을 지방산과 모노글리세리드로 분해해요.', '작은창자 안쪽 벽에 있어요. 탄수화물을 포도당으로 분해해요.', '작은창자 안쪽 벽에 있어요. 단백질을 아미노산으로 분해해요.'];
+    $$('#qs .qa').forEach((row) => { const i = +row.dataset.i; $$('button', row).forEach((b) => b.addEventListener('click', () => {
+      const good = +b.dataset.k === QS[i][1]; $$('button', row).forEach((o) => o.classList.remove('good', 'bad')); b.classList.add(good ? 'good' : 'bad');
+      const r = $('#sres'); r.hidden = false; r.className = 'fbk ' + (good ? 'ok' : 'no'); r.innerHTML = good ? `<b>${QS[i][0]}</b>: ${EXP[i]}` : '다시 골라 봐요. 각 소화효소는 한 종류의 영양소만 분해해요.';
+    })); });
+    const tab = (p) => { $$('#pt button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.p === p))); $$('.pane').forEach((e) => { e.hidden = e.dataset.p !== p; }); };
+    $$('#pt button').forEach((b) => b.addEventListener('click', () => tab(b.dataset.p)));
+    /* 화면 검사용: ?run=mouth|sto|si 까지 진행 */
+    const run = q.get('run');
+    if (run) {
+      used.chew = true; X.chew(); used.saliva = true; X.saliva(); X.ff(8);
+      if (run !== 'mouth') { X.go('sto'); used.gastric = true; X.gastric(); X.ff(8); say(...MSG.gastric); } else say(...MSG.saliva);
+      if (run === 'si') { X.go('si'); used.bileJ = used.pancreas = used.wallE = true; X.bileJ(); X.pancreas(); X.wallE(); X.ff(+(q.get('ff') || 4)); say(...MSG.pancreas); }
+      drawJ(); drawT();
+    }
+    if (q.get('tab')) tab(q.get('tab'));
+    window.SM = window.SM || {}; window.SM.okUI = true; window.__ready = true;
+  } catch (err) { window.SM_err && window.SM_err('소화효소 실험실', err); console.error(err); }
+})();
+</script>
+</body>
+</html>

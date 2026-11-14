@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>우리가 먹은 음식의 소화 – 소화계 3D</title>
+<script>
+/* 문제 알림: 코드에 오류가 나면 화면 아래에 빨간 상자로 알려 줘요 (선생님 확인용) */
+(function () {
+  function box() {
+    var b = document.getElementById('smErr');
+    if (!b && document.body) {
+      b = document.createElement('div'); b.id = 'smErr';
+      b.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;background:#fdecea;color:#8a1f17;border:2px solid #d9534f;border-radius:12px;padding:10px 14px;font:600 14px/1.5 sans-serif;white-space:pre-wrap';
+      document.body.appendChild(b);
+    }
+    return b;
+  }
+  window.SM_err = function (where, err) {
+    var msg = '[' + where + '] ' + (err && err.message ? err.message : String(err));
+    var show = function () { var b = box(); if (b) b.textContent += (b.textContent ? '\n' : '') + msg; };
+    if (document.body) show(); else document.addEventListener('DOMContentLoaded', show);
+  };
+  window.addEventListener('error', function (e) { window.SM_err('스크립트', { message: e.message + ' (줄 ' + e.lineno + ')' }); });
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      var S = window.SM || {};
+      if (!S.okUI) window.SM_err('실행 안 됨', { message: '안내·버튼 코드가 실행되지 않았어요. 파일이 끝(</html>)까지 들어 있는지 확인해 주세요.' });
+      if (document.getElementById('fail3d') && !S.ok3d) { var f = document.getElementById('fail3d'); if (f) f.classList.add('show'); window.SM_err('3D 그림', { message: '3D 그림을 불러오지 못했어요. 인터넷 연결(cdn.jsdelivr.net)을 확인하고 새로고침해 주세요.' }); }
+    }, 9000);
+  });
+})();
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+
+  :root{--bg:#edf3f8;--card:#fff;--ink:#14263b;--ink2:#34495e;--muted:#5a6b7e;--line:#dde6ee;--accent:#0e63b3;--accent-soft:#e3effb;
+    --fab:#4b3fb5;--fab-soft:#ecebfb;--ok:#1f9d5c;--no:#d9534f;
+    --shadow:0 1px 2px rgba(20,38,59,.06),0 8px 24px rgba(20,38,59,.07);--ease:cubic-bezier(.2,.8,.2,1)}
+  *{box-sizing:border-box}html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:"Pretendard",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  button{font:inherit;color:inherit}
+  .app{max-width:1320px;margin:0 auto;padding:14px 16px 28px;display:flex;flex-direction:column;gap:12px}
+  .eyebrow{display:inline-flex;font-size:13px;font-weight:700;color:var(--fab);background:var(--fab-soft);padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(21px,2.4vw,28px);margin:6px 0 2px;letter-spacing:-.02em;word-break:keep-all}
+  .sub{margin:0;color:var(--muted);font-size:15px;word-break:keep-all}
+  .card{background:var(--card);border-radius:20px;box-shadow:var(--shadow);border:1px solid rgba(20,38,59,.04)}
+  .pad{padding:14px 16px}
+  .stage{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(330px,1fr);gap:14px;align-items:start}
+  .viewer{position:sticky;top:10px}
+  .flow{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px}
+  .fs{min-height:54px;border:0;border-radius:12px;background:#eef3f8;font-weight:800;font-size:13px;color:var(--muted);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.2;word-break:keep-all;padding:4px}
+  .fs b{font-size:15px}
+  .fs[aria-selected="true"]{background:var(--fab);color:#fff}
+  .fs.seen:not([aria-selected="true"]){background:#e5f5ec;color:#11703f}
+  .stepname{display:flex;align-items:center;gap:10px;margin:2px 0 6px}
+  .stepname .no{flex:none;width:40px;height:40px;border-radius:12px;background:var(--fab);color:#fff;display:grid;place-items:center;font-weight:900;font-size:19px}
+  .stepname h2{margin:0;font-size:21px;letter-spacing:-.01em;word-break:keep-all}
+  .stepname small{display:block;font-size:13px;color:var(--muted);font-weight:700}
+  .what{font-size:16px;line-height:1.75;color:var(--ink2);margin:0 0 10px;word-break:keep-all}
+  .phase{display:grid;gap:6px;margin:8px 0}
+  .ph{display:grid;grid-template-columns:28px 1fr;gap:8px;align-items:start;padding:7px 10px;border-radius:12px;background:#f7fafc;font-size:15px;line-height:1.55;color:var(--muted);word-break:keep-all;transition:background .3s,color .3s}
+  .ph i{font-style:normal;width:26px;height:26px;border-radius:8px;background:#dfe6ee;display:grid;place-items:center;font-weight:900;font-size:13px;color:#607285}
+  .ph.on{background:var(--fab-soft);color:var(--ink)}.ph.on i{background:var(--fab);color:#fff}
+  .ph.done{color:var(--ink2)}.ph.done i{background:#b9b2ee;color:#fff}
+  .box{border-radius:14px;padding:10px 12px;margin-top:8px;font-size:14.5px;line-height:1.65;word-break:keep-all}
+  .box b.t{display:block;font-size:13px;margin-bottom:2px}
+  .an{background:#fff8e6;border:1px solid #f3dc9a;color:#5b4300}
+  .fact{background:#eef6ff;border:1px solid #cfe2f6;color:#1d3f66}
+  .lnk{background:#ecf8f1;border:1px solid #c6e8d4;color:#0f5a36}
+  .src{display:block;font-size:12px;color:var(--muted);margin-top:3px}
+  .acts{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 0}
+  .btn{min-height:50px;border:0;border-radius:14px;padding:0 16px;font-weight:800;font-size:15.5px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;justify-content:center;word-break:keep-all}
+  .btn:active{transform:scale(.97)}
+  .btn.primary{background:var(--fab);color:#fff}.btn.ghost{background:#eef3f8;color:var(--ink2)}
+  .btn[aria-pressed="true"]{background:#14263b;color:#fff}
+  .btn:disabled{opacity:.4;cursor:default;transform:none}
+  .prog{height:6px;border-radius:3px;background:#e6edf4;margin-top:10px;overflow:hidden}
+  .prog i{display:block;height:100%;width:0;background:linear-gradient(90deg,#8a7ff0,var(--fab))}
+  .credit{text-align:center;font-size:13px;font-weight:700;color:#8495a8;letter-spacing:.02em;margin:6px 0 0}
+  /* ===== 3D 화면 공통 ===== */
+  :root{--Bc:#14a5d0;--Ic:#2fae4a;--Fc:#f0522a;--N:#d8433b;--S:#2f62c9;--P:#7d5ad6}
+  .viewer{position:relative;overflow:hidden;padding:0}
+  .gl-host{position:relative;width:100%;height:min(74vh,700px);min-height:380px;background:linear-gradient(#f6f9fc,#d6e3ef);touch-action:none}
+  .gl-host canvas.gl{display:block;width:100%;height:100%;outline:none}
+  .lbls{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+  .lb{position:absolute;left:0;top:0;white-space:nowrap;font-weight:800;font-size:14px;padding:3px 9px;border-radius:9px;background:rgba(255,255,255,.88);color:#34495e;box-shadow:0 2px 8px rgba(20,38,59,.14);will-change:transform}
+  .lb.small{font-size:12px;font-weight:700;color:#5a6b7e;background:rgba(255,255,255,.72);box-shadow:none}
+  .lb.B{background:var(--Bc);color:#fff}.lb.I{background:var(--Ic);color:#fff}.lb.F{background:var(--Fc);color:#fff;font-size:15px}
+  .lb.P{background:var(--P);color:#fff}
+  .lb.dim{opacity:.35}
+  .vt{position:absolute;display:flex;gap:6px;flex-wrap:wrap;z-index:3}
+  .vt.tl{left:10px;top:10px;max-width:calc(100% - 20px)}
+  .vt.tr{right:10px;top:10px;justify-content:flex-end}
+  .vt.bl{left:10px;bottom:10px;align-items:center}
+  .vb{min-height:44px;padding:0 12px;border-radius:12px;border:1px solid rgba(20,38,59,.12);background:rgba(255,255,255,.9);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);font-weight:800;font-size:14px;color:#34495e;cursor:pointer;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 10px rgba(20,38,59,.08)}
+  .vb:active{transform:scale(.96)}
+  .vb .dot{width:12px;height:12px;border-radius:50%;flex:none}
+  .vb[aria-pressed="false"]{opacity:.62}
+  .vb[aria-pressed="false"] .dot{background:#c2ccd6!important}
+  .vb.sel{background:#14263b;color:#fff;border-color:#14263b}
+  .hint{font-size:12.5px;font-weight:700;color:#5a6b7e;background:rgba(255,255,255,.78);border-radius:10px;padding:6px 10px;word-break:keep-all}
+  .inset{position:absolute;z-index:2;border-radius:18px;border:2px solid rgba(255,255,255,.95);box-shadow:0 10px 30px rgba(20,38,59,.22),inset 0 0 0 1px rgba(20,38,59,.08);pointer-events:none;display:none}
+  .inset.on{display:block}
+  .inset .it{position:absolute;left:8px;top:8px;font-size:12.5px;font-weight:900;color:#14263b;background:rgba(255,255,255,.9);border-radius:8px;padding:3px 8px}
+  .inset .ic{position:absolute;left:6px;right:6px;bottom:6px;display:flex;flex-wrap:wrap;gap:4px;justify-content:center}
+  .inset .ic span{font-size:11.5px;font-weight:800;color:#fff;border-radius:7px;padding:2px 7px;white-space:nowrap}
+  .fail3d{position:absolute;inset:0;display:none;place-items:center;text-align:center;padding:24px;font-size:16px;font-weight:700;color:#7a2a22;line-height:1.7;word-break:keep-all;background:#fff4f2}
+  .fail3d.show{display:grid}
+  .model{font-size:13px;color:var(--muted);text-align:right;margin:0;word-break:keep-all}
+  @media (max-width:900px){.gl-host{height:min(56vh,620px)}}
+  .zoombadge{position:absolute;right:10px;top:62px;z-index:3;font-size:13px;font-weight:800;color:#fff;background:rgba(75,63,181,.9);border-radius:10px;padding:6px 10px;display:none;word-break:keep-all;max-width:60%}
+  .zoombadge.on{display:block}
+  @media (max-width:900px){.stage{grid-template-columns:1fr}.viewer{position:relative;top:0}}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+  /* ===== 광합성 수업 공통 ===== */
+  :root{--fab:#0e63b3;--fab-soft:#e4f0fb}
+  .eyebrow{color:#0e63b3;background:#e4f0fb}
+  .prog i{background:#0e63b3}
+  .ph.done i{background:#8db8e3}
+  [hidden]{display:none!important}
+  .fbk{border-radius:14px;padding:12px 14px;margin-top:10px;font-size:15px;line-height:1.65;word-break:keep-all;background:#f6f9fc;border:1px solid #dbe4ed;color:var(--ink2)}
+  .fbk.ok{background:#e9f3fd;border-color:#bcd7f2;color:#0b3f73}
+  .fbk.no{background:#fff4f2;border-color:#f3c2bb;color:#5e2a25}
+  .fbk b.t{display:block;font-size:13.5px;margin-bottom:2px}
+  .scene{position:relative;width:100%;overflow:hidden;touch-action:manipulation;user-select:none;-webkit-user-select:none;background:#fff}
+  .psv{position:absolute;inset:0;width:100%;height:100%;display:block;overflow:visible}
+  .olay{position:absolute;inset:0;pointer-events:none}
+  .ol{position:absolute;transform:translate(-50%,-50%);white-space:nowrap;font-weight:800;font-size:clamp(12px,1.35vw,15.5px);line-height:1.3;letter-spacing:-.01em;color:#14263b;transition:opacity .25s}
+  .ol.la{transform:translate(-100%,-50%)}.ol.ra{transform:translate(0,-50%)}
+  .ol.bg{background:rgba(255,255,255,.9);padding:2px 8px;border-radius:7px}
+  .ol.lt{color:#fff;text-shadow:0 1px 3px rgba(10,30,20,.55)}
+  .ol.m{font-weight:700;color:#5a6b7e}
+  .ol.big{font-size:clamp(14px,1.7vw,18px)}
+  .ol small{font-weight:700;color:#5a6b7e;font-size:.88em}
+  .ol[data-off="1"]{opacity:0}
+  .psv .tap{cursor:pointer}
+  .steps{display:grid;gap:5px;margin:0 0 10px}
+  .steps .ph{padding:6px 10px;font-size:14.5px;line-height:1.5}
+  .ctl{display:grid;gap:8px}
+  .ctl .btn{width:100%}
+  .ctl .two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .btn.done,.btn:disabled{background:#eef3f8;color:#8b9aab;cursor:default}
+  .pred{display:grid;gap:6px}
+  .pred button,.qa3 button{min-height:46px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:14.5px;cursor:pointer;word-break:keep-all;line-height:1.35;padding:4px 10px;text-align:left}
+  .pred button[aria-pressed="true"],.qa3 button[aria-pressed="true"]{border-color:var(--fab);background:#e9f3fd;color:#0b3f73}
+  .pred button:disabled{cursor:default}
+  .seglbl{font-size:13px;font-weight:800;color:var(--muted);margin:2px 0}
+  .qa{margin-bottom:12px}
+  .qa p{margin:0 0 6px;font-weight:800;font-size:15px;line-height:1.5;word-break:keep-all}
+  .qa3{display:grid;gap:6px}
+  .qa3 button.good{border-color:var(--ok);background:#e8f7ef;color:#11703f}
+  .qa3 button.bad{border-color:#e7a29b;background:#fff4f2;color:#9b3a32}
+  .eqn{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:4px 8px;padding:10px 8px;border-radius:14px;background:#f6f9fc;border:1px solid #dbe4ed;font-weight:800;font-size:15px;word-break:keep-all}
+  .eqn span{transition:color .3s,opacity .3s}.eqn .off{color:#a7b3c0}
+  .eqn .ar{display:inline-flex;flex-direction:column;align-items:center;font-size:12px;line-height:1.1;color:#5a6b7e}
+  .eqn .ar i{font-style:normal;font-size:17px;color:#14263b}
+  .tog{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+  .tog button{min-height:64px;border-radius:14px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:14.5px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:#5a6b7e;word-break:keep-all;line-height:1.25;padding:4px}
+  .tog button svg{width:38px;height:22px;display:block;overflow:visible}
+  .tog button[aria-pressed="true"]{border-color:var(--fab);background:#e9f3fd;color:#0b3f73}
+  .lvls{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:6px;flex:1 1 320px}
+  .lvls button{min-height:46px;border-radius:12px;border:1px solid #d4dee8;background:#fff;color:#34495e;font-weight:800;font-size:14.5px;cursor:pointer;word-break:keep-all;line-height:1.2;padding:2px 4px}
+  .lvls button[aria-pressed="true"]{background:#14263b;color:#fff;border-color:#14263b}
+  .ptxt{font-size:15px;line-height:1.65;color:var(--ink2);margin:0 0 10px;word-break:keep-all}
+  .ptxt b{color:#0b3f73}
+  .whylist{display:grid;gap:6px;margin:0;padding:0;list-style:none}
+  .whylist li{display:grid;grid-template-columns:26px 1fr;gap:8px;font-size:14.5px;line-height:1.55;color:var(--ink2);word-break:keep-all;padding:7px 10px;border-radius:12px;background:#f7fafc}
+  .whylist li i{font-style:normal;width:24px;height:24px;border-radius:8px;background:#0e63b3;color:#fff;display:grid;place-items:center;font-weight:900;font-size:13px}
+  .whylist b{color:#0b3f73}
+  /* ===== 한 화면 배치 (2026-10-15: 태블릿 한 화면 안에서 실험과 결과가 끝나도록) ===== */
+  .app{padding:10px 16px 12px;gap:10px}
+  header.top{display:flex;align-items:center;justify-content:space-between;gap:10px 16px;flex-wrap:wrap}
+  header.top .ttl{min-width:0}
+  header.top .ttl .eyebrow{margin-right:6px;vertical-align:4px}
+  header.top h1{display:inline;font-size:clamp(20px,2.1vw,25px);margin:0}
+  header.top .sub{margin-top:3px;font-size:14.5px}
+  .stage{align-items:stretch}
+  .stage > .viewer{position:relative;top:0;display:flex;flex-direction:column;justify-content:center}
+  .ptabs{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;background:#eef3f8;border-radius:14px;padding:4px;margin-bottom:12px}
+  .ptabs button{min-height:44px;border:0;border-radius:11px;background:transparent;font-weight:800;font-size:14.5px;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
+  .ptabs button[aria-selected="true"]{background:#fff;color:var(--fab);box-shadow:0 1px 3px rgba(20,38,59,.14)}
+  .ptabs button small{font-size:12px;font-weight:800;color:#0b3f73;background:#dcebfa;border-radius:8px;padding:1px 6px}
+  .ptabs.big{min-width:min(100%,380px)}
+  .ptabs.big button{min-height:48px;font-size:15.5px}
+  .pane[hidden]{display:none!important}
+  .mnote{font-size:12.5px;color:var(--muted);line-height:1.6;margin:10px 0 0;word-break:keep-all}
+  .viewer{background:#fff}
+  .vctl{display:flex;flex-wrap:wrap;gap:8px;padding:10px 12px;background:#f3f6f9;border-top:1px solid var(--line);align-items:center}
+  .vctl .vb{box-shadow:none}
+  .vctl .vb[aria-pressed="true"]{background:#14263b;color:#fff;border-color:#14263b;opacity:1}
+  .vctl .vb[aria-pressed="false"]{opacity:1}
+  .vctl .sp{flex:1}
+  .lbl{font-size:13px;font-weight:900;color:var(--fab);margin:12px 0 6px;word-break:keep-all}
+  .lbl:first-child,.pane > .lbl:first-child{margin-top:0}
+  .what{font-size:15.5px;line-height:1.7;color:var(--ink2);margin:0 0 8px;word-break:keep-all}
+  .ph.on{background:#eef5fc}.ph.on i{background:var(--fab)}
+  .viewer > .scene.grow{flex:1 1 auto;min-height:300px;aspect-ratio:auto!important}
+  /* 화면 높이를 꽉 채우기: 그림 칸이 남는 높이를 차지 */
+  html,body{height:100%}
+  .app{height:100vh;height:100dvh;max-height:1400px}
+  .stage{flex:1 1 auto;min-height:0}
+  .stage > .card.pad{overflow:auto}
+  @media (max-width:900px){.stage{grid-template-rows:minmax(0,1fr) auto}}
+  /* ===== 환경요인 수업 전용 ===== */
+  .mlabel{font-weight:800;font-size:14.5px;color:#14263b;white-space:nowrap}
+  .meter{flex:1 1 auto;height:18px;border-radius:9px;background:#dfe7ee;overflow:hidden;min-width:120px}
+  .meter i{display:block;height:100%;background:#0e63b3;border-radius:9px;width:0;transition:width .45s cubic-bezier(.2,.8,.2,1)}
+  .presets{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:4px 0 8px}
+  .presets button{min-height:44px;border-radius:12px;border:1px solid #d4dee8;background:#fff;color:#34495e;font-weight:800;font-size:14px;cursor:pointer;word-break:keep-all;line-height:1.25;padding:2px 8px}
+  .presets button:active{background:#eef3f8}
+  .sl{display:grid;grid-template-columns:118px 1fr;column-gap:10px;align-items:center;margin-top:2px}
+  .sl label{font-weight:800;font-size:14px;word-break:keep-all;line-height:1.25;color:#14263b}
+  .sl .ticks{grid-column:2;display:flex;justify-content:space-between;font-size:12px;font-weight:700;color:#5a6b7e;margin-top:-6px}
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:36px;background:transparent;margin:0;cursor:pointer;touch-action:pan-y}
+  input[type=range]::-webkit-slider-runnable-track{height:8px;border-radius:4px;background:linear-gradient(90deg,#0e63b3 var(--v,50%),#dbe4ed var(--v,50%))}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:34px;height:34px;margin-top:-13px;border-radius:50%;background:#fff;border:2px solid #0e63b3;box-shadow:0 2px 5px rgba(20,38,59,.22)}
+  input[type=range]::-moz-range-track{height:8px;border-radius:4px;background:#dbe4ed}
+  input[type=range]::-moz-range-progress{height:8px;border-radius:4px;background:#0e63b3}
+  input[type=range]::-moz-range-thumb{width:30px;height:30px;border-radius:50%;background:#fff;border:2px solid #0e63b3}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .two button{min-height:44px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:14.5px;cursor:pointer;word-break:keep-all;line-height:1.25;padding:2px 8px}
+  .two button[aria-pressed="true"]{border-color:#0e63b3;background:#e9f3fd;color:#0b3f73}
+  .rt{width:100%;border-collapse:collapse;font-size:14.5px}
+  .rt th{font-size:12.5px;color:#5a6b7e;text-align:left;padding:4px 6px;border-bottom:1px solid #dde6ee;word-break:keep-all}
+  .rt td{padding:8px 6px;border-bottom:1px solid #eef2f6;font-weight:700;color:#34495e}
+  .rt .none td{font-weight:600;color:#5a6b7e;text-align:center;padding:18px 6px}
+  .mini{display:block;height:10px;border-radius:5px;background:#e3eaf0;overflow:hidden;min-width:70px}
+  .mini i{display:block;height:100%;background:#0e63b3}
+  .vars{display:grid;grid-template-columns:auto 1fr;gap:3px 10px;font-size:14px;line-height:1.45;margin:0 0 8px;padding:8px 10px;border-radius:12px;background:#f6f9fc;border:1px solid #dbe4ed;word-break:keep-all}
+  .vars dt{font-weight:700;color:#5a6b7e}
+  .vars dd{margin:0;font-weight:800;color:#14263b}
+  .vars dd.on{color:#0e63b3}
+  .seg3{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:6px}.seg3 button{min-height:46px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:14.5px;cursor:pointer;word-break:keep-all;line-height:1.2;padding:2px 6px}.seg3 button[aria-pressed="true"]{border-color:#0e63b3;background:#e9f3fd;color:#0b3f73}.seg3 button:disabled{opacity:.55;cursor:default}
+  /* 탐구 계획서 */
+  .paper{display:flex;flex-direction:column;min-height:0;padding:12px 14px;overflow:auto}
+  .paper h2{margin:0 0 8px;font-size:18px;display:flex;align-items:baseline;gap:8px}
+  .paper h2 small{font-size:12.5px;color:#5a6b7e;font-weight:700}
+  .pgrid{display:grid;grid-template-columns:116px 1fr;grid-template-rows:repeat(7,auto) minmax(148px,1fr) auto;border:1px solid #b9c8d6;border-radius:10px;overflow:hidden;flex:1 1 auto;min-height:0}
+  .pgrid > .k{background:#e8f1fa;font-weight:800;font-size:13.5px;line-height:1.3;color:#14263b;padding:6px 8px;display:flex;align-items:center;border-bottom:1px solid #c9d7e4;word-break:keep-all}
+  .pgrid > .k.sub{padding-left:14px;font-size:12.5px;font-weight:700;background:#f1f6fb}
+  .pgrid > .v{border-bottom:1px solid #dbe4ed;border-left:1px solid #c9d7e4;display:flex;min-height:0}
+  .pgrid > .k.last,.pgrid > .v.last{border-bottom:0}
+  .pgrid textarea{flex:1;border:0;background:#fff;resize:none;font:inherit;font-size:14px;line-height:1.5;color:#14263b;padding:5px 8px;min-height:34px;word-break:keep-all;width:100%;outline-offset:-2px}
+  .pgrid textarea:focus{background:#f7fbff}
+  .pgrid textarea::placeholder{color:#a3afbb;font-weight:500}
+  .pgrid .tall textarea{min-height:148px}
+  .stepper{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:3px;margin:0 0 10px}
+  .stepper button{min-height:44px;border:0;border-radius:10px;background:#eef3f8;font-weight:800;font-size:13px;color:#5a6b7e;cursor:pointer;line-height:1.15;word-break:keep-all;padding:2px}
+  .stepper button[aria-selected="true"]{background:#0e63b3;color:#fff}
+  .stepper button.done:not([aria-selected="true"]){background:#dcebfa;color:#0b3f73}
+  .ask{font-size:16px;font-weight:800;line-height:1.45;margin:0 0 4px;word-break:keep-all}
+  .ask + p{font-size:14px;color:#34495e;line-height:1.55;margin:0 0 8px;word-break:keep-all}
+  .opts{display:grid;gap:6px}
+  .opts button{min-height:46px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:700;font-size:14.5px;cursor:pointer;word-break:keep-all;line-height:1.35;padding:4px 10px;text-align:left;color:#14263b}
+  .opts button[aria-pressed="true"]{border-color:#0e63b3;background:#e9f3fd;color:#0b3f73}
+  .opts.g2{grid-template-columns:1fr 1fr}
+  .vsort{display:grid;gap:6px}
+  .vsort .row{display:grid;grid-template-columns:1fr 92px 92px;gap:4px;align-items:center;font-weight:800;font-size:14px;word-break:keep-all;line-height:1.25}
+  .vsort .row button{min-height:44px;border-radius:10px;border:2px solid #d4dee8;background:#fff;font-weight:700;font-size:12.5px;cursor:pointer;line-height:1.15;padding:2px;word-break:keep-all}
+  .vsort .row button[aria-pressed="true"]{border-color:#0e63b3;background:#e9f3fd;color:#0b3f73}
+  .order{display:grid;gap:5px}
+  .order button{display:grid;grid-template-columns:28px 1fr;gap:8px;align-items:center;min-height:44px;border-radius:11px;border:2px solid #d4dee8;background:#fff;font-weight:700;font-size:13.5px;line-height:1.3;cursor:pointer;text-align:left;padding:3px 8px;word-break:keep-all;color:#14263b}
+  .order button i{font-style:normal;width:24px;height:24px;border-radius:7px;background:#eef3f8;display:grid;place-items:center;font-weight:900;font-size:13px;color:#5a6b7e}
+  .order button.picked{border-color:#0e63b3;background:#e9f3fd}.order button.picked i{background:#0e63b3;color:#fff}
+  .navb{display:grid;grid-template-columns:1fr 1.4fr;gap:6px;margin-top:10px}
+  .navb .btn{width:100%;min-height:46px}
+  .pfoot{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+  .pfoot .btn{min-height:44px;font-size:14px;padding:0 8px}
+  .peer{display:grid;gap:3px;margin:0 0 6px}
+  .peer label{display:grid;grid-template-columns:30px 1fr;align-items:center;font-size:14px;font-weight:700;line-height:1.35;min-height:38px;word-break:keep-all;cursor:pointer}
+  .peer input{width:22px;height:22px;accent-color:#0e63b3}
+  .fbtxt{width:100%;border:1px solid #cdd9e4;border-radius:10px;font:inherit;font-size:14px;line-height:1.45;padding:6px 9px;resize:none;margin-top:4px;min-height:52px}
+  .slx{display:grid;grid-template-columns:auto 1fr;align-items:center;gap:10px;margin-top:4px}
+  .slx label{font-weight:800;font-size:14px;word-break:keep-all}
+  @media print{
+    body{background:#fff}
+    .stage{display:block}
+    .helper,header.top,.pfoot{display:none!important}
+    .paper{box-shadow:none;border:0;overflow:visible}
+    .app{height:auto;max-height:none}
+    .pgrid textarea{min-height:48px}
+  }
+  @media (max-width:900px){
+    .sl{grid-template-columns:140px 1fr}
+  }
+  /* ===== 소화 수업 전용 ===== */
+  .legend{display:flex;flex-wrap:wrap;gap:4px 14px;padding:8px 12px;background:#f3f6f9;border-top:1px solid var(--line);font-size:13.5px;font-weight:800;color:#34495e;justify-content:center}
+  .legend span{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+  .legend i{display:inline-block;width:12px;height:12px;border-radius:50%}
+  header.top .ptabs.big{margin:0;min-width:min(100%,420px)}
+  .route{display:grid;gap:4px;margin:6px 0 8px}
+  .route .r{display:grid;grid-template-columns:26px 1fr;gap:8px;align-items:center;border-radius:12px;padding:6px 10px;background:#f5f8fb;font-size:14.5px;font-weight:800;color:#8a99a8;word-break:keep-all;transition:background .25s}
+  .route .r i{font-style:normal;width:24px;height:24px;border-radius:8px;background:#c9d5e1;color:#fff;display:grid;place-items:center;font-weight:900;font-size:13px}
+  .route .r small{font-weight:700;color:#8a99a8;font-size:12.5px;margin-left:6px}
+  .route .r.on{background:#e3effb;color:#0b3f73}.route .r.on i{background:#0e63b3}.route .r.on small{color:#34495e}
+  .route .r.done{color:#34495e}.route .r.done i{background:#7fa6cc}
+  .fact2{font-size:14.5px;line-height:1.6;color:var(--ink2);word-break:keep-all;margin:8px 0 0;padding:8px 12px;border-left:3px solid #0e63b3;background:#f7fafc;border-radius:0 10px 10px 0}
+  .nlist{display:grid;gap:6px}
+  .nlist button{display:grid;grid-template-columns:92px 1fr;align-items:center;gap:8px;min-height:48px;border-radius:14px;border:2px solid #d4dee8;background:#fff;cursor:pointer;text-align:left;padding:4px 12px;color:#14263b;font-family:inherit}
+  .nlist button b{font-size:16px;font-weight:900}.nlist button span{font-size:13.5px;font-weight:700;color:#5a6b7e;word-break:keep-all;line-height:1.35}
+  .nlist button[aria-pressed="true"]{border-color:#0e63b3;background:#e9f3fd}
+  .viewer{position:relative}
+  .viewer > .scene[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top"><div class="ttl"><span class="eyebrow">시뮬레이션</span><h1>소화계 3D</h1>
+    <p class="sub">실제 사람 자료로 만든 소화계에서 음식물이 지나가는 길을 따라가고, 소화액이 어디에서 나오는지 찾아봐요.</p></div>
+    <div class="ptabs big" role="tablist" id="at"><button type="button" role="tab" data-a="sys" aria-selected="true">음식물이 지나가는 길</button><button type="button" role="tab" data-a="gland" aria-selected="false">간·쓸개·이자</button></div></header>
+  <div class="stage">
+    <section class="card viewer">
+      <div class="scene grow gl-host" id="fig" style="height:auto;background:#fff" role="img" aria-label="입, 식도, 위, 작은창자, 큰창자, 항문과 침샘, 간, 쓸개, 이자의 3D 모형"></div>
+      <div class="vctl" id="vc1"><div class="seg3" id="vw" style="flex:1"><button type="button" data-v="front" aria-pressed="true">몸 전체</button><button type="button" data-v="mouth" aria-pressed="false">입 가까이</button><button type="button" data-v="gland" aria-pressed="false">간·쓸개·이자 가까이</button></div></div>
+    </section>
+    <section class="card pad">
+      <div class="pane" data-a="sys">
+        <p class="lbl">소화계 = 소화관 + 소화샘</p>
+        <div class="nlist" id="grp">
+          <button type="button" data-g="tube" aria-pressed="false"><b>소화관</b><span>음식물이 지나가는 길: 입, 식도, 위, 작은창자, 큰창자</span></button>
+          <button type="button" data-g="gland" aria-pressed="false"><b>소화샘</b><span>소화액을 분비하는 곳: 침샘, 간, 쓸개, 이자</span></button>
+        </div>
+        <button class="btn primary" type="button" id="tF" style="margin-top:10px;width:100%">음식물 따라가기</button>
+        <div class="route" id="rt"></div>
+        <div class="fbk" id="res"><b class="t" id="resT">처음</b><span id="resM"></span></div>
+      </div>
+      <div class="pane" data-a="gland" hidden>
+        <p class="lbl">소화액이 샘창자로 들어오는 길</p>
+        <div class="nlist" id="jl">
+          <button type="button" data-j="bile" aria-pressed="false"><b>쓸개즙</b><span>간에서 만들어져 쓸개에 저장되었다가 샘창자로</span></button>
+          <button type="button" data-j="panc" aria-pressed="false"><b>이자액</b><span>이자에서 샘창자로</span></button>
+        </div>
+        <div class="fbk" id="gres" style="margin-top:10px"><b class="t" id="gresT">간·쓸개·이자</b><span id="gresM"></span></div>
+        <p class="fact2"><b>작은창자</b>는 소화관 중에서 가장 길어요. 작은창자의 시작 부분을 <b>샘창자</b>라고 하며, 쓸개와 이자가 연결되어 있어 쓸개즙과 이자액이 샘창자로 분비돼요.</p>
+      </div>
+      <p class="mnote">모형 자료: BodyParts3D(소화관·침샘·쓸개·이자·뼈, © The Database Center for Life Science, CC BY 4.0), HuBMAP CCF 3D Reference Object Library(간, CC BY 4.0). 인두와 큰창자 끝 일부는 이어지게 새로 그렸어요. 알갱이는 잘 보이게 정한 모형이에요.</p>
+    </section>
+  </div>
+</div>
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+/* ===== 공통 3D 도구 (three.js) =====
+   전자는 파란 알갱이(−), 전자를 잃은 쪽은 빨간 (+) 표시. 크기·개수·빠르기는 개념 이해를 위한 모형이에요(숫자 없음). */
+const C3 = (() => {
+  const REDUCE = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const V = (x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z);
+  const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+  const clamp01 = (t) => Math.max(0, Math.min(1, t));
+
+  // 탭 껍데기에서 보이지 않는 탭이면 그리지 않아요(태블릿 배터리 아끼기)
+  function visibleNow() {
+    if (document.hidden) return false;
+    try { const f = window.frameElement; if (f && f.hasAttribute('data-page') && !f.classList.contains('on')) return false; } catch (e) {}
+    return true;
+  }
+
+  function canvasTex(w, h, draw) {
+    const c = document.createElement('canvas'); c.width = w; c.height = h;
+    draw(c.getContext('2d'), w, h);
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
+    t.userData.canvas = c; return t;
+  }
+  function gradientBg(top, bottom) {
+    return canvasTex(4, 256, (g, w, h) => { const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, top); gr.addColorStop(1, bottom); g.fillStyle = gr; g.fillRect(0, 0, w, h); });
+  }
+  // 나뭇결 책상
+  function woodTex() {
+    const t = canvasTex(1024, 512, (g, w, h) => {
+      const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#c99a6b'); gr.addColorStop(1, '#b8875a'); g.fillStyle = gr; g.fillRect(0, 0, w, h);
+      for (let i = 0; i < 160; i++) {
+        const y = Math.random() * h, a = 0.04 + Math.random() * 0.08; g.strokeStyle = `rgba(${90 + Math.random() * 40},${55 + Math.random() * 25},30,${a})`;
+        g.lineWidth = 1 + Math.random() * 3; g.beginPath(); g.moveTo(0, y);
+        for (let x = 0; x <= w; x += 32) g.lineTo(x, y + Math.sin(x / 90 + i) * 4 + Math.sin(x / 23) * 1.2);
+        g.stroke();
+      }
+    });
+    t.wrapS = t.wrapT = THREE.RepeatWrapping; return t;
+  }
+  // 바닥에 드리우는 부드러운 그림자
+  function blobTex() {
+    return canvasTex(256, 256, (g, w, h) => { const r = g.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2); r.addColorStop(0, 'rgba(20,38,59,.32)'); r.addColorStop(1, 'rgba(20,38,59,0)'); g.fillStyle = r; g.fillRect(0, 0, w, h); });
+  }
+
+  /* 무대: 렌더러·카메라·조명·손가락 조작 */
+  function makeStage(host, opt = {}) {
+    let hold = !!opt.hold; // true면 준비(prepare)가 끝날 때까지 그리지 않아요
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = opt.exposure || 1.05;
+    renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.domElement.className = 'gl';
+    host.appendChild(renderer.domElement);
+    const scene = new THREE.Scene();
+    scene.background = gradientBg(opt.top || '#f6f9fc', opt.bottom || '#d6e3ef');
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    scene.environment = pmrem.fromScene(new RoomEnvironment(renderer), 0.04).texture;
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x8a9bb0, 0.55));
+    const sun = new THREE.DirectionalLight(0xffffff, 1.6);
+    sun.position.set(opt.sunX || 5, 11, opt.sunZ || 7); sun.castShadow = true;
+    sun.shadow.mapSize.set(1024, 1024); sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.02;
+    const sc = sun.shadow.camera; sc.left = -9; sc.right = 9; sc.top = 9; sc.bottom = -9; sc.near = 1; sc.far = 40;
+    scene.add(sun);
+    const camera = new THREE.PerspectiveCamera(opt.fov || 34, 1, 0.1, 200);
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true; controls.dampingFactor = 0.09; controls.enablePan = false;
+    controls.rotateSpeed = 0.85; controls.zoomSpeed = 0.9;
+    if (opt.scroll) { controls.enableZoom = false; renderer.domElement.style.touchAction = 'pan-y'; host.style.touchAction = 'pan-y'; }
+    controls.minDistance = opt.minD || 3; controls.maxDistance = opt.maxD || 24; controls.maxPolarAngle = Math.PI * 0.86;
+
+    const overlay = document.createElement('div'); overlay.className = 'lbls'; host.appendChild(overlay);
+    let W = 1, H = 1;
+    function resize() {
+      const r = host.getBoundingClientRect(); W = Math.max(1, r.width); H = Math.max(1, r.height);
+      renderer.setSize(W, H, false); camera.aspect = W / H;
+      if (opt.fitWidth) { // 세로 화면에서 장면이 잘리지 않도록 화각을 넓혀요
+        const base = opt.fov || 34; camera.fov = camera.aspect < 1.15 ? Math.min(62, base * (1.15 / camera.aspect) * 0.92) : base;
+      }
+      camera.updateProjectionMatrix();
+    }
+    try { let rq = 0; new ResizeObserver(() => { cancelAnimationFrame(rq); rq = requestAnimationFrame(resize); }).observe(host); } catch (e) { addEventListener('resize', resize); }
+    resize();
+
+    // 이름표(HTML)를 3D 위치에 붙이기
+    const labels = [];
+    function label(html, cls, at) {
+      const el = document.createElement('div'); el.className = 'lb ' + (cls || ''); el.innerHTML = html; overlay.appendChild(el);
+      const L = { el, at, show: true, set(h) { if (el.innerHTML !== h) el.innerHTML = h; } };
+      labels.push(L); return L;
+    }
+    const tmp = V();
+    function placeLabels() {
+      labels.forEach((L) => {
+        if (!L.show) { L.el.style.display = 'none'; return; }
+        const p = typeof L.at === 'function' ? L.at() : L.at;
+        if (!p) { L.el.style.display = 'none'; return; }
+        tmp.copy(p).project(camera);
+        if (tmp.z > 1 || tmp.z < -1) { L.el.style.display = 'none'; return; }
+        const px = ((tmp.x + 1) / 2) * W, py = ((1 - tmp.y) / 2) * H;
+        L.el.style.display = '';
+        L.el.style.transform = `translate(${px}px,${py}px) translate(-50%,-50%)`;
+      });
+    }
+
+    // 카메라 이동
+    let fly = null;
+    controls.addEventListener('start', () => { fly = null; });
+    function flyTo(pos, target, dur = 1.1) {
+      if (REDUCE || dur <= 0) { camera.position.copy(pos); controls.target.copy(target); controls.update(); return; }
+      fly = { p0: camera.position.clone(), t0: controls.target.clone(), p1: pos.clone(), t1: target.clone(), k: 0, dur };
+    }
+
+    const fns = [];
+    let last = performance.now(), running = true;
+    function tick(now) {
+      requestAnimationFrame(tick);
+      if (!running || hold || !visibleNow()) { last = now; return; }
+      if (opt.scroll) { const hr = host.getBoundingClientRect(); if (hr.bottom < -50 || hr.top > (window.innerHeight || 800) + 50) { last = now; return; } } // 화면 밖이면 쉬기
+      const dt = Math.min(0.05, Math.max(0, (now - last) / 1000)); last = now;
+      if (fly) {
+        fly.k = Math.min(1, fly.k + dt / fly.dur); const e = ease(fly.k);
+        camera.position.lerpVectors(fly.p0, fly.p1, e); controls.target.lerpVectors(fly.t0, fly.t1, e);
+        if (fly.k >= 1) fly = null;
+      }
+      for (let i = 0; i < fns.length; i++) { try { fns[i](dt, now / 1000); } catch (err) { console.error(err); } }
+      controls.update();
+      renderer.render(scene, camera);
+      placeLabels();
+    }
+    requestAnimationFrame(tick);
+
+    /* 자동 구도: 물체(또는 여러 물체)가 화면에 꼭 들어오도록 카메라 거리를 찾아요.
+       dir: 카메라가 놓일 방향(물체 중심에서), margin: 가장자리 여백(1.1 = 10%), dur: 이동 시간(초)
+       화면 비율이 바뀌면(가로↔세로) 사용자가 돌리기 전까지 다시 맞춰요. */
+    let lastFit = null, userMoved = false;
+    controls.addEventListener('start', () => { userMoved = true; });
+    const _box = new THREE.Box3(), _v = V(), _c = V();
+    function fitPose(objs, o = {}) {
+      _box.makeEmpty(); (Array.isArray(objs) ? objs : [objs]).forEach((ob) => { ob.updateMatrixWorld(true); _box.expandByObject(ob); });
+      if (o.extra) o.extra.forEach((p) => _box.expandByPoint(p));
+      const ctr = o.target ? o.target.clone() : _box.getCenter(V());
+      const dir = (o.dir ? o.dir.clone() : camera.position.clone().sub(controls.target)).normalize();
+      const pts = []; for (let i = 0; i < 8; i++) pts.push(V(i & 1 ? _box.max.x : _box.min.x, i & 2 ? _box.max.y : _box.min.y, i & 4 ? _box.max.z : _box.min.z));
+      const lim = 1 / (o.margin || 1.1), cam = camera.clone();
+      const ok = (d) => { cam.position.copy(ctr).addScaledVector(dir, d); cam.lookAt(ctr); cam.updateMatrixWorld(); cam.updateProjectionMatrix(); return pts.every((p) => { _c.copy(p).project(cam); return Math.abs(_c.x) <= lim && Math.abs(_c.y) <= lim && _c.z < 1; }); };
+      let lo = 0.5, hi = 200; for (let k = 0; k < 28; k++) { const mid = (lo + hi) / 2; if (ok(mid)) hi = mid; else lo = mid; }
+      return { p: ctr.clone().addScaledVector(dir, hi), t: ctr };
+    }
+    function fit(objs, o = {}) {
+      lastFit = { objs, o: Object.assign({}, o, { dir: o.dir || camera.position.clone().sub(controls.target) }) }; userMoved = false;
+      const f = fitPose(objs, lastFit.o); flyTo(f.p, f.t, o.dur === undefined ? 0 : o.dur); return f;
+    }
+    try { let fr = 0; new ResizeObserver(() => { cancelAnimationFrame(fr); fr = requestAnimationFrame(() => { if (lastFit && !userMoved) { const f = fitPose(lastFit.objs, lastFit.o); flyTo(f.p, f.t, 0); } }); }).observe(host); } catch (e) {}
+
+    return { host, renderer, scene, camera, controls, sun, overlay, label, flyTo, fit, fitPose, onFrame: (f) => fns.push(f), size: () => ({ W, H }), resize, stop: () => { running = false; }, release: () => { hold = false; } };
+  }
+
+  // 관 모양 전선(곡선)
+  function tube(points, r, mat, seg = 80) {
+    const curve = new THREE.CatmullRomCurve3(points, false, 'centripetal');
+    const m = new THREE.Mesh(new THREE.TubeGeometry(curve, seg, r, 10, false), mat); m.castShadow = true; m.curve = curve; return m;
+  }
+
+  // 길을 따라 움직이는 알갱이(전자). 전선에는 전자가 이미 꽉 차 있으므로, 멈춰 있어도 알갱이는 보여요.
+  // setPath(점 배열), update(dt, 빠르기) — 빠르기가 음수면 반대로 움직여요
+  function makeDots(count, color, size = 1) {
+    const geo = new THREE.SphereGeometry(0.06 * size, 14, 10);
+    const mat = new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.55, roughness: 0.3 });
+    const mesh = new THREE.InstancedMesh(geo, mat, count); mesh.frustumCulled = false;
+    let pts = [], cum = [], total = 1, off = 0; const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), p = V(), sc = V(1, 1, 1);
+    function setPath(P) {
+      pts = P; cum = [0];
+      for (let i = 1; i < P.length; i++) cum.push(cum[i - 1] + P[i].distanceTo(P[i - 1]));
+      total = cum[cum.length - 1] || 1;
+    }
+    function at(s, out) {
+      s = ((s % total) + total) % total;
+      let i = 1; while (i < cum.length - 1 && cum[i] < s) i++;
+      const a = pts[i - 1], b = pts[i], seg = cum[i] - cum[i - 1] || 1, k = (s - cum[i - 1]) / seg;
+      out.lerpVectors(a, b, k);
+    }
+    function update(dt, speed) {
+      if (pts.length < 2) { mesh.visible = false; return; }
+      off += dt * speed;
+      const gap = total / count;
+      for (let k = 0; k < count; k++) { at(off + k * gap, p); m4.compose(p, q, sc); mesh.setMatrixAt(k, m4); }
+      mesh.instanceMatrix.needsUpdate = true;
+    }
+    return { mesh, setPath, update, mat };
+  }
+
+  // 책상
+  function addTable(scene, w, d, y = 0) {
+    const tex = woodTex(); tex.repeat.set(w / 10, d / 10);
+    const mat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.55, metalness: 0 });
+    const t = new THREE.Mesh(new RoundedBoxGeometry(w, 0.4, d, 3, 0.12), mat); t.position.y = y - 0.2; t.receiveShadow = true; scene.add(t);
+    return t;
+  }
+  const mesh = (geo, mat, x = 0, y = 0, z = 0) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true; return m; };
+
+  /* ===== 빨리 뜨게 하기 (2026-10-12) =====
+     - lazy(host, fn): 그림 자리가 화면에 가까워지면 fn을 한 번 불러요(iframe 안에서도 되도록 위치를 직접 계산해요).
+     - prepare(st): 재질(셰이더)을 화면을 멈추지 않고 미리 번역한 뒤 그리기 시작해요. 그동안은 미리 찍은 사진(data-poster)을 보여 줘요.
+     - BAKE: 주소에 ?bake=… 이 있으면 영상·사진을 만드는 중이에요(tools/lesson-kit/bake.py). */
+  const BAKE = new URLSearchParams(location.search).get('bake') || '';
+  (function css() {
+    const s = document.createElement('style');
+    s.textContent = '.gl-host>.poster{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1;pointer-events:none}' +
+      '.gl-host.ready>.poster,.gl-host.ready>.prep{display:none}.gl-host.wait>canvas.gl,.gl-host.wait>.lbls{visibility:hidden}' +
+      '.gl-host>.prep{position:absolute;right:10px;bottom:10px;z-index:2;font:800 12.5px Pretendard,sans-serif;color:#33464a;background:rgba(255,255,255,.88);border-radius:9px;padding:5px 10px;pointer-events:none}' +
+      '.gl-host>video.figvid{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}';
+    (document.head || document.documentElement).appendChild(s);
+  })();
+  function posterOn(host) {
+    host.classList.add('wait');
+    const src = host.dataset.poster;
+    if (src && !BAKE && !host.querySelector('.poster')) { const im = document.createElement('img'); im.className = 'poster'; im.alt = ''; im.src = src; host.prepend(im); }
+    if (!BAKE && !host.querySelector('.prep')) { const t = document.createElement('span'); t.className = 'prep'; t.textContent = '3D 준비 중…'; host.appendChild(t); }
+  }
+  function lazy(host, fn, margin = 500) {
+    if (!host) return;
+    posterOn(host);
+    let done = false;
+    const near = () => { const r = host.getBoundingClientRect(), h = window.innerHeight || 800; return r.bottom > -margin && r.top < h + margin && r.width > 0; };
+    const go = () => { if (done || !near()) return; done = true; removeEventListener('scroll', go); removeEventListener('resize', go); clearInterval(iv); try { fn(); } catch (err) { console.error(err); throw err; } };
+    addEventListener('scroll', go, { passive: true }); addEventListener('resize', go);
+    const iv = setInterval(go, 400);
+    if (BAKE) { done = true; clearInterval(iv); if (BAKE === 'all' || BAKE === host.id) fn(); return; }
+    setTimeout(go, 0);
+  }
+  // 재질을 화면을 멈추지 않고 번역해요. 투명한 물체(유리·석영 등)가 있으면 뒤쪽을 따로 그릴 때 쓰는 재질 변형도 미리 준비해요
+  async function compileAll(r, scene, camera) {
+    if (!r.compileAsync) return;
+    await r.compileAsync(scene, camera);
+    let tr = false; scene.traverse((o) => { if (o.material && [].concat(o.material).some((m) => m.transmission > 0)) tr = true; });
+    if (tr) { const rt = new THREE.WebGLRenderTarget(4, 4, { type: THREE.HalfFloatType }), tm = r.toneMapping; r.toneMapping = THREE.NoToneMapping; r.setRenderTarget(rt); try { await r.compileAsync(scene, camera); } finally { r.setRenderTarget(null); r.toneMapping = tm; rt.dispose(); } }
+  }
+  async function prepare(st) {
+    const host = st.host; posterOn(host);
+    try { if (!BAKE) await compileAll(st.renderer, st.scene, st.camera); } catch (e) { console.warn(e); }
+    st.release(); host.classList.remove('wait'); host.classList.add('ready');
+    return st;
+  }
+  /* 보기만 하는 그림: 미리 만든 영상으로 바꿔요 (bake 중에는 3D로 그려요) */
+  function video(host, build) {
+    if (!host) return;
+    if (BAKE === host.id) { build(); return; }
+    const v = document.createElement('video');
+    v.className = 'figvid'; v.muted = true; v.loop = true; v.autoplay = true; v.playsInline = true; v.setAttribute('playsinline', ''); v.setAttribute('muted', '');
+    v.preload = 'metadata'; if (host.dataset.poster) v.poster = host.dataset.poster; v.src = host.dataset.video;
+    host.appendChild(v); host.classList.add('ready');
+    // 화면에 보일 때만 재생해요
+    const chk = () => { const r = host.getBoundingClientRect(), on = r.bottom > 0 && r.top < (window.innerHeight || 800) && !document.hidden; if (on && v.paused) v.play().catch(() => {}); else if (!on && !v.paused) v.pause(); };
+    addEventListener('scroll', chk, { passive: true }); setInterval(chk, 700); chk();
+  }
+  return { BAKE, lazy, prepare, compileAll, video, REDUCE, V, ease, clamp01, makeStage, canvasTex, gradientBg, blobTex, tube, makeDots, addTable, visibleNow, mesh };
+})();
+/* ===== 소화계 3D 도구 DG3 =====
+   입(입술·이·혀·침샘)·식도·위·샘창자·작은창자·큰창자·항문·간·쓸개·이자·뼈: BodyParts3D 4.0(CC BY 4.0). media/ATTRIBUTION.txt
+   인두와 구불잘록창자 부분은 자료에 관 모양이 없어 가운데 길을 따라 새로 만든 관이다(_dg_prep.py).
+   DG3.body: 음식물 흐름, 음식물 따라가기 tour, 소화관·소화샘 강조, 쓸개즙·이자액·침이 나오는 길.
+   알갱이의 크기·수·빠르기는 잘 보이게 정한 모형이다. C3와 같은 모듈 안에 넣는다. */
+const DG3 = (() => {
+  'use strict';
+  const V = (x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z);
+  const REDUCE = C3.REDUCE;
+  const rnd = (a, b) => a + Math.random() * (b - a);
+  const COL = { bone: '#e6dcc8', teeth: '#f4efe3', tongue: '#cc6a64', lip: '#c4695f', saliv: '#e3b25e', phar: '#cf8473', eso: '#cf8473', sto: '#d9826e', duo: '#e8a47e', si: '#ecb18c', li: '#d29a6c', rect: '#c98a60', anus: '#b8755a',
+    liver: '#7c2f24', gall: '#4f8f45', bile: '#6f9f45', pan: '#e2b866', pduct: '#c99a3e', food: '#b98a4e', dig: '#e3c27a', waste: '#7a5232', spit: '#8cc4ea', gastric: '#c9a6e0', bileJ: '#5f9a3a', panJ: '#f0c230' };
+  /* 이 수업의 이름 (교과서 표기) */
+  const NAME = { mouth: '입', eso: '식도', sto: '위', si: '작은창자', li: '큰창자', anus: '항문', saliv: '침샘', liver: '간', gall: '쓸개', pan: '이자', duo: '샘창자' };
+  const TUBE = ['lip', 'teeth', 'tongue', 'phar', 'eso', 'sto', 'duo', 'si', 'li', 'sig', 'rect', 'anus'];
+  const GLAND = ['saliv', 'liver', 'gall', 'bile', 'pan', 'pduct'];
+
+  let dataP = null;
+  function data() {
+    if (dataP) return dataP;
+    dataP = Promise.all([fetch('media/dg.json').then((r) => r.json()), fetch('media/dg.bin').then((r) => r.arrayBuffer())]).then(([m, b]) => {
+      const n = m.counts[0], pos = new Int16Array(b, 0, n * 3), nor = new Int16Array(b, n * 6, n * 3), idx = new Uint32Array(b, m.iOff, m.counts[1]);
+      const pa = new THREE.BufferAttribute(pos, 3, true), na = new THREE.BufferAttribute(nor, 3, true);
+      const geo = (ranges) => { let c = 0; ranges.forEach((r) => { c += r[1]; }); const ix = new Uint32Array(c); let o = 0; ranges.forEach((r) => { ix.set(idx.subarray(r[0], r[0] + r[1]), o); o += r[1]; }); const G = new THREE.BufferGeometry(); G.setAttribute('position', pa); G.setAttribute('normal', na); G.setIndex(new THREE.BufferAttribute(ix, 1)); return G; };
+      return { m, geo };
+    });
+    return dataP;
+  }
+
+  /* 이름표: 3D 위치에서 칸 비율 (x,y)의 글자까지 얇은 선 (EX3와 같은 모양) */
+  (function css() { const c = document.createElement('style'); c.textContent = '.hl{position:absolute;left:0;top:0;z-index:4;font:700 clamp(13px,1.25vw,16px)/1.2 Pretendard,sans-serif;color:#14263b;white-space:nowrap;pointer-events:none;background:rgba(255,255,255,.88);padding:2px 7px;border-radius:6px}.hl.b{font-weight:800;font-size:clamp(14px,1.45vw,18px)}.hl small{display:block;font-size:.76em;font-weight:700;color:#5a6b7e;margin-top:1px}.hl.on{color:#0e63b3}.hl.dim{color:#9aa8b6}.hl.cap3{font-size:clamp(13px,1.2vw,15px);font-weight:800;color:#0b3f73;background:rgba(255,255,255,.94);border:1px solid #d6e5f5}'; document.head.appendChild(c); })();
+  function labels(st) {
+    const host = st.host, ov = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    ov.setAttribute('style', 'position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:3'); host.appendChild(ov);
+    const L = {}, p = V();
+    st.onFrame(() => {
+      const { W, H } = st.size();
+      Object.values(L).forEach((a) => {
+        const on = a.show; a.e.style.display = on ? '' : 'none'; a.ln.style.display = on && a.at ? '' : 'none'; if (!on) return;
+        const port = H > W * 1.02, xx = port && a.px !== undefined ? a.px : a.x, yy = port && a.py !== undefined ? a.py : a.y;
+        const ax = xx < .5 ? '-100%' : '0', tx = xx * W, ty = yy * H; a.e.style.transform = `translate(${tx}px,${ty}px) translate(${a.c ? '-50%' : ax},-50%)`;
+        if (!a.at) return; p.copy(typeof a.at === 'function' ? a.at() : a.at).project(st.camera);
+        a.ln.setAttribute('x1', (p.x + 1) / 2 * W); a.ln.setAttribute('y1', (1 - p.y) / 2 * H); a.ln.setAttribute('x2', tx + (a.c ? 0 : xx < .5 ? 4 : -4)); a.ln.setAttribute('y2', ty + (a.c ? (yy < .5 ? 12 : -12) : 0));
+      });
+    });
+    const add = (k, t, at, x, y, cls = '', extra = {}) => { const e = document.createElement('div'); e.className = 'hl ' + cls; e.innerHTML = t; host.appendChild(e); const ln = document.createElementNS('http://www.w3.org/2000/svg', 'line'); ln.setAttribute('stroke', '#14263b'); ln.setAttribute('stroke-width', '1'); ov.appendChild(ln); L[k] = Object.assign({ e, ln, at, x, y, show: false }, extra); return L[k]; };
+    const only = (keys) => { Object.entries(L).forEach(([k, a]) => { a.show = keys.includes(k); }); };
+    const place = (P) => { Object.entries(P).forEach(([k, a]) => { const l = L[k]; if (!l) return; [l.x, l.y] = a; l.px = a[2] !== undefined ? a[2] : a[0]; l.py = a[3] !== undefined ? a[3] : a[1]; }); };
+    return { add, only, place, L };
+  }
+
+  class Path {
+    constructor(pts) { this.p = pts; this.c = new Float32Array(pts.length); for (let i = 1; i < pts.length; i++) this.c[i] = this.c[i - 1] + pts[i].distanceTo(pts[i - 1]); this.len = this.c[pts.length - 1] || 1; }
+    at(u, out = V()) { const s = Math.max(0, Math.min(1, u)) * this.len, c = this.c; let a = 0, b = c.length - 1; while (b - a > 1) { const m = (a + b) >> 1; if (c[m] <= s) a = m; else b = m; } const t = (s - c[a]) / Math.max(1e-6, c[b] - c[a]); return out.lerpVectors(this.p[a], this.p[b], t); }
+  }
+
+  function baseStage(host, opt) {
+    const st = C3.makeStage(host, { fov: opt.fov || 30, minD: opt.minD || 4, maxD: opt.maxD || 160, hold: !!opt.hold, scroll: !!opt.scroll, exposure: .98, sunX: 6, sunZ: 9 });
+    st.scene.environmentIntensity = .55; st.scene.traverse((o) => { if (o.isHemisphereLight) o.intensity = .5; });
+    st.scene.background = new THREE.Color('#ffffff');
+    st.camera.far = 700; st.camera.updateProjectionMatrix();
+    st.sun.position.set(9, 14, 16); st.sun.castShadow = false;
+    const fill = new THREE.DirectionalLight(0xffffff, .55); fill.position.set(-10, 4, 8); st.scene.add(fill);
+    const back = new THREE.DirectionalLight(0xfff2ea, .45); back.position.set(0, 6, -14); st.scene.add(back);
+    const clk = { dt: 0, last: 0 };
+    st.onFrame((d) => { if (window.__bakeT !== undefined) { const n = window.__bakeT; clk.dt = Math.max(0, n - clk.last); clk.last = n; } else clk.dt = Math.min(.05, d); });
+    const spinRig = { on: false };
+    st.onFrame(() => { if (!spinRig.on) return; const Tt = window.__bakeT || 0, a = spinRig.a0 + Tt / spinRig.T * Math.PI * 2 * spinRig.turn; const t = st.controls.target; st.camera.position.set(t.x + Math.sin(a) * spinRig.d, t.y + spinRig.dy, t.z + Math.cos(a) * spinRig.d); [st.sun, fill, back].forEach((o) => { if (!o.userData.p0) o.userData.p0 = o.position.clone(); o.position.copy(o.userData.p0).applyAxisAngle(V(0, 1, 0), a - spinRig.a0); }); });
+    const spin = (Tt, turn = 1, a0) => { const t = st.controls.target, dx = st.camera.position.x - t.x, dz = st.camera.position.z - t.z; spinRig.on = true; spinRig.T = Tt; spinRig.turn = turn; spinRig.a0 = a0 === undefined ? Math.atan2(dx, dz) : a0; spinRig.d = Math.hypot(dx, dz); spinRig.dy = st.camera.position.y - t.y; };
+    return { st, clk, spin };
+  }
+  const mat = (c, o = {}) => new THREE.MeshStandardMaterial(Object.assign({ color: c, roughness: .72, metalness: 0 }, o));
+
+  /* 울퉁불퉁한 덩어리 모양 (음식물·찌꺼기) */
+  function lump(r, seed) {
+    const g = new THREE.IcosahedronGeometry(r, 2), p = g.attributes.position, v = V();
+    let s = seed; const R = () => { s = (s * 16807) % 2147483647; return s / 2147483647; };
+    const k = [R() * 6, R() * 6, R() * 6];
+    for (let i = 0; i < p.count; i++) { v.fromBufferAttribute(p, i); const n = 1 + .16 * Math.sin(v.x * 9 + k[0]) * Math.cos(v.y * 8 + k[1]) + .1 * Math.sin(v.z * 11 + k[2]); v.multiplyScalar(n); v.y *= .82; p.setXYZ(i, v.x, v.y, v.z); }
+    g.computeVertexNormals(); return g;
+  }
+
+  /* ===================== 몸속 소화계 ===================== */
+  async function body(host, opt = {}) {
+    const D = await data(), M = D.m, G = M.groups, K = M.K;
+    const { st, clk, spin } = baseStage(host, opt);
+    const root = new THREE.Group(); st.scene.add(root);
+    const parts = {};
+    const stat = (k, m) => { const me = new THREE.Mesh(D.geo([G[k]]), m); me.scale.setScalar(K); me.frustumCulled = false; root.add(me); parts[k] = me; me.userData.op = m.opacity; me.userData.tr = m.transparent; return me; };
+    const boneM = mat(COL.bone, { roughness: .9 });
+    stat('skull', boneM); stat('jaw', boneM); stat('spine', boneM); stat('hip', boneM);
+    stat('rib', mat(COL.bone, { roughness: .9, transparent: true, opacity: .32, depthWrite: false }));
+    parts.rib.renderOrder = 30;
+    stat('teeth', mat(COL.teeth, { roughness: .45 })); stat('tongue', mat(COL.tongue, { roughness: .6 })); stat('lip', mat(COL.lip, { roughness: .6 }));
+    stat('saliv', mat(COL.saliv, { roughness: .66 }));
+    stat('phar', mat(COL.phar, { roughness: .58 })); stat('eso', mat(COL.eso, { roughness: .58 }));
+    stat('sto', mat(COL.sto, { roughness: .56 }));
+    stat('duo', mat(COL.duo, { roughness: .6 })); stat('si', mat(COL.si, { roughness: .6 }));
+    const liM = mat(COL.li, { roughness: .64 }); stat('li', liM); stat('sig', liM.clone()); stat('rect', mat(COL.rect, { roughness: .64 })); stat('anus', mat(COL.anus, { roughness: .7 }));
+    stat('liver', mat(COL.liver, { roughness: .5 }));
+    stat('gall', mat(COL.gall, { roughness: .5 })); stat('bile', mat(COL.bile, { roughness: .55 }));
+    stat('pan', mat(COL.pan, { roughness: .7 })); stat('pduct', mat(COL.pduct, { roughness: .6 }));
+
+    /* ----- 길 ----- */
+    const R = M.routes, mk = (k) => new Path(R[k].map((q) => V(...q)));
+    const PA = { food: mk('food'), bileIn: mk('bileIn'), bileOut: mk('bileOut'), panc: mk('panc') };
+    const P = M.pts, pt = (k) => V(...P[k]);
+    /* 음식물 길: 이름이 바뀌는 곳(marks)과 머무는 시간 비율. s(0~1, 시간) → u(0~1, 길) */
+    const MK = M.marks.food.map((a) => a[0]).concat([1]), NM = M.marks.food.map((a) => a[1]);
+    const WT = { 입: .07, 식도: .09, 위: .2, 작은창자: .34, 큰창자: .24, 항문: .06 };
+    const SW = []; { let a = 0; NM.forEach((n) => { SW.push(a); a += WT[n] || .1; }); SW.push(a); for (let i = 0; i < SW.length; i++) SW[i] /= a; }
+    const s2u = (s) => { s = Math.max(0, Math.min(1, s)); let i = 0; while (i < NM.length - 1 && s > SW[i + 1]) i++; const t = (s - SW[i]) / (SW[i + 1] - SW[i]); return MK[i] + (MK[i + 1] - MK[i]) * t; };
+    const stageOf = (u) => { let i = 0; while (i < NM.length - 1 && u >= MK[i + 1]) i++; return i; };
+
+    /* ----- 흐르는 음식물: 입·식도 덩어리 → 위·작은창자에서 작게 → 큰창자 찌꺼기 ----- */
+    const NF = 64, geoF = lump(.17, 3);
+    const imF = new THREE.InstancedMesh(geoF, mat('#ffffff', { roughness: .8, depthTest: false, transparent: true }), NF); imF.renderOrder = 120; imF.frustumCulled = false; root.add(imF);
+    const AF = Array.from({ length: NF }, (_, i) => ({ s: i / NF + rnd(0, .01), sp: rnd(.85, 1.15), j: V(rnd(-1, 1), rnd(-1, 1), rnd(-1, 1)).normalize().multiplyScalar(rnd(0, .1)), r: V(rnd(0, 6), rnd(0, 6), rnd(0, 6)) }));
+    const cF = new THREE.Color(COL.food), cD = new THREE.Color(COL.dig), cW = new THREE.Color(COL.waste), tc = new THREE.Color();
+    const flow = { food: false, speed: 1, scale: 1 };
+    const dum = new THREE.Object3D(), tp = V();
+    const foodLook = (u, out) => { const i = stageOf(u), n = NM[i]; if (n === '입' || n === '식도') { out.copy(cF); return 1.15; } if (n === '위') { const t = (u - MK[i]) / (MK[i + 1] - MK[i]); out.copy(cF).lerp(cD, t); return 1.1 - .35 * t; } if (n === '작은창자') { const t = (u - MK[i]) / (MK[i + 1] - MK[i]); out.copy(cD).lerp(cW, Math.max(0, t - .85) * 4); return .55 - .2 * t; } out.copy(cW); return .85; };
+    /* ----- 소화액 알갱이 (침·위액·쓸개즙·이자액) ----- */
+    const drop = new THREE.SphereGeometry(.09, 10, 8);
+    const juice = { spit: false, gastric: false, bile: false, panc: false, scale: 1 };
+    const JN = 26;
+    const mkJ = (c) => { const im = new THREE.InstancedMesh(drop, mat(c, { roughness: .3, depthTest: false, transparent: true }), JN); im.renderOrder = 130; im.frustumCulled = false; root.add(im); return { im, a: Array.from({ length: JN }, (_, i) => ({ u: i / JN, sp: rnd(.8, 1.2), j: V(rnd(-1, 1), rnd(-1, 1), rnd(-1, 1)).normalize().multiplyScalar(rnd(0, .06)) })) }; };
+    const JS = { spit: mkJ(COL.spit), gastric: mkJ(COL.gastric), bileIn: mkJ(COL.bileJ), bileOut: mkJ(COL.bileJ), panc: mkJ(COL.panJ) };
+    /* 침: 양쪽 침샘 → 입안 */
+    const sgR = pt('saliv'), sgL = sgR.clone(); sgL.x *= -1; const oral = pt('oral');
+    const spitPath = [new Path([sgR, sgR.clone().lerp(oral, .5).add(V(0, .25, .2)), oral]), new Path([sgL, sgL.clone().lerp(oral, .5).add(V(0, .25, .2)), oral])];
+    /* 위액: 위 안쪽 벽에서 가운데로 */
+    const stoU = [MK[NM.indexOf('위')], MK[NM.indexOf('위') + 1]];
+
+    /* ----- 따라가기 ----- */
+    const bolus = new THREE.Mesh(lump(.34, 11), mat(COL.food, { roughness: .8, depthTest: false, transparent: true })); bolus.renderOrder = 201;
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(.62, .05, 8, 40), new THREE.MeshBasicMaterial({ color: '#0e63b3', depthTest: false, transparent: true })); ring.renderOrder = 202;
+    const MKG = new THREE.Group(); MKG.add(bolus, ring); MKG.visible = false; root.add(MKG);
+    let tour = null, onTour = null;
+
+    /* ----- 이름표 ----- */
+    const lab = labels(st);
+    const fu = (n, f = .5) => () => { const i = NM.indexOf(n); return PA.food.at(MK[i] + (MK[i + 1] - MK[i]) * f, V()); };
+    lab.add('mouth', '입', () => pt('mouth').add(V(0, -.1, .2)), .26, .08, 'b');
+    lab.add('saliv', '침샘', () => sgL.clone(), .74, .1, 'b');
+    lab.add('teeth', '이와 혀', () => pt('tongue').add(V(.1, .2, .4)), .74, .16, 'b');
+    lab.add('eso', '식도', () => pt('eso'), .26, .26, 'b');
+    lab.add('liver', '간', () => pt('liver').add(V(-.9, .2, .6)), .2, .4, 'b');
+    lab.add('gall', '쓸개', () => pt('gall'), .2, .52, 'b');
+    lab.add('sto', '위', () => pt('sto').add(V(.6, .2, .6)), .8, .38, 'b');
+    lab.add('pan', '이자', () => pt('pan').add(V(1.1, 0, 0)), .8, .48, 'b');
+    lab.add('duo', '샘창자', () => pt('duo'), .2, .62, 'b');
+    lab.add('si', '작은창자', () => pt('si').add(V(.4, -.3, .6)), .8, .66, 'b');
+    lab.add('li', '큰창자', () => pt('asc'), .2, .74, 'b');
+    lab.add('anus', '항문', () => pt('anus'), .8, .9, 'b');
+    lab.add('tour', '', () => MKG.position, .5, .05, 'cap3', { c: true });
+
+    /* ----- 시점 ----- */
+    const box = (x0, x1, y0, y1, z0 = -3, z1 = 3) => { const m = new THREE.Mesh(new THREE.BoxGeometry(x1 - x0, y1 - y0, z1 - z0)); m.position.set((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2); m.visible = false; st.scene.add(m); return m; };
+    const mo = pt('mouth'), gl = pt('gall'), pn = pt('pan');
+    const VIEW = { front: box(-5, 5, -15, 21.2), mouth: box(mo.x - 2.6, mo.x + 2.6, mo.y - 3.2, mo.y + 2.2, mo.z - 4, mo.z), gland: box(gl.x - 1.6, pn.x + 1.4, pn.y - 1.8, gl.y + 3.4, -1, 3.5), card: box(-4.6, 4.6, -15, 21.2), belly: box(-5, 5, -14.6, 2.8) };
+    const DIR = { front: V(0, .03, 1), mouth: V(.85, .08, 1), gland: V(.08, .18, 1), card: V(.32, .1, 1), belly: V(0, .05, 1) };
+    let curView = 'front';
+    const setView = (k, dur = 0) => { curView = k; st.fit([VIEW[k]], { dir: DIR[k].clone().normalize(), margin: 1.02, dur: window.__bakeT !== undefined ? 0 : dur, target: VIEW[k].position.clone() }); };
+    setView(opt.view || 'front');
+
+    /* ----- 보이기·흐리게 ----- */
+    const fadeTo = {};
+    const setOp = (k, op) => { fadeTo[k] = op; };
+    const focus = (keys) => { Object.keys(parts).forEach((k) => { if (['skull', 'jaw', 'spine', 'hip', 'rib'].includes(k)) return; setOp(k, !keys || keys.includes(k) ? 1 : .13); }); };
+    const show = (o) => { Object.entries(o).forEach(([k, v]) => { if (parts[k]) parts[k].visible = v; }); };
+    st.onFrame(() => {
+      const dt = clk.dt;
+      Object.entries(fadeTo).forEach(([k, to]) => {
+        const m = parts[k].material, base = parts[k].userData.op === undefined ? 1 : parts[k].userData.op, target = to * base;
+        const cur = m.userData.o === undefined ? base : m.userData.o, nx = window.__bakeT !== undefined || REDUCE ? target : cur + (target - cur) * Math.min(1, dt * 5);
+        m.userData.o = nx; m.opacity = nx; const tr = nx < .99 || parts[k].userData.tr; if (m.transparent !== tr) { m.transparent = tr; m.needsUpdate = true; } m.depthWrite = nx > .6;
+        parts[k].renderOrder = nx < .99 ? 40 : 0;
+      });
+    });
+
+    /* ----- 매 장면 ----- */
+    st.onFrame(() => {
+      const dt = clk.dt;
+      /* 음식물 */
+      AF.forEach((a, i) => {
+        if (flow.food) a.s += dt * .022 * flow.speed * a.sp;
+        if (a.s > 1) a.s -= 1;
+        const u = s2u(a.s); PA.food.at(u, tp).add(a.j);
+        const sc = foodLook(u, tc), fade = Math.min(1, a.s / .02, (1 - a.s) / .02);
+        dum.position.copy(tp); a.r.x += dt * .8; dum.rotation.set(a.r.x, a.r.y, a.r.z); dum.scale.setScalar(flow.food ? Math.max(0, fade) * sc * flow.scale : 0); dum.updateMatrix(); imF.setMatrixAt(i, dum.matrix); imF.setColorAt(i, tc);
+      });
+      imF.instanceMatrix.needsUpdate = true; if (imF.instanceColor) imF.instanceColor.needsUpdate = true;
+      /* 소화액 */
+      const runJ = (key, on, pathOf, rate) => { const J = JS[key]; J.a.forEach((a, i) => { if (on) a.u += dt * rate * a.sp; if (a.u > 1) a.u -= 1; pathOf(a, i).at(a.u, tp).add(a.j); const f = Math.min(1, a.u / .08, (1 - a.u) / .1); dum.position.copy(tp); dum.rotation.set(0, 0, 0); dum.scale.setScalar(on ? Math.max(0, f) * juice.scale : 0); dum.updateMatrix(); J.im.setMatrixAt(i, dum.matrix); }); J.im.instanceMatrix.needsUpdate = true; };
+      runJ('spit', juice.spit, (a, i) => spitPath[i % 2], .55);
+      runJ('bileIn', juice.bile, () => PA.bileIn, .32);
+      runJ('bileOut', juice.bile, () => PA.bileOut, .32);
+      runJ('panc', juice.panc, () => PA.panc, .32);
+      /* 위액: 위 벽 가까이에서 생겨 가운데로 퍼진다 */
+      { const J = JS.gastric; J.a.forEach((a, i) => { if (juice.gastric) a.u += dt * .45 * a.sp; if (a.u > 1) { a.u -= 1; a.k = undefined; } if (a.k === undefined) { a.k = stoU[0] + (stoU[1] - stoU[0]) * (.15 + .7 * Math.random()); a.d = V(rnd(-1, 1), rnd(-1, 1), rnd(-1, 1)).normalize(); } PA.food.at(a.k, tp); tp.addScaledVector(a.d, .75 * (1 - a.u)); const f = Math.min(1, a.u / .15, (1 - a.u) / .25); dum.position.copy(tp); dum.scale.setScalar(juice.gastric ? Math.max(0, f) * .9 : 0); dum.updateMatrix(); J.im.setMatrixAt(i, dum.matrix); }); J.im.instanceMatrix.needsUpdate = true; }
+      /* 따라가기 */
+      if (tour) {
+        tour.t += dt * (REDUCE ? 3 : 1) * tour.rate;
+        const s = Math.min(1, tour.t / tour.dur), u = s2u(s);
+        PA.food.at(u, MKG.position); MKG.visible = true; ring.lookAt(st.camera.position); bolus.rotation.x += dt * .9; bolus.rotation.z += dt * .5;
+        const look = foodLook(u, tc); bolus.material.color.copy(tc); bolus.scale.setScalar(.6 + look * .45);
+        const wi = stageOf(u), name = NM[wi];
+        if (wi !== tour.wi) { tour.wi = wi; lab.L.tour.e.textContent = name; tour.auto && autoJuice(name); onTour && onTour(wi, name); }
+        if (s >= 1) { tour = null; MKG.visible = false; lab.L.tour.show = false; onTour && onTour(-1, ''); }
+      }
+    });
+    const autoJuice = (n) => { juice.spit = n === '입'; juice.gastric = n === '위'; juice.bile = juice.panc = n === '작은창자'; };
+
+    const api = {};
+    Object.defineProperties(api, Object.getOwnPropertyDescriptors({
+      st, parts, lab, VIEW, COL, PA, NAME, TUBE, GLAND, marks: NM,
+      get view() { return curView; }, get touring() { return !!tour; },
+      setView, show, focus, spin, setOp,
+      showLabs: (k) => lab.only(k.concat(tour ? ['tour'] : [])), place: (P_) => lab.place(P_),
+      flow(o) { Object.assign(flow, o); }, juice(o) { Object.assign(juice, o); },
+      tour(cb, o = {}) { tour = { t: 0, dur: o.dur || 34, rate: 1, wi: -1, auto: o.auto !== false }; onTour = cb || onTour; lab.L.tour.show = true; },
+      set tourRate(v) { if (tour) tour.rate = v; },
+      stopTour() { tour = null; MKG.visible = false; lab.L.tour.show = false; },
+    }));
+    return api;
+  }
+  return { body, data, labels, Path, COL, lump };
+})();
+window.DG3 = DG3;
+(async () => {
+  'use strict';
+  try {
+    const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+    const q = new URLSearchParams(location.search);
+    const W = await DG3.body($('#fig'), { view: 'front' }); window.__W = W;
+    W.flow({ food: true });
+    /* 보는 방향마다 이름표 자리 [가로 x, y, 세로 x, y] */
+    const POS = {
+      front: { mouth: [.28, .06, .2, .05], saliv: [.72, .06, .8, .05], teeth: [.72, .13, .8, .1], eso: [.28, .22, .2, .2], liver: [.24, .4, .16, .4], gall: [.24, .5, .16, .48], duo: [.24, .58, .16, .56], li: [.24, .72, .16, .7], sto: [.76, .38, .84, .38], pan: [.76, .48, .84, .47], si: [.76, .64, .84, .64], anus: [.76, .9, .84, .9] },
+      mouth: { mouth: [.24, .3, .16, .3], teeth: [.24, .48, .16, .46], saliv: [.76, .56, .84, .56], eso: [.76, .82, .84, .82] },
+      gland: { liver: [.2, .18, .14, .14], gall: [.2, .5, .14, .5], duo: [.2, .72, .14, .74], pan: [.8, .62, .86, .62], sto: [.8, .2, .86, .2] },
+    };
+    const LABS = { front: Object.keys(POS.front), mouth: Object.keys(POS.mouth), gland: Object.keys(POS.gland) };
+    const TUBE = ['mouth', 'teeth', 'eso', 'sto', 'duo', 'si', 'li', 'anus'], GL = ['saliv', 'liver', 'gall', 'pan'];
+    let grp = null;
+    const labs = (k) => { W.place(POS[k]); let ks = LABS[k]; if (grp && k === 'front') ks = ks.filter((x) => (grp === 'tube' ? TUBE : GL).includes(x)); W.showLabs(ks); };
+    let cur = 'front';
+    const look = (v) => {
+      cur = v; W.setView(v, .9); labs(v); $$('#vw button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === v)));
+      W.flow({ scale: v === 'mouth' ? .6 : v === 'gland' ? .7 : 1 }); W.juice({ scale: v === 'front' ? 1.4 : 1 });
+      if (v === 'gland') { W.focus(['liver', 'gall', 'bile', 'pan', 'pduct', 'duo', 'si']); W.setOp('liver', .5); W.setOp('si', .35); }
+      else if (v === 'mouth') { W.focus(null); W.setOp('skull', .25); W.setOp('jaw', .35); }
+      else { setGroup(grp); W.setOp('skull', 1); W.setOp('jaw', 1); }
+    };
+    $$('#vw button').forEach((b) => b.addEventListener('click', () => look(b.dataset.v)));
+    const say = (t, m, c = '') => { $('#res').className = 'fbk ' + c; $('#resT').textContent = t; $('#resM').innerHTML = m; };
+    say('처음', '음식물이 입에서 항문까지 이어진 소화관을 따라 흐르고 있어요. <b>음식물 따라가기</b>를 눌러 한 덩어리를 따라가 봐요. 손가락으로 돌려 볼 수도 있어요.');
+    /* 소화관 · 소화샘 */
+    const setGroup = (g) => {
+      grp = g; $$('#grp button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.g === g)));
+      if (!g) W.focus(null); else if (g === 'tube') W.focus(DG3 && W.TUBE); else W.focus(W.GLAND);
+      if (cur === 'front') labs('front');
+    };
+    $$('#grp button').forEach((b) => b.addEventListener('click', () => {
+      const g = grp === b.dataset.g ? null : b.dataset.g; if (cur !== 'front') look('front'); setGroup(g);
+      if (g === 'tube') say('소화관', '음식물이 지나가는 <b>입, 식도, 위, 작은창자, 큰창자</b> 등이 소화관이에요. 입에서 항문까지 한 줄로 이어져 있어요.');
+      else if (g === 'gland') say('소화샘', '소화관에 연결되어 소화액을 분비하는 <b>침샘, 간, 쓸개, 이자</b> 등이 소화샘이에요. 음식물은 소화샘을 지나가지 않아요.');
+      else say('소화계', '소화계는 <b>소화관</b>과 <b>소화샘</b>으로 구성돼요.');
+    }));
+    /* 따라가기 */
+    const ROUTE = [['입', '이와 혀가 잘게 부수고 침과 섞어요'], ['식도', '음식물이 위로 내려가요'], ['위', '근육 주머니, 위샘에서 위액이 나와요'], ['작은창자', '탄수화물·단백질·지방이 완전히 분해되어 흡수돼요'], ['큰창자', '남은 물이 흡수돼요'], ['항문', '찌꺼기가 몸 밖으로 나가요']];
+    const MSG = [
+      '이와 혀가 음식물을 씹어 잘게 부수고, <b>침샘</b>에서 나온 침(하늘색)과 잘 섞어요.',
+      '삼킨 음식물이 <b>식도</b>를 거쳐 위로 이동해요.',
+      '<b>위</b>는 근육으로 이루어진 주머니예요. 안쪽 벽의 위샘에서 <b>위액</b>(연보라)이 분비돼요.',
+      '<b>샘창자</b>에서 쓸개즙(초록)과 이자액(노랑)이 섞여요. 작은창자에서 탄수화물, 단백질, 지방이 <b>완전히 분해되어 흡수</b>돼요.',
+      '흡수되지 않은 찌꺼기가 <b>큰창자</b>를 지나는 동안 물이 흡수돼요.',
+      '마지막으로 <b>항문</b>을 통해 몸 밖으로 배출돼요.'];
+    const drawRoute = (n) => { $('#rt').innerHTML = ROUTE.map((r, i) => `<div class="r ${i < n ? 'done' : ''} ${i === n ? 'on' : ''}"><i>${i + 1}</i><span>${r[0]}<small>${r[1]}</small></span></div>`).join(''); };
+    drawRoute(-1);
+    const tour = () => {
+      if (W.touring) return; if (cur !== 'front') look('front'); setGroup(null);
+      $('#tF').disabled = true; W.flow({ food: false }); drawRoute(0);
+      W.tour((wi, name) => {
+        if (wi < 0) { $('#tF').disabled = false; W.flow({ food: true }); W.juice({ spit: false, gastric: false, bile: false, panc: false }); drawRoute(99); say('음식물이 몸 밖으로 나갔어요', '입 → 식도 → 위 → 작은창자 → 큰창자 → 항문. 음식물은 <b>소화관</b>만 지나가고, 소화샘에서 나온 소화액이 소화관으로 들어와 섞여요.', 'ok'); return; }
+        const k = ROUTE.findIndex((r) => r[0] === name); drawRoute(k); say(name, MSG[k]);
+      });
+    };
+    $('#tF').addEventListener('click', tour);
+    /* 간·쓸개·이자 */
+    const gsay = (t, m) => { $('#gresT').textContent = t; $('#gresM').innerHTML = m; };
+    const J = { bile: false, panc: false };
+    const setJ = () => { $$('#jl button').forEach((b) => b.setAttribute('aria-pressed', String(J[b.dataset.j]))); W.juice({ bile: J.bile, panc: J.panc }); };
+    $$('#jl button').forEach((b) => b.addEventListener('click', () => {
+      const k = b.dataset.j; J[k] = !J[k]; setJ();
+      if (k === 'bile' && J.bile) gsay('쓸개즙', '초록 알갱이가 <b>간</b>에서 나와 <b>쓸개</b>에 모였다가, 쓸개에서 관을 따라 <b>샘창자</b>로 들어가요. 쓸개즙은 간에서 만들어져 쓸개에 저장되었다가 분비돼요.');
+      else if (k === 'panc' && J.panc) gsay('이자액', '노란 알갱이가 위 뒤쪽에 있는 <b>이자</b>에서 나와 관을 따라 <b>샘창자</b>로 들어가요.');
+      else gsay('간·쓸개·이자', '쓸개즙이나 이자액을 눌러 흐르는 길을 봐요.');
+    }));
+    gsay('간·쓸개·이자', '간을 반쯤 비치게 했어요. <b>쓸개즙</b>이나 <b>이자액</b>을 눌러 소화액이 어디로 가는지 봐요.');
+    /* 활동 탭 */
+    const act = (a) => {
+      $$('#at button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.a === a))); $$('.pane').forEach((e) => { e.hidden = e.dataset.a !== a; });
+      W.stopTour(); $('#tF').disabled = false; W.juice({ spit: false, gastric: false });
+      if (a === 'gland') { look('gland'); W.flow({ food: false }); J.bile = J.panc = true; setJ(); }
+      else { J.bile = J.panc = false; setJ(); look('front'); W.flow({ food: true }); }
+    };
+    $$('#at button').forEach((b) => b.addEventListener('click', () => act(b.dataset.a)));
+    labs('front');
+    /* 화면 검사용 */
+    if (q.get('a')) act(q.get('a'));
+    if (q.get('v')) look(q.get('v'));
+    if (q.get('g')) $(`#grp button[data-g="${q.get('g')}"]`).click();
+    if (q.get('tour')) { tour(); if (q.get('t')) W.tourRate = +q.get('t'); }
+    window.SM = window.SM || {}; window.SM.okUI = true; window.__ready = true;
+  } catch (err) { window.SM_err && window.SM_err('소화계 3D', err); console.error(err); }
+})();
+</script>
+</body>
+</html>
