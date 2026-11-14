@@ -3,119 +3,189 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>식물도 호흡을 할까 – 낮밤 측정 실험실</title>
+<title>식물도 호흡을 할까 – 낮과 밤의 기체 측정 실험실</title>
 <!--@@PART:errbox_sim.html@@-->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <style>
 /*@@PART:css_sim.css@@*/
 /*@@LOCAL:_css_ps.css@@*/
 /*@@LOCAL:_css_sim.css@@*/
-/*@@LOCAL:_css_pf.css@@*/
-.tbl{width:100%;border-collapse:collapse;font-size:14.5px;table-layout:fixed;word-break:keep-all}
-.tbl th,.tbl td{border-bottom:1px solid #e3eaf0;padding:6px 5px;text-align:center;line-height:1.35}
-.tbl th{font-size:13px;color:#14263b;background:#f1f6fb}.tbl td.k{font-weight:800;font-size:12.5px;color:#5a6b7e}
-.tbl .bk{min-height:44px;min-width:76px;padding:0 6px;border:0;border-bottom:2.5px solid #8b9aab;background:#f4f7fa;border-radius:8px 8px 0 0;font:inherit;font-weight:800;color:#0b3f73;cursor:pointer}
-.tbl .bk.cur{background:#e4f0fb;border-color:#0e63b3}.tbl .bk.good{background:#e8f7ef;border-color:#1f9d5c;color:#11703f}.tbl .bk.bad{background:#fff4f2;border-color:#d9534f;color:#9b3a32}
-.chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}.chips button{min-height:44px;padding:0 12px;border-radius:11px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:14.5px;cursor:pointer}
-.seg3{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:6px}.seg3 button{min-height:46px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:14.5px;cursor:pointer;word-break:keep-all;line-height:1.2;padding:2px 6px}.seg3 button[aria-pressed="true"]{border-color:#0e63b3;background:#e9f3fd;color:#0b3f73}.seg3 button:disabled{opacity:.4;cursor:default}
+/*@@LOCAL:_css_3d.css@@*/
+.viewer > .scene.gl-host{background:#eef3f7}
+.viewer > .dayc{flex:1 1 auto;min-height:300px;position:relative;background:#fff}
+.dayc canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.gl-host.dark::after{content:'';position:absolute;inset:0;background:rgba(10,20,45,.18);pointer-events:none}
+.pq{display:grid;grid-template-columns:auto 1fr 1fr 1fr;gap:6px;align-items:center;margin:4px 0 2px}
+.pq b{font-size:14px;color:#14263b;padding-right:4px;word-break:keep-all}
+.pq button{min-height:44px;border-radius:11px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:14px;cursor:pointer;color:#34495e}
+.pq button[aria-pressed="true"]{border-color:#0e63b3;background:#e9f3fd;color:#0b3f73}
+.pq button.good{border-color:#1f9d5c;background:#e8f7ef;color:#11703f}.pq button.bad{border-color:#e7a29b;background:#fff4f2;color:#9b3a32}
+.pq button:disabled{cursor:default}
+.mb{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.mb .btn{min-height:52px;font-size:15px}
+.rec{width:100%;border-collapse:collapse;font-size:14.5px;table-layout:fixed;word-break:keep-all;margin-bottom:10px}
+.rec th,.rec td{border-bottom:1px solid #e3eaf0;padding:8px 4px;text-align:center;line-height:1.35}
+.rec th{background:#f1f6fb;font-size:13px;color:#14263b}
+.rec td.up{color:#0b3f73;font-weight:800}.rec td.dn{color:#8a3b2c;font-weight:800}.rec td.e{color:#a7b3c0}
+.slider{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}
+.slider input{width:100%;height:44px;accent-color:#0e63b3}
+.slider output{font-weight:900;font-size:16px;color:#0b3f73;min-width:84px;text-align:right}
+.bars{display:grid;gap:8px;margin:10px 0}
+.bars .bar{display:grid;grid-template-columns:70px 1fr;gap:8px;align-items:center;font-weight:800;font-size:14px;color:#34495e}
+.bars .tr{height:16px;border-radius:8px;background:#eef3f8;overflow:hidden}
+.bars .tr i{display:block;height:100%;border-radius:8px;background:#0e63b3;transition:width .25s}
+.bars .tr.r i{background:#5a6b7e}
 </style>
 </head>
 <body>
 <div class="app">
-  <header class="top"><div class="ttl"><span class="eyebrow">시뮬레이션</span><h1>낮과 밤의 기체 측정 실험실</h1>
-    <p class="sub">밀폐 장치 속 상추에 LED등을 켜고 끄며 낮과 밤을 만들어요. 산소와 이산화 탄소의 양은 같을까요?</p></div></header>
+  <header class="top"><div class="ttl"><span class="eyebrow">탐구</span><h1>낮과 밤의 기체 측정 실험실</h1>
+    <p class="sub">앞 시간의 밀폐 장치로 LED등을 켜고 끄며 낮과 밤을 만들어요. 방 안 산소와 이산화 탄소의 양은 같을까요?</p></div>
+    <div class="ptabs big" role="tablist" id="at"><button type="button" role="tab" data-a="led" aria-selected="true">LED등 켜고 끄기</button><button type="button" role="tab" data-a="day" aria-selected="false">맑은 날 하루</button></div></header>
   <div class="stage">
     <section class="card viewer">
-      <div class="scene grow" id="fig" role="img" aria-label="왼쪽에 LED등과 상추가 든 밀폐 장치, 오른쪽에 스마트 기기 그래프. LED등을 켜면 이산화 탄소가 줄고 산소가 늘며, 끄면 산소가 줄고 이산화 탄소가 는다."></div>
-      <div class="vctl"><span class="hint">눈금 숫자 없이 변화의 방향만 그린 모형이에요</span><span class="sp"></span><button class="vb" type="button" id="bReset">처음부터</button></div>
+      <div class="scene grow gl-host" id="fig" role="img" aria-label="실험대 위에 LED등, 상추가 든 투명 밀폐 장치와 뚜껑의 산소 센서·이산화 탄소 센서, 그래프가 나오는 스마트 기기가 있다."></div>
+      <div class="dayc" id="dayc" hidden role="img" aria-label="맑은 날 하루 동안 식물의 이산화 탄소 흡수량과 방출량 그래프. 낮에는 흡수, 밤에는 방출이 나타난다."><canvas id="dayCv"></canvas></div>
+      <div class="vctl"><span class="hint" id="hint">그래프는 눈금 숫자 없이 변화의 방향만 그린 모형이에요</span><span class="sp"></span><button class="vb" type="button" id="bReset">처음부터</button></div>
     </section>
     <section class="card pad">
-      <div class="ptabs" role="tablist" id="pt">
-        <button type="button" role="tab" data-p="lab" aria-selected="true">실험하기</button>
-        <button type="button" role="tab" data-p="rec" aria-selected="false">정리하기</button>
-        <button type="button" role="tab" data-p="why" aria-selected="false">왜 그럴까?</button>
+      <!-- 활동 ① LED등 켜고 끄기 -->
+      <div class="pane" data-a="led">
+        <div class="ptabs" role="tablist" id="pt">
+          <button type="button" role="tab" data-p="lab" aria-selected="true">실험하기</button>
+          <button type="button" role="tab" data-p="rec" aria-selected="false">기록</button>
+          <button type="button" role="tab" data-p="why" aria-selected="false">왜 그럴까?</button>
+        </div>
+        <div class="pp" data-p="lab">
+          <p class="ptxt" id="ask"></p>
+          <div id="pred" hidden>
+            <div class="pq" data-g="o"><b>산소</b><button type="button" data-v="up">증가</button><button type="button" data-v="dn">감소</button><button type="button" data-v="eq">그대로</button></div>
+            <div class="pq" data-g="c"><b>이산화 탄소</b><button type="button" data-v="up">증가</button><button type="button" data-v="dn">감소</button><button type="button" data-v="eq">그대로</button></div>
+          </div>
+          <div class="mb"><button class="btn primary" type="button" id="bOn">LED등 켜고 10분 측정</button><button class="btn primary" type="button" id="bOff">LED등 끄고 10분 측정</button></div>
+          <div class="fbk" id="res"><b class="t" id="resT">결과</b><span id="resM"></span></div>
+        </div>
+        <div class="pp" data-p="rec" hidden>
+          <table class="rec"><thead><tr><th style="width:15%">구간</th><th style="width:17%">LED등</th><th>산소</th><th>이산화 탄소</th><th style="width:28%">일어나는 과정</th></tr></thead><tbody id="recB"></tbody></table>
+          <p class="ptxt"><b>단원 마무리 8번 (3)</b> LED등을 끈다면 산소와 이산화 탄소 농도는 어떻게 변할까요?</p>
+          <div class="qa3" id="q8"><button type="button" data-k="0">빛이 없으면 광합성은 일어나지 않고 호흡만 일어나므로 산소 농도는 감소하고 이산화 탄소 농도는 증가한다.</button><button type="button" data-k="1">빛이 없으면 광합성도 호흡도 일어나지 않으므로 두 기체의 농도는 변하지 않는다.</button></div>
+          <div class="fbk" id="q8r" hidden></div>
+        </div>
+        <div class="pp" data-p="why" hidden>
+          <ol class="whylist">
+            <li><i>1</i><span>LED등을 켜면 광합성과 호흡이 함께 일어나요. 광합성으로 이산화 탄소를 흡수하고 산소를 방출하므로 <b>이산화 탄소는 감소, 산소는 증가</b>해요.</span></li>
+            <li><i>2</i><span>LED등을 끄면 빛이 없어 광합성은 일어나지 않고 <b>호흡만</b> 일어나요. 산소를 흡수하고 이산화 탄소를 방출하므로 <b>산소는 감소, 이산화 탄소는 증가</b>해요.</span></li>
+            <li><i>3</i><span>그래서 밀폐된 방에서 식물을 키우면 낮과 밤에 방 안 산소와 이산화 탄소의 양이 <b>달라요</b>.</span></li>
+          </ol>
+          <p class="mnote">장치는 교과서 탐구(투명 밀폐 장치, 산소·이산화 탄소 센서, LED등, 스마트 기기)를 따라 새로 그린 모형이에요. 교과서는 10초 간격으로 10분 동안 재요. 여기서는 10분을 몇 초로 줄여 보여 줘요.</p>
+        </div>
       </div>
-      <div class="pane" data-p="lab">
-        <p class="ptxt" id="ask"></p>
-        <div class="pred" id="pr"></div>
-        <div class="ctl" id="ctl" style="margin-top:8px"></div>
-        <div class="fbk" id="res"><b class="t" id="resT">결과</b><span id="resM"></span></div>
-      </div>
-      <div class="pane" data-p="rec" hidden><div id="qs"></div><div class="fbk" id="recRes" hidden></div></div>
-      <div class="pane" data-p="why" hidden>
-        <ol class="whylist">
-          <li><i>1</i><span>LED등을 켜면 광합성과 호흡이 함께 일어나요. 이산화 탄소를 흡수하고 산소를 방출하므로 <b>이산화 탄소는 감소, 산소는 증가</b>해요.</span></li>
-          <li><i>2</i><span>LED등을 끄면 광합성이 멈추고 호흡만 일어나요. 산소를 흡수하고 이산화 탄소를 방출하므로 <b>산소는 감소, 이산화 탄소는 증가</b>해요.</span></li>
-          <li><i>3</i><span>그래서 밀폐된 방에서 식물을 키우면 낮과 밤에 방 안 산소와 이산화 탄소의 양이 <b>달라요</b>.</span></li>
-        </ol>
+      <!-- 활동 ② 맑은 날 하루 -->
+      <div class="pane" data-a="day" hidden>
+        <p class="ptxt">맑은 날 하루 동안 어떤 식물에서 <b>이산화 탄소 흡수량과 방출량</b>을 재면 그래프처럼 나와요(단원 마무리 9번). 시각을 바꾸며 까닭을 찾아봐요.</p>
+        <div class="slider"><input type="range" id="hr" min="0" max="24" step="0.25" value="0" aria-label="시각"><output id="hrO">0시</output></div>
+        <div class="mb" style="margin-top:6px"><button class="btn primary" type="button" id="bPlay">하루 돌려 보기</button><button class="btn ghost" type="button" id="bAll">그래프 다 보기</button></div>
+        <div class="bars"><div class="bar"><span>광합성량</span><div class="tr"><i id="barP"></i></div></div><div class="bar"><span>호흡량</span><div class="tr r"><i id="barR"></i></div></div></div>
+        <div class="fbk" id="dres"><b class="t" id="dresT">0시</b><span id="dresM"></span></div>
+        <div class="qa" style="margin-top:12px"><p>낮에 이산화 탄소 흡수량이 방출량보다 많은 까닭은?</p>
+          <div class="qa3" id="q9"><button type="button" data-k="0">광합성량이 호흡량보다 많기 때문이다.</button><button type="button" data-k="1">낮에는 호흡이 일어나지 않기 때문이다.</button><button type="button" data-k="2">호흡량이 광합성량보다 많기 때문이다.</button></div></div>
+        <div class="fbk" id="q9r" hidden></div>
       </div>
     </section>
   </div>
 </div>
-<script>
-/*@@LOCAL:_ps.js@@*/
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }
 </script>
-<script>
-/*@@LOCAL:_pf.js@@*/
-</script>
-<script>
-/*@@LOCAL:_rs.js@@*/
-</script>
-<script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+/*@@PART:c3.js@@*/
+/*@@LOCAL:_rs3.js@@*/
+/*@@LOCAL:_rs3lab.js@@*/
 (() => {
   'use strict';
   try {
     const $ = (s, r = document) => r.querySelector(s), $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
     const q = new URLSearchParams(location.search);
-    let L = RS.room($('#fig')), busy = false, pred = null, seen = { on: false, off: false };
+    const L = RS3L.lab($('#fig')); window.__L = L;
     const say = (t, m, c = '') => { $('#res').className = 'fbk ' + c; $('#resT').textContent = t; $('#resM').innerHTML = m; };
-    const OPT = [['a', '이산화 탄소는 증가, 산소는 감소'], ['b', '이산화 탄소는 감소, 산소는 증가'], ['c', '두 기체 모두 그대로']];
-    function render(msg) {
-      const left = L.left, c = $('#ctl'); c.innerHTML = '';
-      const asking = seen.on && !seen.off;
-      $('#ask').innerHTML = !seen.on ? '먼저 LED등을 켜고 측정해 앞 시간 결과를 확인해요.' : asking ? '이제 <b>LED등을 끄면</b> 두 기체가 어떻게 변할까요?' : left ? '켜고 끄기를 더 해 보며 그래프를 봐요.' : '측정이 끝났어요. 켠 구간과 끈 구간을 비교해 봐요.';
-      const pr = $('#pr'); pr.innerHTML = '';
-      if (asking && !busy) { pr.innerHTML = OPT.map(([k, t]) => `<button type="button" data-k="${k}" aria-pressed="${pred === k}">${t}</button>`).join(''); $$('button', pr).forEach((b) => b.addEventListener('click', () => { pred = b.dataset.k; render(); })); }
-      const w = document.createElement('div'); w.className = 'two';
-      [['켜고 측정', true], ['끄고 측정', false]].forEach(([t, on]) => {
-        const b = document.createElement('button'); b.type = 'button';
-        const main = !seen.on ? on : asking ? !on : on;
-        b.className = 'btn ' + (main ? 'primary' : 'ghost'); b.textContent = 'LED등 ' + t;
-        b.disabled = busy || !left || (!seen.on && !on) || (asking && (on || !pred));
-        b.addEventListener('click', () => go(on)); w.append(b);
-      });
-      c.append(w);
-      if (msg) say(msg[0], msg[1], msg[2] || '');
+    const NM = { up: '증가', dn: '감소', eq: '그대로' };
+    const rows = []; // {on, o, c}
+    let pred = { o: null, c: null }, checked = false;
+    const stage = () => (!rows.length ? 0 : !rows.some((r) => !r.on) ? 1 : 2);
+    function render() {
+      const s = stage(), busy = L.running;
+      $('#ask').innerHTML = s === 0 ? '먼저 앞 시간처럼 <b>LED등을 켜고</b> 10분 동안 재요. 산소와 이산화 탄소가 어떻게 변하는지 봐요.'
+        : s === 1 ? '이제 <b>LED등을 끄면</b> 두 기체가 어떻게 변할까요? 먼저 예상을 골라요.'
+        : L.left ? '켜고 끄기를 더 해 보며 그래프를 비교해요.' : '측정이 끝났어요. 켠 구간과 끈 구간의 그래프를 비교해 봐요.';
+      $('#pred').hidden = s !== 1 && !checked;
+      $$('#pred .pq').forEach((row) => $$('button', row).forEach((b) => { b.setAttribute('aria-pressed', String(pred[row.dataset.g] === b.dataset.v)); b.disabled = checked || busy; }));
+      $('#bOn').disabled = busy || !L.left || s === 1;
+      $('#bOff').disabled = busy || !L.left || s === 0 || (s === 1 && (!pred.o || !pred.c));
+      $('#recB').innerHTML = [0, 1, 2, 3].map((i) => { const r = rows[i]; if (!r) return `<tr><td>${i + 1}</td><td class="e">-</td><td class="e">-</td><td class="e">-</td><td class="e">-</td></tr>`; return `<tr><td>${i + 1}</td><td>${r.on ? '켬' : '끔'}</td><td class="${r.on ? 'up' : 'dn'}">${r.on ? '증가' : '감소'}</td><td class="${r.on ? 'dn' : 'up'}">${r.on ? '감소' : '증가'}</td><td>${r.on ? '광합성과 호흡' : '호흡만'}</td></tr>`; }).join('');
     }
-    function go(on) {
-      busy = true; render(['측정 중', on ? '이산화 탄소는 잎으로 들어가고, 산소는 잎에서 나와요.' : '산소는 잎으로 들어가고, 이산화 탄소는 잎에서 나와요.']);
-      L.run(on, () => {
-        busy = false; const first = !on && !seen.off; if (on) seen.on = true; else seen.off = true;
-        let m;
-        if (on) m = ['LED등을 켠 구간', '이산화 탄소는 <b>감소</b>, 산소는 <b>증가</b>했어요. 빛을 받아 광합성이 일어났어요.'];
-        else if (first) m = [pred === 'a' ? '예측이 맞았어요' : '예측과 달라요', '이산화 탄소는 <b>증가</b>, 산소는 <b>감소</b>했어요. 빛이 없으면 호흡만 일어나기 때문이에요.', 'ok'];
-        else m = ['LED등을 끈 구간', '이산화 탄소는 <b>증가</b>, 산소는 <b>감소</b>했어요. 호흡만 일어났어요.'];
-        render(m);
+    $$('#pred .pq').forEach((row) => $$('button', row).forEach((b) => b.addEventListener('click', () => { pred[row.dataset.g] = b.dataset.v; render(); })));
+    const go = (on) => {
+      if (L.running) return;
+      say(on ? 'LED등 켬 · 측정 중' : 'LED등 끔 · 측정 중', on ? '빛을 받은 상추의 잎을 지켜봐요. 장치 안 알갱이가 어디로 가나요?' : '빛이 없어요. 상추의 잎과 그래프를 지켜봐요.');
+      L.measure(on, () => {
+        rows.push({ on });
+        const s = stage();
+        if (on) say('측정 끝: LED등 켬', '<b>산소는 증가</b>하고 <b>이산화 탄소는 감소</b>했어요. 광합성으로 이산화 탄소를 흡수하고 산소를 방출했기 때문이에요.' + (s === 1 ? ' 이제 끄면 어떻게 될지 예상해요.' : ''), 'ok');
+        else {
+          let pre = '';
+          if (!checked && pred.o && pred.c) { checked = true; const okO = pred.o === 'dn', okC = pred.c === 'up'; $$('#pred .pq').forEach((row) => $$('button', row).forEach((b) => { const ans = row.dataset.g === 'o' ? 'dn' : 'up'; b.classList.toggle('good', b.dataset.v === ans); b.classList.toggle('bad', b.dataset.v === pred[row.dataset.g] && b.dataset.v !== ans); })); pre = okO && okC ? '예상이 맞았어요. ' : `예상은 산소 ${NM[pred.o]}, 이산화 탄소 ${NM[pred.c]}였어요. `; }
+          say('측정 끝: LED등 끔', pre + '<b>산소는 감소</b>하고 <b>이산화 탄소는 증가</b>했어요. 빛이 없어 광합성은 일어나지 않고 <b>호흡만</b> 일어나 산소를 흡수하고 이산화 탄소를 방출했기 때문이에요.', 'ok');
+        }
+        render();
       });
+      render();
+    };
+    $('#bOn').addEventListener('click', () => go(true)); $('#bOff').addEventListener('click', () => go(false));
+    say('준비', '상추를 넣고 뚜껑을 닫았어요. 센서와 스마트 기기를 연결했어요.');
+    if (q.get('all')) { L.jump([true, false, true, false]); rows.push({ on: true }, { on: false }, { on: true }, { on: false }); pred = { o: 'dn', c: 'up' }; checked = true; say('측정 끝', '켠 구간과 끈 구간에서 두 기체의 변화가 <b>반대</b>예요. 낮과 밤에 방 안 기체의 양은 달라요.', 'ok'); }
+    render();
+    $('#bReset').addEventListener('click', () => { if (act === 'day') { D.reset(); setHr(0); return; } if (L.running) return; L.reset(); rows.length = 0; pred = { o: null, c: null }; checked = false; $$('#pred button').forEach((b) => b.classList.remove('good', 'bad')); say('준비', '상추를 넣고 뚜껑을 닫았어요. 센서와 스마트 기기를 연결했어요.'); render(); });
+    $$('#q8 button').forEach((b) => b.addEventListener('click', () => { const ok = b.dataset.k === '0'; $$('#q8 button').forEach((x) => x.classList.remove('good', 'bad')); b.classList.add(ok ? 'good' : 'bad'); const r = $('#q8r'); r.hidden = false; r.className = 'fbk ' + (ok ? 'ok' : 'no'); r.innerHTML = ok ? '맞아요. 호흡은 빛이 없을 때도 <b>항상</b> 일어나요.' : '호흡은 빛이 없을 때도 일어나요. 끈 구간의 그래프를 다시 봐요.'; }));
+    const ptab = (p) => { $$('#pt button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.p === p))); $$('.pp').forEach((e) => { e.hidden = e.dataset.p !== p; }); };
+    $$('#pt button').forEach((b) => b.addEventListener('click', () => ptab(b.dataset.p)));
+    if (q.get('tab')) ptab(q.get('tab'));
+
+    /* 활동 ② 맑은 날 하루 */
+    const D = RS3L.dayGraph($('#dayCv'));
+    const fmt = (h) => { const hh = Math.floor(h) % 24, mm = Math.round((h - Math.floor(h)) * 60); return (h >= 24 ? '0시' : (hh < 12 ? (hh === 0 ? '0시' : '오전 ' + hh + '시') : (hh === 12 ? '12시' : '오후 ' + (hh - 12) + '시'))) + (mm ? ' ' + mm + '분' : ''); };
+    function setHr(h) {
+      $('#hr').value = h; $('#hrO').textContent = fmt(h); D.set(h);
+      const p = D.P(h), r = D.Rr(), n = p - r;
+      $('#barP').style.width = (p / 4 * 100) + '%'; $('#barR').style.width = (r / 4 * 100) + '%';
+      $('#dresT').textContent = fmt(h);
+      $('#dresM').innerHTML = p <= 0.001 ? '빛이 없어 광합성은 일어나지 않고 <b>호흡만</b> 일어나요. 이산화 탄소를 <b>방출</b>해요.'
+        : n < -0.05 ? '빛이 약해 광합성량이 호흡량보다 적어요. 이산화 탄소를 <b>방출</b>하는 양이 더 많아요.'
+        : n <= 0.05 ? '광합성량과 호흡량이 비슷해 이산화 탄소가 겉으로 드나들지 않는 것처럼 보여요.'
+        : '빛이 강해 <b>광합성량이 호흡량보다 많아요</b>. 이산화 탄소 흡수량이 방출량보다 많아요.';
     }
-    $('#bReset').addEventListener('click', () => { if (busy) return; L = RS.room($('#fig')); pred = null; seen = { on: false, off: false }; render(['결과', '버튼을 눌러 측정을 시작해요.']); });
-    render(['결과', '버튼을 눌러 측정을 시작해요.']);
-    if (q.get('all')) { L.jump([true, false, true, false]); seen = { on: true, off: true }; pred = 'a'; render(['측정 끝', '낮과 밤에 방 안 산소와 이산화 탄소의 양은 <b>달라요</b>. 켤 때와 끌 때 변화 방향이 반대예요.', 'ok']); }
-    const tab = (p) => { $$('#pt button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.p === p))); $$('.pane').forEach((e) => { e.hidden = e.dataset.p !== p; }); };
-    $$('#pt button').forEach((b) => b.addEventListener('click', () => tab(b.dataset.p)));
-    if (q.get('tab')) tab(q.get('tab'));
-    const QS = [
-      { q: 'LED등을 끄면 밀폐 장치 속 산소의 양은?', o: ['감소한다', '증가한다', '변하지 않는다'], a: 0, ok: '빛이 없으면 호흡만 일어나 산소를 흡수하므로 <b>감소</b>해요.' },
-      { q: 'LED등을 끄면 밀폐 장치 속 이산화 탄소의 양은?', o: ['증가한다', '감소한다', '변하지 않는다'], a: 0, ok: '호흡으로 이산화 탄소를 방출하므로 <b>증가</b>해요.' },
-      { q: '밀폐된 방에서 식물을 키울 때 낮과 밤에 방 안 기체의 양은?', o: ['서로 다르다', '항상 같다', '밤에만 변한다'], a: 0, ok: '낮과 밤에 일어나는 과정이 달라 기체의 양이 <b>달라요</b>.' },
-    ];
-    $('#qs').innerHTML = QS.map((x, i) => `<div class="qa" data-i="${i}"><p>${x.q}</p><div class="qa3">${x.o.map((t, k) => `<button type="button" data-k="${k}">${t}</button>`).join('')}</div></div>`).join('');
-    $$('#qs .qa').forEach((row) => { const x = QS[+row.dataset.i]; $$('button', row).forEach((b) => b.addEventListener('click', () => {
-      const good = +b.dataset.k === x.a; $$('button', row).forEach((o) => o.classList.remove('good', 'bad')); b.classList.add(good ? 'good' : 'bad');
-      const r = $('#recRes'); r.hidden = false; r.className = 'fbk ' + (good ? 'ok' : 'no'); r.innerHTML = good ? x.ok : '다시 골라 봐요. 그림과 그래프를 떠올려요.';
-    })); });
-    window.SM = window.SM || {}; window.SM.okUI = true;
-  } catch (err) { window.SM_err && window.SM_err('낮밤 측정 실험실', err); }
+    $('#hr').addEventListener('input', (e) => { stopPlay(); setHr(+e.target.value); });
+    let pt = null;
+    const stopPlay = () => { if (pt) { cancelAnimationFrame(pt); pt = null; $('#bPlay').textContent = '하루 돌려 보기'; } };
+    $('#bPlay').addEventListener('click', () => {
+      if (pt) return stopPlay();
+      let h = +$('#hr').value >= 24 ? 0 : +$('#hr').value, last = performance.now(); $('#bPlay').textContent = '멈추기';
+      const step = (now) => { h = Math.min(24, h + (now - last) / 1000 * 2.4); last = now; setHr(Math.round(h * 4) / 4); if (h < 24) pt = requestAnimationFrame(step); else { pt = null; $('#bPlay').textContent = '하루 돌려 보기'; } };
+      pt = requestAnimationFrame(step);
+    });
+    $('#bAll').addEventListener('click', () => { stopPlay(); D.showAll(); });
+    $$('#q9 button').forEach((b) => b.addEventListener('click', () => { const ok = b.dataset.k === '0'; $$('#q9 button').forEach((x) => x.classList.remove('good', 'bad')); b.classList.add(ok ? 'good' : 'bad'); const r = $('#q9r'); r.hidden = false; r.className = 'fbk ' + (ok ? 'ok' : 'no'); r.innerHTML = ok ? '맞아요. 낮에는 <b>광합성량이 호흡량보다 많아</b> 흡수량이 방출량보다 많고, 밤에는 <b>호흡만</b> 일어나 방출량이 더 많아요.' : '호흡은 낮에도 항상 일어나요. 12시쯤의 막대 두 개를 비교해 봐요.'; }));
+    setHr(0);
+
+    let act = 'led';
+    const setAct = (a) => { act = a; stopPlay(); $$('#at button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.a === a))); $$('.pane').forEach((e) => { e.hidden = e.dataset.a !== a; }); $('#fig').hidden = a !== 'led'; $('#dayc').hidden = a !== 'day'; $('#hint').textContent = a === 'led' ? '그래프는 눈금 숫자 없이 변화의 방향만 그린 모형이에요' : '곡선 모양은 교과서 그래프를 따라 그린 모형이에요'; if (a === 'led') L.view(); else D.set(+$('#hr').value); };
+    $$('#at button').forEach((b) => b.addEventListener('click', () => setAct(b.dataset.a)));
+    if (q.get('act')) setAct(q.get('act'));
+    if (q.get('hr')) { setHr(+q.get('hr')); if (q.get('hr') === '24') D.showAll(); }
+    window.SM = window.SM || {}; window.SM.okUI = true; window.SM.ok3d = true;
+  } catch (err) { window.SM_err && window.SM_err('측정 실험실', err); }
 })();
 </script>
 </body>
