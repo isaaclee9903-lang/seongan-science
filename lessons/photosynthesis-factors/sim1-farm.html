@@ -203,6 +203,14 @@
   .stage > .card.pad{overflow:auto}
   @media (max-width:900px){.stage{grid-template-rows:minmax(0,1fr) auto}}
   /* ===== 환경요인 수업 전용 ===== */
+  .vstack{position:relative;flex:1 1 auto;min-height:300px}
+  .vstack > .scene{position:absolute;inset:0;height:100%}
+  .vstack > .scene[hidden]{display:none}
+  .vseg{display:inline-flex;gap:4px}
+  .lgd{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+  .lgd.co2{background:#3b424a;box-shadow:-5px 0 0 -1px #e5533f,5px 0 0 -1px #e5533f}
+  .lgd.o2{background:#e5533f}
+  .ol.var{color:#0e63b3;font-weight:900}
   .mlabel{font-weight:800;font-size:14.5px;color:#14263b;white-space:nowrap}
   .meter{flex:1 1 auto;height:18px;border-radius:9px;background:#dfe7ee;overflow:hidden;min-width:120px}
   .meter i{display:block;height:100%;background:#0e63b3;border-radius:9px;width:0;transition:width .45s cubic-bezier(.2,.8,.2,1)}
@@ -295,8 +303,12 @@
   </header>
   <div class="stage">
     <section class="card viewer">
-      <div class="scene grow" id="farm" role="img" aria-label="스마트팜 온실 안의 초록 상추와 붉은 상추. LED등, 센서, 제어함이 있다. 조건을 바꾸면 빛의 밝기, 이산화 탄소 입자 수, 잎으로 드나드는 입자의 양이 달라진다."></div>
+      <div class="vstack">
+        <div class="scene" id="farm" role="img" aria-label="스마트팜 온실 안의 초록 상추와 붉은 상추. LED등, 센서, 제어함이 있다. 조건을 바꾸면 빛의 밝기, 이산화 탄소 입자 수, 잎으로 드나드는 입자의 양이 달라진다."></div>
+        <div class="scene" id="leafv" hidden role="img" aria-label="상추 잎을 잘라 확대한 그림. 위에서 빛이 내려와 엽록체에 닿고, 잎 아래 기공으로 이산화 탄소가 들어가며 산소가 나온다."></div>
+      </div>
       <div class="vctl">
+        <div class="vseg" role="group" aria-label="보기"><button class="vb" type="button" id="vFarm" aria-pressed="true">온실</button><button class="vb" type="button" id="vLeaf" aria-pressed="false">잎 속 확대</button></div>
         <span class="mlabel">광합성량</span>
         <span class="meter" role="img" aria-label="지금 조건의 광합성량"><i id="meter"></i></span>
         <button class="vb" type="button" id="bReset">처음부터</button>
@@ -331,6 +343,7 @@
           <li><i>3</i><span>온도가 높아질수록 광합성량이 증가하지만, 일정 온도보다 높아지면 오히려 <b>급격히 감소</b>해요.</span></li>
           <li><i>4</i><span>한 가지 요인만 적당해서는 잘 일어나지 않아요. <b>모든 환경요인이 알맞게</b> 유지될 때 광합성이 활발해요.</span></li>
           <li><i>5</i><span>광합성이 활발하면 양분이 많이 만들어져요. 그래서 스마트팜은 환경요인을 조절해 <b>생산량</b>을 늘려요.</span></li>
+          <li><i>6</i><span><b>잎 속 확대</b>를 눌러 봐요. 빛은 잎 위에서 들어오고, 이산화 탄소는 <b>기공</b>으로 들어와 둘 다 <b>엽록체</b>에서 쓰여요.</span></li>
         </ol>
         <p class="mnote">눈금 숫자 없이 변화의 모양만 보여 주는 모형이에요. 자라는 시간은 줄였어요.</p>
       </div>
@@ -859,30 +872,90 @@ window.PF = (() => {
     const cursor = el('line', { stroke: '#0e63b3', 'stroke-width': 1.6, 'stroke-dasharray': '5 5', y1: pl.b.y, y2: pl.b.y + pl.b.h, opacity: 0 }, root);
     const dots = el('g', null, root);
     const hintL = ST.label(SX + SW / 2 + 20, SY + 250, '여기에 손가락으로<br>예측 곡선을 그려요', 'm'); hintL.e.style.textAlign = 'center'; hintL.e.style.fontSize = 'clamp(14px,1.5vw,17px)';
-    /* LED등 */
-    const LX = 44, BX = 96, BW = 268, BY = 236, BB = 684;
-    shadow(root, BX + BW / 2, 706, 170, 12, .26);
-    const cone = el('path', { d: `M${LX + 12} 170L${BX + BW + 8} ${BY}V${BB}L${LX + 12} 630Z`, fill: grad([[0, '#fff2a8', .8], [1, '#fff2a8', .08]], { x2: 1, y2: 0 }) }, root);
-    el('path', { d: `M${LX - 34} 702L${LX - 22} 668H${LX + 22}L${LX + 34} 702Z`, fill: grad([[0, '#7a8894'], [1, '#55616c']]), stroke: '#47525c' }, root);
-    el('rect', { x: LX - 13, y: 140, width: 26, height: 530, rx: 7, fill: grad([[0, '#8b98a4'], [.5, '#a9b5bf'], [1, '#70808d']], { x2: 1, y2: 0 }), stroke: '#5e6b76' }, root);
-    const strip = el('rect', { x: LX + 4, y: 154, width: 7, height: 502, rx: 3.5, fill: '#fff6c0' }, root);
-    /* 온도 조절판 */
-    const plate = el('rect', { x: BX - 12, y: BB, width: BW + 24, height: 18, rx: 5, fill: '#9aa6b1', stroke: '#6d7a85' }, root);
-    /* 밀폐 장치 */
-    el('path', { d: `M${BX} ${BY}L${BX + 8} ${BB - 8}Q${BX + 9} ${BB} ${BX + 18} ${BB}H${BX + BW - 18}Q${BX + BW - 9} ${BB} ${BX + BW - 8} ${BB - 8}L${BX + BW} ${BY}Z`, fill: 'rgba(226,238,245,.3)', stroke: '#8ba0b2', 'stroke-width': 2 }, root);
-    const lt = el('g', null, root); lettuce(lt, 'g', true, `translate(${BX + BW / 2} ${BB - 22}) scale(.98)`);
-    /* 온도계 */
-    const thG = el('g', { transform: `translate(${BX + 28} ${BY + 60}) scale(.62)` }, root), thU = factorIcon(thG, 'temp', 0, 0);
-    /* 뚜껑·센서 */
-    el('rect', { x: BX - 10, y: BY - 18, width: BW + 20, height: 16, rx: 5, fill: grad([[0, '#f6f8fa'], [1, '#d3dce4']]), stroke: '#a4b2bf' }, root);
-    el('rect', { x: BX - 6, y: BY - 4, width: BW + 12, height: 6, rx: 3, fill: '#c9483a' }, root);
-    [[BX + 72], [BX + BW - 72]].forEach(([x]) => { el('rect', { x: x - 4, y: BY - 18, width: 8, height: 44, fill: '#67737e' }, root); el('rect', { x: x - 24, y: BY - 92, width: 48, height: 74, rx: 7, fill: grad([[0, '#2aa2d6'], [1, '#157eb0']], { x2: 1, y2: 0 }), stroke: '#0f6a95' }, root); el('rect', { x: x - 17, y: BY - 84, width: 34, height: 18, rx: 3, fill: '#16242e' }, root); el('circle', { cx: x, cy: BY - 46, r: 6, fill: '#e9f2f7', stroke: '#0f6a95' }, root); });
-    const c1 = ST.label(BX + 72, BY - 108, '이산화 탄소 센서', 'm'), c2 = ST.label(BX + BW - 72, BY - 108, '산소 센서', 'm'); c1.e.style.fontSize = c2.e.style.fontSize = 'clamp(10.5px,1.05vw,12.5px)';
-    /* 이산화 탄소 공급: 기체통과 밸브 */
-    const lL = ST.label(LX + 8, 122, 'LED등', 'm'), lP = ST.label(BX + BW / 2, 726, '온도 조절판', 'm'), lB = ST.label(SX + SW / 2, 724, '스마트 기기', 'm');
-    [lL, lP, lB].forEach((l) => { l.e.style.fontSize = 'clamp(12px,1.25vw,14.5px)'; });
+    /* ===== 실험 장치: 앞 차시 탐구 2의 투명 밀폐 장치·센서·LED등에 이산화 탄소 통과 온도 조절 장치를 더한 모형 ===== */
+    const BX = 150, BW = 236, BY = 318, BB = 650, DX = 22, DY = -16;
+    const VAR = (k) => (kind === k ? 'var' : 'm');
+    /* 온도 조절 장치(받침) */
+    shadow(root, BX + BW / 2 + 8, 704, 190, 14, .28);
+    el('path', { d: `M${BX - 22} ${BB}L${BX - 22 + DX} ${BB + DY}H${BX + BW + 22 + DX}L${BX + BW + 22} ${BB}Z`, fill: '#e3e8ed', stroke: '#9aa7b3', 'stroke-width': 1.2 }, root);
+    const plateTop = el('path', { d: `M${BX - 10} ${BB - 2}L${BX - 10 + DX} ${BB + DY + 2}H${BX + BW + 10 + DX}L${BX + BW + 10} ${BB - 2}Z`, fill: '#9aa6b1' }, root);
+    el('path', { d: `M${BX + BW + 22} ${BB}L${BX + BW + 22 + DX} ${BB + DY}V${BB + DY + 46}L${BX + BW + 22} 700Z`, fill: '#b9c3cc', stroke: '#8995a1' }, root);
+    el('rect', { x: BX - 22, y: BB, width: BW + 44, height: 50, rx: 3, fill: grad([[0, '#f4f6f8'], [1, '#d2d9e0']]), stroke: '#8f9ca8', 'stroke-width': 1.2 }, root);
+    el('rect', { x: BX - 6, y: BB + 13, width: 92, height: 24, rx: 4, fill: '#1d2730' }, root);
+    const tBar = el('rect', { x: BX, y: BB + 21, height: 8, rx: 2, fill: '#e8763c' }, root);
+    const knobT = el('g', { transform: `translate(${BX + BW - 6} ${BB + 25})` }, root);
+    el('circle', { r: 15, fill: grad([[0, '#fdfdfd'], [1, '#c5ced6']], { r: 1, cx: .4, cy: .35, rr: .7 }), stroke: '#7d8a96', 'stroke-width': 1.3 }, knobT);
+    el('rect', { x: -1.8, y: -13, width: 3.6, height: 9, rx: 1.5, fill: '#33404c' }, knobT);
+    [[BX + BW - 40, '#3f8fd6'], [BX + BW + 28, '#e0613a']].forEach(([x, c]) => el('circle', { cx: x, cy: BB + 25, r: 3.4, fill: c }, root));
+    /* 투명 밀폐 장치: 뒤 모서리 → 화분·상추 → 앞 유리 */
+    el('path', { d: `M${BX + DX} ${BY + DY}H${BX + BW + DX}V${BB + DY}H${BX + DX}Z`, fill: 'rgba(214,232,244,.35)' }, root);
+    const glassBack = el('g', { stroke: '#b8c7d4', 'stroke-width': 1.4, fill: 'none' }, root);
+    el('path', { d: `M${BX + DX} ${BY + DY}V${BB + DY}H${BX + BW + DX}` }, glassBack);
+    el('path', { d: `M${BX} ${BB}L${BX + DX} ${BB + DY}` }, glassBack);
+    /* 화분 */
+    const PX = BX + BW / 2 + 4, PY = 568;
+    shadow(root, PX + 4, BB - 4, 66, 8, .3);
+    el('path', { d: `M${PX - 56} ${PY}L${PX - 44} ${BB - 4}Q${PX} ${BB + 2} ${PX + 44} ${BB - 4}L${PX + 56} ${PY}Z`, fill: grad([[0, '#c9744a'], [.55, '#b55f37'], [1, '#8f4527']], { x2: 1, y2: 0 }), stroke: '#7a3a20', 'stroke-width': 1.2 }, root);
+    el('ellipse', { cx: PX, cy: PY, rx: 58, ry: 9, fill: '#d08158', stroke: '#7a3a20', 'stroke-width': 1.2 }, root);
+    el('ellipse', { cx: PX, cy: PY + 1.5, rx: 50, ry: 6.5, fill: '#4a3020' }, root);
+    const lt = el('g', null, root); lettuce(lt, 'g', true, `translate(${PX} ${PY - 4}) scale(.78)`);
+    /* 온도계(안쪽 벽) */
+    const thG = el('g', { transform: `translate(${BX + 30} ${BY + 74}) scale(.5)` }, root), thU = factorIcon(thG, 'temp', 0, 0);
+    /* 앞 유리 */
+    el('rect', { x: BX, y: BY, width: BW, height: BB - BY, fill: 'rgba(222,236,246,.22)', stroke: '#7f97ab', 'stroke-width': 2 }, root);
+    el('path', { d: `M${BX + BW} ${BY}L${BX + BW + DX} ${BY + DY}V${BB + DY}L${BX + BW} ${BB}Z`, fill: 'rgba(196,216,232,.35)', stroke: '#7f97ab', 'stroke-width': 1.6 }, root);
+    /* 뚜껑과 고무 패킹, 잠금 고리 */
+    el('path', { d: `M${BX - 8} ${BY - 12}L${BX - 8 + DX} ${BY - 12 + DY}H${BX + BW + 8 + DX}L${BX + BW + 8} ${BY - 12}Z`, fill: '#f6f8fa', stroke: '#a4b2bf', 'stroke-width': 1.2 }, root);
+    el('rect', { x: BX - 8, y: BY - 12, width: BW + 16, height: 12, rx: 2, fill: grad([[0, '#eef2f5'], [1, '#c9d3dc']]), stroke: '#a4b2bf', 'stroke-width': 1.2 }, root);
+    el('rect', { x: BX - 3, y: BY, width: BW + 6, height: 4, fill: '#3d4852' }, root);
+    [BX + 22, BX + BW - 22].forEach((x) => el('rect', { x: x - 7, y: BY - 9, width: 14, height: 20, rx: 3, fill: '#55616c' }, root));
+    /* LED등: 무거운 받침 + 기둥 + 팔 + 판 모양 등 */
+    const LX = 30, LY = 150, PL = BX + 10, PR = BX + BW + 10;
+    const cone = el('path', { d: `M${PL + 6} ${LY + 32}H${PR - 6}L${PR + 16} ${BY - 14}L${PR + 8} ${PY - 40}H${PL - 8}L${PL - 16} ${BY - 14}Z`, fill: grad([[0, '#fff1a0', .75], [1, '#fff1a0', .06]]) }, root);
+    /* 센서 두 개: 뚜껑에 꽂고 줄로 스마트 기기에 연결 */
+    const SEN = [[BX + 70, '이산화 탄소 센서'], [BX + BW - 52, '산소 센서']];
+    SEN.forEach(([x], i) => {
+      el('path', { d: `M${x + 20} ${BY - 66 + i * 10}H${BX + BW + DX + 2 + i * 8}Q${BX + BW + DX + 12 + i * 8} ${BY - 66 + i * 10} ${BX + BW + DX + 12 + i * 8} ${BY - 54 + i * 10}V${SY + 470 + i * 24}Q${BX + BW + DX + 12 + i * 8} ${SY + 490 + i * 24} ${SX - 14} ${SY + 490 + i * 24}`, fill: 'none', stroke: '#2f3943', 'stroke-width': 3, 'stroke-linecap': 'round' }, root);
+      el('rect', { x: x - 3.5, y: BY - 20, width: 7, height: 60, rx: 3, fill: '#7b8792' }, root);
+      el('rect', { x: x - 22, y: BY - 92, width: 44, height: 74, rx: 8, fill: grad([[0, '#2b9fd3'], [1, '#1677aa']], { x2: 1, y2: 0 }), stroke: '#0f6a95', 'stroke-width': 1.2 }, root);
+      el('rect', { x: x - 15, y: BY - 83, width: 30, height: 15, rx: 3, fill: '#16242e' }, root);
+      el('rect', { x: x - 11, y: BY - 78, width: 15 + i * 4, height: 2.6, fill: '#7fe0a5' }, root);
+      el('circle', { cx: x, cy: BY - 46, r: 5.5, fill: '#e9f2f7', stroke: '#0f6a95' }, root);
+    });
+    const sl1 = ST.label(SEN[0][0] - 10, BY - 106, SEN[0][1], 'm'), sl2 = ST.label(SEN[1][0] + 8, BY - 106, SEN[1][1], 'm');
+    el('rect', { x: LX - 4, y: LY - 8, width: 8, height: 690 - LY, rx: 3, fill: grad([[0, '#9aa6b1'], [.5, '#cfd7de'], [1, '#7d8994']], { x2: 1, y2: 0 }) }, root);
+    el('path', { d: `M${LX - 22} 700L${LX - 16} 684H${LX + 18}L${LX + 24} 700Z`, fill: '#4b5661' }, root);
+    el('rect', { x: LX - 4, y: LY - 10, width: (PL + PR) / 2 - LX, height: 8, rx: 3, fill: grad([[0, '#cfd7de'], [1, '#8d99a4']]) }, root);
+    el('rect', { x: (PL + PR) / 2 - 4, y: LY - 4, width: 8, height: 20, fill: '#7d8994' }, root);
+    el('path', { d: `M${PL} ${LY + 14}L${PL + 10} ${LY + 4}H${PR + 10}L${PR} ${LY + 14}Z`, fill: '#46525d' }, root);
+    el('rect', { x: PL, y: LY + 14, width: PR - PL, height: 14, rx: 2, fill: grad([[0, '#5d6973'], [1, '#2f3841']]) }, root);
+    const strip = el('rect', { x: PL + 4, y: LY + 26, width: PR - PL - 8, height: 6, rx: 3, fill: '#fff6c0' }, root);
+    /* 밝기 조절기(기둥에 붙은 상자) */
+    const knobL = el('g', { transform: `translate(${LX + 6} 250)` }, root);
+    el('rect', { x: -4, y: -20, width: 40, height: 40, rx: 6, fill: '#e8edf1', stroke: '#8f9ca8' }, knobL);
+    const kL = el('g', { transform: 'translate(16 0)' }, knobL); const kLi = el('g', null, kL);
+    el('circle', { r: 12, fill: grad([[0, '#fdfdfd'], [1, '#c5ced6']], { r: 1, cx: .4, cy: .35, rr: .7 }), stroke: '#6d7a85' }, kLi); el('rect', { x: -1.5, y: -11, width: 3, height: 7, fill: '#33404c' }, kLi);
+    /* 이산화 탄소 통 + 조절 밸브 + 관 */
+    const CX0 = 62, CW = 54, CT = 470;
+    el('path', { d: `M${CX0 + CW / 2 + 18} ${CT - 30}C${BX - 40} ${CT - 30} ${BX - 30} 540 ${BX} 540`, fill: 'none', stroke: '#9fb3c4', 'stroke-width': 5, 'stroke-linecap': 'round' }, root);
+    shadow(root, CX0 + CW / 2, 703, 46, 7, .3);
+    el('rect', { x: CX0, y: CT, width: CW, height: 700 - CT, rx: 12, fill: grad([[0, '#8d99a4'], [.35, '#c9d2da'], [.62, '#a5b1bc'], [1, '#6f7c88']], { x2: 1, y2: 0 }), stroke: '#5c6873', 'stroke-width': 1.2 }, root);
+    el('path', { d: `M${CX0 + 8} ${CT + 4}Q${CX0 + CW / 2} ${CT - 30} ${CX0 + CW - 8} ${CT + 4}Z`, fill: '#5b6773' }, root);
+    el('rect', { x: CX0, y: CT + 48, width: CW, height: 22, fill: '#2c6f9e', opacity: .9 }, root);
+    el('rect', { x: CX0 + CW / 2 - 6, y: CT - 40, width: 12, height: 26, fill: '#7d8994' }, root);
+    const gauge = el('g', { transform: `translate(${CX0 + CW / 2} ${CT - 52})` }, root);
+    el('circle', { r: 16, fill: '#fff', stroke: '#5c6873', 'stroke-width': 3 }, gauge);
+    const needle = el('line', { x1: 0, y1: 0, x2: 0, y2: -11, stroke: '#1d2730', 'stroke-width': 2, 'stroke-linecap': 'round' }, gauge);
+    el('circle', { r: 2.4, fill: '#1d2730' }, gauge);
+    const valve = el('g', { transform: `translate(${CX0 + CW / 2 + 16} ${CT - 30})` }, root);
+    el('rect', { x: -4, y: -13, width: 8, height: 26, rx: 4, fill: '#2f6fa6' }, valve);
+    el('rect', { x: BX - 6, y: 533, width: 12, height: 14, rx: 2, fill: '#55616c' }, root);
+    const cl = ST.label(CX0 + CW / 2, CT + 124, '이산화<br>탄소 통', VAR('co2')); cl.e.style.textAlign = 'center';
+    const lL = ST.label(LX + 74, LY - 26, 'LED등', VAR('light'));
+    const lP = ST.label(BX + BW / 2, 726, '온도 조절 장치', VAR('temp')), lB = ST.label(SX + SW / 2, 726, '스마트 기기', 'm');
+    [lL, lP, lB, sl1, sl2, cl].forEach((l) => { l.e.style.fontSize = 'clamp(11px,1.15vw,13.5px)'; });
     const mol = el('g', null, root), fl = flock(mol), ambG = el('g', null, mol), R = Math.random;
-    const INB = () => [BX + 62 + R() * (BW - 90), BY + 28 + R() * 240];
+    const INB = () => [BX + 26 + R() * (BW - 52), BY + 24 + R() * (PY - BY - 120)];
     const amb = Array.from({ length: 13 }, () => { const b = INB(); return { u: el('use', { href: '#mCO2', opacity: 0 }, ambG), x: b[0], y: b[1], a: R() * 6.28 }; });
     /* 값: 고른 요인만 x. 나머지는 알맞게 고정 */
     let x = M.xs[0], acc = 0, boost = 0, sk = [], skOn = false; const REST = .85;
@@ -890,8 +963,9 @@ window.PF = (() => {
     const hc = (v) => { const a = (p, q) => Math.round(lerp(p, q, v)); return `rgb(${a(70, 214)},${a(132, 80)},${a(200, 52)})`; };
     const paint = () => {
       const v = lv();
-      cone.setAttribute('opacity', v.L); strip.setAttribute('opacity', .3 + .7 * v.L);
-      plate.setAttribute('fill', hc(v.T)); thU(v.T);
+      cone.setAttribute('opacity', v.L); strip.setAttribute('opacity', .3 + .7 * v.L); kLi.setAttribute('transform', `rotate(${f1(-130 + 260 * v.L)})`);
+      plateTop.setAttribute('fill', hc(v.T)); thU(v.T); tBar.setAttribute('width', f1(10 + 70 * v.T)); tBar.setAttribute('fill', hc(v.T)); knobT.setAttribute('transform', `translate(${BX + BW - 6} ${BB + 25}) rotate(${f1(-130 + 260 * v.T)})`);
+      needle.setAttribute('transform', `rotate(${f1(-120 + 240 * v.C)})`); valve.setAttribute('transform', `translate(${CX0 + CW / 2 + 16} ${CT - 30}) rotate(${f1(90 * (1 - v.C))})`);
       amb.forEach((a, i) => { a.show = i < Math.round(v.C * amb.length); });
       cursor.setAttribute('x1', pl.sx(x)); cursor.setAttribute('x2', pl.sx(x));
     };
@@ -918,15 +992,15 @@ window.PF = (() => {
     paint();
     loop((dt, now) => {
       fl.step(dt);
-      amb.forEach((a, i) => { if (!a.show) { a.u.setAttribute('opacity', 0); return; } a.a += (R() - .5) * dt * 2; a.x += Math.cos(a.a) * 16 * dt; a.y += Math.sin(a.a) * 14 * dt; if (a.x < BX + 50) a.a = 0; if (a.x > BX + BW - 26) a.a = 3.14; if (a.y < BY + 24) a.a = 1.57; if (a.y > BY + 270) a.a = -1.57; a.u.setAttribute('opacity', 1); a.u.setAttribute('transform', `translate(${f1(a.x)} ${f1(a.y)}) rotate(${f1(now * 20 + i * 40)}) scale(.62)`); });
+      amb.forEach((a, i) => { if (!a.show) { a.u.setAttribute('opacity', 0); return; } a.a += (R() - .5) * dt * 2; a.x += Math.cos(a.a) * 16 * dt; a.y += Math.sin(a.a) * 14 * dt; if (a.x < BX + 22) a.a = 0; if (a.x > BX + BW - 22) a.a = 3.14; if (a.y < BY + 20) a.a = 1.57; if (a.y > PY - 100) a.a = -1.57; a.u.setAttribute('opacity', 1); a.u.setAttribute('transform', `translate(${f1(a.x)} ${f1(a.y)}) rotate(${f1(now * 20 + i * 40)}) scale(.62)`); });
       if (skOn) return;
       const v = lv(); acc += dt * rate(v.L, v.C, v.T) * (boost ? 5.5 : 2.2);
       while (acc > 1 && fl.n < 20) {
         acc -= 1;
         const s = amb.filter((a) => a.show); const a = s[Math.floor(R() * s.length)];
-        const t = [BX + BW / 2 + (R() - .5) * 90, BB - 60 - R() * 70];
+        const t = [PX + (R() - .5) * 80, PY - 30 - R() * 50];
         const from = a ? [a.x, a.y] : INB();
-        fl.add('mCO2', [from, t], { dur: 1.1, s: .6, wob: 3, fo: .12, cb: () => fl.add('mO2', [t, [t[0] + (R() - .5) * 40, t[1] - 80], [t[0] + (R() - .5) * 90, BY + 30]], { dur: 1.7, s: .66, wob: 5, fi: .2, fo: .25 }) });
+        fl.add('mCO2', [from, t], { dur: 1.1, s: .6, wob: 3, fo: .12, cb: () => fl.add('mO2', [t, [t[0] + (R() - .5) * 40, t[1] - 80], [t[0] + (R() - .5) * 120, BY + 70]], { dur: 1.7, s: .62, wob: 5, fi: .2, fo: .45 }) });
       }
       if (acc > 2) acc = 2;
     });
@@ -937,6 +1011,181 @@ window.PF = (() => {
 })();
 </script>
 <script>
+/* ===== 잎 속 확대 그림 PFX.leaf =====
+   잎을 잘라 비스듬히 본 덩어리 그림. 위에서 빛 알갱이가 내려와 엽록체에 닿고, 아래 기공으로 이산화 탄소가 들어가
+   엽록체에서 쓰이고, 산소가 기공으로 나간다. 빛의 세기·이산화 탄소 농도·온도(0~1)에 따라 양과 빠르기가 달라진다.
+   잎 조직 이름(책상 조직 등)은 교육과정 밖이라 그림으로만 그린다. 세포 모양은 일반 식물 해부 그림을 참고해 새로 그림. */
+window.PFX = (() => {
+  'use strict';
+  const { el, grad, flock, loop, mk, lerp, clamp, stage, f1, defs } = PS;
+
+  function litDef() {
+    const d = defs(); if (d.querySelector('#mLit')) return;
+    const g = el('g', { id: 'mLit' }, d);
+    el('circle', { r: 10, fill: grad([[0, '#fff8c9', 1], [.5, '#ffe066', .9], [1, '#ffcf3a', 0]], { r: 1, rr: .5 }) }, g);
+    el('circle', { r: 3.6, fill: '#fffbe0' }, g);
+  }
+  /* 둥근 다각형(세포벽) */
+  const blob = (cx, cy, rx, ry, R, n = 9, j = .16) => {
+    const pts = []; const a0 = R() * 6.28;
+    for (let i = 0; i < n; i++) { const a = a0 + i / n * 6.283, k = 1 + (R() - .5) * 2 * j; pts.push([cx + Math.cos(a) * rx * k, cy + Math.sin(a) * ry * k]); }
+    let d = ''; pts.forEach((p, i) => { const q = pts[(i + 1) % n], m = [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2]; d += (i ? '' : `M${f1((pts[n - 1][0] + p[0]) / 2)} ${f1((pts[n - 1][1] + p[1]) / 2)}`) + `Q${f1(p[0])} ${f1(p[1])} ${f1(m[0])} ${f1(m[1])}`; });
+    return d + 'Z';
+  };
+  const rrect = (x, y, w, h, r) => `M${f1(x + r)} ${f1(y)}H${f1(x + w - r)}Q${f1(x + w)} ${f1(y)} ${f1(x + w)} ${f1(y + r)}V${f1(y + h - r)}Q${f1(x + w)} ${f1(y + h)} ${f1(x + w - r)} ${f1(y + h)}H${f1(x + r)}Q${f1(x)} ${f1(y + h)} ${f1(x)} ${f1(y + h - r)}V${f1(y + r)}Q${f1(x)} ${f1(y)} ${f1(x + r)} ${f1(y)}Z`;
+
+  function leaf(host, o = {}) {
+    litDef();
+    const ST = stage(host, o.vb || [40, 6, 890, 630]), svg = ST.svg, R = mk(7);
+    const root = el('g', null, svg);
+    /* 배경: 위는 빛이 드는 공기, 아래는 잎 밑 공기 */
+    el('rect', { x: -200, y: -200, width: 1400, height: 1100, fill: grad([[0, '#eaf4fb'], [.3, '#f7fbfd'], [.85, '#fbfcfd'], [1, '#f1f5f9']]) }, root);
+    const X0 = 100, X1 = 780, Y0 = 200, Y1 = 530, DX = 60, DY = -56;
+    /* 빛줄기(뒤) */
+    const beams = el('g', null, root);
+    for (let i = 0; i < 7; i++) {
+      const x = 140 + i * 100;
+      el('path', { d: `M${x - 30} -20L${x + 26} -20L${x + 58} ${Y0 - 6}L${x - 4} ${Y0 - 6}Z`, fill: grad([[0, '#fff1a6', .55], [1, '#fff1a6', .05]]) }, beams);
+    }
+    /* 윗면: 잎 겉 */
+    const top = el('g', null, root);
+    el('path', { d: `M${X0} ${Y0}L${X0 + DX} ${Y0 + DY}H${X1 + DX}L${X1} ${Y0}Z`, fill: grad([[0, '#5fa83f'], [1, '#7cc04e']], { x2: 1, y2: 0 }), stroke: '#3f7a2a', 'stroke-width': 1.4 }, top);
+    /* 잎맥(윗면, 원근) */
+    const vein = (u0, u1, v0, v1, w) => { const P = (u, v) => [X0 + (X1 - X0) * u + DX * v, Y0 + DY * v]; const a = P(u0, v0), b = P(u1, v1); el('path', { d: `M${f1(a[0])} ${f1(a[1])}L${f1(b[0])} ${f1(b[1])}`, stroke: '#b5e08b', 'stroke-width': w, opacity: .75, 'stroke-linecap': 'round' }, top); };
+    vein(.48, .52, 0, 1, 3.2);
+    [[.1, .35], [.22, .62], [.3, .82], [.6, .9], [.7, .7], [.84, .52]].forEach(([u, v]) => { vein(.5 + (u - .5) * .0, u, v * .5, v, 1.4); });
+    /* 오른쪽 옆면 */
+    el('path', { d: `M${X1} ${Y0}L${X1 + DX} ${Y0 + DY}V${Y1 + DY}L${X1} ${Y1}Z`, fill: grad([[0, '#a6c98a'], [.12, '#8fbd6a'], [.48, '#b6d39c'], [.86, '#9fc483'], [1, '#6f9f55']]), stroke: '#4f7f38', 'stroke-width': 1.2 }, root);
+    /* 앞면: 자른 면 */
+    const face = el('g', null, root);
+    const clipId = 'pfxclip' + Math.floor(R() * 1e6);
+    const cp = el('clipPath', { id: clipId }, el('defs', null, svg)); el('rect', { x: X0, y: Y0, width: X1 - X0, height: Y1 - Y0 }, cp);
+    el('rect', { x: X0, y: Y0, width: X1 - X0, height: Y1 - Y0, fill: '#f2f7ec' }, face);
+    const cells = el('g', { 'clip-path': `url(#${clipId})` }, face);
+    const WALL = '#86b264', CYT = grad([[0, '#f6fbef'], [1, '#e3f0d3']]);
+    const chloros = [];
+    const chl = (cx, cy, a, s = 1, g = cells) => {
+      const c = el('g', { transform: `translate(${f1(cx)} ${f1(cy)}) rotate(${f1(a)}) scale(${s})` }, g);
+      const body = el('ellipse', { rx: 9.5, ry: 5.2, fill: '#3e9a3a', stroke: '#1f5d21', 'stroke-width': 1 }, c);
+      el('path', { d: 'M-5 -2.6V2.6M-1.5 -3.6V3.6M2 -3.6V3.6M5.4 -2.4V2.4', stroke: '#8fd36b', 'stroke-width': 1.1, opacity: .8 }, c);
+      el('ellipse', { rx: 6, ry: 2.2, cy: -1.6, fill: '#7ccc5c', opacity: .45 }, c);
+      const glow = el('ellipse', { rx: 13, ry: 8.5, fill: '#fff07a', opacity: 0 }, c); c.insertBefore(glow, body);
+      const k = { x: cx, y: cy, body, glow, hot: 0 }; chloros.push(k); return k;
+    };
+    /* 위 표피 */
+    const EP = 36; let x = X0 - 10;
+    while (x < X1) { const w = 50 + R() * 22; el('path', { d: rrect(x + 1.5, Y0 + 4, w - 3, EP - 6, 8), fill: '#f8fcf3', stroke: WALL, 'stroke-width': 2 }, cells); x += w; }
+    el('rect', { x: X0, y: Y0, width: X1 - X0, height: 4, fill: '#cfe6b5' }, cells);
+    /* 길쭉한 세포 줄(위) */
+    const PT = Y0 + EP, PH = 120; x = X0 - 6; const pal = [];
+    while (x < X1) {
+      const w = 30 + R() * 8, h = PH - R() * 10;
+      el('path', { d: rrect(x + 2, PT + 2, w - 4, h - 4, 13), fill: CYT, stroke: WALL, 'stroke-width': 2.2 }, cells);
+      pal.push([x + w / 2, PT + h / 2]);
+      for (let k = 0; k < 7; k++) { const side = k % 2 ? 1 : -1; chl(x + w / 2 + side * (w / 2 - 9), PT + 16 + k * (h - 32) / 6 + (R() - .5) * 6, 90 + (R() - .5) * 20, .82); }
+      x += w;
+    }
+    /* 잎맥 다발 */
+    const VX = 420, VY = PT + PH + 58;
+    /* 둥근 세포(아래, 공기 틈이 많음) */
+    const SP0 = PT + PH + 4, SP1 = Y1 - 38, holes = [];
+    const STX = 590, STW = 34; /* 기공 자리 */
+    for (let gy = SP0 + 18; gy < SP1 - 8; gy += 40) {
+      for (let gx = X0 + 6 + (gy % 80 ? 20 : 0); gx < X1 + 10; gx += 56) {
+        const cx = gx + (R() - .5) * 18, cy = gy + (R() - .5) * 10;
+        if (Math.hypot(cx - VX, (cy - VY) * 1.25) < 70) continue;
+        if (Math.abs(cx - STX) < 42 && cy > SP1 - 46) continue;
+        if (R() < .16) { holes.push([cx, cy]); continue; }
+        const rx = 18 + R() * 7, ry = 13 + R() * 6;
+        el('path', { d: blob(cx, cy, rx, ry, R, 9, .14), fill: CYT, stroke: WALL, 'stroke-width': 2 }, cells);
+        for (let k = 0; k < 3; k++) { const a = R() * 6.28; chl(cx + Math.cos(a) * (rx - 8), cy + Math.sin(a) * (ry - 6), a * 57.3 + 90, .66); }
+      }
+    }
+    el('ellipse', { cx: VX, cy: VY, rx: 62, ry: 48, fill: '#eef5dc', stroke: '#a9c27e', 'stroke-width': 2 }, cells);
+    for (let i = 0; i < 26; i++) { const a = R() * 6.28, r = Math.sqrt(R()) * 38; el('path', { d: blob(VX + Math.cos(a) * r, VY + Math.sin(a) * r * .75, 8 + R() * 4, 7 + R() * 3, R, 7, .2), fill: i % 3 ? '#f7f2d8' : '#e8dfb5', stroke: '#b9a86b', 'stroke-width': 1.2 }, cells); }
+    /* 아래 표피와 기공 */
+    x = X0 - 14; const LE = Y1 - 34;
+    while (x < X1) {
+      let w = 44 + R() * 20;
+      if (x + w > STX - STW && x < STX + STW) { const a = STX - STW - x; if (a > 12) el('path', { d: rrect(x + 1.5, LE + 2, a - 3, 28, 7), fill: '#f8fcf3', stroke: WALL, 'stroke-width': 2 }, cells); x = STX + STW; continue; }
+      el('path', { d: rrect(x + 1.5, LE + 2, w - 3, 28, 7), fill: '#f8fcf3', stroke: WALL, 'stroke-width': 2 }, cells); x += w;
+    }
+    /* 기공 둘레 세포 한 쌍(콩팥 모양) */
+    [-1, 1].forEach((s) => {
+      const gx = STX + s * 19;
+      el('path', { d: `M${gx - 15} ${LE + 2}C${gx - 18} ${LE + 18} ${gx - 12} ${LE + 32} ${gx} ${LE + 32}C${gx + 12} ${LE + 32} ${gx + 18} ${LE + 18} ${gx + 15} ${LE + 2}C${gx + 6} ${LE + 8} ${gx - 6} ${LE + 8} ${gx - 15} ${LE + 2}Z`, fill: '#e5f2d4', stroke: '#6f9b4f', 'stroke-width': 2.2 }, cells);
+      chl(gx - 4, LE + 20, 30 * s, .55); chl(gx + 5, LE + 16, -20 * s, .5);
+    });
+    el('rect', { x: X0, y: Y1 - 4, width: X1 - X0, height: 4, fill: '#cfe6b5' }, cells);
+    el('rect', { x: STX - 4, y: Y1 - 6, width: 8, height: 8, fill: '#f2f7ec' }, cells);
+    el('rect', { x: X0, y: Y0, width: X1 - X0, height: Y1 - Y0, fill: 'none', stroke: '#4f7f38', 'stroke-width': 1.6 }, face);
+    /* 이름표 */
+    const lab = [];
+    const pick = chloros.filter((k) => k.y < PT + PH && k.x > X1 - 70 && k.x < X1 - 20 && k.y > PT + 30)[0] || chloros[0];
+    if (o.labels !== false) {
+      el('path', { d: `M${f1(pick.x + 8)} ${f1(pick.y - 4)}L${X1 + DX + 8} ${Y0 + 70}`, stroke: '#14263b', 'stroke-width': 1.3, fill: 'none' }, root);
+      el('circle', { cx: pick.x, cy: pick.y, r: 13, fill: 'none', stroke: '#14263b', 'stroke-width': 1.5 }, root);
+      lab.push(ST.label(X1 + DX + 12, Y0 + 70, '엽록체', 'bg ra'));
+      lab.push(ST.label(STX, Y1 + 34, '기공', 'bg'));
+      lab.push(ST.label(96, 46, '빛', 'bg'));
+    }
+    /* 입자 */
+    const mol = el('g', null, root), fl = flock(mol);
+    const amb = Array.from({ length: 16 }, (_, i) => ({ u: el('use', { href: '#mCO2', opacity: 0 }, mol), x: X0 + R() * (X1 - X0), y: Y1 + 40 + R() * 70, a: R() * 6.28, on: 0 }));
+    const legend = o.labels !== false ? [ST.label(560, 40, '<i class="lgd co2"></i>이산화 탄소', 'm ra'), ST.label(740, 40, '<i class="lgd o2"></i>산소', 'm ra')] : [];
+    let L = .6, C = .6, T = .55, r = 0, accL = 0, accC = 0;
+    const api = {
+      ST,
+      set(a, b, c) {
+        L = a; C = b; T = c; r = PF.rate(L, C, T);
+        beams.setAttribute('opacity', f1(.08 + .92 * L));
+        chloros.forEach((k) => k.body.setAttribute('fill', `rgb(${Math.round(lerp(96, 52, L))},${Math.round(lerp(140, 160, L))},${Math.round(lerp(78, 54, L))})`));
+        return r;
+      },
+      get rate() { return r; },
+    };
+    const inside = () => { const p = pal[Math.floor(R() * pal.length)]; return [p[0] + (R() - .5) * 14, p[1] + (R() - .5) * 70]; };
+    const hole = () => holes.length ? holes[Math.floor(R() * holes.length)] : [STX, SP1 - 20];
+    loop((dt, now) => {
+      fl.step(dt);
+      const want = Math.round(C * amb.length);
+      amb.forEach((a, i) => {
+        a.on += ((i < want ? 1 : 0) - a.on) * Math.min(1, dt * 3);
+        if (a.on < .03) { a.u.setAttribute('opacity', 0); return; }
+        a.a += (R() - .5) * dt * 2; a.x += Math.cos(a.a) * 22 * dt; a.y += Math.sin(a.a) * 12 * dt;
+        if (a.x < X0) a.a = 0; if (a.x > X1) a.a = 3.14; if (a.y < Y1 + 26) a.a = 1.57; if (a.y > 600) a.a = -1.57;
+        a.u.setAttribute('transform', `translate(${f1(a.x)} ${f1(a.y)}) rotate(${f1(now * 30 + i * 40)}) scale(.5)`);
+        a.u.setAttribute('opacity', f1(a.on));
+      });
+      /* 빛 알갱이: 빛의 세기에 비례 */
+      accL += dt * L * 7;
+      while (accL > 1 && fl.n < 70) {
+        accL -= 1; const k = chloros[Math.floor(R() * chloros.length * .7)];
+        const sx = k.x - 90 * (k.y - (-10)) / 600;
+        fl.add('mLit', [[sx, -10], [k.x, k.y]], { dur: .9 + R() * .3, s: 1.15, spin: 0, fi: .1, fo: .05, cb: () => { k.hot = 1; } });
+      }
+      /* 이산화 탄소가 기공으로 들어가 쓰이고, 산소가 나온다 */
+      accC += dt * r * 2.6;
+      while (accC > 1 && fl.n < 70) {
+        accC -= 1;
+        const on = amb.filter((a) => a.on > .5), a = on[Math.floor(R() * on.length)];
+        const s = a ? [a.x, a.y] : [STX + (R() - .5) * 200, 590];
+        const h = hole(), t = inside();
+        fl.add('mCO2', [s, [STX + (R() - .5) * 6, Y1 + 8], [STX, Y1 - 46], h, t], { dur: 2.6, s: .5, wob: 3, spin: 60, fi: .08, fo: .1, cb: () => {
+          const h2 = hole();
+          fl.add('mO2', [t, h2, [STX, Y1 - 46], [STX, Y1 + 8], [STX + (R() - .5) * 260, 600 + R() * 20]], { dur: 3, s: .52, wob: 4, spin: 40, fi: .1, fo: .25 });
+        } });
+      }
+      if (accL > 3) accL = 3; if (accC > 3) accC = 3;
+      chloros.forEach((k) => { if (k.hot > 0) { k.hot = Math.max(0, k.hot - dt * 2.2); k.glow.setAttribute('opacity', f1(k.hot * .85)); } });
+    });
+    api.set(o.L ?? .6, o.C ?? .6, o.T ?? .55);
+    return api;
+  }
+  return { leaf };
+})();
+</script>
+<script>
 (() => {
   'use strict';
   try {
@@ -944,6 +1193,9 @@ window.PF = (() => {
     const q = new URLSearchParams(location.search);
     const S = { L: +(q.get('L') ?? .6), C: +(q.get('C') ?? .6), T: +(q.get('T') ?? .55) };
     const farm = PF.farm($('#farm'), S);
+    let leaf = null;
+    const view = (k) => { $('#farm').hidden = k !== 'farm'; $('#leafv').hidden = k !== 'leaf'; $('#vFarm').setAttribute('aria-pressed', String(k === 'farm')); $('#vLeaf').setAttribute('aria-pressed', String(k === 'leaf')); if (k === 'leaf' && !leaf) { leaf = PFX.leaf($('#leafv'), S); } if (leaf) leaf.set(S.L, S.C, S.T); };
+    $('#vFarm').addEventListener('click', () => view('farm')); $('#vLeaf').addEventListener('click', () => view('leaf'));
     const sl = { L: $('#sL'), C: $('#sC'), T: $('#sT') };
     let pred = null, busy = false, rec = [], grown = false;
     const PRE = [
@@ -955,7 +1207,7 @@ window.PF = (() => {
     $('#pre').innerHTML = PRE.map((p, i) => `<button type="button" data-i="${i}">${p.t}</button>`).join('');
     const say = (t, m, c = '') => { $('#res').className = 'fbk ' + c; $('#resT').textContent = t; $('#resM').innerHTML = m; };
     const sync = () => {
-      const r = farm.set(S.L, S.C, S.T);
+      const r = farm.set(S.L, S.C, S.T); if (leaf) leaf.set(S.L, S.C, S.T);
       $('#meter').style.width = (r * 100).toFixed(0) + '%';
       Object.keys(sl).forEach((k) => { sl[k].value = Math.round(S[k] * 100); sl[k].style.setProperty('--v', sl[k].value + '%'); });
     };
@@ -981,7 +1233,7 @@ window.PF = (() => {
       if (rec.length >= 3) { const m = $('#recM'); m.hidden = false; m.className = 'fbk ok'; m.innerHTML = '기록을 비교해 봐요. 자란 정도가 가장 큰 줄은 <b>세 조건이 모두 알맞은</b> 줄이에요.'; }
     };
     $('#bGo').addEventListener('click', () => {
-      if (busy || !pred) return; busy = true; armed(); $('#bGo').textContent = '자라는 중'; say('자라는 중', '잎으로 들어가는 이산화 탄소와 나오는 산소의 양을 봐요.');
+      if (busy || !pred) return; busy = true; armed(); $('#bGo').textContent = '자라는 중'; say('자라는 중', '잎으로 들어가는 이산화 탄소와 나오는 산소의 양을 봐요. <b>잎 속 확대</b>로 잎 안도 볼 수 있어요.');
       farm.grow(() => {
         busy = false; grown = true; pred === null; $('#bGo').textContent = '상추 키우기';
         const r = farm.rate, [t, m, c] = verdict(), good = r >= .8, okP = (pred === 'y') === good;
@@ -996,6 +1248,7 @@ window.PF = (() => {
     const tab = (p) => { $$('#pt button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.p === p))); $$('.pane').forEach((e) => { e.hidden = e.dataset.p !== p; }); };
     $$('#pt button').forEach((b) => b.addEventListener('click', () => tab(b.dataset.p)));
     if (q.get('tab')) tab(q.get('tab'));
+    if (q.get('view') === 'leaf') view('leaf');
     window.SM = window.SM || {}; window.SM.okUI = true;
   } catch (err) { window.SM_err && window.SM_err('스마트팜 조절실', err); }
 })();
