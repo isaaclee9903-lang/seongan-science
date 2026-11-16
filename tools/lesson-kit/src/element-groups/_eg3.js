@@ -70,7 +70,7 @@ const EG3 = (() => {
     const left = M(lump(el.charCodeAt(0) * 7, W, H, D), crustM, -0.06, 0.06 + H / 2, 0); g.add(left);
     const slice = M(lump(el.charCodeAt(0) * 7 + 3, 0.13, H * 0.96, D * 0.95), crustM2, -0.06 + W / 2 + 0.02, 0.06 + H * 0.48, 0); g.add(slice);
     // 자른 면(처음엔 숨김)
-    const freshM = std('#ffffff', 0.3, 0.75, { map: lusterMap(), emissive: '#ffffff', emissiveMap: lusterMap(), emissiveIntensity: 0.35 });
+    const freshM = std('#ffffff', 0.3, 0.75, { map: lusterMap(), emissive: '#ffffff', emissiveMap: lusterMap(), emissiveIntensity: 0.55 });
     // 자른 면 모양: 덩어리 단면처럼 둥근 네모
     const rr = (w, h, r) => { const s = new THREE.Shape(), x = -w / 2, y = -h / 2; s.moveTo(x + r, y); s.lineTo(x + w - r, y); s.quadraticCurveTo(x + w, y, x + w, y + r); s.lineTo(x + w, y + h - r); s.quadraticCurveTo(x + w, y + h, x + w - r, y + h); s.lineTo(x + r, y + h); s.quadraticCurveTo(x, y + h, x, y + h - r); s.lineTo(x, y + r); s.quadraticCurveTo(x, y, x + r, y); return new THREE.ShapeGeometry(s, 10); };
     const fg = rr(D * 0.9, H * 0.88, Math.min(D, H) * 0.24);
@@ -191,6 +191,9 @@ const EG3 = (() => {
   function part(id) {
     const [a, b] = id.split('-');
     if (a === 'blk') return metalBlock(b);
+    if (a === 'cut') { // 끝을 잘라 은백색 면이 보이는 덩어리
+      const g = metalBlock(b), u = g.userData; u.face.visible = u.face2.visible = true; u.slice.position.x += 0.2; u.slice.rotation.z = -0.7; u.slice.position.y -= u.H * 0.05; return g;
+    }
     if (a === 'fl') return flask();
     if (a === 'blimp') return blimp();
     if (a === 'sign') { const s = neonSign(); s.userData.on(1); return s; }
@@ -277,7 +280,7 @@ const EG3 = (() => {
     }
     function resetBlock(e) {
       const b = blocks[e], u = b.userData; u.left.position.x = -0.06; u.slice.position.set(u.cutX + 0.02, u.slice.position.y, 0); u.slice.rotation.set(0, 0, 0); u.face.visible = false; u.face2.visible = false;
-      u.freshM.color.set('#ffffff'); u.freshM.roughness = 0.3; u.freshM.metalness = 0.75; u.freshM.emissiveIntensity = 0.35; u.age = -1;
+      u.freshM.color.set('#ffffff'); u.freshM.roughness = 0.3; u.freshM.metalness = 0.75; u.freshM.emissiveIntensity = 0.55; u.age = -1;
     }
     function pick(el) {
       clearFx(); S.el = el; S.cut = false; S.wet = false; S.use = false; S.busy = false;
@@ -312,7 +315,7 @@ const EG3 = (() => {
       return true;
     }
     function startReact() {
-      R.on = true; R.t = 0; const a = Math.random() * 6.28; const sp = S.el === 'Li' ? 0.18 : S.el === 'Na' ? 0.42 : 0.55; R.vx = Math.cos(a) * sp; R.vz = Math.sin(a) * sp;
+      R.on = true; R.t = 0; const a = (S.el === 'K' ? 2.2 : S.el === 'Na' ? 0.6 : 4.0); const sp = S.el === 'Li' ? 0.18 : S.el === 'Na' ? 0.42 : 0.55; R.vx = Math.cos(a) * sp; R.vz = Math.sin(a) * sp;
       for (let i = 0; i < 10; i++) emitBub(R.x + (Math.random() - 0.5) * 0.1, wy + 0.02, R.z + (Math.random() - 0.5) * 0.1, 0.012, 0.6, 0.35, 2);
       emitRing(R.x, R.z, 0.5, 0.6);
     }
@@ -322,7 +325,7 @@ const EG3 = (() => {
       const d = EG.D[S.el]; S.busy = true;
       if (d.kind === 'metal') {
         clearFx(); const b = blocks[S.el], u = b.userData; resetBlock(S.el);
-        st.fit([b], { dir: V(0.55, 0.5, 1), margin: 1.25, dur: 0.8 });
+        st.fit([u.left, u.slice], { dir: V(1, 0.5, 0.75), margin: 1.5, dur: 0.8 });
         R.cut = { t: 0, done }; return true;
       }
       S.use = true; R.useT = 0; R.useDone = done;
@@ -408,7 +411,7 @@ const EG3 = (() => {
       Object.keys(blocks).forEach((e) => {
         const u = blocks[e].userData; if (!(u.age >= 0)) return; u.age += dt;
         const k = cl((u.age - 0.6) / u.c.fade);
-        u.freshM.color.set('#ffffff').lerp(new THREE.Color(u.c.crust), k * 0.9); u.freshM.roughness = 0.3 + k * 0.45; u.freshM.metalness = 0.75 - k * 0.4; u.freshM.emissiveIntensity = 0.35 * (1 - k);
+        u.freshM.color.set('#ffffff').lerp(new THREE.Color(u.c.crust), k * 0.9); u.freshM.roughness = 0.3 + k * 0.45; u.freshM.metalness = 0.75 - k * 0.4; u.freshM.emissiveIntensity = 0.55 * (1 - k);
       });
       // 쓰임 물체
       if (S.use) {
@@ -446,6 +449,12 @@ const EG3 = (() => {
       pa.needsUpdate = true;
     });
 
+    function view(k, dur = 0.05) { // 사진용 구도
+      if (k === 'water') st.fit([tr], { dir: V(0.05, 0.7, 1), margin: 0.86, dur });
+      if (k === 'gas') st.fit([tr, flasks[S.el], hose], { dir: V(0.1, 0.45, 1), margin: 0.98, dur });
+      if (k === 'cut') st.fit([blocks[S.el].userData.left, blocks[S.el].userData.slice], { dir: V(1, 0.5, 0.75), margin: 1.5, dur });
+      if (k === 'all') fitNow(dur);
+    }
     function jump(o = {}) { // 검사·사진용
       if (o.el) pick(o.el);
       if (o.cut) { more(() => {}); R.cut.t = 1.8; }
@@ -454,7 +463,7 @@ const EG3 = (() => {
       if (o.gas) { water(() => {}); R.gt = 1.2; for (let i = 0; i < 14; i++) emitBub(nozzle.x, nozzle.y + Math.random() * (wy - nozzle.y), nozzle.z, 0.03, 0.5, 3, 1); }
     }
     fitNow(0);
-    Object.assign(A, { pick, look, water, more, reset, jump, fitNow, say });
+    Object.assign(A, { pick, look, water, more, reset, jump, fitNow, say, view });
     return A;
   }
   return { part, lab, METAL, V, rng };

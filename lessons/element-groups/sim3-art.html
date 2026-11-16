@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>같은 족 원소 – 나만의 원소 그림 카드</title>
+<script>
+/* 문제 알림: 코드에 오류가 나면 화면 아래에 빨간 상자로 알려 줘요 (선생님 확인용) */
+(function () {
+  function box() {
+    var b = document.getElementById('smErr');
+    if (!b && document.body) {
+      b = document.createElement('div'); b.id = 'smErr';
+      b.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;background:#fdecea;color:#8a1f17;border:2px solid #d9534f;border-radius:12px;padding:10px 14px;font:600 14px/1.5 sans-serif;white-space:pre-wrap';
+      document.body.appendChild(b);
+    }
+    return b;
+  }
+  window.SM_err = function (where, err) {
+    var msg = '[' + where + '] ' + (err && err.message ? err.message : String(err));
+    var show = function () { var b = box(); if (b) b.textContent += (b.textContent ? '\n' : '') + msg; };
+    if (document.body) show(); else document.addEventListener('DOMContentLoaded', show);
+  };
+  window.addEventListener('error', function (e) { window.SM_err('스크립트', { message: e.message + ' (줄 ' + e.lineno + ')' }); });
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      var S = window.SM || {};
+      if (!S.okUI) window.SM_err('실행 안 됨', { message: '안내·버튼 코드가 실행되지 않았어요. 파일이 끝(</html>)까지 들어 있는지 확인해 주세요.' });
+      if (document.getElementById('fail3d') && !S.ok3d) { var f = document.getElementById('fail3d'); if (f) f.classList.add('show'); window.SM_err('3D 그림', { message: '3D 그림을 불러오지 못했어요. 인터넷 연결(cdn.jsdelivr.net)을 확인하고 새로고침해 주세요.' }); }
+    }, 9000);
+  });
+})();
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+
+  :root{--bg:#edf3f8;--card:#fff;--ink:#14263b;--ink2:#34495e;--muted:#5a6b7e;--line:#dde6ee;--accent:#0e63b3;--accent-soft:#e3effb;
+    --fab:#4b3fb5;--fab-soft:#ecebfb;--ok:#1f9d5c;--no:#d9534f;
+    --shadow:0 1px 2px rgba(20,38,59,.06),0 8px 24px rgba(20,38,59,.07);--ease:cubic-bezier(.2,.8,.2,1)}
+  *{box-sizing:border-box}html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:"Pretendard",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  button{font:inherit;color:inherit}
+  .app{max-width:1320px;margin:0 auto;padding:14px 16px 28px;display:flex;flex-direction:column;gap:12px}
+  .eyebrow{display:inline-flex;font-size:13px;font-weight:700;color:var(--fab);background:var(--fab-soft);padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(21px,2.4vw,28px);margin:6px 0 2px;letter-spacing:-.02em;word-break:keep-all}
+  .sub{margin:0;color:var(--muted);font-size:15px;word-break:keep-all}
+  .card{background:var(--card);border-radius:20px;box-shadow:var(--shadow);border:1px solid rgba(20,38,59,.04)}
+  .pad{padding:14px 16px}
+  .stage{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(330px,1fr);gap:14px;align-items:start}
+  .viewer{position:sticky;top:10px}
+  .flow{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px}
+  .fs{min-height:54px;border:0;border-radius:12px;background:#eef3f8;font-weight:800;font-size:13px;color:var(--muted);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.2;word-break:keep-all;padding:4px}
+  .fs b{font-size:15px}
+  .fs[aria-selected="true"]{background:var(--fab);color:#fff}
+  .fs.seen:not([aria-selected="true"]){background:#e5f5ec;color:#11703f}
+  .stepname{display:flex;align-items:center;gap:10px;margin:2px 0 6px}
+  .stepname .no{flex:none;width:40px;height:40px;border-radius:12px;background:var(--fab);color:#fff;display:grid;place-items:center;font-weight:900;font-size:19px}
+  .stepname h2{margin:0;font-size:21px;letter-spacing:-.01em;word-break:keep-all}
+  .stepname small{display:block;font-size:13px;color:var(--muted);font-weight:700}
+  .what{font-size:16px;line-height:1.75;color:var(--ink2);margin:0 0 10px;word-break:keep-all}
+  .phase{display:grid;gap:6px;margin:8px 0}
+  .ph{display:grid;grid-template-columns:28px 1fr;gap:8px;align-items:start;padding:7px 10px;border-radius:12px;background:#f7fafc;font-size:15px;line-height:1.55;color:var(--muted);word-break:keep-all;transition:background .3s,color .3s}
+  .ph i{font-style:normal;width:26px;height:26px;border-radius:8px;background:#dfe6ee;display:grid;place-items:center;font-weight:900;font-size:13px;color:#607285}
+  .ph.on{background:var(--fab-soft);color:var(--ink)}.ph.on i{background:var(--fab);color:#fff}
+  .ph.done{color:var(--ink2)}.ph.done i{background:#b9b2ee;color:#fff}
+  .box{border-radius:14px;padding:10px 12px;margin-top:8px;font-size:14.5px;line-height:1.65;word-break:keep-all}
+  .box b.t{display:block;font-size:13px;margin-bottom:2px}
+  .an{background:#fff8e6;border:1px solid #f3dc9a;color:#5b4300}
+  .fact{background:#eef6ff;border:1px solid #cfe2f6;color:#1d3f66}
+  .lnk{background:#ecf8f1;border:1px solid #c6e8d4;color:#0f5a36}
+  .src{display:block;font-size:12px;color:var(--muted);margin-top:3px}
+  .acts{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 0}
+  .btn{min-height:50px;border:0;border-radius:14px;padding:0 16px;font-weight:800;font-size:15.5px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;justify-content:center;word-break:keep-all}
+  .btn:active{transform:scale(.97)}
+  .btn.primary{background:var(--fab);color:#fff}.btn.ghost{background:#eef3f8;color:var(--ink2)}
+  .btn[aria-pressed="true"]{background:#14263b;color:#fff}
+  .btn:disabled{opacity:.4;cursor:default;transform:none}
+  .prog{height:6px;border-radius:3px;background:#e6edf4;margin-top:10px;overflow:hidden}
+  .prog i{display:block;height:100%;width:0;background:linear-gradient(90deg,#8a7ff0,var(--fab))}
+  .credit{text-align:center;font-size:13px;font-weight:700;color:#8495a8;letter-spacing:.02em;margin:6px 0 0}
+  /* ===== 3D 화면 공통 ===== */
+  :root{--Bc:#14a5d0;--Ic:#2fae4a;--Fc:#f0522a;--N:#d8433b;--S:#2f62c9;--P:#7d5ad6}
+  .viewer{position:relative;overflow:hidden;padding:0}
+  .gl-host{position:relative;width:100%;height:min(74vh,700px);min-height:380px;background:linear-gradient(#f6f9fc,#d6e3ef);touch-action:none}
+  .gl-host canvas.gl{display:block;width:100%;height:100%;outline:none}
+  .lbls{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+  .lb{position:absolute;left:0;top:0;white-space:nowrap;font-weight:800;font-size:14px;padding:3px 9px;border-radius:9px;background:rgba(255,255,255,.88);color:#34495e;box-shadow:0 2px 8px rgba(20,38,59,.14);will-change:transform}
+  .lb.small{font-size:12px;font-weight:700;color:#5a6b7e;background:rgba(255,255,255,.72);box-shadow:none}
+  .lb.B{background:var(--Bc);color:#fff}.lb.I{background:var(--Ic);color:#fff}.lb.F{background:var(--Fc);color:#fff;font-size:15px}
+  .lb.P{background:var(--P);color:#fff}
+  .lb.dim{opacity:.35}
+  .vt{position:absolute;display:flex;gap:6px;flex-wrap:wrap;z-index:3}
+  .vt.tl{left:10px;top:10px;max-width:calc(100% - 20px)}
+  .vt.tr{right:10px;top:10px;justify-content:flex-end}
+  .vt.bl{left:10px;bottom:10px;align-items:center}
+  .vb{min-height:44px;padding:0 12px;border-radius:12px;border:1px solid rgba(20,38,59,.12);background:rgba(255,255,255,.9);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);font-weight:800;font-size:14px;color:#34495e;cursor:pointer;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 10px rgba(20,38,59,.08)}
+  .vb:active{transform:scale(.96)}
+  .vb .dot{width:12px;height:12px;border-radius:50%;flex:none}
+  .vb[aria-pressed="false"]{opacity:.62}
+  .vb[aria-pressed="false"] .dot{background:#c2ccd6!important}
+  .vb.sel{background:#14263b;color:#fff;border-color:#14263b}
+  .hint{font-size:12.5px;font-weight:700;color:#5a6b7e;background:rgba(255,255,255,.78);border-radius:10px;padding:6px 10px;word-break:keep-all}
+  .inset{position:absolute;z-index:2;border-radius:18px;border:2px solid rgba(255,255,255,.95);box-shadow:0 10px 30px rgba(20,38,59,.22),inset 0 0 0 1px rgba(20,38,59,.08);pointer-events:none;display:none}
+  .inset.on{display:block}
+  .inset .it{position:absolute;left:8px;top:8px;font-size:12.5px;font-weight:900;color:#14263b;background:rgba(255,255,255,.9);border-radius:8px;padding:3px 8px}
+  .inset .ic{position:absolute;left:6px;right:6px;bottom:6px;display:flex;flex-wrap:wrap;gap:4px;justify-content:center}
+  .inset .ic span{font-size:11.5px;font-weight:800;color:#fff;border-radius:7px;padding:2px 7px;white-space:nowrap}
+  .fail3d{position:absolute;inset:0;display:none;place-items:center;text-align:center;padding:24px;font-size:16px;font-weight:700;color:#7a2a22;line-height:1.7;word-break:keep-all;background:#fff4f2}
+  .fail3d.show{display:grid}
+  .model{font-size:13px;color:var(--muted);text-align:right;margin:0;word-break:keep-all}
+  @media (max-width:900px){.gl-host{height:min(56vh,620px)}}
+  .zoombadge{position:absolute;right:10px;top:62px;z-index:3;font-size:13px;font-weight:800;color:#fff;background:rgba(75,63,181,.9);border-radius:10px;padding:6px 10px;display:none;word-break:keep-all;max-width:60%}
+  .zoombadge.on{display:block}
+  @media (max-width:900px){.stage{grid-template-columns:1fr}.viewer{position:relative;top:0}}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+  /* ===== 끓는점 차 분리 수업 공통 ===== */
+  :root{--fab:#0e63b3;--fab-soft:#e4f0fb}
+  .eyebrow{color:#0e63b3;background:#e4f0fb}
+  .prog i{background:#0e63b3}
+  .ph.done i{background:#8db8e3}
+  .fbk{border-radius:14px;padding:12px 14px;margin-top:10px;font-size:15px;line-height:1.65;word-break:keep-all;background:#f6f9fc;border:1px solid #dbe4ed;color:var(--ink2)}
+  .fbk.ok{background:#e9f3fd;border-color:#bcd7f2;color:#0b3f73}
+  .fbk.no{background:#fff4f2;border-color:#f3c2bb;color:#5e2a25}
+  .fbk b.t{display:block;font-size:13.5px;margin-bottom:2px}
+  [hidden]{display:none!important}
+  /* ===== 분리 그림 공통 ===== */
+  .scene{position:relative;width:100%;overflow:hidden;touch-action:manipulation;user-select:none;-webkit-user-select:none}
+  .scene canvas.wvc{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .olay{position:absolute;inset:0;pointer-events:none}
+  .ol{position:absolute;transform:translate(-50%,-50%);white-space:nowrap;font-weight:700;font-size:clamp(11.5px,1.3vw,14.5px);line-height:1.3;letter-spacing:-.01em}
+  .ol.tx{color:#34495e;background:rgba(255,255,255,.88);padding:1px 6px;border-radius:6px}
+  .ol.tx.m{color:#6b7c8f;background:transparent;padding:0}
+  .ol.la{transform:translate(-100%,-50%)}.ol.ra{transform:translate(0,-50%)}
+  .ol[hidden]{display:none}
+  .ol.tx.big{font-size:clamp(14px,1.7vw,18px);font-weight:900;background:transparent}
+  .ol.tx.cap{font-size:clamp(12.5px,1.45vw,16px);font-weight:700;color:#34495e;background:transparent}
+  .ol.tx.cap b{color:#0e63b3}
+  .ol.tx.cube{background:transparent;color:#fff;font-weight:800;text-shadow:0 1px 2px rgba(0,0,0,.35)}
+  .ol.tx.cube.dark{color:#14263b;text-shadow:none}
+  .ol.tx.nm{font-weight:800;color:#14263b;background:transparent;padding:0}
+  .ol.tx.nm.sol{color:#5a6b7e}
+  .ol.tx.dn{background:transparent;color:#34495e;padding:0}
+  .ol.tx.dn b{color:#0e63b3;font-weight:900}
+  .ol .blank{display:inline-block;width:4.2em;border-bottom:1.6px solid #8b9aab;vertical-align:-2px}
+  .ol.tx.grp{font-weight:900;color:#14263b;background:transparent;transform:translate(0,-50%);font-size:clamp(12.5px,1.4vw,15.5px)}
+  /* ===== 원소 수업 그림 이름표 ===== */
+  .ol.tx.la{transform:translate(-100%,-50%)}.ol.tx.ra{transform:translate(0,-50%)}
+  .ol.tx.gas b{color:#14263b;font-weight:900}
+  .ol.tx.say{background:#fff;color:#14263b;font-weight:800;border-radius:8px;padding:3px 9px;box-shadow:0 2px 10px rgba(20,38,59,.12)}
+  .ol.tx.say.big{font-size:clamp(13px,1.6vw,18px)}
+  .ol.tx.lz{background:rgba(255,255,255,.94);font-weight:800;color:#14263b;font-size:clamp(11px,1.25vw,14.5px)}
+  .pdot{display:inline-block;width:.8em;height:.8em;border-radius:50%;vertical-align:-.08em;margin:0 3px 0 1px}
+  .lg{display:inline-flex;align-items:center;gap:5px;font-weight:800;font-size:14px;color:#34495e;margin-right:10px;white-space:nowrap}
+  .lg i{width:14px;height:14px;border-radius:50%;flex:none}
+  .ol .u{font-size:.8em;font-weight:700;color:#6b7c8f;margin-left:6px}
+  .ol.tx.grp2{background:transparent;padding:0;font-size:clamp(13px,1.6vw,19px);color:#14263b}
+  .ol.tx.grp2 b{color:#0e63b3;font-weight:900}
+  .ol.tx.inm{background:transparent;padding:0;text-align:center;font-weight:800;color:#14263b;line-height:1.3;transform:translate(-50%,0);font-size:clamp(11.5px,1.35vw,15.5px)}
+  .ol.tx.inm.on{color:#0e63b3}
+  .ol.tx.inm .u2{display:block;font-size:.8em;font-weight:700;color:#6b7c8f}
+  .ol.tx.kd{background:#fff;border:1.5px solid #0e63b3;color:#0e63b3;font-weight:900;border-radius:8px;padding:0 8px;font-size:clamp(11px,1.2vw,13.5px)}
+  .ol.tx.ph2{background:transparent;text-align:center;color:#8a9bad;font-weight:800;line-height:1.5;white-space:normal;width:9em}
+  .ol.tx.lt{background:transparent;padding:0;transform:translate(0,-50%);font-size:clamp(17px,2.4vw,28px);color:#14263b}
+  .ol.tx.lgd2{background:transparent;padding:0;transform:translate(0,-50%);white-space:normal;max-width:52%}
+  .ol.tx.lgd2 .lg{font-size:clamp(12.5px,1.55vw,17px)}
+  .ol.tx.lgd2 .lg i{width:1em;height:1em}
+  .ol.tx.lk{background:transparent;padding:0;transform:translate(0,-50%);color:#5a6b7e;font-size:clamp(12.5px,1.55vw,17px)}
+  .ol.tx.lk.dn{color:#14263b}.ol.tx.lk b{color:#0e63b3}
+  /* ===== 한 화면 배치 (2026-10-15: 태블릿 한 화면 안에서 실험과 결과가 끝나도록) ===== */
+  .app{padding:10px 16px 12px;gap:10px}
+  header.top{display:flex;align-items:center;justify-content:space-between;gap:10px 16px;flex-wrap:wrap}
+  header.top .ttl{min-width:0}
+  header.top .ttl .eyebrow{margin-right:6px;vertical-align:4px}
+  header.top h1{display:inline;font-size:clamp(20px,2.1vw,25px);margin:0}
+  header.top .sub{margin-top:3px;font-size:14.5px}
+  .stage{align-items:stretch}
+  .stage > .viewer{position:relative;top:0;display:flex;flex-direction:column;justify-content:center}
+  .ptabs{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;background:#eef3f8;border-radius:14px;padding:4px;margin-bottom:12px}
+  .ptabs button{min-height:44px;border:0;border-radius:11px;background:transparent;font-weight:800;font-size:14.5px;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
+  .ptabs button[aria-selected="true"]{background:#fff;color:var(--fab);box-shadow:0 1px 3px rgba(20,38,59,.14)}
+  .ptabs button small{font-size:12px;font-weight:800;color:#0b3f73;background:#dcebfa;border-radius:8px;padding:1px 6px}
+  .ptabs.big{min-width:min(100%,380px)}
+  .ptabs.big button{min-height:48px;font-size:15.5px}
+  .pane[hidden]{display:none!important}
+  .mnote{font-size:12.5px;color:var(--muted);line-height:1.6;margin:10px 0 0;word-break:keep-all}
+  .viewer{background:#fff}
+  .vctl{display:flex;flex-wrap:wrap;gap:8px;padding:10px 12px;background:#f3f6f9;border-top:1px solid var(--line);align-items:center}
+  .vctl .vb{box-shadow:none}
+  .vctl .vb[aria-pressed="true"]{background:#14263b;color:#fff;border-color:#14263b;opacity:1}
+  .vctl .vb[aria-pressed="false"]{opacity:1}
+  .vctl .sp{flex:1}
+  .lbl{font-size:13px;font-weight:900;color:var(--fab);margin:12px 0 6px;word-break:keep-all}
+  .lbl:first-child,.pane > .lbl:first-child{margin-top:0}
+  .what{font-size:15.5px;line-height:1.7;color:var(--ink2);margin:0 0 8px;word-break:keep-all}
+  .ph.on{background:#eef5fc}.ph.on i{background:var(--fab)}
+  .viewer > .scene.grow{flex:1 1 auto;min-height:300px;aspect-ratio:auto!important}
+  /* 화면 높이를 꽉 채우기: 그림 칸이 남는 높이를 차지 */
+  html,body{height:100%}
+  .app{height:100vh;height:100dvh;max-height:1400px}
+  .stage{flex:1 1 auto;min-height:0}
+  .stage > .card.pad{overflow:auto}
+  @media (max-width:900px){.stage{grid-template-rows:minmax(0,1fr) auto}}
+  /* ===== 이 페이지 전용 ===== */
+  @media (min-width:901px){.stage{grid-template-columns:minmax(0,1.2fr) minmax(360px,1fr)}}
+  .desk{flex:1 1 auto;min-height:0;display:grid;place-items:center;padding:16px;background:#f3f6f9}
+  /* 카드: 교과서 148쪽 예시처럼 세로 카드 */
+  .acard{position:relative;height:100%;max-height:640px;aspect-ratio:3/4;max-width:100%;background:#fff;border-radius:22px;box-shadow:0 14px 34px rgba(20,38,59,.16),0 2px 6px rgba(20,38,59,.08);overflow:hidden;display:flex;flex-direction:column;padding:6% 7% 5%;transform:rotate(-2deg)}
+  .acard::before{content:"";position:absolute;inset:0;border:10px solid #e3effb;border-radius:22px;pointer-events:none}
+  .acard .ah{display:flex;align-items:flex-end;gap:10px;position:relative}
+  .acard .ko{font-size:clamp(30px,4.4vw,52px);font-weight:900;color:#14263b;letter-spacing:-.02em;line-height:1}
+  .acard .en{font-size:clamp(14px,1.7vw,20px);font-weight:800;color:#0e63b3;line-height:1.2;padding-bottom:4px}
+  .acard .art{position:relative;flex:1 1 auto;min-height:0;display:grid;place-items:center;margin:10px 0}
+  .acard .art .sym{position:absolute;font-size:clamp(110px,17vw,220px);font-weight:900;color:#eef4fa;line-height:1;letter-spacing:-.04em;user-select:none}
+  .acard .art img{position:relative;max-width:88%;max-height:100%;object-fit:contain;display:block}
+  .acard .art .sym.solo{color:#0e63b3;position:relative}
+  .acard .ft{display:grid;gap:4px;position:relative}
+  .acard .ft p{margin:0;font-size:clamp(13px,1.55vw,17px);font-weight:800;color:#34495e;line-height:1.45;word-break:keep-all;border-bottom:1.5px dashed #cfdbe6;padding-bottom:3px}
+  .acard .ft p:empty{display:none}
+  .acard .zz{position:absolute;right:7%;bottom:4.5%;text-align:right;line-height:1}
+  .acard .zz small{display:block;font-size:clamp(11px,1.2vw,13px);font-weight:800;color:#5a6b7e}
+  .acard .zz b{font-size:clamp(40px,6vw,72px);font-weight:900;color:#0e63b3}
+  .acard .ft{padding-right:22%}
+  .mini20{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:4px}
+  .mini20 button{min-height:44px;border-radius:9px;border:1.5px solid #d4dee8;background:#fff;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.1;font-family:inherit;padding:2px}
+  .mini20 button b{font-size:16px;font-weight:900;color:#14263b}
+  .mini20 button span{font-size:10.5px;font-weight:700;color:#8a9bad}
+  .mini20 button[aria-pressed="true"]{border-color:#0e63b3;background:#e9f3fd}
+  .mini20 .gap{min-height:0}
+  .mini20 .hd{font-size:11.5px;font-weight:800;color:#5a6b7e;text-align:center;align-self:end}
+  .fld{display:grid;gap:6px;margin-bottom:8px}
+  .fld label{font-size:13px;font-weight:800;color:var(--muted)}
+  .fld input,.fld textarea{width:100%;box-sizing:border-box;border:1.5px solid #d4dee8;border-radius:12px;padding:10px 12px;font:600 15.5px/1.5 Pretendard,sans-serif;color:#14263b;background:#fff;min-height:46px;resize:vertical}
+  .fld input:focus,.fld textarea:focus{outline:2px solid #0e63b3;outline-offset:1px;border-color:#0e63b3}
+  .ex{font-size:13.5px;color:#5a6b7e;line-height:1.6;margin:0 0 8px;word-break:keep-all}
+  .ex b{color:#14263b}
+  .ctl{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}
+  .ctl .btn{width:100%}
+  .peer{display:grid;gap:8px}
+  .peer label{display:flex;gap:10px;align-items:flex-start;font-size:15px;line-height:1.6;color:var(--ink2);word-break:keep-all;min-height:44px;cursor:pointer}
+  .peer input{width:22px;height:22px;flex:none;margin-top:2px;accent-color:#0e63b3}
+  .steps4{display:grid;gap:5px;margin:0 0 10px}
+  .steps4 .ph{padding:6px 10px;font-size:14px;line-height:1.5}
+  @media print{body *{visibility:hidden}.acard,.acard *{visibility:visible}.acard{position:fixed;left:10mm;top:10mm;height:150mm;transform:none;box-shadow:none}}
+  @media (max-width:900px){.acard{max-height:560px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="ttl">
+      <span class="eyebrow">과학과 나 · 과학적 방법으로 문제 해결</span><h1>나만의 원소 그림 카드</h1>
+      <p class="sub">원소의 특징을 조사해 그 원소를 잘 표현하는 나만의 그림 카드를 구상해요.</p>
+    </div>
+  </header>
+  <div class="stage">
+    <section class="card viewer">
+      <div class="desk"><div class="acard" id="acard">
+        <div class="ah"><span class="ko" id="cKo">수소</span><span class="en" id="cEn">Hydrogen</span></div>
+        <div class="art" id="cArt"></div>
+        <div class="ft" id="cFt"></div>
+        <div class="zz"><small>원자 번호</small><b id="cZ">1</b></div>
+      </div></div>
+      <div class="vctl"><span class="hint">카드는 글을 쓰면 바로 바뀌어요. 그림은 구상한 대로 종이나 기기에 직접 그려요</span></div>
+    </section>
+    <section class="card pad">
+      <div class="ptabs" role="tablist" id="pt">
+        <button type="button" role="tab" data-p="pick" aria-selected="true">1 원소 정하기</button>
+        <button type="button" role="tab" data-p="plan" aria-selected="false">2·3 구상하기</button>
+        <button type="button" role="tab" data-p="peer" aria-selected="false">4 돌아보기</button>
+      </div>
+      <div class="pane" data-p="pick">
+        <p class="ex">교과서 145쪽 주기율표의 원소를 참고해 <b>모둠원끼리 서로 다른 원소</b>를 정해요.</p>
+        <div class="mini20" id="m20"></div>
+        <div class="fbk" id="res"><b class="t" id="resT">고른 원소</b><span id="resM"></span></div>
+      </div>
+      <div class="pane" data-p="plan" hidden>
+        <p class="ex">정한 원소의 특징을 조사해 나타내고 싶은 특징을 적고, 어떻게 표현할지 구상해요. 예시: <b>수소</b> — 가장 작고 가벼운 원소, 불에 잘 타는 성질이 있음, 산소와 반응하여 물 생성.</p>
+        <div class="fld"><label for="f1">카드에 넣을 특징 ①</label><input id="f1" maxlength="34"></div>
+        <div class="fld"><label for="f2">카드에 넣을 특징 ②</label><input id="f2" maxlength="34"></div>
+        <div class="fld"><label for="f3">그림 구상 (무엇을 어떻게 그릴까?)</label><textarea id="f3" rows="2" placeholder="예: H 글자를 하늘을 나는 연 모양으로 그려 가벼움을 나타낸다."></textarea></div>
+        <div class="ctl"><button class="btn ghost" type="button" id="bCopy">구상 복사하기</button><button class="btn primary" type="button" id="bPrint">카드 인쇄하기</button></div>
+      </div>
+      <div class="pane" data-p="peer" hidden>
+        <p class="ex">만든 원소 그림 카드를 <b>공유 플랫폼</b>에 올리고 원소의 특징을 개인별로 발표해요.</p>
+        <div class="seglbl" style="font-size:13px;font-weight:800;color:var(--muted);margin:4px 0 8px">모둠 활동 돌아보기</div>
+        <div class="peer">
+          <label><input type="checkbox"><span>원소 그림 카드에 원소의 특징이 잘 반영되었는가?</span></label>
+          <label><input type="checkbox"><span>원소 그림 카드를 창의적으로 표현하였는가?</span></label>
+          <label><input type="checkbox"><span>원소를 정하는 과정에서 모둠원끼리 서로의 의견을 존중하였는가?</span></label>
+        </div>
+      </div>
+      <p class="mnote">카드의 사진은 원소로 된 물질을 새로 만든 3D 모형이에요. 쓴 글은 저장되지 않으니 복사하거나 인쇄해요.</p>
+    </section>
+  </div>
+</div>
+<script>
+window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
+  reduce: !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches), Q: new URLSearchParams(location.search) };
+</script>
+<script>
+/* ===== 같은 족 원소 수업 자료 (교과서 146~148쪽, 161쪽 대단원 문제 5) =====
+   EG.D[원소] : 이름·양성자수·족·주기와 원소 카드 네 칸의 바른 답.
+   '그 밖의 특징'에서 교과서에 없는 조사 내용(무름·보관·쓰임)은 curriculum 문서 '교과서 밖 조사 내용'에 적어 둠. */
+window.EG = window.EG || {};
+EG.ORDER = ['Na', 'He', 'Li', 'Ar', 'K', 'Ne']; // 교과서 146쪽 순서
+EG.D = {
+  Li: { ko: '리튬', en: 'Lithium', z: 3, g: 1, p: 2, kind: 'metal', state: '고체', water: 'hard', stab: 'react',
+    more: ['칼로 자를 수 있을 만큼 물러요.', '자른 면은 은백색 광택이 나다가 공기 중에서 곧 흐려져요.', '석유 속에 넣어 보관해요.'] },
+  Na: { ko: '나트륨', en: 'Sodium', z: 11, g: 1, p: 3, kind: 'metal', state: '고체', water: 'hard', stab: 'react',
+    more: ['칼로 쉽게 잘릴 만큼 물러요.', '자른 면은 은백색 광택이 나다가 공기 중에서 곧 흐려져요.', '석유 속에 넣어 보관해요.'] },
+  K: { ko: '칼륨', en: 'Potassium', z: 19, g: 1, p: 4, kind: 'metal', state: '고체', water: 'hard', stab: 'react',
+    more: ['칼로 아주 쉽게 잘릴 만큼 물러요.', '자른 면의 은백색 광택이 공기 중에서 금방 흐려져요.', '물과 만나면 불꽃이 일기도 해요.'] },
+  He: { ko: '헬륨', en: 'Helium', z: 2, g: 18, p: 1, kind: 'gas', state: '기체', water: 'none', stab: 'stable',
+    more: ['색과 냄새가 없는 기체예요.', '공기보다 가벼워 비행선이나 풍선에 넣어요.'] },
+  Ne: { ko: '네온', en: 'Neon', z: 10, g: 18, p: 2, kind: 'gas', state: '기체', water: 'none', stab: 'stable',
+    more: ['색과 냄새가 없는 기체예요.', '유리관에 넣고 전기를 흘리면 붉은빛을 내요. 그래서 간판에 써요.'] },
+  Ar: { ko: '아르곤', en: 'Argon', z: 18, g: 18, p: 3, kind: 'gas', state: '기체', water: 'none', stab: 'stable',
+    more: ['색과 냄새가 없는 기체예요.', '공기 속에 조금 들어 있어요.', '전구 속에 넣기도 해요.'] },
+};
+// 원소 카드 칸(교과서 146쪽 카드 항목과 말풍선 질문)
+EG.ROWS = [
+  { k: 'state', t: '실온에서 물질의 상태', q: '실온에서 고체, 액체, 기체 중 어떤 상태로 존재할까?', opts: [['고체', '고체'], ['액체', '액체'], ['기체', '기체']] },
+  { k: 'water', t: '물과의 반응', q: '물에 넣었을 때 어떤 변화가 나타날까?', opts: [['hard', '격렬히 반응함'], ['none', '거의 반응하지 않음']] },
+  { k: 'stab', t: '원소의 안정성', q: '다른 원소와 만났을 때 반응이 잘 일어날까?', opts: [['react', '반응이 잘 일어남'], ['stable', '거의 반응하지 않음']] },
+  { k: 'more', t: '그 밖의 특징', q: '단단하고 무른 정도는 어떠할까?' },
+];
+EG.ANS = (el, k) => { const d = EG.D[el], r = EG.ROWS.find((x) => x.k === k); if (k === 'more') return d.more[0]; const o = r.opts.find((x) => x[0] === d[k]); return o ? o[1] : d[k]; };
+// 1~20번 원소(교과서 145쪽 주기율표 범위). [기호, 이름, 영어 이름, 족, 주기]
+EG.EL20 = [
+  ['H', '수소', 'Hydrogen', 1, 1], ['He', '헬륨', 'Helium', 18, 1], ['Li', '리튬', 'Lithium', 1, 2], ['Be', '베릴륨', 'Beryllium', 2, 2],
+  ['B', '붕소', 'Boron', 13, 2], ['C', '탄소', 'Carbon', 14, 2], ['N', '질소', 'Nitrogen', 15, 2], ['O', '산소', 'Oxygen', 16, 2],
+  ['F', '플루오린', 'Fluorine', 17, 2], ['Ne', '네온', 'Neon', 18, 2], ['Na', '나트륨', 'Sodium', 1, 3], ['Mg', '마그네슘', 'Magnesium', 2, 3],
+  ['Al', '알루미늄', 'Aluminium', 13, 3], ['Si', '규소', 'Silicon', 14, 3], ['P', '인', 'Phosphorus', 15, 3], ['S', '황', 'Sulfur', 16, 3],
+  ['Cl', '염소', 'Chlorine', 17, 3], ['Ar', '아르곤', 'Argon', 18, 3], ['K', '칼륨', 'Potassium', 1, 4], ['Ca', '칼슘', 'Calcium', 2, 4],
+];
+EG.GROUPS = [1, 2, 13, 14, 15, 16, 17, 18]; // 교과서 147쪽 표에 보이는 족(3~12족은 '…')
+</script>
+<script>
+/* ===== 블록 1: 원소 그림 카드 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S, Q = S.Q;
+    // 사진: 이 수업에서 만든 것(sm-*.jpg)과 원소 수업에서 만든 원소 표본(el-*.png)
+    const PIC = { Li: 'sm-Li.jpg', Na: 'sm-Na.jpg', K: 'sm-K.jpg', He: 'u-He.jpg', Ne: 'u-Ne.jpg', Ar: 'u-Ar.jpg' };
+    ['H', 'Be', 'C', 'N', 'O', 'Mg', 'Al', 'Si', 'S', 'Cl', 'Ca'].forEach((e) => (PIC[e] = `el-${e}.png`));
+    const EX = { H: ['가장 작고 가벼운 원소', '불에 잘 타는 성질이 있음'] }; // 교과서 148쪽 예시
+    const st = { e: 'H', f: { H: EX.H.slice() } };
+    // 1~20번 미니 주기율표(족: 1 2 13~18)
+    const COLS = [1, 2, 13, 14, 15, 16, 17, 18];
+    let h = COLS.map((c) => `<span class="hd">${c}</span>`).join('');
+    for (let p = 1; p <= 4; p++) COLS.forEach((c) => { const el = EG.EL20.find((x) => x[3] === c && x[4] === p); h += el ? `<button type="button" data-e="${el[0]}" aria-pressed="false"><b>${el[0]}</b><span>${el[1]}</span></button>` : '<span class="gap"></span>'; });
+    $('#m20').innerHTML = h;
+    function card() {
+      const i = EG.EL20.findIndex((x) => x[0] === st.e), el = EG.EL20[i];
+      $('#cKo').textContent = el[1]; $('#cEn').textContent = el[2]; $('#cZ').textContent = i + 1;
+      $('#cArt').innerHTML = PIC[st.e] ? `<span class="sym">${st.e}</span><img src="media/${PIC[st.e]}" alt="${el[1]}로 된 물질 모형">` : `<span class="sym solo">${st.e}</span>`;
+      const f = st.f[st.e] || ['', ''];
+      $('#cFt').innerHTML = `<p>${esc(f[0] || '')}</p><p>${esc(f[1] || '')}</p>`;
+      $$('#m20 button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.e === st.e)));
+      $('#resM').innerHTML = `<b>${el[1]}(${st.e})</b> · 원자 번호(양성자수) ${i + 1} · ${el[3]}족 ${el[4]}주기. 이제 <b>구상하기</b>에서 특징을 써요.`;
+      $('#f1').value = f[0] || ''; $('#f2').value = f[1] || '';
+    }
+    const esc = (t) => t.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    $$('#m20 button').forEach((b) => b.addEventListener('click', () => { st.e = b.dataset.e; st.f[st.e] = st.f[st.e] || ['', '']; card(); }));
+    ['f1', 'f2'].forEach((id, k) => $('#' + id).addEventListener('input', (ev) => { st.f[st.e] = st.f[st.e] || ['', '']; st.f[st.e][k] = ev.target.value; const f = st.f[st.e]; $('#cFt').innerHTML = `<p>${esc(f[0])}</p><p>${esc(f[1])}</p>`; }));
+    $('#bCopy').addEventListener('click', async () => {
+      const i = EG.EL20.findIndex((x) => x[0] === st.e), el = EG.EL20[i], f = st.f[st.e] || ['', ''];
+      const out = `내가 정한 원소: ${el[1]}(${el[2]})\n원자 번호(양성자수)와 원소 기호: 원자 번호 ${i + 1}, 원소 기호 ${st.e}\n원소의 특징: ${[f[0], f[1]].filter(Boolean).join(', ')}\n그림 구상: ${$('#f3').value}`;
+      try { await navigator.clipboard.writeText(out); $('#bCopy').textContent = '복사했어요'; } catch (e) { $('#bCopy').textContent = '복사가 안 돼요'; }
+      setTimeout(() => ($('#bCopy').textContent = '구상 복사하기'), 2000);
+    });
+    $('#bPrint').addEventListener('click', () => window.print());
+    function show(p) { $$('#pt button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.p === p))); $$('.pane').forEach((x) => (x.hidden = x.dataset.p !== p)); }
+    $$('#pt button').forEach((b) => b.addEventListener('click', () => show(b.dataset.p)));
+    if (Q.get('e') && EG.EL20.some((x) => x[0] === Q.get('e'))) st.e = Q.get('e');
+    card(); show(['plan', 'peer'].includes(Q.get('tab')) ? Q.get('tab') : 'pick');
+    S.okUI = true;
+  } catch (err) { window.SM_err('원소 그림 카드', err); }
+})();
+</script>
+</body>
+</html>

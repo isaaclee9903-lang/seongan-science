@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>같은 족 원소 – 사진 찍기용 3D</title>
+<style>html,body{margin:0;background:#fff}#fig{width:100vw;height:100vh}#fig canvas{display:block;width:100%;height:100%}</style>
+</head>
+<body>
+<div id="fig"></div>
+<script>
+/*@@LOCAL:_eg_data.js@@*/
+</script>
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+window.THREE = THREE;
+/*@@LOCAL:_eg3.js@@*/
+/* 사진 찍기: ?k=<물체 id> 또는 k=row(여섯 원소 줄) → window.__shot() */
+(() => {
+  const host = document.getElementById('fig'), q = new URLSearchParams(location.search), k = q.get('k') || 'blk-Na';
+  const R = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+  R.setPixelRatio(1); R.outputColorSpace = THREE.SRGBColorSpace; R.toneMapping = THREE.ACESFilmicToneMapping; R.toneMappingExposure = 1.0;
+  R.shadowMap.enabled = true; R.shadowMap.type = THREE.PCFSoftShadowMap; R.setClearColor(0xffffff, 1);
+  host.appendChild(R.domElement);
+  const W = innerWidth, H = innerHeight; R.setSize(W, H, false);
+  const scene = new THREE.Scene(); scene.background = new THREE.Color('#ffffff');
+  const pm = new THREE.PMREMGenerator(R); scene.environment = pm.fromScene(new RoomEnvironment(R), 0.04).texture;
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x9aa8b8, 0.6));
+  const sun = new THREE.DirectionalLight(0xffffff, 1.8); sun.position.set(-3, 8, 5); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); sun.shadow.radius = 6;
+  Object.assign(sun.shadow.camera, { left: -5, right: 5, top: 5, bottom: -5 }); sun.shadow.bias = -0.0005; scene.add(sun);
+  const cam = new THREE.PerspectiveCamera(24, W / H, 0.05, 200);
+  let obj = new THREE.Group();
+  if (k === 'row') { // 여섯 원소: 1족 덩어리 셋 + 18족 플라스크 셋
+    ['Li', 'Na', 'K'].forEach((e, i) => { const b = EG3.part('cut-' + e); b.scale.setScalar(1.05); b.position.set(-3.3 + i * 1.3, 0, 0.1); obj.add(b); });
+    ['He', 'Ne', 'Ar'].forEach((e, i) => { const f = EG3.part('fl-' + e); f.scale.setScalar(0.72); f.position.set(0.55 + i * 1.0, 0, -0.1); obj.add(f); });
+  } else obj = EG3.part(k);
+  if (k === 'blimp') obj.rotation.y = -0.3;
+  scene.add(obj);
+  const box = new THREE.Box3().setFromObject(obj), ctr = box.getCenter(new THREE.Vector3());
+  const fl = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), new THREE.ShadowMaterial({ opacity: 0.2 })); fl.rotation.x = -Math.PI / 2; fl.position.y = box.min.y - (k === 'blimp' ? 0.6 : 0); fl.receiveShadow = true; scene.add(fl);
+  sun.target.position.copy(ctr); scene.add(sun.target);
+  const el = +(q.get('el') || (k === 'blimp' ? 0.12 : 0.36)), az = +(q.get('az') || 0.3);
+  const dir = new THREE.Vector3(Math.sin(az) * Math.cos(el), Math.sin(el), Math.cos(az) * Math.cos(el));
+  const pts = []; for (let i = 0; i < 8; i++) pts.push(new THREE.Vector3(i & 1 ? box.max.x : box.min.x, i & 2 ? box.max.y : box.min.y, i & 4 ? box.max.z : box.min.z));
+  const lim = 1 / +(q.get('m') || 1.1); let lo = 0.5, hi = 100;
+  for (let t = 0; t < 30; t++) { const d = (lo + hi) / 2; cam.position.copy(ctr).addScaledVector(dir, d); cam.lookAt(ctr); cam.updateMatrixWorld(); const ok = pts.every((p) => { const c = p.clone().project(cam); return Math.abs(c.x) <= lim && Math.abs(c.y) <= lim; }); if (ok) hi = d; else lo = d; }
+  cam.position.copy(ctr).addScaledVector(dir, hi); cam.lookAt(ctr);
+  R.render(scene, cam);
+  window.__shot = () => { R.render(scene, cam); return R.domElement.toDataURL('image/png'); };
+  window.__ready = true; void OrbitControls;
+})();
+</script>
+</body>
+</html>

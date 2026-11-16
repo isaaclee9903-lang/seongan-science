@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <style>
 /*@@PART:css_sum.css@@*/
-/*@@LOCAL:_css_ps.css@@*/
+/*@@LOCAL:_css_el.css@@*/
   :root{--violet:#0e63b3}
   .pr.sel{border-color:#0e63b3;background:#eef5fc}
   .wq{background:#eef5fc;color:#123a63}
@@ -33,6 +33,15 @@
   .gcard .opt button{min-height:44px;border-radius:10px;border:2px solid #d4dee8;background:#fff;font-weight:700;font-size:14px;cursor:pointer;word-break:keep-all;line-height:1.2;padding:2px 6px}
   .gcard .opt button[aria-pressed="true"]{border-color:#0e63b3;background:#e4f0fb;color:#0b3f73}
   .gcard.good{border-color:#1f9d5c}.gcard.bad{border-color:#d9534f}
+  .gcard{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:10px;align-items:stretch}
+  .gcard .gl{border:2px solid #cfe0f0;border-radius:12px;padding:8px;background:#fff}
+  .gcard img{width:100%;height:80px;object-fit:contain;display:block}
+  .gcard ul{margin:4px 0 0;padding-left:16px;font-size:14px;line-height:1.55;color:#34495e;word-break:keep-all}
+  .gcard .opt{grid-template-columns:1fr!important;margin-top:0}
+  .gcard .opt button{display:grid;grid-template-columns:62px 1fr;align-items:center;gap:8px;text-align:left;padding:6px 8px;min-height:64px}
+  .gcard .opt button img{height:46px}
+  .gcard .opt button span{font-size:13px;font-weight:600;color:#5a6b7e;line-height:1.4}
+  .gcard .opt button span b{display:block;font-size:15px;font-weight:800;color:#14263b}
   @media (max-width:700px){.gmatch{grid-template-columns:1fr}}
 </style>
 </head>
@@ -41,7 +50,7 @@
   <header>
     <span class="eyebrow">같은 족 원소의 성질 · 스스로 정리하기</span>
     <h1>같은 족 정리하기</h1>
-    <p class="sub">빈칸을 채우고, 족을 고르고, O X로 확인한 뒤, 내 말로 설명해 봐요.</p>
+    <p class="sub">빈칸을 채우고, 같은 족 원소 카드를 연결하고, O X로 확인한 뒤, 내 말로 설명해 봐요.</p>
   </header>
   <nav class="tabs" id="tabs"></nav>
 
@@ -55,8 +64,8 @@
   </section>
 
   <section class="card" id="s2">
-    <h2><span class="no">2</span>어느 족일까요?</h2>
-    <p class="goal">원소마다 어느 족인지 골라요.</p>
+    <h2><span class="no">2</span>같은 족 원소 카드 연결하기</h2>
+    <p class="goal">왼쪽 원소 카드와 같은 족인 원소를 오른쪽에서 골라요. (대단원 문제 5)</p>
     <div class="gmatch" id="gm"></div>
     <div class="acts"><button type="button" class="btn primary" id="chk2" disabled>확인하기</button></div>
     <div class="fb" id="fb2"></div>
@@ -90,10 +99,7 @@
 </div>
 
 <script>
-/*@@LOCAL:_ps.js@@*/
-</script>
-<script>
-window.SW_CHECKS = [['ok1', '빈칸'], ['ok2', '족'], ['ok3', 'O X'], ['ok4', '글쓰기']];
+window.SW_CHECKS = [['ok1', '빈칸'], ['ok2', '연결'], ['ok3', 'O X'], ['ok4', '글쓰기']];
 window.SW = {
   $: (s, r = document) => r.querySelector(s),
   $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
@@ -103,7 +109,7 @@ window.SW = {
 };
 (() => {
   const { $, $$ } = window.SW;
-  const TABS = ['빈칸', '족', 'O X', '글쓰기'];
+  const TABS = ['빈칸', '연결', 'O X', '글쓰기'];
   window.SW.renderTabs = () => {
     $('#tabs').innerHTML = TABS.map((t, i) => `<button type="button" class="tab${window.SW.done[i + 1] ? ' done' : ''}" data-s="${i + 1}"><span class="n">${i + 1}</span>${t}</button>`).join('');
     $$('#tabs .tab').forEach((b) => b.addEventListener('click', () => document.getElementById('s' + b.dataset.s).scrollIntoView({ behavior: 'smooth', block: 'start' })));
@@ -118,9 +124,9 @@ window.SW = {
   'use strict';
   try {
     const { $, $$, shuffle, fb, finish } = window.SW;
-    const TXT = ["주기율표의 세로줄을 ", 0, ", 가로줄을 ", 1, "(이)라고 한다. ", 2, "족 원소는 물과 격렬히 반응하고, ", 3, "족 원소는 다른 원소와 거의 반응하지 않는다."];
-    const ANS = ["족", "주기", "1", "18"];
-    const BANK = shuffle(ANS.concat(["2", "원소"]));
+    const TXT = ["주기율표의 가로줄을 ", 0, "(이)라 하고, 세로줄을 ", 1, "(이)라고 한다. 주기율표의 같은 족에는 ", 2, " 성질을 가지는 원소들이 배치되므로, 성질을 모르는 원소라도 그 원소와 ", 3, " 족에 속한 다른 원소들의 성질을 알면 그 원소의 성질을 예측할 수 있다."];
+    const ANS = ["주기", "족", "비슷한", "같은"];
+    const BANK = shuffle(ANS.concat(["다른", "양성자"]));
     let pick = ANS.map(() => null), cur = 0;
     function render() {
       $('#fill').innerHTML = TXT.map((x) => (typeof x === 'number' ? `<button type="button" class="bk${x === cur ? ' cur' : ''}" data-i="${x}">${pick[x] || ''}</button>` : x)).join('');
@@ -132,7 +138,7 @@ window.SW = {
     $('#re1').addEventListener('click', () => { pick = ANS.map(() => null); cur = 0; $('#fb1').className = 'fb'; render(); });
     $('#chk1').addEventListener('click', () => {
       let w = 0; $$('#fill .bk').forEach((b) => { const i = +b.dataset.i, ok = pick[i] === ANS[i]; b.classList.remove('cur'); b.classList.add(ok ? 'good' : 'bad'); if (!ok) w++; });
-      if (!w) { fb('#fb1', true, '모두 맞았어요! 성질이 비슷한 원소는 같은 족에 있어요.'); finish(1); }
+      if (!w) { fb('#fb1', true, '모두 맞았어요! 같은 족에는 비슷한 성질의 원소가 있어서, 같은 족 원소의 성질로 모르는 원소의 성질을 예측할 수 있어요.'); finish(1); }
       else fb('#fb1', false, `빨간 빈칸 ${w}개를 다시 생각해 봐요. 빈칸을 누르면 비워져요.`);
     });
     render();
@@ -141,23 +147,30 @@ window.SW = {
 })();
 </script>
 <script>
-/* ===== 블록 2: 족 ===== */
+/* ===== 블록 2: 같은 족 원소 카드 연결 (161쪽 대단원 문제 5) ===== */
 (() => {
   'use strict';
   try {
     const { $, $$, fb, finish } = window.SW;
-    const G = [{"n": "리튬", "a": "1족", "c": "#fdeeee"}, {"n": "헬륨", "a": "18족", "c": "#eef3fb"}, {"n": "칼륨", "a": "1족", "c": "#fdeeee"}, {"n": "아르곤", "a": "18족", "c": "#eef3fb"}];
-    const OPT = ["1족", "18족"];
+    const G = [
+      { e: 'Li', n: '리튬(Li)', l: ['양성자수: 3', '물과 격렬하게 반응한다.', '은백색 광택이 있다.'], a: 'Na' },
+      { e: 'He', n: '헬륨(He)', l: ['양성자수: 2', '다른 원소와 거의 반응하지 않는다.', '실온에서 기체 상태이다.'], a: 'Ar' },
+    ];
+    const OPT = [
+      { e: 'Ar', n: '아르곤(Ar)', l: ['양성자수: 18', '다른 원소와 거의 반응하지 않는다.', '실온에서 기체 상태이다.'] },
+      { e: 'Na', n: '나트륨(Na)', l: ['양성자수: 11', '물과 격렬하게 반응한다.', '은백색 광택이 있다.'] },
+    ];
     const val = G.map(() => null);
-    $('#gm').innerHTML = G.map((g, i) => `<div class="gcard" data-i="${i}" style="background:${g.c}"><p class="gh"><b>${g.n}</b></p><div class="opt">${OPT.map((t) => `<button type="button" aria-pressed="false">${t}</button>`).join('')}</div></div>`).join('');
-    $$('#gm .gcard').forEach((c) => { const i = +c.dataset.i; $$('button', c).forEach((b) => b.addEventListener('click', () => { val[i] = b.textContent; c.classList.remove('good', 'bad'); $$('button', c).forEach((o) => o.setAttribute('aria-pressed', String(o === b))); $('#chk2').disabled = val.includes(null); })); });
+    const card = (o) => `<img src="media/sm-${o.e}.jpg" alt=""><p class="gh"><b>${o.n}</b></p><ul>${o.l.map((x) => `<li>${x}</li>`).join('')}</ul>`;
+    $('#gm').innerHTML = G.map((g, i) => `<div class="gcard" data-i="${i}"><div class="gl">${card(g)}</div><div class="opt">${OPT.map((o) => `<button type="button" data-e="${o.e}" aria-pressed="false"><img src="media/sm-${o.e}.jpg" alt=""><span><b>${o.n}</b>${o.l.slice(1).join(' ')}</span></button>`).join('')}</div></div>`).join('');
+    $$('#gm .gcard').forEach((c) => { const i = +c.dataset.i; $$('button', c).forEach((b) => b.addEventListener('click', () => { val[i] = b.dataset.e; c.classList.remove('good', 'bad'); $$('button', c).forEach((x) => x.setAttribute('aria-pressed', String(x === b))); $('#chk2').disabled = val.includes(null); })); });
     $('#chk2').addEventListener('click', () => {
       let w = 0; $$('#gm .gcard').forEach((c) => { const i = +c.dataset.i, ok = G[i].a === val[i]; c.classList.toggle('good', ok); c.classList.toggle('bad', !ok); if (!ok) w++; });
-      if (!w) { fb('#fb2', true, '맞아요!'); finish(2); }
-      else fb('#fb2', false, `빨간 칸 ${w}개를 다시 골라요. 원소 카드를 떠올려요.`);
+      if (!w) { fb('#fb2', true, '맞아요! 리튬과 나트륨은 1족, 헬륨과 아르곤은 18족이에요. 같은 족 원소는 성질이 비슷해요.'); finish(2); }
+      else fb('#fb2', false, `빨간 칸 ${w}개를 다시 골라요. 물과의 반응과 상태가 같은 카드를 찾아요.`);
     });
     window.SW.ok2 = true;
-  } catch (err) { window.SW_err('족', err); }
+  } catch (err) { window.SW_err('연결', err); }
 })();
 </script>
 <script>
@@ -167,7 +180,7 @@ window.SW = {
   try {
     const { $, $$, shuffle, fb, finish } = window.SW;
     const OX = [['o', 'O'], ['x', 'X']];
-    const items = [["1족 원소는 실온에서 고체이다.", 'o', OX],["18족 원소는 물과 격렬히 반응한다.", 'x', OX],["네온 기체는 간판에 쓰인다.", 'o', OX],["같은 족 원소는 성질이 전혀 다르다.", 'x', OX],["헬륨은 비행선에 이용된다.", 'o', OX],["주기율표의 가로줄을 족이라고 한다.", 'x', OX]];
+    const items = [["1족 원소는 물과 격렬히 반응한다.", 'o', OX],["18족 원소는 실온에서 고체이다.", 'x', OX],["헬륨과 네온은 같은 주기에 속해서 성질이 비슷하다.", 'x', OX],["주기율표의 가로줄을 족이라고 한다.", 'x', OX],["원소를 양성자수만을 기준으로 배열하였다면 주기율표는 긴 띠 모양이 되었을 것이다.", 'o', OX],["네온 기체는 간판에, 헬륨은 비행선에 이용한다.", 'o', OX]];
     const list = shuffle(items.slice()), pick = list.map(() => null);
     $('#sort3').innerHTML = list.map((it, i) => `<div class="si" data-i="${i}"><p>${it[0]}</p><div class="two">${it[2].map(([v, t]) => `<button type="button" data-v="${v}" aria-pressed="false">${t}</button>`).join('')}</div></div>`).join('');
     $$('#sort3 .si').forEach((row) => { const i = +row.dataset.i; $$('button', row).forEach((b) => b.addEventListener('click', () => { pick[i] = b.dataset.v; row.classList.remove('good', 'bad'); $$('button', row).forEach((o) => o.setAttribute('aria-pressed', String(o === b))); $('#chk3').disabled = pick.includes(null); })); });
