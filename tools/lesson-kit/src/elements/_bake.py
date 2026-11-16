@@ -21,7 +21,7 @@ LAB = [  # sim1-water.html 장면
     ('shot=hero', 'p-lab.jpg', 900, 760),
     ('shot=plus', 'p-plus.jpg', 520, 600),
     ('shot=minus', 'p-minus.jpg', 520, 600),
-    ('shot=card', '../card.jpg', 760, 570),
+    ('shot=card', '../card.jpg', 900, 760),
 ]
 
 
@@ -59,7 +59,10 @@ async def main():
             await pg.wait_for_timeout(600)
             f = OUT / 'tmp.png'
             await pg.locator('#lab').screenshot(path=str(f))
-            Image.open(f).convert('RGB').save(OUT / name, quality=84)
+            im = Image.open(f).convert('RGB')
+            if 'card' in name:  # 카드는 4:3으로 잘라 가운데 장치만
+                W2, H2 = im.size; ch = int(W2 * 0.75); top = max(0, (H2 - ch) // 2 + int(H2 * 0.04)); im = im.crop((0, top, W2, min(H2, top + ch))).resize((760, 570))
+            im.save(OUT / name, quality=84)
             f.unlink()
             print(name)
             await pg.close()

@@ -69,7 +69,7 @@
   function gasJar(tint, op) {
     const g = new THREE.Group();
     const prof = [[0, 0], [0.62, 0], [0.66, 0.05], [0.66, 1.55], [0.6, 1.66], [0.4, 1.74], [0.36, 1.86], [0.4, 1.9], [0.4, 1.97]];
-    g.add(lathe(prof, glassMat({ thickness: 0.08 })));
+    g.add(lathe(prof, phys({ color: '#d6e2ea', roughness: 0.06, transparent: true, opacity: 0.32, depthWrite: false, side: THREE.DoubleSide, clearcoat: 1 })));
     if (tint) { const gas = lathe([[0, 0.04], [0.62, 0.04], [0.62, 1.55], [0.55, 1.65], [0.36, 1.73], [0.33, 1.9], [0, 1.9]], std(tint, 1, 0, { transparent: true, opacity: op, depthWrite: false }), 48); g.add(gas); }
     const cap = lathe([[0, 1.9], [0.45, 1.9], [0.47, 1.96], [0.47, 2.12], [0.42, 2.18], [0, 2.18]], std('#2f3a46', 0.5));
     g.add(cap);
@@ -82,7 +82,7 @@
     const g = new THREE.Group(), cols = ['#6fc6e8', '#ef6f7c', '#e23b3b', '#3fae5c'], pos = [[-0.42, 2.25, -0.2], [0.38, 2.45, -0.35], [0.02, 1.95, 0.25], [0.62, 1.85, 0.2]];
     const prof = Array.from({ length: 30 }, (_, i) => { const t = i / 29, a = t * Math.PI; return [Math.sin(a) * 0.48 * (1 + 0.15 * Math.sin(a * 0.9 - 0.6)), -Math.cos(a) * 0.58 - 0.02 * Math.sin(a)]; });
     pos.forEach(([x, y, z], i) => {
-      const b = lathe(prof.map(([px, py]) => [px, py]).reverse(), phys({ color: cols[i], roughness: 0.32, clearcoat: 0.6, clearcoatRoughness: 0.35, sheen: 0.3 }), 64);
+      const b = lathe(prof.map(([px, py]) => [px, py]).reverse(), std(cols[i], 0.38, 0, { envMapIntensity: 0.9, side: THREE.DoubleSide }), 64);
       b.rotation.x = Math.PI; b.position.set(x, y, z); b.rotation.z = (i - 1.5) * 0.12; g.add(b);
       const knot = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.1, 16), std(cols[i], 0.4)); knot.position.set(x + (i - 1.5) * 0.07, y - 0.62, z); g.add(knot);
       const str = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3([V(x + (i - 1.5) * 0.07, y - 0.66, z), V(x * 0.5 + 0.03, 1.0, z * 0.5), V(0.02, 0.18, 0)]), 30, 0.008, 6), std('#d9d4c8', 0.8)); g.add(str);
@@ -98,7 +98,7 @@
     const tri = (a, b, c) => P.push(a.x, a.y, a.z, b.x, b.y, b.z, c.x, c.y, c.z);
     for (let i = 0; i < N; i++) { const j = (i + 1) % N; tri(C, T[j], T[i]); tri(T[i], T[j], G[j]); tri(T[i], G[j], G[i]); tri(G[i], G[j], G2[j]); tri(G[i], G2[j], G2[i]); tri(G2[i], G2[j], Bt); }
     geo.setAttribute('position', new THREE.Float32BufferAttribute(P, 3)); geo.computeVertexNormals(); void pts;
-    const m = new THREE.Mesh(geo, phys({ color: 0xffffff, roughness: 0, metalness: 0, transmission: 1, ior: 2.42, thickness: 1.2, dispersion: 0.6, envMapIntensity: 2.2, specularIntensity: 1 }));
+    const m = new THREE.Mesh(geo, phys({ color: '#dfe7f0', roughness: 0.02, metalness: 1, flatShading: true, envMapIntensity: 2.6, iridescence: 0.7, iridescenceIOR: 1.6 }));
     m.rotation.z = 0.32; m.rotation.x = -0.18; m.position.y = 1.05; m.scale.setScalar(0.95);
     const g = new THREE.Group(); g.add(m); return g;
   };
@@ -110,8 +110,10 @@
     const p = c.geometry.attributes.position, v = V();
     for (let i = 0; i < p.count; i++) { v.fromBufferAttribute(p, i); if (v.y > 0.05 && v.y < 0.6) { const a = Math.atan2(v.z, v.x), k = 1 + 0.025 * Math.cos(a * 18); v.x *= k; v.z *= k; p.setXYZ(i, v.x, v.y, v.z); } }
     c.geometry.computeVertexNormals();
-    c.rotation.x = Math.PI; c.position.y = 0.72; g.add(c);
-    const c2 = c.clone(); c2.rotation.set(Math.PI * 0.5 + 0.25, 0, 0.5); c2.position.set(0.95, 0.68, -0.4); c2.material = std('#b8bec7', 0.32, 1); g.add(c2);
+    const lid = new THREE.Mesh(new THREE.CircleGeometry(0.8, 72), std('#dfe3e8', 0.45, 1)); lid.rotation.x = -Math.PI / 2; lid.position.y = 0.725;
+    const ring = new THREE.Mesh(new THREE.RingGeometry(0.5, 0.62, 72), std('#aeb5be', 0.35, 1)); ring.rotation.x = -Math.PI / 2; ring.position.y = 0.728;
+    const cap1 = new THREE.Group(); cap1.add(c, lid, ring); g.add(cap1);
+    const cap2 = cap1.clone(); cap2.rotation.set(-Math.PI * 0.5 + 0.35, 0.9, 0); cap2.position.set(1.15, 0.84, 0.35); g.add(cap2);
     g.scale.setScalar(1.25); return g;
   };
   OBJ.copper = () => {
@@ -154,7 +156,7 @@
     const g = new THREE.Group();
     const cup = lathe([[0, 0], [0.55, 0], [0.58, 0.03], [0.68, 1.75], [0.64, 1.75], [0.55, 0.12], [0, 0.12]], glassMat({ thickness: 0.1 }), 72);
     g.add(cup);
-    const wat = lathe([[0, 0.12], [0.545, 0.12], [0.63, 1.3], [0, 1.3]], phys({ color: '#7cc3ef', roughness: 0.05, transmission: 0.75, thickness: 1, ior: 1.33, attenuationColor: '#4aa3e0', attenuationDistance: 1.6, transparent: true, opacity: 0.95 }), 72);
+    const wat = lathe([[0, 0.12], [0.545, 0.12], [0.63, 1.3], [0, 1.3]], phys({ color: '#4fa8e6', roughness: 0.05, transmission: 0.75, thickness: 1, ior: 1.33, attenuationColor: '#4aa3e0', attenuationDistance: 1.6, transparent: true, opacity: 0.95 }), 72);
     g.add(wat);
     g.scale.setScalar(1.05); return g;
   };
@@ -183,7 +185,7 @@
   S.He = () => { const g = OBJ.balloon(); g.scale.setScalar(0.85); return g; };
   S.N = () => gasJar(null);
   S.O = () => gasJar(null);
-  S.Cl = () => gasJar('#c6e04a', 0.45);
+  S.Cl = () => gasJar('#a6c514', 0.92);
   S.Ne = () => { // 빛나는 네온관
     const g = new THREE.Group(), pts = [];
     for (let i = 0; i <= 80; i++) { const t = i / 80; pts.push(V(-0.9 + t * 1.8, 1.0 + 0.45 * Math.sin(t * Math.PI * 2.2), 0)); }
@@ -203,8 +205,12 @@
   S.Mg = () => { // 마그네슘 리본 감은 것
     const g = new THREE.Group(), pts = [];
     for (let i = 0; i < 400; i++) { const t = i / 399, a = t * Math.PI * 2 * 5; pts.push(V(Math.cos(a) * (0.7 - t * 0.15), 0.25 + t * 0.12, Math.sin(a) * (0.7 - t * 0.15))); }
-    const crv = new THREE.CatmullRomCurve3(pts), shp = new THREE.Shape(); shp.moveTo(-0.012, -0.14); shp.lineTo(0.012, -0.14); shp.lineTo(0.012, 0.14); shp.lineTo(-0.012, 0.14);
-    const rib = new THREE.Mesh(new THREE.ExtrudeGeometry(shp, { steps: 800, bevelEnabled: false, extrudePath: crv }), metal('#b9bec4', 0.3)); g.add(rib);
+    // 리본: 감긴 길을 따라 세운 얇은 띠
+    const P = [], N = [];
+    for (let i = 0; i < pts.length; i++) { const a = pts[i], b = pts[Math.min(i + 1, pts.length - 1)], t = b.clone().sub(a).normalize(), n = new THREE.Vector3(-t.z, 0, t.x); P.push(a.clone().add(V(0, -0.13, 0)), a.clone().add(V(0, 0.13, 0))); N.push(n, n); }
+    const idx = []; for (let i = 0; i < pts.length - 1; i++) { const k = i * 2; idx.push(k, k + 1, k + 2, k + 1, k + 3, k + 2); }
+    const rg = new THREE.BufferGeometry(); rg.setAttribute('position', new THREE.Float32BufferAttribute(P.flatMap((v) => [v.x, v.y, v.z]), 3)); rg.setIndex(idx); rg.computeVertexNormals();
+    const rib = new THREE.Mesh(rg, metal('#c3c8ce', 0.3)); rib.material.side = THREE.DoubleSide; g.add(rib);
     const pl = pile((i) => chunk(360 + i, metal('#aab0b7', 0.4), { rough: 0.3 }), 4, 0.5, 37); pl.position.set(0.9, 0, 0.6); pl.scale.setScalar(0.8); g.add(pl);
     return g;
   };

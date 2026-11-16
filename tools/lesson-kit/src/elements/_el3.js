@@ -43,6 +43,11 @@ const EL3 = (() => {
     const g = new THREE.Group(), A = MOL[id];
     const c = V(); A.forEach(([, x, y, z]) => c.add(V(x, y, z))); c.multiplyScalar(1 / A.length);
     A.forEach(([e, x, y, z]) => g.add(ball(e, x - c.x, y - c.y, z - c.z, k)));
+    if (id === 'H2O' || id === 'NH3') { // 처음 볼 때 입자가 가려지지 않게 면을 앞으로
+      const P = A.map(([, x, y, z]) => V(x, y, z)), n = P[1].clone().sub(P[0]).cross(P[2].clone().sub(P[0])).normalize();
+      if (id === 'NH3') n.copy(P[1].clone().add(P[2]).add(P[3]).multiplyScalar(1 / 3).sub(P[0]).normalize().negate());
+      g.quaternion.setFromUnitVectors(n, V(0, id === 'NH3' ? 0.75 : 0.25, 1).normalize());
+    }
     return g;
   }
   const randQ = (r) => new THREE.Quaternion().setFromEuler(new THREE.Euler(r() * 6.28, r() * 6.28, r() * 6.28));

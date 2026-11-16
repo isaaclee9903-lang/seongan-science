@@ -38,16 +38,16 @@
     const jack = (x, c) => { const j = M(new THREE.CylinderGeometry(0.05, 0.055, 0.1, 20), std(c, 0.45), x, 0.95, 0.42); dev.add(j); return j; };
     jack(-0.05, '#d93a2c'); jack(0.55, '#1d2228');
     // 투명 기둥
-    const acr = new THREE.MeshPhysicalMaterial({ color: '#eef6fb', roughness: 0.08, metalness: 0, transparent: true, opacity: 0.22, depthWrite: false, side: THREE.DoubleSide, clearcoat: 0.6 });
-    const X0 = 0.25, Y0 = 1.3, H = 2.55, TR = 0.115, TX = [X0 - 0.16, X0 + 0.16]; // 관 두 개의 x (왼쪽 (+), 오른쪽 (−))
+    const acr = new THREE.MeshPhysicalMaterial({ color: '#e3edf5', roughness: 0.08, metalness: 0, transparent: true, opacity: 0.3, depthWrite: false, side: THREE.DoubleSide, clearcoat: 0.6 });
+    const X0 = 0.25, Y0 = 1.3, H = 2.2, TR = 0.115, TX = [X0 - 0.16, X0 + 0.16]; // 관 두 개의 x (왼쪽 (+), 오른쪽 (−))
     const holder = M(new RoundedBoxGeometry(0.95, 0.38, 0.62, 3, 0.03), acr, X0, 1.11, 0); holder.castShadow = false; dev.add(holder);
     const col = M(new THREE.BoxGeometry(0.62, H, 0.42), acr, X0, Y0 + H / 2, 0); col.castShadow = false; dev.add(col);
     const frameM = std('#d5dbe2', 0.35, 0.6);
     [[-0.33, 0.23], [0.33, 0.23], [-0.33, -0.23], [0.33, -0.23]].forEach(([x, z]) => dev.add(M(new THREE.CylinderGeometry(0.018, 0.018, H, 10), frameM, X0 + x, Y0 + H / 2, z)));
     const cap = M(new RoundedBoxGeometry(0.72, 0.16, 0.5, 3, 0.03), std('#1f242a', 0.5), X0, Y0 + H + 0.08, 0); dev.add(cap);
     // 관 속 물·기체
-    const waterM = new THREE.MeshPhysicalMaterial({ color: '#8ccbef', roughness: 0.1, transparent: true, opacity: 0.62, depthWrite: false });
-    const tubeGlass = new THREE.MeshPhysicalMaterial({ color: '#ffffff', roughness: 0.05, transparent: true, opacity: 0.18, depthWrite: false, side: THREE.DoubleSide });
+    const waterM = new THREE.MeshPhysicalMaterial({ color: '#4ea6e3', roughness: 0.12, transparent: true, opacity: 0.78, depthWrite: false });
+    const tubeGlass = new THREE.MeshPhysicalMaterial({ color: '#dfe9f1', roughness: 0.05, transparent: true, opacity: 0.32, depthWrite: false, side: THREE.DoubleSide });
     const T = {};
     ['+', '-'].forEach((s, i) => {
       const x = TX[i], g = new THREE.Group(); g.position.set(x, 0, 0); dev.add(g);
@@ -86,7 +86,7 @@
       Object.assign(b, { live: true, s, x: t.x + Math.cos(a) * rr, y: Y0 + 0.18 + Math.random() * 0.22, z: Math.sin(a) * rr, v: 0.15 + Math.random() * 0.1, r: 0.008 + Math.random() * 0.012, ph: Math.random() * 6 });
     }
     const level = (s) => Y0 + H - 0.04 - T[s].gas; // 물 높이(위에서 기체만큼 내려감)
-    const GMAX = { '+': 0.62, '-': 1.24 }; // (−)극에 더 많이 모이게
+    const GMAX = { '+': 0.55, '-': 1.1 }; // (−)극에 더 많이 모이게
     function setWater() {
       ['+', '-'].forEach((s) => { const t = T[s], top = level(s), bot = Y0 + 0.02; t.w.scale.y = top - bot; t.w.position.y = (top + bot) / 2; t.men.position.y = top - 0.004; });
       bw.material.opacity = 0;
@@ -95,12 +95,11 @@
 
     // 작은 시험관(기체 모으기)
     const tt = new THREE.Group(); scene.add(tt); tt.visible = false;
-    const ttGlass = new THREE.MeshPhysicalMaterial({ color: '#ffffff', roughness: 0.05, transparent: true, opacity: 0.28, depthWrite: false, side: THREE.DoubleSide });
+    const ttGlass = new THREE.MeshPhysicalMaterial({ color: '#b9cfdf', roughness: 0.05, transparent: true, opacity: 0.5, depthWrite: false, side: THREE.DoubleSide });
     tt.add(M(new THREE.LatheGeometry([[0, 0.0], [0.07, 0.01], [0.1, 0.05], [0.11, 0.12], [0.11, 0.78], [0.125, 0.8], [0.125, 0.82], [0.105, 0.82], [0.095, 0.8], [0.095, 0.12], [0, 0.03]].map(([a, b]) => new THREE.Vector2(a, b)), 32), ttGlass));
     const ttFill = M(new THREE.CylinderGeometry(0.093, 0.093, 1, 24), new THREE.MeshStandardMaterial({ color: '#dff1fb', transparent: true, opacity: 0.0, depthWrite: false }), 0, 0, 0); tt.add(ttFill);
     tt.rotation.z = Math.PI; // 입구가 아래
     // 집게
-    const clamp3 = M(new THREE.BoxGeometry(0.06, 0.06, 0.32), std('#8a6a48', 0.7), 0, -0.45, 0.18); tt.add(clamp3);
 
     // 향
     const stick = new THREE.Group(); scene.add(stick); stick.visible = false;
@@ -166,11 +165,11 @@
       // 향 연기·불꽃 흔들림
       if (stick.visible) {
         const tip = ember.getWorldPosition(V());
-        if (stickMode === 'bright' && Math.random() < dt * 30) sparkBurst(tip, 2, 0.9);
+        if (stickMode === 'bright' && Math.random() < dt * 40) sparkBurst(tip, 3, 1.0);
         flame.material.rotation = Math.sin(now * 13) * 0.05; flame.scale.y *= 1 + Math.sin(now * 23) * 0.01;
         smk.forEach((o) => { o.t += dt; if (o.t > 2.6) { o.t = 0; } const u = o.t / 2.6; o.s.position.set(tip.x + Math.sin(o.t * 2 + u * 3) * 0.05 * u, tip.y + 0.05 + u * 0.7, tip.z); o.s.scale.setScalar(0.06 + u * 0.22); o.s.material.opacity = stickMode === 'ember' ? 0.45 * Math.sin(u * Math.PI) : 0.12 * Math.sin(u * Math.PI); });
       } else smk.forEach((o) => (o.s.material.opacity = 0));
-      if (flash.material.opacity > 0) { flash.material.opacity = Math.max(0, flash.material.opacity - dt * 2.4); flash.scale.multiplyScalar(1 + dt * 1.5); }
+      if (flash.material.opacity > 0) { flash.material.opacity = Math.max(0, flash.material.opacity - dt * 1.3); flash.scale.multiplyScalar(1 + dt * 1.2); }
       // 장면 진행
       if (anim) {
         anim.t += dt; const u = clamp(anim.t / anim.dur, 0, 1);
@@ -183,7 +182,7 @@
     const REDUCEd = C3.REDUCE;
 
     /* 기체 확인: 시험관을 꼭지에 거꾸로 대어 기체를 모은 뒤 옆으로 옮겨 향(불)을 아래에서 넣는다 */
-    const SIDE = { '+': V(-1.75, 2.15, 0.55), '-': V(2.15, 2.15, 0.55) };
+    const SIDE = { '+': V(-1.45, 2.35, 0.95), '-': V(1.95, 2.35, 0.95) };
     function test(s, done) {
       if (S.busy || S.on || T[s].gas < 0.2) return false;
       S.busy = true; const t = T[s], top = t.tip(), start = V(s === '+' ? -2.2 : 2.6, 3.2, 0.6), side = SIDE[s];
@@ -208,7 +207,7 @@
                 L.say.set('향불이 다시 살아났어요'); sayAt = mouth.clone().add(V(0, 0.95, 0));
                 L.say.show = true; S.p = true; S.busy = false; done && done(); A.onEvent && A.onEvent('p');
               } else {
-                pop(); flash.position.copy(mouth.clone().add(V(0, 0.3, 0))); flash.scale.setScalar(0.5); flash.material.opacity = 1; sparkBurst(mouth.clone().add(V(0, 0.25, 0)), 24, 1.6);
+                pop(); flash.position.copy(mouth.clone().add(V(0, 0.3, 0))); flash.scale.setScalar(1.1); flash.material.opacity = 1; sparkBurst(mouth.clone().add(V(0, 0.25, 0)), 24, 1.6);
                 ttFill.material.opacity = 0;
                 const tp = tt.position.clone();
                 play(0.35, (u) => { tt.position.copy(tp).add(V(Math.sin(u * 40) * 0.03 * (1 - u), 0, 0)); }, () => {
@@ -234,7 +233,7 @@
     const CAP = { O2: '(+)극 기체: <b>산소 입자만</b> 있어요', H2: '(−)극 기체: <b>수소 입자만</b> 있어요', H2O: '물: <b>수소와 산소, 두 종류</b>의 입자가 모여 있어요' };
     const lensTarget = () => (lensK === 'O2' ? V(TX[0], level('+') + T['+'].gas / 2, 0) : lensK === 'H2' ? V(TX[1], level('-') + T['-'].gas / 2, 0) : V(TX[1], Y0 + 0.55, 0));
     function setLens(k) {
-      lensK = k; if (!VW) VW = EL3.viewer(lens.querySelector('.lv'), { spin: 0.25, margin: 1.0 });
+      lensK = k; if (!VW) VW = EL3.viewer(lens.querySelector('.lv'), { spin: 0.25, margin: 0.8 });
       VW.show(k === 'H2O' ? 'water' : k); lens.querySelector('.lcap').innerHTML = CAP[k];
       lens.querySelectorAll('[data-k]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.k === k)));
     }
@@ -273,12 +272,14 @@
     // 장면 진행용 anim이 sayAt만 있을 때도 멈추지 않게
     const _play = play; void _play;
     function view(dur = 0.8, mode) {
-      const objs = [dev]; const extra = [V(-2.4, 0, 0), V(2.6, 3.4, 0)];
+      const objs = [col, holder, bottle, box]; const extra = [V(-2.1, 0.2, 0.6), V(2.45, 2.6, 0.6), V(0.25, 4.75, 0)];
       if (mode === 'tall') extra.push(V(0, 4.3, 0));
-      st.fit(objs, { dir: V(0.12, 0.3, 1), margin: opt.margin || 1.04, dur, extra });
+      st.fit(objs, { dir: V(0.1, 0.16, 1), margin: opt.margin || 1.0, dur, extra });
     }
+    function focus(s, dur = 0.9) { st.fit([tt, stick], { dir: V(s === '+' ? 0.3 : -0.3, 0.18, 1), margin: 1.12, dur, extra: [V(TX[s === '+' ? 0 : 1], Y0 + 0.6, 0), V(TX[s === '+' ? 0 : 1], Y0 + H + 0.3, 0), SIDE[s].clone().add(V(0, 0.95, 0))] }); }
+    function tight(dur = 0) { st.fit([col, holder, bottle, box, cap], { dir: V(0.1, 0.2, 1), margin: 1.05, dur }); }
     view(0);
-    Object.assign(A, { st: S, power, test, leave, showLens, setLens, reset, jump, view, stage: st, T });
+    Object.assign(A, { focus, tight, st: S, power, test, leave, showLens, setLens, reset, jump, view, stage: st, T });
     return A;
   };
 })();
