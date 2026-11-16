@@ -858,7 +858,7 @@ const ES3 = (() => {
   // 땅 x -9~4.5, 바다 x 4.5~9, 앞뒤 z -4.5~4.5, 땅 위 y=0
   const RIVER = [V(1.35, 0, -4.5), V(1.7, 0, -3.2), V(2.15, 0, -2.0), V(2.95, 0, -0.9), V(3.55, 0, 0.3), V(4.1, 0, 1.0), V(4.62, 0, 1.25)];
   const PLACES = {
-    sky: { n: '높은 하늘', at: V(-3.2, 5.75, -1.2), box: [V(-9, 2.6, -5), V(9, 7.6, 2.5)], dir: V(0.12, 0.05, 1) },
+    sky: { n: '높은 하늘', at: V(-3.2, 5.75, -1.2), box: [V(-9, 2.4, -5), V(9, 8.6, 2.5)], dir: V(0.12, 0.05, 1) },
     city: { n: '도시', at: V(-6.9, 3.15, -0.6), box: [V(-9, 0, -4.5), V(-3.6, 2.8, 3.2)], dir: V(0.32, 0.5, 1) },
     farm: { n: '논밭', at: V(-2.4, 1.55, -1.3), box: [V(-4.5, 0, -4.4), V(-0.4, 1.6, 2.2)], dir: V(0.05, 0.85, 1) },
     forest: { n: '숲', at: V(3.0, 2.2, 3.0), box: [V(0.2, 0, -1), V(4.6, 2.2, 4.5)], dir: V(0.2, 0.45, 1) },
@@ -990,7 +990,7 @@ const ES3 = (() => {
     const layer = mesh(new THREE.BoxGeometry(18.6, .55, 8), new THREE.MeshStandardMaterial({ color: '#8fbbe6', roughness: 1, transparent: true, opacity: .26, depthWrite: false }), 0, LAYER_Y, -1, false); layer.castShadow = false; layer.receiveShadow = false; all.add(layer);
     const ozoneDots = new THREE.Group(); all.add(ozoneDots);
     for (let i = 0; i < 260; i++) { const m = tiny('O3', .055); m.position.set(-9.1 + R() * 18.2, LAYER_Y - .22 + R() * .44, -4.8 + R() * 7.6); m.rotation.set(R() * 6, R() * 6, R() * 6); ozoneDots.add(m); }
-    const sunP = V(-7.2, 6.55, -4.6);
+    const sunP = V(-8.6, 8.9, -6.2);
     const sunMesh = mesh(new THREE.SphereGeometry(.62, 32, 20), new THREE.MeshBasicMaterial({ color: '#ffd45a' }), sunP.x, sunP.y, sunP.z, false); all.add(sunMesh);
 
     /* 이름표(누르면 그곳으로) */
@@ -1022,9 +1022,9 @@ const ES3 = (() => {
       if (place === 'city' || place === 'forest') cars.forEach((c) => { c.position.x += c.userData.dir * dt * .9; if (c.position.x > 0.9) c.position.x = -8.9; if (c.position.x < -8.9) c.position.x = 0.9; });
       if (place === 'sky') {
         acc += dt; if (acc > .08) { acc = 0; // 자외선: 해에서 땅 쪽으로, 오존층에서 흡수
-          const tx = -6 + Math.random() * 13, tz = -3.5 + Math.random() * 6, dir = V(tx, 0, tz).sub(sunP).normalize();
+          const hit = V(-8.5 + Math.random() * 17, LAYER_Y + .25, -4 + Math.random() * 6), dir = V(.42 + (Math.random() - .5) * .06, -1, .12).normalize();
           const ray = new THREE.Mesh(new THREE.CylinderGeometry(.04, .04, 1, 8), new THREE.MeshBasicMaterial({ color: '#7a48e6', transparent: true, opacity: .9 }));
-          ray.quaternion.setFromUnitVectors(V(0, 1, 0), dir); ray.scale.y = 1.8; const p0 = sunP.clone().addScaledVector(dir, .8);
+          ray.quaternion.setFromUnitVectors(V(0, 1, 0), dir); ray.scale.y = 1.8; const p0 = hit.clone().addScaledVector(dir, -3.4 / -dir.y);
           ray.position.copy(p0); addPart(ray, { kind: 'ray', dir, p: p0.clone(), life: 9 });
         }
       }
@@ -1089,6 +1089,7 @@ const ES3 = (() => {
     function go(k, dur = 1.2) {
       if (k === place) return; place = k; clearFx(); acc = acc2 = 0; pv = 0;
       Object.entries(labels).forEach(([n, L]) => L.el.classList.toggle('on', n === k));
+      ozoneDots.visible = layer.visible = !k || k === 'sky' || k === 'city'; labels.sky.show = ozoneDots.visible;
       if (!k) { home(dur); return; }
       const P = PLACES[k], box = new THREE.Box3(P.box[0], P.box[1]), h = new THREE.Object3D();
       const helper = new THREE.Mesh(new THREE.BoxGeometry(...box.getSize(V()).toArray()), new THREE.MeshBasicMaterial()); helper.position.copy(box.getCenter(V())); helper.updateMatrixWorld(true); void h;
@@ -1162,7 +1163,7 @@ const ES3 = (() => {
   function still(host, k) {
     if (k.startsWith('w-')) { // 지구 환경 모형
       const w = world(host, { still: true }); let p = k.slice(2); const many = p === 'forest2'; if (many) p = 'forest';
-      if (p !== 'all') { w.go(p, 0); if (many) w.setCO2(1); for (let i = 0; i < (many ? 160 : 60); i++) w.step(.2); }
+      if (p !== 'all') { w.go(p, 0); if (many) w.setCO2(1); for (let i = 0; i < (many ? 640 : 260); i++) w.step(.05); }
       w.st.release(); setTimeout(() => { window.__ready = true; }, 800); return w;
     }
     host.style.background = '#fff';
