@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>같은 족 원소 – 카드 모으기와 주기율표</title>
+<script>
+/* 문제 알림: 코드에 오류가 나면 화면 아래에 빨간 상자로 알려 줘요 (선생님 확인용) */
+(function () {
+  function box() {
+    var b = document.getElementById('smErr');
+    if (!b && document.body) {
+      b = document.createElement('div'); b.id = 'smErr';
+      b.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;background:#fdecea;color:#8a1f17;border:2px solid #d9534f;border-radius:12px;padding:10px 14px;font:600 14px/1.5 sans-serif;white-space:pre-wrap';
+      document.body.appendChild(b);
+    }
+    return b;
+  }
+  window.SM_err = function (where, err) {
+    var msg = '[' + where + '] ' + (err && err.message ? err.message : String(err));
+    var show = function () { var b = box(); if (b) b.textContent += (b.textContent ? '\n' : '') + msg; };
+    if (document.body) show(); else document.addEventListener('DOMContentLoaded', show);
+  };
+  window.addEventListener('error', function (e) { window.SM_err('스크립트', { message: e.message + ' (줄 ' + e.lineno + ')' }); });
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      var S = window.SM || {};
+      if (!S.okUI) window.SM_err('실행 안 됨', { message: '안내·버튼 코드가 실행되지 않았어요. 파일이 끝(</html>)까지 들어 있는지 확인해 주세요.' });
+      if (document.getElementById('fail3d') && !S.ok3d) { var f = document.getElementById('fail3d'); if (f) f.classList.add('show'); window.SM_err('3D 그림', { message: '3D 그림을 불러오지 못했어요. 인터넷 연결(cdn.jsdelivr.net)을 확인하고 새로고침해 주세요.' }); }
+    }, 9000);
+  });
+})();
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+
+  :root{--bg:#edf3f8;--card:#fff;--ink:#14263b;--ink2:#34495e;--muted:#5a6b7e;--line:#dde6ee;--accent:#0e63b3;--accent-soft:#e3effb;
+    --fab:#4b3fb5;--fab-soft:#ecebfb;--ok:#1f9d5c;--no:#d9534f;
+    --shadow:0 1px 2px rgba(20,38,59,.06),0 8px 24px rgba(20,38,59,.07);--ease:cubic-bezier(.2,.8,.2,1)}
+  *{box-sizing:border-box}html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:"Pretendard",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  button{font:inherit;color:inherit}
+  .app{max-width:1320px;margin:0 auto;padding:14px 16px 28px;display:flex;flex-direction:column;gap:12px}
+  .eyebrow{display:inline-flex;font-size:13px;font-weight:700;color:var(--fab);background:var(--fab-soft);padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(21px,2.4vw,28px);margin:6px 0 2px;letter-spacing:-.02em;word-break:keep-all}
+  .sub{margin:0;color:var(--muted);font-size:15px;word-break:keep-all}
+  .card{background:var(--card);border-radius:20px;box-shadow:var(--shadow);border:1px solid rgba(20,38,59,.04)}
+  .pad{padding:14px 16px}
+  .stage{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(330px,1fr);gap:14px;align-items:start}
+  .viewer{position:sticky;top:10px}
+  .flow{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px}
+  .fs{min-height:54px;border:0;border-radius:12px;background:#eef3f8;font-weight:800;font-size:13px;color:var(--muted);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.2;word-break:keep-all;padding:4px}
+  .fs b{font-size:15px}
+  .fs[aria-selected="true"]{background:var(--fab);color:#fff}
+  .fs.seen:not([aria-selected="true"]){background:#e5f5ec;color:#11703f}
+  .stepname{display:flex;align-items:center;gap:10px;margin:2px 0 6px}
+  .stepname .no{flex:none;width:40px;height:40px;border-radius:12px;background:var(--fab);color:#fff;display:grid;place-items:center;font-weight:900;font-size:19px}
+  .stepname h2{margin:0;font-size:21px;letter-spacing:-.01em;word-break:keep-all}
+  .stepname small{display:block;font-size:13px;color:var(--muted);font-weight:700}
+  .what{font-size:16px;line-height:1.75;color:var(--ink2);margin:0 0 10px;word-break:keep-all}
+  .phase{display:grid;gap:6px;margin:8px 0}
+  .ph{display:grid;grid-template-columns:28px 1fr;gap:8px;align-items:start;padding:7px 10px;border-radius:12px;background:#f7fafc;font-size:15px;line-height:1.55;color:var(--muted);word-break:keep-all;transition:background .3s,color .3s}
+  .ph i{font-style:normal;width:26px;height:26px;border-radius:8px;background:#dfe6ee;display:grid;place-items:center;font-weight:900;font-size:13px;color:#607285}
+  .ph.on{background:var(--fab-soft);color:var(--ink)}.ph.on i{background:var(--fab);color:#fff}
+  .ph.done{color:var(--ink2)}.ph.done i{background:#b9b2ee;color:#fff}
+  .box{border-radius:14px;padding:10px 12px;margin-top:8px;font-size:14.5px;line-height:1.65;word-break:keep-all}
+  .box b.t{display:block;font-size:13px;margin-bottom:2px}
+  .an{background:#fff8e6;border:1px solid #f3dc9a;color:#5b4300}
+  .fact{background:#eef6ff;border:1px solid #cfe2f6;color:#1d3f66}
+  .lnk{background:#ecf8f1;border:1px solid #c6e8d4;color:#0f5a36}
+  .src{display:block;font-size:12px;color:var(--muted);margin-top:3px}
+  .acts{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 0}
+  .btn{min-height:50px;border:0;border-radius:14px;padding:0 16px;font-weight:800;font-size:15.5px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;justify-content:center;word-break:keep-all}
+  .btn:active{transform:scale(.97)}
+  .btn.primary{background:var(--fab);color:#fff}.btn.ghost{background:#eef3f8;color:var(--ink2)}
+  .btn[aria-pressed="true"]{background:#14263b;color:#fff}
+  .btn:disabled{opacity:.4;cursor:default;transform:none}
+  .prog{height:6px;border-radius:3px;background:#e6edf4;margin-top:10px;overflow:hidden}
+  .prog i{display:block;height:100%;width:0;background:linear-gradient(90deg,#8a7ff0,var(--fab))}
+  .credit{text-align:center;font-size:13px;font-weight:700;color:#8495a8;letter-spacing:.02em;margin:6px 0 0}
+  /* ===== 3D 화면 공통 ===== */
+  :root{--Bc:#14a5d0;--Ic:#2fae4a;--Fc:#f0522a;--N:#d8433b;--S:#2f62c9;--P:#7d5ad6}
+  .viewer{position:relative;overflow:hidden;padding:0}
+  .gl-host{position:relative;width:100%;height:min(74vh,700px);min-height:380px;background:linear-gradient(#f6f9fc,#d6e3ef);touch-action:none}
+  .gl-host canvas.gl{display:block;width:100%;height:100%;outline:none}
+  .lbls{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+  .lb{position:absolute;left:0;top:0;white-space:nowrap;font-weight:800;font-size:14px;padding:3px 9px;border-radius:9px;background:rgba(255,255,255,.88);color:#34495e;box-shadow:0 2px 8px rgba(20,38,59,.14);will-change:transform}
+  .lb.small{font-size:12px;font-weight:700;color:#5a6b7e;background:rgba(255,255,255,.72);box-shadow:none}
+  .lb.B{background:var(--Bc);color:#fff}.lb.I{background:var(--Ic);color:#fff}.lb.F{background:var(--Fc);color:#fff;font-size:15px}
+  .lb.P{background:var(--P);color:#fff}
+  .lb.dim{opacity:.35}
+  .vt{position:absolute;display:flex;gap:6px;flex-wrap:wrap;z-index:3}
+  .vt.tl{left:10px;top:10px;max-width:calc(100% - 20px)}
+  .vt.tr{right:10px;top:10px;justify-content:flex-end}
+  .vt.bl{left:10px;bottom:10px;align-items:center}
+  .vb{min-height:44px;padding:0 12px;border-radius:12px;border:1px solid rgba(20,38,59,.12);background:rgba(255,255,255,.9);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);font-weight:800;font-size:14px;color:#34495e;cursor:pointer;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 10px rgba(20,38,59,.08)}
+  .vb:active{transform:scale(.96)}
+  .vb .dot{width:12px;height:12px;border-radius:50%;flex:none}
+  .vb[aria-pressed="false"]{opacity:.62}
+  .vb[aria-pressed="false"] .dot{background:#c2ccd6!important}
+  .vb.sel{background:#14263b;color:#fff;border-color:#14263b}
+  .hint{font-size:12.5px;font-weight:700;color:#5a6b7e;background:rgba(255,255,255,.78);border-radius:10px;padding:6px 10px;word-break:keep-all}
+  .inset{position:absolute;z-index:2;border-radius:18px;border:2px solid rgba(255,255,255,.95);box-shadow:0 10px 30px rgba(20,38,59,.22),inset 0 0 0 1px rgba(20,38,59,.08);pointer-events:none;display:none}
+  .inset.on{display:block}
+  .inset .it{position:absolute;left:8px;top:8px;font-size:12.5px;font-weight:900;color:#14263b;background:rgba(255,255,255,.9);border-radius:8px;padding:3px 8px}
+  .inset .ic{position:absolute;left:6px;right:6px;bottom:6px;display:flex;flex-wrap:wrap;gap:4px;justify-content:center}
+  .inset .ic span{font-size:11.5px;font-weight:800;color:#fff;border-radius:7px;padding:2px 7px;white-space:nowrap}
+  .fail3d{position:absolute;inset:0;display:none;place-items:center;text-align:center;padding:24px;font-size:16px;font-weight:700;color:#7a2a22;line-height:1.7;word-break:keep-all;background:#fff4f2}
+  .fail3d.show{display:grid}
+  .model{font-size:13px;color:var(--muted);text-align:right;margin:0;word-break:keep-all}
+  @media (max-width:900px){.gl-host{height:min(56vh,620px)}}
+  .zoombadge{position:absolute;right:10px;top:62px;z-index:3;font-size:13px;font-weight:800;color:#fff;background:rgba(75,63,181,.9);border-radius:10px;padding:6px 10px;display:none;word-break:keep-all;max-width:60%}
+  .zoombadge.on{display:block}
+  @media (max-width:900px){.stage{grid-template-columns:1fr}.viewer{position:relative;top:0}}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+  /* ===== 끓는점 차 분리 수업 공통 ===== */
+  :root{--fab:#0e63b3;--fab-soft:#e4f0fb}
+  .eyebrow{color:#0e63b3;background:#e4f0fb}
+  .prog i{background:#0e63b3}
+  .ph.done i{background:#8db8e3}
+  .fbk{border-radius:14px;padding:12px 14px;margin-top:10px;font-size:15px;line-height:1.65;word-break:keep-all;background:#f6f9fc;border:1px solid #dbe4ed;color:var(--ink2)}
+  .fbk.ok{background:#e9f3fd;border-color:#bcd7f2;color:#0b3f73}
+  .fbk.no{background:#fff4f2;border-color:#f3c2bb;color:#5e2a25}
+  .fbk b.t{display:block;font-size:13.5px;margin-bottom:2px}
+  [hidden]{display:none!important}
+  /* ===== 분리 그림 공통 ===== */
+  .scene{position:relative;width:100%;overflow:hidden;touch-action:manipulation;user-select:none;-webkit-user-select:none}
+  .scene canvas.wvc{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .olay{position:absolute;inset:0;pointer-events:none}
+  .ol{position:absolute;transform:translate(-50%,-50%);white-space:nowrap;font-weight:700;font-size:clamp(11.5px,1.3vw,14.5px);line-height:1.3;letter-spacing:-.01em}
+  .ol.tx{color:#34495e;background:rgba(255,255,255,.88);padding:1px 6px;border-radius:6px}
+  .ol.tx.m{color:#6b7c8f;background:transparent;padding:0}
+  .ol.la{transform:translate(-100%,-50%)}.ol.ra{transform:translate(0,-50%)}
+  .ol[hidden]{display:none}
+  .ol.tx.big{font-size:clamp(14px,1.7vw,18px);font-weight:900;background:transparent}
+  .ol.tx.cap{font-size:clamp(12.5px,1.45vw,16px);font-weight:700;color:#34495e;background:transparent}
+  .ol.tx.cap b{color:#0e63b3}
+  .ol.tx.cube{background:transparent;color:#fff;font-weight:800;text-shadow:0 1px 2px rgba(0,0,0,.35)}
+  .ol.tx.cube.dark{color:#14263b;text-shadow:none}
+  .ol.tx.nm{font-weight:800;color:#14263b;background:transparent;padding:0}
+  .ol.tx.nm.sol{color:#5a6b7e}
+  .ol.tx.dn{background:transparent;color:#34495e;padding:0}
+  .ol.tx.dn b{color:#0e63b3;font-weight:900}
+  .ol .blank{display:inline-block;width:4.2em;border-bottom:1.6px solid #8b9aab;vertical-align:-2px}
+  .ol.tx.grp{font-weight:900;color:#14263b;background:transparent;transform:translate(0,-50%);font-size:clamp(12.5px,1.4vw,15.5px)}
+  /* ===== 원소 수업 그림 이름표 ===== */
+  .ol.tx.la{transform:translate(-100%,-50%)}.ol.tx.ra{transform:translate(0,-50%)}
+  .ol.tx.gas b{color:#14263b;font-weight:900}
+  .ol.tx.say{background:#fff;color:#14263b;font-weight:800;border-radius:8px;padding:3px 9px;box-shadow:0 2px 10px rgba(20,38,59,.12)}
+  .ol.tx.say.big{font-size:clamp(13px,1.6vw,18px)}
+  .ol.tx.lz{background:rgba(255,255,255,.94);font-weight:800;color:#14263b;font-size:clamp(11px,1.25vw,14.5px)}
+  .pdot{display:inline-block;width:.8em;height:.8em;border-radius:50%;vertical-align:-.08em;margin:0 3px 0 1px}
+  .lg{display:inline-flex;align-items:center;gap:5px;font-weight:800;font-size:14px;color:#34495e;margin-right:10px;white-space:nowrap}
+  .lg i{width:14px;height:14px;border-radius:50%;flex:none}
+  .ol .u{font-size:.8em;font-weight:700;color:#6b7c8f;margin-left:6px}
+  .ol.tx.grp2{background:transparent;padding:0;font-size:clamp(13px,1.6vw,19px);color:#14263b}
+  .ol.tx.grp2 b{color:#0e63b3;font-weight:900}
+  .ol.tx.inm{background:transparent;padding:0;text-align:center;font-weight:800;color:#14263b;line-height:1.3;transform:translate(-50%,0);font-size:clamp(11.5px,1.35vw,15.5px)}
+  .ol.tx.inm.on{color:#0e63b3}
+  .ol.tx.inm .u2{display:block;font-size:.8em;font-weight:700;color:#6b7c8f}
+  .ol.tx.kd{background:#fff;border:1.5px solid #0e63b3;color:#0e63b3;font-weight:900;border-radius:8px;padding:0 8px;font-size:clamp(11px,1.2vw,13.5px)}
+  .ol.tx.ph2{background:transparent;text-align:center;color:#8a9bad;font-weight:800;line-height:1.5;white-space:normal;width:9em}
+  .ol.tx.lt{background:transparent;padding:0;transform:translate(0,-50%);font-size:clamp(17px,2.4vw,28px);color:#14263b}
+  .ol.tx.lgd2{background:transparent;padding:0;transform:translate(0,-50%);white-space:normal;max-width:52%}
+  .ol.tx.lgd2 .lg{font-size:clamp(12.5px,1.55vw,17px)}
+  .ol.tx.lgd2 .lg i{width:1em;height:1em}
+  .ol.tx.lk{background:transparent;padding:0;transform:translate(0,-50%);color:#5a6b7e;font-size:clamp(12.5px,1.55vw,17px)}
+  .ol.tx.lk.dn{color:#14263b}.ol.tx.lk b{color:#0e63b3}
+  /* ===== 한 화면 배치 (2026-10-15: 태블릿 한 화면 안에서 실험과 결과가 끝나도록) ===== */
+  .app{padding:10px 16px 12px;gap:10px}
+  header.top{display:flex;align-items:center;justify-content:space-between;gap:10px 16px;flex-wrap:wrap}
+  header.top .ttl{min-width:0}
+  header.top .ttl .eyebrow{margin-right:6px;vertical-align:4px}
+  header.top h1{display:inline;font-size:clamp(20px,2.1vw,25px);margin:0}
+  header.top .sub{margin-top:3px;font-size:14.5px}
+  .stage{align-items:stretch}
+  .stage > .viewer{position:relative;top:0;display:flex;flex-direction:column;justify-content:center}
+  .ptabs{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;background:#eef3f8;border-radius:14px;padding:4px;margin-bottom:12px}
+  .ptabs button{min-height:44px;border:0;border-radius:11px;background:transparent;font-weight:800;font-size:14.5px;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
+  .ptabs button[aria-selected="true"]{background:#fff;color:var(--fab);box-shadow:0 1px 3px rgba(20,38,59,.14)}
+  .ptabs button small{font-size:12px;font-weight:800;color:#0b3f73;background:#dcebfa;border-radius:8px;padding:1px 6px}
+  .ptabs.big{min-width:min(100%,380px)}
+  .ptabs.big button{min-height:48px;font-size:15.5px}
+  .pane[hidden]{display:none!important}
+  .mnote{font-size:12.5px;color:var(--muted);line-height:1.6;margin:10px 0 0;word-break:keep-all}
+  .viewer{background:#fff}
+  .vctl{display:flex;flex-wrap:wrap;gap:8px;padding:10px 12px;background:#f3f6f9;border-top:1px solid var(--line);align-items:center}
+  .vctl .vb{box-shadow:none}
+  .vctl .vb[aria-pressed="true"]{background:#14263b;color:#fff;border-color:#14263b;opacity:1}
+  .vctl .vb[aria-pressed="false"]{opacity:1}
+  .vctl .sp{flex:1}
+  .lbl{font-size:13px;font-weight:900;color:var(--fab);margin:12px 0 6px;word-break:keep-all}
+  .lbl:first-child,.pane > .lbl:first-child{margin-top:0}
+  .what{font-size:15.5px;line-height:1.7;color:var(--ink2);margin:0 0 8px;word-break:keep-all}
+  .ph.on{background:#eef5fc}.ph.on i{background:var(--fab)}
+  .viewer > .scene.grow{flex:1 1 auto;min-height:300px;aspect-ratio:auto!important}
+  /* 화면 높이를 꽉 채우기: 그림 칸이 남는 높이를 차지 */
+  html,body{height:100%}
+  .app{height:100vh;height:100dvh;max-height:1400px}
+  .stage{flex:1 1 auto;min-height:0}
+  .stage > .card.pad{overflow:auto}
+  @media (max-width:900px){.stage{grid-template-rows:minmax(0,1fr) auto}}
+  /* ===== 같은 족 원소 수업: 원소 고르기·원소 카드 ===== */
+  .elpick{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+  .elpick button{position:relative;min-height:52px;border-radius:12px;border:2px solid #d4dee8;background:#fff;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.15;padding:3px 2px;font-family:inherit}
+  .elpick button b{font-size:19px;font-weight:900;color:#14263b}
+  .elpick button span{font-size:12px;font-weight:700;color:#5a6b7e}
+  .elpick button[aria-pressed="true"]{border-color:#0e63b3;background:#e9f3fd}
+  .elpick button.done::after{content:"";position:absolute;right:5px;top:5px;width:8px;height:8px;border-radius:50%;background:#0e63b3}
+  /* 원소 카드(교과서 부록 329쪽 카드 모양: 위 오른쪽 귀퉁이 탭) */
+  .ecard{margin-top:12px;border:2px solid #b9d3ec;border-radius:16px;background:#fff;padding:0 12px 6px;position:relative}
+  .ecard .eh{display:flex;align-items:baseline;gap:8px;padding:8px 2px 6px;border-bottom:1px solid #e3ecf4;margin:0 -2px 2px}
+  .ecard .eh b{font-size:24px;font-weight:900;color:#0e63b3;line-height:1}
+  .ecard .eh span{font-size:16px;font-weight:800;color:#14263b}
+  .ecard .eh small{margin-left:auto;font-size:13px;font-weight:700;color:#5a6b7e}
+  .ecard .empty{margin:8px 0 6px;font-size:14.5px;color:#8a9bad}
+  .ecard .er{display:grid;grid-template-columns:118px 1fr;gap:8px;align-items:center;padding:5px 0;border-bottom:1px dashed #dde6ee}
+  .ecard .er:last-child{border-bottom:0}
+  .ecard .rl{font-size:13.5px;font-weight:800;color:#34495e;line-height:1.3;word-break:keep-all;display:flex;gap:6px;align-items:flex-start}
+  .ecard .rl i{font-style:normal;flex:none;width:19px;height:19px;border-radius:50%;background:#0e63b3;color:#fff;font-size:12px;display:grid;place-items:center;margin-top:-1px}
+  .ecard .chips{display:flex;gap:5px;flex-wrap:wrap}
+  .ecard .chips button{flex:1 1 0;min-height:44px;border-radius:11px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:14px;color:#34495e;cursor:pointer;padding:2px 6px;word-break:keep-all;line-height:1.25;font-family:inherit}
+  .ecard .chips button:disabled{opacity:.38;cursor:default}
+  .ecard .chips button.good{border-color:#0e63b3;background:#e9f3fd;color:#0b3f73}
+  .ecard .chips button.bad{border-color:#e7a29b;background:#fff4f2;color:#9b3a32}
+  .ecard .rv.more{font-size:13.5px;line-height:1.5;color:#14263b;word-break:keep-all}
+  .ecard .rv.more em{font-style:normal;display:block}
+  .ecard .rv.more u{text-decoration:none;color:#8a9bad;font-weight:700}
+  /* ===== 이 페이지 전용 ===== */
+  @media (min-width:901px){.stage{grid-template-columns:minmax(0,1.6fr) minmax(330px,1fr)}}
+  .act[hidden]{display:none!important}
+  .act{flex:1 1 auto;min-height:0}
+  .board2{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;gap:12px;padding:14px;background:#fff}
+  /* 미니 원소 카드 */
+  .mc{position:relative;display:flex;flex-direction:column;border:2px solid #cfe0f0;border-radius:14px;background:#fff;padding:6px 7px 7px;cursor:pointer;min-width:0;font-family:inherit;text-align:left;transition:border-color .15s,box-shadow .15s;touch-action:manipulation}
+  .mc .tb{position:absolute;right:-2px;top:-2px;background:#e3effb;border-radius:0 12px 0 12px;padding:2px 9px 3px;font-size:19px;font-weight:900;color:#0e63b3;line-height:1.2}
+  .mc .nm{font-size:14px;font-weight:900;color:#14263b;line-height:1.2;margin:1px 0 2px}
+  .mc img{width:100%;height:clamp(46px,8.4vh,86px);object-fit:contain;display:block;pointer-events:none;margin:2px 0 4px}
+  .mc ul{list-style:none;margin:0;padding:0;display:grid;gap:1px}
+  .mc li{font-size:12px;line-height:1.35;color:#34495e;word-break:keep-all}
+  .mc li b{font-weight:800;color:#5a6b7e;margin-right:3px}
+  .mc[aria-pressed="true"]{border-color:#0e63b3;box-shadow:0 0 0 3px #cfe2f6}
+  .mc.shake{animation:shk .45s}
+  @keyframes shk{20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
+  .tray{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;min-height:120px}
+  .tray .ph0{grid-column:1/-1;display:grid;place-items:center;color:#8a9bad;font-weight:700;font-size:14.5px;border:1.5px dashed #d6e1ec;border-radius:14px;min-height:44px}
+  .tray.empty{min-height:0}
+  .bins{flex:1 1 auto;min-height:0;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .bin{display:flex;flex-direction:column;border:2px dashed #c3d3e3;border-radius:18px;padding:10px;background:#f8fbfd;cursor:pointer;min-height:0;font-family:inherit}
+  .bin.hot{border-color:#0e63b3;background:#eef5fc}
+  .bin .bh{font-size:15px;font-weight:900;color:#14263b;margin:0 0 8px;display:flex;justify-content:space-between;align-items:baseline}
+  .bin .bh small{font-size:12.5px;font-weight:700;color:#5a6b7e}
+  .bin .bc{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;align-content:start;flex:1}
+  .bin.ok{border-style:solid;border-color:#0e63b3;background:#fff}
+  .bin .bs{font-size:13.5px;color:#0b3f73;font-weight:700;line-height:1.5;margin-top:8px;word-break:keep-all}
+  /* 빈 칸 주기율표(교과서 147쪽 정리하기 표) */
+  .ptw{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:center}
+  .pt{display:grid;grid-template-columns:44px repeat(2,minmax(0,1fr)) 22px repeat(6,minmax(0,1fr));grid-template-rows:30px repeat(4,minmax(0,1fr));gap:5px;flex:1 1 auto;min-height:0;max-height:560px}
+  .pt .hd{display:grid;place-items:center;font-size:14px;font-weight:800;color:#34495e;background:#eef2f6;border-radius:8px}
+  .pt .hd.c{background:transparent;color:#5a6b7e;font-size:12.5px}
+  .pt .dots{display:grid;place-items:center;color:#8a9bad;font-weight:900;letter-spacing:1px}
+  .pt .cell{position:relative;border:1.5px solid #d9e4ee;border-radius:10px;background:#fbfdfe;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;min-height:0;min-width:0;padding:2px;font-family:inherit;overflow:hidden;transition:background .2s,border-color .2s}
+  .pt .cell .z{position:absolute;left:5px;top:3px;font-size:11.5px;font-weight:800;color:#8a9bad}
+  .pt .cell .s{font-size:clamp(15px,1.9vw,22px);font-weight:900;color:#c3ced9;line-height:1}
+  .pt .cell.hint .s{color:#34495e}
+  .pt .cell.hot{border-color:#0e63b3;background:#eef5fc}
+  .pt .cell.put{border-color:#0e63b3;background:#fff}
+  .pt .cell.put .s{color:#0e63b3}
+  .pt .cell.put img{width:100%;flex:1 1 0;min-height:0;object-fit:contain;display:block}
+  .pt .cell.put .k{font-size:11.5px;font-weight:800;color:#14263b;line-height:1.2}
+  .pt .cell.col{background:#e3effb;border-color:#0e63b3}
+  .pt .cell.q{border:2px dashed #0e63b3;background:#fff}
+  .pt .cell.q .s{color:#0e63b3;font-size:clamp(22px,2.6vw,30px)}
+  .pt .cell.shake{animation:shk .45s}
+  .pt .colLbl{grid-row:6;font-size:13px;font-weight:900;color:#0e63b3;text-align:center;line-height:1.3}
+  .chipsA{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px}
+  .chipsA .mc{width:calc((100% - 30px) / 6)}
+  .mini .mc img{height:clamp(34px,5vh,52px)}
+  .mini .mc ul{display:none}
+  .ctl{display:grid;gap:8px}
+  .ctl .btn{width:100%}
+  .seglbl{font-size:13px;font-weight:800;color:var(--muted);margin:10px 0 6px}
+  .seglbl:first-child{margin-top:0}
+  .qa3{display:grid;gap:6px}
+  .qa3 button{min-height:46px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:14.5px;cursor:pointer;word-break:keep-all;line-height:1.35;padding:4px 10px;text-align:left;font-family:inherit;color:#34495e}
+  .qa3 button.good{border-color:#0e63b3;background:#e9f3fd;color:#0b3f73}
+  .qa3 button.bad{border-color:#e7a29b;background:#fff4f2;color:#9b3a32}
+  .prow{display:grid;grid-template-columns:96px 1fr;gap:8px;align-items:center;margin-bottom:6px}
+  .prow span{font-size:13.5px;font-weight:800;color:#34495e;word-break:keep-all;line-height:1.3}
+  .prow .chips{display:flex;gap:5px}
+  .prow .chips button{flex:1;min-height:44px;border-radius:11px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:13.5px;color:#34495e;cursor:pointer;word-break:keep-all;line-height:1.25;font-family:inherit;padding:2px 4px}
+  .prow .chips button[aria-pressed="true"]{border-color:#0e63b3;background:#e9f3fd;color:#0b3f73}
+  .prow .chips button.good{border-color:#0e63b3;background:#e9f3fd;color:#0b3f73}
+  .prow .chips button.bad{border-color:#e7a29b;background:#fff4f2;color:#9b3a32}
+  .qsel{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px}
+  .qsel button{min-height:46px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:14.5px;cursor:pointer;font-family:inherit;color:#34495e}
+  .qsel button[aria-pressed="true"]{border-color:#0e63b3;background:#e9f3fd;color:#0b3f73}
+  .reveal{display:none;position:absolute;right:14px;bottom:14px;width:min(46%,360px);background:#fff;border:1.5px solid #dbe4ed;border-radius:16px;padding:8px;box-shadow:0 10px 30px rgba(20,38,59,.16);z-index:3}
+  .reveal.on{display:block;animation:rin .35s ease-out}
+  @keyframes rin{from{transform:translateY(16px)}to{transform:none}}
+  .reveal img{width:100%;display:block;border-radius:10px}
+  .reveal p{margin:6px 4px 2px;font-size:13.5px;font-weight:700;color:#14263b;line-height:1.5;word-break:keep-all}
+  .board2{position:relative}
+  @media (prefers-reduced-motion:reduce){.mc.shake,.pt .cell.shake,.reveal.on{animation:none}}
+  @media (max-width:900px){.pt{max-height:none}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="ttl">
+      <span class="eyebrow">탐구 · 활동하기 2 · 정리하기</span><h1>카드 모으기와 주기율표</h1>
+      <p class="sub">성질이 비슷한 원소 카드끼리 모으고, 그 원소들이 주기율표의 어디에 있는지 찾아요.</p>
+    </div>
+    <div class="ptabs big" role="tablist" id="acts">
+      <button type="button" role="tab" data-a="grp" aria-selected="true">카드 모으기</button>
+      <button type="button" role="tab" data-a="tbl" aria-selected="false">주기율표에 표시</button>
+      <button type="button" role="tab" data-a="prd" aria-selected="false">성질 예측</button>
+    </div>
+  </header>
+
+  <!-- 활동 1: 성질이 유사한 것끼리 카드 모으기 -->
+  <div class="stage act" data-a="grp">
+    <section class="card viewer">
+      <div class="board2">
+        <div class="tray" id="tray"></div>
+        <div class="bins" id="bins"></div>
+      </div>
+      <div class="vctl"><span class="hint">카드를 누른 뒤 넣을 칸을 눌러요</span><span class="sp"></span><button class="vb" type="button" id="gReset">처음부터</button></div>
+    </section>
+    <section class="card pad">
+      <div class="ptabs" role="tablist" id="pt1"><button type="button" role="tab" data-p="do" aria-selected="true">모으기</button><button type="button" role="tab" data-p="why" aria-selected="false">왜 그럴까?</button></div>
+      <div class="pane" data-p="do">
+        <p class="what">원소 조사실에서 쓴 카드 여섯 장이에요. <b>성질이 비슷한 것끼리</b> 두 칸에 나누어 모아요.</p>
+        <div class="seglbl">어떤 기준으로 나눌까요?</div>
+        <div class="qa3" id="crit"></div>
+        <div class="ctl" style="margin-top:10px"><button class="btn primary" type="button" id="gCheck" disabled>확인하기</button></div>
+        <div class="fbk" id="res1"><b class="t" id="res1T">결과</b><span id="res1M">카드를 하나 눌러 골라요.</span></div>
+      </div>
+      <div class="pane" data-p="why" hidden>
+        <div class="phase">
+          <div class="ph on"><i>1</i><span>리튬, 나트륨, 칼륨은 실온에서 <b>고체</b>이고, 물에 넣으면 <b>격렬히 반응</b>해요. 다른 원소와도 반응이 잘 일어나요.</span></div>
+          <div class="ph on"><i>2</i><span>헬륨, 네온, 아르곤은 실온에서 <b>기체</b>이고, 다른 원소와 <b>거의 반응하지 않아요</b>. 안정한 원소예요.</span></div>
+          <div class="ph on"><i>3</i><span>원소의 성질을 기준으로 나누면 이렇게 두 무리가 생겨요. 이 두 무리는 주기율표의 어디에 있을까요? <b>주기율표에 표시</b>에서 확인해요.</span></div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- 활동 2: 주기율표에 표시하기 -->
+  <div class="stage act" data-a="tbl" hidden>
+    <section class="card viewer">
+      <div class="board2">
+        <div class="chipsA mini" id="tray2"></div>
+        <div class="ptw"><div class="pt" id="pt"></div></div>
+      </div>
+      <div class="vctl"><span class="hint">카드를 누른 뒤 주기율표의 칸을 눌러요. 칸의 작은 수는 원자 번호(양성자수)예요</span><span class="sp"></span><button class="vb" type="button" id="tReset">처음부터</button></div>
+    </section>
+    <section class="card pad">
+      <div class="ptabs" role="tablist" id="pt2"><button type="button" role="tab" data-p="do" aria-selected="true">표시하기</button><button type="button" role="tab" data-p="why" aria-selected="false">왜 그럴까?</button></div>
+      <div class="pane" data-p="do">
+        <p class="what">카드의 <b>양성자수</b>를 보고 원소의 자리를 찾아 주기율표에 표시해요.</p>
+        <div class="fbk" id="res2"><b class="t" id="res2T">결과</b><span id="res2M">위에서 카드를 하나 눌러 골라요.</span></div>
+        <div id="talk" hidden>
+          <div class="seglbl">이야기해 보기 · 성질이 유사한 원소들은 주기율표의 어디에 있나요?</div>
+          <div class="qa3" id="qT"></div>
+        </div>
+      </div>
+      <div class="pane" data-p="why" hidden>
+        <div class="phase">
+          <div class="ph on"><i>1</i><span>주기율표의 가로줄을 <b>주기</b>, 세로줄을 <b>족</b>이라고 해요.</span></div>
+          <div class="ph on"><i>2</i><span>리튬·나트륨·칼륨은 모두 <b>1족</b>, 헬륨·네온·아르곤은 모두 <b>18족</b>에 있어요.</span></div>
+          <div class="ph on"><i>3</i><span>과학자들은 원소의 성질을 연구해 비슷한 성질을 가진 원소가 <b>같은 족</b> 위치에 오도록 주기율표를 만들었어요. 양성자수만 기준으로 늘어놓았다면 주기율표는 <b>긴 띠 모양</b>이 되었을 거예요.</span></div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- 활동 3: 성질 예측하기 -->
+  <div class="stage act" data-a="prd" hidden>
+    <section class="card viewer">
+      <div class="board2">
+        <div class="ptw"><div class="pt" id="pt3"></div></div>
+        <div class="reveal" id="rv"><img id="rvImg" alt=""><p id="rvTxt"></p></div>
+      </div>
+      <div class="vctl"><span class="hint" id="h3">물음표 원소는 성질을 모르는 원소예요</span></div>
+    </section>
+    <section class="card pad">
+      <div class="seglbl">물음표 원소 고르기</div>
+      <div class="qsel" id="qsel"></div>
+      <p class="what" id="pq"></p>
+      <div id="prows"></div>
+      <div class="ctl"><button class="btn primary" type="button" id="pCheck" disabled>확인하기</button></div>
+      <div class="fbk" id="res3"><b class="t" id="res3T">결과</b><span id="res3M">같은 족에 있는 원소의 성질을 보고 예측해요.</span></div>
+    </section>
+  </div>
+</div>
+<script>
+window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
+  reduce: !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches), Q: new URLSearchParams(location.search) };
+</script>
+<script>
+/* ===== 같은 족 원소 수업 자료 (교과서 146~148쪽, 161쪽 대단원 문제 5) =====
+   EG.D[원소] : 이름·양성자수·족·주기와 원소 카드 네 칸의 바른 답.
+   '그 밖의 특징'에서 교과서에 없는 조사 내용(무름·보관·쓰임)은 curriculum 문서 '교과서 밖 조사 내용'에 적어 둠. */
+window.EG = window.EG || {};
+EG.ORDER = ['Na', 'He', 'Li', 'Ar', 'K', 'Ne']; // 교과서 146쪽 순서
+EG.D = {
+  Li: { ko: '리튬', en: 'Lithium', z: 3, g: 1, p: 2, kind: 'metal', state: '고체', water: 'hard', stab: 'react',
+    more: ['칼로 자를 수 있을 만큼 물러요.', '자른 면은 은백색 광택이 나다가 공기 중에서 곧 흐려져요.', '석유 속에 넣어 보관해요.'] },
+  Na: { ko: '나트륨', en: 'Sodium', z: 11, g: 1, p: 3, kind: 'metal', state: '고체', water: 'hard', stab: 'react',
+    more: ['칼로 쉽게 잘릴 만큼 물러요.', '자른 면은 은백색 광택이 나다가 공기 중에서 곧 흐려져요.', '석유 속에 넣어 보관해요.'] },
+  K: { ko: '칼륨', en: 'Potassium', z: 19, g: 1, p: 4, kind: 'metal', state: '고체', water: 'hard', stab: 'react',
+    more: ['칼로 아주 쉽게 잘릴 만큼 물러요.', '자른 면의 은백색 광택이 공기 중에서 금방 흐려져요.', '물과 만나면 불꽃이 일기도 해요.'] },
+  He: { ko: '헬륨', en: 'Helium', z: 2, g: 18, p: 1, kind: 'gas', state: '기체', water: 'none', stab: 'stable',
+    more: ['색과 냄새가 없는 기체예요.', '공기보다 가벼워 비행선이나 풍선에 넣어요.'] },
+  Ne: { ko: '네온', en: 'Neon', z: 10, g: 18, p: 2, kind: 'gas', state: '기체', water: 'none', stab: 'stable',
+    more: ['색과 냄새가 없는 기체예요.', '유리관에 넣고 전기를 흘리면 붉은빛을 내요. 그래서 간판에 써요.'] },
+  Ar: { ko: '아르곤', en: 'Argon', z: 18, g: 18, p: 3, kind: 'gas', state: '기체', water: 'none', stab: 'stable',
+    more: ['색과 냄새가 없는 기체예요.', '공기 속에 조금 들어 있어요.', '전구 속에 넣기도 해요.'] },
+};
+// 원소 카드 칸(교과서 146쪽 카드 항목과 말풍선 질문)
+EG.ROWS = [
+  { k: 'state', t: '실온에서 물질의 상태', q: '실온에서 고체, 액체, 기체 중 어떤 상태로 존재할까?', opts: [['고체', '고체'], ['액체', '액체'], ['기체', '기체']] },
+  { k: 'water', t: '물과의 반응', q: '물에 넣었을 때 어떤 변화가 나타날까?', opts: [['hard', '격렬히 반응함'], ['none', '거의 반응하지 않음']] },
+  { k: 'stab', t: '원소의 안정성', q: '다른 원소와 만났을 때 반응이 잘 일어날까?', opts: [['react', '반응이 잘 일어남'], ['stable', '거의 반응하지 않음']] },
+  { k: 'more', t: '그 밖의 특징', q: '단단하고 무른 정도는 어떠할까?' },
+];
+EG.ANS = (el, k) => { const d = EG.D[el], r = EG.ROWS.find((x) => x.k === k); if (k === 'more') return d.more[0]; const o = r.opts.find((x) => x[0] === d[k]); return o ? o[1] : d[k]; };
+// 1~20번 원소(교과서 145쪽 주기율표 범위). [기호, 이름, 영어 이름, 족, 주기]
+EG.EL20 = [
+  ['H', '수소', 'Hydrogen', 1, 1], ['He', '헬륨', 'Helium', 18, 1], ['Li', '리튬', 'Lithium', 1, 2], ['Be', '베릴륨', 'Beryllium', 2, 2],
+  ['B', '붕소', 'Boron', 13, 2], ['C', '탄소', 'Carbon', 14, 2], ['N', '질소', 'Nitrogen', 15, 2], ['O', '산소', 'Oxygen', 16, 2],
+  ['F', '플루오린', 'Fluorine', 17, 2], ['Ne', '네온', 'Neon', 18, 2], ['Na', '나트륨', 'Sodium', 1, 3], ['Mg', '마그네슘', 'Magnesium', 2, 3],
+  ['Al', '알루미늄', 'Aluminium', 13, 3], ['Si', '규소', 'Silicon', 14, 3], ['P', '인', 'Phosphorus', 15, 3], ['S', '황', 'Sulfur', 16, 3],
+  ['Cl', '염소', 'Chlorine', 17, 3], ['Ar', '아르곤', 'Argon', 18, 3], ['K', '칼륨', 'Potassium', 1, 4], ['Ca', '칼슘', 'Calcium', 2, 4],
+];
+EG.GROUPS = [1, 2, 13, 14, 15, 16, 17, 18]; // 교과서 147쪽 표에 보이는 족(3~12족은 '…')
+</script>
+<script>
+/* ===== 블록 0: 공통(미니 카드, 빈 칸 주기율표, 움직임) ===== */
+(() => {
+  'use strict';
+  try {
+    const D = EG.D;
+    const SHORT = { state: (d) => d.state, water: (d) => (d.water === 'hard' ? '격렬히 반응함' : '거의 반응하지 않음'), stab: (d) => (d.stab === 'react' ? '반응이 잘 일어남' : '거의 반응하지 않음') };
+    EG.card = (e, o = {}) => {
+      const d = D[e];
+      return `<button type="button" class="mc" data-e="${e}" aria-pressed="false"><span class="tb">${e}</span><span class="nm">${d.ko}</span><img src="media/sm-${e}.jpg" alt="">${o.z ? `<span class="nm" style="font-size:12px;color:#5a6b7e">양성자수 ${d.z}</span>` : ''}<ul><li><b>상태</b>${SHORT.state(d)}</li><li><b>물</b>${SHORT.water(d)}</li><li><b>반응</b>${SHORT.stab(d)}</li></ul></button>`;
+    };
+    // 빈 칸 주기율표: 1~4주기, 1·2족 … 13~18족 (4주기는 1·2족만)
+    EG.table = (host) => {
+      const cols = [1, 2, 'dots', 13, 14, 15, 16, 17, 18];
+      let h = '<div class="hd c">족<br>주기</div>' + cols.map((c) => (c === 'dots' ? '<div class="dots">…</div>' : `<div class="hd">${c}</div>`)).join('');
+      for (let p = 1; p <= 4; p++) {
+        h += `<div class="hd">${p}</div>`;
+        cols.forEach((c) => {
+          if (c === 'dots') { h += `<div class="dots">${p >= 4 ? '…' : ''}</div>`; return; }
+          const el = EG.EL20.find((x) => x[3] === c && x[4] === p);
+          if (!el) { h += '<div></div>'; return; }
+          const z = EG.EL20.indexOf(el) + 1;
+          h += `<button type="button" class="cell" data-sym="${el[0]}" data-g="${c}" data-p="${p}"><span class="z">${z}</span><span class="s"></span></button>`;
+        });
+      }
+      host.innerHTML = h;
+    };
+    EG.put = (cell, e, small) => { const d = D[e]; cell.classList.add('put'); cell.innerHTML = `<span class="z">${d.z}</span><img src="media/sm-${e}.jpg" alt=""><span class="s" style="font-size:${small ? '15px' : ''}">${e}</span><span class="k">${d.ko}</span>`; };
+    // FLIP: 요소가 새 자리로 미끄러져 가게
+    EG.flip = (els, change) => {
+      const R = new Map(els.map((x) => [x.dataset.e, x.getBoundingClientRect()]));
+      change();
+      if (window.SM.reduce) return;
+      document.querySelectorAll('.mc[data-e]').forEach((x) => {
+        const r0 = R.get(x.dataset.e); if (!r0) return; const r1 = x.getBoundingClientRect();
+        const dx = r0.left - r1.left, dy = r0.top - r1.top; if (!dx && !dy) return;
+        x.animate([{ transform: `translate(${dx}px,${dy}px)` }, { transform: 'none' }], { duration: 380, easing: 'cubic-bezier(.2,.7,.2,1)' });
+      });
+    };
+    EG.shake = (x) => { x.classList.remove('shake'); void x.offsetWidth; x.classList.add('shake'); };
+  } catch (err) { window.SM_err('공통', err); }
+})();
+</script>
+<script>
+/* ===== 블록 1: 카드 모으기 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S, Q = S.Q, D = EG.D;
+    const st = { where: {}, sel: null, crit: null, checked: false }; // where[e] = 'a' | 'b'
+    const START = ['K', 'He', 'Na', 'Ar', 'Li', 'Ne'];
+    const CRIT = [['n', '원소 이름의 글자 수', false], ['p', '원소의 성질(상태, 물과의 반응, 안정성)', true], ['c', '원소 기호의 첫 글자', false]];
+    function msg(t, m, c = '') { $('#res1').className = 'fbk ' + c; $('#res1T').textContent = t; $('#res1M').innerHTML = m; }
+    function render() {
+      const free = START.filter((e) => !st.where[e]);
+      $('#tray').classList.toggle('empty', !free.length); $('#tray').innerHTML = free.length ? free.map((e) => EG.card(e)).join('') : '<div class="ph0">카드를 모두 나누었어요</div>';
+      $('#bins').innerHTML = ['a', 'b'].map((b, i) => {
+        const L = START.filter((e) => st.where[e] === b);
+        return `<div class="bin" data-b="${b}" role="button" tabindex="0"><div class="bh">무리 ${i ? '㉡' : '㉠'}<small>${L.length}장</small></div><div class="bc">${L.map((e) => EG.card(e)).join('')}</div><div class="bs" data-s="${b}"></div></div>`;
+      }).join('');
+      $$('#tray .mc, #bins .mc').forEach((x) => { x.setAttribute('aria-pressed', String(x.dataset.e === st.sel)); x.addEventListener('click', (ev) => { ev.stopPropagation(); st.sel = st.sel === x.dataset.e ? null : x.dataset.e; render(); if (st.sel) msg('결과', `<b>${D[st.sel].ko}</b> 카드를 골랐어요. 넣을 칸을 눌러요.`); }); });
+      $$('#bins .bin').forEach((b) => { b.classList.toggle('hot', !!st.sel); b.addEventListener('click', () => drop(b.dataset.b)); });
+      $('#gCheck').disabled = START.some((e) => !st.where[e]) || !st.crit;
+      if (st.checked) showGroups();
+    }
+    function drop(b) {
+      if (!st.sel) { msg('결과', '먼저 카드를 하나 눌러 골라요.'); return; }
+      const e = st.sel; st.sel = null; st.checked = false;
+      EG.flip($$('.mc[data-e]'), () => { st.where[e] = b; render(); });
+      const left = START.filter((x) => !st.where[x]).length;
+      msg('결과', left ? `${left}장 남았어요.` : '다 나누었어요. 나눈 기준을 고르고 <b>확인하기</b>를 눌러요.');
+    }
+    function showGroups() {
+      ['a', 'b'].forEach((b) => {
+        const L = START.filter((e) => st.where[e] === b), k = D[L[0]].kind, s = $(`[data-s="${b}"]`);
+        if (s) s.textContent = k === 'metal' ? '실온에서 고체 · 물과 격렬히 반응 · 반응이 잘 일어남' : '실온에서 기체 · 물과 거의 반응하지 않음 · 안정함';
+        const bin = $(`.bin[data-b="${b}"]`); bin && bin.classList.add('ok');
+      });
+    }
+    $('#crit').innerHTML = CRIT.map(([v, t]) => `<button type="button" data-v="${v}">${t}</button>`).join('');
+    $$('#crit button').forEach((x) => x.addEventListener('click', () => {
+      st.crit = x.dataset.v; $$('#crit button').forEach((y) => y.classList.remove('good', 'bad'));
+      const ok = CRIT.find((c) => c[0] === st.crit)[2]; x.classList.add(ok ? 'good' : 'bad');
+      if (!ok) msg('다시 생각해 봐요', '탐구에서는 원소의 <b>성질</b>이 비슷한 것끼리 모아요. 카드에 적은 성질을 기준으로 해요.', 'no');
+      render();
+    }));
+    $('#gCheck').addEventListener('click', () => {
+      const ok = CRIT.find((c) => c[0] === st.crit)[2];
+      const groups = ['a', 'b'].map((b) => START.filter((e) => st.where[e] === b));
+      const pure = groups.every((g) => g.length === 3 && g.every((e) => D[e].kind === D[g[0]].kind));
+      if (!ok) { msg('다시 생각해 봐요', '나눈 기준을 다시 골라요.', 'no'); return; }
+      if (!pure) { msg('다시 나누어 봐요', '한 칸에 성질이 다른 카드가 섞여 있어요. 카드의 <b>상태</b>와 <b>물과의 반응</b>을 비교해요. 카드를 누르면 다른 칸으로 옮길 수 있어요.', 'no'); return; }
+      st.checked = true; render();
+      msg('잘 모았어요', '리튬·나트륨·칼륨이 한 무리, 헬륨·네온·아르곤이 한 무리예요. 이제 <b>주기율표에 표시</b> 탭에서 이 원소들의 자리를 찾아요. <button class="btn primary" type="button" id="toT" style="width:100%;margin-top:8px">주기율표에 표시하러 가기</button>', 'ok');
+      $('#toT').addEventListener('click', () => window.SM.goAct('tbl'));
+    });
+    $('#gReset').addEventListener('click', () => { Object.assign(st, { where: {}, sel: null, crit: null, checked: false }); $$('#crit button').forEach((y) => y.classList.remove('good', 'bad')); msg('결과', '카드를 하나 눌러 골라요.'); render(); });
+    render();
+    if (Q.get('all') === '1') { ['Li', 'Na', 'K'].forEach((e) => (st.where[e] = 'a')); ['He', 'Ne', 'Ar'].forEach((e) => (st.where[e] = 'b')); st.crit = 'p'; $('#crit [data-v="p"]').classList.add('good'); render(); $('#gCheck').click(); }
+    if (Q.get('half') === '1') { st.where.K = 'a'; st.where.He = 'b'; st.where.Na = 'a'; st.sel = 'Ar'; render(); }
+  } catch (err) { window.SM_err('카드 모으기', err); }
+})();
+</script>
+<script>
+/* ===== 블록 2: 주기율표에 표시하기 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S, Q = S.Q, D = EG.D;
+    const st = { put: {}, sel: null, talk: null };
+    function msg(t, m, c = '') { $('#res2').className = 'fbk ' + c; $('#res2T').textContent = t; $('#res2M').innerHTML = m; }
+    EG.table($('#pt'));
+    function render() {
+      const free = EG.ORDER.filter((e) => !st.put[e]);
+      $('#tray2').innerHTML = free.map((e) => EG.card(e, { z: 1 })).join('');
+      $$('#tray2 .mc').forEach((x) => { x.setAttribute('aria-pressed', String(x.dataset.e === st.sel)); x.addEventListener('click', () => { st.sel = st.sel === x.dataset.e ? null : x.dataset.e; render(); if (st.sel) msg('결과', `<b>${D[st.sel].ko}</b>의 양성자수는 <b>${D[st.sel].z}</b>이에요. 주기율표에서 원자 번호 ${D[st.sel].z}인 칸을 눌러요.`); }); });
+      $$('#pt .cell').forEach((c) => c.classList.toggle('hot', !!st.sel && !c.classList.contains('put')));
+      const all = EG.ORDER.every((e) => st.put[e]);
+      $('#pt').classList.toggle('done', all);
+      $$('#pt .cell').forEach((c) => c.classList.toggle('col', all && c.classList.contains('put')));
+      $('#talk').hidden = !all;
+    }
+    $$('#pt .cell').forEach((c) => c.addEventListener('click', () => {
+      if (c.classList.contains('put')) return;
+      if (!st.sel) { msg('결과', '먼저 위에서 카드를 하나 눌러 골라요.'); return; }
+      const e = st.sel, d = D[e];
+      if (c.dataset.sym !== e) {
+        EG.shake(c);
+        const z = EG.EL20.findIndex((x) => x[0] === c.dataset.sym) + 1;
+        msg('다른 칸이에요', `이 칸은 원자 번호 <b>${z}</b>이에요. ${d.ko}의 양성자수는 <b>${d.z}</b>예요. 원자 번호와 양성자수가 같은 칸을 찾아요.`, 'no');
+        return;
+      }
+      st.put[e] = true; st.sel = null; EG.put(c, e);
+      if (!S.reduce) c.animate([{ transform: 'scale(.6)' }, { transform: 'scale(1.06)' }, { transform: 'none' }], { duration: 360, easing: 'ease-out' });
+      const left = EG.ORDER.filter((x) => !st.put[x]).length;
+      if (left) msg('맞아요', `${d.ko}은(는) <b>${d.p}주기 ${d.g}족</b>에 있어요. ${left}장 남았어요.`, 'ok');
+      else msg('여섯 장을 다 표시했어요', '파란 칸으로 표시된 두 세로줄을 봐요. 성질이 비슷한 원소들은 어디에 모여 있나요? 아래에서 골라요.', 'ok');
+      render();
+    }));
+    const QT = [['b', '같은 가로줄, 곧 같은 주기에 있다', false], ['c', '주기율표 여기저기에 흩어져 있다', false], ['a', '같은 세로줄, 곧 같은 족에 있다', true]];
+    $('#qT').innerHTML = QT.map(([v, t]) => `<button type="button" data-v="${v}">${t}</button>`).join('');
+    $$('#qT button').forEach((x) => x.addEventListener('click', () => {
+      $$('#qT button').forEach((y) => y.classList.remove('good', 'bad')); const ok = QT.find((q) => q[0] === x.dataset.v)[2]; x.classList.add(ok ? 'good' : 'bad');
+      if (ok) msg('맞아요', '성질이 비슷한 리튬·나트륨·칼륨은 <b>1족</b>, 헬륨·네온·아르곤은 <b>18족</b>에 있어요. 주기율표에서 <b>성질이 유사한 원소들은 같은 족에 배치</b>되어 있어요.', 'ok');
+      else msg('다시 생각해 봐요', '리튬(2주기)·나트륨(3주기)·칼륨(4주기)은 가로줄이 서로 달라요. 세 원소가 함께 있는 줄은 어느 쪽인가요?', 'no');
+    }));
+    $('#tReset').addEventListener('click', () => { st.put = {}; st.sel = null; EG.table($('#pt')); bind(); msg('결과', '위에서 카드를 하나 눌러 골라요.'); $$('#qT button').forEach((y) => y.classList.remove('good', 'bad')); render(); });
+    function bind() { $$('#pt .cell').forEach((c) => c.addEventListener('click', () => { if (c.classList.contains('put')) return; if (!st.sel) { msg('결과', '먼저 위에서 카드를 하나 눌러 골라요.'); return; } const e = st.sel, d = D[e]; if (c.dataset.sym !== e) { EG.shake(c); const z = EG.EL20.findIndex((x) => x[0] === c.dataset.sym) + 1; msg('다른 칸이에요', `이 칸은 원자 번호 <b>${z}</b>이에요. ${d.ko}의 양성자수는 <b>${d.z}</b>예요.`, 'no'); return; } st.put[e] = true; st.sel = null; EG.put(c, e); const left = EG.ORDER.filter((x) => !st.put[x]).length; msg(left ? '맞아요' : '여섯 장을 다 표시했어요', left ? `${d.ko}은(는) <b>${d.p}주기 ${d.g}족</b>에 있어요.` : '성질이 비슷한 원소들은 어디에 모여 있나요? 아래에서 골라요.', 'ok'); render(); })); }
+    render();
+    if (Q.get('tall') === '1') { EG.ORDER.forEach((e) => { st.put[e] = true; EG.put($(`#pt .cell[data-sym="${e}"]`), e); }); render(); msg('여섯 장을 다 표시했어요', '성질이 비슷한 원소들은 어디에 모여 있나요? 아래에서 골라요.', 'ok'); }
+  } catch (err) { window.SM_err('주기율표에 표시', err); }
+})();
+</script>
+<script>
+/* ===== 블록 3: 성질 예측하기 (스스로 평가 2) ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S, Q = S.Q, D = EG.D;
+    const QS = { K: ['Li', 'Na'], Ar: ['He', 'Ne'] };
+    const st = { q: 'K', pick: {} };
+    const ROWS = EG.ROWS.filter((r) => r.k !== 'more');
+    function msg(t, m, c = '') { $('#res3').className = 'fbk ' + c; $('#res3T').textContent = t; $('#res3M').innerHTML = m; }
+    function draw() {
+      EG.table($('#pt3'));
+      const known = QS[st.q];
+      known.forEach((e) => EG.put($(`#pt3 .cell[data-sym="${e}"]`), e, true));
+      const qc = $(`#pt3 .cell[data-sym="${st.q}"]`); qc.classList.add('q'); qc.querySelector('.s').textContent = '?';
+      $$('#pt3 .cell').forEach((c) => { c.disabled = true; c.style.cursor = 'default'; c.classList.toggle('col', c.classList.contains('put')); });
+      $('#qsel').innerHTML = Object.keys(QS).map((e) => `<button type="button" data-q="${e}" aria-pressed="${st.q === e}">${D[e].g}족 ${D[e].p}주기의 ?</button>`).join('');
+      $$('#qsel button').forEach((b) => b.addEventListener('click', () => { st.q = b.dataset.q; st.pick = {}; $('#rv').classList.remove('on'); msg('결과', '같은 족에 있는 원소의 성질을 보고 예측해요.'); draw(); }));
+      const kn = known.map((e) => D[e].ko).join('과 ');
+      $('#pq').innerHTML = `물음표 원소는 <b>${kn}</b>과(와) 같은 <b>${D[st.q].g}족</b>이에요. 이 원소의 성질을 예측해요.`;
+      $('#prows').innerHTML = ROWS.map((r) => `<div class="prow"><span>${r.t}</span><div class="chips" data-k="${r.k}">${r.opts.map(([v, t]) => `<button type="button" data-v="${v}" aria-pressed="${st.pick[r.k] === v}">${t}</button>`).join('')}</div></div>`).join('');
+      $$('#prows .chips button').forEach((b) => b.addEventListener('click', () => { st.pick[b.parentElement.dataset.k] = b.dataset.v; $$('button', b.parentElement).forEach((x) => { x.setAttribute('aria-pressed', String(x === b)); x.classList.remove('good', 'bad'); }); $('#pCheck').disabled = ROWS.some((r) => !st.pick[r.k]); }));
+      $('#pCheck').disabled = true;
+    }
+    $('#pCheck').addEventListener('click', () => {
+      const d = D[st.q]; let n = 0;
+      ROWS.forEach((r) => { const b = $(`#prows .chips[data-k="${r.k}"] button[aria-pressed="true"]`); const ok = st.pick[r.k] === d[r.k]; if (ok) n++; b && b.classList.add(ok ? 'good' : 'bad'); });
+      const qc = $(`#pt3 .cell[data-sym="${st.q}"]`); qc.classList.remove('q'); EG.put(qc, st.q, true);
+      $('#rvImg').src = d.kind === 'metal' ? `media/rx-${st.q}.jpg` : `media/u-${st.q}.jpg`;
+      $('#rvTxt').innerHTML = d.kind === 'metal' ? `물음표 원소는 <b>칼륨</b>이에요. 물에 넣으면 격렬히 반응해요.` : `물음표 원소는 <b>아르곤</b>이에요. 실온에서 기체이고, 다른 원소와 거의 반응하지 않아 전구 속에 넣기도 해요.`;
+      $('#rv').classList.add('on');
+      msg(n === 3 ? '예측이 모두 맞았어요' : `${n}개 맞았어요`, `성질을 모르는 원소라도 <b>같은 족</b>에 속한 다른 원소의 성질을 알면 그 원소의 성질을 예측할 수 있어요. ${d.ko}은(는) ${QS[st.q].map((e) => D[e].ko).join('·')}처럼 ${d.kind === 'metal' ? '실온에서 고체이고 물과 격렬히 반응해요' : '실온에서 기체이고 다른 원소와 거의 반응하지 않아요'}.`, n === 3 ? 'ok' : 'no');
+    });
+    draw();
+    if (Q.get('pq') === 'Ar') { st.q = 'Ar'; draw(); }
+    if (Q.get('pans') === '1') { ROWS.forEach((r) => { st.pick[r.k] = D[st.q][r.k]; }); draw(); ROWS.forEach((r) => $(`#prows .chips[data-k="${r.k}"] button[data-v="${D[st.q][r.k]}"]`).setAttribute('aria-pressed', 'true')); $('#pCheck').disabled = false; $('#pCheck').click(); }
+  } catch (err) { window.SM_err('성질 예측', err); }
+})();
+</script>
+<script>
+/* ===== 블록 4: 활동 탭 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S, Q = S.Q;
+    function act(a) { $$('#acts button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.a === a))); $$('.act').forEach((x) => (x.hidden = x.dataset.a !== a)); }
+    S.goAct = act;
+    $$('#acts button').forEach((b) => b.addEventListener('click', () => act(b.dataset.a)));
+    [['#pt1', 1], ['#pt2', 2]].forEach(([id]) => { const box = $(id).parentElement; $$(id + ' button').forEach((b) => b.addEventListener('click', () => { $$(id + ' button').forEach((x) => x.setAttribute('aria-selected', String(x === b))); $$('.pane', box).forEach((p) => (p.hidden = p.dataset.p !== b.dataset.p)); })); });
+    act(['tbl', 'prd'].includes(Q.get('act')) ? Q.get('act') : 'grp');
+    if (Q.get('tab') === 'why') { $$('.act:not([hidden]) .ptabs [data-p="why"]').forEach((b) => b.click()); }
+    S.okUI = true;
+  } catch (err) { window.SM_err('활동 탭', err); }
+})();
+</script>
+</body>
+</html>
