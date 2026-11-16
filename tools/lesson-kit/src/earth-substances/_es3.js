@@ -90,7 +90,7 @@ const ES3 = (() => {
   // 땅 x -9~4.5, 바다 x 4.5~9, 앞뒤 z -4.5~4.5, 땅 위 y=0
   const RIVER = [V(1.35, 0, -4.5), V(1.7, 0, -3.2), V(2.15, 0, -2.0), V(2.95, 0, -0.9), V(3.55, 0, 0.3), V(4.1, 0, 1.0), V(4.62, 0, 1.25)];
   const PLACES = {
-    sky: { n: '높은 하늘', at: V(-3.2, 6.35, -1.2), box: [V(-9, 3.4, -5), V(9, 6.6, 2.5)], dir: V(0.12, 0.05, 1) },
+    sky: { n: '높은 하늘', at: V(-3.2, 5.75, -1.2), box: [V(-9, 2.6, -5), V(9, 7.6, 2.5)], dir: V(0.12, 0.05, 1) },
     city: { n: '도시', at: V(-6.9, 3.15, -0.6), box: [V(-9, 0, -4.5), V(-3.6, 2.8, 3.2)], dir: V(0.32, 0.5, 1) },
     farm: { n: '논밭', at: V(-2.4, 1.55, -1.3), box: [V(-4.5, 0, -4.4), V(-0.4, 1.6, 2.2)], dir: V(0.05, 0.85, 1) },
     forest: { n: '숲', at: V(3.0, 2.2, 3.0), box: [V(0.2, 0, -1), V(4.6, 2.2, 4.5)], dir: V(0.2, 0.45, 1) },
@@ -130,9 +130,9 @@ const ES3 = (() => {
       const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx); g.computeVertexNormals();
       const m = new THREE.Mesh(g, mat); m.receiveShadow = true; return m;
     }
-    all.add(ribbon(0.42, 0.012, M('#7a8a5a')));
-    const riverM = M('#4b93c6', { roughness: 0.4 });
-    const riverMesh = ribbon(0.32, 0.024, riverM); all.add(riverMesh);
+    all.add(ribbon(0.58, 0.012, M('#b9a77e', { side: THREE.DoubleSide })));
+    const riverM = M('#3f8fd0', { roughness: 0.35, side: THREE.DoubleSide });
+    const riverMesh = ribbon(0.44, 0.024, riverM); all.add(riverMesh);
     const nearRiver = (x, z, d) => { for (let i = 0; i <= 40; i++) { const p = curve.getPoint(i / 40); if (Math.hypot(p.x - x, p.z - z) < d) return true; } return false; };
 
     /* 도시: 건물 */
@@ -203,7 +203,7 @@ const ES3 = (() => {
     }
     for (let i = 0; i < 70; i++) {
       const x = 0.4 + R() * 3.8, z = -4.2 + R() * 8.4;
-      if (nearRiver(x, z, .8) || (x < 1.6 && z < -2.1) || (z > 2.1 && z < 3.2) || (x > 3.9 && z > .3 && z < 2)) continue;
+      if (nearRiver(x, z, .95) || (x < 1.6 && z < -2.1) || (z > 2.1 && z < 3.2) || (x > 3.9 && z > .3 && z < 2)) continue;
       tree(x, z, .8 + R() * .55, R() < .4);
     }
     for (let i = 0; i < 12; i++) { const x = -8.8 + R() * 4.6, z = 3.35 + R() * .95; tree(x, z, .55 + R() * .3, R() < .5); }
@@ -211,18 +211,18 @@ const ES3 = (() => {
 
     /* 구름 */
     const cloudM = M('#ffffff', { roughness: 1 });
-    [[-5.5, 3.7, -2.5, 1], [1.5, 4.1, -3.4, .8], [6.2, 3.5, -1.2, .9]].forEach(([x, y, z, s]) => {
+    [[-5.5, 3.3, -2.5, 1], [1.5, 3.6, -3.4, .8], [6.2, 3.1, -1.2, .9]].forEach(([x, y, z, s]) => {
       const c = new THREE.Group(); c.position.set(x, y, z);
       [[0, 0, 0, .55], [.55, -.08, .05, .42], [-.55, -.1, 0, .4], [.2, .26, -.05, .38], [-.25, .2, .1, .34]].forEach(([a, b, d, r]) => { const p = mesh(leafGeo, cloudM, a * s, b * s, d * s, false); p.scale.set(r * s * 1.2, r * s * .85, r * s); c.add(p); });
       all.add(c);
     });
 
     /* 높은 하늘: 오존층과 해 */
-    const LAYER_Y = 6.0;
-    const layer = mesh(new THREE.BoxGeometry(19, .55, 10), new THREE.MeshStandardMaterial({ color: '#8fbbe6', roughness: 1, transparent: true, opacity: .26, depthWrite: false }), 0, LAYER_Y, -1, false); layer.castShadow = false; layer.receiveShadow = false; all.add(layer);
+    const LAYER_Y = 5.3;
+    const layer = mesh(new THREE.BoxGeometry(18.6, .55, 8), new THREE.MeshStandardMaterial({ color: '#8fbbe6', roughness: 1, transparent: true, opacity: .26, depthWrite: false }), 0, LAYER_Y, -1, false); layer.castShadow = false; layer.receiveShadow = false; all.add(layer);
     const ozoneDots = new THREE.Group(); all.add(ozoneDots);
-    for (let i = 0; i < 260; i++) { const m = tiny('O3', .055); m.position.set(-9.2 + R() * 18.4, LAYER_Y - .22 + R() * .44, -5.8 + R() * 9.6); m.rotation.set(R() * 6, R() * 6, R() * 6); ozoneDots.add(m); }
-    const sunP = V(-7.6, 8.6, -4.8);
+    for (let i = 0; i < 260; i++) { const m = tiny('O3', .055); m.position.set(-9.1 + R() * 18.2, LAYER_Y - .22 + R() * .44, -4.8 + R() * 7.6); m.rotation.set(R() * 6, R() * 6, R() * 6); ozoneDots.add(m); }
+    const sunP = V(-7.2, 6.55, -4.6);
     const sunMesh = mesh(new THREE.SphereGeometry(.62, 32, 20), new THREE.MeshBasicMaterial({ color: '#ffd45a' }), sunP.x, sunP.y, sunP.z, false); all.add(sunMesh);
 
     /* 이름표(누르면 그곳으로) */
@@ -238,7 +238,7 @@ const ES3 = (() => {
     let place = null, co2 = 0, t = 0;
     const parts = [];
     const puffGeo = new THREE.SphereGeometry(1, 12, 9);
-    function clearFx() { parts.length = 0; while (fx.children.length) fx.remove(fx.children[0]); hazeM.opacity = 0; haze.visible = false; riverM.color.set('#4b93c6'); }
+    function clearFx() { parts.length = 0; while (fx.children.length) fx.remove(fx.children[0]); hazeM.opacity = 0; haze.visible = false; riverM.color.set('#3f8fd0'); }
     const hazeTex = canvasTex(128, 128, (g, w, h) => { const r = g.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2); r.addColorStop(0, 'rgba(255,255,255,1)'); r.addColorStop(.55, 'rgba(255,255,255,.55)'); r.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = r; g.fillRect(0, 0, w, h); });
     const hazeM = new THREE.SpriteMaterial({ map: hazeTex, color: '#b8a284', transparent: true, opacity: 0, depthWrite: false });
     const haze = new THREE.Group(); haze.visible = false; all.add(haze);
@@ -292,7 +292,7 @@ const ES3 = (() => {
           const d = mesh(puffGeo, M('#6b5a3e', { transparent: true, opacity: .5, roughness: 1, depthWrite: false }), pipeEnd.x, .03, pipeEnd.z, false); d.scale.set(.06, .012, .06);
           addPart(d, { kind: 'waste', u: .24, off: (Math.random() - .5) * .3 });
         }
-        pv = Math.min(1, pv + dt * .08); riverM.color.set('#4b93c6').lerp(new THREE.Color('#7d8a76'), pv * .5);
+        pv = Math.min(1, pv + dt * .08); riverM.color.set('#3f8fd0').lerp(new THREE.Color('#6f8a86'), pv * .45);
       }
       for (let i = parts.length - 1; i >= 0; i--) {
         const p = parts[i], ob = p.obj; p.age += dt; let dead = false;
@@ -307,7 +307,7 @@ const ES3 = (() => {
           if (p.absorb && e > .86) ob.scale.setScalar(Math.max(.01, (1 - e) / .14));
           if (e >= 1) { if (p.absorb) dead = true; else { p.kind = 'co2s'; p.v = V((Math.random() - .5) * .25, (Math.random() - .5) * .06, (Math.random() - .5) * .15); } }
         } else if (p.kind === 'co2s') { ob.position.addScaledVector(p.v, dt); if (ob.position.x > 8.5 || ob.position.x < -8.5) p.v.x *= -1; if (ob.position.y > 5.1 || ob.position.y < 2.8) p.v.y *= -1; ob.rotation.y += dt * .6; }
-        else if (p.kind === 'waste') { p.u = Math.min(1, p.u + dt * .055); const c = curve.getPoint(p.u), tg = curve.getTangent(p.u), n = V(-tg.z, 0, tg.x).normalize(); ob.position.set(c.x + n.x * p.off * .25, .03, c.z + n.z * p.off * .25); const s = .05 + p.age * .02; ob.scale.set(Math.min(.15, s), .012, Math.min(.15, s)); if (p.u >= 1) { ob.position.x += p.age * .05; if (p.age > 28) dead = true; } }
+        else if (p.kind === 'waste') { p.u = Math.min(1, p.u + dt * .055); const c = curve.getPoint(p.u), tg = curve.getTangent(p.u), n = V(-tg.z, 0, tg.x).normalize(); ob.position.set(c.x + n.x * p.off * .6, .03, c.z + n.z * p.off * .6); const s = .05 + p.age * .02; ob.scale.set(Math.min(.15, s), .012, Math.min(.15, s)); if (p.u >= 1) { ob.position.x += p.age * .05; if (p.age > 28) dead = true; } }
         if (dead) { fx.remove(ob); parts.splice(i, 1); }
       }
       const co2s = parts.filter((p) => p.kind === 'co2s'); if (co2s.length > 90) { fx.remove(co2s[0].obj); parts.splice(parts.indexOf(co2s[0]), 1); }
@@ -315,9 +315,9 @@ const ES3 = (() => {
     if (!REDUCE) st.onFrame(step);
 
     /* ---------- 카메라 ---------- */
-    const allBox = [land, bed, layer, sunMesh];
+    const allBox = [land, bed, layer];
     const homeDir = V(0.16, 0.5, 1);
-    function home(dur = 0) { st.fit(allBox, { dir: homeDir, margin: 1.04, dur }); }
+    function home(dur = 0) { st.fit(allBox, { dir: homeDir, margin: .97, dur }); }
     function go(k, dur = 1.2) {
       if (k === place) return; place = k; clearFx(); acc = acc2 = 0; pv = 0;
       Object.entries(labels).forEach(([n, L]) => L.el.classList.toggle('on', n === k));
@@ -364,25 +364,26 @@ const ES3 = (() => {
         if (id === 'Hg') { const s = EL3.swarm('Hg', 13, 4.2, { gap: 1.95, speed: .5, liquid: true, seed: 4 }); return { group: s.group, tick: s.tick, R: 3.9 }; }
         const g = EL3.mol(id); if (id === 'O3') g.rotation.set(0, 0, 0);
         const b = new THREE.Box3().setFromObject(g), sp = b.getBoundingSphere(new THREE.Sphere());
-        return { group: g, tick: null, R: Math.max(1.5, sp.radius) };
+        return { group: g, tick: null, R: Math.max(2.1, sp.radius + .55), single: true };
       }
       const cfg = { O3: ['O3', 10, 9, 2.9, 2.2], N2O: ['N2O', 10, 9, 3.2, 2.2], CO2: ['CO2', 10, 9, 3.2, 2.2], O2: ['O2', 11, 9, 2.6, 2.4], Hg: ['Hg', 30, 6.4, 2.0, .7] }[kind];
       const s = EL3.swarm(cfg[0], cfg[1], cfg[2], { gap: cfg[3], speed: cfg[4], liquid: kind === 'Hg', seed: 11 });
       return { group: s.group, tick: s.tick, R: cfg[2] * .6 };
     }
+    const hgM = new THREE.MeshStandardMaterial({ color: '#c9ced4', roughness: .28, metalness: .75 });
     function show(kind) {
       if (cur && cur.kind === kind) return cur;
       if (cur) root.remove(cur.group);
-      cur = build(kind); cur.kind = kind; root.add(cur.group); root.rotation.set(0, 0, 0); place(); return cur;
+      cur = build(kind); cur.group.traverse((m) => { if (m.isMesh && m.userData.el === 'Hg') m.material = hgM; }); cur.kind = kind; root.add(cur.group); root.rotation.set(0, 0, 0); place(); return cur;
     }
     try { new ResizeObserver(resize).observe(host); } catch (e) { addEventListener('resize', resize); }
     resize();
-    let last = performance.now();
+    let last = performance.now(), sw = 0;
     function vis() { if (document.hidden) return false; try { const f = window.frameElement; if (f && f.hasAttribute('data-page') && !f.classList.contains('on')) return false; } catch (e) {} const r = host.getBoundingClientRect(); return r.width > 2 && r.bottom > -40 && r.top < (innerHeight || 800) + 40; }
     function tick(now) {
       requestAnimationFrame(tick);
       const dt = Math.min(0.05, (now - last) / 1000) * TS(); last = now; if (!vis()) return;
-      if (cur) { if (cur.tick) cur.tick(dt); if (!REDUCE) root.rotation.y += dt * spin; }
+      if (cur) { if (cur.tick) cur.tick(dt); if (!REDUCE) { if (cur.single) { sw += dt * spin; root.rotation.y = Math.sin(sw * 1.6) * .45; } else root.rotation.y += dt * spin; } }
       if (controls) controls.update(); renderer.render(scene, cam);
     }
     requestAnimationFrame(tick);
@@ -392,8 +393,8 @@ const ES3 = (() => {
   /* ================= 사진용 장면 ================= */
   function still(host, k) {
     if (k.startsWith('w-')) { // 지구 환경 모형
-      const w = world(host, { still: true }); const p = k.slice(2);
-      if (p !== 'all') { w.go(p, 0); for (let i = 0; i < 60; i++) w.step(.2); }
+      const w = world(host, { still: true }); let p = k.slice(2); const many = p === 'forest2'; if (many) p = 'forest';
+      if (p !== 'all') { w.go(p, 0); if (many) w.setCO2(1); for (let i = 0; i < (many ? 160 : 60); i++) w.step(.2); }
       w.st.release(); setTimeout(() => { window.__ready = true; }, 800); return w;
     }
     host.style.background = '#fff';
