@@ -238,13 +238,29 @@
   .stage{flex:1 1 auto;min-height:0}
   .stage > .card.pad{overflow:auto}
   @media (max-width:900px){.stage{grid-template-rows:minmax(0,1fr) auto}}
+  /* ===== 원자 3D 그림 이름표 ===== */
+  .gl-host{position:relative;overflow:hidden;background:#f4f8fb;touch-action:none;user-select:none;-webkit-user-select:none}
+  .gl-host > canvas.gl{position:absolute;inset:0;width:100%!important;height:100%!important;display:block}
+  .lb.zl{font-size:clamp(13px,1.35vw,15.5px);color:#14263b;background:rgba(255,255,255,.9);box-shadow:0 2px 8px rgba(20,38,59,.12);padding:3px 10px}
+  .lb.zl.big{font-size:clamp(15px,1.7vw,19px);font-weight:900;padding:4px 12px}
+  .lb.zl.pr,.lb.zl.ne{padding-left:8px}
+  .lb.zl.pr::before,.lb.zl.ne::before{content:'';display:inline-block;width:.75em;height:.75em;border-radius:50%;margin-right:6px;vertical-align:-.04em}
+  .lb.zl.pr::before{background:#e2463d}.lb.zl.ne::before{background:#6fb646}
+  .lb.zl.pr{transform-origin:0 0;margin:-2.6em 0 0 -1.2em}.lb.zl.ne{margin:2.6em 0 0 1.2em}
+  .lb.zl.nucq{background:transparent;box-shadow:none;color:#fff;font-weight:900;font-size:clamp(20px,2.6vw,30px);letter-spacing:-.02em;text-shadow:0 1px 2px rgba(90,15,10,.4);padding:0}
+  .lb.zl.nucq.sm{font-size:clamp(15px,1.9vw,22px)}
+  .pk{display:inline-block;width:18px;height:18px;border-radius:50%;flex:none}
+  .ph b.k{color:#0e63b3}
+  .good{border-color:#0e63b3!important;background:#e4f0fb!important;color:#0b3f73!important}
+  .bad{border-color:#e7a29b!important;background:#fff4f2!important;color:#9b3a32!important}
+  .lb.zl.nucq.xl{font-size:44px}
   /* ===== 이 페이지 전용 ===== */
   .stage{grid-template-columns:minmax(0,1.35fr) minmax(330px,1fr)}
   .tbox{flex:1 1 auto;display:flex;flex-direction:column;justify-content:center;gap:14px;padding:16px 18px 12px}
   .tfoot{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
   .tfoot p{margin:0;font-size:13.5px;color:var(--muted);line-height:1.6;word-break:keep-all;flex:1;min-width:180px}
   .tfoot p b{color:var(--ink)}
-  #atomv{aspect-ratio:600/370;margin:-4px 0 0}
+  #atomv{height:clamp(220px,40vh,330px);margin:-4px 0 0;border-radius:14px}
   .zline{text-align:center;font-size:16px;font-weight:700;color:var(--ink2);margin:2px 0 8px;word-break:keep-all}
   .zline b{color:#0e63b3;font-size:1.15em}
   .stepper{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;margin-bottom:6px}
@@ -256,7 +272,7 @@
   .qdots i{flex:1;height:6px;border-radius:3px;background:#e2e9f0}
   .qdots i.ok{background:#0e63b3}.qdots i.now{background:#8db8e3}
   .ph b.k{color:#0e63b3}
-  @media (max-width:900px){.stage{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr)}.tbox{justify-content:flex-start;padding-top:12px}.ptab .pt-c{min-height:64px}#atomv{aspect-ratio:600/250}body[data-p="quiz"] #atomv{aspect-ratio:600/190}}
+  @media (max-width:900px){.stage{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr)}.tbox{justify-content:flex-start;padding-top:12px}.ptab .pt-c{min-height:64px}#atomv{height:230px!important}body[data-p="quiz"] #atomv{height:180px!important}}
 </style>
 </head>
 <body>
@@ -292,7 +308,7 @@
         <button type="button" role="tab" data-p="why" aria-selected="false">왜 그럴까?</button>
       </div>
       <div id="figbox">
-        <div class="scene" id="atomv" role="img" aria-label="고른 원자를 간단히 나타낸 원자 모형. 원자핵에 양성자수에 따른 전하량이 쓰여 있고, 주위에 같은 수의 전자가 움직인다."></div>
+        <div class="gl-host" id="atomv" role="img" aria-label="고른 원자를 간단히 나타낸 원자 모형. 원자핵에 양성자수에 따른 전하량이 쓰여 있고, 주위에 같은 수의 전자가 움직인다."></div>
         <p class="zline" id="zline"></p>
       </div>
       <div class="pane" data-p="lab">
@@ -946,7 +962,7 @@ window.AT = (() => {
   try {
     const S = window.SM, { $, $$ } = S, Q = S.Q;
     const E = (z) => AT.EL20[z - 1];
-    const A = AT.single($('#atomv'), { W: 600, H: 370, R: 165, Y: 182, p: 1 });
+    const A = { set(z) { window.__z = z; if (window.__A3) window.__A3.setZ(z, true); } }; // 3D 원자는 아래 모듈에서 만들어요
     let quiz = false, mark = null;
     const T = AT.table($('#ptab'), { onPick: (z) => (quiz ? window.QZ.pick(z) : set(z)) });
     AT.fullTable($('#ftab'));
@@ -1024,6 +1040,726 @@ window.AT = (() => {
     if (Q.get('tab') === 'quiz' && Q.get('qa')) window.QZ.pick(+Q.get('qa'));
   } catch (err) { window.SM_err('찾기 도전', err); }
 })();
+</script>
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+/* ===== 공통 3D 도구 (three.js) =====
+   전자는 파란 알갱이(−), 전자를 잃은 쪽은 빨간 (+) 표시. 크기·개수·빠르기는 개념 이해를 위한 모형이에요(숫자 없음). */
+const C3 = (() => {
+  const REDUCE = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const V = (x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z);
+  const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+  const clamp01 = (t) => Math.max(0, Math.min(1, t));
+
+  // 탭 껍데기에서 보이지 않는 탭이면 그리지 않아요(태블릿 배터리 아끼기)
+  function visibleNow() {
+    if (document.hidden) return false;
+    try { const f = window.frameElement; if (f && f.hasAttribute('data-page') && !f.classList.contains('on')) return false; } catch (e) {}
+    return true;
+  }
+
+  function canvasTex(w, h, draw) {
+    const c = document.createElement('canvas'); c.width = w; c.height = h;
+    draw(c.getContext('2d'), w, h);
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
+    t.userData.canvas = c; return t;
+  }
+  function gradientBg(top, bottom) {
+    return canvasTex(4, 256, (g, w, h) => { const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, top); gr.addColorStop(1, bottom); g.fillStyle = gr; g.fillRect(0, 0, w, h); });
+  }
+  // 나뭇결 책상
+  function woodTex() {
+    const t = canvasTex(1024, 512, (g, w, h) => {
+      const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#c99a6b'); gr.addColorStop(1, '#b8875a'); g.fillStyle = gr; g.fillRect(0, 0, w, h);
+      for (let i = 0; i < 160; i++) {
+        const y = Math.random() * h, a = 0.04 + Math.random() * 0.08; g.strokeStyle = `rgba(${90 + Math.random() * 40},${55 + Math.random() * 25},30,${a})`;
+        g.lineWidth = 1 + Math.random() * 3; g.beginPath(); g.moveTo(0, y);
+        for (let x = 0; x <= w; x += 32) g.lineTo(x, y + Math.sin(x / 90 + i) * 4 + Math.sin(x / 23) * 1.2);
+        g.stroke();
+      }
+    });
+    t.wrapS = t.wrapT = THREE.RepeatWrapping; return t;
+  }
+  // 바닥에 드리우는 부드러운 그림자
+  function blobTex() {
+    return canvasTex(256, 256, (g, w, h) => { const r = g.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2); r.addColorStop(0, 'rgba(20,38,59,.32)'); r.addColorStop(1, 'rgba(20,38,59,0)'); g.fillStyle = r; g.fillRect(0, 0, w, h); });
+  }
+
+  /* 무대: 렌더러·카메라·조명·손가락 조작 */
+  function makeStage(host, opt = {}) {
+    let hold = !!opt.hold; // true면 준비(prepare)가 끝날 때까지 그리지 않아요
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = opt.exposure || 1.05;
+    renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.domElement.className = 'gl';
+    host.appendChild(renderer.domElement);
+    const scene = new THREE.Scene();
+    scene.background = gradientBg(opt.top || '#f6f9fc', opt.bottom || '#d6e3ef');
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    scene.environment = pmrem.fromScene(new RoomEnvironment(renderer), 0.04).texture;
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x8a9bb0, 0.55));
+    const sun = new THREE.DirectionalLight(0xffffff, 1.6);
+    sun.position.set(opt.sunX || 5, 11, opt.sunZ || 7); sun.castShadow = true;
+    sun.shadow.mapSize.set(1024, 1024); sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.02;
+    const sc = sun.shadow.camera; sc.left = -9; sc.right = 9; sc.top = 9; sc.bottom = -9; sc.near = 1; sc.far = 40;
+    scene.add(sun);
+    const camera = new THREE.PerspectiveCamera(opt.fov || 34, 1, 0.1, 200);
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true; controls.dampingFactor = 0.09; controls.enablePan = false;
+    controls.rotateSpeed = 0.85; controls.zoomSpeed = 0.9;
+    if (opt.scroll) { controls.enableZoom = false; renderer.domElement.style.touchAction = 'pan-y'; host.style.touchAction = 'pan-y'; }
+    controls.minDistance = opt.minD || 3; controls.maxDistance = opt.maxD || 24; controls.maxPolarAngle = Math.PI * 0.86;
+
+    const overlay = document.createElement('div'); overlay.className = 'lbls'; host.appendChild(overlay);
+    let W = 1, H = 1;
+    function resize() {
+      const r = host.getBoundingClientRect(); W = Math.max(1, r.width); H = Math.max(1, r.height);
+      renderer.setSize(W, H, false); camera.aspect = W / H;
+      if (opt.fitWidth) { // 세로 화면에서 장면이 잘리지 않도록 화각을 넓혀요
+        const base = opt.fov || 34; camera.fov = camera.aspect < 1.15 ? Math.min(62, base * (1.15 / camera.aspect) * 0.92) : base;
+      }
+      camera.updateProjectionMatrix();
+    }
+    try { let rq = 0; new ResizeObserver(() => { cancelAnimationFrame(rq); rq = requestAnimationFrame(resize); }).observe(host); } catch (e) { addEventListener('resize', resize); }
+    resize();
+
+    // 이름표(HTML)를 3D 위치에 붙이기
+    const labels = [];
+    function label(html, cls, at) {
+      const el = document.createElement('div'); el.className = 'lb ' + (cls || ''); el.innerHTML = html; overlay.appendChild(el);
+      const L = { el, at, show: true, set(h) { if (el.innerHTML !== h) el.innerHTML = h; } };
+      labels.push(L); return L;
+    }
+    const tmp = V();
+    function placeLabels() {
+      labels.forEach((L) => {
+        if (!L.show) { L.el.style.display = 'none'; return; }
+        const p = typeof L.at === 'function' ? L.at() : L.at;
+        if (!p) { L.el.style.display = 'none'; return; }
+        tmp.copy(p).project(camera);
+        if (tmp.z > 1 || tmp.z < -1) { L.el.style.display = 'none'; return; }
+        const px = ((tmp.x + 1) / 2) * W, py = ((1 - tmp.y) / 2) * H;
+        L.el.style.display = '';
+        L.el.style.transform = `translate(${px}px,${py}px) translate(-50%,-50%)`;
+      });
+    }
+
+    // 카메라 이동
+    let fly = null;
+    controls.addEventListener('start', () => { fly = null; });
+    function flyTo(pos, target, dur = 1.1) {
+      if (REDUCE || dur <= 0) { camera.position.copy(pos); controls.target.copy(target); controls.update(); return; }
+      fly = { p0: camera.position.clone(), t0: controls.target.clone(), p1: pos.clone(), t1: target.clone(), k: 0, dur };
+    }
+
+    const fns = [];
+    let last = performance.now(), running = true;
+    function tick(now) {
+      requestAnimationFrame(tick);
+      if (!running || hold || !visibleNow()) { last = now; return; }
+      if (opt.scroll) { const hr = host.getBoundingClientRect(); if (hr.bottom < -50 || hr.top > (window.innerHeight || 800) + 50) { last = now; return; } } // 화면 밖이면 쉬기
+      const dt = Math.min(0.05, Math.max(0, (now - last) / 1000)); last = now;
+      if (fly) {
+        fly.k = Math.min(1, fly.k + dt / fly.dur); const e = ease(fly.k);
+        camera.position.lerpVectors(fly.p0, fly.p1, e); controls.target.lerpVectors(fly.t0, fly.t1, e);
+        if (fly.k >= 1) fly = null;
+      }
+      for (let i = 0; i < fns.length; i++) { try { fns[i](dt, now / 1000); } catch (err) { console.error(err); } }
+      controls.update();
+      renderer.render(scene, camera);
+      placeLabels();
+    }
+    requestAnimationFrame(tick);
+
+    /* 자동 구도: 물체(또는 여러 물체)가 화면에 꼭 들어오도록 카메라 거리를 찾아요.
+       dir: 카메라가 놓일 방향(물체 중심에서), margin: 가장자리 여백(1.1 = 10%), dur: 이동 시간(초)
+       화면 비율이 바뀌면(가로↔세로) 사용자가 돌리기 전까지 다시 맞춰요. */
+    let lastFit = null, userMoved = false;
+    controls.addEventListener('start', () => { userMoved = true; });
+    const _box = new THREE.Box3(), _v = V(), _c = V();
+    function fitPose(objs, o = {}) {
+      _box.makeEmpty(); (Array.isArray(objs) ? objs : [objs]).forEach((ob) => { ob.updateMatrixWorld(true); _box.expandByObject(ob); });
+      if (o.extra) o.extra.forEach((p) => _box.expandByPoint(p));
+      const ctr = o.target ? o.target.clone() : _box.getCenter(V());
+      const dir = (o.dir ? o.dir.clone() : camera.position.clone().sub(controls.target)).normalize();
+      const pts = []; for (let i = 0; i < 8; i++) pts.push(V(i & 1 ? _box.max.x : _box.min.x, i & 2 ? _box.max.y : _box.min.y, i & 4 ? _box.max.z : _box.min.z));
+      const lim = 1 / (o.margin || 1.1), cam = camera.clone();
+      const ok = (d) => { cam.position.copy(ctr).addScaledVector(dir, d); cam.lookAt(ctr); cam.updateMatrixWorld(); cam.updateProjectionMatrix(); return pts.every((p) => { _c.copy(p).project(cam); return Math.abs(_c.x) <= lim && Math.abs(_c.y) <= lim && _c.z < 1; }); };
+      let lo = 0.5, hi = 200; for (let k = 0; k < 28; k++) { const mid = (lo + hi) / 2; if (ok(mid)) hi = mid; else lo = mid; }
+      return { p: ctr.clone().addScaledVector(dir, hi), t: ctr };
+    }
+    function fit(objs, o = {}) {
+      lastFit = { objs, o: Object.assign({}, o, { dir: o.dir || camera.position.clone().sub(controls.target) }) }; userMoved = false;
+      const f = fitPose(objs, lastFit.o); flyTo(f.p, f.t, o.dur === undefined ? 0 : o.dur); return f;
+    }
+    try { let fr = 0; new ResizeObserver(() => { cancelAnimationFrame(fr); fr = requestAnimationFrame(() => { if (lastFit && !userMoved) { const f = fitPose(lastFit.objs, lastFit.o); flyTo(f.p, f.t, 0); } }); }).observe(host); } catch (e) {}
+
+    return { host, renderer, scene, camera, controls, sun, overlay, label, flyTo, fit, fitPose, onFrame: (f) => fns.push(f), size: () => ({ W, H }), resize, stop: () => { running = false; }, release: () => { hold = false; } };
+  }
+
+  // 관 모양 전선(곡선)
+  function tube(points, r, mat, seg = 80) {
+    const curve = new THREE.CatmullRomCurve3(points, false, 'centripetal');
+    const m = new THREE.Mesh(new THREE.TubeGeometry(curve, seg, r, 10, false), mat); m.castShadow = true; m.curve = curve; return m;
+  }
+
+  // 길을 따라 움직이는 알갱이(전자). 전선에는 전자가 이미 꽉 차 있으므로, 멈춰 있어도 알갱이는 보여요.
+  // setPath(점 배열), update(dt, 빠르기) — 빠르기가 음수면 반대로 움직여요
+  function makeDots(count, color, size = 1) {
+    const geo = new THREE.SphereGeometry(0.06 * size, 14, 10);
+    const mat = new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.55, roughness: 0.3 });
+    const mesh = new THREE.InstancedMesh(geo, mat, count); mesh.frustumCulled = false;
+    let pts = [], cum = [], total = 1, off = 0; const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), p = V(), sc = V(1, 1, 1);
+    function setPath(P) {
+      pts = P; cum = [0];
+      for (let i = 1; i < P.length; i++) cum.push(cum[i - 1] + P[i].distanceTo(P[i - 1]));
+      total = cum[cum.length - 1] || 1;
+    }
+    function at(s, out) {
+      s = ((s % total) + total) % total;
+      let i = 1; while (i < cum.length - 1 && cum[i] < s) i++;
+      const a = pts[i - 1], b = pts[i], seg = cum[i] - cum[i - 1] || 1, k = (s - cum[i - 1]) / seg;
+      out.lerpVectors(a, b, k);
+    }
+    function update(dt, speed) {
+      if (pts.length < 2) { mesh.visible = false; return; }
+      off += dt * speed;
+      const gap = total / count;
+      for (let k = 0; k < count; k++) { at(off + k * gap, p); m4.compose(p, q, sc); mesh.setMatrixAt(k, m4); }
+      mesh.instanceMatrix.needsUpdate = true;
+    }
+    return { mesh, setPath, update, mat };
+  }
+
+  // 책상
+  function addTable(scene, w, d, y = 0) {
+    const tex = woodTex(); tex.repeat.set(w / 10, d / 10);
+    const mat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.55, metalness: 0 });
+    const t = new THREE.Mesh(new RoundedBoxGeometry(w, 0.4, d, 3, 0.12), mat); t.position.y = y - 0.2; t.receiveShadow = true; scene.add(t);
+    return t;
+  }
+  const mesh = (geo, mat, x = 0, y = 0, z = 0) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true; return m; };
+
+  /* ===== 빨리 뜨게 하기 (2026-10-12) =====
+     - lazy(host, fn): 그림 자리가 화면에 가까워지면 fn을 한 번 불러요(iframe 안에서도 되도록 위치를 직접 계산해요).
+     - prepare(st): 재질(셰이더)을 화면을 멈추지 않고 미리 번역한 뒤 그리기 시작해요. 그동안은 미리 찍은 사진(data-poster)을 보여 줘요.
+     - BAKE: 주소에 ?bake=… 이 있으면 영상·사진을 만드는 중이에요(tools/lesson-kit/bake.py). */
+  const BAKE = new URLSearchParams(location.search).get('bake') || '';
+  (function css() {
+    const s = document.createElement('style');
+    s.textContent = '.gl-host>.poster{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1;pointer-events:none}' +
+      '.gl-host.ready>.poster,.gl-host.ready>.prep{display:none}.gl-host.wait>canvas.gl,.gl-host.wait>.lbls{visibility:hidden}' +
+      '.gl-host>.prep{position:absolute;right:10px;bottom:10px;z-index:2;font:800 12.5px Pretendard,sans-serif;color:#33464a;background:rgba(255,255,255,.88);border-radius:9px;padding:5px 10px;pointer-events:none}' +
+      '.gl-host>video.figvid{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}';
+    (document.head || document.documentElement).appendChild(s);
+  })();
+  function posterOn(host) {
+    host.classList.add('wait');
+    const src = host.dataset.poster;
+    if (src && !BAKE && !host.querySelector('.poster')) { const im = document.createElement('img'); im.className = 'poster'; im.alt = ''; im.src = src; host.prepend(im); }
+    if (!BAKE && !host.querySelector('.prep')) { const t = document.createElement('span'); t.className = 'prep'; t.textContent = '3D 준비 중…'; host.appendChild(t); }
+  }
+  function lazy(host, fn, margin = 500) {
+    if (!host) return;
+    posterOn(host);
+    let done = false;
+    const near = () => { const r = host.getBoundingClientRect(), h = window.innerHeight || 800; return r.bottom > -margin && r.top < h + margin && r.width > 0; };
+    const go = () => { if (done || !near()) return; done = true; removeEventListener('scroll', go); removeEventListener('resize', go); clearInterval(iv); try { fn(); } catch (err) { console.error(err); throw err; } };
+    addEventListener('scroll', go, { passive: true }); addEventListener('resize', go);
+    const iv = setInterval(go, 400);
+    if (BAKE) { done = true; clearInterval(iv); if (BAKE === 'all' || BAKE === host.id) fn(); return; }
+    setTimeout(go, 0);
+  }
+  // 재질을 화면을 멈추지 않고 번역해요. 투명한 물체(유리·석영 등)가 있으면 뒤쪽을 따로 그릴 때 쓰는 재질 변형도 미리 준비해요
+  async function compileAll(r, scene, camera) {
+    if (!r.compileAsync) return;
+    await r.compileAsync(scene, camera);
+    let tr = false; scene.traverse((o) => { if (o.material && [].concat(o.material).some((m) => m.transmission > 0)) tr = true; });
+    if (tr) { const rt = new THREE.WebGLRenderTarget(4, 4, { type: THREE.HalfFloatType }), tm = r.toneMapping; r.toneMapping = THREE.NoToneMapping; r.setRenderTarget(rt); try { await r.compileAsync(scene, camera); } finally { r.setRenderTarget(null); r.toneMapping = tm; rt.dispose(); } }
+  }
+  async function prepare(st) {
+    const host = st.host; posterOn(host);
+    try { if (!BAKE) await compileAll(st.renderer, st.scene, st.camera); } catch (e) { console.warn(e); }
+    st.release(); host.classList.remove('wait'); host.classList.add('ready');
+    return st;
+  }
+  /* 보기만 하는 그림: 미리 만든 영상으로 바꿔요 (bake 중에는 3D로 그려요) */
+  function video(host, build) {
+    if (!host) return;
+    if (BAKE === host.id) { build(); return; }
+    const v = document.createElement('video');
+    v.className = 'figvid'; v.muted = true; v.loop = true; v.autoplay = true; v.playsInline = true; v.setAttribute('playsinline', ''); v.setAttribute('muted', '');
+    v.preload = 'metadata'; if (host.dataset.poster) v.poster = host.dataset.poster; v.src = host.dataset.video;
+    host.appendChild(v); host.classList.add('ready');
+    // 화면에 보일 때만 재생해요
+    const chk = () => { const r = host.getBoundingClientRect(), on = r.bottom > 0 && r.top < (window.innerHeight || 800) && !document.hidden; if (on && v.paused) v.play().catch(() => {}); else if (!on && !v.paused) v.pause(); };
+    addEventListener('scroll', chk, { passive: true }); setInterval(chk, 700); chk();
+  }
+  return { BAKE, lazy, prepare, compileAll, video, REDUCE, V, ease, clamp01, makeStage, canvasTex, gradientBg, blobTex, tube, makeDots, addTable, visibleNow, mesh };
+})();
+/* ===== 원자의 구조 3D (AT3) =====
+   교과서 그림 Ⅳ-4~Ⅳ-7의 표현(하늘색 공 모양 원자, 빨간 양성자 '+', 초록 중성자, 파란 전자 '−', 간단히 나타낸 모형의 원자핵 전하량)을
+   따라 이 수업을 위해 새로 만든 3D 모형이다. 원자·원자핵·전자의 크기 비율, 전자의 위치와 움직임은 보기 좋게 정한 모형이다.
+   AT3.dive(host, 'gold'|'he')  금괴 → 금 원자 / 헬륨 풍선 → 헬륨 원자들 → 헬륨 원자 → 원자핵 연속 확대
+   AT3.lab(host)                 해 보기 144쪽: 원자핵 전하량 쓰기, 전자 붙임딱지 붙이기
+   AT3.single(host)              양성자수에 따라 바뀌는 원자(간단히 나타낸 모형), 양성자·전자 더하기·빼기 */
+const AT3 = (() => {
+  'use strict';
+  const { V, makeStage, prepare, REDUCE } = C3;
+  const lerp = (a, b, t) => a + (b - a) * t, clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
+  const ease = (t) => (t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+  const easeO = (t) => 1 - Math.pow(1 - t, 3);
+  const mkR = (seed) => () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  const COL = { p: '#e2463d', n: '#6fb646', e: '#2f7fd0', cloud: '#9fd8f6' };
+  const SPH = new THREE.SphereGeometry(1, 48, 32);
+
+  /* ---------- 재질 ---------- */
+  function noiseTex(seed, base, spots) { // 매트한 입자 겉면(아주 엷은 얼룩)
+    const r = mkR(seed);
+    return C3.canvasTex(256, 128, (g, w, h) => {
+      g.fillStyle = base; g.fillRect(0, 0, w, h);
+      for (let i = 0; i < 260; i++) { g.fillStyle = `rgba(${r() < .5 ? '255,255,255' : '0,0,0'},${.02 + r() * .035})`; g.beginPath(); g.arc(r() * w, r() * h, 2 + r() * 7, 0, 6.3); g.fill(); }
+      if (spots) spots(g, w, h, r);
+    });
+  }
+  const MAT = {};
+  function partMat(kind) {
+    if (MAT[kind]) return MAT[kind];
+    MAT[kind] = new THREE.MeshStandardMaterial({ map: noiseTex(kind.charCodeAt(0) * 7, COL[kind]), roughness: kind === 'e' ? .42 : .5, metalness: 0 });
+    return MAT[kind];
+  }
+  // 입자에 찍힌 '+', '−' (교과서처럼 흰 부호). 늘 카메라 쪽 겉면에 보이게 해요.
+  const SIGN = {};
+  function signTex(s) {
+    if (SIGN[s]) return SIGN[s];
+    SIGN[s] = C3.canvasTex(128, 128, (g, w) => {
+      g.translate(w / 2, w / 2); g.fillStyle = '#ffffff'; g.shadowColor = 'rgba(60,0,0,.25)'; g.shadowBlur = 4;
+      const L = 33, T = 15; const rr = (x, y, a, b) => { g.beginPath(); g.roundRect(x, y, a, b, T / 2); g.fill(); };
+      rr(-L, -T / 2, 2 * L, T); if (s === '+') rr(-T / 2, -L, T, 2 * L);
+    });
+    return SIGN[s];
+  }
+  /* 원자(하늘색 공): 가장자리가 진하고 가운데가 맑은 매트한 공. 빛은 왼쪽 위에서 */
+  function cloudMat(op = 1, deep = '#4fb0e6', light = '#d6f0fd') {
+    return new THREE.ShaderMaterial({
+      transparent: true, depthWrite: false,
+      uniforms: { uOp: { value: op }, uDeep: { value: new THREE.Color(deep) }, uLight: { value: new THREE.Color(light) } },
+      vertexShader: 'varying vec3 vN; varying vec3 vV; void main(){ vec4 mv = modelViewMatrix*vec4(position,1.); vV = -mv.xyz; vN = normalize(normalMatrix*normal); gl_Position = projectionMatrix*mv; }',
+      fragmentShader: `uniform float uOp; uniform vec3 uDeep; uniform vec3 uLight; varying vec3 vN; varying vec3 vV;
+        void main(){ vec3 n = normalize(vN), v = normalize(vV); float f = 1.0 - abs(dot(n, v));
+          float l = dot(n, normalize(vec3(-.55,.65,.55)))*.5+.5;
+          vec3 c = mix(uDeep, uLight, clamp(l*.75 + (1.0-f)*.35, 0., 1.));
+          float hl = smoothstep(.93, .995, dot(n, normalize(vec3(-.45,.55,.7)))) * .35;
+          c = mix(c, vec3(1.), hl);
+          float a = uOp * (0.20 + 0.58*pow(f, 1.7) + hl*.6);
+          gl_FragColor = vec4(c, a);
+          #include <colorspace_fragment>
+        }`,
+    });
+  }
+
+  /* ---------- 입자 하나 ---------- */
+  // kind: 'p' 양성자, 'n' 중성자, 'e' 전자. g.userData.r 은 반지름
+  function particle(kind, r) {
+    const g = new THREE.Group();
+    const m = new THREE.Mesh(SPH, partMat(kind)); m.scale.setScalar(r); m.castShadow = true; g.add(m);
+    g.userData = { r, kind, body: m };
+    if (kind === 'p' || kind === 'e') {
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: signTex(kind === 'p' ? '+' : '-'), transparent: true, depthWrite: false, toneMapped: false }));
+      sp.scale.setScalar(r * 1.25); sp.renderOrder = 6; g.add(sp); g.userData.sign = sp;
+    }
+    return g;
+  }
+  // 부호를 카메라 쪽 겉면으로 옮겨요(매 장면마다)
+  const _w = V(), _c = V(), _d = V(), _s = V();
+  function placeSigns(root, camera) {
+    camera.getWorldPosition(_c);
+    root.traverse((o) => {
+      const sp = o.userData && o.userData.sign; if (!sp) return;
+      o.getWorldPosition(_w); o.getWorldScale(_s);
+      _d.copy(_c).sub(_w).normalize().multiplyScalar(o.userData.r * _s.x * 1.04).add(_w);
+      o.worldToLocal(_d); sp.position.copy(_d);
+    });
+  }
+
+  /* ---------- 원자핵 덩어리 ---------- */
+  // 양성자 np개, 중성자 nn개를 공처럼 뭉쳐요(번갈아 섞음)
+  function nucleus(np, nn, r = .34, seed = 3) {
+    const g = new THREE.Group(), n = np + nn, rnd = mkR(seed);
+    const kinds = []; let a = np, b = nn; for (let i = 0; i < n; i++) { if ((i % 2 === 0 && a) || !b) { kinds.push('p'); a--; } else { kinds.push('n'); b--; } }
+    const pts = [];
+    if (n === 4) [[1, 1, 1], [-1, -1, 1], [-1, 1, -1], [1, -1, -1]].forEach((q) => pts.push(V(...q).normalize().multiplyScalar(r * 1.22)));
+    else { const ga = Math.PI * (3 - Math.sqrt(5)); const R0 = r * 1.05 * Math.cbrt(n); for (let i = 0; i < n; i++) { const y = 1 - (i + .5) / n * 2, rr = Math.sqrt(1 - y * y), th = ga * i; pts.push(V(Math.cos(th) * rr, y, Math.sin(th) * rr).multiplyScalar(R0 * (.55 + .45 * rnd()))); } }
+    const parts = kinds.map((k, i) => { const p = particle(k, r); p.position.copy(pts[i]); p.userData.home = pts[i].clone(); g.add(p); return p; });
+    g.userData.parts = parts;
+    return g;
+  }
+
+  /* ---------- 전자 움직임: 원자핵 주위를 매끄럽게 돌아다녀요 ---------- */
+  function electronPath(seed, rMin, rMax) {
+    const r = mkR(seed), a = [r() * 6, r() * 6, r() * 6], f = [.35 + r() * .3, .27 + r() * .3, .2 + r() * .25], ax = V(r() - .5, r() - .5, r() - .5).normalize();
+    const q = new THREE.Quaternion().setFromAxisAngle(ax, r() * 3);
+    return (t, out) => {
+      const th = a[0] + t * f[0] * 2.2, ph = Math.PI / 2 + Math.sin(a[1] + t * f[1]) * 1.05;
+      const rad = lerp(rMin, rMax, .5 + .5 * Math.sin(a[2] + t * f[2]));
+      out.set(Math.sin(ph) * Math.cos(th), Math.cos(ph), Math.sin(ph) * Math.sin(th)).applyQuaternion(q).multiplyScalar(rad);
+      return out;
+    };
+  }
+
+  /* ---------- 투명도(장면 바꾸기) ---------- */
+  function prepFade(root) {
+    root.traverse((o) => {
+      if (!o.material) return;
+      const ms = [].concat(o.material).map((m) => { const c = m.clone(); c.userData.o0 = m.opacity === undefined ? 1 : m.opacity; c.userData.dw0 = m.depthWrite; if (c.uniforms && c.uniforms.uOp) c.userData.u0 = c.uniforms.uOp.value; c.transparent = true; return c; });
+      o.material = Array.isArray(o.material) ? ms : ms[0];
+    });
+  }
+  function setFade(root, a) {
+    root.visible = a > .003;
+    root.traverse((o) => { if (!o.material) return; [].concat(o.material).forEach((m) => { if (m.uniforms && m.uniforms.uOp) m.uniforms.uOp.value = m.userData.u0 * a; else m.opacity = m.userData.o0 * a; m.depthWrite = !!m.userData.dw0 && a > .98; }); });
+  }
+
+  /* ---------- 그림 재료: 금괴 ---------- */
+  function goldBar() {
+    const s = new THREE.Shape(); const wb = .62, wt = .46, h = .42;
+    s.moveTo(-wb, 0); s.lineTo(wb, 0); s.lineTo(wt, h); s.lineTo(-wt, h); s.closePath();
+    const geo = new THREE.ExtrudeGeometry(s, { depth: 2.3, bevelEnabled: true, bevelThickness: .07, bevelSize: .05, bevelSegments: 4, steps: 1 });
+    geo.translate(0, 0, -1.15); geo.computeVertexNormals();
+    const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: '#dba41e', metalness: 1, roughness: .33, envMapIntensity: .85 }));
+    m.castShadow = true; m.receiveShadow = true;
+    return m;
+  }
+  function goldBars() {
+    const g = new THREE.Group();
+    const a = goldBar(); a.position.set(-.75, 0, .25); a.rotation.y = .32; g.add(a);
+    const b = goldBar(); b.position.set(.62, 0, .55); b.rotation.y = .5; g.add(b);
+    const c = goldBar(); c.position.set(-.05, .49, .25); c.rotation.set(.05, -.18, -.05); c.scale.setScalar(1.02); g.add(c);
+    const fl = new THREE.Mesh(new THREE.PlaneGeometry(30, 30), new THREE.ShadowMaterial({ opacity: .2 })); fl.rotation.x = -Math.PI / 2; fl.position.y = -.07; fl.receiveShadow = true; g.add(fl);
+    g.scale.setScalar(1.6); g.position.y = -1.05;
+    g.userData.focus = V(-.08, .96 * 1.6 - 1.05, .3 * 1.6); // 맨 위 금괴의 윗면
+    return g;
+  }
+  // 금 원자: 노란 공이 빽빽이 쌓인 모습(그림 Ⅳ-4)
+  function goldLattice() {
+    const g = new THREE.Group(), r = .5, rows = 13, cols = 15, layers = 3, list = [];
+    for (let L = 0; L < layers; L++) for (let i = 0; i < rows; i++) for (let j = 0; j < cols; j++) {
+      const x = (j - cols / 2) * 2 * r + (i % 2) * r + (L % 2) * r, z = (i - rows / 2) * Math.sqrt(3) * r + (L % 2) * r * .577, y = -L * r * 1.633;
+      if (Math.hypot(x, z) > 7.4) continue; list.push(V(x, y, z));
+    }
+    const mat = new THREE.MeshStandardMaterial({ color: '#e4a91c', metalness: .3, roughness: .46, envMapIntensity: 1.0 });
+    const im = new THREE.InstancedMesh(new THREE.SphereGeometry(r * .985, 36, 24), mat, list.length);
+    const m4 = new THREE.Matrix4(); list.forEach((p, i) => { m4.makeTranslation(p.x, p.y, p.z); im.setMatrixAt(i, m4); });
+    im.castShadow = true; im.receiveShadow = true; g.add(im);
+    g.rotation.x = .62; g.position.y = -.3;
+    return g;
+  }
+
+  /* ---------- 그림 재료: 헬륨 풍선 ---------- */
+  function balloonGeo() {
+    const pts = []; for (let i = 0; i <= 40; i++) { const t = i / 40, a = t * Math.PI; const y = -Math.cos(a) * 1.25; let x = Math.sin(a) * 1.0 * (1 - .32 * Math.pow(1 - t, 2.2)); if (t < .06) x *= t / .06 * .9 + .1; pts.push(new THREE.Vector2(Math.max(.02, x), y)); }
+    const g = new THREE.LatheGeometry(pts, 64); g.computeVertexNormals(); return g;
+  }
+  function balloon(color) {
+    const g = new THREE.Group();
+    const skin = new THREE.Mesh(balloonGeo(), new THREE.MeshPhysicalMaterial({ color, roughness: .42, clearcoat: .25, clearcoatRoughness: .5, sheen: .4, sheenColor: new THREE.Color('#ffffff') }));
+    skin.castShadow = true; g.add(skin);
+    const knot = new THREE.Mesh(new THREE.ConeGeometry(.09, .16, 16), skin.material); knot.position.y = -1.32; knot.rotation.x = Math.PI; g.add(knot);
+    return g;
+  }
+  function balloons() {
+    const g = new THREE.Group();
+    const spec = [['#f4b740', -1.55, .35, -.6, .12], ['#e34c64', 0, .55, .25, 0], ['#4cb3d4', 1.5, .3, -.45, -.14]];
+    const sm = new THREE.MeshStandardMaterial({ color: '#9aa4ae', roughness: .8 });
+    spec.forEach(([c, x, y, z, tilt], i) => {
+      const b = balloon(c); b.position.set(x, y, z); b.rotation.z = tilt; b.scale.setScalar(i === 1 ? 1.08 : .96); g.add(b);
+      const top = V(x + Math.sin(-tilt) * -1.4, y - 1.42, z), pts = [top, V(lerp(top.x, 0, .4) + (i - 1) * .15, -1.2, z * .5), V((i - 1) * .12, -2.55, .1)];
+      g.add(C3.tube(pts, .012, sm, 40));
+    });
+    const hold = new THREE.Mesh(new THREE.CylinderGeometry(.22, .26, .26, 24), new THREE.MeshStandardMaterial({ color: '#5d6b79', roughness: .6 })); hold.position.set(0, -2.6, .1); hold.castShadow = true; g.add(hold);
+    g.position.y = .35;
+    g.userData.focus = V(0, .9, .25 + 1.0);
+    return g;
+  }
+  // 풍선 속: 헬륨 원자들이 자유롭게 움직여요
+  function heGas(n = 26) {
+    const g = new THREE.Group(), r = mkR(11), atoms = [];
+    const wall = new THREE.Mesh(new THREE.SphereGeometry(12, 48, 32), new THREE.MeshBasicMaterial({ color: '#f6d3d9', side: THREE.BackSide })); g.add(wall);
+    for (let i = 0; i < n; i++) {
+      const a = new THREE.Group();
+      const c = new THREE.Mesh(SPH, cloudMat(1)); c.scale.setScalar(.42); c.renderOrder = 2; a.add(c);
+      const k = new THREE.Mesh(SPH, partMat('p')); k.scale.setScalar(.07); a.add(k);
+      a.position.set((r() - .5) * 8, (r() - .5) * 5, (r() - .5) * 4 - 1);
+      a.userData.v = V(r() - .5, r() - .5, r() - .5).normalize().multiplyScalar(.6 + r() * .5);
+      g.add(a); atoms.push(a);
+    }
+    const pick = atoms[0]; pick.position.set(.2, .1, 1.2); pick.userData.v.multiplyScalar(.15);
+    g.userData = { atoms, pick, focus: pick.position };
+    g.userData.step = (dt) => atoms.forEach((a) => {
+      const p = a.position, v = a.userData.v; p.addScaledVector(v, dt);
+      if (Math.abs(p.x) > 4.6) { v.x *= -1; p.x = Math.sign(p.x) * 4.6; } if (Math.abs(p.y) > 2.9) { v.y *= -1; p.y = Math.sign(p.y) * 2.9; } if (p.z > 1.8 || p.z < -3.5) { v.z *= -1; p.z = clamp(p.z, -3.5, 1.8); }
+      if (a === pick) { p.x = clamp(p.x, -.6, .9); p.y = clamp(p.y, -.5, .7); }
+    });
+    return g;
+  }
+  // 헬륨 원자 하나(그림 Ⅳ-6): 원자핵(양성자 2, 중성자 2)과 전자 2개
+  function heAtom() {
+    const g = new THREE.Group();
+    const cloud = new THREE.Mesh(SPH, cloudMat(1)); cloud.scale.setScalar(2.6); cloud.renderOrder = 3; g.add(cloud);
+    const nuc = nucleus(2, 2, .3); g.add(nuc);
+    const simple = particle('p', .5); simple.userData.sign.visible = false; simple.scale.setScalar(.001); g.add(simple);
+    const es = [0, 1].map((i) => { const e = particle('e', .19); e.userData.path = electronPath(5 + i * 17, 1.35, 2.15); g.add(e); return e; });
+    g.userData = { cloud, nuc, simple, es, t: Math.random() * 10, simp: 0, simpTo: 0 };
+    g.userData.step = (dt, run = true) => {
+      const u = g.userData; if (run) u.t += dt;
+      es.forEach((e, i) => e.userData.path(u.t + i * 3.1, e.position));
+      u.simp += (u.simpTo - u.simp) * Math.min(1, dt * 3.2);
+      const k = ease(clamp(u.simp));
+      nuc.userData.parts.forEach((p) => { p.position.copy(p.userData.home).multiplyScalar(1 - k); p.scale.setScalar(Math.max(.001, 1 - k)); });
+      simple.scale.setScalar(Math.max(.001, k)); if (u.spin !== false) { nuc.rotation.y += dt * .25 * (1 - k); nuc.rotation.x += dt * .12 * (1 - k); }
+    };
+    return g;
+  }
+
+  /* ---------- 무대 공통 ---------- */
+  function stage(host, o = {}) {
+    const st = makeStage(host, Object.assign({ top: '#ffffff', bottom: '#e7eff6', fov: 32, minD: 3, maxD: 40, fitWidth: true, hold: true, exposure: 1.0 }, o));
+    st.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    st.onFrame(() => placeSigns(st.scene, st.camera));
+    return st;
+  }
+  function frameBox(w, h, d = 1) { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshBasicMaterial()); m.visible = false; return m; }
+
+  /* ===================== 1) 연속 확대 ===================== */
+  const CHAIN = {
+    gold: [
+      { name: '금괴', make: goldBars, labels: [['금 원소 · 금을 이루는 물질', 'big', () => V(0, 1.75, .3)]], K: 9 },
+      { name: '금 원자', make: goldLattice, labels: [['금 원자 · 금 원소를 구성하는 입자', 'big', () => V(0, 2.4, 1.0)]] },
+    ],
+    he: [
+      { name: '헬륨 풍선', make: balloons, labels: [['헬륨 풍선', 'big', () => V(0, 2.75, .3)]], K: 7 },
+      { name: '풍선 속 헬륨', make: heGas, labels: [['헬륨 원자', 'big', (g) => V().copy(g.userData.pick.position).add(V(0, .75, 0))]], K: 6.5 },
+      { name: '헬륨 원자', make: heAtom, labels: [['원자핵', '', () => V(0, -.62, .2)], ['전자', '', (g) => V().copy(g.userData.es[0].position).add(V(0, .45, 0))], ['헬륨 원자', 'big', () => V(-2.7, -2.35, 0)]], K: 5.5 },
+      { name: '원자핵', make: null, labels: [] }, // 헬륨 원자를 원자핵 둘레로 확대한 장면
+    ],
+  };
+  function dive(host, which) {
+    const st = stage(host, which === 'he' ? { top: '#ffffff', bottom: '#e6eef5' } : { top: '#ffffff', bottom: '#ece8de' });
+    const chain = CHAIN[which];
+    const levels = chain.map((c, i) => { if (!c.make) return null; const inner = c.make(), g = new THREE.Group(); g.add(inner); g.userData = inner.userData; prepFade(g); st.scene.add(g); return g; });
+    const frame = frameBox(7.2, 5.4); st.scene.add(frame);
+    st.camera.position.set(0, 1.2, 14); st.controls.target.set(0, 0, 0);
+    const home = st.fit(frame, { dir: V(0, .16, 1), margin: 1.02 });
+    st.controls.minDistance = 4; st.controls.maxDistance = 30;
+    const API = { st, lv: 0, busy: false, simple: false, onEvent: null, NAMES: chain.map((c) => c.name) };
+    // 이름표
+    const LB = [];
+    chain.forEach((c, i) => c.labels.forEach(([t, cls, at]) => { const g = levels[i] || levels[i - 1]; const L = st.label(t, 'zl ' + cls, () => at(g)); L.lv = i; L.show = false; LB.push(L); }));
+    let nucLab = [];
+    if (which === 'he') {
+      const g = levels[2], parts = g.userData.nuc.userData.parts;
+      nucLab = [st.label('양성자', 'zl pr', () => parts[0].getWorldPosition(V()).add(V(0, .0, 0))), st.label('중성자', 'zl ne', () => parts[1].getWorldPosition(V()))];
+      nucLab.forEach((L) => (L.show = false));
+      API.simpleLab = st.label('+2', 'zl nucq', () => g.userData.simple.getWorldPosition(V())); API.simpleLab.show = false;
+    }
+    function labels(lv, on) {
+      LB.forEach((L) => (L.show = on && L.lv === lv && !(lv === 2 && API.simple && L.el.textContent === '원자핵')));
+      nucLab.forEach((L) => (L.show = on && lv === 3));
+      if (API.simpleLab) API.simpleLab.show = on && lv === 2 && API.simple;
+    }
+    // 장면 상태 정하기: lv 단계에서 각 그룹의 크기·위치·투명도
+    function pose(lv, k = 1, from = lv) {
+      levels.forEach((g, i) => { if (!g) return; g.visible = false; });
+      const set = (i, s, pos, a) => { const g = levels[i]; if (!g) return; g.scale.setScalar(s); g.position.copy(pos); setFade(g, a); };
+      if (which === 'he' && (lv === 3 || from === 3)) {
+        // 헬륨 원자 → 원자핵: 원자핵을 가운데 두고 크게
+        const t = from === 3 && lv === 2 ? 1 - k : lv === 3 ? k : 1;
+        const s = lerp(1, 3.3, ease(t)); set(2, s, V(), 1);
+        const cl = levels[2].userData.cloud; cl.material.uniforms.uOp.value = 1 - clamp(t * 1.6);
+        return;
+      }
+      if (from === lv) { if (levels[lv]) set(lv, 1, V(), 1); return; }
+      // from → lv (한 단계 들어가거나 나오기)
+      const inward = lv > from, a = inward ? from : lv, b = inward ? lv : from, t = ease(inward ? k : 1 - k);
+      const ga = levels[a], gb = levels[b], K = chain[a].K || 6;
+      const f = ga.userData.focus.clone();
+      const sa = lerp(1, K, t); set(a, sa, f.clone().multiplyScalar(1 - sa), 1 - clamp((t - .35) / .45));
+      const sb = lerp(1 / K, 1, t); set(b, sb, f.clone().multiplyScalar(1 - t), clamp((t - .3) / .5));
+    }
+    let anim = null;
+    function go(lv) {
+      lv = Math.max(0, Math.min(chain.length - 1, lv));
+      if (API.busy || lv === API.lv) return;
+      const from = API.lv, step = lv > from ? 1 : -1;
+      if (Math.abs(lv - from) > 1) { jump(lv); return; }
+      if (API.simple && which === 'he') setSimple(false);
+      labels(from, false); API.busy = true; st.controls.enabled = false;
+      st.flyTo(home.p, home.t, .45);
+      anim = { from, to: lv, k: 0, delay: .45 };
+      API.onEvent && API.onEvent('leave', from);
+    }
+    function jump(lv) {
+      anim = null; API.lv = lv; API.busy = false; st.controls.enabled = true; if (API.simple) setSimple(false);
+      pose(lv); labels(lv, true); st.flyTo(home.p, home.t, 0);
+      API.onEvent && API.onEvent('arrive', lv);
+    }
+    function setSimple(on) {
+      if (which !== 'he') return; API.simple = !!on; levels[2].userData.simpTo = on ? 1 : 0; labels(API.lv, !API.busy);
+    }
+    st.onFrame((dt) => {
+      levels.forEach((g) => g && g.visible && g.userData.step && g.userData.step(dt));
+      if (which === 'he') levels[2].userData.spin = API.lv !== 3 && !(anim && anim.to === 3);
+      if (!anim) return;
+      if (anim.delay > 0) { anim.delay -= dt; return; }
+      anim.k = Math.min(1, anim.k + dt / (REDUCE ? .01 : 1.7));
+      pose(anim.to, anim.k, anim.from);
+      if (anim.k >= 1) { const to = anim.to; anim = null; API.lv = to; API.busy = false; st.controls.enabled = true; pose(to); labels(to, true); API.onEvent && API.onEvent('arrive', to); }
+    });
+    pose(0); labels(0, true);
+    Object.assign(API, { go, jump, setSimple, levels });
+    prepare(st).then(() => { window.__ready = true; });
+    return API;
+  }
+
+  /* ===================== 2) 원자 모형 실험실 (해 보기) ===================== */
+  function lab(host) {
+    const st = stage(host, { top: '#ffffff', bottom: '#eaf1f7', fov: 30 });
+    st.controls.enabled = false;
+    const R = 3, g = new THREE.Group(); st.scene.add(g);
+    const cloud = new THREE.Mesh(SPH, cloudMat(1)); cloud.scale.setScalar(R); cloud.renderOrder = 3; g.add(cloud);
+    const core = new THREE.Mesh(SPH, partMat('p')); core.scale.setScalar(.62); core.castShadow = true; g.add(core);
+    const sh = new THREE.Mesh(new THREE.PlaneGeometry(9, 9), new THREE.MeshBasicMaterial({ map: C3.blobTex(), transparent: true, opacity: .35, depthWrite: false })); sh.rotation.x = -Math.PI / 2; sh.position.y = -R - .05; sh.scale.set(.75, .32, 1); g.add(sh);
+    const frame = frameBox(6.6, 6.7); frame.position.y = -.1; st.scene.add(frame);
+    st.camera.position.set(0, 0, 14); st.fit(frame, { dir: V(0, 0, 1), margin: 1.0 });
+    const qLab = st.label('', 'zl nucq', () => core.getWorldPosition(V())); qLab.show = false;
+    const nameLab = st.label('', 'zl big', () => V(-R * .78, R * .9, 0)); nameLab.show = false;
+    const API = { st: { p: 0, es: [] }, onChange: null, onBlock: null, name: '' };
+    const es = []; // {g, k, born}
+    function add(p, quiet) {
+      const e = particle('e', .27); e.position.copy(p); e.userData.k = quiet ? 1 : 0; g.add(e); es.push(e);
+      API.st.es = es.map((x) => x.position.clone()); if (!quiet) API.onChange && API.onChange(API.st);
+    }
+    function remove(e) { g.remove(e); es.splice(es.indexOf(e), 1); API.st.es = es.map((x) => x.position.clone()); API.onChange && API.onChange(API.st); }
+    const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(), plane = new THREE.Plane(V(0, 0, 1), 0), hit = V();
+    host.addEventListener('pointerup', (ev) => {
+      const rc = host.getBoundingClientRect(); ndc.set(((ev.clientX - rc.left) / rc.width) * 2 - 1, -((ev.clientY - rc.top) / rc.height) * 2 + 1);
+      ray.setFromCamera(ndc, st.camera);
+      const hitE = ray.intersectObjects(es.map((e) => e.userData.body), false)[0];
+      if (hitE) { const e = es.find((x) => x.userData.body === hitE.object); if (e) remove(e); return; }
+      if (!ray.ray.intersectPlane(plane, hit)) return;
+      const d = Math.hypot(hit.x, hit.y);
+      if (d > R * .93) return;
+      if (!API.st.p) { API.onBlock && API.onBlock('p'); return; }
+      if (d < .62 + .35) { API.onBlock && API.onBlock('core'); return; }
+      if (es.length >= API.st.p) { API.onBlock && API.onBlock('full'); return; }
+      if (es.some((e) => Math.hypot(e.position.x - hit.x, e.position.y - hit.y) < .55)) { hit.x += .3; hit.y += .25; }
+      add(V(hit.x, hit.y, .25));
+    });
+    st.onFrame((dt, t) => {
+      es.forEach((e, i) => { e.userData.k = Math.min(1, e.userData.k + dt * 4); const k = e.userData.k, s = k < 1 ? easeO(k) * (1 + .25 * Math.sin(k * Math.PI)) : 1; e.scale.setScalar(Math.max(.001, s)); e.position.z = .25 + Math.sin(t * 1.3 + i) * .04; });
+      g.rotation.y = Math.sin(t * .35) * .05;
+    });
+    // 전자 n개를 고르게 흩어 놓기(검사·한꺼번에 채우기용)
+    function spots(n) { const out = [], r = mkR(n * 13 + 7); let tries = 0; while (out.length < n && tries++ < 4000) { const a = r() * 6.283, d = 1.25 + r() * 1.35, p = V(Math.cos(a) * d, Math.sin(a) * d, .25); if (out.every((q) => q.distanceTo(p) > .85) && es.every((e) => e.position.distanceTo(p) > .85)) out.push(p); } return out; }
+    Object.assign(API, {
+      setAtom(name) { API.name = name; nameLab.set(name + ' 원자'); nameLab.show = true; API.clear(true); API.st.p = 0; qLab.show = false; core.material = partMat('p'); },
+      setP(n) { API.st.p = n; qLab.set('+' + n); qLab.show = true; },
+      clear(quiet) { es.slice().forEach((e) => g.remove(e)); es.length = 0; API.st.es = []; if (!quiet) API.onChange && API.onChange(API.st); },
+      fill(k) { const n = (k === undefined ? API.st.p : k) - es.length; spots(n).forEach((p, i) => add(p, i < n - 1)); },
+    });
+    prepare(st).then(() => { window.__ready = true; });
+    return API;
+  }
+
+  /* ===================== 3) 양성자수에 따라 바뀌는 원자 ===================== */
+  function single(host, o = {}) {
+    const st = stage(host, { top: '#ffffff', bottom: '#eaf1f7', fov: 30 });
+    st.controls.enabled = !!o.orbit;
+    const R = 3, g = new THREE.Group(); st.scene.add(g);
+    const cloud = new THREE.Mesh(SPH, cloudMat(1)); cloud.scale.setScalar(R); cloud.renderOrder = 3; g.add(cloud);
+    const core = new THREE.Mesh(SPH, partMat('p')); core.scale.setScalar(.62); core.castShadow = true; g.add(core);
+    const frame = frameBox(6.4, 6.4); st.scene.add(frame);
+    st.camera.position.set(0, 0, 14); st.fit(frame, { dir: V(0, .05, 1), margin: 1.0 });
+    let lastWH = '';
+    st.onFrame(() => { const { W, H } = st.size(), k = W + 'x' + H; if (k !== lastWH) { lastWH = k; st.fit(frame, { dir: V(0, .05, 1), margin: 1.0 }); } });
+    const qLab = st.label('', 'zl nucq', () => core.getWorldPosition(V()));
+    const es = [], fly = []; let t0 = 0, Z = 0, pulse = 0;
+    function mkE(i) { const e = particle('e', .21); e.userData.path = electronPath(31 + i * 23, 1.3, 2.55); return e; }
+    function setZ(z, animate) {
+      z = Math.max(1, Math.min(20, z)); const old = Z; Z = z; qLab.set('+' + z);
+      if (!animate || REDUCE || old === 0 || Math.abs(z - old) !== 1) {
+        fly.forEach((f) => g.remove(f.o)); fly.length = 0;
+        while (es.length > z) g.remove(es.pop());
+        while (es.length < z) { const e = mkE(es.length); g.add(e); es.push(e); }
+        return;
+      }
+      if (z > old) { // 양성자가 날아와 원자핵에 붙고, 전자가 하나 들어와요
+        const p = particle('p', .3); p.position.set(-5.2, 1.6, .5); g.add(p); fly.push({ o: p, a: p.position.clone(), b: V(), k: 0, dur: .9, end: () => { g.remove(p); pulse = 1; } });
+        const e = mkE(es.length); g.add(e); es.push(e); e.userData.enter = 0;
+      } else { // 양성자가 빠져나가고, 전자도 하나 나가요
+        const p = particle('p', .3); g.add(p); fly.push({ o: p, a: V(), b: V(5.2, -1.4, .5), k: 0, dur: .9, end: () => g.remove(p) });
+        const e = es.pop(); const a = e.position.clone(); fly.push({ o: e, a, b: a.clone().normalize().multiplyScalar(6.5), k: 0, dur: .8, end: () => g.remove(e) });
+        pulse = -1;
+      }
+    }
+    const tmp = V();
+    st.onFrame((dt) => {
+      t0 += dt;
+      es.forEach((e, i) => {
+        e.userData.path(t0 * .9 + i * 1.7, tmp);
+        if (e.userData.enter !== undefined) { e.userData.enter = Math.min(1, e.userData.enter + dt / .9); const k = ease(e.userData.enter); e.position.lerpVectors(V(5.4, 2.0, .6), tmp, k); if (e.userData.enter >= 1) delete e.userData.enter; }
+        else e.position.copy(tmp);
+      });
+      for (let i = fly.length - 1; i >= 0; i--) { const f = fly[i]; f.k = Math.min(1, f.k + dt / f.dur); const k = ease(f.k); f.o.position.lerpVectors(f.a, f.b, k); if (f.o.userData.kind === 'p') f.o.position.y += Math.sin(k * Math.PI) * .5; if (f.k >= 1) { f.end(); fly.splice(i, 1); } }
+      if (pulse) { const s = 1 + .14 * Math.sin((1 - Math.abs(pulse)) * Math.PI); core.scale.setScalar(.62 * s); pulse = Math.sign(pulse) * Math.max(0, Math.abs(pulse) - dt * 2.5); if (Math.abs(pulse) < .01) { pulse = 0; core.scale.setScalar(.62); } }
+      g.rotation.y = Math.sin(t0 * .3) * .08;
+    });
+    const API = { st, setZ, get Z() { return Z; } };
+    prepare(st).then(() => { window.__ready = true; });
+    return API;
+  }
+
+  /* ===================== 읽기·카드용 사진 장면 ===================== */
+  // which: 'he-detail' 그림 Ⅳ-6, 'he-simple' 그림 Ⅳ-7, 'gold-bars', 'gold-atoms', 'struct' 그림 Ⅳ-5, 'card'
+  function still(host, which) {
+    const st = stage(host, { top: '#ffffff', bottom: '#ffffff', fov: 30 });
+    st.scene.background = new THREE.Color('#ffffff');
+    st.controls.enabled = false;
+    let fr, dir = V(0, .05, 1), margin = 1.02;
+    if (which === 'gold-bars') { const g = goldBars(); st.scene.add(g); fr = frameBox(7.4, 3.6); fr.position.y = -.25; dir = V(.25, .55, 1); margin = 1.02; st.scene.background = new THREE.Color('#ffffff'); }
+    else if (which === 'gold-atoms') { const g = goldLattice(); st.scene.add(g); fr = frameBox(6, 6); }
+    else {
+      const g = heAtom(); st.scene.add(g);
+      if (which === 'he-simple') { g.userData.simpTo = 1; g.userData.simp = 1; st.label('+2', 'zl nucq xl', () => V()); }
+      g.userData.step(0.01);
+      if (which === 'struct' || which === 'card') {
+        // 그림 Ⅳ-5처럼 전자 여러 개가 아니라, 헬륨 원자 그대로 두되 전자 자리를 보기 좋게
+        g.userData.es[0].position.set(-1.9, 1.25, .8); g.userData.es[1].position.set(1.7, -1.55, .6);
+      } else { g.userData.es[0].position.set(.6, 2.1, .9); g.userData.es[1].position.set(-1.65, -1.6, .7); }
+      g.userData.nuc.scale.setScalar(1.75); g.userData.simple.scale.multiplyScalar(1.6); g.userData.es.forEach((e) => e.scale.setScalar(1.45));
+      g.userData.step = null; fr = frameBox(5.3, 5.3);
+    }
+    st.scene.add(fr); st.camera.position.set(0, 0, 14); st.fit(fr, { dir, margin });
+    prepare(st).then(() => { window.__ready = true; });
+    return { st };
+  }
+
+  return { COL, particle, nucleus, dive, lab, single, still, cloudMat };
+})();
+/* ===== 블록 3: 3D 원자 ===== */
+try {
+  window.__A3 = AT3.single(document.getElementById('atomv'));
+  window.__A3.setZ(window.__z || 1, false);
+  window.SM.ok3d = true;
+} catch (err) { window.SM_err && window.SM_err('3D 원자', err); }
 </script>
 </body>
 </html>

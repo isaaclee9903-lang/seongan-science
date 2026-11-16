@@ -10,13 +10,14 @@
 /*@@PART:css_sim.css@@*/
 /*@@LOCAL:_css_at.css@@*/
 /*@@LOCAL:_css_sim.css@@*/
+/*@@LOCAL:_css_at3.css@@*/
   /* ===== 이 페이지 전용 ===== */
   .stage{grid-template-columns:minmax(0,1.35fr) minmax(330px,1fr)}
   .tbox{flex:1 1 auto;display:flex;flex-direction:column;justify-content:center;gap:14px;padding:16px 18px 12px}
   .tfoot{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
   .tfoot p{margin:0;font-size:13.5px;color:var(--muted);line-height:1.6;word-break:keep-all;flex:1;min-width:180px}
   .tfoot p b{color:var(--ink)}
-  #atomv{aspect-ratio:600/370;margin:-4px 0 0}
+  #atomv{height:clamp(220px,40vh,330px);margin:-4px 0 0;border-radius:14px}
   .zline{text-align:center;font-size:16px;font-weight:700;color:var(--ink2);margin:2px 0 8px;word-break:keep-all}
   .zline b{color:#0e63b3;font-size:1.15em}
   .stepper{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;margin-bottom:6px}
@@ -28,7 +29,7 @@
   .qdots i{flex:1;height:6px;border-radius:3px;background:#e2e9f0}
   .qdots i.ok{background:#0e63b3}.qdots i.now{background:#8db8e3}
   .ph b.k{color:#0e63b3}
-  @media (max-width:900px){.stage{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr)}.tbox{justify-content:flex-start;padding-top:12px}.ptab .pt-c{min-height:64px}#atomv{aspect-ratio:600/250}body[data-p="quiz"] #atomv{aspect-ratio:600/190}}
+  @media (max-width:900px){.stage{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr)}.tbox{justify-content:flex-start;padding-top:12px}.ptab .pt-c{min-height:64px}#atomv{height:230px!important}body[data-p="quiz"] #atomv{height:180px!important}}
 </style>
 </head>
 <body>
@@ -64,7 +65,7 @@
         <button type="button" role="tab" data-p="why" aria-selected="false">왜 그럴까?</button>
       </div>
       <div id="figbox">
-        <div class="scene" id="atomv" role="img" aria-label="고른 원자를 간단히 나타낸 원자 모형. 원자핵에 양성자수에 따른 전하량이 쓰여 있고, 주위에 같은 수의 전자가 움직인다."></div>
+        <div class="gl-host" id="atomv" role="img" aria-label="고른 원자를 간단히 나타낸 원자 모형. 원자핵에 양성자수에 따른 전하량이 쓰여 있고, 주위에 같은 수의 전자가 움직인다."></div>
         <p class="zline" id="zline"></p>
       </div>
       <div class="pane" data-p="lab">
@@ -116,7 +117,7 @@ window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) 
   try {
     const S = window.SM, { $, $$ } = S, Q = S.Q;
     const E = (z) => AT.EL20[z - 1];
-    const A = AT.single($('#atomv'), { W: 600, H: 370, R: 165, Y: 182, p: 1 });
+    const A = { set(z) { window.__z = z; if (window.__A3) window.__A3.setZ(z, true); } }; // 3D 원자는 아래 모듈에서 만들어요
     let quiz = false, mark = null;
     const T = AT.table($('#ptab'), { onPick: (z) => (quiz ? window.QZ.pick(z) : set(z)) });
     AT.fullTable($('#ftab'));
@@ -194,6 +195,23 @@ window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) 
     if (Q.get('tab') === 'quiz' && Q.get('qa')) window.QZ.pick(+Q.get('qa'));
   } catch (err) { window.SM_err('찾기 도전', err); }
 })();
+</script>
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+/*@@PART:c3.js@@*/
+/*@@LOCAL:_at3.js@@*/
+/* ===== 블록 3: 3D 원자 ===== */
+try {
+  window.__A3 = AT3.single(document.getElementById('atomv'));
+  window.__A3.setZ(window.__z || 1, false);
+  window.SM.ok3d = true;
+} catch (err) { window.SM_err && window.SM_err('3D 원자', err); }
 </script>
 </body>
 </html>

@@ -253,6 +253,7 @@
   .ph b.k{color:#0e63b3}
   .good{border-color:#0e63b3!important;background:#e4f0fb!important;color:#0b3f73!important}
   .bad{border-color:#e7a29b!important;background:#fff4f2!important;color:#9b3a32!important}
+  .lb.zl.nucq.xl{font-size:44px}
   /* ===== 이 페이지 전용 ===== */
   .viewer > .gl-host{flex:1 1 auto;min-height:300px}
   .lv{display:grid;gap:5px;margin:0 0 10px}
@@ -648,7 +649,7 @@ const AT3 = (() => {
     if (SIGN[s]) return SIGN[s];
     SIGN[s] = C3.canvasTex(128, 128, (g, w) => {
       g.translate(w / 2, w / 2); g.fillStyle = '#ffffff'; g.shadowColor = 'rgba(60,0,0,.25)'; g.shadowBlur = 4;
-      const L = 30, T = 9.5; const rr = (x, y, a, b) => { g.beginPath(); g.roundRect(x, y, a, b, T / 2); g.fill(); };
+      const L = 33, T = 15; const rr = (x, y, a, b) => { g.beginPath(); g.roundRect(x, y, a, b, T / 2); g.fill(); };
       rr(-L, -T / 2, 2 * L, T); if (s === '+') rr(-T / 2, -L, T, 2 * L);
     });
     return SIGN[s];
@@ -679,8 +680,8 @@ const AT3 = (() => {
     const m = new THREE.Mesh(SPH, partMat(kind)); m.scale.setScalar(r); m.castShadow = true; g.add(m);
     g.userData = { r, kind, body: m };
     if (kind === 'p' || kind === 'e') {
-      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: signTex(kind === 'p' ? '+' : '-'), transparent: true, depthWrite: false }));
-      sp.scale.setScalar(r * 1.25); g.add(sp); g.userData.sign = sp;
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: signTex(kind === 'p' ? '+' : '-'), transparent: true, depthWrite: false, toneMapped: false }));
+      sp.scale.setScalar(r * 1.25); sp.renderOrder = 6; g.add(sp); g.userData.sign = sp;
     }
     return g;
   }
@@ -702,7 +703,7 @@ const AT3 = (() => {
     const g = new THREE.Group(), n = np + nn, rnd = mkR(seed);
     const kinds = []; let a = np, b = nn; for (let i = 0; i < n; i++) { if ((i % 2 === 0 && a) || !b) { kinds.push('p'); a--; } else { kinds.push('n'); b--; } }
     const pts = [];
-    if (n === 4) [[1, 1, 1], [-1, -1, 1], [-1, 1, -1], [1, -1, -1]].forEach((q) => pts.push(V(...q).normalize().multiplyScalar(r * 1.0)));
+    if (n === 4) [[1, 1, 1], [-1, -1, 1], [-1, 1, -1], [1, -1, -1]].forEach((q) => pts.push(V(...q).normalize().multiplyScalar(r * 1.22)));
     else { const ga = Math.PI * (3 - Math.sqrt(5)); const R0 = r * 1.05 * Math.cbrt(n); for (let i = 0; i < n; i++) { const y = 1 - (i + .5) / n * 2, rr = Math.sqrt(1 - y * y), th = ga * i; pts.push(V(Math.cos(th) * rr, y, Math.sin(th) * rr).multiplyScalar(R0 * (.55 + .45 * rnd()))); } }
     const parts = kinds.map((k, i) => { const p = particle(k, r); p.position.copy(pts[i]); p.userData.home = pts[i].clone(); g.add(p); return p; });
     g.userData.parts = parts;
@@ -740,7 +741,7 @@ const AT3 = (() => {
     s.moveTo(-wb, 0); s.lineTo(wb, 0); s.lineTo(wt, h); s.lineTo(-wt, h); s.closePath();
     const geo = new THREE.ExtrudeGeometry(s, { depth: 2.3, bevelEnabled: true, bevelThickness: .07, bevelSize: .05, bevelSegments: 4, steps: 1 });
     geo.translate(0, 0, -1.15); geo.computeVertexNormals();
-    const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: '#f3c24f', metalness: 1, roughness: .27, envMapIntensity: 1.25 }));
+    const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: '#dba41e', metalness: 1, roughness: .33, envMapIntensity: .85 }));
     m.castShadow = true; m.receiveShadow = true;
     return m;
   }
@@ -761,7 +762,7 @@ const AT3 = (() => {
       const x = (j - cols / 2) * 2 * r + (i % 2) * r + (L % 2) * r, z = (i - rows / 2) * Math.sqrt(3) * r + (L % 2) * r * .577, y = -L * r * 1.633;
       if (Math.hypot(x, z) > 7.4) continue; list.push(V(x, y, z));
     }
-    const mat = new THREE.MeshStandardMaterial({ color: '#f2bf36', metalness: .35, roughness: .38, envMapIntensity: 1.1 });
+    const mat = new THREE.MeshStandardMaterial({ color: '#e4a91c', metalness: .3, roughness: .46, envMapIntensity: 1.0 });
     const im = new THREE.InstancedMesh(new THREE.SphereGeometry(r * .985, 36, 24), mat, list.length);
     const m4 = new THREE.Matrix4(); list.forEach((p, i) => { m4.makeTranslation(p.x, p.y, p.z); im.setMatrixAt(i, m4); });
     im.castShadow = true; im.receiveShadow = true; g.add(im);
@@ -819,10 +820,10 @@ const AT3 = (() => {
   // 헬륨 원자 하나(그림 Ⅳ-6): 원자핵(양성자 2, 중성자 2)과 전자 2개
   function heAtom() {
     const g = new THREE.Group();
-    const cloud = new THREE.Mesh(SPH, cloudMat(1)); cloud.scale.setScalar(3); cloud.renderOrder = 3; g.add(cloud);
+    const cloud = new THREE.Mesh(SPH, cloudMat(1)); cloud.scale.setScalar(2.6); cloud.renderOrder = 3; g.add(cloud);
     const nuc = nucleus(2, 2, .3); g.add(nuc);
     const simple = particle('p', .5); simple.userData.sign.visible = false; simple.scale.setScalar(.001); g.add(simple);
-    const es = [0, 1].map((i) => { const e = particle('e', .19); e.userData.path = electronPath(5 + i * 17, 1.55, 2.45); g.add(e); return e; });
+    const es = [0, 1].map((i) => { const e = particle('e', .19); e.userData.path = electronPath(5 + i * 17, 1.35, 2.15); g.add(e); return e; });
     g.userData = { cloud, nuc, simple, es, t: Math.random() * 10, simp: 0, simpTo: 0 };
     g.userData.step = (dt, run = true) => {
       const u = g.userData; if (run) u.t += dt;
@@ -853,7 +854,7 @@ const AT3 = (() => {
     he: [
       { name: '헬륨 풍선', make: balloons, labels: [['헬륨 풍선', 'big', () => V(0, 2.75, .3)]], K: 7 },
       { name: '풍선 속 헬륨', make: heGas, labels: [['헬륨 원자', 'big', (g) => V().copy(g.userData.pick.position).add(V(0, .75, 0))]], K: 6.5 },
-      { name: '헬륨 원자', make: heAtom, labels: [['원자핵', '', () => V(0, -.62, .2)], ['전자', '', (g) => V().copy(g.userData.es[0].position).add(V(0, .45, 0))], ['헬륨 원자', 'big', () => V(0, 3.35, 0)]], K: 5.5 },
+      { name: '헬륨 원자', make: heAtom, labels: [['원자핵', '', () => V(0, -.62, .2)], ['전자', '', (g) => V().copy(g.userData.es[0].position).add(V(0, .45, 0))], ['헬륨 원자', 'big', () => V(-2.7, -2.35, 0)]], K: 5.5 },
       { name: '원자핵', make: null, labels: [] }, // 헬륨 원자를 원자핵 둘레로 확대한 장면
     ],
   };
@@ -888,7 +889,7 @@ const AT3 = (() => {
       if (which === 'he' && (lv === 3 || from === 3)) {
         // 헬륨 원자 → 원자핵: 원자핵을 가운데 두고 크게
         const t = from === 3 && lv === 2 ? 1 - k : lv === 3 ? k : 1;
-        const s = lerp(1, 5.2, ease(t)); set(2, s, V(), 1);
+        const s = lerp(1, 3.3, ease(t)); set(2, s, V(), 1);
         const cl = levels[2].userData.cloud; cl.material.uniforms.uOp.value = 1 - clamp(t * 1.6);
         return;
       }
@@ -946,7 +947,7 @@ const AT3 = (() => {
     const frame = frameBox(6.6, 6.7); frame.position.y = -.1; st.scene.add(frame);
     st.camera.position.set(0, 0, 14); st.fit(frame, { dir: V(0, 0, 1), margin: 1.0 });
     const qLab = st.label('', 'zl nucq', () => core.getWorldPosition(V())); qLab.show = false;
-    const nameLab = st.label('', 'zl big', () => V(0, -R - .45, 0)); nameLab.show = false;
+    const nameLab = st.label('', 'zl big', () => V(-R * .78, R * .9, 0)); nameLab.show = false;
     const API = { st: { p: 0, es: [] }, onChange: null, onBlock: null, name: '' };
     const es = []; // {g, k, born}
     function add(p, quiet) {
@@ -994,6 +995,8 @@ const AT3 = (() => {
     const core = new THREE.Mesh(SPH, partMat('p')); core.scale.setScalar(.62); core.castShadow = true; g.add(core);
     const frame = frameBox(6.4, 6.4); st.scene.add(frame);
     st.camera.position.set(0, 0, 14); st.fit(frame, { dir: V(0, .05, 1), margin: 1.0 });
+    let lastWH = '';
+    st.onFrame(() => { const { W, H } = st.size(), k = W + 'x' + H; if (k !== lastWH) { lastWH = k; st.fit(frame, { dir: V(0, .05, 1), margin: 1.0 }); } });
     const qLab = st.label('', 'zl nucq', () => core.getWorldPosition(V()));
     const es = [], fly = []; let t0 = 0, Z = 0, pulse = 0;
     function mkE(i) { const e = particle('e', .21); e.userData.path = electronPath(31 + i * 23, 1.3, 2.55); return e; }
@@ -1038,18 +1041,18 @@ const AT3 = (() => {
     st.scene.background = new THREE.Color('#ffffff');
     st.controls.enabled = false;
     let fr, dir = V(0, .05, 1), margin = 1.02;
-    if (which === 'gold-bars') { const g = goldBars(); st.scene.add(g); fr = frameBox(4.2, 2.2); fr.position.y = .05; dir = V(.15, .5, 1); margin = 1.0; st.scene.background = new THREE.Color('#ffffff'); }
+    if (which === 'gold-bars') { const g = goldBars(); st.scene.add(g); fr = frameBox(7.4, 3.6); fr.position.y = -.25; dir = V(.25, .55, 1); margin = 1.02; st.scene.background = new THREE.Color('#ffffff'); }
     else if (which === 'gold-atoms') { const g = goldLattice(); st.scene.add(g); fr = frameBox(6, 6); }
     else {
       const g = heAtom(); st.scene.add(g);
-      if (which === 'he-simple') { g.userData.simpTo = 1; g.userData.simp = 1; st.label('+2', 'zl nucq', () => V()); }
+      if (which === 'he-simple') { g.userData.simpTo = 1; g.userData.simp = 1; st.label('+2', 'zl nucq xl', () => V()); }
       g.userData.step(0.01);
       if (which === 'struct' || which === 'card') {
         // 그림 Ⅳ-5처럼 전자 여러 개가 아니라, 헬륨 원자 그대로 두되 전자 자리를 보기 좋게
         g.userData.es[0].position.set(-1.9, 1.25, .8); g.userData.es[1].position.set(1.7, -1.55, .6);
       } else { g.userData.es[0].position.set(.6, 2.1, .9); g.userData.es[1].position.set(-1.65, -1.6, .7); }
-      g.userData.step = null; fr = frameBox(6.15, 6.15);
-      if (which === 'card') { dir = V(.25, .18, 1); }
+      g.userData.nuc.scale.setScalar(1.75); g.userData.simple.scale.multiplyScalar(1.6); g.userData.es.forEach((e) => e.scale.setScalar(1.45));
+      g.userData.step = null; fr = frameBox(5.3, 5.3);
     }
     st.scene.add(fr); st.camera.position.set(0, 0, 14); st.fit(fr, { dir, margin });
     prepare(st).then(() => { window.__ready = true; });

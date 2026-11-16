@@ -10,8 +10,17 @@
 /*@@PART:css_sim.css@@*/
 /*@@LOCAL:_css_at.css@@*/
 /*@@LOCAL:_css_sim.css@@*/
+/*@@LOCAL:_css_at3.css@@*/
   /* ===== 이 페이지 전용 ===== */
-  #lab{aspect-ratio:1000/760;cursor:pointer}
+  .viewer > .gl-host{flex:1 1 auto;min-height:300px;cursor:pointer}
+  .pairs{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;align-items:center;padding:10px 16px;border-top:1px solid var(--line);background:#fbfdfe}
+  .pairs b{font-size:14.5px;white-space:nowrap}.pairs b span{color:#0b3f73;margin-left:6px}
+  .pairs .tk{display:flex;flex-wrap:wrap;gap:5px;min-height:24px}
+  .pairs .tk i{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;color:#fff;font-style:normal;font-weight:900;font-size:16px;line-height:1;box-shadow:inset -2px -3px 4px rgba(0,0,0,.18);animation:pop .3s ease-out}
+  .pairs .tk i.p{background:#e2463d}.pairs .tk i.e{background:#2f7fd0}
+  .pairs .tk i.ghost{background:#edf1f5;box-shadow:none;color:#b4c0cc;animation:none}
+  @keyframes pop{from{transform:scale(.4)}to{transform:scale(1)}}
+  @media (prefers-reduced-motion:reduce){.pairs .tk i{animation:none}}
   .pick3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:0 0 10px}
   .pick3 button{min-height:54px;border-radius:12px;border:2px solid #d4dee8;background:#fff;cursor:pointer;line-height:1.3;padding:4px 6px;color:var(--ink)}
   .pick3 button b{display:block;font-size:15.5px;font-weight:900}
@@ -55,7 +64,8 @@
 
   <div class="stage">
     <section class="card viewer">
-      <div class="scene grow" id="lab" role="img" aria-label="하늘색 공 모양의 원자 가운데에 빨간 원자핵이 있다. 원자 안을 누르면 그 자리에 전자 붙임딱지가 붙고, 붙인 전자를 다시 누르면 떨어진다. 아래 줄에는 양성자와 전자가 짝지어 놓여 총전하량을 비교한다."></div>
+      <div class="gl-host" id="lab" role="img" aria-label="하늘색 공 모양의 원자 가운데에 빨간 원자핵이 있다. 원자 안을 누르면 그 자리에 전자 붙임딱지가 붙고, 붙인 전자를 다시 누르면 떨어진다."></div>
+      <div class="pairs" aria-label="양성자와 전자의 수 비교"><b>양성자<span id="pqv"></span></b><div class="tk" id="tkP"></div><b>전자<span id="eqv"></span></b><div class="tk" id="tkE"></div></div>
       <div class="vctl">
         <span class="hint" id="hint">먼저 오른쪽에서 원자를 골라요</span>
         <span class="sp"></span>
@@ -100,23 +110,22 @@
 window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
   reduce: !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches), Q: new URLSearchParams(location.search) };
 </script>
-<script>
-/*@@LOCAL:_at_core.js@@*/
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }
 </script>
-<script>
-/*@@LOCAL:_at_atom.js@@*/
-</script>
-<script>
-/*@@LOCAL:_at_lab.js@@*/
-</script>
-<script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+/*@@PART:c3.js@@*/
+/*@@LOCAL:_at3.js@@*/
 /* ===== 블록 1: 실험하기 · 기록표 ===== */
-(() => {
-  'use strict';
+{
   try {
     const S = window.SM, { $, $$ } = S, Q = S.Q;
     const ATOMS = [{ id: 'Li', name: '리튬', e: 3 }, { id: 'C', name: '탄소', e: 6 }, { id: 'O', name: '산소', e: 8 }];
-    const L = AT.lab($('#lab'));
+    const L = AT3.lab($('#lab'));
     const st = { a: null, step: 0, pq: null, eq: null, done: {} };
     const BTN = (id, t, cls = 'ghost', dis = false) => `<button class="btn ${cls}" type="button" id="${id}"${dis ? ' disabled' : ''}>${t}</button>`;
     function msg(t, m, cls = '') { $('#res').className = 'fbk ' + cls; $('#resT').textContent = t; $('#resM').innerHTML = m; }
@@ -163,11 +172,18 @@ window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) 
         $$('#cq1 button').forEach((b) => b.addEventListener('click', () => pickq('pq', +b.dataset.i)));
         $$('#cq2 button').forEach((b) => b.addEventListener('click', () => pickq('eq', +b.dataset.i)));
       }
-      $('#hint').textContent = !a ? '먼저 오른쪽에서 원자를 골라요' : st.step === 1 ? '양성자수를 고르면 원자핵에 전하량이 써져요' : st.step === 2 ? '원자 안을 누르면 전자가 붙고, 전자를 누르면 떨어져요' : '아래 줄에서 양성자와 전자가 하나씩 짝을 이뤄요';
+      tokens();
+      $('#hint').textContent = !a ? '먼저 오른쪽에서 원자를 골라요' : st.step === 1 ? '양성자수를 고르면 원자핵에 전하량이 써져요' : st.step === 2 ? '원자 안을 누르면 전자가 붙고, 전자를 누르면 떨어져요' : '아래 줄에서 양성자와 전자의 수를 비교해요';
+    }
+    function tokens() {
+      const a = A(), p = a && st.step >= 2 ? a.e : 0, ne = L.st.es.length, n = a ? a.e : 0;
+      const row = (k, cnt, sg) => Array.from({ length: Math.max(n, cnt) }, (_, i) => `<i class="${i < cnt ? k : 'ghost'}">${i < cnt ? sg : ''}</i>`).join('');
+      $('#tkP').innerHTML = row('p', p, '+'); $('#tkE').innerHTML = row('e', ne, '−');
+      $('#pqv').textContent = p ? ` ${p}개` : ''; $('#eqv').textContent = ne ? ` ${ne}개` : '';
     }
     L.onChange = (s) => {
       const a = A(); if (!a || st.step !== 2) return;
-      if (s.es.length === a.e) { st.step = 3; msg('결과 · 전자를 모두 붙였어요', `전자 ${a.e}개를 붙였어요. 아래 줄을 보면 양성자와 전자가 하나씩 <b>짝</b>을 이뤄요. 각각의 총전하량을 골라요.`, 'ok'); }
+      if (s.es.length === a.e) { st.step = 3; msg('결과 · 전자를 모두 붙였어요', `전자 ${a.e}개를 붙였어요. 아래 줄을 보면 양성자와 전자의 수가 <b>같아요</b>. 각각의 총전하량을 골라요.`, 'ok'); }
       else msg('결과', `전자를 ${s.es.length}개 붙였어요. <b>${a.e - s.es.length}개</b> 더 붙여요.`);
       render();
     };
@@ -209,9 +225,9 @@ window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) 
     }
     render();
     show(['rec', 'why'].includes(Q.get('tab')) ? Q.get('tab') : 'lab');
-    window.SM.okUI = true;
-  } catch (err) { window.SM_err('실험하기', err); }
-})();
+    window.SM.okUI = true; window.__L = L;
+  } catch (err) { window.SM_err && window.SM_err('실험하기', err); }
+}
 </script>
 </body>
 </html>
