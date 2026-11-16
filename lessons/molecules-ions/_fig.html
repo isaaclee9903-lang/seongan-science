@@ -1105,7 +1105,7 @@ const MI3 = (() => {
     const atoms = [];
     let t0 = 0, spin = 0;
     const _bb = new THREE.Box3(), _bc = V();
-    const hint = st.label('아래 원자 넣기 버튼을 눌러 원자를 넣어요', 'zl say', () => (API.mode === 'build' && API.target && !atoms.length ? V(0, .2, 0) : null));
+    const hint = st.label('원자 넣기 버튼을 눌러 원자를 넣어요', 'zl say', () => (API.mode === 'build' && API.target && !atoms.length ? V(0, .2, 0) : null));
     const nameLab = st.label('', 'zl big', () => { _bb.setFromObject(R); _bb.getCenter(_bc); return V(_bc.x, Math.max(FLOOR_Y + .45, _bb.min.y - .55), _bc.z); }); nameLab.show = false;
 
     function mkAtom(el) {
@@ -1306,8 +1306,27 @@ const MI3 = (() => {
       g.rotation.y = Math.sin(t0 * .3) * .08;
     });
     let fade = 0;
-    function hide(h) { g.visible = !h; qLab.show = !h; if (h) API.label(''); }
-    const API = { st, set, lose, gain, hide, get n() { return es.length + (fly && fly.kind === 'in' ? 0 : 0); }, get busy() { return !!fly; }, label: (h) => big.set(h), onChange: null };
+    function hide(h) { g.visible = !h; qLab.show = !h; if (h) API.label(''); if (!h) poly(null); }
+    // 여러 개의 원자가 결합한 이온(표 Ⅳ-1): 결합 길이와 모양만 살린 간단한 입자 모형
+    const PG = new THREE.Group(); st.scene.add(PG);
+    EL3.PT.Mn = EL3.PT.Mn || { c: '#8a5bc4', r: 0.95, n: '망가니즈' };
+    const TET = [[1, 1, 1], [-1, -1, 1], [-1, 1, -1], [1, -1, -1]].map((q) => V(...q).normalize());
+    const TRI = [0, 1, 2].map((i) => V(Math.cos(i * 2.094 + 1.571), Math.sin(i * 2.094 + 1.571), 0));
+    const POLY = {
+      NH4: [['N', V()]].concat(TET.map((d) => ['H', d.clone().multiplyScalar(1.03)])),
+      OH: [['O', V(-.24, 0, 0)], ['H', V(.73, 0, 0)]],
+      NO3: [['N', V()]].concat(TRI.map((d) => ['O', d.clone().multiplyScalar(1.25)])),
+      CO3: [['C', V()]].concat(TRI.map((d) => ['O', d.clone().multiplyScalar(1.29)])),
+      MnO4: [['Mn', V()]].concat(TET.map((d) => ['O', d.clone().multiplyScalar(1.63)])),
+    };
+    function poly(id) {
+      while (PG.children.length) PG.remove(PG.children[0]);
+      if (!id || !POLY[id]) return;
+      const m = new THREE.Group(); POLY[id].forEach(([e, p]) => m.add(EL3.ball(e, p.x, p.y, p.z)));
+      const rad = new THREE.Box3().setFromObject(m).getBoundingSphere(new THREE.Sphere()).radius; m.scale.setScalar(2.5 / rad); const flat = id === 'NO3' || id === 'CO3'; m.userData.flat = flat; m.rotation.set(flat ? -.45 : .35, flat ? .25 : .5, 0); PG.add(m);
+    }
+    st.onFrame((dt) => { const m = PG.children[0]; if (m && !REDUCE) { if (m.userData.flat) m.rotateZ(dt * .35); else m.rotation.y += dt * .35; } });
+    const API = { st, set, lose, gain, hide, poly, get n() { return es.length + (fly && fly.kind === 'in' ? 0 : 0); }, get busy() { return !!fly; }, label: (h) => big.set(h), onChange: null };
     prepare(st).then(() => { window.__ready = true; });
     return API;
   }

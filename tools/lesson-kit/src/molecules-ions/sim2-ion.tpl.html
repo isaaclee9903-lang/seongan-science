@@ -223,8 +223,8 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
       render();
     };
     function tokens() {
-      const a = A(); if (!a) { $('#tkP').innerHTML = $('#tkE').innerHTML = ''; $('#pv').textContent = $('#ev').textContent = ''; return; }
-      const n = st.n, mx = Math.max(a.z, n);
+      const a = st.view ? { z: st.view.z } : A(); if (!a) { $('#tkP').innerHTML = $('#tkE').innerHTML = ''; $('#pv').textContent = $('#ev').textContent = ''; return; }
+      const n = st.view ? st.view.n : st.n, mx = Math.max(a.z, n);
       $('#tkP').innerHTML = Array.from({ length: a.z }, () => '<i class="p">+</i>').join('');
       $('#tkE').innerHTML = Array.from({ length: mx }, (_, i) => (i < n ? `<i class="e${i >= a.z ? ' new' : ''}">−</i>` : '<i class="ghost"></i>')).join('');
       $('#pv').textContent = ` +${a.z}`; $('#ev').textContent = ` −${n}`;
@@ -243,12 +243,16 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
     const RD = [
       { f: 'H<sup>+</sup>', n: '수소 이온', z: 1, q: 1 }, { f: 'K<sup>+</sup>', n: '칼륨 이온', z: 19, q: 1 }, { f: 'Be<sup>2+</sup>', n: '베릴륨 이온', z: 4, q: 2 },
       { f: 'O<sup>2−</sup>', n: '산화 이온', z: 8, q: -2 }, { f: 'Ca<sup>2+</sup>', n: '칼슘 이온', z: 20, q: 2 }, { f: 'Mg<sup>2+</sup>', n: '마그네슘 이온', z: 12, q: 2 },
-      { f: 'Na<sup>+</sup>', n: '나트륨 이온', z: 11, q: 1 }, { f: 'Cu<sup>2+</sup>', n: '구리 이온', q: 2 }, { f: 'S<sup>2−</sup>', n: '황화 이온', z: 16, q: -2 }, { f: 'Cl<sup>−</sup>', n: '염화 이온', z: 17, q: -1 },
-      { f: 'NO<sub>3</sub><sup>−</sup>', n: '질산 이온', q: -1, poly: true }, { f: 'CO<sub>3</sub><sup>2−</sup>', n: '탄산 이온', q: -2, poly: true }, { f: 'MnO<sub>4</sub><sup>−</sup>', n: '과망가니즈산 이온', q: -1, poly: true },
-      { f: 'NH<sub>4</sub><sup>+</sup>', n: '암모늄 이온', q: 1, poly: true }, { f: 'OH<sup>−</sup>', n: '수산화 이온', q: -1, poly: true },
+      { f: 'Na<sup>+</sup>', n: '나트륨 이온', z: 11, q: 1 }, { f: 'Cu<sup>2+</sup>', n: '구리 이온', z: 29, q: 2 }, { f: 'S<sup>2−</sup>', n: '황화 이온', z: 16, q: -2 }, { f: 'Cl<sup>−</sup>', n: '염화 이온', z: 17, q: -1 },
+      { f: 'NO<sub>3</sub><sup>−</sup>', n: '질산 이온', q: -1, poly: 'NO3' }, { f: 'CO<sub>3</sub><sup>2−</sup>', n: '탄산 이온', q: -2, poly: 'CO3' }, { f: 'MnO<sub>4</sub><sup>−</sup>', n: '과망가니즈산 이온', q: -1, poly: 'MnO4' },
+      { f: 'NH<sub>4</sub><sup>+</sup>', n: '암모늄 이온', q: 1, poly: 'NH4' }, { f: 'OH<sup>−</sup>', n: '수산화 이온', q: -1, poly: 'OH' },
     ];
     const WRONG = { '수소 이온': ['수소화 이온', '헬륨 이온'], '칼륨 이온': ['칼슘 이온', '칼륨화 이온'], '베릴륨 이온': ['베릴륨화 이온', '붕소 이온'], '산화 이온': ['산소 이온', '산소화 이온'], '칼슘 이온': ['칼륨 이온', '칼슘화 이온'], '마그네슘 이온': ['마그네슘화 이온', '망가니즈 이온'], '나트륨 이온': ['나트륨화 이온', '질소 이온'], '구리 이온': ['구리화 이온', '탄소 이온'], '황화 이온': ['황 이온', '수소화 이온'], '염화 이온': ['염소 이온', '염소화 이온'], '질산 이온': ['탄산 이온', '질소 이온'], '탄산 이온': ['질산 이온', '탄소 이온'], '과망가니즈산 이온': ['마그네슘 이온', '질산 이온'], '암모늄 이온': ['암모니아 이온', '질소 이온'], '수산화 이온': ['산화 이온', '수소 이온'] };
     let ri = 0; const rdone = {};
+    function showRd(r) { // 맞힌 이온을 그림으로: 원자 하나로 된 이온은 원자 모형, 여러 원자로 된 이온은 입자 모형
+      if (r.z) { L.hide(false); L.set(r.z, r.z - r.q); L.label(`${r.f} <small>${r.n}</small>`); $('.pairs').hidden = false; st.view = { z: r.z, n: r.z - r.q }; tokens(); }
+      else { L.hide(true); L.poly(r.poly); L.label(`${r.f} <small>${r.n}</small>`); $('.pairs').hidden = true; }
+    }
     function rdRender() {
       const r = RD[ri], opts = [r.n].concat(WRONG[r.n]);
       const sh = opts.map((o, i) => [o, ((ri * 7 + i * 5) % 3)]).sort((x, y) => x[1] - y[1]).map((x) => x[0]);
@@ -263,7 +267,7 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
           if (r.poly) m = `<b>${r.n}</b> · 여러 개의 원자가 결합하여 ${r.q > 0 ? '(+)' : '(−)'}전하를 띤 ${kind}이에요.`;
           else m = `<b>${r.n}</b> · 원자가 전자 ${k}개를 ${r.q > 0 ? '잃은' : '얻은'} ${kind}이에요.${k === 1 ? ' 전자 수 1은 생략했어요.' : ''}`;
           $('#res3').className = 'fbk ok'; $('#res3T').textContent = '결과 · 맞았어요'; $('#res3M').innerHTML = m;
-          if (r.z) { L.hide(false); L.set(r.z, r.z - r.q); L.label(`${r.f} <small>${r.n}</small>`); } else { L.hide(true); L.label(`${r.f} <small>${r.n}</small>`); }
+          showRd(r);
         } else { b.classList.add('bad'); $('#res3').className = 'fbk no'; $('#res3T').textContent = '다시 골라요'; $('#res3M').innerHTML = r.q > 0 ? '오른쪽 위가 (+)이면 양이온이에요. 양이온은 원소 이름 뒤에 ‘~ 이온’을 붙여요.' : '오른쪽 위가 (−)이면 음이온이에요. 음이온은 대부분 ‘~화 이온’이에요. 여러 원자로 된 이온은 표 Ⅳ-1의 이름을 떠올려요.'; }
       }));
       $('#res3').className = 'fbk'; $('#res3T').textContent = '결과'; $('#res3M').textContent = '화학식을 보고 이온의 이름을 골라요.';
@@ -275,9 +279,9 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 
     function show(p) {
       $$('#pt button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.p === p))); $$('.pane').forEach((e) => (e.hidden = e.dataset.p !== p));
-      if (p === 'lab') L.hide(false);
+      if (p === 'lab') { L.hide(false); $('.pairs').hidden = false; st.view = null; }
       if (p === 'lab' && st.a) { const a = A(); L.set(a.z, st.n); bigLabel(); }
-      if (p === 'read') { const r = RD[ri]; if (rdone[ri] && r.z) { L.set(r.z, r.z - r.q); L.label(`${r.f} <small>${r.n}</small>`); } }
+      if (p === 'read' && rdone[ri]) showRd(RD[ri]);
     }
     $$('#pt button').forEach((b) => b.addEventListener('click', () => show(b.dataset.p)));
 
