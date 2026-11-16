@@ -10,6 +10,7 @@
 /*@@PART:css_sim.css@@*/
 /*@@LOCAL:_css_el.css@@*/
 /*@@LOCAL:_css_sim.css@@*/
+/*@@LOCAL:_css_3d.css@@*/
   /* ===== 이 페이지 전용 ===== */
   #lab{aspect-ratio:1000/800}
   .steps{display:grid;gap:5px;margin:0 0 10px}
@@ -44,9 +45,9 @@
 
   <div class="stage">
     <section class="card viewer">
-      <div class="scene grow" id="lab" role="img" aria-label="물이 든 수조에 관 두 개가 거꾸로 서 있고, 관 아래에는 전원 장치에 연결된 (+)극과 (−)극이 있다. 전원을 켜면 전극에서 기체 방울이 올라와 관 위쪽에 모이고, (−)극 관에 더 많이 모인다. (+)극 관의 기체에 꺼져가는 향불을 대면 향불이 살아나고, (−)극 관의 기체에 향불을 대면 퍽 소리를 내며 탄다."></div>
+      <div class="scene grow gl-host" id="lab" data-poster="media/p-lab.jpg" role="img" aria-label="전원 장치 위에 투명한 기둥이 서 있고, 기둥 속 관 두 개의 아래에 (+)극과 (−)극 전극이 있다. 옆에 물통이 관으로 이어져 있다. 전원을 켜면 전극에서 기체 방울이 올라와 관 위쪽에 모이고, (−)극 관에 더 많이 모인다. (+)극 관의 기체에 꺼져가는 향불을 대면 향불이 살아나고, (−)극 관의 기체에 향불을 대면 퍽 소리를 내며 탄다."></div>
       <div class="vctl">
-        <span class="hint" id="hint">전원을 켜면 전극에서 기체 방울이 올라와요</span>
+        <span class="hint" id="hint">장치를 손가락으로 돌려 볼 수 있어요</span>
         <span class="sp"></span>
         <button class="vb" type="button" id="bReset">처음부터</button>
       </div>
@@ -61,8 +62,8 @@
       <div class="pane" data-p="lab">
         <div class="steps" id="steps">
           <div class="ph" data-s="1"><i>1</i><span>예측하고, 전원을 켜서 두 관에 기체를 모아요.</span></div>
-          <div class="ph" data-s="2"><i>2</i><span>(+)극 관의 기체에 <b>꺼져가는 향불</b>을 대요.</span></div>
-          <div class="ph" data-s="3"><i>3</i><span>(−)극 관의 기체에 <b>향불</b>을 대요.</span></div>
+          <div class="ph" data-s="2"><i>2</i><span>(+)극 관의 기체를 시험관에 모아 <b>꺼져가는 향불</b>을 대요.</span></div>
+          <div class="ph" data-s="3"><i>3</i><span>(−)극 관의 기체를 시험관에 모아 <b>향불</b>을 대요.</span></div>
           <div class="ph" data-s="4"><i>4</i><span>입자 돋보기로 물과 두 기체 속을 봐요.</span></div>
         </div>
         <div class="ctl" id="ctl"></div>
@@ -90,19 +91,23 @@
 window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
   reduce: !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches), Q: new URLSearchParams(location.search) };
 </script>
-<script>
-/*@@LOCAL:_el_core.js@@*/
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }
 </script>
-<script>
-/*@@LOCAL:_el_water.js@@*/
-</script>
-<script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+/*@@PART:c3.js@@*/
+/*@@LOCAL:_el3.js@@*/
+/*@@LOCAL:_el3lab.js@@*/
 /* ===== 블록 1: 실험하기 ===== */
 (() => {
   'use strict';
   try {
     const S = window.SM, { $, $$ } = S, Q = S.Q;
-    const L = EL.water($('#lab'));
+    const L = EL3.lab($('#lab')); C3.prepare(L.stage);
     window.LAB = L;
     const st = { step: 1, pred: null, started: false };
     const BTN = (id, t, cls = 'ghost', dis = false) => `<button class="btn ${cls}" type="button" id="${id}"${dis ? ' disabled' : ''}>${t}</button>`;
@@ -119,8 +124,8 @@ window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) 
       $$('#pred button').forEach((b) => b.addEventListener('click', () => { st.pred = b.dataset.v; msg('결과', '예측했어요. <b>전원 켜기</b>를 눌러 전극을 지켜봐요.'); render(); }));
       const on = (id, fn) => { const e = $('#' + id); e && e.addEventListener('click', fn); };
       on('bOn', () => { L.power(true); msg('결과', '전원을 켰어요. 두 전극에서 기체 방울이 올라와 관 위쪽에 모여요. 어느 쪽에 더 많이 모이나요?'); render(); });
-      on('bP', () => { if (L.test('+', () => { st.step = 3; msg('결과 · 향불이 살아났어요', '(+)극 관의 기체에 꺼져가는 향불을 대니 <b>향불이 다시 살아났어요</b>. 이제 (−)극 관의 기체를 확인해요.', 'ok'); render(); })) { msg('결과', '(+)극 관의 꼭지를 열고 꺼져가는 향불을 대는 중이에요…'); render(); } });
-      on('bM', () => { if (L.st.busy) return; L.leave(); L.st.busy = true; msg('결과', '(−)극 관의 꼭지를 열고 향불을 대는 중이에요…'); render(); setTimeout(() => { L.st.busy = false; L.test('-', () => { st.step = 4; judge(); render(); }); }, 750); });
+      on('bP', () => { if (L.test('+', () => { st.step = 3; msg('결과 · 향불이 살아났어요', '(+)극 관의 기체를 모은 시험관에 꺼져가는 향불을 넣으니 <b>향불이 다시 살아났어요</b>. 이제 (−)극 관의 기체를 확인해요.', 'ok'); render(); })) { msg('결과', '(+)극 관 위에 시험관을 거꾸로 대고 꼭지를 열어 기체를 모으는 중이에요…'); render(); } });
+      on('bM', () => { if (L.st.busy) return; L.leave(); L.st.busy = true; msg('결과', '(−)극 관 위에 시험관을 거꾸로 대고 꼭지를 열어 기체를 모으는 중이에요…'); render(); setTimeout(() => { L.st.busy = false; L.test('-', () => { st.step = 4; judge(); render(); }); }, 750); });
       on('bLens', () => { L.showLens(!L.st.lens); if (L.st.lens) msg('결과 · 입자 돋보기', '산소 기체에는 <b>산소 입자만</b>, 수소 기체에는 <b>수소 입자만</b> 있어요. 물에는 <b>수소와 산소, 두 종류의 입자</b>가 모여 있어요. 그래서 수소·산소는 <b>원소</b>, 물은 <b>화합물</b>이에요.', 'ok'); render(); });
       on('bAgain', reset);
     }
@@ -146,7 +151,17 @@ window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) 
     }
     render();
     if (at === 'lens') $('#bLens') && (L.showLens(false), $('#bLens').click());
-    window.SM.okUI = true;
+    window.SM.okUI = true; window.SM.ok3d = true;
+    // 사진 굽기용: ?shot=hero|plus|minus|card
+    const shot = Q.get('shot');
+    if (shot) {
+      document.querySelector('.stage').style.display = 'block'; document.querySelector('.card.pad').style.display = 'none'; document.querySelector('header.top').style.display = 'none'; document.querySelector('.vctl').style.display = 'none';
+      document.querySelector('.app').style.padding = '0';
+      if (shot === 'plus') { L.jump({ p: true, inc: '+' }); setTimeout(() => L.focus('+', 0), 300); }
+      else if (shot === 'minus') { L.jump({ p: true, m: true, inc: '-' }); setTimeout(() => L.focus('-', 0), 300); }
+      else { L.jump({ gas: 1 }); L.tight(0); if (shot === 'card') L.stage.overlay.style.display = 'none'; }
+      setTimeout(() => { window.__shotReady = true; }, 2500);
+    }
   } catch (err) { window.SM_err('실험하기', err); }
 })();
 </script>

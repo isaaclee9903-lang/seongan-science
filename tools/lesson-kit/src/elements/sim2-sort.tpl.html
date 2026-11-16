@@ -10,8 +10,9 @@
 /*@@PART:css_sim.css@@*/
 /*@@LOCAL:_css_el.css@@*/
 /*@@LOCAL:_css_sim.css@@*/
+/*@@LOCAL:_css_3d.css@@*/
   /* ===== 이 페이지 전용 ===== */
-  #fig{aspect-ratio:1000/820}
+  .viewer > #fig.scene.grow{display:flex}
   .steps{display:grid;gap:5px;margin:0 0 10px}
   .steps .ph{padding:6px 10px;font-size:14.5px;line-height:1.5}
   .ctl{display:grid;gap:8px}
@@ -44,7 +45,7 @@
     <section class="card viewer">
       <div class="scene grow" id="fig" role="img" aria-label="위쪽에 헬륨 풍선, 플라스틱 병, 염화 나트륨, 구리선, 비누, 다이아몬드, 물, 유리컵, 알루미늄 커피 캡슐, 드라이아이스가 있다. 하나를 누르면 아래쪽 둥근 돋보기에 그 물질을 이루는 입자가 보인다."></div>
       <div class="vctl">
-        <span class="hint" id="hint">그림 속 물체를 눌러 골라요</span>
+        <span class="hint" id="hint">물체를 눌러 고르고, 입자 모형은 손가락으로 돌려 봐요</span>
         <span class="sp"></span>
         <button class="vb" type="button" id="bReset">처음부터</button>
       </div>
@@ -97,22 +98,21 @@
 window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
   reduce: !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches), Q: new URLSearchParams(location.search) };
 </script>
-<script>
-/*@@LOCAL:_el_core.js@@*/
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }
 </script>
-<script>
-/*@@LOCAL:_el_items.js@@*/
-</script>
-<script>
-/*@@LOCAL:_el_sort.js@@*/
-</script>
-<script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+/*@@LOCAL:_el3.js@@*/
+/*@@LOCAL:_el_board.js@@*/
 /* ===== 블록 1: 나누기 ===== */
 (() => {
   'use strict';
   try {
     const S = window.SM, { $, $$ } = S, Q = S.Q;
-    const F = EL.sort($('#fig'));
+    const F = EL3.board($('#fig'));
     function msg(t, m, cls = '') { $('#res').className = 'fbk ' + cls; $('#resT').textContent = t; $('#resM').innerHTML = m; }
     function count() {
       const n = F.items.filter((m) => m.done).length;
@@ -125,7 +125,7 @@ window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) 
       $('#picked').innerHTML = `고른 물체: <b>${it.name}</b>`;
       $('#bEl').disabled = $('#bCp').disabled = m.done;
       if (m.done) msg('결과 · 이미 나눴어요', `${it.name}은(는) <b>${it.kind === 'el' ? '원소' : '화합물'}</b>예요. 다른 물체를 골라 봐요.`, 'ok');
-      else msg('결과', `돋보기 속 입자는 몇 종류인가요? 원소인지 화합물인지 골라요.`);
+      else msg('결과', `돋보기 속 입자는 <b>몇 종류</b>인가요? 색으로 세어 보고 원소인지 화합물인지 골라요.`);
     };
     function pick(kind) {
       const m = F.st.sel; if (!m) return;
@@ -133,7 +133,7 @@ window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) 
       if (ok) {
         const n = count();
         $('#bEl').disabled = $('#bCp').disabled = true;
-        const why = it.kind === 'el' ? `<b>${EL.PT[it.els[0]].name} 입자만</b> 있으니 한 종류의 입자로 이루어진 <b>원소</b>예요.` : `<b>${F.names(it)}</b> 입자가 모여 있으니 두 종류 이상의 입자로 이루어진 <b>화합물</b>이에요.`;
+        const why = it.kind === 'el' ? `<b>${EL3.PT[it.els[0]].n} 입자만</b> 있으니 한 종류의 입자로 이루어진 <b>원소</b>예요.` : `<b>${F.names(it)}</b> 입자가 모여 있으니 두 종류 이상의 입자로 이루어진 <b>화합물</b>이에요.`;
         msg(n === 10 ? '결과 · 10가지를 모두 나눴어요' : '결과 · 맞았어요', `${it.name}에는 ${why}${n === 10 ? ' <b>그림 Ⅳ-1처럼 모아 보기</b>를 눌러 봐요.' : ' 다른 물체를 골라요.'}`, 'ok');
       } else {
         msg('다시 세어 봐요', `${it.name}의 돋보기 속 입자 색을 다시 세어 봐요. 색이 <b>${it.els.length === 1 ? '한 가지' : '두 가지 이상'}</b>인가요?`, 'no');
@@ -148,7 +148,7 @@ window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) 
     if (Q.get('done') === '1') { F.items.forEach((m) => (m.done = true)); count(); }
     if (Q.get('group') === '1') { F.items.forEach((m) => (m.done = true)); F.group(); count(); }
     if (Q.get('sel')) F.select(Q.get('sel'));
-    window.SM.okUI = true;
+    window.SM.okUI = true; window.SM.ok3d = true;
   } catch (err) { window.SM_err('나누기', err); }
 })();
 </script>
