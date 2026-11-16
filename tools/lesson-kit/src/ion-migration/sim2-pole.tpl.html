@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>이온의 이동 – 어느 극으로 갈까?</title>
+<!--@@PART:errbox_sim.html@@-->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+/*@@PART:css_sim.css@@*/
+/*@@LOCAL:_css_mi.css@@*/
+/*@@LOCAL:_css_sim.css@@*/
+/*@@LOCAL:_css_3d.css@@*/
+/*@@LOCAL:_css_im.css@@*/
+  /* ===== 이 페이지 전용 ===== */
+  .viewer > .gl-host{flex:1 1 auto;min-height:280px;height:auto;background:#f4f8fb}
+  .legend{display:flex;flex-wrap:wrap;gap:4px 16px;padding:9px 14px;border-top:1px solid var(--line);background:#fbfdfe;font-size:14px;font-weight:800;color:#34495e;min-height:42px;align-items:center}
+  .legend span{display:inline-flex;align-items:center;white-space:nowrap}
+  .legend em{font-style:normal;font-weight:700;color:var(--muted);margin-left:5px;font-size:13px}
+  .ions{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin:0 0 10px}
+  .ions button{min-height:58px;border-radius:12px;border:2px solid #d4dee8;background:#fff;cursor:pointer;line-height:1.25;padding:3px 3px;color:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .ions button b{font-size:18px;font-weight:900}
+  .ions button span{font-size:11.5px;font-weight:700;color:var(--muted);word-break:keep-all;letter-spacing:-.02em}
+  .ions button[aria-pressed="true"]{border-color:var(--fab);background:#e9f3fd}
+  .ions button.done b::after{content:' ✓';color:var(--fab);font-size:14px}
+  .sols{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin:0 0 10px}
+  .sols button{min-height:50px;border-radius:12px;border:2px solid #d4dee8;background:#fff;cursor:pointer;font-weight:800;font-size:14px;color:var(--ink);word-break:keep-all;line-height:1.3;padding:3px 6px}
+  .sols button[aria-pressed="true"]{border-color:var(--fab);background:#e9f3fd;color:#0b3f73}
+  .card2{border:1px solid var(--line);border-radius:14px;padding:8px 12px;background:#fbfdfe;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:14px}
+  .card2 .big{font-size:38px;font-weight:900;color:#14263b;line-height:1.1}
+  .card2 .big sup,.card2 .big sub{font-size:.55em;line-height:0}.card2 .big sup{color:#0e63b3}
+  .card2 .n{font-size:15px;font-weight:800;color:#34495e;text-align:left;line-height:1.4}
+  .card2 .n small{display:block;font-size:12.5px;color:var(--muted)}
+  .lbl2{font-size:13.5px;font-weight:800;color:var(--ink2);margin:0 0 5px}
+  .chips{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:8px}
+  .chips button{min-height:46px;border-radius:11px;border:2px solid #d4dee8;background:#fff;font-weight:900;font-size:15px;cursor:pointer;color:var(--ink);word-break:keep-all;line-height:1.25;padding:2px 4px}
+  .chips button[aria-pressed="true"]{border-color:var(--fab);background:#e9f3fd;color:#0b3f73}
+  .chips button.bad{border-color:#e7a29b;background:#fff4f2;color:#9b3a32}
+  .chips button:disabled{opacity:.45;cursor:default}
+  .rec{width:100%;border-collapse:collapse;font-size:14px;margin:0 0 10px}
+  .rec th,.rec td{border:1px solid var(--line);padding:6px 5px;text-align:center;word-break:keep-all;line-height:1.35}
+  .rec thead th{background:#f2f6fa;font-weight:800}
+  .rec td.f{font-weight:900;font-size:16px}
+  .rec td.em{color:#b2bdc8;font-weight:700}
+  .rec sup,.rec sub{font-size:.7em;line-height:0}
+  .whylist{list-style:none;margin:0;padding:0;display:grid;gap:7px}
+  .whylist li{display:grid;grid-template-columns:28px 1fr;gap:10px;align-items:start;font-size:15px;line-height:1.65;word-break:keep-all;background:#f6f9fc;border-radius:12px;padding:8px 12px}
+  .whylist li i{width:26px;height:26px;border-radius:8px;background:var(--fab);color:#fff;font-style:normal;font-weight:900;display:grid;place-items:center;font-size:14px;margin-top:2px}
+  .whylist b.k{color:#0e63b3}
+  .btn.wide{width:100%;min-height:52px}
+  @media (max-width:900px){.ions{grid-template-columns:repeat(4,1fr)}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="ttl"><span class="eyebrow">시뮬레이션</span><h1>어느 극으로 갈까?</h1>
+      <p class="sub">이온의 전하를 보고 이동할 극을 예측한 뒤, 전류를 흘려 확인해요.</p></div>
+  </header>
+  <div class="stage">
+    <section class="card viewer">
+      <div class="gl-host" id="cell" role="img" aria-label="두 금속판 사이 수용액 속 이온 입자 모형. 왼쪽 금속판이 (−)극, 오른쪽이 (+)극이다. 전류를 흘리면 양이온은 왼쪽 (−)극 쪽으로, 음이온은 오른쪽 (+)극 쪽으로 이동한다."></div>
+      <div id="fail3d" class="fail3d">3D 그림을 불러오지 못했어요. 인터넷 연결을 확인하고 새로고침해 주세요.</div>
+      <div class="legend" id="lg"></div>
+    </section>
+
+    <section class="card pad">
+      <div class="ptabs" role="tablist" id="pt">
+        <button type="button" role="tab" data-p="one" aria-selected="true">이온 하나씩</button>
+        <button type="button" role="tab" data-p="sol" aria-selected="false">수용액으로</button>
+        <button type="button" role="tab" data-p="rec" aria-selected="false">기록표</button>
+        <button type="button" role="tab" data-p="why" aria-selected="false">왜 그럴까?</button>
+      </div>
+
+      <div class="pane" data-p="one">
+        <div class="ions" id="ions"></div>
+        <div class="card2" id="cd"></div>
+        <p class="lbl2">① 이 이온은?</p>
+        <div class="chips" id="cK"><button type="button" data-v="1">양이온</button><button type="button" data-v="-1">음이온</button></div>
+        <p class="lbl2">② 전류를 흘리면 어느 극 쪽으로 갈까?</p>
+        <div class="chips" id="cP"><button type="button" data-v="-1">(−)극 쪽</button><button type="button" data-v="1">(+)극 쪽</button></div>
+        <button class="btn primary wide" type="button" id="go">전류 흘리기</button>
+        <div class="fbk" id="res"><b class="t" id="resT">결과</b><span id="resM">위에서 이온을 하나 골라요.</span></div>
+      </div>
+
+      <div class="pane" data-p="sol" hidden>
+        <p class="lbl2">수용액에는 양이온과 음이온이 함께 들어 있어요. 하나를 골라 전류를 흘려 봐요.</p>
+        <div class="sols" id="sols"></div>
+        <button class="btn primary wide" type="button" id="go2">전류 흘리기</button>
+        <div class="fbk" id="res2"><b class="t" id="res2T">결과</b><span id="res2M">수용액을 골라요.</span></div>
+      </div>
+
+      <div class="pane" data-p="rec" hidden>
+        <table class="rec" id="rec"></table>
+        <p class="mnote" style="margin-top:0">'이온 하나씩'에서 확인하면 표가 채워져요. 159쪽 개념 확인 1번과 같은 이온이 들어 있어요.</p>
+      </div>
+
+      <div class="pane" data-p="why" hidden>
+        <ol class="whylist">
+          <li><i>1</i><span>이온은 원자가 전자를 잃거나 얻어 <b>전하를 띤 입자</b>예요. 전자를 잃으면 양이온, 얻으면 음이온이에요.</span></li>
+          <li><i>2</i><span>전류를 흘려 주면 (+)전하를 띤 <b class="k">양이온</b>은 (−)극 쪽으로, (−)전하를 띤 <b class="k">음이온</b>은 (+)극 쪽으로 이동해요.</span></li>
+          <li><i>3</i><span>화학식 오른쪽 위가 <b>+</b>이면 (−)극 쪽, <b>−</b>이면 (+)극 쪽으로 가요. 여러 개의 원자가 결합한 이온(SO<sub>4</sub><sup>2−</sup>, MnO<sub>4</sub><sup>−</sup>, NO<sub>3</sub><sup>−</sup>)도 같아요.</span></li>
+          <li><i>4</i><span>이온이 전류를 따라 이동할 수 있는 까닭은 <b>이온이 전하를 띠고 있기 때문</b>이에요.</span></li>
+        </ol>
+      </div>
+      <p class="mnote">물 입자는 그리지 않았어요. 입자의 크기·색과 움직이는 빠르기는 개념 이해를 위해 정한 모형이에요(구리 이온은 수용액의 파란색에 맞춰 파랗게 그렸어요).</p>
+    </section>
+  </div>
+</div>
+<script>
+window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
+  reduce: !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches), Q: new URLSearchParams(location.search) };
+</script>
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+/*@@PART:c3.js@@*/
+/*@@LOCAL:_el3.js@@*/
+/*@@LOCAL:_im3.js@@*/
+/* ===== 블록 1: 이온 하나씩 · 수용액으로 · 기록표 ===== */
+{
+  try {
+    const { $, $$, Q } = window.SM;
+    const C = IM3.cell($('#cell'), {});
+    window.SM.ok3d = true; window.__C = C;
+    const ION = IM3.ION, SOL = IM3.SOL;
+    const LIST = ['Na+', 'Cl-', 'K+', 'NO3-', 'Cu2+', 'SO42-', 'MnO4-'];
+    const st = { id: null, k: null, p: null, ran: false, done: {}, sol: null, ran2: false };
+    const dotC = (id) => EL3.PT[ION[id].at[0][0]].c;
+    const say = (t, m, c = '', n = '') => { $('#res' + n).className = 'fbk ' + c; $('#res' + n + 'T').textContent = t; $('#res' + n + 'M').innerHTML = m; };
+    const legend = (ids) => { $('#lg').innerHTML = ids.length ? ids.map((id) => `<span><i class="pk" style="background:${dotC(id)}"></i>${ION[id].n} ${ION[id].f}</span>`).join('') + '<span><em>원자 색: 원소 수업과 같음</em></span>' : '<span><em>이온을 고르면 수용액 속에 나타나요.</em></span>'; };
+    $('#ions').innerHTML = LIST.map((id) => `<button type="button" data-id="${id}" aria-pressed="false"><b>${ION[id].f}</b><span>${ION[id].n}</span></button>`).join('');
+    function pick(id) {
+      st.id = id; st.k = st.p = null; st.ran = false;
+      $$('#ions button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.id === id)));
+      const d = ION[id];
+      $('#cd').innerHTML = `<span class="big">${d.f}</span><span class="n">${d.n}<small>${d.from}에 들어 있어요</small></span>`;
+      C.set([id], { n: 7, seed: LIST.indexOf(id) + 3 }); legend([id]);
+      say('결과', '화학식 오른쪽 위를 보고 양이온인지 음이온인지 골라요.');
+      upd();
+    }
+    function upd() {
+      $$('#cK button').forEach((b) => { b.setAttribute('aria-pressed', String(st.k === b.dataset.v)); b.disabled = !st.id || st.ran; b.classList.remove('bad'); });
+      $$('#cP button').forEach((b) => { b.setAttribute('aria-pressed', String(st.p === b.dataset.v)); b.disabled = !st.id || st.ran; });
+      $('#go').disabled = !st.id || st.k === null || st.p === null || st.ran;
+      $('#go').textContent = st.ran ? '이동하는 중…' : '전류 흘리기';
+      $$('#ions button').forEach((b) => b.classList.toggle('done', !!st.done[b.dataset.id]));
+    }
+    $$('#ions button').forEach((b) => b.addEventListener('click', () => pick(b.dataset.id)));
+    $$('#cK button').forEach((b) => b.addEventListener('click', () => {
+      const q = Math.sign(ION[st.id].q);
+      if (+b.dataset.v !== q) { b.classList.add('bad'); say('다시 골라요', `오른쪽 위의 부호를 봐요. <b>+</b>이면 (+)전하를 띤 양이온, <b>−</b>이면 (−)전하를 띤 음이온이에요.`, 'no'); return; }
+      st.k = b.dataset.v; say('맞았어요', `${ION[st.id].n}은 <b>${q > 0 ? '(+)전하를 띤 양이온' : '(−)전하를 띤 음이온'}</b>이에요. 어느 극 쪽으로 갈지 예측해요.`); upd();
+    }));
+    $$('#cP button').forEach((b) => b.addEventListener('click', () => { st.p = b.dataset.v; upd(); }));
+    let timer = null;
+    function arrived() { return C.ions.every((p) => Math.abs(Math.abs(p.m.position.x) - p.stop) < .9 && Math.sign(p.m.position.x) === (p.q > 0 ? -1 : 1)); }
+    function watch(fn) { clearInterval(timer); const t0 = performance.now(); timer = setInterval(() => { if (arrived() || performance.now() - t0 > 15000 / (window.__TS || 1)) { clearInterval(timer); fn(); } }, 200); }
+    $('#go').addEventListener('click', () => {
+      st.ran = true; upd(); C.power(true);
+      const id = st.id, d = ION[id], to = d.q > 0 ? -1 : 1, ok = +st.p === to;
+      say('관찰해요', `${d.n}이 어느 쪽으로 가는지 지켜봐요.`);
+      watch(() => {
+        st.done[id] = true; table();
+        say(ok ? '결과 · 예측이 맞았어요' : '결과 · 예측과 달라요', `${d.n}(${d.f})이 <b>${to < 0 ? '(−)극' : '(+)극'} 쪽</b>으로 이동했어요. ${to < 0 ? '(+)전하' : '(−)전하'}를 띠고 있어서 반대 전하를 띤 극 쪽으로 끌려가요.${Object.keys(st.done).length < LIST.length ? ' 다른 이온도 골라 봐요.' : ' 일곱 이온을 모두 확인했어요.'}`, 'ok');
+        st.ran = false; st.k = st.p = null; upd(); $('#go').disabled = true;
+      });
+    });
+
+    // 수용액으로
+    const SOLS = ['salt', 'kno3', 'cu', 'mn'];
+    $('#sols').innerHTML = SOLS.map((k) => `<button type="button" data-k="${k}" aria-pressed="false">${SOL[k].n}</button>`).join('');
+    function pickSol(k) {
+      st.sol = k; st.ran2 = false; $$('#sols button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.k === k)));
+      C.set(SOL[k].ions, { n: 6, wide: true, seed: SOLS.indexOf(k) + 11 }); legend(SOL[k].ions);
+      $('#go2').disabled = false; $('#go2').textContent = '전류 흘리기';
+      const [a, b] = SOL[k].ions.map((i) => ION[i]);
+      say('결과', `${SOL[k].n}에는 ${a.n}(${a.f})과 ${b.n}(${b.f})이 고르게 섞여 있어요. 전류를 흘리면 어떻게 될까요?`, '', '2');
+    }
+    $$('#sols button').forEach((b) => b.addEventListener('click', () => pickSol(b.dataset.k)));
+    $('#go2').addEventListener('click', () => {
+      if (!st.sol) return; st.ran2 = true; $('#go2').disabled = true; $('#go2').textContent = '이동하는 중…'; C.power(true);
+      say('관찰해요', '두 이온이 서로 반대쪽으로 가는지 지켜봐요.', '', '2');
+      const k = st.sol;
+      watch(() => {
+        const [a, b] = SOL[k].ions.map((i) => ION[i]);
+        let m = `양이온 ${a.n}(${a.f})은 <b>(−)극 쪽</b>, 음이온 ${b.n}(${b.f})은 <b>(+)극 쪽</b>으로 이동했어요.`;
+        if (k === 'cu') m += ' 실험실에서 (−)극 쪽으로 간 파란색이 구리 이온이에요.';
+        if (k === 'mn') m += ' 실험실에서 (+)극 쪽으로 간 보라색이 과망가니즈산 이온이에요.';
+        if (k === 'kno3' || k === 'salt') m += ' 색이 없어 눈에 보이지 않지만, 이온이 이동하여 전류가 흘러요.';
+        say('결과', m, 'ok', '2'); $('#go2').disabled = false; $('#go2').textContent = '처음 상태로 다시 보기';
+        $('#go2').onclick = null;
+      });
+    });
+    $('#go2').addEventListener('click', () => { if (!st.ran2 || C.on === false) return; }, true);
+    // 결과가 나온 뒤 다시 누르면 처음 상태로
+    $('#go2').addEventListener('click', (e) => { if ($('#go2').textContent === '처음 상태로 다시 보기') { e.stopImmediatePropagation(); pickSol(st.sol); } }, true);
+
+    function table() {
+      $('#rec').innerHTML = `<thead><tr><th>이온</th><th>화학식</th><th>전하</th><th>이동한 극</th></tr></thead><tbody>${LIST.map((id) => { const d = ION[id], ok = st.done[id]; return `<tr><td>${d.n}</td><td class="f">${d.f}</td>${ok ? `<td>${d.q > 0 ? '(+)전하' : '(−)전하'}</td><td><b>${d.q > 0 ? '(−)극' : '(+)극'}</b></td>` : '<td class="em">?</td><td class="em">?</td>'}</tr>`; }).join('')}</tbody>`;
+    }
+    table();
+
+    function tab(p) {
+      $$('#pt button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.p === p))); $$('.pane').forEach((e) => (e.hidden = e.dataset.p !== p));
+      if (p === 'one' && st.id) pick(st.id);
+      if (p === 'sol') pickSol(st.sol || 'cu');
+    }
+    $$('#pt button').forEach((b) => b.addEventListener('click', () => tab(b.dataset.p)));
+
+    // 검사용 주소: ?id=Cu2%2B&run=1, ?tab=sol&s=mn&run=1, ?all=1&tab=rec
+    legend([]); upd();
+    const qid = Q.get('id');
+    if (Q.get('tab') === 'sol') { tab('sol'); if (Q.get('s')) pickSol(Q.get('s')); if (Q.get('run') === '1') $('#go2').click(); }
+    else if (Q.get('tab')) tab(Q.get('tab'));
+    else { pick(qid && ION[qid] ? qid : 'Cu2+'); if (Q.get('run') === '1') { const q = Math.sign(ION[st.id].q); $(`#cK button[data-v="${q}"]`).click(); $(`#cP button[data-v="${q > 0 ? -1 : 1}"]`).click(); $('#go').click(); } }
+    if (Q.get('all') === '1') { LIST.forEach((id) => (st.done[id] = true)); table(); upd(); }
+    window.SM.okUI = true;
+  } catch (err) { window.SM_err && window.SM_err('어느 극으로 갈까?', err); }
+}
+</script>
+</body>
+</html>
