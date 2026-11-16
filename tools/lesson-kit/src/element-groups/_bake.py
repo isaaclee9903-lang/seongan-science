@@ -16,11 +16,7 @@ JOBS = [(f'cut-{e}', f'sm-{e}.jpg', 640, 480, '&az=0.55&el=0.4') for e in ['Li',
        [('blimp', 'u-He.jpg', 720, 420, ''), ('sign', 'u-Ne.jpg', 620, 480, '&el=0.15&az=0.15'), ('bulb', 'u-Ar.jpg', 420, 560, '&el=0.2'),
         ('row', 'row.jpg', 1500, 520, '&el=0.32&az=0.12&m=1.04')]
 LAB = [  # sim1-lab.html 장면: (주소, 저장 이름, 가로, 세로)
-    ('el=Na&at=react&wait=2300', 'rx-Na.jpg', 760, 560),
     ('el=K&at=react&wait=2000', 'rx-K.jpg', 760, 560),
-    ('el=Li&at=react&wait=2600', 'rx-Li.jpg', 760, 560),
-    ('el=He&at=gas&wait=2400', 'gx-He.jpg', 760, 560),
-    ('el=Na&at=cut&wait=1000&nolab=1', 'cut-Na.jpg', 760, 560),
     ('el=K&at=react&wait=2000&nolab=1', '../card.jpg', 900, 700),
 ]
 
