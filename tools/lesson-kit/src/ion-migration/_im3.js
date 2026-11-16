@@ -23,7 +23,7 @@ const IM3 = (() => {
   Object.assign(EL3.PT, {
     Mn: EL3.PT.Mn || { c: '#8a5bc4', r: 0.95, n: '망가니즈' }, // MI3과 같음
     S: { c: '#e8c23a', r: 0.98, n: '황' },
-    K: { c: '#dfe4ea', r: 1.22, n: '칼륨' },
+    K: { c: '#dfe4ea', r: 1.05, n: '칼륨' },
     Cu2: { c: '#3f97df', r: 0.92, n: '구리' }, // 그림 Ⅳ-13처럼 파랗게
   });
   const TET = [[1, 1, 1], [-1, -1, 1], [-1, 1, -1], [1, -1, -1]].map((q) => V(...q).normalize());
@@ -88,7 +88,7 @@ const IM3 = (() => {
     const st = stage(host, { top: o.lens ? '#fbfdff' : '#ffffff', bottom: o.lens ? '#e4eef7' : '#e8eff6', minD: 4, maxD: 60 });
     st.controls.enableZoom = false;
     if (o.lens) { st.controls.enabled = false; }
-    const XW = 6.2, YH = 2.1, ZD = 2.4; // 이온이 움직이는 칸(반 너비)
+    const XW = o.XW || 6.2, YH = o.YH || 2.1, ZD = o.ZD || 2.4; // 이온이 움직이는 칸(반 너비)
     const g = new THREE.Group(); st.scene.add(g);
     // 물(아주 옅은 하늘색 덩어리) + 바닥(페트리 접시 바닥)
     const water = M(new THREE.BoxGeometry(XW * 2 + .6, YH * 2 + 1.0, ZD * 2 + .8), new THREE.MeshPhysicalMaterial({ color: '#d9ecf8', roughness: .2, transparent: true, opacity: .16, depthWrite: false }), 0, 0, 0);
@@ -104,8 +104,8 @@ const IM3 = (() => {
     // 전선 집게 쪽 띠(판 위로 나온 부분)
     [-1, 1].forEach((s) => { const lip = M(new THREE.BoxGeometry(.9, .14, ZD * 2 + .6), cuM, s * (XW + .92), YH + 1.02, 0); g.add(lip); });
     const lab = {
-      m: st.label('(−)극', 'zl pole', () => V(-(XW + .55), YH + 1.75, 0)),
-      p: st.label('(+)극', 'zl pole', () => V(XW + .55, YH + 1.75, 0)),
+      m: st.label('(−)극', 'zl pole', () => (o.lens ? V(-(XW - .9), YH + .75, 0) : V(-(XW + .55), YH + 1.75, 0))),
+      p: st.label('(+)극', 'zl pole', () => (o.lens ? V(XW - .9, YH + .75, 0) : V(XW + .55, YH + 1.75, 0))),
     };
     const frame = frameBox(XW * 2 + 2.4, YH * 2 + 3.4, ZD * 2); frame.position.y = .35; st.scene.add(frame);
     st.camera.position.set(0, 4, 18); st.controls.target.set(0, 0, 0);
@@ -116,7 +116,7 @@ const IM3 = (() => {
     function clear() { ions.forEach((p) => g.remove(p.m)); ions.length = 0; }
     function add(id, x, y, z) {
       const m = ionModel(id); m.position.set(x, y, z); g.add(m);
-      const p = { id, q: ION[id].q, m, mob: .85 + rnd() * .35, ph: rnd() * 6.28, ph2: rnd() * 6.28, home: V(x, y, z), lane: V(0, y, z), stop: XW - .1 - m.userData.R - rnd() * 1.6 };
+      const p = { id, q: ION[id].q, m, mob: .85 + rnd() * .35, ph: rnd() * 6.28, ph2: rnd() * 6.28, home: V(x, y, z), lane: V(0, y, z), stop: XW - .1 - m.userData.R - rnd() * Math.min(1.6, XW * .25) };
       ions.push(p); return p;
     }
     // 가운데에 떨어뜨린 방울처럼 모인 이온(kind 하나 또는 수용액)
@@ -127,7 +127,7 @@ const IM3 = (() => {
         for (let i = 0; i < n; i++) {
           let x, y, z, ok = false, tries = 0;
           while (!ok && tries++ < 400) {
-            const a = rnd() * 6.283, r = Math.sqrt(rnd()) * (o2.wide ? XW - 1 : 2.2 * spread);
+            const a = rnd() * 6.283, r = Math.sqrt(rnd()) * (o2.wide ? XW - 1 : Math.min(2.2, XW * .45) * spread);
             x = o2.wide ? (rnd() * 2 - 1) * (XW - 1.3) : Math.cos(a) * r; y = (rnd() * 2 - 1) * (YH - .5); z = o2.wide ? (rnd() * 2 - 1) * (ZD - .4) : Math.sin(a) * r * .55;
             ok = ions.every((p) => p.m.position.distanceTo(V(x, y, z)) > (p.m.userData.R + 1.25));
           }
@@ -263,7 +263,7 @@ const IM3 = (() => {
     function beaker(x, z, col, op, lvl, name) {
       const g = new THREE.Group(); g.position.set(x, 0, z); scene.add(g);
       const b = M(beakGeo, beakM); b.castShadow = false; g.add(b);
-      const lq = M(new THREE.CylinderGeometry(.295, .295, 1, 40), new THREE.MeshPhysicalMaterial({ color: col, roughness: .12, transparent: true, opacity: op, depthWrite: false }), 0, 0, 0); lq.castShadow = false; g.add(lq);
+      const lq = M(new THREE.CylinderGeometry(.295, .295, 1, 40), new THREE.MeshStandardMaterial({ color: col, roughness: .3, transparent: true, opacity: op, depthWrite: false, envMapIntensity: .35 }), 0, 0, 0); lq.renderOrder = 2; lq.castShadow = false; g.add(lq);
       // 눈금
       for (let i = 1; i <= 4; i++) { const t = M(new THREE.BoxGeometry(.07, .006, .004), std('#9fb0c0', .6), -.12, .12 * i, .305); t.castShadow = false; g.add(t); }
       const o = { g, lq, lvl, name, set(l) { o.lvl = l; lq.scale.y = Math.max(.001, l); lq.position.y = .012 + l / 2; } };
@@ -271,8 +271,8 @@ const IM3 = (() => {
     }
     const BK = {
       kno3: beaker(-2.0, -.6, '#e3eef6', .38, .44, '질산 칼륨 수용액'),
-      cu: beaker(-1.6, -1.45, '#3f9be0', .8, .36, '황산 구리(Ⅱ) 수용액'),
-      mn: beaker(-.75, -1.75, '#4f0f66', .92, .36, '과망가니즈산 칼륨 수용액'),
+      cu: beaker(-1.6, -1.45, '#2a86d4', .9, .36, '황산 구리(Ⅱ) 수용액'),
+      mn: beaker(-.75, -1.75, '#36064a', .98, .36, '과망가니즈산 칼륨 수용액'),
     };
     function pipette(col) {
       const g = new THREE.Group();
@@ -288,7 +288,7 @@ const IM3 = (() => {
     const drop = M(new THREE.SphereGeometry(1, 20, 14), std('#2f86d6', .15, 0, { transparent: true, opacity: .92 }), 0, -5, 0); drop.visible = false; scene.add(drop);
 
     /* 집게 달린 전선 */
-    const clipHome = { m: V(.95, .1, -.65), p: V(1.35, .1, -.55) };
+    const clipHome = { m: V(1.05, .05, -.35), p: V(1.5, .05, -.3) };
     const clipAt = { m: V(CX - DR - .1, .17, CZ), p: V(CX + DR + .1, .17, CZ) };
     function clip(col) {
       const g = new THREE.Group();
@@ -302,11 +302,12 @@ const IM3 = (() => {
     const wireM = { m: std('#262b31', .55), p: std('#cc3b2e', .55) };
     const W = { m: null, p: null };
     const clipPos = { m: clipHome.m.clone(), p: clipHome.p.clone() };
+    const wf = { m: 0, p: 0 }; // 0 쉬는 자리, 1 금속판에 연결
     function wirePath(k) {
-      const a = jackPos(k), c = clipPos[k], s = k === 'm' ? -1 : 1;
-      const mid1 = V(lerp(a.x, c.x, .35), .025, a.z + .55), mid2 = k === 'm' ? V(c.x - .25, .03, CZ + DR + .45) : V(c.x + .32, .03, CZ + .55);
-      const near = V(c.x + s * .3, .06, c.z);
-      return [a, V(a.x, .06, a.z + .25), mid1, mid2, near, c.clone().add(V(s * .15, 0, 0))];
+      const a = jackPos(k), c = clipPos[k], s = k === 'm' ? -1 : 1, f = wf[k];
+      const restA = V(a.x + .05, .03, a.z + .35), restB = V(lerp(a.x, c.x, .6), .03, lerp(a.z, c.z, .6) + .2);
+      const onA = k === 'm' ? V(.9, .03, CZ + DR + .35) : V(1.75, .03, CZ + .55), onB = k === 'm' ? V(CX - DR - .55, .03, CZ + .55) : V(CX + DR + .55, .03, CZ + .3);
+      return [a, V(a.x, .06, a.z + .18), restA.lerp(onA, f), restB.lerp(onB, f), c.clone().add(V(s * .22, -.05, 0))];
     }
     function buildWire(k) {
       if (W[k]) { scene.remove(W[k]); W[k].geometry.dispose(); }
@@ -324,8 +325,8 @@ const IM3 = (() => {
       paper: st.label('흰 종이', 'dv', () => V(CX - 1.35, .02, CZ + 1.12)),
       psu: st.label('전원 장치', 'dv', () => psu.localToWorld(V(0, .95, 0))),
       kno3: st.label('질산 칼륨 수용액', 'dv', () => (S.busy && S.pour ? null : BK.kno3.g.position.clone().add(V(0, .92, 0)))),
-      cu: st.label('황산 구리(Ⅱ) 수용액', 'dv', () => BK.cu.g.position.clone().add(V(0, 1.12, 0))),
-      mn: st.label('과망가니즈산 칼륨 수용액', 'dv', () => BK.mn.g.position.clone().add(V(0, 1.12, 0))),
+      cu: st.label('황산 구리(Ⅱ) 수용액', 'dv', () => BK.cu.g.position.clone().add(V(-.35, .98, .1))),
+      mn: st.label('과망가니즈산 칼륨 수용액', 'dv', () => BK.mn.g.position.clone().add(V(.45, 1.12, 0))),
       pm: st.label('(−)극', 'dv pole', () => (S.wires >= 1 ? V(CX - DR - .02, WALL + .26, CZ - .1) : null)),
       pp: st.label('(+)극', 'dv pole', () => (S.wires >= 1 ? V(CX + DR + .02, WALL + .26, CZ - .1) : null)),
       plate: st.label('금속판', 'dv', () => (S.plates >= 1 && S.wires < 1 ? V(CX + DR + .05, WALL + .25, CZ - .15) : null)),
@@ -360,7 +361,7 @@ const IM3 = (() => {
     const EDGE = DR - .1; // 금속판 앞
     function stepDye(dt, t) {
       const dir = S.kind === 'cu' ? -1 : 1;
-      let front = 0;
+      let front = 0, n = 0;
       puffs.forEach((p) => {
         // 방울이 퍼지는 처음 움직임(점점 느려짐)
         p.x += p.vx * dt; p.z += p.vz * dt; const f = Math.exp(-dt * 2.6); p.vx *= f; p.vz *= f;
@@ -373,9 +374,9 @@ const IM3 = (() => {
           if (gap < .12) { p.z += (p.z >= 0 ? 1 : -1) * dt * .02 * (1 - gap / .12); p.r = Math.min(.17, p.r + dt * .004); } // 판 앞에 모여 옆으로 퍼짐
         }
         const rr = Math.hypot(p.x, p.z); if (rr > DR - .06) { p.x *= (DR - .06) / rr; p.z *= (DR - .06) / rr; }
-        front = Math.max(front, (p.x * dir) / EDGE);
+        front += clamp((p.x * dir + .08) / (EDGE - p.r * .35)); n++;
       });
-      return front;
+      return n ? front / n : 0;
     }
     // 진행 정도로 바로 옮기기(사진·검사용)
     function jumpDye(k) {
@@ -409,7 +410,7 @@ const IM3 = (() => {
       if (S.dropped) {
         const f = stepDye(dt, t0); if (S.on) S.prog = Math.max(S.prog, f);
         drawDye();
-        if (S.on && S.prog > .97 && !S.doneEv) { S.doneEv = true; ev('arrive'); }
+        if (S.on && S.prog > .88 && !S.doneEv) { S.doneEv = true; ev('arrive'); }
       }
       if (S.on) { knob.rotation.z = lerp(knob.rotation.z, -1.1, Math.min(1, dt * 4)); lamp.material.emissiveIntensity = 2; }
       else { knob.rotation.z = lerp(knob.rotation.z, 0, Math.min(1, dt * 4)); lamp.material.emissiveIntensity = 0; }
@@ -456,9 +457,9 @@ const IM3 = (() => {
       ['m', 'p'].forEach((k, i) => {
         play(1.0, (u) => {
           const e = ease(u), to = clipAt[k];
-          clipPos[k].lerpVectors(from[k], to, e); clipPos[k].y += Math.sin(e * Math.PI) * .45;
+          clipPos[k].lerpVectors(from[k], to, e); clipPos[k].y += Math.sin(e * Math.PI) * .45; wf[k] = e;
           placeClip(k); CL[k].rotation.z = (k === 'm' ? -1 : 1) * Math.sin(e * Math.PI) * .25; buildWire(k);
-        }, () => { clipPos[k].copy(clipAt[k]); placeClip(k); buildWire(k); });
+        }, () => { clipPos[k].copy(clipAt[k]); wf[k] = 1; placeClip(k); buildWire(k); });
       });
       play(.05, () => {}, () => { S.wires = 1; S.busy = false; ev('wires'); done && done(); });
       return true;
@@ -495,7 +496,7 @@ const IM3 = (() => {
     let CELL = null, cellKind = null;
     function syncCell() {
       if (!CELL) return;
-      if (cellKind !== S.kind) { CELL.set(SOL[S.kind].ions, { n: 5, seed: S.kind === 'cu' ? 5 : 9 }); cellKind = S.kind; }
+      if (cellKind !== S.kind) { CELL.set(SOL[S.kind].ions, { n: 3, seed: S.kind === 'cu' ? 5 : 9 }); cellKind = S.kind; }
       CELL.jump(S.prog); CELL.power(S.on);
       const d = SOL[S.kind], a = ION[d.ions[0]], b = ION[d.ions[1]];
       lens.querySelector('.lcap').innerHTML = `<span><i class="pk" style="background:${EL3.PT[a.at[0][0]].c}"></i>${a.n}(${a.f}) → (−)극</span><span><i class="pk" style="background:${EL3.PT[b.at[0][0]].c}"></i>${b.n}(${b.f}) → (+)극</span>`;
@@ -511,17 +512,17 @@ const IM3 = (() => {
     });
     function showLens(on) {
       lens.hidden = !on; lline.hidden = !on; S.lens = !!on;
-      if (on) { if (!CELL) CELL = cell(lens.querySelector('.lv'), { lens: true, dir: V(0, .42, 1), margin: 1.0 }); cellKind = null; syncCell(); }
+      if (on) { if (!CELL) CELL = cell(lens.querySelector('.lv'), { lens: true, dir: V(0, .3, 1), margin: .92, XW: 3.6, YH: 1.5, ZD: 1.4 }); cellKind = null; syncCell(); }
     }
     A.syncLens = syncCell;
 
     /* 보기 */
-    const fr = frameBox(5.6, 1.6, 3.2); fr.position.set(.05, .6, -.45); scene.add(fr);
+    const fr = frameBox(4.9, .8, 3.3); fr.position.set(.15, .35, -.3); scene.add(fr);
     const frDish = frameBox(2.5, .35, 2.15); frDish.position.set(CX, .15, CZ); scene.add(frDish);
     function view(mode = 'all', dur = .9) {
       A.mode = mode;
-      if (mode === 'dish') st.fit(frDish, { dir: V(0, 2.0, 1), margin: opt.dishMargin || 1.0, dur });
-      else st.fit(fr, { dir: V(.02, .62, 1), margin: opt.margin || 1.0, dur });
+      if (mode === 'dish') st.fit(frDish, { dir: V(0, 2.0, 1), margin: opt.dishMargin || 1.22, dur });
+      else st.fit(fr, { dir: V(.02, .95, 1), margin: opt.margin || .97, dur });
     }
 
     function reset(kind) {
@@ -531,7 +532,7 @@ const IM3 = (() => {
       plates.forEach((p) => (p.visible = false)); setLevel(0); puffs.length = 0; drawDye(); dye.visible = false; drawDisp(false);
       BK.kno3.set(.44); BK.kno3.g.position.set(-2.0, 0, -.6); BK.kno3.g.rotation.set(0, 0, 0);
       ['cu', 'mn'].forEach((k) => { PIP[k].position.copy(pipHome(k)); PIP[k].rotation.set(0, 0, -.12); });
-      ['m', 'p'].forEach((k) => { clipPos[k].copy(clipHome[k]); placeClip(k); CL[k].rotation.z = 0; buildWire(k); });
+      ['m', 'p'].forEach((k) => { clipPos[k].copy(clipHome[k]); wf[k] = 0; placeClip(k); CL[k].rotation.z = 0; buildWire(k); });
       drop.visible = false; stream.visible = false; say('');
       if (S.lens) { cellKind = null; syncCell(); }
       view('all', 0);
@@ -542,9 +543,9 @@ const IM3 = (() => {
       const order = ['plates', 'fill', 'wires', 'on', 'drop'], n = order.indexOf(o.upto || 'drop') + 1;
       if (n >= 1) { S.plates = 1; plates.forEach((p) => { p.visible = true; p.position.copy(p.userData.home); p.rotation.z = 0; }); }
       if (n >= 2) { S.fill = 1; setLevel(1); BK.kno3.set(.2); }
-      if (n >= 3) { S.wires = 1; ['m', 'p'].forEach((k) => { clipPos[k].copy(clipAt[k]); placeClip(k); buildWire(k); }); }
+      if (n >= 3) { S.wires = 1; ['m', 'p'].forEach((k) => { clipPos[k].copy(clipAt[k]); wf[k] = 1; placeClip(k); buildWire(k); }); }
       if (n >= 4) power(true);
-      if (n >= 5) { S.dropped = true; dye.visible = true; S.doneEv = (o.prog || 0) > .97; jumpDye(o.prog || 0); }
+      if (n >= 5) { S.dropped = true; dye.visible = true; S.doneEv = (o.prog || 0) > .88; jumpDye(o.prog || 0); }
       if (o.off) power(false);
       if (S.lens) syncCell();
     }
@@ -559,7 +560,7 @@ const IM3 = (() => {
     // lab-*: 실험실 / cell-*: 입자 돋보기
     if (k.startsWith('cell')) {
       const kind = k.split('-')[1] || 'cu';
-      const C = cell(host, { dir: V(0, .5, 1), margin: 1.0 });
+      const C = cell(host, { dir: V(0, .4, 1), margin: 1.06 });
       C.st.controls.enabled = false;
       C.set(SOL[kind].ions, { n: 6, seed: kind === 'cu' ? 5 : 9 });
       C.onReady = () => { C.jump(.62); };
