@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>RAS · Reading After Studying</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -452,25 +452,46 @@ const TABS = [
   // 처음 열면 항상 중2 과학. 같은 방문 안에서 수업을 보고 돌아올 때만 마지막 탭을 기억한다(sessionStorage)
   let cur = 'm2';
   try { localStorage.removeItem('ras-tab'); const s = sessionStorage.getItem('ras-tab'); if (s && TABS.some(t => t.id === s)) cur = s; } catch (e) {}
+  // 펼친 단원은 같은 방문 안에서 탭마다 기억한다. 수업에서 돌아오면(수업 껍데기가 남긴 ras-last) 그 수업의 단원을 펼치고 카드를 보여 준다
+  let opened = {}, back = null;
+  try { opened = JSON.parse(sessionStorage.getItem('ras-open') || '{}') || {}; } catch (e) {}
+  try {
+    const last = sessionStorage.getItem('ras-last'); sessionStorage.removeItem('ras-last');
+    // 같은 수업이 여러 탭에 있으면 지금 탭을 먼저 본다
+    const order = [TABS.find(t => t.id === cur)].concat(TABS.filter(t => t.id !== cur));
+    for (const t of order) { const ui = t.units.findIndex(u => u.lessons.includes(last)); if (ui >= 0) { back = { tab: t.id, ui, lesson: last }; break; } }
+    if (back) { cur = back.tab; const o = opened[cur] || [0]; if (!o.includes(back.ui)) o.push(back.ui); opened[cur] = o; }
+  } catch (e) {}
+  const saveOpen = () => { try { sessionStorage.setItem('ras-open', JSON.stringify(opened)); sessionStorage.setItem('ras-tab', cur); } catch (e) {} };
+  if (back) saveOpen();
   tabsEl.innerHTML = TABS.map(t => `<button class="tab" role="tab" data-t="${t.id}">${t.name}<small>${count(t) || '준비 중'}</small></button>`).join('');
   const arrow = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
   function render() {
     tabsEl.querySelectorAll('.tab').forEach(b => b.setAttribute('aria-selected', b.dataset.t === cur));
     const t = TABS.find(x => x.id === cur);
     if (!t.units.length) { unitsEl.innerHTML = `<li class="empty"><b>${t.name} 수업은 준비 중이에요</b>수업이 열리면 이곳에 단원별로 나타나요.</li>`; return; }
+    const op = opened[cur] || [0];
     unitsEl.innerHTML = t.units.map((u, ui) => `
-      <li class="unit ${ui === 0 ? 'open' : ''}">
+      <li class="unit ${op.includes(ui) ? 'open' : ''}">
         <button class="uhead" aria-expanded="false"><span class="uno">${u.no}</span><span class="uname">${u.name}</span><span class="ucnt">수업 ${u.lessons.length}개</span><span class="chev"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span></button>
         <div class="lessons"><div><div class="lgrid">${u.lessons.map((s, i) => { const d = L[s]; return d ? `
-          <a class="lesson" href="${d.href}"><span class="thumb">${d.art}</span><span class="ltxt"><i>${i + 1}</i><b>${d.title}</b><span>${d.sub}</span></span><span class="arrow">${arrow}</span></a>` : ''; }).join('')}</div></div></div>
+          <a class="lesson" href="${d.href}" data-l="${s}"><span class="thumb">${d.art}</span><span class="ltxt"><i>${i + 1}</i><b>${d.title}</b><span>${d.sub}</span></span><span class="arrow">${arrow}</span></a>` : ''; }).join('')}</div></div></div>
       </li>`).join('');
-    unitsEl.querySelectorAll('.unit').forEach(li => {
+    unitsEl.querySelectorAll('.unit').forEach((li, ui) => {
       const h = li.querySelector('.uhead'); h.setAttribute('aria-expanded', li.classList.contains('open'));
-      h.addEventListener('click', () => { li.classList.toggle('open'); h.setAttribute('aria-expanded', li.classList.contains('open')); });
+      h.addEventListener('click', () => {
+        li.classList.toggle('open'); h.setAttribute('aria-expanded', li.classList.contains('open'));
+        const o = (opened[cur] || [0]).filter(x => x !== ui); if (li.classList.contains('open')) o.push(ui); opened[cur] = o; saveOpen();
+      });
     });
   }
-  tabsEl.addEventListener('click', e => { const b = e.target.closest('.tab'); if (!b) return; cur = b.dataset.t; try { sessionStorage.setItem('ras-tab', cur); } catch (e) {} render(); });
+  tabsEl.addEventListener('click', e => { const b = e.target.closest('.tab'); if (!b) return; cur = b.dataset.t; saveOpen(); render(); });
   render();
+  // 돌아온 수업 카드를 화면 가운데로 (펼침 효과가 끝난 뒤)
+  if (back && back.tab === cur) {
+    const a = unitsEl.querySelector(`.lesson[data-l="${back.lesson}"]`);
+    if (a) setTimeout(() => a.scrollIntoView({ block: 'center' }), 450);
+  }
 })().catch(e => __err('목차', e));
 </script>
 
