@@ -1,6 +1,7 @@
 # 한 화면 검사: 시뮬레이션 페이지가 태블릿 한 화면(탭 껍데기 안 iframe 크기)에 스크롤 없이 들어가는지 잰다.
 # 사용: python tools/lesson-kit/fit_check.py <수업> [--base http://localhost:8770] [--shots 폴더]
 #   src/<수업>/fit.json: [{"page": "sim1-lab.html", "clicks": ["#go", "wait600"]}, ...]  (없으면 sim*.html 첫 화면만)
+#   '직접 작성' 수업(src/에 원본이 없는 ohm 등)은 lessons/<수업>/sim*.html을 재고, 장면은 fit/<수업>.json에 적는다.
 # 기준: 가로 1280×740, 세로 800×1220 (태블릿 1280×800·800×1280에서 위쪽 탭 줄 60px을 뺀 크기).
 # 넘치면 몇 px 넘치는지와 가장 아래에 있는 요소를 알려 준다. 0이 되도록 배치를 고친다.
 import sys, json, asyncio, pathlib, io
@@ -12,9 +13,14 @@ SIZES = [(1280, 740), (800, 1220)]
 
 async def main(name, base, shots):
     src = KIT / 'src' / name
-    f = src / 'fit.json'
-    cases = json.loads(f.read_text(encoding='utf-8')) if f.exists() else [{'page': p.name.replace('.tpl.html', '.html')} for p in sorted(src.glob('sim*.tpl.html'))]
-    cfg = json.loads((src / 'lesson.json').read_text(encoding='utf-8'))
+    if (src / 'lesson.json').exists():
+        f = src / 'fit.json'
+        cases = json.loads(f.read_text(encoding='utf-8')) if f.exists() else [{'page': p.name.replace('.tpl.html', '.html')} for p in sorted(src.glob('sim*.tpl.html'))]
+        cfg = json.loads((src / 'lesson.json').read_text(encoding='utf-8'))
+    else:  # 직접 작성 수업
+        f = KIT / 'fit' / f'{name}.json'
+        cases = json.loads(f.read_text(encoding='utf-8')) if f.exists() else [{'page': p.name} for p in sorted((KIT.parent.parent / 'lessons' / name).glob('sim*.html'))]
+        cfg = {'out': f'lessons/{name}'}
     bad = 0
     async with async_playwright() as p:
         b = await p.chromium.launch(channel='chrome')
