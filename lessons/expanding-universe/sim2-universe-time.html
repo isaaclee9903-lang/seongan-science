@@ -151,14 +151,59 @@
   .tried{font-size:14px;font-weight:800;color:#3a2c7a;background:#f1eeff;border-radius:12px;padding:8px 12px;margin-top:8px;word-break:keep-all}
   [hidden]{display:none!important}
   @media (max-width:520px){.three{grid-template-columns:1fr}}
+  /* ===== 한 화면 배치 (2026-11-24: 태블릿 한 화면 안에서 조작과 결과가 끝나도록) =====
+     활동은 제목 줄의 활동 탭, 설명·기록표·안내는 오른쪽 칸 안의 작은 탭. 입체 그림 칸은 남은 높이를 채워요. */
+  html,body{height:100%}
+  .app{height:100vh;padding:10px 16px 12px;gap:10px}
+  header.top{display:flex;align-items:flex-end;justify-content:space-between;gap:8px 18px}
+  header.top .ttl{min-width:0;flex:1}
+  header.top h1{display:inline;font-size:clamp(20px,2.1vw,25px);margin:0 0 0 6px;vertical-align:-2px}
+  header.top .sub{margin-top:3px;font-size:14.5px}
+  header.top .modes{flex:none;width:min(44%,470px);margin:0}
+  .modes,.stabs{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;background:#e3eaf2;border-radius:16px;padding:4px}
+  .modes .md{min-height:48px;border-radius:12px;background:transparent;padding:0 8px}
+  .modes .md[aria-selected="true"]{background:#fff;color:var(--fab);box-shadow:0 1px 3px rgba(20,38,59,.14)}
+  .stabs{border-radius:14px;margin-top:10px}
+  .stabs button{min-height:44px;border:0;border-radius:10px;background:transparent;font-weight:800;font-size:14.5px;color:var(--muted);cursor:pointer;word-break:keep-all;padding:0 6px}
+  .stabs button[aria-selected="true"]{background:#fff;color:var(--fab);box-shadow:0 1px 3px rgba(20,38,59,.14)}
+  .spanes{display:grid;margin-top:8px}
+  .spanes > .spane{grid-area:1/1;min-width:0}
+  .spanes > .spane.off{visibility:hidden;pointer-events:none}
+  .spane > .why,.spane > .box,.spane > .pick,.spane > .ask,.spane > .tbl{margin-top:0}
+  .spane > .why h3{display:none}
+  .stage{flex:1;min-height:0;align-items:stretch;grid-template-rows:minmax(0,1fr)}
+  .viewer{position:relative;top:0;height:100%}
+  .gl-host{height:100%;min-height:0}
+  .side{padding:12px 14px;display:flex;flex-direction:column;min-height:0}
+  .side .stepname{margin-top:0}
+  .credit{display:none}
+  @media (max-width:900px){
+    header.top{flex-direction:column;align-items:stretch}
+    header.top .modes{width:auto}
+    .stage{display:flex;flex-direction:column;gap:12px}
+    .viewer{flex:1;min-height:300px;height:auto;display:flex;flex-direction:column}
+    .viewer .gl-host{flex:1;height:auto}
+    .side{flex:none}
+  }
+  /* 입체 그림 칸: 그림이 남은 높이를 채우고 시간 막대는 그 아래에 붙어요 */
+  .viewer{display:flex;flex-direction:column}
+  .viewer .gl-host{flex:1;height:auto;min-height:0}
+  .viewer .tbar{flex:none}
+  .side .flow{margin-bottom:10px}
+  .side .what{margin-bottom:0}
+  .side .tried{margin-top:8px}
+  .spane > .phase,.spane > .why{margin:0}
+  .side .acts{margin-top:10px}
+  @media (max-width:900px){.viewer .gl-host{min-height:300px}}
 </style>
 </head>
 <body>
 <div class="app">
-  <header>
-    <span class="eyebrow">우주 팽창 · 시뮬레이션 ②</span>
-    <h1>시간에 따른 우주의 변화</h1>
-    <p class="sub">대폭발부터 현재까지 시간을 흐르게 하며 우주가 어떻게 변하는지 봐요. 은하 사이에 들어가 중심이 있는지도 확인해요.</p>
+  <header class="top">
+    <div class="ttl">
+      <span class="eyebrow">우주 팽창 · 시뮬레이션 ②</span><h1>시간에 따른 우주의 변화</h1>
+      <p class="sub">대폭발부터 현재까지 시간을 흐르게 하며 우주가 어떻게 변하는지 봐요. 은하 사이에 들어가 중심이 있는지도 확인해요.</p>
+    </div>
   </header>
   <div class="stage">
     <section class="card viewer">
@@ -180,7 +225,7 @@
         </div>
       </div>
     </section>
-    <section class="card pad">
+    <section class="card side">
       <div class="flow" id="flow" role="tablist">
         <button class="fs" type="button" role="tab" data-s="1"><b>1</b>대폭발</button>
         <button class="fs" type="button" role="tab" data-s="2"><b>2</b>점점 팽창</button>
@@ -189,19 +234,48 @@
       </div>
       <div class="stepname"><span class="no" id="sNo">1</span><div><h2 id="sTitle"></h2><small id="sSub"></small></div></div>
       <p class="what" id="sWhat"></p>
-      <div class="phase" id="sPh"></div>
       <div class="tried" id="tried" hidden></div>
-      <div class="ask"><p id="askQ"></p><div class="three" id="askB"></div><div class="ans" id="askA"></div></div>
-      <div class="why" id="why"></div>
+      <div class="stabs" role="tablist" aria-label="일어나는 일, 질문, 왜 그럴까?">
+        <button type="button" role="tab" data-s="uStep" aria-selected="true">일어나는 일</button>
+        <button type="button" role="tab" data-s="uAsk" aria-selected="false">질문</button>
+        <button type="button" role="tab" data-s="uWhy" aria-selected="false" id="tabWhy">왜 그럴까?</button>
+        <button type="button" role="tab" data-s="uNote" aria-selected="false">모형 안내</button>
+      </div>
+      <div class="spanes">
+      <div class="spane" id="uStep"><div class="phase" id="sPh"></div></div>
+      <div class="spane" id="uAsk"><div class="ask"><p id="askQ"></p><div class="three" id="askB"></div><div class="ans" id="askA"></div></div></div>
+      <div class="spane" id="uWhy"><div class="why" id="why"></div></div>
+      <div class="spane" id="uNote"><div class="box an"><b class="t">모형 안내</b>은하의 수·모양·크기와 우주가 커지는 빠르기는 실제와 달라요. 숫자는 교과서의 '약 138억 년 전'만 썼어요. 우주가 커져도 은하 그림의 크기는 그대로 두었어요.</div></div>
+      </div>
       <div class="acts"><button class="btn ghost" type="button" id="bPrev">이전</button><button class="btn primary" type="button" id="bNext">다음 단계</button></div>
       <div class="prog"><i id="prog"></i></div>
-      <div class="box an"><b class="t">모형 안내</b>은하의 수·모양·크기와 우주가 커지는 빠르기는 실제와 달라요. 숫자는 교과서의 '약 138억 년 전'만 썼어요. 우주가 커져도 은하 그림의 크기는 그대로 두었어요.</div>
     </section>
   </div>
   <p class="credit">우주 팽창 · 시간에 따른 우주의 변화</p>
 </div>
 <script>
 window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) => Array.from(r.querySelectorAll(s)), step: 1, view: 'whole', t: 0, play: false, grid: false, line: false, center: -1, tried: {}, seen: {} };
+</script>
+<script>
+/* ===== 블록: 칸 안의 작은 탭 (한 화면 배치) ===== */
+(() => {
+  'use strict';
+  try {
+    const groups = Array.from(document.querySelectorAll('.stabs'));
+    groups.forEach((tb) => {
+      const bs = Array.from(tb.querySelectorAll('button[data-s]'));
+      const go = (id) => bs.forEach((b) => {
+        const on = b.dataset.s === id, p = document.getElementById(b.dataset.s);
+        b.setAttribute('aria-selected', String(on));
+        if (p) { p.classList.toggle('off', !on); p.setAttribute('aria-hidden', String(!on)); }
+      });
+      bs.forEach((b) => b.addEventListener('click', () => go(b.dataset.s)));
+      tb.goSub = go;
+      go((bs.find((b) => b.getAttribute('aria-selected') === 'true') || bs[0]).dataset.s);
+    });
+    window.FIT = { go: (id) => { const b = document.querySelector(`.stabs button[data-s="${id}"]`); if (b) b.closest('.stabs').goSub(id); } };
+  } catch (err) { window.SM_err ? window.SM_err('칸 안의 탭', err) : console.error(err); }
+})();
 </script>
 <script>
 /* ===== 우주 팽창 그림 도구 (은하, 우주 공, 대폭발, 시간의 흐름, 풍선) =====
@@ -554,6 +628,8 @@ window.EU = (function () {
       $('#sPh').innerHTML = st.ph.map((p, i) => `<div class="ph" data-at="${p[0]}"><i>${i + 1}</i><span>${p[1]}</span></div>`).join('');
       $('#why').innerHTML = st.why.length ? '<h3>왜 그럴까?</h3>' + st.why.map((w, i) => `<div class="w"><i>${i + 1}</i><span>${w}</span></div>`).join('') : '';
       $('#askQ').textContent = st.q; paintAsk();
+      $('#tabWhy').hidden = !st.why.length;
+      if (window.FIT) window.FIT.go('uStep');
       $('#tried').hidden = n !== 3; paintTried();
       $('#bPrev').disabled = n === 1; $('#bNext').textContent = n === 4 ? '처음부터' : '다음 단계';
       $('#prog').style.width = (n / 4) * 100 + '%';
