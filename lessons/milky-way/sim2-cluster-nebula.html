@@ -173,14 +173,65 @@
   .why .w i{font-style:normal;width:26px;height:26px;border-radius:8px;background:var(--fab);color:#fff;display:grid;place-items:center;font-weight:900;font-size:13px}
   [hidden]{display:none!important}
   @media (max-width:520px){.game{grid-template-columns:1fr;justify-items:center}.types,.tri{grid-template-columns:1fr}}
+  /* ===== 한 화면 배치 (2026-11-24: 태블릿 한 화면 안에서 조작과 결과가 끝나도록) =====
+     활동은 제목 줄의 활동 탭, 설명·기록표·안내는 오른쪽 칸 안의 작은 탭. 입체 그림 칸은 남은 높이를 채워요. */
+  html,body{height:100%}
+  .app{height:100vh;padding:10px 16px 12px;gap:10px}
+  header.top{display:flex;align-items:flex-end;justify-content:space-between;gap:8px 18px}
+  header.top .ttl{min-width:0;flex:1}
+  header.top h1{display:inline;font-size:clamp(20px,2.1vw,25px);margin:0 0 0 6px;vertical-align:-2px}
+  header.top .sub{margin-top:3px;font-size:14.5px}
+  header.top .modes{flex:none;width:min(44%,470px);margin:0}
+  .modes,.stabs{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;background:#e3eaf2;border-radius:16px;padding:4px}
+  .modes .md{min-height:48px;border-radius:12px;background:transparent;padding:0 8px}
+  .modes .md[aria-selected="true"]{background:#fff;color:var(--fab);box-shadow:0 1px 3px rgba(20,38,59,.14)}
+  .stabs{border-radius:14px;margin-top:10px}
+  .stabs button{min-height:44px;border:0;border-radius:10px;background:transparent;font-weight:800;font-size:14.5px;color:var(--muted);cursor:pointer;word-break:keep-all;padding:0 6px}
+  .stabs button[aria-selected="true"]{background:#fff;color:var(--fab);box-shadow:0 1px 3px rgba(20,38,59,.14)}
+  .spanes{display:grid;margin-top:8px}
+  .spanes > .spane{grid-area:1/1;min-width:0}
+  .spanes > .spane.off{visibility:hidden;pointer-events:none}
+  .spane > .why,.spane > .box,.spane > .pick,.spane > .ask,.spane > .tbl{margin-top:0}
+  .spane > .why h3{display:none}
+  .stage{flex:1;min-height:0;align-items:stretch;grid-template-rows:minmax(0,1fr)}
+  .viewer{position:relative;top:0;height:100%}
+  .gl-host{height:100%;min-height:0}
+  .side{padding:12px 14px;display:flex;flex-direction:column;min-height:0}
+  .side .stepname{margin-top:0}
+  .credit{display:none}
+  @media (max-width:900px){
+    header.top{flex-direction:column;align-items:stretch}
+    header.top .modes{width:auto}
+    .stage{display:flex;flex-direction:column;gap:12px}
+    .viewer{flex:1;min-height:300px;height:auto;display:flex;flex-direction:column}
+    .viewer .gl-host{flex:1;height:auto}
+    .side{flex:none}
+  }
+  .gl-host{touch-action:pan-y}
+  .side .rng{margin-top:4px}
+  .spane > .obs,.spane > .tbl,.spane > .game,.spane > .phase,.spane > .match{margin-top:0}
+  .spane > .why{margin-top:0}
+  .spane > h3{margin:0 0 6px!important}
+  #paneB .defl{margin-top:0}
+  #paneB .acts{margin-top:4px}
+  /* 질문 답과 비교표가 두 줄로 밀리지 않게 오른쪽 칸을 조금 넓혀요 */
+  .stage{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr)}
+  /* 성운 이름과 고르기 단추를 한 줄에 놓아요 */
+  .mt{display:grid;grid-template-columns:112px 1fr;gap:10px;align-items:center;padding:8px 10px}
+  .mt p{margin:0;word-break:keep-all;line-height:1.35}
 </style>
 </head>
 <body>
 <div class="app">
-  <header>
-    <span class="eyebrow">우리은하 · 시뮬레이션 ②</span>
-    <h1>성단과 성운 살펴보기</h1>
-    <p class="sub">두 성단을 확대해 비교하고, 별빛이 성간 물질을 만나 세 가지 성운이 되는 모습을 확인해요.</p>
+  <header class="top">
+    <div class="ttl">
+      <span class="eyebrow">우리은하 · 시뮬레이션 ②</span><h1>성단과 성운 살펴보기</h1>
+      <p class="sub">두 성단을 확대해 비교하고, 별빛이 성간 물질을 만나 세 가지 성운이 되는 모습을 확인해요.</p>
+    </div>
+    <div class="modes" role="tablist" aria-label="활동 고르기">
+      <button class="md" type="button" role="tab" id="mA" aria-selected="true">성단 비교</button>
+      <button class="md" type="button" role="tab" id="mB" aria-selected="false">성운 만들기</button>
+    </div>
   </header>
   <div class="stage">
     <section class="card viewer">
@@ -189,23 +240,27 @@
         <div class="vt bl"><span class="hint" id="hint">모형 그림 · 별의 수는 실제보다 적어요</span></div>
       </div>
     </section>
-    <section class="card pad">
-      <div class="modes" role="tablist">
-        <button class="md" type="button" role="tab" id="mA" aria-selected="true">성단 비교</button>
-        <button class="md" type="button" role="tab" id="mB" aria-selected="false">성운 만들기</button>
-      </div>
+    <section class="card side">
       <!-- A: 성단 -->
       <div id="paneA">
         <div class="stepname"><span class="no">A</span><div><h2>산개 성단과 구상 성단</h2><small>별이 모여 있는 형태로 구분해요</small></div></div>
         <div class="rng"><label for="rZoom">확대</label><input type="range" id="rZoom" min="1" max="2.5" step="0.25" value="1"></div>
         <p class="what" style="margin:2px 0 6px">왼쪽 그림을 보며 질문에 답해 보세요. 답하면 아래 비교표가 채워져요.</p>
-        <div class="obs" id="obs"></div>
-        <table class="tbl" id="tbl"></table>
-        <div class="game">
+        <div class="stabs" role="tablist" aria-label="질문과 비교표">
+          <button type="button" role="tab" data-s="cObs" aria-selected="true">질문</button>
+          <button type="button" role="tab" data-s="cTbl" aria-selected="false">비교표</button>
+          <button type="button" role="tab" data-s="cGame" aria-selected="false">분류해 보기</button>
+          <button type="button" role="tab" data-s="cLnk" aria-selected="false">앞 시간과 연결</button>
+        </div>
+        <div class="spanes">
+        <div class="spane" id="cObs"><div class="obs" id="obs"></div></div>
+        <div class="spane" id="cTbl"><table class="tbl" id="tbl"></table></div>
+        <div class="spane" id="cGame"><div class="game">
           <canvas id="gCv" aria-label="분류할 성단 그림"></canvas>
           <div><p id="gQ">이 성단은 어느 쪽일까요?</p><div class="two" id="gB"><button type="button" data-k="open">산개 성단</button><button type="button" data-k="glob">구상 성단</button></div><div class="sc" id="gS"></div></div>
+        </div></div>
+        <div class="spane" id="cLnk"><div class="box lnk"><b class="t">앞 시간과 연결</b>파란색을 띠는 별은 표면 온도가 높고, 붉은색을 띠는 별은 표면 온도가 낮아요. 그래서 산개 성단에는 <b>고온의 별</b>, 구상 성단에는 <b>저온의 별</b>이 많아요.</div></div>
         </div>
-        <div class="box lnk"><b class="t">앞 시간과 연결</b>파란색을 띠는 별은 표면 온도가 높고, 붉은색을 띠는 별은 표면 온도가 낮아요. 그래서 산개 성단에는 <b>고온의 별</b>, 구상 성단에는 <b>저온의 별</b>이 많아요.</div>
       </div>
       <!-- B: 성운 -->
       <div id="paneB" hidden>
@@ -216,11 +271,20 @@
           <button type="button" data-k="refl" aria-pressed="false">반사 성운<small>별빛 반사</small></button>
           <button type="button" data-k="dark" aria-pressed="false">암흑 성운<small>별빛 가로막음</small></button>
         </div>
-        <div class="phase" id="nPh"></div>
-        <div class="acts" style="margin-top:6px"><button class="btn ghost" type="button" id="bStar" aria-pressed="false">별빛 끄기</button><button class="btn ghost" type="button" id="bAgain">처음부터 다시 보기</button></div>
-        <div class="why" id="nWhy"></div>
+        <div class="acts"><button class="btn ghost" type="button" id="bStar" aria-pressed="false">별빛 끄기</button><button class="btn ghost" type="button" id="bAgain">처음부터 다시 보기</button></div>
+        <div class="stabs" role="tablist" aria-label="일어나는 일과 설명">
+          <button type="button" role="tab" data-s="nStep" aria-selected="true">일어나는 일</button>
+          <button type="button" role="tab" data-s="nWhyP" aria-selected="false">왜 그럴까?</button>
+          <button type="button" role="tab" data-s="nMatch" aria-selected="false">오리온자리 성운</button>
+        </div>
+        <div class="spanes">
+        <div class="spane" id="nStep"><div class="phase" id="nPh"></div></div>
+        <div class="spane" id="nWhyP"><div class="why" id="nWhy"></div></div>
+        <div class="spane" id="nMatch">
         <h3 style="margin:14px 0 2px;font-size:16px">오리온자리의 성운은 어느 종류일까?</h3>
         <div class="match" id="match"></div>
+        </div>
+        </div>
       </div>
     </section>
   </div>
@@ -849,6 +913,35 @@ window.MW = (function () {
     re();
     window.SM.okDraw = true;
   } catch (err) { window.SM_err('그림', err); }
+})();
+</script>
+<script>
+/* ===== 블록: 칸 안의 작은 탭 (한 화면 배치) ===== */
+(() => {
+  'use strict';
+  try {
+    const groups = Array.from(document.querySelectorAll('.stabs'));
+    groups.forEach((tb) => {
+      const bs = Array.from(tb.querySelectorAll('button[data-s]'));
+      const go = (id) => bs.forEach((b) => {
+        const on = b.dataset.s === id, p = document.getElementById(b.dataset.s);
+        b.setAttribute('aria-selected', String(on));
+        if (p) { p.classList.toggle('off', !on); p.setAttribute('aria-hidden', String(!on)); }
+      });
+      bs.forEach((b) => b.addEventListener('click', () => go(b.dataset.s)));
+      tb.goSub = go;
+      go((bs.find((b) => b.getAttribute('aria-selected') === 'true') || bs[0]).dataset.s);
+    });
+    window.FIT = { go: (id) => { const b = document.querySelector(`.stabs button[data-s="${id}"]`); if (b) b.closest('.stabs').goSub(id); } };
+  } catch (err) { window.SM_err ? window.SM_err('칸 안의 탭', err) : console.error(err); }
+})();
+</script>
+<script>
+/* ===== 블록: 성운 종류를 고르면 '일어나는 일' 탭 보이기 ===== */
+(() => {
+  try {
+    document.querySelectorAll('#types button, #bAgain').forEach((b) => b.addEventListener('click', () => { if (window.FIT) window.FIT.go('nStep'); }));
+  } catch (err) { window.SM_err('일어나는 일 탭', err); }
 })();
 </script>
 </body>
