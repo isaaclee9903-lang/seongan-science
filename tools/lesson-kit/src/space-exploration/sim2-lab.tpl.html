@@ -38,28 +38,47 @@
   .cb{display:grid;grid-template-columns:96px 1fr auto;gap:8px;align-items:center;font-size:13.5px;font-weight:800;color:var(--ink2)}
   .cb .tr{height:14px;border-radius:7px;background:#eef3f8;overflow:hidden}
   .cb .tr i{display:block;height:100%;border-radius:7px}
+/*@@LOCAL:_fit.css@@*/
+  /* 실험실: 활동 셋은 제목 줄의 활동 탭, 계기(걸린 날·연료·온도)는 그림 아래쪽 위에 띄워요 */
+  header.top .flow{margin:0}
+  .lab canvas{position:absolute;inset:0;width:100%;height:100%;min-height:0}
+  .lab .mtrs{position:absolute;left:12px;right:12px;bottom:12px;z-index:3}
+  .lab .mtrs .meters{margin:0;max-width:560px}
+  .lab .mtrs .mt{background:rgba(11,18,38,.9);border:1px solid rgba(255,255,255,.1)}
+  .side .what{margin-bottom:8px}
+  .side .acts{flex:none;margin-top:10px}
+  .side .pick,.side .rng{flex:none}
+  .spane > .cmpbars{margin-top:0}
+  .spane > .why h3{margin:0 0 4px;font-size:15.5px;color:#7a3a10;word-break:keep-all}
+  .spane > .why ol{margin-top:0}
+  .spane > .box{margin-top:0}
+  @media (max-width:900px){
+    .lab{height:42vh;min-height:0}
+    .side .pick{grid-template-columns:repeat(3,1fr)}
+    .side .pk{grid-template-columns:1fr;justify-items:start;align-content:start}
+  }
 </style>
 </head>
 <body>
 <div class="app">
-  <header>
-    <span class="eyebrow">시뮬레이션 ② · 탐사선 실험실</span>
-    <h1>탐사선이 되어 직접 해 보기</h1>
-    <p class="sub">다누리가 왜 멀리 돌아갔는지, 다트가 소행성을 어떻게 밀었는지, 파커가 어떻게 타지 않는지 실험해 봐요.</p>
+  <header class="top">
+    <div class="ttl">
+      <span class="eyebrow">시뮬레이션 ② · 탐사선 실험실</span><h1>탐사선이 되어 직접 해 보기</h1>
+      <p class="sub">다누리가 왜 멀리 돌아갔는지, 다트가 소행성을 어떻게 밀었는지, 파커가 어떻게 타지 않는지 실험해 봐요.</p>
+    </div>
+    <div class="flow modes" role="tablist" aria-label="실험 고르기">
+      <button class="fs" role="tab" data-lab="danuri" aria-selected="true"><b>1</b>다누리의 길</button>
+      <button class="fs" role="tab" data-lab="dart" aria-selected="false"><b>2</b>다트 충돌</button>
+      <button class="fs" role="tab" data-lab="parker" aria-selected="false"><b>3</b>파커 열 차폐막</button>
+    </div>
   </header>
   <div class="stage">
     <div class="card lab viewer">
       <canvas id="cv" role="img" aria-label="탐사선 실험 화면"></canvas>
       <div class="vt tl"><span class="hint" id="hint"></span></div>
+      <div class="mtrs" id="meters"></div>
     </div>
-    <div class="card pad">
-      <div class="flow" role="tablist">
-        <button class="fs" role="tab" data-lab="danuri" aria-selected="true"><b>1</b>다누리의 길</button>
-        <button class="fs" role="tab" data-lab="dart" aria-selected="false"><b>2</b>다트 충돌</button>
-        <button class="fs" role="tab" data-lab="parker" aria-selected="false"><b>3</b>파커 열 차폐막</button>
-      </div>
-      <div id="panel"></div>
-    </div>
+    <div class="card side" id="panel"></div>
   </div>
   <p class="model">개념 이해를 위한 모형이에요. 크기·거리·빠르기는 실제 비율과 다르고, 연료 막대와 온도 막대는 비교만 나타내요. 숫자는 공식 발표 값만 썼어요.</p>
 </div>
@@ -68,11 +87,14 @@
 /*@@LOCAL:_sx.js@@*/
 </script>
 <script>
+/*@@LOCAL:_fit.js@@*/
+</script>
+<script>
 window.SM = window.SM || {};
 (() => {
   'use strict';
   try {
-    const S = window.SX, $ = (s) => document.querySelector(s), cv = $('#cv'), panel = $('#panel'), hint = $('#hint');
+    const S = window.SX, $ = (s) => document.querySelector(s), cv = $('#cv'), panel = $('#panel'), hint = $('#hint'), meters = $('#meters');
     let lab = 'danuri';
     const st = {
       danuri: { path: 'blt', run: false, t0: 0, p: 0, done: false },
@@ -133,22 +155,30 @@ window.SM = window.SM || {};
         <p class="what">달까지 가는 길은 여러 가지예요. 길을 고르고 <b>발사</b>를 눌러 걸리는 날과, 달 둘레를 돌기 위해 <b>속도를 줄일 때 드는 연료</b>를 비교해 봐요.</p>
         <div class="pick">${Object.keys(ROUTES).map((k) => `<button type="button" class="pk" data-r="${k}" aria-pressed="${s.path === k}"><i style="background:${ROUTES[k].col};color:#1a1200">${Object.keys(ROUTES).indexOf(k) + 1}</i><span><b>${ROUTES[k].n}</b><span>${ROUTES[k].days} · ${ROUTES[k].k} · ${ROUTES[k].sub}</span></span></button>`).join('')}</div>
         <div class="acts"><button class="btn primary" id="dGo" type="button">발사</button></div>
-        <div class="meters"><div class="mt"><small>걸린 날</small><b id="dDays">0일</b></div><div class="mt"><small>달에 들어갈 때 속도를 줄이는 연료</small><div class="bar"><i id="dFuel"></i></div></div></div>
-        <div class="cmpbars" id="dCmp"></div>
-        <details class="why"><summary>왜 멀리 돌아가면 연료를 아낄까? (단계별)</summary><ol>
+        <div class="stabs" role="tablist" aria-label="결과와 설명">
+          <button type="button" role="tab" data-s="dCmpP" aria-selected="${Object.keys(triedD).length > 0}">결과 비교</button>
+          <button type="button" role="tab" data-s="dWhy" aria-selected="${!Object.keys(triedD).length}">왜 그럴까?</button>
+          <button type="button" role="tab" data-s="dRec" aria-selected="false">다누리 기록</button>
+        </div>
+        <div class="spanes">
+        <div class="spane" id="dCmpP"><div class="cmpbars" id="dCmp"></div></div>
+        <div class="spane" id="dWhy"><div class="why"><h3>왜 멀리 돌아가면 연료를 아낄까? (단계별)</h3><ol>
           <li>곧장 가면 빠르지만, 빠른 만큼 달에 도착했을 때 <b>속도를 많이 줄여야</b> 달 둘레를 돌 수 있어요. 속도를 줄이는 데도 연료가 들어요.</li>
           <li>멀리 돌아가는 길은 <b>태양과 지구의 중력</b>을 이용해요. 먼 곳에서 탐사선이 저절로 느려지고 방향이 바뀌어요.</li>
           <li>그래서 달에 다가갈 때 이미 느려져 있어, <b>속도를 조금만 줄여도</b> 달의 중력에 붙잡혀요.</li>
           <li>대신 시간이 오래 걸리고(145일), 길을 계산하기가 아주 어려워요. 다누리는 처음에 다른 길을 계획했다가 <b>2020년에 이 길로 바꿨어요</b>.</li>
-          <li>아낀 연료 덕분에 다누리는 처음 계획(1년)보다 훨씬 오래, <b>2027년 12월까지</b> 임무를 하게 됐어요.</li></ol></details>
-        <div class="box fact"><b class="t">다누리 기록</b>2022년 8월 5일 발사 → 2022년 12월 27일 달 궤도 도착(145일). 가는 길에 지구에서 가장 멀어졌을 때는 약 155만 km였어요.<span class="src">출처: 북툰 「다누리의 독특한 여행 궤적」 화면, 한국항공우주연구원 발표를 다룬 기사</span></div>`;
+          <li>아낀 연료 덕분에 다누리는 처음 계획(1년)보다 훨씬 오래, <b>2027년 12월까지</b> 임무를 하게 됐어요.</li></ol></div></div>
+        <div class="spane" id="dRec"><div class="box fact"><b class="t">다누리 기록</b>2022년 8월 5일 발사 → 2022년 12월 27일 달 궤도 도착(145일). 가는 길에 지구에서 가장 멀어졌을 때는 약 155만 km였어요.<span class="src">출처: 북툰 「다누리의 독특한 여행 궤적」 화면, 한국항공우주연구원 발표를 다룬 기사</span></div></div>
+        </div>`;
+      meters.innerHTML = `<div class="meters"><div class="mt"><small>걸린 날</small><b id="dDays">0일</b></div><div class="mt"><small>달에 들어갈 때 속도를 줄이는 연료</small><div class="bar"><i id="dFuel"></i></div></div></div>`;
+      window.FIT.wire(panel);
       panel.querySelectorAll('.pk').forEach((b) => b.addEventListener('click', () => { s.path = b.dataset.r; s.run = false; s.p = 0; s.done = false; panelDanuri(); }));
       $('#dGo').addEventListener('click', () => { s.run = true; s.done = false; s.p = 0; s.t0 = performance.now(); hint.textContent = ROUTES[s.path].n + '로 가는 중'; });
       cmpDanuri();
       hint.textContent = '길을 고르고 발사해 보세요';
     }
     const triedD = {};
-    function finishDanuri() { triedD[st.danuri.path] = true; cmpDanuri(); hint.textContent = '달 궤도 도착! 다른 길과 비교해 보세요'; }
+    function finishDanuri() { triedD[st.danuri.path] = true; cmpDanuri(); window.FIT.go('dCmpP'); hint.textContent = '달 궤도 도착! 다른 길과 비교해 보세요'; }
     function cmpDanuri() {
       const el = $('#dCmp'); if (!el) return;
       const ks = Object.keys(ROUTES).filter((k) => triedD[k]);
@@ -196,15 +226,23 @@ window.SM = window.SM || {};
       panel.innerHTML = `<div class="stepname"><span class="no">2</span><div><small>다트 충돌 실험</small><h2>부딪쳐서 소행성의 길을 바꿀 수 있을까?</h2></div></div>
         <p class="what">작은 소행성 <b>디모르포스</b>는 큰 소행성 <b>디디모스</b>의 둘레를 돌아요. 다트 탐사선을 부딪쳐 한 바퀴 도는 시간이 바뀌는지 확인해 봐요.</p>
         <div class="acts"><button class="btn primary" id="tGo" type="button">다트 부딪치기</button><button class="btn ghost" id="tRe" type="button">처음으로</button></div>
-        <div class="meters"><div class="mt cool"><small>충돌 전 · 한 바퀴 도는 시간</small><b id="tBefore">11시간 55분</b></div><div class="mt"><small>충돌 후 · 한 바퀴 도는 시간</small><b id="tAfter">?</b></div></div>
-        <div class="cmpbars" id="tCmp"></div>
-        <details class="why"><summary>왜 이런 실험을 했을까? (단계별)</summary><ol>
+        <div class="stabs" role="tablist" aria-label="결과와 설명">
+          <button type="button" role="tab" data-s="tCmpP" aria-selected="${!!st.dart.hit}">결과 비교</button>
+          <button type="button" role="tab" data-s="tWhy" aria-selected="${!st.dart.hit}">왜 그럴까?</button>
+          <button type="button" role="tab" data-s="tNext" aria-selected="false">앞으로</button>
+        </div>
+        <div class="spanes">
+        <div class="spane" id="tCmpP"><div class="cmpbars" id="tCmp"></div></div>
+        <div class="spane" id="tWhy"><div class="why"><h3>왜 이런 실험을 했을까? (단계별)</h3><ol>
           <li>언젠가 지구로 다가오는 소행성을 미리 찾는다면, <b>그 길을 조금만 바꿔도</b> 지구를 비켜 가게 할 수 있어요.</li>
           <li>그래서 지구와 부딪칠 걱정이 없는 소행성 쌍을 골라, 탐사선을 일부러 부딪쳐 보았어요(2022년 9월 26일).</li>
           <li>디모르포스가 한 바퀴 도는 시간이 <b>약 33분</b> 줄었어요. 목표로 한 73초보다 훨씬 큰 변화예요.</li>
           <li>교과서: 다트는 소행성 충돌과 같은 <b>우주 위험에 대응할 수 있는 가능성</b>을 보여 주었어요.</li>
-          <li>2005년 딥 임팩트호는 혜성에 충돌체를 떨어뜨려 <b>혜성 속 물질</b>을 조사했어요. 둘 다 ‘일부러 부딪치는’ 탐사지만 목적이 달라요.</li></ol></details>
-        <div class="box fact"><b class="t">앞으로</b>유럽의 헤라 탐사선이 2026년 11월 디디모스에 도착해 충돌 자국을 살펴볼 예정이에요.<span class="src">출처: NASA·존스홉킨스 응용물리연구소 발표, ESA</span></div>`;
+          <li>2005년 딥 임팩트호는 혜성에 충돌체를 떨어뜨려 <b>혜성 속 물질</b>을 조사했어요. 둘 다 ‘일부러 부딪치는’ 탐사지만 목적이 달라요.</li></ol></div></div>
+        <div class="spane" id="tNext"><div class="box fact"><b class="t">앞으로</b>유럽의 헤라 탐사선이 2026년 11월 디디모스에 도착해 충돌 자국을 살펴볼 예정이에요.<span class="src">출처: NASA·존스홉킨스 응용물리연구소 발표, ESA</span></div></div>
+        </div>`;
+      meters.innerHTML = `<div class="meters"><div class="mt cool"><small>충돌 전 · 한 바퀴 도는 시간</small><b id="tBefore">11시간 55분</b></div><div class="mt"><small>충돌 후 · 한 바퀴 도는 시간</small><b id="tAfter">?</b></div></div>`;
+      window.FIT.wire(panel);
       $('#tGo').addEventListener('click', () => { const s = st.dart; if (s.go) return; s.go = true; s.goT = performance.now(); hint.textContent = '다트가 다가가는 중'; });
       $('#tRe').addEventListener('click', () => { st.dart = { hit: false, t0: 0, ang0: 0 }; ej.length = 0; panelDart(); });
       hint.textContent = '다트를 부딪쳐 보세요';
@@ -212,7 +250,7 @@ window.SM = window.SM || {};
     }
     function finishDart() {
       hint.textContent = '충돌! 한 바퀴 도는 시간을 비교해 보세요';
-      const el = $('#tCmp'); if (!el) return;
+      const el = $('#tCmp'); if (!el) return; window.FIT.go('tCmpP');
       el.innerHTML = `<small style="font-weight:800;color:var(--muted)">한 바퀴 도는 시간이 줄어든 양</small>
         <div class="cb"><span>목표</span><span class="tr"><i style="width:3.7%;background:#9fb0cc"></i></span><span>73초</span></div>
         <div class="cb"><span>실제 결과</span><span class="tr"><i style="width:100%;background:linear-gradient(90deg,#ffb14a,#ff6a3d)"></i></span><span>약 33분</span></div>`;
@@ -268,14 +306,21 @@ window.SM = window.SM || {};
         <div class="rng"><span>멀리</span><input type="range" id="pD" min="0" max="1000" value="${Math.round(s.d * 1000)}" aria-label="태양까지 거리"></div>
         <div class="rng" style="grid-template-columns:1fr"><span style="text-align:right;margin-top:-8px">가장 가까이 →</span></div>
         <div class="acts"><button class="btn ghost" id="pS" type="button" aria-pressed="${!s.shield}">${s.shield ? '차폐막 치워 보기' : '차폐막 다시 달기'}</button></div>
-        <div class="meters"><div class="mt"><small>차폐막 앞(태양 쪽)</small><b id="pFrontV">견딜 만함</b><div class="bar"><i id="pFront"></i></div></div><div class="mt cool"><small>차폐막 뒤 장비</small><b id="pBackV">약 29°C</b><div class="bar"><i id="pBack"></i></div></div></div>
-        <details class="why"><summary>어떻게 장비가 29°C로 지낼까? (단계별)</summary><ol>
+        <div class="stabs" role="tablist" aria-label="설명">
+          <button type="button" role="tab" data-s="pWhy" aria-selected="true">왜 그럴까?</button>
+          <button type="button" role="tab" data-s="pFun" aria-selected="false">재미있는 사실</button>
+        </div>
+        <div class="spanes">
+        <div class="spane" id="pWhy"><div class="why"><h3>어떻게 장비가 29°C로 지낼까? (단계별)</h3><ol>
           <li>탐사선은 늘 <b>차폐막을 태양 쪽으로</b> 향하게 하고, 장비는 그 뒤 그늘에 숨겨요.</li>
           <li>차폐막은 아주 뜨거워져도 견디도록 만들었어요. 가장 가까이 갔을 때 앞쪽은 <b>약 1,000°C</b>예요(약 1,430°C까지 견디게 설계).</li>
           <li>열이 차폐막을 지나 뒤로 넘어오지 않게 해서, 그 뒤의 장비는 <b>약 29°C</b>로 지내요.</li>
           <li>2024년 12월 24일, 태양 표면에서 <b>약 610만 km</b>까지 다가갔어요. 사람이 만든 물체 가운데 태양에 가장 가까이 간 기록이에요.</li>
-          <li>이때 빠르기는 <b>시속 약 69만 km</b>. 서울에서 부산까지 약 2초면 가는 빠르기예요.</li></ol></details>
-        <div class="box fact"><b class="t">재미있는 사실</b>파커가 태양에 가장 가까이 가 있는 동안은 지구와 교신이 끊겨요. 다시 멀어진 뒤에야 "무사하다"는 신호가 도착했어요.<span class="src">출처: NASA 파커 태양 탐사선 발표(2024년 12월)</span></div>`;
+          <li>이때 빠르기는 <b>시속 약 69만 km</b>. 서울에서 부산까지 약 2초면 가는 빠르기예요.</li></ol></div></div>
+        <div class="spane" id="pFun"><div class="box fact"><b class="t">재미있는 사실</b>파커가 태양에 가장 가까이 가 있는 동안은 지구와 교신이 끊겨요. 다시 멀어진 뒤에야 "무사하다"는 신호가 도착했어요.<span class="src">출처: NASA 파커 태양 탐사선 발표(2024년 12월)</span></div></div>
+        </div>`;
+      meters.innerHTML = `<div class="meters"><div class="mt"><small>차폐막 앞(태양 쪽)</small><b id="pFrontV">견딜 만함</b><div class="bar"><i id="pFront"></i></div></div><div class="mt cool"><small>차폐막 뒤 장비</small><b id="pBackV">약 29°C</b><div class="bar"><i id="pBack"></i></div></div></div>`;
+      window.FIT.wire(panel);
       $('#pD').addEventListener('input', (e) => { s.d = e.target.value / 1000; hint.textContent = s.d > 0.985 ? '가장 가까이 왔어요' : '태양에 다가가는 중'; });
       $('#pS').addEventListener('click', () => { s.shield = !s.shield; panelParker(); hint.textContent = s.shield ? '차폐막을 다시 달았어요' : '차폐막이 없으면 장비는?'; });
       hint.textContent = '막대를 움직여 태양에 다가가 보세요';
