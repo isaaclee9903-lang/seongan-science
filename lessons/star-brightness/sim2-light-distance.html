@@ -155,6 +155,40 @@
   .why .w i{font-style:normal;width:26px;height:26px;border-radius:8px;background:var(--fab);color:#fff;display:grid;place-items:center;font-weight:900;font-size:13px}
   .why .w.on{background:#fff3d6}
   [hidden]{display:none!important}
+  /* ===== 한 화면 배치 (2026-11-24: 태블릿 한 화면 안에서 조작과 결과가 끝나도록) =====
+     활동은 제목 줄의 활동 탭, 설명·기록표·안내는 오른쪽 칸 안의 작은 탭. 입체 그림 칸은 남은 높이를 채워요. */
+  html,body{height:100%}
+  .app{height:100vh;padding:10px 16px 12px;gap:10px}
+  header.top{display:flex;align-items:flex-end;justify-content:space-between;gap:8px 18px}
+  header.top .ttl{min-width:0;flex:1}
+  header.top h1{display:inline;font-size:clamp(20px,2.1vw,25px);margin:0 0 0 6px;vertical-align:-2px}
+  header.top .sub{margin-top:3px;font-size:14.5px}
+  header.top .modes{flex:none;width:min(44%,470px);margin:0}
+  .modes,.stabs{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;background:#e3eaf2;border-radius:16px;padding:4px}
+  .modes .md{min-height:48px;border-radius:12px;background:transparent;padding:0 8px}
+  .modes .md[aria-selected="true"]{background:#fff;color:var(--fab);box-shadow:0 1px 3px rgba(20,38,59,.14)}
+  .stabs{border-radius:14px;margin-top:10px}
+  .stabs button{min-height:44px;border:0;border-radius:10px;background:transparent;font-weight:800;font-size:14.5px;color:var(--muted);cursor:pointer;word-break:keep-all;padding:0 6px}
+  .stabs button[aria-selected="true"]{background:#fff;color:var(--fab);box-shadow:0 1px 3px rgba(20,38,59,.14)}
+  .spanes{display:grid;margin-top:8px}
+  .spanes > .spane{grid-area:1/1;min-width:0}
+  .spanes > .spane.off{visibility:hidden;pointer-events:none}
+  .spane > .why,.spane > .box,.spane > .pick,.spane > .ask,.spane > .tbl{margin-top:0}
+  .spane > .why h3{display:none}
+  .stage{flex:1;min-height:0;align-items:stretch;grid-template-rows:minmax(0,1fr)}
+  .viewer{position:relative;top:0;height:100%}
+  .gl-host{height:100%;min-height:0}
+  .side{padding:12px 14px;display:flex;flex-direction:column;min-height:0}
+  .side .stepname{margin-top:0}
+  .credit{display:none}
+  @media (max-width:900px){
+    header.top{flex-direction:column;align-items:stretch}
+    header.top .modes{width:auto}
+    .stage{display:flex;flex-direction:column;gap:12px}
+    .viewer{flex:1;min-height:300px;height:auto;display:flex;flex-direction:column}
+    .viewer .gl-host{flex:1;height:auto}
+    .side{flex:none}
+  }
 </style>
 <script type="importmap">
 { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }
@@ -162,10 +196,15 @@
 </head>
 <body>
 <div class="app">
-  <header>
-    <span class="eyebrow">별의 밝기 · 3D 시뮬레이션 ②</span>
-    <h1>3D 거리와 빛의 세기</h1>
-    <p class="sub">광원에서 나온 빛은 사방으로 퍼져 나가요. 거리가 멀어지면 같은 넓이에 들어오는 빛이 얼마나 줄어드는지 직접 확인해 보세요. 손가락으로 돌려 볼 수 있어요.</p>
+  <header class="top">
+    <div class="ttl">
+      <span class="eyebrow">별의 밝기 · 3D 시뮬레이션 ②</span><h1>3D 거리와 빛의 세기</h1>
+      <p class="sub">광원에서 나온 빛은 사방으로 퍼져 나가요. 거리가 멀어지면 같은 넓이에 들어오는 빛이 얼마나 줄어드는지 직접 확인해 보세요. 손가락으로 돌려 볼 수 있어요.</p>
+    </div>
+    <div class="modes" role="tablist" aria-label="활동 고르기">
+      <button class="md" type="button" role="tab" id="mA" aria-selected="true">빛이 퍼지는 모습</button>
+      <button class="md" type="button" role="tab" id="mB" aria-selected="false">같은 가로등, 다른 거리</button>
+    </div>
   </header>
   <div class="stage">
     <section class="card viewer">
@@ -175,11 +214,7 @@
         <div class="fail3d" id="fail3d">3D 그림을 불러오지 못했어요.<br>인터넷 연결을 확인하고 새로고침해 주세요.<br>(오른쪽 설명은 그대로 읽을 수 있어요)</div>
       </div>
     </section>
-    <section class="card pad">
-      <div class="modes" role="tablist">
-        <button class="md" type="button" role="tab" id="mA" aria-selected="true">빛이 퍼지는 모습</button>
-        <button class="md" type="button" role="tab" id="mB" aria-selected="false">같은 가로등, 다른 거리</button>
-      </div>
+    <section class="card side">
       <div id="paneA">
         <div class="stepname"><span class="no">A</span><div><h2>멀어질수록 넓게 퍼지는 빛</h2><small>그림 Ⅷ-4처럼 광원에서 거리 1·2·3·4 배에 판을 세웠어요</small></div></div>
         <div class="dsel" id="dsel" role="group" aria-label="광원으로부터의 거리"></div>
@@ -188,15 +223,22 @@
           <div class="c"><small>빛이 비추는 넓이</small><b id="cA">1 칸</b></div><span class="ar">→</span>
           <div class="c hl"><small>한 칸에 들어오는 빛</small><b id="cL">1 배</b></div>
         </div>
-        <table class="tbl" id="tbl"><thead><tr><th>거리</th><th>넓이</th><th>한 칸의 빛</th><th></th></tr></thead><tbody></tbody></table>
-        <div class="why" id="whyA">
+        <div class="stabs" role="tablist" aria-label="기록표와 설명">
+          <button type="button" role="tab" data-s="aTbl" aria-selected="true">기록표</button>
+          <button type="button" role="tab" data-s="aWhy" aria-selected="false">왜 그럴까?</button>
+          <button type="button" role="tab" data-s="aNote" aria-selected="false">모형 안내</button>
+        </div>
+        <div class="spanes">
+        <div class="spane" id="aTbl"><table class="tbl" id="tbl"><thead><tr><th>거리</th><th>넓이</th><th>한 칸의 빛</th><th></th></tr></thead><tbody></tbody></table></div>
+        <div class="spane" id="aWhy"><div class="why" id="whyA">
           <h3>왜 그럴까?</h3>
           <div class="w" data-w="1"><i>1</i><span>광원에서 나온 빛은 <b>사방으로 퍼져 나가요</b>. 둥근 껍질이 커지면서 퍼지는 모습을 보세요.</span></div>
           <div class="w" data-w="2"><i>2</i><span>거리가 2 배가 되면 판의 가로도 2 배, 세로도 2 배가 되어 같은 빛이 <b>4 칸</b>에 퍼져요. 3 배면 9 칸이에요.</span></div>
           <div class="w" data-w="3"><i>3</i><span>같은 양의 빛을 더 많은 칸이 나누어 가지니, 노란 <b>한 칸에 들어오는 빛</b>은 1/4 배, 1/9 배, 1/16 배로 줄어요. 한 칸을 지나가는 빛 알갱이가 드물어지는 것을 보세요.</span></div>
           <div class="w" data-w="4"><i>4</i><span>그래서 광원에서 멀어질수록 빛의 세기는 줄어들고 <b>어둡게</b> 보여요. 스스로 빛을 내는 별도 마찬가지예요.</span></div>
+        </div></div>
+        <div class="spane" id="aNote"><div class="box an"><b class="t">모형 안내</b>빛 알갱이는 빛이 퍼지는 모습을 보여 주는 모형이에요. 판은 그림 Ⅷ-4처럼 한쪽 방향만 잘라서 보여 줘요. 실제로는 빛이 모든 방향으로 퍼져요.</div></div>
         </div>
-        <div class="box an"><b class="t">모형 안내</b>빛 알갱이는 빛이 퍼지는 모습을 보여 주는 모형이에요. 판은 그림 Ⅷ-4처럼 한쪽 방향만 잘라서 보여 줘요. 실제로는 빛이 모든 방향으로 퍼져요.</div>
       </div>
       <div id="paneB" hidden>
         <div class="stepname"><span class="no">B</span><div><h2>같은 밝기의 가로등</h2><small>모두 같은 가로등인데 멀리 있는 것이 어둡게 보여요</small></div></div>
@@ -206,13 +248,19 @@
           <div class="c"><small>가로등의 실제 밝기</small><b>모두 같음</b></div><span class="ar">→</span>
           <div class="c hl"><small>내 눈에 들어오는 빛</small><b id="lL">1 배</b></div>
         </div>
-        <table class="tbl" id="tbl2"><thead><tr><th>가로등</th><th>거리</th><th>눈에 들어오는 빛</th><th></th></tr></thead><tbody></tbody></table>
-        <div class="why">
+        <div class="stabs" role="tablist" aria-label="기록표와 설명">
+          <button type="button" role="tab" data-s="bTbl" aria-selected="true">기록표</button>
+          <button type="button" role="tab" data-s="bWhy" aria-selected="false">왜 그럴까?</button>
+        </div>
+        <div class="spanes">
+        <div class="spane" id="bTbl"><table class="tbl" id="tbl2"><thead><tr><th>가로등</th><th>거리</th><th>눈에 들어오는 빛</th><th></th></tr></thead><tbody></tbody></table></div>
+        <div class="spane" id="bWhy"><div class="why">
           <h3>왜 그럴까?</h3>
           <div class="w"><i>1</i><span>네 가로등은 <b>같은 밝기</b>예요. 그런데 '내 자리에서 보기'를 누르면 멀리 있는 가로등일수록 작고 어둡게 보여요.</span></div>
           <div class="w"><i>2</i><span>멀리 있는 가로등의 빛은 나에게 오는 동안 더 넓게 퍼져서, 내 눈에 들어오는 빛이 적어요.</span></div>
           <div class="w"><i>3</i><span>밤하늘의 별도 같아요. 지구에서 보이는 밝기(겉보기 등급)만으로는 별의 <b>실제 밝기</b>를 비교할 수 없어요.</span></div>
           <div class="w"><i>4</i><span>실제 밝기를 비교하려면 모든 별을 <b>같은 거리</b>에 놓고 비교해야 해요. 다음 시뮬레이션 '10 pc로 옮기기'에서 해 봐요.</span></div>
+        </div></div>
         </div>
       </div>
     </section>
@@ -317,6 +365,7 @@ const C3 = (() => {
 
   /* 무대: 렌더러·카메라·조명·손가락 조작 */
   function makeStage(host, opt = {}) {
+    let hold = !!opt.hold; // true면 준비(prepare)가 끝날 때까지 그리지 않아요
     const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -387,7 +436,7 @@ const C3 = (() => {
     let last = performance.now(), running = true;
     function tick(now) {
       requestAnimationFrame(tick);
-      if (!running || !visibleNow()) { last = now; return; }
+      if (!running || hold || !visibleNow()) { last = now; return; }
       if (opt.scroll) { const hr = host.getBoundingClientRect(); if (hr.bottom < -50 || hr.top > (window.innerHeight || 800) + 50) { last = now; return; } } // 화면 밖이면 쉬기
       const dt = Math.min(0.05, Math.max(0, (now - last) / 1000)); last = now;
       if (fly) {
@@ -425,7 +474,7 @@ const C3 = (() => {
     }
     try { let fr = 0; new ResizeObserver(() => { cancelAnimationFrame(fr); fr = requestAnimationFrame(() => { if (lastFit && !userMoved) { const f = fitPose(lastFit.objs, lastFit.o); flyTo(f.p, f.t, 0); } }); }).observe(host); } catch (e) {}
 
-    return { renderer, scene, camera, controls, sun, overlay, label, flyTo, fit, fitPose, onFrame: (f) => fns.push(f), size: () => ({ W, H }), resize };
+    return { host, renderer, scene, camera, controls, sun, overlay, label, flyTo, fit, fitPose, onFrame: (f) => fns.push(f), size: () => ({ W, H }), resize, stop: () => { running = false; }, release: () => { hold = false; } };
   }
 
   // 관 모양 전선(곡선)
@@ -471,7 +520,62 @@ const C3 = (() => {
   }
   const mesh = (geo, mat, x = 0, y = 0, z = 0) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true; return m; };
 
-  return { REDUCE, V, ease, clamp01, makeStage, canvasTex, gradientBg, blobTex, tube, makeDots, addTable, visibleNow, mesh };
+  /* ===== 빨리 뜨게 하기 (2026-10-12) =====
+     - lazy(host, fn): 그림 자리가 화면에 가까워지면 fn을 한 번 불러요(iframe 안에서도 되도록 위치를 직접 계산해요).
+     - prepare(st): 재질(셰이더)을 화면을 멈추지 않고 미리 번역한 뒤 그리기 시작해요. 그동안은 미리 찍은 사진(data-poster)을 보여 줘요.
+     - BAKE: 주소에 ?bake=… 이 있으면 영상·사진을 만드는 중이에요(tools/lesson-kit/bake.py). */
+  const BAKE = new URLSearchParams(location.search).get('bake') || '';
+  (function css() {
+    const s = document.createElement('style');
+    s.textContent = '.gl-host>.poster{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1;pointer-events:none}' +
+      '.gl-host.ready>.poster,.gl-host.ready>.prep{display:none}.gl-host.wait>canvas.gl,.gl-host.wait>.lbls{visibility:hidden}' +
+      '.gl-host>.prep{position:absolute;right:10px;bottom:10px;z-index:2;font:800 12.5px Pretendard,sans-serif;color:#33464a;background:rgba(255,255,255,.88);border-radius:9px;padding:5px 10px;pointer-events:none}' +
+      '.gl-host>video.figvid{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}';
+    (document.head || document.documentElement).appendChild(s);
+  })();
+  function posterOn(host) {
+    host.classList.add('wait');
+    const src = host.dataset.poster;
+    if (src && !BAKE && !host.querySelector('.poster')) { const im = document.createElement('img'); im.className = 'poster'; im.alt = ''; im.src = src; host.prepend(im); }
+    if (!BAKE && !host.querySelector('.prep')) { const t = document.createElement('span'); t.className = 'prep'; t.textContent = '3D 준비 중…'; host.appendChild(t); }
+  }
+  function lazy(host, fn, margin = 500) {
+    if (!host) return;
+    posterOn(host);
+    let done = false;
+    const near = () => { const r = host.getBoundingClientRect(), h = window.innerHeight || 800; return r.bottom > -margin && r.top < h + margin && r.width > 0; };
+    const go = () => { if (done || !near()) return; done = true; removeEventListener('scroll', go); removeEventListener('resize', go); clearInterval(iv); try { fn(); } catch (err) { console.error(err); throw err; } };
+    addEventListener('scroll', go, { passive: true }); addEventListener('resize', go);
+    const iv = setInterval(go, 400);
+    if (BAKE) { done = true; clearInterval(iv); if (BAKE === 'all' || BAKE === host.id) fn(); return; }
+    setTimeout(go, 0);
+  }
+  // 재질을 화면을 멈추지 않고 번역해요. 투명한 물체(유리·석영 등)가 있으면 뒤쪽을 따로 그릴 때 쓰는 재질 변형도 미리 준비해요
+  async function compileAll(r, scene, camera) {
+    if (!r.compileAsync) return;
+    await r.compileAsync(scene, camera);
+    let tr = false; scene.traverse((o) => { if (o.material && [].concat(o.material).some((m) => m.transmission > 0)) tr = true; });
+    if (tr) { const rt = new THREE.WebGLRenderTarget(4, 4, { type: THREE.HalfFloatType }), tm = r.toneMapping; r.toneMapping = THREE.NoToneMapping; r.setRenderTarget(rt); try { await r.compileAsync(scene, camera); } finally { r.setRenderTarget(null); r.toneMapping = tm; rt.dispose(); } }
+  }
+  async function prepare(st) {
+    const host = st.host; posterOn(host);
+    try { if (!BAKE) await compileAll(st.renderer, st.scene, st.camera); } catch (e) { console.warn(e); }
+    st.release(); host.classList.remove('wait'); host.classList.add('ready');
+    return st;
+  }
+  /* 보기만 하는 그림: 미리 만든 영상으로 바꿔요 (bake 중에는 3D로 그려요) */
+  function video(host, build) {
+    if (!host) return;
+    if (BAKE === host.id) { build(); return; }
+    const v = document.createElement('video');
+    v.className = 'figvid'; v.muted = true; v.loop = true; v.autoplay = true; v.playsInline = true; v.setAttribute('playsinline', ''); v.setAttribute('muted', '');
+    v.preload = 'metadata'; if (host.dataset.poster) v.poster = host.dataset.poster; v.src = host.dataset.video;
+    host.appendChild(v); host.classList.add('ready');
+    // 화면에 보일 때만 재생해요
+    const chk = () => { const r = host.getBoundingClientRect(), on = r.bottom > 0 && r.top < (window.innerHeight || 800) && !document.hidden; if (on && v.paused) v.play().catch(() => {}); else if (!on && !v.paused) v.pause(); };
+    addEventListener('scroll', chk, { passive: true }); setInterval(chk, 700); chk();
+  }
+  return { BAKE, lazy, prepare, compileAll, video, REDUCE, V, ease, clamp01, makeStage, canvasTex, gradientBg, blobTex, tube, makeDots, addTable, visibleNow, mesh };
 })();
 /* ===== 3D: 빛이 퍼지는 모습 (그림 Ⅷ-4처럼 광원에서 거리 1·2·3·4 배인 판) =====
    읽기 페이지와 시뮬레이션 ②가 같은 모형을 써요. 판의 칸 수와 밝기(1, 1/4, 1/9, 1/16 배)는 교과서 값이에요.
@@ -724,6 +828,27 @@ try {
   S.home++; S.on3d();
   window.SM.ok3d = true;
 } catch (err) { window.SM_err('3D', err); }
+</script>
+<script>
+/* ===== 블록: 칸 안의 작은 탭 (한 화면 배치) ===== */
+(() => {
+  'use strict';
+  try {
+    const groups = Array.from(document.querySelectorAll('.stabs'));
+    groups.forEach((tb) => {
+      const bs = Array.from(tb.querySelectorAll('button[data-s]'));
+      const go = (id) => bs.forEach((b) => {
+        const on = b.dataset.s === id, p = document.getElementById(b.dataset.s);
+        b.setAttribute('aria-selected', String(on));
+        if (p) { p.classList.toggle('off', !on); p.setAttribute('aria-hidden', String(!on)); }
+      });
+      bs.forEach((b) => b.addEventListener('click', () => go(b.dataset.s)));
+      tb.goSub = go;
+      go((bs.find((b) => b.getAttribute('aria-selected') === 'true') || bs[0]).dataset.s);
+    });
+    window.FIT = { go: (id) => { const b = document.querySelector(`.stabs button[data-s="${id}"]`); if (b) b.closest('.stabs').goSub(id); } };
+  } catch (err) { window.SM_err ? window.SM_err('칸 안의 탭', err) : console.error(err); }
+})();
 </script>
 </body>
 </html>
