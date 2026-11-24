@@ -13,7 +13,7 @@
   - `c3.js`: three.js 3D 도구(무대, 이름표, 전선, 흐르는 알갱이, 책상). `st.fit(물체, {dir, margin, dur})`는 물체가 화면에 꼭 들어오게 카메라를 맞추고, 가로↔세로가 바뀌면 다시 맞춰요
   - `bulb.js`: 전구(꼬마·백열·LED)와 똑딱 스위치 3D 모형
   - `flow.js`: 2D SVG 도식 도구. `FLOW.dots(path, {n, r, color, speed})`로 길을 따라 알갱이를 흐르게 하고, `.set({rate})`로 양을 바꿔요
-  - `shell.html`: 탭 껍데기 틀
+  - `shell.html`: 탭 껍데기 틀. 끝에서 공통 손질 `assets/ras-shell.js`를 불러와요(세로 화면 탭 좁히기, 허브가 이 수업 단원을 펼치게 기억, 마지막 탭 끝에 '수업 목록으로 · 이 단원 한자어 · 다음 수업' 길). 다음 수업은 허브 `index.html`의 `TABS` 차례를 그대로 읽으니 따로 적지 않아요
 - `src/<수업>/`: 수업 원본
   - `lesson.json`: 출력 폴더, 제목, 로고, 탭 목록. `"shell": false`면 탭 껍데기 없이 `index.tpl.html` 한 장만 만들어요(예: `career-map`)
   - `*.tpl.html`: 페이지 템플릿
