@@ -112,12 +112,26 @@
   .score i.ok{background:var(--ok)}.score i.no{background:var(--no)}
   .tip{border-radius:16px;padding:12px 14px;background:linear-gradient(135deg,rgba(90,180,255,.16),rgba(90,180,255,.04));border:1px solid rgba(90,180,255,.35);font-size:15px;line-height:1.65;word-break:keep-all;color:var(--ink2)}
   .tip b{color:#fff}
+  /* 한 화면 배치: 결과·사진, 질문·정리는 칸 안의 작은 탭으로 */
+  .scope{max-width:230px}
+  .ctl .note{flex:1 1 300px}
+  .res{flex:1;min-height:0;display:flex;flex-direction:column;gap:10px}
+  .ptabs{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;background:rgba(255,255,255,.07);border-radius:14px;padding:4px}
+  .ptabs button{min-height:44px;border:0;border-radius:11px;background:transparent;font-weight:800;font-size:14.5px;color:var(--muted);cursor:pointer;white-space:nowrap;padding:0 8px}
+  .ptabs button[aria-selected="true"]{background:#fff;color:#12305e}
+  .ptabs button:disabled{opacity:.4;cursor:default}
+  .ptabs button.new:not([aria-selected="true"]){color:var(--accent);box-shadow:inset 0 0 0 2px var(--accent)}
+  .pbody{flex:1;min-height:0;overflow:auto}
+  .pane{display:none}.pane.on{display:block}
+  .pane .say{margin-top:10px}
+  .mis{height:calc(100vh - 62px);height:calc(100dvh - 62px);min-height:0}
+  .mis .mp:last-child .pane.on{display:flex;flex-direction:column;gap:10px}
   @media (max-width:900px){
     .top{flex-wrap:wrap;height:auto}.top .sp{display:none}
     .lay,.mis{grid-template-columns:1fr;height:auto;min-height:0}
-    .scene .cvw{height:520px;flex:none}
-    .side{overflow:visible}
-    .scope{max-width:340px}
+    .scene .cvw{height:560px;flex:none}
+    .side{overflow:visible;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:stretch}
+    .scope{max-width:300px}
   }
   @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -144,6 +158,7 @@
       <div class="rng"><label for="dX">별 X까지 거리</label><span class="end">가깝게</span><input type="range" id="dX" min="0" max="100" value="23"><span class="end">멀게</span></div>
       <div class="tog" role="switch" tabindex="0" id="tY" aria-checked="true"><span class="sw"></span>별 Y 보기</div>
       <div class="tog" role="switch" tabindex="0" id="tStop" aria-checked="false"><span class="sw"></span>지구가 공전하지 않는다면?</div>
+      <p class="note">실제 연주 시차는 1″보다도 작을 만큼 아주 작아요. 잘 보이도록 각도와 크기를 크게 과장한 모형이에요.</p>
     </div>
   </section>
   <aside class="side">
@@ -152,19 +167,24 @@
       <div class="scope"><canvas id="scopeCv" aria-label="망원경으로 본 하늘. 멀리 있는 별들 사이에서 별 X와 별 Y가 보인다."></canvas><span class="tag" id="scopeTag">A에서 0개월</span></div>
       <div style="display:flex;gap:8px;margin-top:8px"><button type="button" class="btn ghost" id="bBlink" style="flex:1;justify-content:center" disabled>A·B 사진 번갈아 보기</button></div>
     </section>
-    <section class="card sc">
-      <h3><span class="lab">사진</span>6개월 간격으로 찍은 하늘</h3>
+    <section class="card sc res" id="obsRes">
+      <div class="ptabs" role="tablist" aria-label="비교와 사진">
+        <button type="button" role="tab" data-p="cmp" aria-selected="true">연주 시차의 크기</button>
+        <button type="button" role="tab" data-p="pho" aria-selected="false">6개월 간격 사진</button>
+      </div>
+      <div class="pbody">
+      <div class="pane" data-pane="pho">
       <div class="photos">
         <div class="ph"><canvas id="phA"></canvas><span>A 위치</span><div class="empty" id="eA">지구가 A에 오면 사진을 찍어요</div></div>
         <div class="ph"><canvas id="phB"></canvas><span>B 위치 (6개월 뒤)</span><div class="empty" id="eB">지구가 B에 오면 사진을 찍어요</div></div>
       </div>
-    </section>
-    <section class="card sc">
-      <h3><span class="lab">비교</span>연주 시차의 크기</h3>
+      </div>
+      <div class="pane on" data-pane="cmp">
       <div class="meter"><span style="color:var(--X)">별 X</span><div class="bar"><i id="mX" style="background:linear-gradient(90deg,#2f86e0,#8fd3ff)"></i></div></div>
       <div class="meter" id="mYrow"><span style="color:var(--Y)">별 Y</span><div class="bar"><i id="mY" style="background:linear-gradient(90deg,#9fb52a,#e5f27a)"></i></div></div>
       <p class="say" id="say"></p>
-      <p class="note" style="margin-top:8px">실제 연주 시차는 1″보다도 작을 만큼 아주 작아요. 잘 보이도록 각도와 크기를 크게 과장한 모형이에요.</p>
+      </div>
+      </div>
     </section>
   </aside>
 </main>
@@ -205,16 +225,23 @@
   </section>
   <section class="card mp">
     <div class="tip"><b>2013년</b>에 발사된 <b>가이아 우주 망원경</b>은 지구와 함께 움직이며 별의 위치를 관측해요. 왼쪽은 <b>6개월 간격</b>으로 찍은 같은 하늘이에요. 아주 멀리 있는 배경 별들은 거의 움직이지 않아요.</div>
-    <div class="mq" id="mq1"><p>1. 두 별 A와 B의 위치가 변한 까닭은?</p>
+    <div class="ptabs" role="tablist" aria-label="질문과 정리">
+      <button type="button" role="tab" data-p="mq1" aria-selected="true">질문 1</button>
+      <button type="button" role="tab" data-p="mq2" aria-selected="false">질문 2</button>
+      <button type="button" role="tab" data-p="mdone" aria-selected="false" disabled>정리</button>
+    </div>
+    <div class="pbody">
+    <div class="pane on" data-pane="mq1"><div class="mq" id="mq1"><p>1. 두 별 A와 B의 위치가 변한 까닭은?</p>
       <div class="opts">
         <button type="button" data-v="0">지구가 공전하여 관측하는 위치가 바뀌었기 때문에</button>
         <button type="button" data-v="1">별 A와 B가 6개월 동안 스스로 빠르게 날아갔기 때문에</button>
         <button type="button" data-v="2">망원경의 방향이 흔들렸기 때문에</button>
-      </div><div class="fb"></div></div>
-    <div class="mq" id="mq2"><p>2. 두 별의 연주 시차를 비교했을 때, 지구에서 <b>더 멀리</b> 떨어져 있는 별은?</p>
+      </div><div class="fb"></div></div></div>
+    <div class="pane" data-pane="mq2"><div class="mq" id="mq2"><p>2. 두 별의 연주 시차를 비교했을 때, 지구에서 <b>더 멀리</b> 떨어져 있는 별은?</p>
       <div class="opts two"><button type="button" data-v="A">별 A</button><button type="button" data-v="B">별 B</button></div><div class="fb"></div></div>
-    <button type="button" class="btn pri hide" id="mNext" style="justify-content:center">다른 하늘 사진으로 또 해 보기 →</button>
-    <div class="tip hide" id="mDone"><b>정리</b> · 6개월 동안 위치가 <b>많이</b> 변한 별은 연주 시차가 <b>커서 가까운</b> 별이고, <b>조금</b> 변한 별은 연주 시차가 <b>작아서 먼</b> 별이에요. 지구로부터 100 pc 이상 떨어진 별은 연주 시차가 너무 작아서 이 방법으로 거리를 알기 어려워요.</div>
+    <button type="button" class="btn pri hide" id="mNext" style="justify-content:center">다른 하늘 사진으로 또 해 보기 →</button></div>
+    <div class="pane" data-pane="mdone"><div class="tip hide" id="mDone"><b>정리</b> · 6개월 동안 위치가 <b>많이</b> 변한 별은 연주 시차가 <b>커서 가까운</b> 별이고, <b>조금</b> 변한 별은 연주 시차가 <b>작아서 먼</b> 별이에요. 지구로부터 100 pc 이상 떨어진 별은 연주 시차가 너무 작아서 이 방법으로 거리를 알기 어려워요.</div></div>
+    </div>
   </section>
 </main>
 
@@ -299,6 +326,22 @@ window.RD = window.RD || {};
   window.SKY = { star: star, field: field, drawField: drawField, space: space, fit: fit, rng: rng };
   window.RD.ok1 = true;
   } catch (err) { window.RD_err && window.RD_err('별 그리기 도구', err); }
+})();
+</script>
+<script>
+/* ===== 블록 1-2: 칸 안의 작은 탭 (비교·사진, 질문·정리) ===== */
+(function () {
+  'use strict';
+  try {
+  var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+  function show(box, key) {
+    $$('.ptabs button', box).forEach(function (b) { var on = b.dataset.p === key; b.setAttribute('aria-selected', String(on)); if (on) b.classList.remove('new'); });
+    $$('.pane', box).forEach(function (p) { p.classList.toggle('on', p.dataset.pane === key); });
+  }
+  function open(box, key) { var b = box.querySelector('.ptabs button[data-p="' + key + '"]'); if (b.disabled) b.disabled = false; if (b.getAttribute('aria-selected') !== 'true') b.classList.add('new'); }
+  $$('.ptabs').forEach(function (t) { var box = t.parentNode; $$('button', t).forEach(function (b) { b.addEventListener('click', function () { show(box, b.dataset.p); }); }); });
+  window.PTAB = { show: show, open: open };
+  } catch (err) { window.RD_err && window.RD_err('작은 탭', err); }
 })();
 </script>
 <script>
@@ -595,10 +638,11 @@ window.RD = window.RD || {};
       if (after) after(r.ok);
     }); });
   }
+  var misBox = $('#mq1').closest('.mp');
   wire('#mq1', function (v) {
     return v === '0' ? { ok: true, msg: '맞아요! 가이아는 지구와 함께 태양 둘레를 돌아요. 6개월 뒤에는 공전 궤도의 반대쪽에서 보기 때문에 가까운 별이 보이는 방향이 달라져요.' }
       : { ok: false, msg: '아주 멀리 있는 배경 별들은 그대로인데 A와 B만 위치가 바뀌었어요. 6개월 동안 바뀐 것은 무엇일까요?' };
-  });
+  }, function (ok) { if (ok) window.PTAB.open(misBox, 'mq2'); });
   var tried = false;
   wire('#mq2', function (v) {
     var ok = v === cur.far, near = cur.far === 'A' ? 'B' : 'A';
@@ -609,7 +653,7 @@ window.RD = window.RD || {};
   }, function (ok) {
     if (!ok) return;
     if (res.length < ROUNDS) $('#mNext').classList.remove('hide');
-    else $('#mDone').classList.remove('hide');
+    else { $('#mDone').classList.remove('hide'); window.PTAB.open(misBox, 'mdone'); }
   });
   $('#mNext').addEventListener('click', function () { round++; tried = false; newRound(); });
   $('#mGrid').addEventListener('click', function () { grid = !grid; this.setAttribute('aria-pressed', String(grid)); });
