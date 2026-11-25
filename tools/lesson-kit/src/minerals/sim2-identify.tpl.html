@@ -24,6 +24,25 @@
   .keybox svg{width:100%;height:auto;display:block}
   .keybox .kn rect{transition:fill .3s,stroke .3s}
   .done-ban{margin-top:10px;border-radius:14px;padding:12px 14px;background:#e8f7ef;color:#0f5a36;font-weight:800;font-size:15px;line-height:1.6;word-break:keep-all}
+/*@@LOCAL:_fit.css@@*/
+  /* 실험 다섯 가지를 한 줄에, 관찰 기록은 이름표를 왼쪽에 */
+  #workBox > .lab-l{margin-top:0}
+  #picks{grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);grid-template-columns:none}
+  #picks .pk{padding:0 6px;gap:5px;min-height:54px;justify-content:center}
+  #picks .pk .sw{margin-right:0;width:18px;height:18px}
+  .pk .lt{line-height:1.25;white-space:nowrap;text-align:left}.pk .lt i{display:none}.pk .lt b{display:block;font-weight:800}
+  #picks .pk.fin::after{position:static;margin:-18px 2px 0 1px;width:5px;height:10px;border-width:0 2.5px 2.5px 0;flex:none}
+  .tests{grid-template-columns:repeat(5,1fr)}
+  .tests .act{min-height:56px;padding:4px;line-height:1.3}
+  .note2{display:flex;align-items:center;gap:10px}
+  .note2 b.h{flex:none;width:62px;margin:0;line-height:1.4;word-break:keep-all}
+  .note2 .obs{flex:1;min-width:0;align-items:center}
+  .keybox{margin-top:0}
+  /* 할 일은 그림 칸 아래 줄에 */
+  .viewer.cap{display:flex;flex-direction:column}
+  .vbox{position:relative;flex:1;min-height:0}
+  .vbox .gl-host{height:100%}
+  .viewer.cap .what{margin:0;padding:10px 16px 12px;border-top:1px solid var(--line)}
 </style>
 <script type="importmap">
 { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }
@@ -31,27 +50,38 @@
 </head>
 <body>
 <div class="app">
-  <header>
-    <span class="eyebrow">광물의 특성 · 시뮬레이션 ②</span>
-    <h1>광물 구별하기: 이름 없는 표본의 정체 밝히기</h1>
-    <p class="sub">이름표가 없는 광물 표본에 실험을 해 보고, 관찰한 특성으로 어떤 광물인지 알아내요. 알아낸 방법은 '구별 열쇠'로 정리돼요. (가상 실험이에요)</p>
+  <header class="top">
+    <div class="ttl">
+      <span class="eyebrow">광물의 특성 · 시뮬레이션 ②</span><h1>광물 구별하기: 이름 없는 표본의 정체 밝히기</h1>
+      <p class="sub">이름표가 없는 광물 표본에 실험을 해 보고, 관찰한 특성으로 어떤 광물인지 알아내요. 알아낸 방법은 '구별 열쇠'로 정리돼요. (가상 실험이에요)</p>
+    </div>
+    <div class="flow three3" id="flow" role="tablist" aria-label="단계 고르기">
+      <button class="fs" type="button" role="tab" data-s="1"><b>1</b>노란 광물 셋</button>
+      <button class="fs" type="button" role="tab" data-s="2"><b>2</b>이름 없는 표본 상자</button>
+      <button class="fs" type="button" role="tab" data-s="3"><b>3</b>구별 방법 정리</button>
+    </div>
   </header>
   <div class="stage">
-    <section class="card viewer">
+    <section class="card viewer cap">
+      <div class="vbox">
       <div class="gl-host" id="host" data-poster="media/p-lab2.jpg" role="img" aria-label="실험 책상. 뒤쪽에 이름표 대신 A, B, C 같은 기호가 붙은 광물 표본이 놓여 있고, 조흔판, 클립, 묽은 염산이 준비되어 있다."></div>
       <div class="vt tr"><button class="vb" type="button" id="vAll">책상 전체 보기</button></div>
       <div class="toast" id="toast"></div>
       <span class="hint lhint">손가락으로 돌려 볼 수 있어요</span>
       <div id="fail3d" class="fail3d">3D 그림을 불러오지 못했어요. 인터넷 연결을 확인하고 새로고침해 주세요.</div>
-    </section>
-    <section class="card pad">
-      <div class="flow three3" id="flow" role="tablist">
-        <button class="fs" type="button" role="tab" data-s="1"><b>1</b>노란 광물 셋</button>
-        <button class="fs" type="button" role="tab" data-s="2"><b>2</b>이름 없는 표본 상자</button>
-        <button class="fs" type="button" role="tab" data-s="3"><b>3</b>구별 방법 정리</button>
       </div>
-      <div class="stepname"><span class="no" id="sNo">1</span><div><h2 id="sTitle"></h2><small id="sSub"></small></div></div>
       <p class="what" id="sWhat"></p>
+    </section>
+    <section class="card side">
+      <div class="stepname"><span class="no" id="sNo">1</span><div><h2 id="sTitle"></h2><small id="sSub"></small></div><div class="nav"><button class="btn ghost" type="button" id="bPrev">이전</button><button class="btn primary" type="button" id="bNext">다음 단계</button></div></div>
+      <div class="prog"><i id="prog"></i></div>
+      <div class="stabs" role="tablist" aria-label="실험과 구별 열쇠">
+        <button type="button" role="tab" data-s="pDo" id="tabDo" aria-selected="true">실험하기</button>
+        <button type="button" role="tab" data-s="pKey" aria-selected="false">구별 열쇠</button>
+        <button type="button" role="tab" data-s="pNote" aria-selected="false">모형 안내</button>
+      </div>
+      <div class="spanes">
+      <div class="spane" id="pDo">
       <div id="workBox">
         <p class="lab-l">표본 고르기</p>
         <div class="picks" id="picks"></div>
@@ -60,10 +90,10 @@
         <div class="rec"><p class="lab-l" id="nameQ">이 표본은 어떤 광물일까요?</p><div class="names chips" id="names"></div><div class="fb" id="nameFb"></div></div>
       </div>
       <div id="endBox" hidden></div>
-      <div class="keybox"><h3>구별 열쇠 <small style="color:var(--muted);font-weight:700" id="keyNote">· 표본을 알아내면 길이 밝아져요</small></h3><div id="keySvg"></div></div>
-      <div class="acts"><button class="btn ghost" type="button" id="bPrev">이전</button><button class="btn primary" type="button" id="bNext">다음 단계</button></div>
-      <div class="prog"><i id="prog"></i></div>
-      <div class="box an"><b class="t">모형 안내</b>3D 광물은 실제 표본의 생김새를 참고해 만든 모형이고, 실험 장면은 가상이에요. 실제 표본은 같은 광물이라도 생김새와 색이 조금씩 달라요.</div>
+      </div>
+      <div class="spane" id="pKey"><div class="keybox"><h3>구별 열쇠 <small style="color:var(--muted);font-weight:700" id="keyNote">· 표본을 알아내면 길이 밝아져요</small></h3><div id="keySvg"></div></div></div>
+      <div class="spane" id="pNote"><div class="box an"><b class="t">모형 안내</b>3D 광물은 실제 표본의 생김새를 참고해 만든 모형이고, 실험 장면은 가상이에요. 실제 표본은 같은 광물이라도 생김새와 색이 조금씩 달라요.</div></div>
+      </div>
     </section>
   </div>
   <p class="credit">광물의 특성 · 광물 구별하기</p>
@@ -97,7 +127,7 @@ function buildLab(set) {
     host.classList.remove('ready'); host.querySelectorAll('.poster').forEach((e) => { if (lab) e.remove(); });
     st = C3.makeStage(host, { top: '#f3f0ea', bottom: '#d9d2c6', fov: 32, minD: 1.2, maxD: 14, fitWidth: true, hold: true });
     st.controls.maxPolarAngle = Math.PI * 0.47;
-    lab = LAB.make(st, { specimens: set }); S.lab = lab; S.st = st; C3.prepare(st);
+    lab = LAB.make(st, { oneScreen: true, specimens: set }); S.lab = lab; S.st = st; C3.prepare(st);
     window.SM.ok3d = true;
   } catch (err) { window.SM_err('3D 그림', err); }
 }
@@ -159,7 +189,7 @@ try {
     const stp = STEPS[step], set = stp.set;
     $('#workBox').hidden = !set; $('#endBox').hidden = !!set;
     if (!set) return;
-    $('#picks').innerHTML = set.map((s) => `<button type="button" class="pk${s.key === curKey ? ' sel' : ''}${solved[s.key] ? ' fin' : ''}" data-k="${s.key}"><span class="sw" style="background:${solved[s.key] ? SW[s.id] : '#c9ced4'}"></span>${s.label}${solved[s.key] ? ' · ' + INFO[s.id].name : ''}</button>`).join('');
+    $('#picks').innerHTML = set.map((s) => `<button type="button" class="pk${s.key === curKey ? ' sel' : ''}${solved[s.key] ? ' fin' : ''}" data-k="${s.key}"><span class="sw" style="background:${solved[s.key] ? SW[s.id] : '#c9ced4'}"></span><span class="lt">${s.label}${solved[s.key] ? '<i> · </i><b>' + INFO[s.id].name + '</b>' : ''}</span></button>`).join('');
     $$('#picks .pk').forEach((b) => b.addEventListener('click', () => pick(b.dataset.k)));
     const busy = !lab || lab.busy;
     $('#tests').innerHTML = TESTS.map(([a, l]) => `<button type="button" class="act" data-a="${a}" ${busy || !curKey ? 'disabled' : ''}>${l}</button>`).join('');
@@ -212,6 +242,14 @@ try {
     })();
     paintWork(); await p; paintWork();
   }
+  /* 질문은 한 번에 하나씩 보여요 */
+  function askNav(root) {
+    const asks = $$('.ask', root), nav = $('.qnav', root), bs = $$('button', nav);
+    const go = (i) => { asks.forEach((el, k) => (el.hidden = k !== i)); bs.forEach((b, k) => b.classList.toggle('on', k === i)); };
+    bs.forEach((b, i) => b.addEventListener('click', () => go(i)));
+    asks.forEach((el, i) => $$('.three button', el).forEach((b) => b.addEventListener('click', () => { if (b.className === 'good') bs[i].classList.add('fin'); })));
+    go(0);
+  }
   function paintEnd() {
     if (step !== 3) return;
     const QS = [
@@ -220,12 +258,13 @@ try {
       { q: '검은색인 자철석과 흑운모를 구별하는 방법은?', o: ['클립을 가져다 대거나 조흔색을 비교한다', '겉보기 색을 비교한다', '묽은 염산을 떨어뜨린다'], a: 0, e: '자철석은 <b>자성</b>이 있어 클립이 붙고, 흑운모는 붙지 않아요. 조흔색도 자철석은 검은색, 흑운모는 <b>흰색</b>이에요.' },
       { q: '광물을 구별할 때 특성을 하나만 보지 않고 여러 가지를 함께 비교하는 까닭은?', o: ['한 가지 특성이 같은 광물이 여럿 있을 수 있어서', '실험이 재미있어서', '광물의 색은 항상 다르기 때문에'], a: 0, e: '광물은 종류에 따라 <b>고유한 특성</b>을 가지지만, 색처럼 한 가지 특성은 여러 광물이 같을 수 있어요. 그래서 <b>색, 조흔색, 굳기, 자성, 염산 반응</b> 등을 함께 비교해요.' },
     ];
-    $('#endBox').innerHTML = QS.map((x, i) => `<div class="ask" data-i="${i}"><p>${x.q}</p><div class="three">${x.o.map((o, j) => `<button type="button" data-j="${j}">${o}</button>`).join('')}</div><div class="ans"></div></div>`).join('') +
+    $('#endBox').innerHTML = `<div class="qnav">${QS.map((x, i) => `<button type="button">질문 ${i + 1}</button>`).join('')}</div>` + QS.map((x, i) => `<div class="ask" data-i="${i}"><p>${x.q}</p><div class="three">${x.o.map((o, j) => `<button type="button" data-j="${j}">${o}</button>`).join('')}</div><div class="ans"></div></div>`).join('') +
       `<div class="done-ban">정리: 광물은 종류에 따라 고유한 특성을 가져요. 먼저 <b>색</b>으로 나누고, 색이 비슷하면 <b>조흔색</b>, <b>자성</b>, <b>염산 반응</b>, <b>굳기</b>를 비교해 구별해요.</div>`;
     $$('#endBox .ask').forEach((el) => {
       const x = QS[+el.dataset.i];
-      $$('button', el).forEach((b) => b.addEventListener('click', () => { const j = +b.dataset.j; $$('button', el).forEach((o, k) => { o.className = k === x.a ? 'good' : k === j ? 'bad' : ''; }); $('.ans', el).innerHTML = j === x.a ? x.e : '다시 생각해 보세요. 아래 구별 열쇠를 보면 알 수 있어요.'; }));
+      $$('button', el).forEach((b) => b.addEventListener('click', () => { const j = +b.dataset.j; $$('button', el).forEach((o, k) => { o.className = k === x.a ? 'good' : k === j ? 'bad' : ''; }); $('.ans', el).innerHTML = j === x.a ? x.e : '다시 생각해 보세요. 구별 열쇠를 보면 알 수 있어요.'; }));
     });
+    askNav($('#endBox'));
   }
   function setStep(n) {
     const prevSet = STEPS[step].set; step = n; const stp = STEPS[n];
@@ -237,7 +276,9 @@ try {
     if (stp.set && stp.set !== prevSet) { curKey = null; buildLab(stp.set); }
     else if (!stp.set && lab) lab.view('all');
     if (n === 3 && !lab) buildLab(SET2);
+    $('#tabDo').textContent = n === 3 ? '질문' : '실험하기'; if (window.FIT) window.FIT.go('pDo');
     paintWork(); paintKey(); paintEnd();
+    setTimeout(() => { if (lab && !curKey && !lab.busy) lab.view('all', 0.01); }, 80); // 칸 높이가 정해진 뒤 다시 맞춰요
   }
   $$('#flow .fs').forEach((b) => b.addEventListener('click', () => { if (!lab || !lab.busy) setStep(+b.dataset.s); }));
   $('#bPrev').addEventListener('click', () => { if (step > 1 && (!lab || !lab.busy)) setStep(step - 1); });
@@ -251,6 +292,9 @@ try {
   if (q.get('m')) { (async () => { const k = (STEPS[step].set || [])[+q.get('m')]; if (k) { await pick(k.key); if (q.get('do')) for (const a of q.get('do').split('+')) await act(a); } })(); }
   window.SM.okUI = true;
 } catch (err) { window.SM_err('안내·버튼', err); }
+</script>
+<script>
+/*@@LOCAL:_fit.js@@*/
 </script>
 </body>
 </html>
