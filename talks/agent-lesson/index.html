@@ -21,7 +21,10 @@
     font-family:"Pretendard",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;-webkit-font-smoothing:antialiased}
   button{font:inherit;color:inherit}
   body{display:grid;place-items:center}
-  .deck{position:relative;width:var(--dw,100vw);height:var(--dh,56.25vw);background:var(--paper);overflow:hidden}
+  .deck{position:relative;width:var(--dw,100vw);height:var(--dh,56.25vw);background:var(--paper);overflow:hidden;
+    touch-action:pinch-zoom;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
+  .deck .toc{touch-action:pan-y}
+  :fullscreen body,:-webkit-full-screen body{background:#fff}
 
   /* ── 장 배치 ─────────────────────────────────────────
      data-layout="text"  글만 (넓은 여백)
@@ -7135,6 +7138,7 @@ DECK.anim('p10-check', stage => {
   <span class="where" id="where"></span>
   <span class="dots" id="dots"></span>
   <span class="sp"></span>
+  <button class="bb" id="fsBtn" hidden>전체 화면</button>
   <button class="bb" id="tocBtn">목차</button>
   <button class="bb" id="prev" aria-label="이전">←</button>
   <button class="bb go" id="next">다음 →</button>
@@ -7239,6 +7243,36 @@ try {
   });
   /* 실제 페이지(iframe) 안을 누르면 키보드가 그쪽으로 감 → 막대에 마우스를 올리면 다시 발표로 */
   bar.addEventListener('mouseenter', () => { if (document.activeElement && document.activeElement.tagName==='IFRAME') document.activeElement.blur(); window.focus(); });
+
+  /* 전체 화면: 지원하는 기기에서만 단추가 보임 (아이폰 사파리는 지원 안 함) */
+  const fsBtn = document.getElementById('fsBtn'), root = document.documentElement;
+  const fsReq = root.requestFullscreen || root.webkitRequestFullscreen;
+  const fsEl = () => document.fullscreenElement || document.webkitFullscreenElement;
+  if (fsReq) {
+    fsBtn.hidden = false;
+    fsBtn.onclick = () => { if (fsEl()) (document.exitFullscreen || document.webkitExitFullscreen).call(document); else fsReq.call(root); };
+    const fsLabel = () => { fsBtn.textContent = fsEl() ? '전체 화면 끝' : '전체 화면'; setTimeout(fit, 120); };
+    document.addEventListener('fullscreenchange', fsLabel); document.addEventListener('webkitfullscreenchange', fsLabel);
+  }
+  addEventListener('keydown', e => { if ((e.key==='f' || e.key==='F') && !(e.target.closest && e.target.closest('input,textarea'))) fsBtn.click(); });
+
+  /* 터치: 화면을 톡 치면 '다음'과 같음. 왼쪽→오른쪽으로 밀면 이전, 오른쪽→왼쪽으로 밀면 다음.
+     단추·링크·입력 칸·실제 페이지·누를 수 있는 그림 위에서는 원래 동작을 그대로 둠 */
+  let t0 = null;
+  const tappable = el => el.closest('button,a,input,select,textarea,label,summary,[role=button],[onclick],.live,.toc,.bar,[data-notap]')
+    || getComputedStyle(el).cursor === 'pointer';
+  deck.addEventListener('pointerdown', e => {
+    if (e.pointerType === 'mouse') { t0 = null; return; }
+    t0 = { x:e.clientX, y:e.clientY, t:Date.now(), skip: tappable(e.target) };
+  });
+  deck.addEventListener('pointerup', e => {
+    if (!t0 || e.pointerType === 'mouse') return;
+    const dx = e.clientX - t0.x, dy = e.clientY - t0.y, s = t0; t0 = null;
+    if (s.skip || toc.classList.contains('on')) return;
+    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy)*1.5) { dx < 0 ? next() : prev(); return; }
+    if (Math.abs(dx) < 12 && Math.abs(dy) < 12 && Date.now() - s.t < 600) next();
+  });
+  deck.addEventListener('pointercancel', () => { t0 = null; });
 
   const tg = document.getElementById('tocGrid'); let last = '';
   slides.forEach((s,i) => {
