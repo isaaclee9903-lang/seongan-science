@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>물체의 색과 빛의 합성 – 조명 실험실</title>
+<script>
+/* 문제 알림: 코드에 오류가 나면 화면 아래에 빨간 상자로 알려 줘요 (선생님 확인용) */
+(function () {
+  function box() {
+    var b = document.getElementById('smErr');
+    if (!b && document.body) {
+      b = document.createElement('div'); b.id = 'smErr';
+      b.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;background:#fdecea;color:#8a1f17;border:2px solid #d9534f;border-radius:12px;padding:10px 14px;font:600 14px/1.5 sans-serif;white-space:pre-wrap';
+      document.body.appendChild(b);
+    }
+    return b;
+  }
+  window.SM_err = function (where, err) {
+    var msg = '[' + where + '] ' + (err && err.message ? err.message : String(err));
+    var show = function () { var b = box(); if (b) b.textContent += (b.textContent ? '\n' : '') + msg; };
+    if (document.body) show(); else document.addEventListener('DOMContentLoaded', show);
+  };
+  window.addEventListener('error', function (e) { window.SM_err('스크립트', { message: e.message + ' (줄 ' + e.lineno + ')' }); });
+  window.addEventListener('load', function () {
+    setTimeout(function () {
+      var S = window.SM || {};
+      if (!S.okUI) window.SM_err('실행 안 됨', { message: '안내·버튼 코드가 실행되지 않았어요. 파일이 끝(</html>)까지 들어 있는지 확인해 주세요.' });
+      if (document.getElementById('fail3d') && !S.ok3d) { var f = document.getElementById('fail3d'); if (f) f.classList.add('show'); window.SM_err('3D 그림', { message: '3D 그림을 불러오지 못했어요. 인터넷 연결(cdn.jsdelivr.net)을 확인하고 새로고침해 주세요.' }); }
+    }, 9000);
+  });
+})();
+</script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+
+  :root{--bg:#edf3f8;--card:#fff;--ink:#14263b;--ink2:#34495e;--muted:#5a6b7e;--line:#dde6ee;--accent:#0e63b3;--accent-soft:#e3effb;
+    --fab:#4b3fb5;--fab-soft:#ecebfb;--ok:#1f9d5c;--no:#d9534f;
+    --shadow:0 1px 2px rgba(20,38,59,.06),0 8px 24px rgba(20,38,59,.07);--ease:cubic-bezier(.2,.8,.2,1)}
+  *{box-sizing:border-box}html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:"Pretendard",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  button{font:inherit;color:inherit}
+  .app{max-width:1320px;margin:0 auto;padding:14px 16px 28px;display:flex;flex-direction:column;gap:12px}
+  .eyebrow{display:inline-flex;font-size:13px;font-weight:700;color:var(--fab);background:var(--fab-soft);padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(21px,2.4vw,28px);margin:6px 0 2px;letter-spacing:-.02em;word-break:keep-all}
+  .sub{margin:0;color:var(--muted);font-size:15px;word-break:keep-all}
+  .card{background:var(--card);border-radius:20px;box-shadow:var(--shadow);border:1px solid rgba(20,38,59,.04)}
+  .pad{padding:14px 16px}
+  .stage{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(330px,1fr);gap:14px;align-items:start}
+  .viewer{position:sticky;top:10px}
+  .flow{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px}
+  .fs{min-height:54px;border:0;border-radius:12px;background:#eef3f8;font-weight:800;font-size:13px;color:var(--muted);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.2;word-break:keep-all;padding:4px}
+  .fs b{font-size:15px}
+  .fs[aria-selected="true"]{background:var(--fab);color:#fff}
+  .fs.seen:not([aria-selected="true"]){background:#e5f5ec;color:#11703f}
+  .stepname{display:flex;align-items:center;gap:10px;margin:2px 0 6px}
+  .stepname .no{flex:none;width:40px;height:40px;border-radius:12px;background:var(--fab);color:#fff;display:grid;place-items:center;font-weight:900;font-size:19px}
+  .stepname h2{margin:0;font-size:21px;letter-spacing:-.01em;word-break:keep-all}
+  .stepname small{display:block;font-size:13px;color:var(--muted);font-weight:700}
+  .what{font-size:16px;line-height:1.75;color:var(--ink2);margin:0 0 10px;word-break:keep-all}
+  .phase{display:grid;gap:6px;margin:8px 0}
+  .ph{display:grid;grid-template-columns:28px 1fr;gap:8px;align-items:start;padding:7px 10px;border-radius:12px;background:#f7fafc;font-size:15px;line-height:1.55;color:var(--muted);word-break:keep-all;transition:background .3s,color .3s}
+  .ph i{font-style:normal;width:26px;height:26px;border-radius:8px;background:#dfe6ee;display:grid;place-items:center;font-weight:900;font-size:13px;color:#607285}
+  .ph.on{background:var(--fab-soft);color:var(--ink)}.ph.on i{background:var(--fab);color:#fff}
+  .ph.done{color:var(--ink2)}.ph.done i{background:#b9b2ee;color:#fff}
+  .box{border-radius:14px;padding:10px 12px;margin-top:8px;font-size:14.5px;line-height:1.65;word-break:keep-all}
+  .box b.t{display:block;font-size:13px;margin-bottom:2px}
+  .an{background:#fff8e6;border:1px solid #f3dc9a;color:#5b4300}
+  .fact{background:#eef6ff;border:1px solid #cfe2f6;color:#1d3f66}
+  .lnk{background:#ecf8f1;border:1px solid #c6e8d4;color:#0f5a36}
+  .src{display:block;font-size:12px;color:var(--muted);margin-top:3px}
+  .acts{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 0}
+  .btn{min-height:50px;border:0;border-radius:14px;padding:0 16px;font-weight:800;font-size:15.5px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;justify-content:center;word-break:keep-all}
+  .btn:active{transform:scale(.97)}
+  .btn.primary{background:var(--fab);color:#fff}.btn.ghost{background:#eef3f8;color:var(--ink2)}
+  .btn[aria-pressed="true"]{background:#14263b;color:#fff}
+  .btn:disabled{opacity:.4;cursor:default;transform:none}
+  .prog{height:6px;border-radius:3px;background:#e6edf4;margin-top:10px;overflow:hidden}
+  .prog i{display:block;height:100%;width:0;background:linear-gradient(90deg,#8a7ff0,var(--fab))}
+  .credit{text-align:center;font-size:13px;font-weight:700;color:#8495a8;letter-spacing:.02em;margin:6px 0 0}
+  /* ===== 3D 화면 공통 ===== */
+  :root{--Bc:#14a5d0;--Ic:#2fae4a;--Fc:#f0522a;--N:#d8433b;--S:#2f62c9;--P:#7d5ad6}
+  .viewer{position:relative;overflow:hidden;padding:0}
+  .gl-host{position:relative;width:100%;height:min(74vh,700px);min-height:380px;background:linear-gradient(#f6f9fc,#d6e3ef);touch-action:none}
+  .gl-host canvas.gl{display:block;width:100%;height:100%;outline:none}
+  .lbls{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+  .lb{position:absolute;left:0;top:0;white-space:nowrap;font-weight:800;font-size:14px;padding:3px 9px;border-radius:9px;background:rgba(255,255,255,.88);color:#34495e;box-shadow:0 2px 8px rgba(20,38,59,.14);will-change:transform}
+  .lb.small{font-size:12px;font-weight:700;color:#5a6b7e;background:rgba(255,255,255,.72);box-shadow:none}
+  .lb.B{background:var(--Bc);color:#fff}.lb.I{background:var(--Ic);color:#fff}.lb.F{background:var(--Fc);color:#fff;font-size:15px}
+  .lb.P{background:var(--P);color:#fff}
+  .lb.dim{opacity:.35}
+  .vt{position:absolute;display:flex;gap:6px;flex-wrap:wrap;z-index:3}
+  .vt.tl{left:10px;top:10px;max-width:calc(100% - 20px)}
+  .vt.tr{right:10px;top:10px;justify-content:flex-end}
+  .vt.bl{left:10px;bottom:10px;align-items:center}
+  .vb{min-height:44px;padding:0 12px;border-radius:12px;border:1px solid rgba(20,38,59,.12);background:rgba(255,255,255,.9);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);font-weight:800;font-size:14px;color:#34495e;cursor:pointer;display:inline-flex;align-items:center;gap:6px;box-shadow:0 2px 10px rgba(20,38,59,.08)}
+  .vb:active{transform:scale(.96)}
+  .vb .dot{width:12px;height:12px;border-radius:50%;flex:none}
+  .vb[aria-pressed="false"]{opacity:.62}
+  .vb[aria-pressed="false"] .dot{background:#c2ccd6!important}
+  .vb.sel{background:#14263b;color:#fff;border-color:#14263b}
+  .hint{font-size:12.5px;font-weight:700;color:#5a6b7e;background:rgba(255,255,255,.78);border-radius:10px;padding:6px 10px;word-break:keep-all}
+  .inset{position:absolute;z-index:2;border-radius:18px;border:2px solid rgba(255,255,255,.95);box-shadow:0 10px 30px rgba(20,38,59,.22),inset 0 0 0 1px rgba(20,38,59,.08);pointer-events:none;display:none}
+  .inset.on{display:block}
+  .inset .it{position:absolute;left:8px;top:8px;font-size:12.5px;font-weight:900;color:#14263b;background:rgba(255,255,255,.9);border-radius:8px;padding:3px 8px}
+  .inset .ic{position:absolute;left:6px;right:6px;bottom:6px;display:flex;flex-wrap:wrap;gap:4px;justify-content:center}
+  .inset .ic span{font-size:11.5px;font-weight:800;color:#fff;border-radius:7px;padding:2px 7px;white-space:nowrap}
+  .fail3d{position:absolute;inset:0;display:none;place-items:center;text-align:center;padding:24px;font-size:16px;font-weight:700;color:#7a2a22;line-height:1.7;word-break:keep-all;background:#fff4f2}
+  .fail3d.show{display:grid}
+  .model{font-size:13px;color:var(--muted);text-align:right;margin:0;word-break:keep-all}
+  @media (max-width:900px){.gl-host{height:min(56vh,620px)}}
+  .zoombadge{position:absolute;right:10px;top:62px;z-index:3;font-size:13px;font-weight:800;color:#fff;background:rgba(75,63,181,.9);border-radius:10px;padding:6px 10px;display:none;word-break:keep-all;max-width:60%}
+  .zoombadge.on{display:block}
+  @media (max-width:900px){.stage{grid-template-columns:1fr}.viewer{position:relative;top:0}}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+  /* ===== 빛 그림 공통 ===== */
+  .scene{position:relative;width:100%;overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+  .scene > svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .olay{position:absolute;inset:0;pointer-events:none}
+  .ol{position:absolute;transform:translate(-50%,-50%);white-space:nowrap;font-weight:800;font-size:clamp(11.5px,1.32vw,15px);line-height:1.25;color:#e9eef5;background:rgba(14,18,25,.74);padding:3px 8px;border-radius:7px;letter-spacing:-.01em}
+  .ol.key{color:#fff;background:#0e63b3}
+  .ol.soft{background:transparent;color:#b7c3d1;font-weight:700;padding:0}
+  .ol.ink{color:#15263a;background:rgba(255,255,255,.9);box-shadow:0 1px 4px rgba(20,38,59,.12)}
+  .ol.inkk{color:#fff;background:#0e63b3}
+  .ol.inks{background:transparent;color:#5a6b7e;font-weight:700;padding:0}
+  .ol.la{transform:translate(-100%,-50%)}.ol.ra{transform:translate(0,-50%)}
+  .ol[hidden]{display:none}
+  .flowdash{animation:flowdash .55s linear infinite}
+  @keyframes flowdash{to{stroke-dashoffset:-37}}
+  @media (prefers-reduced-motion:reduce){.flowdash{animation:none}}
+  /* ===== 물체의 색 수업 공통 ===== */
+  :root{--fab:#0e63b3;--fab-soft:#e4f0fb}
+  .eyebrow{color:#0e63b3;background:#e4f0fb}
+  .prog i{background:#0e63b3}
+  .ph.done i{background:#8db8e3}
+  .fbk{border-radius:14px;padding:12px 14px;margin-top:10px;font-size:15px;line-height:1.65;word-break:keep-all;background:#f6f9fc;border:1px solid #dbe4ed;color:var(--ink2)}
+  .fbk.ok{background:#e9f3fd;border-color:#bcd7f2;color:#0b3f73}
+  .fbk.no{background:#fff4f2;border-color:#f3c2bb;color:#5e2a25}
+  .fbk b.t{display:block;font-size:13.5px;margin-bottom:2px}
+  .seg{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:10px 10px 0}
+  .seg button{min-height:48px;border:0;border-radius:14px;background:#eef3f8;font-weight:800;font-size:16px;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px}
+  .seg button svg{flex:none}
+  .seg button[aria-selected="true"]{background:var(--fab);color:#fff}
+  .seg button.seen:not([aria-selected="true"]){background:#e9f3fd;color:#0b3f73}
+  .vlab{position:absolute;left:12px;top:10px;z-index:3;font-size:13px;font-weight:800;color:#34495e;background:rgba(255,255,255,.88);border-radius:9px;padding:4px 10px}
+  .concl{border-radius:16px;padding:14px 16px;margin-top:10px;background:#f2f7fd;border:1px solid #d6e5f5;font-size:15.5px;line-height:1.75;color:#1d2a40;word-break:keep-all}
+  .concl .kt{display:block;font-size:13px;font-weight:900;color:#0e63b3;margin-bottom:4px}
+  .concl.lock{background:#f6f8fa;border-color:#e2e8ee;color:var(--muted)}
+  .concl p{margin:0 0 4px}
+  [hidden]{display:none!important}
+  /* ===== 이 페이지 전용 ===== */
+  .viewer{background:#040506}
+  #scene{aspect-ratio:1000/600}
+  .vctl{display:flex;flex-wrap:wrap;gap:8px;padding:10px 12px;background:#0d1117;border-top:1px solid rgba(255,255,255,.06);align-items:center}
+  .vctl .vb{background:rgba(255,255,255,.08);color:#dfe7f0;border-color:rgba(255,255,255,.12)}
+  .vctl .vb[aria-pressed="true"]{background:#e9eef5;color:#14263b;opacity:1}
+  .vctl .vb[aria-pressed="false"]{opacity:1}
+  .vctl .note{font-size:13px;font-weight:700;color:#93a1b1;word-break:keep-all;flex:1;min-width:200px}
+  .lights{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+  .lights button{min-height:58px;border:2px solid transparent;border-radius:14px;background:#eef3f8;font-weight:800;font-size:15px;color:var(--ink2);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+  .lights button i{width:16px;height:16px;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(0,0,0,.18)}
+  .lights button[aria-selected="true"]{border-color:var(--fab);background:#fff;color:var(--fab)}
+  .lights button.seen:not([aria-selected="true"]) small{color:#0b3f73}
+  .lights button small{font-size:11.5px;font-weight:700;color:var(--muted)}
+  .lbl{font-size:13px;font-weight:900;color:var(--fab);margin:14px 0 6px}
+  .lbl:first-child{margin-top:0}
+  .pred{border-radius:16px;padding:10px 12px;background:#f7fafc;border:1px solid var(--line)}
+  .pred p{margin:0 0 8px;font-size:15.5px;line-height:1.6;font-weight:700;word-break:keep-all}
+  .prow{display:grid;grid-template-columns:86px 1fr;gap:8px;align-items:center;padding:4px 0}
+  .prow b{font-size:14.5px;word-break:keep-all}
+  .chips{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+  .chips button{min-height:46px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:13.5px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;padding:0 4px}
+  .chips button i{width:13px;height:13px;border-radius:50%;flex:none}
+  .chips button[aria-pressed="true"]{border-color:var(--fab);background:#e9f3fd;color:#0b3f73}
+  .chips button.good{border-color:var(--ok);background:#e8f7ef;color:#11703f}
+  .chips button.bad{border-color:var(--no);background:#fdecea;color:#9b3a32}
+  .tbl{width:100%;border-collapse:collapse;margin:6px 0 4px;font-size:14px}
+  .tbl th,.tbl td{border:1px solid #dbe4ed;padding:7px 4px;text-align:center;word-break:keep-all;line-height:1.4}
+  .tbl th{background:#f3f7fb;font-weight:800;color:var(--ink2)}
+  .tbl td{font-weight:800;color:#14263b}
+  .tbl td i{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:4px;vertical-align:-1px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.15)}
+  .tbl td.empty{color:#a3b1c0;font-weight:700}
+  .tbl td.now{background:#f2f7fd}
+  .why{margin-top:12px;display:grid;gap:6px}
+  .why h3{margin:6px 0 2px;font-size:16px}
+  .why .w{display:grid;grid-template-columns:28px 1fr;gap:8px;align-items:start;padding:8px 10px;border-radius:12px;background:#f7fafc;font-size:14.5px;line-height:1.6;color:var(--ink2);word-break:keep-all}
+  .why .w i{font-style:normal;width:26px;height:26px;border-radius:8px;background:var(--fab);color:#fff;display:grid;place-items:center;font-weight:900;font-size:13px}
+  .figcap{position:absolute;right:12px;top:10px;z-index:3;font-size:13px;font-weight:800;color:#c9d3df;background:rgba(14,18,25,.72);border-radius:9px;padding:4px 10px}
+  .ol.ink{font-size:clamp(11px,1.2vw,13.5px)}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <span class="eyebrow">물체의 색과 빛의 합성 · 시뮬레이션 ①</span>
+    <h1>조명 실험실: 조명 색을 바꾸면 물체의 색은?</h1>
+    <p class="sub">어두운 방에서 3색 LED 손전등으로 빨간 사과와 파란 셔츠를 비춰요. 불을 켜기 전에 어떤 색으로 보일지 먼저 예측하고, 빛이 어디로 가는지 따라가 봐요.</p>
+  </header>
+  <div class="stage">
+    <section class="card viewer">
+      <div class="scene" id="scene"><span class="figcap" id="cap">주위를 어둡게 했어요</span></div>
+      <div class="vctl">
+        <button class="vb" type="button" id="bRay" aria-pressed="true">빛의 경로 보기</button>
+        <span class="note">실험할 때 전등 빛을 사람의 눈에 직접 쏘지 않아요.</span>
+      </div>
+    </section>
+    <section class="card pad">
+      <div class="lbl">1. 손전등 빛 고르기</div>
+      <div class="lights" id="lights" role="tablist" aria-label="조명 색 고르기"></div>
+      <div class="lbl" id="pL">2. 예측하기</div>
+      <div class="pred" id="pred"><p id="pT"></p><div id="prows"></div></div>
+      <div class="acts"><button type="button" class="btn primary" id="go">손전등 켜기</button><button type="button" class="btn ghost" id="off">끄기</button></div>
+      <div class="fbk" id="fb"><b class="t" id="fbT"></b><span id="fbM"></span></div>
+      <div class="lbl">관찰 기록</div>
+      <table class="tbl" id="tbl"></table>
+      <div class="why" id="why"></div>
+      <div class="concl lock" id="concl"><span class="kt">조명에 따른 물체의 색</span><p>빨간색, 초록색, 파란색 빛을 모두 비춰 보면 정리가 나타나요.</p></div>
+    </section>
+  </div>
+  <p class="model">물체의 색은 물체가 반사하는 빛과 조명 빛을 함께 계산해 칠한 개념 이해를 위한 모형이에요. 빛의 경로는 알아보기 쉽게 화살표 몇 개로만 그렸어요.</p>
+  <p class="credit">물체의 색과 빛의 합성 · 조명 실험실</p>
+</div>
+<script>
+window.SM = { $: (s, r = document) => r.querySelector(s), $$: (s, r = document) => Array.from(r.querySelectorAll(s)),
+  reduce: !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches), Q: new URLSearchParams(location.search) };
+</script>
+<script>
+/* ===== 2D 도식 도구 (SVG) =====
+   FLOW.dots(path, 옵션): SVG 길(path)을 따라 알갱이(전기·물·열)가 흐르게 해요.
+     옵션 n(개수), r(크기), color, speed(초당 길 몇 바퀴), layer(알갱이를 넣을 g, 생략하면 길의 부모), glow(빛 번짐)
+     반환값.set({ rate: 0~1(보이는 양과 빠르기), color }) 로 바꿔요.
+   FLOW.onFrame(fn): 화면에 보일 때만 매 프레임 fn(dt, t)를 불러요(탭 껍데기에서 숨은 탭이면 쉬어요).
+   FLOW.num(el, 값, 자릿수): 숫자를 부드럽게 바꿔 보여 줘요.
+   크기·개수·빠르기는 개념 이해를 위한 모형이에요. */
+const FLOW = (() => {
+  const NS = 'http://www.w3.org/2000/svg';
+  const REDUCE = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
+  const fns = [];
+  function visibleNow() {
+    if (document.hidden) return false;
+    try { const f = window.frameElement; if (f && f.hasAttribute('data-page') && !f.classList.contains('on')) return false; } catch (e) {}
+    return true;
+  }
+  let last = performance.now();
+  function tick(now) {
+    requestAnimationFrame(tick);
+    const dt = Math.min(0.05, Math.max(0, (now - last) / 1000)); last = now;
+    if (!visibleNow()) return;
+    for (const f of fns) { try { f(dt, now / 1000); } catch (e) { console.error(e); } }
+  }
+  requestAnimationFrame(tick);
+  const onFrame = (f) => fns.push(f);
+  function onScreen(el) { const r = el.getBoundingClientRect(); return r.bottom > -40 && r.top < (window.innerHeight || 800) + 40; }
+
+  function dots(path, o = {}) {
+    const n = o.n || 14, layer = o.layer || path.parentNode, L = path.getTotalLength();
+    const svg = path.ownerSVGElement;
+    const g = document.createElementNS(NS, 'g'); g.setAttribute('pointer-events', 'none'); layer.appendChild(g);
+    const cs = [];
+    for (let k = 0; k < n; k++) {
+      const c = document.createElementNS(NS, 'circle'); c.setAttribute('r', o.r || 4);
+      if (o.glow) c.setAttribute('filter', o.glow);
+      g.appendChild(c); cs.push(c);
+    }
+    let rate = o.rate === undefined ? 1 : o.rate, color = o.color || '#2f6fd6', off = Math.random(), speed = o.speed || 0.12;
+    const paint = () => cs.forEach((c) => c.setAttribute('fill', color)); paint();
+    function place() {
+      const show = Math.round(n * Math.min(1, rate));
+      cs.forEach((c, k) => {
+        if (k >= show) { c.setAttribute('opacity', '0'); return; }
+        const s = ((off + k / n) % 1), p = path.getPointAtLength(s * L);
+        c.setAttribute('cx', p.x.toFixed(1)); c.setAttribute('cy', p.y.toFixed(1));
+        c.setAttribute('opacity', String(Math.min(1, s * 8, (1 - s) * 8)));
+      });
+    }
+    onFrame((dt) => { if (REDUCE || !onScreen(svg)) return; off = (off + dt * speed * (0.25 + 0.75 * Math.min(1, rate))) % 1; place(); });
+    place();
+    return { set(v) { if (v.rate !== undefined) rate = v.rate; if (v.color) { color = v.color; paint(); } if (v.speed) speed = v.speed; place(); }, g };
+  }
+
+  const shown = new WeakMap();
+  function num(el, v, digits = 0) {
+    const from = shown.has(el) ? shown.get(el) : 0; shown.set(el, v);
+    const fmt = (x) => x.toLocaleString('ko-KR', { minimumFractionDigits: digits, maximumFractionDigits: digits });
+    if (REDUCE) { el.textContent = fmt(v); return; }
+    let t = 0; const step = (dt) => { t = Math.min(1, t + dt / 0.5); el.textContent = fmt(from + (v - from) * (1 - Math.pow(1 - t, 3))); return t < 1; };
+    const f = (dt) => { if (!step(dt)) { const i = fns.indexOf(f); if (i >= 0) fns.splice(i, 1); } };
+    fns.push(f);
+  }
+  return { dots, onFrame, num, REDUCE, NS };
+})();
+window.FLOW = FLOW;
+</script>
+<script>
+/* ===== 빛 그림 도구 (SVG 2D) =====
+   OP.el(태그, 속성, 부모)            SVG 요소 만들기
+   OP.defs(svg)                       공통 그라디언트·번짐 필터
+   OP.overlay(host, W, H)             그림 위 HTML 이름표 (.ol). put(id, x, y, 글, 종류) / hide(id)
+   OP.toSvg(svg, 이벤트)              누른 곳 → 그림 좌표
+   OP.beam(부모, 옵션)                레이저 광선(번짐 + 밝은 심 + 흐르는 점선). set(점 목록) / show(켜기, 자라기)
+   OP.photons(층)                     빛 알갱이 흐름. add(점 목록, {rate, speed, r, color}) → 길 / clear()
+   OP.protractor(부모, C, R, 'half'|'full')  각도기
+   OP.laser(부모) / OP.place(g, x, y, 각도)  슬릿 레이저 기구
+   OP.eye(부모, x, y, 너비)           눈 그림
+   크기·빠르기는 개념 이해를 위한 모형이에요. 굴절 정도는 실제 물과 비슷하게 그리지만 계산식은 화면에 쓰지 않아요. */
+window.OP = (() => {
+  const NS = 'http://www.w3.org/2000/svg', D = Math.PI / 180;
+  const el = (tag, at = {}, parent) => { const e = document.createElementNS(NS, tag); for (const k in at) e.setAttribute(k, at[k]); if (parent) parent.appendChild(e); return e; };
+  const RED = '#ff3b2f';
+
+  function defs(svg) {
+    const d = el('defs', {}, svg);
+    d.innerHTML = `
+      <filter id="opGlow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="6"/></filter>
+      <filter id="opGlow2" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2.2"/></filter>
+      <filter id="opDot" x="-200%" y="-200%" width="500%" height="500%"><feGaussianBlur stdDeviation="2.4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      <filter id="opShadow" x="-20%" y="-20%" width="140%" height="160%"><feGaussianBlur in="SourceAlpha" stdDeviation="7"/><feOffset dy="6"/><feComponentTransfer><feFuncA type="linear" slope=".45"/></feComponentTransfer><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      <filter id="opNoise" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="4"/><feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .07 0"/><feComposite in2="SourceGraphic" operator="in"/></filter>
+      <linearGradient id="opBody" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4a5260"/><stop offset=".18" stop-color="#2a3039"/><stop offset=".7" stop-color="#15191f"/><stop offset="1" stop-color="#0b0d11"/></linearGradient>
+      <linearGradient id="opMetal" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e9edf2"/><stop offset=".45" stop-color="#9aa3ae"/><stop offset=".55" stop-color="#7d8692"/><stop offset="1" stop-color="#c9d0d8"/></linearGradient>
+      <linearGradient id="opPlastic" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#dfeaf6" stop-opacity=".16"/><stop offset=".5" stop-color="#dfeaf6" stop-opacity=".07"/><stop offset="1" stop-color="#dfeaf6" stop-opacity=".13"/></linearGradient>
+      <radialGradient id="opIris" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#1b1410"/><stop offset=".38" stop-color="#1b1410"/><stop offset=".42" stop-color="#6b4a2c"/><stop offset=".8" stop-color="#3f2a18"/><stop offset="1" stop-color="#22160c"/></radialGradient>
+      <radialGradient id="opSclera" cx=".5" cy=".45" r=".6"><stop offset="0" stop-color="#ffffff"/><stop offset=".75" stop-color="#eef0f2"/><stop offset="1" stop-color="#c9ced6"/></radialGradient>`;
+    return d;
+  }
+
+  function overlay(host, W, H) {
+    const box = document.createElement('div'); box.className = 'olay'; host.appendChild(box);
+    const map = {};
+    return {
+      put(id, x, y, html, cls = '') {
+        let e = map[id]; if (!e) { e = document.createElement('span'); box.appendChild(e); map[id] = e; }
+        e.className = 'ol ' + cls; if (e._h !== html) { e.innerHTML = html; e._h = html; }
+        e.style.left = (x / W * 100).toFixed(2) + '%'; e.style.top = (y / H * 100).toFixed(2) + '%'; e.hidden = false; return e;
+      },
+      hide(id) { if (map[id]) map[id].hidden = true; },
+      hideAll() { Object.values(map).forEach((e) => (e.hidden = true)); },
+      box,
+    };
+  }
+
+  function toSvg(svg, ev) {
+    const p = svg.createSVGPoint(); p.x = ev.clientX; p.y = ev.clientY;
+    const q = p.matrixTransform(svg.getScreenCTM().inverse()); return [q.x, q.y];
+  }
+
+  const dstr = (pts) => pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
+
+  function beam(parent, o = {}) {
+    const g = el('g', { 'pointer-events': 'none', 'stroke-linecap': 'round', 'stroke-linejoin': 'round', fill: 'none' }, parent);
+    const col = o.color || RED;
+    const halo = el('path', { stroke: col, 'stroke-width': o.halo || 22, 'stroke-opacity': 0.16, filter: 'url(#opGlow)' }, g);
+    const mid = el('path', { stroke: col, 'stroke-width': o.mid || 7, 'stroke-opacity': 0.55, filter: 'url(#opGlow2)' }, g);
+    const core = el('path', { stroke: o.core || '#ffd9d2', 'stroke-width': o.w || 2.4 }, g);
+    const dash = el('path', { stroke: '#fff', 'stroke-width': 2.6, 'stroke-opacity': 0.75, 'stroke-dasharray': '3 34', class: 'flowdash' }, g);
+    const parts = [halo, mid, core, dash];
+    let on = false;
+    return {
+      g,
+      set(pts) { const d = dstr(pts); parts.forEach((p) => p.setAttribute('d', d)); },
+      setSegments(list) { const d = list.map(dstr).join(' '); parts.forEach((p) => p.setAttribute('d', d)); },
+      show(v, grow) {
+        on = v; g.style.display = v ? '' : 'none';
+        if (v && grow && !(window.FLOW && FLOW.REDUCE)) {
+          [halo, mid, core].forEach((p) => {
+            const L = p.getTotalLength(); p.style.transition = 'none'; p.style.strokeDasharray = L; p.style.strokeDashoffset = L;
+            p.getBoundingClientRect(); p.style.transition = 'stroke-dashoffset .55s cubic-bezier(.3,.7,.3,1)'; p.style.strokeDashoffset = 0;
+            setTimeout(() => { p.style.strokeDasharray = ''; p.style.strokeDashoffset = ''; p.style.transition = ''; }, 600);
+          });
+          dash.style.opacity = 0; setTimeout(() => (dash.style.opacity = ''), 560);
+        }
+      },
+      get on() { return on; },
+      style(o2) { if (o2.halo) halo.setAttribute('stroke-width', o2.halo); if (o2.haloOp != null) halo.setAttribute('stroke-opacity', o2.haloOp); if (o2.midOp != null) mid.setAttribute('stroke-opacity', o2.midOp); },
+    };
+  }
+
+  function photons(layer) {
+    const routes = [], dots = [], pool = [];
+    const visible = () => { const r = layer.ownerSVGElement.getBoundingClientRect(); return r.bottom > 0 && r.top < (innerHeight || 800); };
+    function prep(r) { r.seg = []; r.total = 0; for (let i = 1; i < r.pts.length; i++) { const a = r.pts[i - 1], b = r.pts[i], L = Math.hypot(b[0] - a[0], b[1] - a[1]); r.seg.push(L); r.total += L; } }
+    function pos(r, d) { for (let i = 0; i < r.seg.length; i++) { if (d <= r.seg[i] || i === r.seg.length - 1) { const a = r.pts[i], b = r.pts[i + 1], t = r.seg[i] ? Math.min(1, d / r.seg[i]) : 0; return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]; } d -= r.seg[i]; } return r.pts[0]; }
+    function add(pts, o = {}) {
+      const r = { pts, rate: o.rate == null ? 2 : o.rate, speed: o.speed || 240, color: o.color || '#ffe6a0', size: o.r || 4.2, acc: o.phase == null ? Math.random() : o.phase, fade: o.fade || 26, dead: false, end: o.end };
+      prep(r); routes.push(r); return r;
+    }
+    function spawn(r, d0) { const c = pool.pop() || el('circle', {}, layer); c.setAttribute('r', r.size); c.setAttribute('fill', r.color); c.style.display = ''; dots.push({ c, r, d: d0 || 0 }); }
+    FLOW.onFrame((dt) => {
+      if (!visible()) return;
+      routes.forEach((r) => { if (r.rate <= 0) return; r.acc += dt * r.rate; while (r.acc >= 1) { r.acc -= 1; spawn(r); } });
+      for (let i = dots.length - 1; i >= 0; i--) {
+        const p = dots[i]; p.d += dt * p.r.speed;
+        if (p.r.dead || p.d >= p.r.total) { if (!p.r.dead && p.r.end) p.r.end(); p.c.style.display = 'none'; pool.push(p.c); dots.splice(i, 1); continue; }
+        const [x, y] = pos(p.r, p.d); p.c.setAttribute('cx', x.toFixed(1)); p.c.setAttribute('cy', y.toFixed(1));
+        p.c.setAttribute('opacity', Math.max(0, Math.min(1, p.d / p.r.fade, (p.r.total - p.d) / p.r.fade)).toFixed(2));
+      }
+    });
+    return {
+      add,
+      fill(r) { for (let d = 0; d < r.total; d += r.speed / Math.max(0.5, r.rate)) spawn(r, d); },
+      remove(r) { r.dead = true; const i = routes.indexOf(r); if (i >= 0) routes.splice(i, 1); },
+      clear() { routes.forEach((r) => (r.dead = true)); routes.length = 0; },
+      routes,
+    };
+  }
+
+  function protractor(parent, C, R, mode) {
+    const g = el('g', { 'pointer-events': 'none' }, parent);
+    const [cx, cy] = C, full = mode === 'full';
+    const dir = (a) => (full ? [Math.sin(a * D), -Math.cos(a * D)] : [Math.sin(a * D), Math.cos(a * D)]);
+    // 판
+    if (full) el('circle', { cx, cy, r: R, fill: 'url(#opPlastic)', stroke: 'rgba(225,236,248,.55)', 'stroke-width': 1.6 }, g);
+    else el('path', { d: `M${cx - R} ${cy} A${R} ${R} 0 0 0 ${cx + R} ${cy} Z`, fill: 'url(#opPlastic)', stroke: 'rgba(225,236,248,.55)', 'stroke-width': 1.6 }, g);
+    const ri = R * 0.24;
+    if (full) el('circle', { cx, cy, r: ri, fill: 'none', stroke: 'rgba(225,236,248,.35)', 'stroke-width': 1.2 }, g);
+    else el('path', { d: `M${cx - ri} ${cy} A${ri} ${ri} 0 0 0 ${cx + ri} ${cy}`, fill: 'none', stroke: 'rgba(225,236,248,.35)', 'stroke-width': 1.2 }, g);
+    const lines = [], ticks = [];
+    const a0 = full ? 0 : -90, a1 = full ? 359 : 90;
+    for (let a = a0; a <= a1; a++) {
+      const [sx, sy] = dir(a), big = a % 10 === 0, mid = a % 5 === 0;
+      const L = big ? 20 : mid ? 13 : 7;
+      ticks.push(`M${(cx + sx * R).toFixed(1)} ${(cy + sy * R).toFixed(1)}L${(cx + sx * (R - L)).toFixed(1)} ${(cy + sy * (R - L)).toFixed(1)}`);
+      if (big) lines.push(`M${(cx + sx * ri).toFixed(1)} ${(cy + sy * ri).toFixed(1)}L${(cx + sx * (R - 46)).toFixed(1)} ${(cy + sy * (R - 46)).toFixed(1)}`);
+    }
+    el('path', { d: lines.join(''), stroke: 'rgba(225,236,248,.16)', 'stroke-width': 1 }, g);
+    el('path', { d: ticks.join(''), stroke: 'rgba(225,236,248,.62)', 'stroke-width': 1.1 }, g);
+    const tg = el('g', { fill: 'rgba(232,240,250,.78)', 'font-size': Math.max(12, R * 0.045), 'font-weight': 700, 'font-family': 'Pretendard,sans-serif', 'text-anchor': 'middle', 'dominant-baseline': 'central' }, g);
+    for (let a = a0; a <= a1; a += 10) {
+      const v = full ? (a <= 90 ? a : a <= 180 ? 180 - a : a <= 270 ? a - 180 : 360 - a) : Math.abs(a);
+      const [sx, sy] = dir(a), rr = R - 33;
+      const t = el('text', { x: (cx + sx * rr).toFixed(1), y: (cy + sy * rr).toFixed(1), transform: `rotate(${full ? a : -a} ${(cx + sx * rr).toFixed(1)} ${(cy + sy * rr).toFixed(1)})` }, tg);
+      t.textContent = v;
+    }
+    el('circle', { cx, cy, r: 3.2, fill: 'rgba(240,246,252,.9)' }, g);
+    return g;
+  }
+
+  function laser(parent) {
+    const g = el('g', { 'pointer-events': 'none', filter: 'url(#opShadow)' }, parent);
+    el('rect', { x: -112, y: -21, width: 98, height: 42, rx: 8, fill: 'url(#opBody)', stroke: '#05070a', 'stroke-width': 1 }, g);
+    el('rect', { x: -108, y: -18, width: 90, height: 6, rx: 3, fill: 'rgba(255,255,255,.12)' }, g);
+    el('rect', { x: -90, y: -6, width: 40, height: 12, rx: 3, fill: '#0d1015', stroke: 'rgba(255,255,255,.08)' }, g);
+    el('circle', { cx: -34, cy: 0, r: 6, fill: '#20252d', stroke: 'rgba(255,255,255,.18)' }, g);
+    el('rect', { x: -16, y: -15, width: 16, height: 30, rx: 3, fill: 'url(#opMetal)', stroke: '#6b737e', 'stroke-width': .8 }, g);
+    const slit = el('rect', { x: -1.6, y: -10, width: 3.2, height: 20, rx: 1.4, fill: '#3a1210' }, g);
+    const led = el('circle', { cx: -34, cy: 0, r: 2.6, fill: '#3a1210' }, g);
+    return { g, power(v) { slit.setAttribute('fill', v ? '#ff6a5a' : '#3a1210'); led.setAttribute('fill', v ? '#ff3b2f' : '#3a1210'); } };
+  }
+  const place = (g, x, y, deg) => g.setAttribute('transform', `translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${deg.toFixed(2)})`);
+
+  function eye(parent, x, y, w, o = {}) {
+    const g = el('g', { transform: `translate(${x} ${y}) scale(${w / 100})`, 'pointer-events': 'none' }, parent);
+    if (o.shade !== false) el('ellipse', { cx: 0, cy: 3, rx: 58, ry: 34, fill: 'rgba(0,0,0,.18)', filter: 'url(#opGlow2)' }, g);
+    el('path', { d: 'M-50 0C-30-30 30-30 50 0C30 30-30 30-50 0Z', fill: 'url(#opSclera)', stroke: '#3b2f2a', 'stroke-width': 3.2, 'stroke-linejoin': 'round' }, g);
+    const clip = 'eyc' + Math.random().toString(36).slice(2, 7);
+    el('clipPath', { id: clip }, g).innerHTML = '<path d="M-50 0C-30-30 30-30 50 0C30 30-30 30-50 0Z"/>';
+    const ir = el('g', { 'clip-path': `url(#${clip})` }, g);
+    el('circle', { cx: o.lx || 0, cy: o.ly || 0, r: 19, fill: 'url(#opIris)' }, ir);
+    el('circle', { cx: (o.lx || 0) - 6, cy: (o.ly || 0) - 7, r: 5, fill: '#fff', opacity: .9 }, ir);
+    el('path', { d: 'M-50 0C-30-30 30-30 50 0', fill: 'none', stroke: '#2a201c', 'stroke-width': 5, 'stroke-linecap': 'round' }, g);
+    return g;
+  }
+
+  const arc = (cx, cy, r, a0, a1) => { const x0 = cx + r * Math.cos(a0), y0 = cy + r * Math.sin(a0), x1 = cx + r * Math.cos(a1), y1 = cy + r * Math.sin(a1); const large = Math.abs(a1 - a0) > Math.PI ? 1 : 0, sw = a1 > a0 ? 1 : 0; return `M${x0.toFixed(1)} ${y0.toFixed(1)}A${r} ${r} 0 ${large} ${sw} ${x1.toFixed(1)} ${y1.toFixed(1)}`; };
+  const refr = (deg) => Math.asin(Math.sin(deg * D) / 1.33) / D; // 공기 → 물 (그림용)
+
+  return { el, D, NS, RED, defs, overlay, toSvg, beam, photons, protractor, laser, place, eye, arc, refr, dstr };
+})();
+</script>
+<script>
+/* ===== 물체의 색 그림 도구 (SVG 2D 일러스트) =====
+   OC.LIGHTS / OC.OBJS           조명 4가지(흰색·빨간색·초록색·파란색)와 물체 3가지(사과·잎·셔츠)
+   OC.seen(물체, 조명)            그 조명에서 보이는 색 이름 ('빨간색' … '검은색')
+   OC.defs(svg)                   그라디언트·흐림 필터
+   OC.apple(g, x, y, s)           잎 달린 빨간 사과   OC.shirt(g, x, y, s)  옷걸이에 걸린 파란 셔츠
+   OC.torch(g, x, y, 각도, s)     3색 LED 손전등 → set('red' | null)
+   OC.litFilter(svg, id)          조명 색을 곱하는 필터 → set([r,g,b]) / to([r,g,b], ms)
+   OC.lab(host, 옵션)             조명 실험 장면(어두운 방, 흰 천, 사과, 셔츠, 손전등, 눈, 빛의 경로)
+   물체의 색은 '물체가 반사하는 빛 × 조명 빛'으로 칠한 개념 이해용 모형이에요. */
+window.OC = (() => {
+  const { el } = OP;
+  const LIGHTS = {
+    white: { name: '흰색', rgb: [1, 1, 1], col: '#f4f6fa' },
+    red: { name: '빨간색', rgb: [1, 0, 0], col: '#ff3b30' },
+    green: { name: '초록색', rgb: [0, 1, 0], col: '#34d058' },
+    blue: { name: '파란색', rgb: [0, 0, 1], col: '#3d6dff' },
+  };
+  const RAY = { r: '#ff4a3c', g: '#3fe064', b: '#5a86ff' };
+  const OBJS = {
+    apple: { name: '빨간 사과', ch: 'r', col: '빨간색' },
+    leaf: { name: '초록 잎', ch: 'g', col: '초록색' },
+    shirt: { name: '파란 셔츠', ch: 'b', col: '파란색' },
+  };
+  const CHI = { r: 0, g: 1, b: 2 };
+  const SWATCH = { 빨간색: '#e0342a', 초록색: '#23a047', 파란색: '#2c55d8', 검은색: '#17191d', 흰색: '#f4f6fa' };
+  const seen = (obj, light) => (LIGHTS[light].rgb[CHI[OBJS[obj].ch]] ? OBJS[obj].col : '검은색');
+  const rid = () => Math.random().toString(36).slice(2, 7);
+
+  function defs(svg) {
+    const d = svg.querySelector('defs') || el('defs', {}, svg);
+    if (d.querySelector('#ocApple')) return d;
+    d.insertAdjacentHTML('beforeend', `
+      <filter id="ocBlur3" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="3"/></filter>
+      <filter id="ocBlur8" x="-40%" y="-80%" width="180%" height="260%"><feGaussianBlur stdDeviation="8"/></filter>
+      <filter id="ocBlur16" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="16"/></filter>
+      <radialGradient id="ocApple" cx=".36" cy=".34" r=".78"><stop offset="0" stop-color="#ff2414"/><stop offset=".38" stop-color="#e0170b"/><stop offset=".72" stop-color="#a80c05"/><stop offset="1" stop-color="#560402"/></radialGradient>
+      <radialGradient id="ocAppleRim" cx=".42" cy=".4" r=".62"><stop offset=".72" stop-color="#2a0100" stop-opacity="0"/><stop offset="1" stop-color="#2a0100" stop-opacity=".55"/></radialGradient>
+      <radialGradient id="ocCavity" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#3a0402"/><stop offset=".7" stop-color="#7a0904" stop-opacity=".7"/><stop offset="1" stop-color="#a80c05" stop-opacity="0"/></radialGradient>
+      <linearGradient id="ocLeaf" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22d21e"/><stop offset=".55" stop-color="#169a12"/><stop offset="1" stop-color="#075a07"/></linearGradient>
+      <linearGradient id="ocLeafB" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#0c6e0b"/><stop offset="1" stop-color="#0a4f09"/></linearGradient>
+      <linearGradient id="ocStem" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#2a1608"/><stop offset=".45" stop-color="#6a4120"/><stop offset="1" stop-color="#26130a"/></linearGradient>
+      <linearGradient id="ocShirt" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#050a78"/><stop offset=".22" stop-color="#1018d8"/><stop offset=".5" stop-color="#1c22f2"/><stop offset=".78" stop-color="#0e16c8"/><stop offset="1" stop-color="#040864"/></linearGradient>
+      <linearGradient id="ocShirtV" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity="0"/><stop offset=".75" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".3"/></linearGradient>
+      <linearGradient id="ocCloth" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stop-color="#d6d6d3"/><stop offset=".08" stop-color="#f1f1ef"/><stop offset=".17" stop-color="#dcdcd9"/><stop offset=".3" stop-color="#f4f4f2"/><stop offset=".42" stop-color="#e2e2df"/>
+        <stop offset=".55" stop-color="#f6f6f4"/><stop offset=".68" stop-color="#dededb"/><stop offset=".8" stop-color="#f2f2f0"/><stop offset=".92" stop-color="#dadad7"/><stop offset="1" stop-color="#eeeeec"/></linearGradient>
+      <linearGradient id="ocClothV" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#000" stop-opacity=".18"/><stop offset=".25" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".08"/></linearGradient>
+      <linearGradient id="ocTable" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c4c4c1"/><stop offset="1" stop-color="#e9e9e6"/></linearGradient>
+      <linearGradient id="ocTableF" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9c9c99"/><stop offset="1" stop-color="#7a7a77"/></linearGradient>
+      <linearGradient id="ocWire" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f2f2f0"/><stop offset=".5" stop-color="#a9a9a6"/><stop offset="1" stop-color="#d6d6d3"/></linearGradient>
+      <linearGradient id="ocAlu" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5b626c"/><stop offset=".18" stop-color="#9aa2ac"/><stop offset=".34" stop-color="#3a4048"/><stop offset=".75" stop-color="#16191e"/><stop offset="1" stop-color="#2a2f36"/></linearGradient>
+      <linearGradient id="ocAluHead" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6b737e"/><stop offset=".2" stop-color="#c3cad2"/><stop offset=".38" stop-color="#4a515a"/><stop offset=".8" stop-color="#1b1f24"/><stop offset="1" stop-color="#333941"/></linearGradient>
+      <radialGradient id="ocLensGlass" cx=".4" cy=".35" r=".7"><stop offset="0" stop-color="#3a414a"/><stop offset="1" stop-color="#0d0f12"/></radialGradient>
+      <radialGradient id="ocVig" cx=".46" cy=".52" r=".7"><stop offset=".35" stop-color="#000" stop-opacity="0"/><stop offset=".8" stop-color="#000" stop-opacity=".55"/><stop offset="1" stop-color="#000" stop-opacity=".88"/></radialGradient>`);
+    return d;
+  }
+
+  function litFilter(svg, id) {
+    const f = el('filter', { id, x: '0', y: '0', width: '100%', height: '100%', 'color-interpolation-filters': 'sRGB' }, defs(svg));
+    const m = el('feColorMatrix', { type: 'matrix' }, f);
+    let cur = [1, 1, 1], raf = 0;
+    const set = (c) => { cur = c.slice(); m.setAttribute('values', `${c[0].toFixed(3)} 0 0 0 0  0 ${c[1].toFixed(3)} 0 0 0  0 0 ${c[2].toFixed(3)} 0 0  0 0 0 1 0`); };
+    set(cur);
+    return {
+      set,
+      to(c, ms = 520, done) {
+        cancelAnimationFrame(raf);
+        if (window.FLOW && FLOW.REDUCE) { set(c); if (done) done(); return; }
+        const a = cur.slice(), t0 = performance.now();
+        const step = (t) => { const k = Math.min(1, (t - t0) / ms), e = 1 - Math.pow(1 - k, 3); set(a.map((v, i) => v + (c[i] - v) * e)); if (k < 1) raf = requestAnimationFrame(step); else if (done) done(); };
+        raf = requestAnimationFrame(step);
+      },
+      get cur() { return cur; },
+    };
+  }
+
+  /* 사과: 가운데 (0,0), 반지름 약 100. 잎은 꼭지에서 오른쪽 위로 */
+  function apple(par, x, y, s = 1, o = {}) {
+    const g = el('g', { transform: `translate(${x} ${y}) scale(${s})` }, par);
+    if (o.shadow !== false) el('ellipse', { cx: 10, cy: 94, rx: 96, ry: 15, fill: '#000', opacity: 0.5, filter: 'url(#ocBlur8)' }, g);
+    const body = 'M0 -60C24 -88 80 -92 99 -40C117 8 93 70 53 92C37 101 18 99 0 92C-18 99 -37 101 -53 92C-93 70 -117 8 -99 -40C-80 -92 -24 -88 0 -60Z';
+    const cid = 'oca' + rid();
+    el('clipPath', { id: cid }, g).appendChild(el('path', { d: body }));
+    el('path', { d: body, fill: 'url(#ocApple)' }, g);
+    const inn = el('g', { 'clip-path': `url(#${cid})` }, g);
+    // 세로 줄무늬 (사과 껍질 결)
+    [[-70, .5], [-46, .7], [-22, .55], [6, .65], [30, .5], [56, .6], [78, .45]].forEach(([dx, op], i) => {
+      el('path', { d: `M${dx * 0.25} -58C${dx * 0.9} -40 ${dx * 1.15} 20 ${dx * 0.75} 96`, fill: 'none', stroke: i % 2 ? '#7a0603' : '#ff2a12', 'stroke-width': i % 2 ? 9 : 5, opacity: op * 0.45, filter: 'url(#ocBlur3)' }, inn);
+    });
+    // 작은 점(껍질 숨구멍)
+    let seed = 7; const rnd = () => ((seed = (seed * 9301 + 49297) % 233280) / 233280);
+    for (let i = 0; i < 46; i++) { const a = rnd() * Math.PI * 2, r = Math.sqrt(rnd()) * 88; el('ellipse', { cx: (Math.cos(a) * r).toFixed(1), cy: (Math.sin(a) * r * 0.9 + 6).toFixed(1), rx: 1.6, ry: 1.1, fill: '#ff3a1a', opacity: 0.45 }, inn); }
+    el('path', { d: body, fill: 'url(#ocAppleRim)' }, inn);
+    el('ellipse', { cx: 0, cy: -58, rx: 30, ry: 13, fill: 'url(#ocCavity)' }, inn);
+    // 반짝임 (아주 약하게: 조명 색을 그대로 비춤)
+    el('ellipse', { cx: -46, cy: -26, rx: 14, ry: 28, transform: 'rotate(28 -46 -26)', fill: '#fff', opacity: 0.3, filter: 'url(#ocBlur3)' }, inn);
+    el('ellipse', { cx: -54, cy: -38, rx: 4, ry: 8, transform: 'rotate(28 -54 -38)', fill: '#fff', opacity: 0.45 }, inn);
+    // 꼭지
+    el('path', { d: 'M-2 -58C-3 -78 2 -96 12 -110', fill: 'none', stroke: 'url(#ocStem)', 'stroke-width': 8, 'stroke-linecap': 'round' }, g);
+    el('path', { d: 'M0 -64C0 -80 4 -94 11 -106', fill: 'none', stroke: '#8a5a2c', 'stroke-width': 1.6, 'stroke-linecap': 'round', opacity: 0.7 }, g);
+    if (o.leaf !== false) {
+      const L = el('g', {}, g);
+      el('path', { d: 'M8 -100C22 -150 82 -168 122 -146C100 -112 48 -86 8 -100Z', fill: 'url(#ocLeaf)' }, L);
+      el('path', { d: 'M8 -100C40 -112 86 -128 122 -146C100 -112 48 -86 8 -100Z', fill: 'url(#ocLeafB)', opacity: 0.75 }, L);
+      el('path', { d: 'M9 -100C42 -116 84 -132 120 -146', fill: 'none', stroke: '#2ee02c', 'stroke-width': 2.4, opacity: 0.7 }, L);
+      [[30, -110, 36, -132], [52, -118, 62, -142], [74, -126, 88, -148], [40, -113, 52, -100], [66, -122, 80, -108]].forEach(([a, b, c, d2]) =>
+        el('path', { d: `M${a} ${b}Q${(a + c) / 2 + 4} ${(b + d2) / 2} ${c} ${d2}`, fill: 'none', stroke: '#22c822', 'stroke-width': 1.3, opacity: 0.55 }, L));
+      el('path', { d: 'M14 -108C30 -140 70 -156 104 -150', fill: 'none', stroke: '#40ff3a', 'stroke-width': 2, opacity: 0.22, filter: 'url(#ocBlur3)' }, L);
+    }
+    return g;
+  }
+
+  /* 셔츠: 옷걸이 고리 끝이 (0,-205), 몸판 아래 끝 y=148 */
+  function shirt(par, x, y, s = 1) {
+    const g = el('g', { transform: `translate(${x} ${y}) scale(${s})` }, par);
+    const body = 'M-30 -150C-56 -142 -90 -134 -112 -120L-150 -8L-116 6L-98 -58L-98 146C-60 153 60 153 98 146L98 -58L116 6L150 -8L112 -120C90 -134 56 -142 30 -150C18 -138 -18 -138 -30 -150Z';
+    el('path', { d: body, fill: '#000', opacity: 0.35, transform: 'translate(10 12)', filter: 'url(#ocBlur8)' }, g);
+    // 옷걸이
+    el('path', { d: 'M0 -150L0 -176C0 -196 22 -200 22 -186', fill: 'none', stroke: 'url(#ocWire)', 'stroke-width': 4.5, 'stroke-linecap': 'round' }, g);
+    el('path', { d: 'M-108 -124L0 -156L108 -124', fill: 'none', stroke: 'url(#ocWire)', 'stroke-width': 5, 'stroke-linejoin': 'round' }, g);
+    const cid = 'ocs' + rid();
+    el('clipPath', { id: cid }, g).appendChild(el('path', { d: body }));
+    el('path', { d: body, fill: 'url(#ocShirt)' }, g);
+    const inn = el('g', { 'clip-path': `url(#${cid})` }, g);
+    el('path', { d: body, fill: 'url(#ocShirtV)' }, inn);
+    // 주름: 어두운 골과 밝은 등
+    [['M-60 -40C-50 20 -64 90 -54 150', '#050c5c', 10, .45], ['M44 -60C36 0 52 80 40 150', '#050c5c', 12, .4], ['M-20 40C-10 80 -18 120 -12 150', '#050c5c', 7, .35],
+      ['M-72 -50C-62 10 -78 90 -66 150', '#3a40ff', 6, .35], ['M58 -50C50 10 64 80 54 150', '#3a40ff', 6, .3], ['M-130 -40L-112 -2', '#050c5c', 8, .5], ['M130 -40L112 -2', '#050c5c', 8, .5],
+      ['M-98 -58C-96 -80 -104 -100 -112 -118', '#030844', 6, .55], ['M98 -58C96 -80 104 -100 112 -118', '#030844', 6, .55]].forEach(([d, c, w, op]) =>
+      el('path', { d, fill: 'none', stroke: c, 'stroke-width': w, opacity: op, filter: 'url(#ocBlur3)', 'stroke-linecap': 'round' }, inn));
+    // 소매 끝단
+    el('path', { d: 'M-150 -8L-116 6L-112 -6L-146 -20Z', fill: '#0810a8', opacity: 0.9 }, g);
+    el('path', { d: 'M150 -8L116 6L112 -6L146 -20Z', fill: '#0810a8', opacity: 0.9 }, g);
+    // 단추 줄과 단추
+    el('path', { d: 'M0 -126L0 146', stroke: '#060e94', 'stroke-width': 2.5 }, g);
+    el('path', { d: 'M8 -126L8 146', stroke: '#2a30ff', 'stroke-width': 1.2, opacity: 0.6 }, g);
+    [-96, -44, 8, 60, 112].forEach((by) => { el('circle', { cx: 4, cy: by, r: 5.2, fill: '#2028f0', stroke: '#060c88', 'stroke-width': 1.4 }, g); el('circle', { cx: 3, cy: by - 1.5, r: 1.6, fill: '#5058ff', opacity: 0.8 }, g); });
+    // 주머니
+    el('path', { d: 'M-70 -82L-30 -82L-30 -40C-30 -34 -70 -34 -70 -40Z', fill: 'none', stroke: '#060e94', 'stroke-width': 2, 'stroke-dasharray': '3 3', opacity: 0.85 }, g);
+    // 깃
+    el('path', { d: 'M-30 -150C-24 -136 -12 -118 -2 -110L-14 -98L-48 -136Z', fill: '#1a22ee', stroke: '#060c88', 'stroke-width': 1.6, 'stroke-linejoin': 'round' }, g);
+    el('path', { d: 'M30 -150C24 -136 12 -118 2 -110L14 -98L48 -136Z', fill: '#161ee2', stroke: '#060c88', 'stroke-width': 1.6, 'stroke-linejoin': 'round' }, g);
+    el('path', { d: 'M-30 -150C-18 -140 18 -140 30 -150C22 -144 -22 -144 -30 -150Z', fill: '#050c5c' }, g);
+    return g;
+  }
+
+  /* 3색 LED 손전등: (x, y)가 앞 렌즈 가운데, 각도(도)는 비추는 방향 */
+  function torch(par, x, y, deg, s = 1) {
+    const g = el('g', { transform: `translate(${x} ${y}) rotate(${deg}) scale(${s})`, 'pointer-events': 'none' }, par);
+    el('ellipse', { cx: -90, cy: 40, rx: 110, ry: 12, fill: '#000', opacity: 0.35, filter: 'url(#ocBlur8)' }, g);
+    el('rect', { x: -206, y: -21, width: 22, height: 42, rx: 8, fill: 'url(#ocAlu)' }, g);
+    el('rect', { x: -188, y: -22, width: 150, height: 44, rx: 6, fill: 'url(#ocAlu)' }, g);
+    for (let i = 0; i < 14; i++) el('rect', { x: -176 + i * 6.5, y: -22, width: 2.4, height: 44, fill: '#0b0d10', opacity: 0.55 }, g);
+    el('rect', { x: -84, y: -26, width: 18, height: 8, rx: 3, fill: '#262b32' }, g);
+    el('path', { d: 'M-40 -22L-6 -36L0 -36L0 36L-6 36L-40 22Z', fill: 'url(#ocAluHead)' }, g);
+    el('ellipse', { cx: 0, cy: 0, rx: 9, ry: 36, fill: '#2a2f36', stroke: '#8e96a0', 'stroke-width': 1.5 }, g);
+    el('ellipse', { cx: 1.5, cy: 0, rx: 6.5, ry: 31, fill: 'url(#ocLensGlass)' }, g);
+    const leds = {};
+    [['red', -16, '#5a0f0b', '#ff3b30'], ['green', 0, '#0f3d18', '#34d058'], ['blue', 16, '#101f57', '#3d6dff']].forEach(([k, yy, off, on]) => {
+      const glow = el('ellipse', { cx: 4, cy: yy, rx: 16, ry: 16, fill: on, opacity: 0, filter: 'url(#ocBlur3)' }, g);
+      const dot = el('ellipse', { cx: 2.5, cy: yy, rx: 3, ry: 5, fill: off }, g);
+      leds[k] = { glow, dot, off, on };
+    });
+    return {
+      g,
+      set(k) {
+        Object.entries(leds).forEach(([n, L]) => { const v = k === 'white' || k === n; L.dot.setAttribute('fill', v ? '#fff' : L.off); L.glow.setAttribute('opacity', v ? 0.95 : 0); L.glow.setAttribute('fill', L.on); });
+      },
+    };
+  }
+
+  function arrow(par, p0, p1, col, o = {}) {
+    const w = o.w || 3, g = el('g', { 'pointer-events': 'none' }, par);
+    const dx = p1[0] - p0[0], dy = p1[1] - p0[1], L = Math.hypot(dx, dy), ux = dx / L, uy = dy / L, hs = o.hs || 13;
+    el('line', { x1: p0[0], y1: p0[1], x2: p1[0], y2: p1[1], stroke: col, 'stroke-width': w * 4, 'stroke-opacity': 0.16, 'stroke-linecap': 'round' }, g);
+    const end = o.head === false ? p1 : [p1[0] - ux * hs * 0.7, p1[1] - uy * hs * 0.7];
+    el('line', { x1: p0[0], y1: p0[1], x2: end[0], y2: end[1], stroke: col, 'stroke-width': w, 'stroke-linecap': 'round', 'stroke-dasharray': o.dash || '' }, g);
+    if (o.head !== false) { const hx = p1[0], hy = p1[1]; el('path', { d: `M${hx} ${hy}L${hx - ux * hs - uy * hs * 0.5} ${hy - uy * hs + ux * hs * 0.5}L${hx - ux * hs + uy * hs * 0.5} ${hy - uy * hs - ux * hs * 0.5}Z`, fill: col }, g); }
+    return g;
+  }
+
+  /* 흡수 표시: 빛이 물체 표면에서 사라지는 작은 번짐 */
+  function absorb(par, p, col) {
+    const g = el('g', { 'pointer-events': 'none' }, par);
+    el('circle', { cx: p[0], cy: p[1], r: 13, fill: col, opacity: 0.35, filter: 'url(#ocBlur3)' }, g);
+    el('circle', { cx: p[0], cy: p[1], r: 5, fill: 'none', stroke: col, 'stroke-width': 2, opacity: 0.8 }, g);
+    return g;
+  }
+
+  /* 조명 실험 장면. 옵션: rays(빛의 경로 보기), eye(눈 그림), labels(이름표), shirt(셔츠 포함) */
+  function lab(host, o = {}) {
+    const W = 1000, H = 600;
+    const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': o.aria || '어두운 방에서 3색 LED 손전등으로 빨간 사과와 파란 셔츠를 비추는 장면' }, null);
+    host.prepend(svg);
+    OP.defs(svg); defs(svg);
+    const fid = 'ocLit' + rid(), F = litFilter(svg, fid);
+    el('rect', { width: W, height: H, fill: '#040506' }, svg);
+    const lit = el('g', { filter: `url(#${fid})` }, svg);
+    // 흰 천(뒤 배경)과 탁자
+    el('path', { d: 'M40 18C200 30 800 30 960 18L960 420L40 420Z', fill: 'url(#ocCloth)' }, lit);
+    el('path', { d: 'M40 18C200 30 800 30 960 18L960 420L40 420Z', fill: 'url(#ocClothV)' }, lit);
+    el('path', { d: 'M0 408L1000 408L1000 600L0 600Z', fill: 'url(#ocTable)' }, lit);
+    el('path', { d: 'M0 408L1000 408L1000 416L0 416Z', fill: '#000', opacity: 0.12 }, lit);
+    // 옷걸이 봉
+    if (o.shirt !== false) {
+      el('rect', { x: 560, y: 52, width: 290, height: 9, rx: 4.5, fill: 'url(#ocWire)' }, lit);
+      el('rect', { x: 560, y: 63, width: 290, height: 5, fill: '#000', opacity: 0.12, filter: 'url(#ocBlur3)' }, lit);
+      shirt(lit, 705, 262, 0.98);
+    }
+    apple(lit, 352, 410 - 92 * 0.95, 0.95);
+    // 빛 번짐(공기 중 산란)과 손전등
+    const beamId = 'ocBeam' + rid();
+    el('linearGradient', { id: beamId, x1: '0', y1: '0', x2: '1', y2: '0' }, svg.querySelector('defs')).innerHTML = '<stop offset="0" stop-color="#fff" stop-opacity=".34"/><stop offset=".55" stop-color="#fff" stop-opacity=".08"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>';
+    const TX = 168, TY = 122, TA = 34;
+    const beam = el('g', { transform: `translate(${TX} ${TY}) rotate(${TA})`, opacity: 0, style: 'mix-blend-mode:screen;transition:opacity .5s' }, svg);
+    const beamPath = el('path', { d: 'M4 -30L900 -330L900 330L4 30Z', fill: `url(#${beamId})`, filter: 'url(#ocBlur16)' }, beam);
+    el('rect', { width: W, height: H, fill: 'url(#ocVig)', 'pointer-events': 'none' }, svg);
+    const T = torch(svg, TX, TY, TA, 0.92);
+    const head = [TX + Math.cos(TA * Math.PI / 180) * 6, TY + Math.sin(TA * Math.PI / 180) * 6];
+    // 눈, 빛의 경로 층
+    const rayG = el('g', {}, svg), dotG = el('g', {}, svg);
+    const EYE = [900, 528];
+    if (o.eye !== false) OP.eye(svg, EYE[0], EYE[1], 74, { lx: -12, ly: -6 });
+    const ov = OP.overlay(host, W, H);
+    const HIT = { apple: [300, 338], leaf: [418, 271], shirt: [660, 196] };
+    const NAMEPOS = { apple: [352, 498, ''], leaf: [470, 188, ''], shirt: [705, 432, ''] };
+    if (o.labels !== false) Object.entries(NAMEPOS).forEach(([k, [x, y]]) => { if (k !== 'shirt' || o.shirt !== false) ov.put('n-' + k, x, y, OBJS[k].name); });
+    if (o.eye !== false) ov.put('eye', EYE[0], EYE[1] + 38, '관찰자의 눈', 'soft');
+    const ph = window.FLOW ? OP.photons(dotG) : null;
+    let light = null, on = false, rays = o.rays !== false;
+
+    function drawRays() {
+      rayG.innerHTML = ''; if (ph) ph.clear(); ['apple', 'leaf', 'shirt'].forEach((k) => ov.hide('ab-' + k));
+      if (!on || !rays) return;
+      const L = LIGHTS[light];
+      ['apple', 'leaf', 'shirt'].forEach((k) => {
+        if (k === 'shirt' && o.shirt === false) return;
+        const hit = HIT[k], ch = OBJS[k].ch;
+        const comps = ['r', 'g', 'b'].filter((c) => L.rgb[CHI[c]]);
+        const dx = hit[0] - head[0], dy = hit[1] - head[1], len = Math.hypot(dx, dy), nx = -dy / len, ny = dx / len;
+        let anyRefl = false;
+        comps.forEach((c, i) => {
+          const off = comps.length > 1 ? (i - 1) * 6 : 0;
+          const a = [head[0] + nx * off, head[1] + ny * off], b = [hit[0] + nx * off, hit[1] + ny * off];
+          const refl = c === ch;
+          arrow(rayG, a, b, RAY[c], { w: 2.4, hs: 11, head: !refl });
+          if (refl) {
+            anyRefl = true;
+            arrow(rayG, b, [EYE[0] - 30, EYE[1] - 22], RAY[c], { w: 2.6, hs: 13 });
+            if (ph) ph.add([a, b, [EYE[0] - 30, EYE[1] - 22]], { rate: 1.5, speed: 260, r: 4.4, color: RAY[c] });
+          } else {
+            absorb(rayG, b, RAY[c]);
+            if (ph) ph.add([a, b], { rate: 1.5, speed: 260, r: 4.4, color: RAY[c], fade: 40 });
+          }
+        });
+        const lp = { apple: [228, 352], leaf: [392, 228], shirt: [598, 160] }[k];
+        if (comps.some((c) => c !== ch)) ov.put('ab-' + k, lp[0], lp[1], anyRefl ? '나머지 빛 흡수' : '모두 흡수', 'ink');
+      });
+    }
+    function setLight(k, isOn, instant) {
+      light = k; on = isOn;
+      const amp = k === 'white' ? 0.96 : 0.84, rgb = on ? LIGHTS[k].rgb.map((v) => Math.max(0.035, v * amp)) : [0.035, 0.035, 0.04];
+      if (instant) F.set(rgb); else F.to(rgb, on ? 620 : 380);
+      T.set(on ? k : null);
+      beam.setAttribute('opacity', on ? 1 : 0);
+      beamPath.style.fill = `url(#${beamId})`;
+      svg.querySelector('#' + beamId).querySelectorAll('stop').forEach((s) => s.setAttribute('stop-color', LIGHTS[k].col));
+      drawRays();
+    }
+    return {
+      svg, ov, HIT,
+      light: setLight,
+      rays(v) { rays = v; drawRays(); },
+      get state() { return { light, on }; },
+    };
+  }
+
+  return { LIGHTS, OBJS, RAY, SWATCH, CHI, seen, defs, litFilter, apple, shirt, torch, arrow, absorb, lab };
+})();
+</script>
+<script>
+/* ===== 블록 1: 조명 실험실 ===== */
+(() => {
+  'use strict';
+  try {
+    const S = window.SM, { $, $$ } = S, Q = S.Q;
+    const ORDER = ['white', 'red', 'green', 'blue'], OBJ = ['apple', 'leaf', 'shirt'];
+    const CHOICES = ['빨간색', '초록색', '파란색', '검은색'];
+    const lab = OC.lab($('#scene'));
+    const done = {}; let light = 'white', on = false; const pred = {};
+    if (Q.get('done') === 'all') ORDER.forEach((k) => (done[k] = true));
+    const dot = (c) => `<i style="background:${OC.SWATCH[c]}"></i>`;
+
+    $('#lights').innerHTML = ORDER.map((k) => `<button type="button" role="tab" data-l="${k}"><i style="background:${OC.LIGHTS[k].col}"></i>${OC.LIGHTS[k].name} 빛<small></small></button>`).join('');
+    $$('#lights button').forEach((b) => b.addEventListener('click', () => pick(b.dataset.l)));
+    $('#prows').innerHTML = OBJ.map((o) => `<div class="prow" data-o="${o}"><b>${OC.OBJS[o].name}${o === 'leaf' ? '<small style="display:block;font-size:12px;color:var(--muted)">사과 꼭지의 잎</small>' : ''}</b><div class="chips">${CHOICES.map((c) => `<button type="button" data-c="${c}" aria-pressed="false">${dot(c)}${c}</button>`).join('')}</div></div>`).join('');
+    $$('#prows .prow').forEach((r) => $$('button', r).forEach((b) => b.addEventListener('click', () => {
+      if (on && !needPred()) return;
+      pred[r.dataset.o] = b.dataset.c; $$('button', r).forEach((x) => { x.setAttribute('aria-pressed', String(x === b)); x.classList.remove('good', 'bad'); });
+      paint();
+    })));
+    const fb = (t, m, cls = '') => { $('#fb').className = 'fbk ' + cls; $('#fbT').textContent = t; $('#fbM').innerHTML = m; };
+    const needPred = () => light !== 'white' && !done[light];
+
+    function pick(k) {
+      light = k; OBJ.forEach((o) => delete pred[o]);
+      $$('#prows button').forEach((x) => { x.setAttribute('aria-pressed', 'false'); x.classList.remove('good', 'bad'); });
+      if (done[k]) { setOn(true); showResult(false); }
+      else { setOn(false); fb(`${OC.LIGHTS[k].name} 빛`, k === 'white' ? '먼저 흰색 빛으로 물체의 평소 색을 확인해요. \'손전등 켜기\'를 누르세요.' : `불을 켜기 전에 ${OC.LIGHTS[k].name} 빛을 비추면 세 물체가 각각 어떤 색으로 보일지 골라요.`); }
+      paint();
+    }
+    function setOn(v) {
+      on = v; lab.light(light, v);
+      $('#cap').textContent = v ? `${OC.LIGHTS[light].name} 빛을 비추었어요` : '주위를 어둡게 했어요';
+    }
+    function showResult(grade) {
+      const L = OC.LIGHTS[light];
+      if (light === 'white') { fb('흰색 빛을 비추면', `사과는 <b>빨간색</b>, 잎은 <b>초록색</b>, 셔츠는 <b>파란색</b>으로 보여요. 각 물체가 반사한 빛이 눈에 들어와요. 이제 다른 색 빛을 골라 보세요.`, 'ok'); return; }
+      let wrong = 0;
+      const lines = OBJ.map((o) => {
+        const s = OC.seen(o, light), p = pred[o];
+        if (grade) { const ok = p === s; if (!ok) wrong++; $$(`#prows .prow[data-o="${o}"] button`).forEach((x) => { x.classList.toggle('good', x.dataset.c === s); x.classList.toggle('bad', x.dataset.c === p && !ok); }); }
+        return `${OC.OBJS[o].name} → <b>${s}</b>${s === '검은색' ? ' (반사하는 빛이 없어요)' : ' (그 빛을 반사해요)'}`;
+      });
+      fb(grade ? (wrong ? `예측과 ${wrong}개가 달라요` : '예측이 모두 맞았어요') : `${L.name} 빛을 비추면`, lines.join('<br>'), grade && wrong ? 'no' : 'ok');
+    }
+    $('#go').addEventListener('click', () => {
+      if (needPred() && OBJ.some((o) => !pred[o])) return;
+      const grade = needPred();
+      setOn(true); done[light] = true;
+      setTimeout(() => { showResult(grade); paint(); }, S.reduce ? 0 : 520);
+      paint();
+    });
+    $('#off').addEventListener('click', () => { setOn(false); paint(); });
+    $('#bRay').addEventListener('click', () => { const v = $('#bRay').getAttribute('aria-pressed') !== 'true'; $('#bRay').setAttribute('aria-pressed', String(v)); lab.rays(v); });
+
+    function paint() {
+      $$('#lights button').forEach((b) => { const k = b.dataset.l; b.setAttribute('aria-selected', String(k === light)); b.classList.toggle('seen', !!done[k]); b.querySelector('small').textContent = done[k] ? '관찰 완료' : '관찰 전'; });
+      const np = needPred();
+      $('#pred').hidden = !np && !(light !== 'white' && on && Object.keys(pred).length);
+      $('#pL').hidden = $('#pred').hidden;
+      $('#pT').innerHTML = `<b>${OC.LIGHTS[light].name} 빛</b>을 비추면 각 물체는 어떤 색으로 보일까요?`;
+      $('#go').disabled = on || (np && OBJ.some((o) => !pred[o]));
+      $('#go').textContent = np ? '예측했으면 손전등 켜기' : '손전등 켜기';
+      $('#off').disabled = !on;
+      $('#tbl').innerHTML = '<tr><th>비춘 빛 →</th>' + ORDER.map((k) => `<th>${OC.LIGHTS[k].name}</th>`).join('') + '</tr>' +
+        OBJ.map((o) => `<tr><th>${OC.OBJS[o].name}</th>` + ORDER.map((k) => done[k] ? `<td class="${k === light && on ? 'now' : ''}">${dot(OC.seen(o, k))}${OC.seen(o, k)}</td>` : '<td class="empty">?</td>').join('') + '</tr>').join('');
+      const all = ['red', 'green', 'blue'].every((k) => done[k]), c = $('#concl');
+      c.classList.toggle('lock', !all);
+      c.querySelector('p').innerHTML = all ? '우리 눈에 보이는 물체의 색은 그 물체가 <b>반사하는 빛의 색</b>이에요. 빨간 사과는 빨간색 빛만 반사하고 나머지 빛은 흡수해서, 초록색이나 파란색 빛을 비추면 반사하는 빛이 없어 <b>검은색</b>으로 보여요. 이처럼 같은 물체라도 <b>비추는 조명의 색에 따라</b> 물체의 색이 다르게 보여요.' : '빨간색, 초록색, 파란색 빛을 모두 비춰 보면 정리가 나타나요.';
+    }
+    $('#why').innerHTML = '<h3>왜 그럴까?</h3>' + [
+      '우리는 물체에서 <b>반사되어 나온 빛</b>이 눈에 들어와야 물체를 볼 수 있어요.',
+      '빨간 사과는 <b>빨간색 빛만 반사</b>하고 나머지 빛은 흡수해요. 초록 잎은 초록색 빛만, 파란 셔츠는 파란색 빛만 반사해요.',
+      '비춘 빛 중에 물체가 반사하는 빛이 없으면 눈에 들어오는 빛이 없어 <b>검은색</b>으로 보여요.',
+    ].map((t, i) => `<div class="w"><i>${i + 1}</i><span>${t}</span></div>`).join('');
+
+    const ql = Q.get('light');
+    if (ORDER.includes(ql)) { light = ql; if (Q.get('on') === '1') { done[ql] = true; } }
+    if (Q.get('rays') === '0') $('#bRay').click();
+    if (done[light]) { setOn(true); showResult(false); } else pick(light);
+    lab.light(light, on, true);
+    paint();
+    window.SM.okUI = true; window.SM.ok3d = true;
+  } catch (err) { window.SM_err('조명 실험실', err); }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>수로 모형으로 보는 전기 회로</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+  :root{
+    --bg:#edf3f8; --card:#fff; --ink:#14263b; --muted:#5a6b7e; --line:#dde6ee;
+    --accent:#0e63b3; --accent-soft:#e3effb;
+    --V:#2f6fd6; --I:#e89a00; --R:#23a566; --water:#3e9ad8; --red:#e0483e;
+    --shadow:0 1px 2px rgba(20,38,59,.06),0 8px 24px rgba(20,38,59,.07);
+    --ease:cubic-bezier(.2,.8,.2,1);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:"Pretendard",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+    -webkit-font-smoothing:antialiased;line-height:1.5;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  button{font:inherit;color:inherit}
+  .app{max-width:1280px;margin:0 auto;padding:16px 16px 28px;display:flex;flex-direction:column;gap:14px}
+  .top{display:flex;align-items:flex-end;justify-content:space-between;gap:14px;flex-wrap:wrap}
+  .eyebrow{display:inline-flex;font-size:13px;font-weight:700;color:var(--accent);background:var(--accent-soft);padding:4px 10px;border-radius:999px}
+  h1{font-size:clamp(22px,2.6vw,30px);margin:8px 0 2px;letter-spacing:-.02em;line-height:1.25}
+  .sub{margin:0;color:var(--muted);font-size:15px;word-break:keep-all}
+  .seg{display:flex;background:#dde7f1;padding:4px;border-radius:16px;gap:4px}
+  .seg button{border:0;background:transparent;padding:8px 16px;border-radius:12px;cursor:pointer;min-height:54px;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;line-height:1.25;font-weight:800;font-size:15px;color:#3b4d61;transition:all .25s}
+  .seg button small{font-weight:500;font-size:12px;color:var(--muted)}
+  .seg button[aria-pressed="true"]{background:#fff;box-shadow:var(--shadow);color:var(--ink)}
+  .seg button[aria-pressed="true"] small{color:var(--accent)}
+  .card{background:var(--card);border-radius:20px;box-shadow:var(--shadow);border:1px solid rgba(20,38,59,.04)}
+  .pad{padding:14px 16px}
+  .card-title{font-weight:800;font-size:16px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .card-title .hint{font-weight:500;font-size:12.5px;color:var(--muted)}
+
+  /* 조작 막대 */
+  .controls{display:flex;flex-wrap:wrap;gap:14px 22px;align-items:flex-end}
+  .ctl{display:flex;flex-direction:column;gap:6px}
+  .ctl .lb{font-size:13px;font-weight:800;color:#34495e;display:flex;align-items:center;gap:6px}
+  .ctl .lb i{width:10px;height:10px;border-radius:3px}
+  .chips{display:flex;gap:6px;flex-wrap:wrap}
+  .chip{min-height:46px;min-width:56px;padding:0 12px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15px;cursor:pointer;transition:all .2s var(--ease);font-variant-numeric:tabular-nums}
+  .chip small{display:block;font-size:11px;font-weight:600;color:var(--muted);line-height:1}
+  .chip:active{transform:scale(.96)}
+  .chip[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+  .chip.v[aria-pressed="true"]{border-color:var(--V);background:#e7effc;color:var(--V)}
+  .chip.r[aria-pressed="true"]{border-color:var(--R);background:#e6f6ee;color:#11703f}
+  .tog{min-height:46px;padding:0 14px;border-radius:12px;border:2px solid #d4dee8;background:#fff;font-weight:800;font-size:15px;cursor:pointer;display:flex;align-items:center;gap:8px}
+  .tog .dot{width:12px;height:12px;border-radius:50%;background:#c2ccd6}
+  .tog[aria-pressed="true"]{border-color:var(--R);background:#e6f6ee;color:#11703f}
+  .tog[aria-pressed="true"] .dot{background:var(--R)}
+  .r2only{display:none}
+  body.m2 .r2only{display:flex}
+  body.m2 .r1only{display:none}
+
+  /* 두 화면 */
+  .twin{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .panel{position:relative;overflow:hidden}
+  .panel .ph{display:flex;justify-content:space-between;align-items:center;padding:12px 16px 0}
+  .panel svg{display:block;width:100%;height:auto}
+  .tagline{font-size:12.5px;font-weight:700;color:var(--muted)}
+  .pt{cursor:pointer}
+  .pt circle.hit{fill:transparent}
+  .pt .bub{transition:fill .2s,stroke .2s}
+  .lbl{font-size:12.5px;font-weight:800;fill:#34495e}
+  .lbl.s{font-size:11px;font-weight:700;fill:#5a6b7e}
+
+  .row{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:14px;align-items:start}
+  .col{display:flex;flex-direction:column;gap:14px}
+  .trip{min-height:48px;padding:0 16px;border:0;border-radius:12px;background:var(--V);color:#fff;font-weight:800;font-size:15px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;box-shadow:0 5px 14px rgba(47,111,214,.28)}
+  .trip:disabled{opacity:.45;box-shadow:none}
+  .trip:active{transform:scale(.97)}
+  .tripread{font-size:14px;font-weight:700;color:#34495e;min-height:22px}
+  .tripread b{color:var(--V);font-variant-numeric:tabular-nums}
+
+  .vm{display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:center;margin-top:10px}
+  .meter{width:132px;height:132px;border-radius:24px;background:linear-gradient(160deg,#2b3340,#1b2029);display:grid;place-items:center;color:#7cf0b0;box-shadow:inset 0 0 0 3px #3d4756}
+  .meter .num{font-size:34px;font-weight:900;font-variant-numeric:tabular-nums;letter-spacing:-.02em;text-align:center;line-height:1}
+  .meter .unit{font-size:13px;font-weight:700;color:#a7b4c4;text-align:center;margin-top:4px}
+  .meter.neg{color:#ffb0a6}
+  .vpts{display:flex;flex-wrap:wrap;gap:6px}
+  .vpts .chip{min-width:48px}
+  .vpts .chip.plus{border-color:var(--red);background:#fdecea;color:var(--red)}
+  .vpts .chip.minus{border-color:#14263b;background:#e9edf2;color:#14263b}
+  .vmsg{font-size:13.5px;color:#34495e;margin-top:8px;word-break:keep-all;min-height:40px}
+  .vmsg b{font-variant-numeric:tabular-nums}
+  .small-btn{min-height:40px;padding:0 12px;border:0;border-radius:10px;background:#eef3f8;font-weight:700;font-size:13px;cursor:pointer;color:#34495e}
+
+  .big{font-size:30px;font-weight:900;letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:var(--I)}
+  .ohm{margin-top:8px;display:flex;flex-direction:column;gap:6px}
+  .ohm .ln{background:#f5f8fb;border-radius:12px;padding:10px 12px;font-size:14.5px;font-weight:700;font-variant-numeric:tabular-nums;word-break:keep-all}
+  .ohm .ln.no{background:#fdf1ef;color:#9a3a32;font-weight:600}
+  .ohm .ln .v{color:var(--V)}.ohm .ln .r{color:#11703f}.ohm .ln .i{color:#b87400}
+
+  .missions .head{display:flex;justify-content:space-between;align-items:center}
+  .prog{font-size:13px;font-weight:800;color:var(--accent);background:var(--accent-soft);padding:4px 10px;border-radius:999px}
+  .mlist{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin-top:12px}
+  .mission{display:flex;gap:10px;align-items:flex-start;background:#f5f8fb;border-radius:14px;padding:12px;border:2px solid transparent;transition:all .35s}
+  .mcheck{flex:none;width:28px;height:28px;border-radius:50%;border:2px solid #b8c7d6;display:grid;place-items:center;background:#fff;transition:all .35s var(--ease)}
+  .mcheck svg{opacity:0;transform:scale(.4);transition:all .35s var(--ease)}
+  .mission .mt{font-weight:800;font-size:14px;line-height:1.35;word-break:keep-all}
+  .mission .mr{font-size:13px;color:#155c39;margin-top:4px;max-height:0;overflow:hidden;opacity:0;transition:all .5s var(--ease);word-break:keep-all}
+  .mission.done{background:#ecf8f1;border-color:#9fdcbb}
+  .mission.done .mcheck{background:var(--R);border-color:var(--R)}
+  .mission.done .mcheck svg{opacity:1;transform:none}
+  .mission.done .mr{max-height:90px;opacity:1}
+  .note{font-size:12.5px;color:var(--muted);margin:2px 4px 0;line-height:1.6;word-break:keep-all}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,30px);opacity:0;background:#14263b;color:#fff;padding:12px 18px;border-radius:14px;font-weight:700;font-size:15px;box-shadow:0 10px 30px rgba(0,0,0,.25);transition:all .4s var(--ease);pointer-events:none;z-index:10;max-width:calc(100% - 32px);text-align:center;word-break:keep-all}
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+  @media (max-width:900px){.twin,.row{grid-template-columns:1fr}}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div>
+      <span class="eyebrow">중2 과학 · 전기 · 수로 모형</span>
+      <h1>수로 모형으로 보는 전기 회로</h1>
+      <p class="sub">펌프가 올린 <b>물의 높이 차</b>가 바로 <b>전압</b>이에요. 두 화면을 함께 보며 비교해 봐요.</p>
+    </div>
+    <div class="seg" role="group" aria-label="회로 고르기">
+      <button type="button" id="m1Btn" aria-pressed="true">저항 1개<small>기본 회로</small></button>
+      <button type="button" id="m2Btn" aria-pressed="false">저항 2개<small>도전! 저항에 걸리는 전압</small></button>
+    </div>
+  </header>
+
+  <section class="card pad controls">
+    <div class="ctl">
+      <span class="lb"><i style="background:var(--V)"></i>전지 (펌프가 올리는 높이)</span>
+      <div class="chips" id="vChips"></div>
+    </div>
+    <div class="ctl r1only">
+      <span class="lb"><i style="background:var(--R)"></i>저항 R</span>
+      <div class="chips" id="rChips"></div>
+    </div>
+    <div class="ctl r2only">
+      <span class="lb"><i style="background:var(--R)"></i>저항 1</span>
+      <div class="chips" id="r1Chips"></div>
+    </div>
+    <div class="ctl r2only">
+      <span class="lb"><i style="background:var(--R)"></i>저항 2</span>
+      <div class="chips" id="r2Chips"></div>
+    </div>
+    <div class="ctl">
+      <span class="lb">스위치 (수문)</span>
+      <button type="button" class="tog" id="swBtn" aria-pressed="true"><span class="dot"></span><span id="swTxt">닫힘 · 흐름</span></button>
+    </div>
+    <div class="ctl">
+      <span class="lb">회로에서 보기</span>
+      <div class="chips">
+        <button type="button" class="chip" id="viewI" aria-pressed="true">전류 방향</button>
+        <button type="button" class="chip" id="viewE" aria-pressed="false">전자 이동 방향</button>
+      </div>
+    </div>
+  </section>
+
+  <div class="twin">
+    <section class="card panel">
+      <div class="ph"><div class="card-title">수로 모형</div><span class="tagline">점을 눌러 높이 차를 재 보세요</span></div>
+      <svg id="water" viewBox="0 0 560 400" role="img" aria-label="펌프, 수로, 물레방아로 이루어진 수로 모형"></svg>
+    </section>
+    <section class="card panel">
+      <div class="ph"><div class="card-title">전기 회로</div><span class="tagline" id="cTag">전류는 (+)극 → (-)극</span></div>
+      <svg id="circuit" viewBox="0 0 560 400" role="img" aria-label="전지, 스위치, 저항으로 이루어진 전기 회로"></svg>
+    </section>
+  </div>
+
+  <div class="row">
+    <section class="card pad">
+      <div class="card-title">한 바퀴 높이 지도 <span class="hint">전하가 회로를 한 바퀴 돌 때 지나는 높이(전압)</span></div>
+      <svg id="graph" viewBox="0 0 560 220" style="display:block;width:100%;height:auto;margin-top:6px"></svg>
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:6px">
+        <button type="button" class="trip" id="tripBtn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg>
+          한 바퀴 여행 출발
+        </button>
+        <span class="tripread" id="tripRead">출발점에서 시작해 회로를 한 바퀴 돌아요.</span>
+      </div>
+    </section>
+    <div class="col">
+      <section class="card pad">
+        <div class="card-title">전압계 <span class="hint">두 지점을 차례로 눌러요: 처음은 (+)단자, 다음은 (-)단자</span></div>
+        <div class="vm">
+          <div class="meter" id="meter"><div><div class="num" id="vNum">--</div><div class="unit">V</div></div></div>
+          <div>
+            <div class="vpts" id="vPts"></div>
+            <div class="vmsg" id="vMsg">전압계는 <b>두 지점의 높이 차</b>를 재요. 그래서 회로에 <b>병렬</b>로, 두 지점에 걸쳐 연결해요.</div>
+            <button type="button" class="small-btn" id="vReset">다시 재기</button>
+          </div>
+        </div>
+      </section>
+      <section class="card pad">
+        <div class="card-title">전류 <span class="hint">회로 어디서나 같아요</span></div>
+        <div class="big" id="iNum">0.30 A</div>
+        <div class="ohm" id="ohm"></div>
+      </section>
+    </div>
+  </div>
+
+  <section class="card pad missions">
+    <div class="head"><div class="card-title">탐구 미션</div><span class="prog" id="prog">0 / 5</span></div>
+    <div class="mlist" id="mlist"></div>
+  </section>
+
+  <p class="note">※ 물의 높이로 전압을 나타낸 비유 모형이에요. 실제 전기 회로 속에 물이 흐르는 것은 아니에요. 도선은 저항이 아주 작아서 도선 양 끝의 높이 차(전압)를 0으로 나타냈어요.</p>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+  'use strict';
+  const $ = (s) => document.querySelector(s);
+  const NS = 'http://www.w3.org/2000/svg';
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const fmtV = (v) => (Math.abs(v) < 0.005 ? '0' : (Math.round(v * 100) / 100).toString());
+  const fmtI = (i) => i.toFixed(2);
+
+  const K = 36, Y0 = 336;              // 1 V = 36 px, 바닥 수로 높이
+  const VOLTS = [1.5, 3, 4.5, 6];
+  const RS = [5, 10, 15, 30], RS2 = [5, 10, 15];
+
+  const S = { mode: 1, V: 3, R: 10, R1: 10, R2: 15, sw: true, view: 'I', probes: [], trip: null,
+              flow: 0, flowC: 0, wheel: 0, seenVR: {}, done: {} };
+
+  /* ---------- 물리 ---------- */
+  const Rt = () => (S.mode === 1 ? S.R : S.R1 + S.R2);
+  const I = () => (S.sw ? S.V / Rt() : 0);
+  function H() {   // 각 지점의 높이(전압)
+    if (S.mode === 1) return S.sw ? { A: S.V, B: S.V, C: 0, D: 0 } : { A: S.V, B: 0, C: 0, D: 0 };
+    const v1 = I() * S.R1;
+    return S.sw ? { A: S.V, B: S.V, C: S.V - v1, D: 0, E: 0 } : { A: S.V, B: 0, C: 0, D: 0, E: 0 };
+  }
+  const ORDER = () => (S.mode === 1 ? ['D', 'A', 'B', 'C'] : ['E', 'A', 'B', 'C', 'D']);
+  // 구간 종류 (ORDER의 i번째 점 → 다음 점)
+  const SEGS = () => (S.mode === 1 ? ['bat', 'wire', 'res', 'wire'] : ['bat', 'wire', 'res', 'res', 'wire']);
+
+  /* ---------- 수로 모형 좌표 ---------- */
+  function W() {
+    const yT = Y0 - S.V * K, h = H();
+    const yM = S.mode === 2 ? Y0 - (S.sw ? h.C : 0) * K : 0;
+    const gateX = 196;
+    if (S.mode === 1) {
+      const fx = 404;
+      return { yT, gateX, falls: [{ x: fx, top: yT, bot: Y0, R: S.R, name: '물레방아(저항)' }],
+        pts: { A: [132, yT], B: [356, yT], C: [452, Y0], D: [132, Y0] },
+        segs: [ [[132, Y0], [72, Y0], [72, yT], [132, yT]], [[132, yT], [356, yT]],
+                [[356, yT], [fx, yT], [fx, Y0], [452, Y0]], [[452, Y0], [132, Y0]] ],
+        topEnd: fx + 12 };
+    }
+    const f1 = 286, f2 = 420, yMid = yM;
+    return { yT, yM: yMid, gateX, falls: [{ x: f1, top: yT, bot: yMid, R: S.R1, name: '물레방아 1' }, { x: f2, top: yMid, bot: Y0, R: S.R2, name: '물레방아 2' }],
+      pts: { A: [132, yT], B: [250, yT], C: [352, yMid], D: [470, Y0], E: [132, Y0] },
+      segs: [ [[132, Y0], [72, Y0], [72, yT], [132, yT]], [[132, yT], [250, yT]],
+              [[250, yT], [f1, yT], [f1, yMid], [352, yMid]], [[352, yMid], [f2, yMid], [f2, Y0], [470, Y0]], [[470, Y0], [132, Y0]] ],
+      topEnd: f1 + 12 };
+  }
+  /* ---------- 전기 회로 좌표 ---------- */
+  function C() {
+    if (S.mode === 1) return { pts: { A: [140, 80], B: [430, 80], C: [430, 320], D: [140, 320] },
+      res: [{ x: 470, y1: 160, y2: 240, R: S.R, lab: `R = ${S.R} Ω` }],
+      segs: [ [[140, 320], [80, 320], [80, 80], [140, 80]], [[140, 80], [430, 80]], [[430, 80], [470, 80], [470, 320], [430, 320]], [[430, 320], [140, 320]] ] };
+    return { pts: { A: [140, 80], B: [430, 80], C: [470, 200], D: [430, 320], E: [140, 320] },
+      res: [{ x: 470, y1: 104, y2: 166, R: S.R1, lab: `저항 1 = ${S.R1} Ω` }, { x: 470, y1: 234, y2: 296, R: S.R2, lab: `저항 2 = ${S.R2} Ω` }],
+      segs: [ [[140, 320], [80, 320], [80, 80], [140, 80]], [[140, 80], [430, 80]], [[430, 80], [470, 80], [470, 200]], [[470, 200], [470, 320], [430, 320]], [[430, 320], [140, 320]] ] };
+  }
+
+  /* ---------- 폴리라인 도우미 ---------- */
+  function polyLen(p) { let L = 0; for (let i = 1; i < p.length; i++) L += Math.hypot(p[i][0] - p[i - 1][0], p[i][1] - p[i - 1][1]); return L; }
+  function polyAt(p, t) {
+    const L = polyLen(p) * clamp(t, 0, 1); let acc = 0;
+    for (let i = 1; i < p.length; i++) {
+      const d = Math.hypot(p[i][0] - p[i - 1][0], p[i][1] - p[i - 1][1]);
+      if (acc + d >= L) { const k = d ? (L - acc) / d : 0; return [lerp(p[i - 1][0], p[i][0], k), lerp(p[i - 1][1], p[i][1], k)]; }
+      acc += d;
+    }
+    return p[p.length - 1];
+  }
+  function loopOf(segs) { const out = []; segs.forEach((s, i) => s.forEach((q, j) => { if (i && !j) return; out.push(q); })); return out; }
+  const el = (tag, a = {}, parent) => { const n = document.createElementNS(NS, tag); for (const k in a) n.setAttribute(k, a[k]); if (parent) parent.appendChild(n); return n; };
+
+  /* ---------- 수로 모형 그리기 ---------- */
+  const wSvg = $('#water');
+  let wDyn = null, wParts = [], wWheels = [], wPump = null, wProbe = null, wTrip = null;
+  function drawWater() {
+    const g = W(), h = H(), flowing = S.sw;
+    let s = `<defs>
+      <linearGradient id="wSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e9f5ff"/><stop offset="1" stop-color="#f7fbff"/></linearGradient>
+      <linearGradient id="wWat" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#62b3ea"/><stop offset="1" stop-color="#2f84c6"/></linearGradient>
+      <pattern id="brick" width="28" height="14" patternUnits="userSpaceOnUse"><rect width="28" height="14" fill="#d9a77c"/><path d="M0 13.5 H28 M14 0 V7 M0 7 H28 M0 7 V14 M28 7 V14" stroke="#b9805a" stroke-width="1.2"/></pattern>
+    </defs>
+    <rect width="560" height="400" fill="url(#wSky)"/>`;
+    // 높이 눈금
+    s += `<g>`;
+    for (let v = 0; v <= 6; v++) {
+      const y = Y0 - v * K;
+      s += `<line x1="510" y1="${y}" x2="522" y2="${y}" stroke="#9fb0c2" stroke-width="1.5"/><text x="528" y="${y + 4}" class="lbl s">${v}</text>`;
+    }
+    s += `<line x1="516" y1="${Y0}" x2="516" y2="${Y0 - 6 * K}" stroke="#9fb0c2" stroke-width="1.5"/><text x="540" y="${Y0 - 6 * K - 14}" text-anchor="middle" class="lbl s">높이(V)</text></g>`;
+    // 펌프 높이 기준선
+    s += `<line x1="40" y1="${g.yT}" x2="508" y2="${g.yT}" stroke="#2f6fd6" stroke-dasharray="4 6" stroke-opacity=".35"/>`;
+    s += `<line x1="40" y1="${Y0}" x2="508" y2="${Y0}" stroke="#7a8794" stroke-dasharray="4 6" stroke-opacity=".35"/>`;
+    // 바닥
+    s += `<rect x="30" y="${Y0 + 14}" width="480" height="${400 - Y0 - 14}" fill="url(#brick)"/>`;
+    // 아래 수로
+    s += trough(52, g.falls[g.falls.length - 1].x + 70 > 500 ? 500 : g.falls[g.falls.length - 1].x + 70, Y0, true);
+    // 위 수로 (수문 앞뒤)
+    const topR = g.topEnd;
+    s += troughWalls(60, topR, g.yT);
+    s += `<rect x="62" y="${g.yT - 7}" width="${g.gateX - 62}" height="14" fill="url(#wWat)"/>`;
+    if (flowing) s += `<rect x="${g.gateX}" y="${g.yT - 7}" width="${topR - g.gateX - 2}" height="14" fill="url(#wWat)"/>`;
+    s += pillar(110, g.yT) + pillar(topR - 36, g.yT);
+    // 중간 수로 (저항 2개)
+    if (S.mode === 2) {
+      const xa = g.falls[0].x - 8, xb = g.falls[1].x + 12;
+      s += troughWalls(xa, xb, g.yM);
+      if (flowing) s += `<rect x="${xa + 2}" y="${g.yM - 7}" width="${xb - xa - 4}" height="14" fill="url(#wWat)"/>`;
+      s += pillar(xa + 30, g.yM);
+    }
+    // 펌프 관
+    s += `<rect x="60" y="${g.yT - 8}" width="24" height="${Y0 - g.yT + 8}" rx="4" fill="#cfd8e1" stroke="#98a6b4" stroke-width="2"/>`;
+    s += `<rect x="64" y="${g.yT - 4}" width="16" height="${Y0 - g.yT + 2}" fill="url(#wWat)"/>`;
+    const pyc = (g.yT + Y0) / 2;
+    s += `<rect x="40" y="${pyc - 26}" width="64" height="52" rx="10" fill="#2f6fd6"/><circle cx="72" cy="${pyc}" r="17" fill="#e7effc"/>`;
+    s += `<text x="72" y="${pyc - 4}" text-anchor="middle" style="font-size:10.5px;font-weight:800;fill:#2f6fd6">펌프</text><text x="72" y="${pyc + 10}" text-anchor="middle" style="font-size:10.5px;font-weight:800;fill:#2f6fd6">(전지)</text>`;
+    // 낙하 + 물레방아
+    g.falls.forEach((f, i) => {
+      const drop = f.bot - f.top, gap = clamp(30 * 5 / f.R, 5, 30);
+      if (flowing && drop > 2) s += `<rect x="${f.x - gap / 2}" y="${f.top}" width="${gap}" height="${drop}" fill="url(#wWat)" opacity=".9"/>`;
+      s += `<rect x="${f.x - gap / 2 - 9}" y="${f.top - 12}" width="8" height="22" rx="2" fill="#6b7785"/><rect x="${f.x + gap / 2 + 1}" y="${f.top - 12}" width="8" height="22" rx="2" fill="#6b7785"/>`;
+      const r = clamp(drop / 2 - 6, 14, 30), cy = (f.top + f.bot) / 2;
+      s += `<circle cx="${f.x + r + 6}" cy="${cy}" r="${r}" fill="#f6efe2" stroke="#8a6a46" stroke-width="3"/>`;
+      s += `<g id="wheel${i}"></g>`;
+      s += `<text x="${f.x + 14}" y="${f.top - 36}" text-anchor="middle" class="lbl" style="fill:#11703f">${f.name}</text>`;
+      s += `<text x="${f.x + 14}" y="${f.top - 22}" text-anchor="middle" class="lbl s">${f.R} Ω · 좁은 문</text>`;
+    });
+    // 수문(스위치)
+    const gh = S.sw ? -26 : 0;
+    s += `<rect x="${g.gateX - 4}" y="${g.yT - 22 + gh}" width="8" height="30" rx="2" fill="#56616d"/>`;
+    s += `<text x="${g.gateX}" y="${g.yT - 30 + gh}" text-anchor="middle" class="lbl s">수문(스위치)</text>`;
+    s += `<text x="${(132 + g.gateX) / 2 + 20}" y="${g.yT + 26}" text-anchor="middle" class="lbl s">수로(도선)</text>`;
+    s += `<g id="wDyn"></g><g id="wProbe"></g>`;
+    // 지점
+    Object.entries(g.pts).forEach(([k, p]) => { s += ptMarkup(k, p, h[k]); });
+    s += `<g id="wTrip"></g>`;
+    wSvg.innerHTML = s;
+    wDyn = $('#wDyn'); wProbe = $('#wProbe'); wTrip = $('#wTrip');
+    wWheels = g.falls.map((f, i) => { const r = clamp((f.bot - f.top) / 2 - 6, 14, 30); return { g: $('#wheel' + i), cx: f.x + r + 6, cy: (f.top + f.bot) / 2, r, R: f.R }; });
+    wParts = Array.from({ length: 70 }, () => el('circle', { r: 2.6, fill: '#ffffff', opacity: 0 }, wDyn));
+    bindPts(wSvg);
+    drawProbes();
+  }
+  function trough(x1, x2, y, water) {
+    return troughWalls(x1, x2, y) + (water ? `<rect x="${x1 + 2}" y="${y - 7}" width="${x2 - x1 - 4}" height="14" fill="url(#wWat)"/>` : '');
+  }
+  function troughWalls(x1, x2, y) {
+    return `<rect x="${x1}" y="${y + 7}" width="${x2 - x1}" height="6" rx="2" fill="#8a96a3"/><rect x="${x1}" y="${y - 12}" width="${x2 - x1}" height="25" rx="3" fill="#cfd8e1" opacity=".35"/>`;
+  }
+  function pillar(x, y) { return `<rect x="${x}" y="${y + 13}" width="10" height="${Math.max(0, Y0 + 14 - y - 13)}" fill="#c2a07c" opacity=".55"/>`; }
+  function ptMarkup(k, p, hv) {
+    return `<g class="pt" data-p="${k}" role="button" tabindex="0" aria-label="지점 ${k}"><circle class="hit" cx="${p[0]}" cy="${p[1]}" r="20"/>
+      <circle class="bub" data-b="${k}" cx="${p[0]}" cy="${p[1] - 22}" r="12" fill="#fff" stroke="#14263b" stroke-width="2"/>
+      <text x="${p[0]}" y="${p[1] - 17.5}" text-anchor="middle" style="font-size:13px;font-weight:900;fill:#14263b;pointer-events:none">${k}</text>
+      <circle cx="${p[0]}" cy="${p[1]}" r="4" fill="#14263b"/></g>`;
+  }
+
+  /* ---------- 전기 회로 그리기 ---------- */
+  const cSvg = $('#circuit');
+  let cDyn = null, cDots = [], cProbe = null, cTrip = null;
+  function drawCircuit() {
+    const g = C(), h = H(), n = Math.round(S.V / 1.5);
+    let s = `<rect width="560" height="400" fill="#fbfcfe"/>`;
+    // 도선
+    s += `<path id="cLoop" d="M80 320 V80 H470 V320 Z" fill="none" stroke="#3d4955" stroke-width="4" stroke-linejoin="round"/>`;
+    if (S.sw) s += `<path d="M80 320 V80 H470 V320 Z" fill="none" stroke="#f2b33d" stroke-width="10" stroke-opacity=".18" stroke-linejoin="round"/>`;
+    // 전지 (건전지 n개)
+    const top = 200 - n * 14, cellH = 28;
+    s += `<rect x="60" y="${top - 6}" width="40" height="${n * cellH + 12}" fill="#fbfcfe"/>`;
+    for (let i = 0; i < n; i++) {
+      const y = top + i * cellH;
+      s += `<line x1="58" y1="${y + 6}" x2="102" y2="${y + 6}" stroke="#14263b" stroke-width="3"/><line x1="69" y1="${y + 18}" x2="91" y2="${y + 18}" stroke="#14263b" stroke-width="7"/>`;
+      if (i < n - 1) s += `<line x1="80" y1="${y + 18}" x2="80" y2="${y + 34}" stroke="#3d4955" stroke-width="3"/>`;
+    }
+    s += `<text x="112" y="${top + 8}" class="lbl" style="fill:#e0483e;font-size:16px">+</text><text x="112" y="${top + n * cellH - 2}" class="lbl" style="font-size:18px">−</text>`;
+    s += `<text x="30" y="${top - 16}" class="lbl" style="fill:#2f6fd6">전지 ${fmtV(S.V)} V</text><text x="30" y="${top - 2}" class="lbl s">건전지 ${n}개</text>`;
+    // 스위치
+    s += `<rect x="186" y="70" width="50" height="20" fill="#fbfcfe"/><circle cx="190" cy="80" r="4.5" fill="#14263b"/><circle cx="232" cy="80" r="4.5" fill="#14263b"/>`;
+    s += S.sw ? `<line x1="190" y1="80" x2="232" y2="80" stroke="#14263b" stroke-width="4" stroke-linecap="round"/>` : `<line x1="190" y1="80" x2="226" y2="56" stroke="#14263b" stroke-width="4" stroke-linecap="round"/>`;
+    s += `<text x="211" y="${S.sw ? 108 : 50}" text-anchor="middle" class="lbl s">스위치</text>`;
+    // 저항
+    g.res.forEach((r) => {
+      let zz = `M${r.x} ${r.y1}`, steps = 8, dy = (r.y2 - r.y1) / steps;
+      for (let i = 0; i < steps; i++) zz += ` L${r.x + (i % 2 ? -12 : 12)} ${r.y1 + dy * (i + 0.5)}`;
+      zz += ` L${r.x} ${r.y2}`;
+      s += `<rect x="${r.x - 16}" y="${r.y1}" width="32" height="${r.y2 - r.y1}" fill="#fbfcfe"/><path d="${zz}" fill="none" stroke="#23a566" stroke-width="4" stroke-linejoin="round"/>`;
+      s += `<text x="${r.x - 24}" y="${(r.y1 + r.y2) / 2 + 4}" text-anchor="end" class="lbl" style="fill:#11703f">${r.lab}</text>`;
+    });
+    s += `<g id="cDyn"></g><g id="cProbe"></g>`;
+    Object.entries(g.pts).forEach(([k, p]) => { s += ptMarkup(k, p, h[k]); });
+    s += `<g id="cTrip"></g>`;
+    cSvg.innerHTML = s;
+    cDyn = $('#cDyn'); cProbe = $('#cProbe'); cTrip = $('#cTrip');
+    cDots = Array.from({ length: 26 }, () => el('circle', { r: 4, fill: '#e89a00', opacity: 0 }, cDyn));
+    bindPts(cSvg);
+    drawProbes();
+  }
+
+  /* ---------- 높이 지도 ---------- */
+  const gSvg = $('#graph');
+  const GX0 = 46, GX1 = 530, GY0 = 178, GK = 22;
+  function graphPts() {
+    const ord = ORDER(), h = H(), n = ord.length;
+    const xs = ord.map((_, i) => lerp(GX0, GX1, i / n)).concat([GX1]);
+    const pts = ord.map((k, i) => [xs[i], GY0 - h[k] * GK]).concat([[GX1, GY0 - h[ord[0]] * GK]]);
+    return { xs, pts, ord };
+  }
+  let gTrip = null;
+  function drawGraph() {
+    const { xs, pts, ord } = graphPts(), segs = SEGS(), h = H();
+    let s = `<rect width="560" height="220" fill="#fbfcfe" rx="8"/>`;
+    for (let v = 0; v <= 6; v++) { const y = GY0 - v * GK; s += `<line x1="${GX0}" y1="${y}" x2="${GX1}" y2="${y}" stroke="#e3e9ef"/><text x="${GX0 - 8}" y="${y + 4}" text-anchor="end" class="lbl s">${v}</text>`; }
+    s += `<text x="${GX0 - 30}" y="${GY0 - 6 * GK - 10}" class="lbl s">높이(V)</text>`;
+    // 구간 배경
+    segs.forEach((t, i) => {
+      const col = t === 'bat' ? '#2f6fd6' : t === 'res' ? '#23a566' : '#9aa7b4';
+      const name = t === 'bat' ? '전지' : t === 'res' ? (S.mode === 2 ? `저항 ${i - 1}` : '저항') : '도선';
+      s += `<rect x="${xs[i]}" y="${GY0 + 6}" width="${xs[i + 1] - xs[i] - 2}" height="6" rx="3" fill="${col}" opacity=".7"/>`;
+      s += `<text x="${(xs[i] + xs[i + 1]) / 2}" y="${GY0 + 28}" text-anchor="middle" class="lbl s" style="fill:${col}">${name}</text>`;
+    });
+    // 선
+    let d = '';
+    pts.forEach((p, i) => { d += (i ? ' L' : 'M') + p[0] + ' ' + p[1]; });
+    if (!S.sw && S.mode >= 1) {
+      // 스위치 위치에서 떨어지는 모양
+      const xa = xs[1], xb = xs[2], xm = (xa + xb) / 2;
+      d = `M${pts[0][0]} ${pts[0][1]} L${xa} ${GY0 - S.V * GK} L${xm} ${GY0 - S.V * GK} L${xm} ${GY0} L${GX1} ${GY0}`;
+      s += `<text x="${xm}" y="${GY0 - S.V * GK - 10}" text-anchor="middle" class="lbl s" style="fill:#e0483e">스위치 열림</text>`;
+    }
+    s += `<path d="${d}" fill="none" stroke="#2f6fd6" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>`;
+    // 지점 이름
+    ord.concat([ord[0]]).forEach((k, i) => {
+      const x = i < ord.length ? xs[i] : GX1, y = GY0 - h[k] * GK;
+      s += `<circle cx="${x}" cy="${y}" r="5" fill="#fff" stroke="#14263b" stroke-width="2"/><text x="${x}" y="${y - 10}" text-anchor="middle" style="font-size:13px;font-weight:900;fill:#14263b">${k}</text>`;
+    });
+    s += `<text x="${GX1}" y="${GY0 + 44}" text-anchor="end" class="lbl s">다시 출발점 ${ord[0]}</text>`;
+    s += `<g id="gTrip"></g>`;
+    gSvg.innerHTML = s;
+    gTrip = $('#gTrip');
+  }
+
+  /* ---------- 전압계 ---------- */
+  const vPts = $('#vPts'), vNum = $('#vNum'), vMsg = $('#vMsg'), meter = $('#meter');
+  function buildVPts() {
+    vPts.innerHTML = '';
+    Object.keys(H()).forEach((k) => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'chip'; b.textContent = k; b.dataset.p = k;
+      b.addEventListener('click', () => pick(k));
+      vPts.appendChild(b);
+    });
+  }
+  function bindPts(svg) {
+    svg.querySelectorAll('.pt').forEach((g) => {
+      g.addEventListener('click', () => pick(g.dataset.p));
+      g.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(g.dataset.p); } });
+    });
+  }
+  function pick(k) {
+    if (S.probes.length >= 2) S.probes = [];
+    if (S.probes[0] === k) return;
+    S.probes.push(k);
+    updateMeter();
+  }
+  function segName(a, b) {
+    const ord = ORDER(), segs = SEGS(), ia = ord.indexOf(a), ib = ord.indexOf(b);
+    const n = ord.length;
+    if ((ia + 1) % n === ib) return { t: segs[ia], i: ia };
+    if ((ib + 1) % n === ia) return { t: segs[ib], i: ib };
+    return null;
+  }
+  function updateMeter() {
+    const h = H();
+    vPts.querySelectorAll('.chip').forEach((c) => { c.classList.toggle('plus', c.dataset.p === S.probes[0]); c.classList.toggle('minus', c.dataset.p === S.probes[1]); });
+    [wSvg, cSvg].forEach((svg) => svg.querySelectorAll('.bub').forEach((b) => {
+      const k = b.dataset.b;
+      b.setAttribute('fill', k === S.probes[0] ? '#fdecea' : k === S.probes[1] ? '#e9edf2' : '#fff');
+      b.setAttribute('stroke', k === S.probes[0] ? '#e0483e' : '#14263b');
+    }));
+    meter.classList.remove('neg');
+    if (S.probes.length < 2) {
+      vNum.textContent = '--';
+      vMsg.innerHTML = S.probes.length ? `<b style="color:#e0483e">(+)단자: ${S.probes[0]}</b>. 이제 (-)단자를 연결할 지점을 눌러요.` :
+        '전압계는 <b>두 지점의 높이 차</b>를 재요. 그래서 회로에 <b>병렬</b>로, 두 지점에 걸쳐 연결해요.';
+      drawProbes(); return;
+    }
+    const [p, m] = S.probes, v = h[p] - h[m];
+    vNum.textContent = (v < 0 ? '-' : '') + fmtV(Math.abs(v));
+    const sg = segName(p, m);
+    let msg = `${p}와 ${m}의 높이 차 = <b>${fmtV(h[p])} V − ${fmtV(h[m])} V = ${fmtV(v)} V</b>. `;
+    if (v < -0.001) { meter.classList.add('neg'); msg += '바늘이 거꾸로 움직여요! (+)단자는 전지의 (+)극 쪽(높은 쪽)에 연결해요.'; }
+    else if (sg && sg.t === 'wire') msg += S.sw ? '도선 양 끝은 높이 차가 거의 없어요. 그래서 전압이 0이에요.' : '이 구간 안에 열린 스위치가 있어요.';
+    else if (sg && sg.t === 'res') msg += S.mode === 1 ? '저항(물레방아) 위아래의 높이 차예요. 이 값이 옴의 법칙의 V예요!' : `저항 ${sg.i - 1}에 걸리는 전압이에요. 옴의 법칙은 이 값으로 계산해요.`;
+    else if (sg && sg.t === 'bat') msg += '펌프(전지)가 물을 올린 높이, 즉 전지의 전압이에요.';
+    else if (Math.abs(v) < 0.001) msg += '두 지점의 높이가 같아서 전압이 0이에요.';
+    vMsg.innerHTML = msg;
+    drawProbes();
+    // 미션
+    if (S.sw && sg && sg.t === 'wire') complete('m1');
+    if (S.sw && S.mode === 1 && sg && sg.t === 'res' && v > 0) complete('m2');
+    if (S.sw && S.mode === 2 && sg && sg.t === 'res' && v > 0) { S.seenVR[sg.i] = true; if (S.seenVR[2] && S.seenVR[3]) complete('m4'); }
+  }
+  function drawProbes() {
+    if (!wProbe || !cProbe) return;
+    wProbe.innerHTML = ''; cProbe.innerHTML = '';
+    if (S.probes.length < 2) return;
+    const h = H(), [p, m] = S.probes, gw = W(), gc = C();
+    const y1 = Y0 - h[p] * K, y2 = Y0 - h[m] * K, x = 492;
+    let s = `<line x1="${gw.pts[p][0]}" y1="${y1}" x2="${x + 8}" y2="${y1}" stroke="#e0483e" stroke-dasharray="5 4" stroke-width="2"/>`;
+    s += `<line x1="${gw.pts[m][0]}" y1="${y2}" x2="${x + 8}" y2="${y2}" stroke="#14263b" stroke-dasharray="5 4" stroke-width="2"/>`;
+    if (Math.abs(y1 - y2) > 2) {
+      s += `<line x1="${x}" y1="${y1}" x2="${x}" y2="${y2}" stroke="#7d5ad6" stroke-width="3"/><path d="M${x - 6} ${y1} H${x + 6} M${x - 6} ${y2} H${x + 6}" stroke="#7d5ad6" stroke-width="3"/>`;
+      s += `<rect x="${x - 74}" y="${(y1 + y2) / 2 - 13}" width="66" height="26" rx="13" fill="#7d5ad6"/><text x="${x - 41}" y="${(y1 + y2) / 2 + 5}" text-anchor="middle" style="font-size:13px;font-weight:800;fill:#fff">${fmtV(h[p] - h[m])} V</text>`;
+    }
+    wProbe.innerHTML = s;
+    const cx = 275, cy = 200, P = gc.pts[p], M = gc.pts[m];
+    cProbe.innerHTML = `<path d="M${cx - 14} ${cy} Q ${(cx + P[0]) / 2} ${cy - 40} ${P[0]} ${P[1]}" fill="none" stroke="#e0483e" stroke-width="3"/>
+      <path d="M${cx + 14} ${cy} Q ${(cx + M[0]) / 2} ${cy + 40} ${M[0]} ${M[1]}" fill="none" stroke="#14263b" stroke-width="3"/>
+      <circle cx="${cx}" cy="${cy}" r="24" fill="#fff" stroke="#7d5ad6" stroke-width="3"/><text x="${cx}" y="${cy + 7}" text-anchor="middle" style="font-size:20px;font-weight:900;fill:#7d5ad6">V</text>
+      <text x="${cx}" y="${cy + 44}" text-anchor="middle" style="font-size:13px;font-weight:800;fill:#7d5ad6">${fmtV(h[p] - h[m])} V</text>`;
+  }
+  $('#vReset').addEventListener('click', () => { S.probes = []; updateMeter(); });
+
+  /* ---------- 전류 & 옴의 법칙 ---------- */
+  function updateInfo() {
+    const i = I();
+    $('#iNum').textContent = `${fmtI(i)} A`;
+    $('#iNum').insertAdjacentHTML('beforeend', ` <span style="font-size:15px;color:#5a6b7e;font-weight:700">(${Math.round(i * 1000)} mA)</span>`);
+    const box = $('#ohm');
+    if (!S.sw) { box.innerHTML = `<div class="ln no">스위치(수문)가 열려 있어 전류가 흐르지 않아요.</div>`; return; }
+    if (S.mode === 1) {
+      box.innerHTML = `<div class="ln">저항에 걸린 전압 ÷ 저항 = <span class="v">${fmtV(S.V)} V</span> ÷ <span class="r">${S.R} Ω</span> = <span class="i">${fmtI(i)} A</span></div>
+        <div class="ln" style="font-weight:600">저항이 1개일 때는 저항에 걸리는 전압이 전지의 전압과 같아요. 도선에서는 높이가 줄지 않기 때문이에요.</div>`;
+    } else {
+      const v1 = i * S.R1, v2 = i * S.R2;
+      box.innerHTML = `<div class="ln">저항 1: <span class="v">${fmtV(v1)} V</span> ÷ <span class="r">${S.R1} Ω</span> = <span class="i">${fmtI(i)} A</span></div>
+        <div class="ln">저항 2: <span class="v">${fmtV(v2)} V</span> ÷ <span class="r">${S.R2} Ω</span> = <span class="i">${fmtI(i)} A</span></div>
+        <div class="ln no">전지 전압으로 계산하면? ${fmtV(S.V)} V ÷ ${S.R1} Ω = ${fmtI(S.V / S.R1)} A ✗<br>옴의 법칙의 V는 <b>그 저항에 걸리는 전압</b>이에요.</div>`;
+    }
+  }
+
+  /* ---------- 조작 ---------- */
+  function chipRow(host, list, key, cls, fmt) {
+    host.innerHTML = '';
+    list.forEach((v) => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'chip ' + cls; b.innerHTML = fmt(v);
+      b.setAttribute('aria-pressed', String(S[key] === v));
+      b.addEventListener('click', () => { S[key] = v; refreshAll(); });
+      host.appendChild(b);
+    });
+  }
+  function refreshAll() {
+    chipRow($('#vChips'), VOLTS, 'V', 'v', (v) => `${v} V<small>건전지 ${v / 1.5}개</small>`);
+    chipRow($('#rChips'), RS, 'R', 'r', (v) => `${v} Ω`);
+    chipRow($('#r1Chips'), RS2, 'R1', 'r', (v) => `${v} Ω`);
+    chipRow($('#r2Chips'), RS2, 'R2', 'r', (v) => `${v} Ω`);
+    $('#swBtn').setAttribute('aria-pressed', String(S.sw));
+    $('#swTxt').textContent = S.sw ? '닫힘 · 흐름' : '열림 · 멈춤';
+    document.body.classList.toggle('m2', S.mode === 2);
+    $('#m1Btn').setAttribute('aria-pressed', String(S.mode === 1));
+    $('#m2Btn').setAttribute('aria-pressed', String(S.mode === 2));
+    const keys = Object.keys(H());
+    S.probes = S.probes.filter((p) => keys.includes(p));
+    S.trip = null;
+    drawWater(); drawCircuit(); drawGraph(); buildVPts(); updateMeter(); updateInfo();
+    $('#tripBtn').disabled = !S.sw;
+    $('#tripRead').textContent = S.sw ? '출발점에서 시작해 회로를 한 바퀴 돌아요.' : '스위치(수문)가 열려 있어 한 바퀴 돌 수 없어요.';
+    // 전압 2배 → 전류 2배 미션
+    if (S.sw && S.mode === 1) {
+      const key = 'R' + S.R; S.vSeen = S.vSeen || {}; S.vSeen[key] = S.vSeen[key] || new Set(); S.vSeen[key].add(S.V);
+      const set = S.vSeen[key];
+      if ([...set].some((v) => set.has(v * 2))) complete('m5');
+    }
+  }
+  $('#swBtn').addEventListener('click', () => { S.sw = !S.sw; refreshAll(); });
+  $('#m1Btn').addEventListener('click', () => { S.mode = 1; S.probes = []; refreshAll(); });
+  $('#m2Btn').addEventListener('click', () => { S.mode = 2; S.probes = []; refreshAll(); });
+  function setView(v) { S.view = v; $('#viewI').setAttribute('aria-pressed', String(v === 'I')); $('#viewE').setAttribute('aria-pressed', String(v === 'E')); $('#cTag').textContent = v === 'I' ? '전류는 (+)극 → (-)극' : '전자는 (-)극 → (+)극 (전류와 반대)'; }
+  $('#viewI').addEventListener('click', () => setView('I'));
+  $('#viewE').addEventListener('click', () => setView('E'));
+
+  /* ---------- 한 바퀴 여행 ---------- */
+  $('#tripBtn').addEventListener('click', () => { if (S.sw) S.trip = { t: 0 }; });
+  function tripPos(t) {
+    const segs = SEGS(), n = segs.length, k = Math.min(n - 1, Math.floor(t * n)), u = t * n - k;
+    const ord = ORDER(), h = H(), a = ord[k], b = ord[(k + 1) % n];
+    const height = lerp(h[a], h[b], segs[k] === 'wire' ? 0 : u);
+    const ww = W().segs[k], cc = C().segs[k];
+    const { xs } = graphPts();
+    return { k, u, height: segs[k] === 'wire' ? h[a] : height, w: polyAt(ww, u), c: polyAt(cc, u), gx: lerp(xs[k], xs[k + 1], u) };
+  }
+
+  /* ---------- 미션 ---------- */
+  const MISSIONS = [
+    { id: 'm1', t: '전압계로 도선 양 끝의 전압 재기', r: '도선 양 끝은 높이 차가 거의 없어 0 V예요.' },
+    { id: 'm2', t: '저항 1개 회로에서 저항 양 끝의 전압 재기', r: '저항에 걸리는 전압 = 물레방아 위아래의 높이 차. 이 값을 옴의 법칙에 써요.' },
+    { id: 'm3', t: '한 바퀴 여행으로 출발점까지 돌아오기', r: '전지에서 올라간 높이만큼 저항에서 내려와, 한 바퀴 돌면 높이 차가 0이에요.' },
+    { id: 'm4', t: '(도전) 저항 2개 회로에서 두 저항의 전압을 각각 재기', r: '두 저항이 높이를 나눠서 내려가요. 각 저항의 전압으로 옴의 법칙을 계산해요.' },
+    { id: 'm5', t: '같은 저항에서 전지 전압을 2배로 바꿔 전류 비교하기', r: '전압이 2배가 되면 전류도 2배! 전류는 전압에 비례해요.' },
+  ];
+  const mlist = $('#mlist');
+  MISSIONS.forEach((m) => {
+    mlist.insertAdjacentHTML('beforeend', `<div class="mission" id="${m.id}"><span class="mcheck"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span><div><div class="mt">${m.t}</div><div class="mr">${m.r}</div></div></div>`);
+  });
+  let toastT = null;
+  function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2800); }
+  function complete(id) {
+    if (S.done[id]) return; S.done[id] = true;
+    document.getElementById(id).classList.add('done');
+    const n = Object.keys(S.done).length;
+    $('#prog').textContent = `${n} / ${MISSIONS.length}`;
+    toast(n === MISSIONS.length ? '탐구 미션을 모두 해냈어요!' : '미션 완료! ' + MISSIONS.find((m) => m.id === id).r);
+  }
+
+  /* ---------- 애니메이션 ---------- */
+  let last = performance.now();
+  function frame(now) {
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    const i = I();
+    // 물 입자
+    if (wDyn) {
+      const loop = loopOf(W().segs), L = polyLen(loop);
+      S.flow = (S.flow + dt * i * 150) % L;
+      wParts.forEach((c, j) => {
+        if (!S.sw) { c.setAttribute('opacity', 0); return; }
+        const p = polyAt(loop, ((S.flow + (j * L) / wParts.length) % L) / L);
+        c.setAttribute('cx', p[0].toFixed(1)); c.setAttribute('cy', p[1].toFixed(1)); c.setAttribute('opacity', '.85');
+      });
+      S.wheel += dt * i * 260;
+      wWheels.forEach((w) => {
+        let sp = '';
+        for (let a = 0; a < 6; a++) { const ang = (S.wheel + a * 60) * Math.PI / 180; sp += `<line x1="${w.cx}" y1="${w.cy}" x2="${(w.cx + Math.cos(ang) * w.r).toFixed(1)}" y2="${(w.cy + Math.sin(ang) * w.r).toFixed(1)}" stroke="#8a6a46" stroke-width="3"/><rect x="${(w.cx + Math.cos(ang) * w.r - 4).toFixed(1)}" y="${(w.cy + Math.sin(ang) * w.r - 4).toFixed(1)}" width="8" height="8" fill="#b88b5a"/>`; }
+        w.g.innerHTML = sp + `<circle cx="${w.cx}" cy="${w.cy}" r="5" fill="#8a6a46"/>`;
+      });
+    }
+    // 회로 점
+    if (cDyn) {
+      const loop = [[80, 320], [80, 80], [470, 80], [470, 320], [80, 320]], L = polyLen(loop);
+      S.flowC = (S.flowC + dt * i * 150) % L;
+      cDots.forEach((c, j) => {
+        if (!S.sw) { c.setAttribute('opacity', 0); return; }
+        let d = (S.flowC + (j * L) / cDots.length) % L;
+        if (S.view === 'E') d = L - d;
+        const p = polyAt(loop, d / L);
+        const inBat = p[0] === 80 && p[1] > 140 && p[1] < 260;
+        c.setAttribute('cx', p[0].toFixed(1)); c.setAttribute('cy', p[1].toFixed(1));
+        c.setAttribute('fill', S.view === 'E' ? '#2f6fd6' : '#e89a00');
+        c.setAttribute('r', S.view === 'E' ? 3.4 : 4);
+        c.setAttribute('opacity', inBat ? 0 : 0.95);
+      });
+    }
+    // 한 바퀴 여행
+    if (S.trip && wTrip) {
+      S.trip.t += dt / 9;
+      const done = S.trip.t >= 1;
+      const t = Math.min(S.trip.t, 0.9999), p = tripPos(t);
+      const drop = (x, y) => `<g transform="translate(${x.toFixed(1)} ${y.toFixed(1)})"><circle r="15" fill="#7d5ad6" opacity=".18"/><path d="M0 -10 C6 -2 7 2 7 4 A7 7 0 0 1 -7 4 C-7 2 -6 -2 0 -10Z" fill="#7d5ad6" stroke="#fff" stroke-width="2"/></g>`;
+      wTrip.innerHTML = drop(p.w[0], p.w[1]);
+      cTrip.innerHTML = `<g transform="translate(${p.c[0].toFixed(1)} ${p.c[1].toFixed(1)})"><circle r="15" fill="#7d5ad6" opacity=".18"/><circle r="8" fill="#7d5ad6" stroke="#fff" stroke-width="2"/></g>`;
+      gTrip.innerHTML = `<line x1="${p.gx}" y1="${GY0}" x2="${p.gx}" y2="${GY0 - p.height * GK}" stroke="#7d5ad6" stroke-dasharray="3 3"/><circle cx="${p.gx}" cy="${GY0 - p.height * GK}" r="8" fill="#7d5ad6" stroke="#fff" stroke-width="2"/>`;
+      const segT = SEGS()[p.k];
+      const where = segT === 'bat' ? '전지(펌프)에서 올라가는 중' : segT === 'res' ? '저항(물레방아)에서 내려오는 중' : '도선(수로)을 지나는 중: 높이 그대로';
+      $('#tripRead').innerHTML = `${where} · 지금 높이 <b>${fmtV(p.height)} V</b>`;
+      if (done) {
+        S.trip = null;
+        wTrip.innerHTML = ''; cTrip.innerHTML = ''; gTrip.innerHTML = '';
+        $('#tripRead').innerHTML = `출발점으로 돌아왔어요! 출발점과의 높이 차 = <b>0 V</b>. 전지에서 올라간 ${fmtV(S.V)} V만큼 저항에서 내려왔어요.`;
+        complete('m3');
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+
+  refreshAll();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
